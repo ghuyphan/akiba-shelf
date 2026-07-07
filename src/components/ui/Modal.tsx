@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "./Button";
 
@@ -8,15 +9,16 @@ type ModalProps = {
   onClose: () => void;
   children: ReactNode;
   wide?: boolean;
+  className?: string;
 };
 
-export function Modal({ title, isOpen, onClose, children, wide = false }: ModalProps) {
+export function Modal({ title, isOpen, onClose, children, wide = false, className = "" }: ModalProps) {
   if (!isOpen) return null;
 
-  return (
+  const modal = (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <section
-        className={`modal ${wide ? "modal-wide" : ""}`}
+        className={`modal ${wide ? "modal-wide" : ""} ${className}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -30,4 +32,6 @@ export function Modal({ title, isOpen, onClose, children, wide = false }: ModalP
       </section>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

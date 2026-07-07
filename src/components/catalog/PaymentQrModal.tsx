@@ -40,7 +40,7 @@ export function PaymentQrModal({ isOpen, payment, product, onClose }: PaymentQrM
   const bank = getPaymentBank(payment.bank_code, payment.bank_acq_id);
 
   return (
-    <Modal title={title} isOpen={isOpen} onClose={onClose} wide>
+    <Modal title={title} isOpen={isOpen} onClose={onClose} className="payment-modal">
       <div className="qr-modal-layout">
         <div className="qr-display">
           {qrSrc && !isGenerating ? <img src={qrSrc} alt="Payment QR code" /> : <div className="qr-loading" />}

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 
 type AlertVariant = "info" | "success" | "error";
@@ -20,7 +21,7 @@ const icons = {
 export function Alert({ children, title, variant = "info", className = "", onClose }: AlertProps) {
   const Icon = icons[variant];
 
-  return (
+  const alert = (
     <div
       className={`alert alert-${variant} ${onClose ? "alert-dismissible" : ""} ${className}`}
       role={variant === "error" ? "alert" : "status"}
@@ -37,4 +38,6 @@ export function Alert({ children, title, variant = "info", className = "", onClo
       )}
     </div>
   );
+
+  return createPortal(alert, document.body);
 }
