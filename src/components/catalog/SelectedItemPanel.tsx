@@ -1,4 +1,4 @@
-import { Banknote, Minus, Plus, Trash2, X } from "lucide-react";
+import { Banknote, MousePointer2, PackageOpen, Minus, Plus, Trash2, X } from "lucide-react";
 import type { PaymentSettings, Product } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { Button } from "../ui/Button";
@@ -6,11 +6,13 @@ import { Button } from "../ui/Button";
 type SelectedItemPanelProps = {
   product?: Product;
   payment: PaymentSettings;
+  quantity: number;
+  onQuantityChange: (quantity: number) => void;
   onOpenPayment: () => void;
   onClose: () => void;
 };
 
-export function SelectedItemPanel({ product, payment, onOpenPayment, onClose }: SelectedItemPanelProps) {
+export function SelectedItemPanel({ product, payment, quantity, onQuantityChange, onOpenPayment, onClose }: SelectedItemPanelProps) {
   if (!product) {
     return (
       <aside className="selected-panel selected-panel-empty">
@@ -18,10 +20,16 @@ export function SelectedItemPanel({ product, payment, onOpenPayment, onClose }: 
           <h2>Selected Item</h2>
         </div>
         <div className="selected-empty-body">
-          <div className="selected-empty-thumb" />
+          <div className="selected-empty-thumb">
+            <PackageOpen size={34} />
+          </div>
           <div>
             <h3>No item selected</h3>
             <p>Tap a merch card to preview details and generate a payment QR.</p>
+            <span className="selected-empty-hint">
+              <MousePointer2 size={14} />
+              Waiting for selection
+            </span>
           </div>
         </div>
         <div className="selected-actions">
@@ -34,6 +42,9 @@ export function SelectedItemPanel({ product, payment, onOpenPayment, onClose }: 
   }
 
   const primaryImage = product.images.find(Boolean);
+  const maxQuantity = Math.max(1, product.quantity_available);
+  const canDecrease = quantity > 1;
+  const canIncrease = quantity < maxQuantity;
 
   return (
     <aside className="selected-panel">
@@ -59,11 +70,21 @@ export function SelectedItemPanel({ product, payment, onOpenPayment, onClose }: 
       </div>
       <div className="quantity-row">
         <div className="quantity-stepper" aria-label="Quantity">
-          <button type="button" aria-label="Decrease quantity">
+          <button
+            type="button"
+            aria-label="Decrease quantity"
+            disabled={!canDecrease}
+            onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+          >
             <Minus size={16} />
           </button>
-          <span>1</span>
-          <button type="button" aria-label="Increase quantity">
+          <span>{quantity}</span>
+          <button
+            type="button"
+            aria-label="Increase quantity"
+            disabled={!canIncrease}
+            onClick={() => onQuantityChange(Math.min(maxQuantity, quantity + 1))}
+          >
             <Plus size={16} />
           </button>
         </div>

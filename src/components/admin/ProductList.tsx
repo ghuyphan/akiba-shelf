@@ -2,7 +2,7 @@ import type { Product } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { Button } from "../ui/Button";
 import { AdminCard } from "./AdminCard";
-import { Plus } from "lucide-react";
+import { Boxes, ImageIcon, PackageSearch, Plus } from "lucide-react";
 
 type ProductListProps = {
   products: Product[];
@@ -16,6 +16,7 @@ export function ProductList({ products, selectedId, onSelect, onCreate }: Produc
     <AdminCard
       title="Products"
       description={`${products.length} items`}
+      icon={<Boxes size={18} />}
       className="product-manager-list"
       action={
         <Button icon={<Plus size={18} />} onClick={onCreate}>
@@ -24,6 +25,13 @@ export function ProductList({ products, selectedId, onSelect, onCreate }: Produc
       }
     >
       <div className="admin-product-list">
+        {products.length === 0 && (
+          <div className="admin-list-empty">
+            <PackageSearch size={24} />
+            <strong>No products yet</strong>
+            <span>Create the first catalog item to start building the booth.</span>
+          </div>
+        )}
         {products.map((product) => {
           const primaryImage = product.images.find(Boolean);
 
@@ -35,7 +43,7 @@ export function ProductList({ products, selectedId, onSelect, onCreate }: Produc
               onClick={() => onSelect(product)}
             >
               <span className="admin-product-thumb">
-                {primaryImage ? <img src={primaryImage} alt="" /> : <span className="admin-product-thumb-placeholder" />}
+                {primaryImage ? <img src={primaryImage} alt="" /> : <ImageIcon size={24} className="admin-product-thumb-placeholder" />}
               </span>
               <span>
                 <strong>{product.name}</strong>

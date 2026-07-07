@@ -20,6 +20,7 @@ export function CatalogPage() {
   const [booth, setBooth] = useState<BoothSettings>(defaultBooth);
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [activeCategory, setActiveCategory] = useState("All");
   const [sort, setSort] = useState("recommended");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -71,6 +72,10 @@ export function CatalogPage() {
     applyPageTheme(booth);
   }, [booth]);
 
+  useEffect(() => {
+    setSelectedQuantity(1);
+  }, [selectedProduct?.id]);
+
   const categories = useMemo(
     () => ["All", ...Array.from(new Set(products.map((product) => product.category))).filter(Boolean)],
     [products],
@@ -105,15 +110,20 @@ export function CatalogPage() {
           </div>
           <ProductGrid
             products={visibleProducts}
+            totalProducts={products.length}
+            activeCategory={activeCategory}
             selectedProduct={selectedProduct}
             viewMode={viewMode}
             onSelect={setSelectedProduct}
+            onResetFilters={() => setActiveCategory("All")}
           />
         </section>
         <section className="catalog-side">
           <SelectedItemPanel
             product={selectedProduct}
             payment={payment}
+            quantity={selectedQuantity}
+            onQuantityChange={setSelectedQuantity}
             onOpenPayment={() => setIsQrOpen(true)}
             onClose={() => setSelectedProduct(undefined)}
           />
@@ -124,6 +134,7 @@ export function CatalogPage() {
         isOpen={isQrOpen}
         payment={payment}
         product={selectedProduct}
+        quantity={selectedQuantity}
         onClose={() => setIsQrOpen(false)}
       />
       <Modal title="Booth Info" isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>

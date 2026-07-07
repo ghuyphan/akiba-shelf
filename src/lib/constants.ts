@@ -26,3 +26,5 @@ export const defaultPayment: PaymentSettings = {
   bank_add_info_template: "",
   payment_instructions: "",
 };
+
+export const productBadges = ["New", "Best Seller", "Limited", "Restock", "Event Exclusive", "Preorder", "Last Call"];

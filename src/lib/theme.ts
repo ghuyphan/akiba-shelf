@@ -4,8 +4,14 @@ import type { BoothSettings } from "../types/catalog";
 
 type ThemeStyle = CSSProperties & Record<`--${string}`, string>;
 
+const themeStorageKey = "merch-booth-theme";
+
 function color(value: string | undefined, fallback: string) {
   return value?.trim() || fallback;
+}
+
+function isThemeSettings(value: unknown): value is Partial<BoothSettings> {
+  return Boolean(value && typeof value === "object");
 }
 
 export function getThemeStyle(booth: BoothSettings): ThemeStyle {
@@ -30,4 +36,27 @@ export function applyPageTheme(booth: BoothSettings) {
   Object.entries(style).forEach(([key, value]) => {
     document.documentElement.style.setProperty(key, value);
   });
+
+  try {
+    localStorage.setItem(themeStorageKey, JSON.stringify(booth));
+  } catch {
+    // Theme caching is a visual enhancement; ignore storage failures.
+  }
+}
+
+export function applyStoredPageTheme() {
+  try {
+    const stored = localStorage.getItem(themeStorageKey);
+    if (!stored) return;
+    const parsed = JSON.parse(stored) as unknown;
+    if (isThemeSettings(parsed)) {
+      applyPageTheme({ ...defaultBooth, ...parsed });
+    }
+  } catch {
+    try {
+      localStorage.removeItem(themeStorageKey);
+    } catch {
+      // Ignore unavailable storage.
+    }
+  }
 }

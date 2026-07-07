@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { BadgeDollarSign, Building2, CreditCard, Edit3, QrCode, X } from "lucide-react";
 import type { PaymentSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { Alert } from "../ui/Alert";
@@ -15,27 +16,78 @@ type QrManagerProps = {
 
 export function QrManager({ settings, onSave }: QrManagerProps) {
   const [draft, setDraft] = useState(settings);
+  const [isEditing, setIsEditing] = useState(false);
   const { busy, error, run, setError } = useAsyncAction();
   const banks = getVietQrBanks();
   const selectedBank = getPaymentBank(draft.bank_code, draft.bank_acq_id);
 
-  useEffect(() => setDraft(settings), [settings]);
+  useEffect(() => {
+    setDraft(settings);
+    setIsEditing(false);
+    setError("");
+  }, [settings]);
+
+  function resetDraft() {
+    setDraft(settings);
+    setIsEditing(false);
+    setError("");
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    await run(() => onSave(draft)).catch(() => undefined);
+    let didSave = false;
+    await run(async () => {
+      await onSave(draft);
+      didSave = true;
+    }).catch(() => undefined);
+    if (didSave) setIsEditing(false);
   }
 
   return (
-    <AdminCard title="Payment QR" description="Generate bank QR by item amount, with static QR fallback.">
+    <AdminCard
+      title="Payment QR"
+      description="Review payment details here. Edit only when the booth payment account changes."
+      icon={<QrCode size={18} />}
+      action={
+        !isEditing ? (
+          <Button type="button" variant="secondary" icon={<Edit3 size={18} />} onClick={() => setIsEditing(true)}>
+            Edit
+          </Button>
+        ) : undefined
+      }
+    >
       <form className="admin-form" onSubmit={handleSubmit}>
+        {!isEditing && (
+          <div className="admin-readout" aria-label="Payment summary">
+            <span>
+              <Building2 size={16} />
+              <small>Bank</small>
+              <strong>{selectedBank?.name ?? "Not set"}</strong>
+            </span>
+            <span>
+              <CreditCard size={16} />
+              <small>Account</small>
+              <strong>{draft.bank_account_no || "Not set"}</strong>
+            </span>
+            <span>
+              <BadgeDollarSign size={16} />
+              <small>Label</small>
+              <strong>{draft.bank_label || "Payment"}</strong>
+            </span>
+          </div>
+        )}
         <div className="form-grid">
           <Field label="Payment Label">
-            <TextInput value={draft.bank_label} onChange={(event) => setDraft({ ...draft, bank_label: event.target.value })} />
+            <TextInput
+              value={draft.bank_label}
+              disabled={!isEditing}
+              onChange={(event) => setDraft({ ...draft, bank_label: event.target.value })}
+            />
           </Field>
           <Field label="Bank">
             <SelectInput
               value={selectedBank?.code ?? ""}
+              disabled={!isEditing}
               onChange={(event) => {
                 const bank = banks.find((item) => item.code === event.target.value);
                 setDraft({
@@ -69,12 +121,14 @@ export function QrManager({ settings, onSave }: QrManagerProps) {
           <Field label="Account Number">
             <TextInput
               value={draft.bank_account_no ?? ""}
+              disabled={!isEditing}
               onChange={(event) => setDraft({ ...draft, bank_account_no: event.target.value })}
             />
           </Field>
           <Field label="Account Name">
             <TextInput
               value={draft.bank_account_name ?? ""}
+              disabled={!isEditing}
               onChange={(event) => setDraft({ ...draft, bank_account_name: event.target.value })}
             />
           </Field>
@@ -82,21 +136,31 @@ export function QrManager({ settings, onSave }: QrManagerProps) {
         <Field label="Transfer Message Template" hint="Available tokens: {code}, {item}, {amount}">
           <TextInput
             value={draft.bank_add_info_template ?? ""}
+            disabled={!isEditing}
             onChange={(event) => setDraft({ ...draft, bank_add_info_template: event.target.value })}
           />
         </Field>
-        <details className="advanced-payment-settings">
+        <details className="advanced-payment-settings" open={isEditing ? undefined : false}>
           <summary>Fallback QR</summary>
           <div className="fallback-qr-row">
             <Field label="Fallback QR URL">
-              <TextInput value={draft.bank_qr_url} onChange={(event) => setDraft({ ...draft, bank_qr_url: event.target.value })} />
+              <TextInput
+                value={draft.bank_qr_url}
+                disabled={!isEditing}
+                onChange={(event) => setDraft({ ...draft, bank_qr_url: event.target.value })}
+              />
             </Field>
-            <ImageUpload bucket="payment-qr" label="Upload QR" onUploaded={(url) => setDraft({ ...draft, bank_qr_url: url })} />
+            {isEditing ? (
+              <ImageUpload bucket="payment-qr" label="Upload QR" onUploaded={(url) => setDraft({ ...draft, bank_qr_url: url })} />
+            ) : (
+              <div className="image-admin-note">Fallback upload is available while editing.</div>
+            )}
           </div>
         </details>
         <Field label="Payment Instructions">
           <TextArea
             value={draft.payment_instructions}
+            disabled={!isEditing}
             onChange={(event) => setDraft({ ...draft, payment_instructions: event.target.value })}
           />
         </Field>
@@ -105,9 +169,16 @@ export function QrManager({ settings, onSave }: QrManagerProps) {
             {error}
           </Alert>
         )}
-        <Button type="submit" loading={busy} loadingText="Saving...">
-          Save QR Settings
-        </Button>
+        {isEditing && (
+          <div className="form-actions">
+            <Button type="submit" loading={busy} loadingText="Saving...">
+              Save QR Settings
+            </Button>
+            <Button type="button" variant="secondary" icon={<X size={18} />} disabled={busy} onClick={resetDraft}>
+              Cancel
+            </Button>
+          </div>
+        )}
       </form>
     </AdminCard>
   );

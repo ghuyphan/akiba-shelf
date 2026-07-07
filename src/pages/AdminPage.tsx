@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Clock, LogOut, Package, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Clock, EyeOff, LogOut, Package, ShoppingBag, Sparkles, TriangleAlert } from "lucide-react";
 import {
   deleteProduct,
   getAdminProducts,
@@ -55,6 +55,11 @@ export function AdminPage() {
   const [statusVariant, setStatusVariant] = useState<"info" | "success" | "error">("info");
 
   const nextSort = useMemo(() => Math.max(0, ...products.map((product) => product.sort_order)) + 1, [products]);
+  const lowStockCount = useMemo(
+    () => products.filter((product) => product.active && product.stock_status !== "in_stock").length,
+    [products],
+  );
+  const hiddenCount = useMemo(() => products.filter((product) => !product.active).length, [products]);
 
   useEffect(() => {
     if (!supabase) {
@@ -143,9 +148,10 @@ export function AdminPage() {
 
   async function handleSaveProduct(product: Product) {
     await runAdminAction(async () => {
+      const wasNewProduct = !products.some((current) => current.id === product.id);
       await saveProduct(product);
       await reload();
-      setSelectedProduct(product);
+      setSelectedProduct(wasNewProduct ? createBlankProduct(product.sort_order + 1) : product);
     }, "Item saved.");
   }
 
@@ -193,6 +199,18 @@ export function AdminPage() {
             <span>
               <Package size={16} />
               {products.length} items
+            </span>
+            <span>
+              <Sparkles size={16} />
+              {products.filter((product) => product.featured).length} featured
+            </span>
+            <span>
+              <TriangleAlert size={16} />
+              {lowStockCount} attention
+            </span>
+            <span>
+              <EyeOff size={16} />
+              {hiddenCount} hidden
             </span>
             <span>
               <Clock size={16} />

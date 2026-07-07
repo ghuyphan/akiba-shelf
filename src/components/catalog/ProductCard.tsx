@@ -1,4 +1,3 @@
-import { Heart } from "lucide-react";
 import type { Product } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { getStockTone } from "../../lib/product";
@@ -21,9 +20,6 @@ export function ProductCard({ product, selected, viewMode, onSelect }: ProductCa
     >
       <div className="product-image-wrap">
         {product.badge && <span className="product-badge">{product.badge}</span>}
-        <span className="favorite-pill" aria-hidden="true">
-          <Heart size={18} />
-        </span>
         {primaryImage ? (
           <img src={primaryImage} alt={product.name} loading="lazy" />
         ) : (
@@ -33,7 +29,12 @@ export function ProductCard({ product, selected, viewMode, onSelect }: ProductCa
       <div className="product-card-body">
         <div>
           <h3>{product.name}</h3>
-          <p>{product.collection}</p>
+          {product.collection && <p className="product-collection">{product.collection}</p>}
+          {product.description && (
+            <p className="product-card-description" title={product.description}>
+              {product.description}
+            </p>
+          )}
         </div>
         <div className="product-meta-row">
           <div>

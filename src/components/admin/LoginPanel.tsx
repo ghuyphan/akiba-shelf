@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { Lock } from "lucide-react";
+import { Lock, ShieldCheck, ShoppingBag } from "lucide-react";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { Alert } from "../ui/Alert";
@@ -25,7 +25,7 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
       <div className="admin-card admin-card-narrow">
         <div className="admin-title-row">
           <div className="admin-icon">
-            <Lock size={24} />
+            <ShoppingBag size={24} />
           </div>
           <div>
             <h1>Admin Login</h1>
@@ -35,6 +35,16 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
                 : "Supabase environment variables are required."}
             </p>
           </div>
+        </div>
+        <div className="login-trust-strip">
+          <span>
+            <ShieldCheck size={16} />
+            Secure catalog controls
+          </span>
+          <span>
+            <Lock size={16} />
+            Admin only
+          </span>
         </div>
         <form className="stack" onSubmit={handleSubmit}>
           <Field label="Email">
