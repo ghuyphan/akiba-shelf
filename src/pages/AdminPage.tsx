@@ -21,6 +21,7 @@ import { ProductForm } from "../components/admin/ProductForm";
 import { ProductList } from "../components/admin/ProductList";
 import { QrManager } from "../components/admin/QrManager";
 import { SettingsForm } from "../components/admin/SettingsForm";
+import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 
 function createBlankProduct(nextSort: number): Product {
@@ -51,6 +52,7 @@ export function AdminPage() {
   const [booth, setBooth] = useState<BoothSettings>(defaultBooth);
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const [status, setStatus] = useState("");
+  const [statusVariant, setStatusVariant] = useState<"info" | "success" | "error">("info");
 
   const nextSort = useMemo(() => Math.max(0, ...products.map((product) => product.sort_order)) + 1, [products]);
 
@@ -90,7 +92,10 @@ export function AdminPage() {
 
   useEffect(() => {
     if (!isAuthed) return;
-    reload().catch((error) => setStatus(error instanceof Error ? error.message : "Could not load admin data."));
+    reload().catch((error) => {
+      setStatusVariant("error");
+      setStatus(error instanceof Error ? error.message : "Could not load admin data.");
+    });
   }, [isAuthed]);
 
   useEffect(() => {
@@ -101,11 +106,15 @@ export function AdminPage() {
       onChange: () => {
         window.clearTimeout(reloadTimer);
         reloadTimer = window.setTimeout(() => {
-          reload().catch((error) => setStatus(error instanceof Error ? error.message : "Could not refresh admin data."));
+          reload().catch((error) => {
+            setStatusVariant("error");
+            setStatus(error instanceof Error ? error.message : "Could not refresh admin data.");
+          });
         }, 150);
       },
       onStatus: (status, error) => {
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          setStatusVariant("error");
           setStatus(error instanceof Error ? error.message : "Realtime connection failed.");
         }
       },
@@ -123,6 +132,7 @@ export function AdminPage() {
 
   async function runAdminAction(action: () => Promise<void>, message: string) {
     await action();
+    setStatusVariant("success");
     setStatus(message);
   }
 
@@ -155,7 +165,7 @@ export function AdminPage() {
   if (isCheckingAuth) {
     return (
       <main className="admin-shell" style={getThemeStyle(booth)}>
-        <div className="status-banner">Checking admin session...</div>
+        <Alert>Checking admin session...</Alert>
       </main>
     );
   }
@@ -194,7 +204,7 @@ export function AdminPage() {
           Sign Out
         </Button>
       </header>
-      {status && <div className="status-banner">{status}</div>}
+      {status && <Alert variant={statusVariant}>{status}</Alert>}
       <div className="admin-grid">
         <ProductList
           products={products}

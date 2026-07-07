@@ -1117,13 +1117,75 @@ a {
   font-weight: 820;
 }
 
-.status-banner {
+.alert {
   margin-top: 12px;
-  padding: 12px 14px;
-  border: 1px solid #f0c3c3;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  color: #8f2130;
-  background: #fff1ef;
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(7 24 50 / 4%);
+}
+
+.alert svg {
+  margin-top: 1px;
+}
+
+.alert-content {
+  min-width: 0;
+}
+
+.alert-title,
+.alert-description {
+  margin: 0;
+}
+
+.alert-title {
+  font-size: 13px;
+  font-weight: 820;
+  line-height: 1.2;
+}
+
+.alert-description {
+  color: #44546a;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.alert-title + .alert-description {
+  margin-top: 2px;
+}
+
+.alert-info {
+  border-color: #cdd9ea;
+  background: #f8fbff;
+}
+
+.alert-info svg {
+  color: var(--blue);
+}
+
+.alert-success {
+  border-color: #b9decf;
+  background: #f3fbf7;
+}
+
+.alert-success svg {
+  color: var(--green);
+}
+
+.alert-error {
+  border-color: #efc3c8;
+  background: #fff7f7;
+}
+
+.alert-error svg,
+.alert-error .alert-title {
+  color: var(--red);
 }
 
 .admin-login {
@@ -2250,7 +2312,7 @@ a {
   box-shadow: 0 8px 18px rgb(7 24 50 / 7%);
 }
 
-.admin-shell > .status-banner,
+.admin-shell > .alert,
 .admin-grid,
 .admin-settings-grid {
   margin-right: 28px;
@@ -2631,7 +2693,7 @@ a {
     padding: 14px;
   }
 
-  .admin-shell > .status-banner,
+  .admin-shell > .alert,
   .admin-grid,
   .admin-settings-grid {
     margin-right: 14px;

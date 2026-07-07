@@ -12,6 +12,7 @@ import { BoothInfoPanel } from "../components/catalog/BoothInfoPanel";
 import { PaymentQrModal } from "../components/catalog/PaymentQrModal";
 import { ProductGrid } from "../components/catalog/ProductGrid";
 import { SelectedItemPanel } from "../components/catalog/SelectedItemPanel";
+import { Alert } from "../components/ui/Alert";
 import { Modal } from "../components/ui/Modal";
 
 export function CatalogPage() {
@@ -91,7 +92,11 @@ export function CatalogPage() {
   return (
     <main className="app-shell" style={getThemeStyle(booth)}>
       <CatalogHeader booth={booth} onOpenPayment={() => setIsQrOpen(true)} onOpenInfo={() => setIsInfoOpen(true)} />
-      {loadError && <div className="status-banner">{loadError}</div>}
+      {loadError && (
+        <Alert variant="error" title="Catalog unavailable">
+          {loadError}
+        </Alert>
+      )}
       <div className="catalog-layout">
         <section className="catalog-main">
           <div className="catalog-controls">
