@@ -2583,6 +2583,14 @@ a {
   box-shadow: 0 10px 22px rgb(231 53 124 / 12%);
 }
 
+.upload-button-loading {
+  pointer-events: none;
+}
+
+.upload-button-loading .upload-button-face {
+  opacity: 0.72;
+}
+
 .qr-admin-preview {
   padding: 12px;
   border: 1px solid var(--soft-line);

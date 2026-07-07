@@ -126,12 +126,6 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
         <div className="image-admin-row">
           {primaryImage ? <img src={primaryImage} alt="" /> : <div className="image-admin-placeholder" aria-hidden="true" />}
           <div>
-            <Field label="Primary Image URL">
-              <TextInput
-                value={draft.images[0] ?? ""}
-                onChange={(event) => setField("images", [event.target.value])}
-              />
-            </Field>
             <ImageUpload bucket="product-images" label="Upload Product Image" onUploaded={(url) => setField("images", [url])} />
           </div>
         </div>
