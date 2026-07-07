@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Lock } from "lucide-react";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
+import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
 import { Field, TextInput } from "../ui/Field";
 
@@ -12,7 +13,7 @@ type LoginPanelProps = {
 export function LoginPanel({ onLogin }: LoginPanelProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { busy, error, run } = useAsyncAction();
+  const { busy, error, run, setError } = useAsyncAction();
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -47,8 +48,12 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
               required
             />
           </Field>
-          {error && <p className="form-error">{error}</p>}
-          <Button type="submit" disabled={busy || !isSupabaseConfigured}>
+          {error && (
+            <Alert variant="error" title="Sign in failed" onClose={() => setError("")}>
+              {error}
+            </Alert>
+          )}
+          <Button type="submit" loading={busy} loadingText="Signing in..." disabled={!isSupabaseConfigured}>
             Sign In
           </Button>
         </form>

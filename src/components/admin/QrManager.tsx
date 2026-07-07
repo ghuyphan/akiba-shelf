@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { PaymentSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
+import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
 import { Field, SelectInput, TextArea, TextInput } from "../ui/Field";
 import { AdminCard } from "./AdminCard";
@@ -14,7 +15,7 @@ type QrManagerProps = {
 
 export function QrManager({ settings, onSave }: QrManagerProps) {
   const [draft, setDraft] = useState(settings);
-  const { busy, error, run } = useAsyncAction();
+  const { busy, error, run, setError } = useAsyncAction();
   const banks = getVietQrBanks();
   const selectedBank = getPaymentBank(draft.bank_code, draft.bank_acq_id);
 
@@ -93,8 +94,12 @@ export function QrManager({ settings, onSave }: QrManagerProps) {
             onChange={(event) => setDraft({ ...draft, payment_instructions: event.target.value })}
           />
         </Field>
-        {error && <p className="form-error">{error}</p>}
-        <Button type="submit" disabled={busy}>
+        {error && (
+          <Alert variant="error" title="Could not save QR settings" onClose={() => setError("")}>
+            {error}
+          </Alert>
+        )}
+        <Button type="submit" loading={busy} loadingText="Saving...">
           Save QR Settings
         </Button>
       </form>

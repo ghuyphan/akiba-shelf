@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { BoothSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
+import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
 import { Field, TextArea, TextInput } from "../ui/Field";
 import { AdminCard } from "./AdminCard";
@@ -12,7 +13,7 @@ type SettingsFormProps = {
 
 export function SettingsForm({ settings, onSave }: SettingsFormProps) {
   const [draft, setDraft] = useState(settings);
-  const { busy, error, run } = useAsyncAction();
+  const { busy, error, run, setError } = useAsyncAction();
 
   useEffect(() => setDraft(settings), [settings]);
 
@@ -92,8 +93,12 @@ export function SettingsForm({ settings, onSave }: SettingsFormProps) {
             </span>
           </Field>
         </div>
-        {error && <p className="form-error">{error}</p>}
-        <Button type="submit" disabled={busy}>
+        {error && (
+          <Alert variant="error" title="Could not save booth info" onClose={() => setError("")}>
+            {error}
+          </Alert>
+        )}
+        <Button type="submit" loading={busy} loadingText="Saving...">
           Save Booth Info
         </Button>
       </form>

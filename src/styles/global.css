@@ -212,6 +212,14 @@ a {
   transform: translateY(0) scale(0.98);
 }
 
+.button-loading {
+  pointer-events: none;
+}
+
+.button-spinner {
+  animation: spin 900ms linear infinite;
+}
+
 .button-primary {
   color: #fff;
   background: var(--coral);
@@ -241,6 +249,12 @@ a {
 .button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .hero {

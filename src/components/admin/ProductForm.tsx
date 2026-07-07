@@ -3,6 +3,7 @@ import type { Product, StockStatus } from "../../types/catalog";
 import { normalizeSlug } from "../../lib/format";
 import { validateProduct } from "../../lib/validation";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
+import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
 import { Field, SelectInput, TextArea, TextInput } from "../ui/Field";
 import { AdminCard } from "./AdminCard";
@@ -17,8 +18,11 @@ type ProductFormProps = {
 export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
   const [draft, setDraft] = useState(product);
   const [errors, setErrors] = useState<string[]>([]);
-  const { busy, error: asyncError, run } = useAsyncAction();
+  const { busy: isSaving, error: saveError, run: runSave, setError: setSaveError } = useAsyncAction();
+  const { busy: isDeleting, error: deleteError, run: runDelete, setError: setDeleteError } = useAsyncAction();
   const primaryImage = draft.images.find(Boolean);
+  const asyncError = saveError || deleteError;
+  const busy = isSaving || isDeleting;
 
   useEffect(() => {
     setDraft(product);
@@ -35,14 +39,16 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
     setErrors(nextErrors);
     if (nextErrors.length > 0) return;
 
-    await run(() => onSave({ ...draft, id: draft.id || normalizeSlug(`${draft.item_code}-${draft.name}`) })).catch(
+    setDeleteError("");
+    await runSave(() => onSave({ ...draft, id: draft.id || normalizeSlug(`${draft.item_code}-${draft.name}`) })).catch(
       () => undefined,
     );
   }
 
   async function handleDelete() {
     if (!draft.id) return;
-    await run(() => onDelete(draft.id)).catch(() => undefined);
+    setSaveError("");
+    await runDelete(() => onDelete(draft.id)).catch(() => undefined);
   }
 
   return (
@@ -129,19 +135,30 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
             <ImageUpload bucket="product-images" label="Upload Product Image" onUploaded={(url) => setField("images", [url])} />
           </div>
         </div>
-        {(errors.length > 0 || asyncError) && (
+        {asyncError && (
+          <Alert
+            variant="error"
+            title="Could not update item"
+            onClose={() => {
+              setSaveError("");
+              setDeleteError("");
+            }}
+          >
+            {asyncError}
+          </Alert>
+        )}
+        {errors.length > 0 && (
           <div className="form-error">
             {errors.map((error) => (
               <p key={error}>{error}</p>
             ))}
-            {asyncError && <p>{asyncError}</p>}
           </div>
         )}
         <div className="form-actions">
-          <Button type="submit" disabled={busy}>
+          <Button type="submit" loading={isSaving} loadingText="Saving..." disabled={busy}>
             Save Item
           </Button>
-          <Button type="button" variant="danger" disabled={busy} onClick={handleDelete}>
+          <Button type="button" variant="danger" loading={isDeleting} loadingText="Deleting..." disabled={busy} onClick={handleDelete}>
             Delete
           </Button>
         </div>
