@@ -53,7 +53,13 @@ export function PaymentQrModal({ isOpen, payment, product, onClose }: PaymentQrM
           {product && <strong className="qr-item-name">{product.name}</strong>}
           {bank && (
             <div className="qr-bank-line">
-              <img src={getBankLogoUrl(bank)} alt="" />
+              <img
+                src={getBankLogoUrl(bank)}
+                alt=""
+                onError={(event) => {
+                  event.currentTarget.src = getBankLogoUrl();
+                }}
+              />
               <span>
                 <strong>{bank.name}</strong>
                 <small>{bank.full_name}</small>

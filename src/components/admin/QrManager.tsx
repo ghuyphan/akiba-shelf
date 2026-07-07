@@ -54,7 +54,13 @@ export function QrManager({ settings, onSave }: QrManagerProps) {
             </SelectInput>
           </Field>
           <div className={`selected-bank-summary ${selectedBank ? "" : "selected-bank-summary-empty"}`}>
-            <img src={getBankLogoUrl(selectedBank)} alt="" />
+            <img
+              src={getBankLogoUrl(selectedBank)}
+              alt=""
+              onError={(event) => {
+                event.currentTarget.src = getBankLogoUrl();
+              }}
+            />
             <span>
               <strong>{selectedBank?.name ?? "No bank selected"}</strong>
               <small>{selectedBank?.full_name ?? "Choose a bank to generate dynamic VietQR codes"}</small>

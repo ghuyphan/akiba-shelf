@@ -28,5 +28,5 @@ export function getPaymentBank(code?: string, bin?: string) {
 }
 
 export function getBankLogoUrl(bank?: Pick<VietQrBank, "code">) {
-  return bank ? `/bank-logos/${bank.code}.png` : "/bank-logos/default.png";
+  return `${import.meta.env.BASE_URL}bank-logos/${bank?.code ?? "default"}.png`;
 }
