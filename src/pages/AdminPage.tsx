@@ -204,7 +204,11 @@ export function AdminPage() {
           Sign Out
         </Button>
       </header>
-      {status && <Alert variant={statusVariant}>{status}</Alert>}
+      {status && (
+        <Alert variant={statusVariant} onClose={() => setStatus("")}>
+          {status}
+        </Alert>
+      )}
       <div className="admin-grid">
         <ProductList
           products={products}

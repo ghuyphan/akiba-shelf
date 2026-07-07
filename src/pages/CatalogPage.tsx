@@ -93,7 +93,7 @@ export function CatalogPage() {
     <main className="app-shell" style={getThemeStyle(booth)}>
       <CatalogHeader booth={booth} onOpenPayment={() => setIsQrOpen(true)} onOpenInfo={() => setIsInfoOpen(true)} />
       {loadError && (
-        <Alert variant="error" title="Catalog unavailable">
+        <Alert variant="error" title="Catalog unavailable" onClose={() => setLoadError("")}>
           {loadError}
         </Alert>
       )}

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 
 type AlertVariant = "info" | "success" | "error";
 
@@ -8,6 +8,7 @@ type AlertProps = {
   title?: string;
   variant?: AlertVariant;
   className?: string;
+  onClose?: () => void;
 };
 
 const icons = {
@@ -16,16 +17,24 @@ const icons = {
   error: AlertCircle,
 };
 
-export function Alert({ children, title, variant = "info", className = "" }: AlertProps) {
+export function Alert({ children, title, variant = "info", className = "", onClose }: AlertProps) {
   const Icon = icons[variant];
 
   return (
-    <div className={`alert alert-${variant} ${className}`} role={variant === "error" ? "alert" : "status"}>
+    <div
+      className={`alert alert-${variant} ${onClose ? "alert-dismissible" : ""} ${className}`}
+      role={variant === "error" ? "alert" : "status"}
+    >
       <Icon size={18} aria-hidden="true" />
       <div className="alert-content">
         {title && <p className="alert-title">{title}</p>}
         <p className="alert-description">{children}</p>
       </div>
+      {onClose && (
+        <button className="alert-close" type="button" aria-label="Dismiss notification" onClick={onClose}>
+          <X size={14} aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }

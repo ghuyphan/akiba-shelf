@@ -1135,12 +1135,38 @@ a {
   box-shadow: 0 12px 32px rgb(7 24 50 / 14%);
 }
 
-.alert svg {
+.alert > svg {
   margin-top: 1px;
+}
+
+.alert-dismissible {
+  grid-template-columns: 18px minmax(0, 1fr) 28px;
+  padding-right: 8px;
 }
 
 .alert-content {
   min-width: 0;
+}
+
+.alert-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-top: -4px;
+  border: 0;
+  border-radius: 6px;
+  color: #6a7689;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    color 150ms var(--ease-standard),
+    background 150ms var(--ease-standard);
+}
+
+.alert-close:hover {
+  color: var(--ink);
+  background: rgb(7 24 50 / 7%);
 }
 
 .alert-title,
