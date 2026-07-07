@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.agents/
+.env
+.env.*
+!.env.example
+skills-lock.json
+*.tsbuildinfo
+.DS_Store
