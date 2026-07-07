@@ -1118,17 +1118,21 @@ a {
 }
 
 .alert {
-  margin-top: 12px;
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 60;
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
+  width: min(420px, calc(100vw - 24px));
   padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
   background: #fff;
-  box-shadow: 0 1px 2px rgb(7 24 50 / 4%);
+  box-shadow: 0 12px 32px rgb(7 24 50 / 14%);
 }
 
 .alert svg {
@@ -2312,7 +2316,6 @@ a {
   box-shadow: 0 8px 18px rgb(7 24 50 / 7%);
 }
 
-.admin-shell > .alert,
 .admin-grid,
 .admin-settings-grid {
   margin-right: 28px;
@@ -2693,11 +2696,16 @@ a {
     padding: 14px;
   }
 
-  .admin-shell > .alert,
   .admin-grid,
   .admin-settings-grid {
     margin-right: 14px;
     margin-left: 14px;
+  }
+
+  .alert {
+    top: 10px;
+    right: 10px;
+    width: calc(100vw - 20px);
   }
 
   .catalog-controls {
