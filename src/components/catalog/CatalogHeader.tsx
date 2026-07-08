@@ -18,9 +18,12 @@ export function CatalogHeader({ booth, onOpenInfo }: CatalogHeaderProps) {
             <ShoppingBag size={30} />
           )}
         </div>
-        <div>
+        <div className="brand-lockup-details">
           <h1>{booth.booth_name}</h1>
-          <p>Booth {booth.booth_code}</p>
+          <div className="brand-meta">
+            {booth.booth_code && <span className="brand-meta-code">Booth {booth.booth_code}</span>}
+            <span className="brand-meta-subtitle">{booth.subtitle || "Official Shop"}</span>
+          </div>
         </div>
       </div>
       <div className="header-actions">

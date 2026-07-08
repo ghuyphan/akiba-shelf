@@ -74,8 +74,9 @@ export function SelectedItemPanel({ product, payment, quantity, onQuantityChange
         </button>
       </div>
       <div className="selected-actions">
-        <Button variant="primary" icon={<Banknote size={18} />} onClick={onOpenPayment}>
-          Pay Now
+        <Button variant="primary" className="button-checkout" icon={<Banknote size={18} />} onClick={onOpenPayment}>
+          <span className="checkout-btn-label">Pay Now</span>
+          <span className="checkout-btn-price">{formatVnd(product.price_vnd * quantity)}</span>
         </Button>
       </div>
     </aside>
