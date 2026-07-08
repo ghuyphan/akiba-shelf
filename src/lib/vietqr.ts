@@ -1,4 +1,4 @@
-import type { PaymentSettings, Product } from "../types/catalog";
+import type { CartItem, PaymentSettings, Product } from "../types/catalog";
 
 type VietQrResponse = {
   data?: {
@@ -83,3 +83,67 @@ export async function generateVietQr(settings: PaymentSettings, product?: Produc
 
   return null;
 }
+
+export async function generateVietQrForCart(
+  settings: PaymentSettings,
+  cart: CartItem[]
+): Promise<GeneratedVietQr | null> {
+  if (!canGenerateVietQr(settings)) return null;
+
+  const amount = cart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0);
+
+  // Construct combined info
+  const codesStr = cart.map(item => `${item.product.item_code}${item.quantity > 1 ? `x${item.quantity}` : ""}`).join(" ");
+  const itemsStr = cart.map(item => `${item.quantity}x ${item.product.name}`).join(", ");
+
+  const fallback = `Booth order ${codesStr}`;
+  let addInfo = fallback;
+  if (settings.bank_add_info_template) {
+    addInfo = settings.bank_add_info_template
+      .replace(/\{code\}/g, codesStr)
+      .replace(/\{item\}/g, itemsStr)
+      .replace(/\{amount\}/g, String(amount))
+      .trim();
+  }
+
+  if (addInfo.length > 50) {
+    addInfo = addInfo.substring(0, 50).trim();
+  }
+
+  const imageUrl = buildImageFallbackUrl(settings, amount, addInfo);
+  if (imageUrl) return { src: imageUrl, source: "image" };
+
+  const apiUrl = import.meta.env.VITE_VIETQR_API_URL_GENERATE || DEFAULT_VIETQR_GENERATE_URL;
+  const clientId = import.meta.env.VITE_VIETQR_API_CLIENT_ID;
+  const apiKey = import.meta.env.VITE_VIETQR_API_CLIENT_SECRET;
+
+  if (clientId && apiKey) {
+    try {
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-client-id": clientId,
+          "x-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          accountNo: settings.bank_account_no,
+          accountName: settings.bank_account_name,
+          acqId: settings.bank_acq_id,
+          amount,
+          addInfo,
+          template: "compact",
+        }),
+      });
+
+      if (!response.ok) throw new Error(`VietQR request failed with ${response.status}`);
+      const data = (await response.json()) as VietQrResponse;
+      if (data.data?.qrDataURL) return { src: data.data.qrDataURL, source: "api" };
+    } catch (error) {
+      console.warn("Could not generate VietQR from API:", error);
+    }
+  }
+
+  return null;
+}
+

@@ -1,6 +1,7 @@
 import { ImageUp, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { uploadImage } from "../../lib/api";
+import { compressImage } from "../../lib/image";
 import { Alert } from "../ui/Alert";
 
 type ImageUploadProps = {
@@ -19,7 +20,8 @@ export function ImageUpload({ bucket, label, onUploaded }: ImageUploadProps) {
     setError("");
 
     try {
-      const url = await uploadImage(bucket, file);
+      const compressedFile = await compressImage(file);
+      const url = await uploadImage(bucket, compressedFile);
       onUploaded(url);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not upload image.");

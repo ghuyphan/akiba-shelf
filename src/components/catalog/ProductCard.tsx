@@ -29,7 +29,11 @@ export function ProductCard({ product, selected, viewMode, onSelect }: ProductCa
       onKeyDown={handleKeyDown}
     >
       <div className="product-image-wrap">
-        {product.badge && <span className="product-badge">{product.badge}</span>}
+        {product.badge ? (
+          <span className="product-badge">{product.badge}</span>
+        ) : product.featured ? (
+          <span className="product-badge product-badge-featured">★ Featured</span>
+        ) : null}
         {isSoldOut && (
           <div className="product-soldout-overlay">
             <span>Sold Out</span>
@@ -43,7 +47,10 @@ export function ProductCard({ product, selected, viewMode, onSelect }: ProductCa
       </div>
       <div className="product-card-body">
         <div>
-          <h3>{product.name}</h3>
+          <h3>
+            {product.featured && <span style={{ color: "var(--mustard)", marginRight: "4px" }} title="Featured Item">★</span>}
+            {product.name}
+          </h3>
           {product.collection && <p className="product-collection">{product.collection}</p>}
           {product.description && (
             <p className="product-card-description" title={product.description}>

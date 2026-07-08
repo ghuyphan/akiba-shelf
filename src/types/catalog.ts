@@ -57,3 +57,9 @@ export type CatalogData = {
   booth: BoothSettings;
   payment: PaymentSettings;
 };
+
+export type CartItem = {
+  product: Product;
+  quantity: number;
+};
+

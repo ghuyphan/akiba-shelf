@@ -74,31 +74,34 @@ export function SettingsForm({ settings, onSave }: SettingsFormProps) {
             </span>
           </div>
         )}
-        {isEditing && (
-          <div className="logo-upload-row">
-            <div className="logo-upload-preview">
-              {draft.logo_url ? (
-                <img src={draft.logo_url} alt="Booth logo" />
-              ) : (
-                <Store size={24} />
-              )}
-            </div>
-            <div className="logo-upload-controls">
-              <Field label="Booth Logo">
-                <TextInput
-                  value={draft.logo_url ?? ""}
-                  placeholder="Logo image URL"
-                  onChange={(event) => setDraft({ ...draft, logo_url: event.target.value })}
-                />
-              </Field>
+        <div className="logo-upload-row">
+          <div className="logo-upload-preview">
+            {draft.logo_url ? (
+              <img src={draft.logo_url} alt="Booth logo" />
+            ) : (
+              <Store size={24} />
+            )}
+          </div>
+          <div className="logo-upload-controls">
+            <Field label="Booth Logo">
+              <TextInput
+                value={draft.logo_url ?? ""}
+                placeholder="Logo image URL"
+                disabled={!isEditing}
+                onChange={(event) => setDraft({ ...draft, logo_url: event.target.value })}
+              />
+            </Field>
+            {isEditing ? (
               <ImageUpload
                 bucket="payment-qr"
                 label="Upload Logo"
                 onUploaded={(url) => setDraft({ ...draft, logo_url: url })}
               />
-            </div>
+            ) : (
+              <div className="image-admin-note">Logo upload is available while editing.</div>
+            )}
           </div>
-        )}
+        </div>
         <div className="form-grid">
           <Field label="Booth Name">
             <TextInput
@@ -128,12 +131,7 @@ export function SettingsForm({ settings, onSave }: SettingsFormProps) {
         <Field label="Location">
           <TextInput value={draft.location} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, location: event.target.value })} />
         </Field>
-        <Field label="Hero Title">
-          <TextInput value={draft.hero_title} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, hero_title: event.target.value })} />
-        </Field>
-        <Field label="Hero Text">
-          <TextArea value={draft.hero_text} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, hero_text: event.target.value })} />
-        </Field>
+
         <div className="social-settings-grid">
           <div className="palette-heading">
             <Link2 size={17} />

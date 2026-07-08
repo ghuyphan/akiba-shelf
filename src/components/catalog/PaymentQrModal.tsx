@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Banknote, CheckCircle2, ReceiptText, Sparkles } from "lucide-react";
-import type { PaymentSettings, Product } from "../../types/catalog";
+import type { CartItem, PaymentSettings, Product } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
-import { canGenerateVietQr, generateVietQr } from "../../lib/vietqr";
+import { canGenerateVietQr, generateVietQrForCart } from "../../lib/vietqr";
 import { Modal } from "../ui/Modal";
 import { saveProduct } from "../../lib/api";
 import { supabase } from "../../lib/supabase";
@@ -10,12 +10,12 @@ import { supabase } from "../../lib/supabase";
 type PaymentQrModalProps = {
   isOpen: boolean;
   payment: PaymentSettings;
-  product?: Product;
-  quantity: number;
+  cart: CartItem[];
   onClose: () => void;
+  onSuccess: () => void;
 };
 
-export function PaymentQrModal({ isOpen, payment, product, quantity, onClose }: PaymentQrModalProps) {
+export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: PaymentQrModalProps) {
   const [qrSrc, setQrSrc] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
@@ -25,9 +25,9 @@ export function PaymentQrModal({ isOpen, payment, product, quantity, onClose }: 
   const [loginError, setLoginError] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
 
-  const paymentProduct = useMemo(
-    () => (product ? { ...product, price_vnd: product.price_vnd * quantity } : undefined),
-    [product, quantity],
+  const totalAmount = useMemo(
+    () => cart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0),
+    [cart],
   );
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function PaymentQrModal({ isOpen, payment, product, quantity, onClose }: 
 
     async function loadQr() {
       setIsGenerating(true);
-      const generated = await generateVietQr(payment, paymentProduct).catch(() => null);
+      const generated = await generateVietQrForCart(payment, cart).catch(() => null);
       if (!cancelled) {
         setQrSrc(generated?.src || payment.bank_qr_url || payment.momo_qr_url);
         setIsGenerating(false);
@@ -47,7 +47,7 @@ export function PaymentQrModal({ isOpen, payment, product, quantity, onClose }: 
     return () => {
       cancelled = true;
     };
-  }, [isOpen, payment, paymentProduct]);
+  }, [isOpen, payment, cart]);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -68,19 +68,24 @@ export function PaymentQrModal({ isOpen, payment, product, quantity, onClose }: 
   }, []);
 
   const handleConfirm = async () => {
-    if (!product) return;
+    if (cart.length === 0) return;
     setIsConfirming(true);
     try {
-      const newQty = Math.max(0, product.quantity_available - quantity);
-      const newStatus = newQty === 0 ? "sold_out" : newQty <= 5 ? "limited" : "in_stock";
-      const updatedProduct: Product = {
-        ...product,
-        quantity_available: newQty,
-        stock_status: newStatus,
-        stock_note: newQty === 0 ? "Sold out" : newQty <= 5 ? "Limited stock" : "In stock",
-      };
-      await saveProduct(updatedProduct);
+      await Promise.all(
+        cart.map((item) => {
+          const newQty = Math.max(0, item.product.quantity_available - item.quantity);
+          const newStatus = newQty === 0 ? "sold_out" : newQty <= 5 ? "limited" : "in_stock";
+          const updatedProduct: Product = {
+            ...item.product,
+            quantity_available: newQty,
+            stock_status: newStatus,
+            stock_note: newQty === 0 ? "Sold out" : newQty <= 5 ? "Limited stock" : "In stock",
+          };
+          return saveProduct(updatedProduct);
+        })
+      );
       alert("Payment confirmed! Stock updated successfully.");
+      onSuccess();
       onClose();
     } catch (err: any) {
       alert("Error confirming payment: " + (err.message || err));
@@ -91,7 +96,7 @@ export function PaymentQrModal({ isOpen, payment, product, quantity, onClose }: 
 
   const handleLoginAndConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase || !product) return;
+    if (!supabase || cart.length === 0) return;
     setIsConfirming(true);
     setLoginError("");
     try {
@@ -100,16 +105,21 @@ export function PaymentQrModal({ isOpen, payment, product, quantity, onClose }: 
       setIsStaff(true);
       setShowLoginForm(false);
 
-      const newQty = Math.max(0, product.quantity_available - quantity);
-      const newStatus = newQty === 0 ? "sold_out" : newQty <= 5 ? "limited" : "in_stock";
-      const updatedProduct: Product = {
-        ...product,
-        quantity_available: newQty,
-        stock_status: newStatus,
-        stock_note: newQty === 0 ? "Sold out" : newQty <= 5 ? "Limited stock" : "In stock",
-      };
-      await saveProduct(updatedProduct);
+      await Promise.all(
+        cart.map((item) => {
+          const newQty = Math.max(0, item.product.quantity_available - item.quantity);
+          const newStatus = newQty === 0 ? "sold_out" : newQty <= 5 ? "limited" : "in_stock";
+          const updatedProduct: Product = {
+            ...item.product,
+            quantity_available: newQty,
+            stock_status: newStatus,
+            stock_note: newQty === 0 ? "Sold out" : newQty <= 5 ? "Limited stock" : "In stock",
+          };
+          return saveProduct(updatedProduct);
+        })
+      );
       alert("Payment confirmed! Stock updated successfully.");
+      onSuccess();
       onClose();
     } catch (err: any) {
       setLoginError(err.message || "Invalid credentials");
@@ -139,14 +149,18 @@ export function PaymentQrModal({ isOpen, payment, product, quantity, onClose }: 
 
           <div className="receipt-divider" />
 
-          {product && (
+          {cart.length > 0 && (
             <div className="receipt-section">
               <span className="receipt-label">Order Details</span>
-              <div className="receipt-row">
-                <span className="receipt-item-name">
-                  {quantity} x {product.name}
-                </span>
-                <span className="receipt-item-price">{formatVnd(product.price_vnd * quantity)}</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {cart.map((item) => (
+                  <div key={item.product.id} className="receipt-row">
+                    <span className="receipt-item-name">
+                      {item.quantity} x {item.product.name}
+                    </span>
+                    <span className="receipt-item-price">{formatVnd(item.product.price_vnd * item.quantity)}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}

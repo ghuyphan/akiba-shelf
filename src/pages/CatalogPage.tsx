@@ -6,7 +6,7 @@ import { defaultPayment } from "../lib/constants";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme";
-import type { BoothSettings, PaymentSettings, Product } from "../types/catalog";
+import type { BoothSettings, CartItem, PaymentSettings, Product } from "../types/catalog";
 import { TiktokIcon } from "../components/ui/TiktokIcon";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
@@ -23,8 +23,7 @@ export function CatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [booth, setBooth] = useState<BoothSettings>(() => getStoredBoothTheme());
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
-  const [selectedProduct, setSelectedProduct] = useState<Product>();
-  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [sort, setSort] = useState("recommended");
@@ -39,9 +38,15 @@ export function CatalogPage() {
         setProducts(data.products);
         setBooth(data.booth);
         setPayment(data.payment);
-        setSelectedProduct((current) => {
-          if (!current) return undefined;
-          return data.products.find((product) => product.id === current.id);
+        setCart((currentCart) => {
+          return currentCart
+            .map((item) => {
+              const freshProduct = data.products.find((p) => p.id === item.product.id);
+              if (!freshProduct || freshProduct.quantity_available <= 0) return null;
+              const nextQty = Math.min(item.quantity, freshProduct.quantity_available);
+              return { product: freshProduct, quantity: nextQty };
+            })
+            .filter((item): item is CartItem => item !== null);
         });
         setLoadError("");
       })
@@ -76,9 +81,50 @@ export function CatalogPage() {
     applyPageTheme(booth);
   }, [booth]);
 
-  useEffect(() => {
-    setSelectedQuantity(1);
-  }, [selectedProduct?.id]);
+  const handleAddToCart = (product: Product) => {
+    const isSoldOut = product.quantity_available <= 0;
+    if (isSoldOut) return;
+
+    setCart((prevCart) => {
+      const existingIndex = prevCart.findIndex((item) => item.product.id === product.id);
+      if (existingIndex > -1) {
+        const nextQty = prevCart[existingIndex].quantity + 1;
+        if (nextQty > product.quantity_available) {
+          alert(`Cannot add more. Only ${product.quantity_available} units available.`);
+          return prevCart;
+        }
+        const nextCart = [...prevCart];
+        nextCart[existingIndex] = {
+          ...nextCart[existingIndex],
+          quantity: nextQty,
+        };
+        return nextCart;
+      }
+      return [...prevCart, { product, quantity: 1 }];
+    });
+  };
+
+  const handleUpdateCartQuantity = (productId: string, quantity: number) => {
+    setCart((prevCart) =>
+      prevCart
+        .map((item) => {
+          if (item.product.id === productId) {
+            const maxQty = Math.max(1, item.product.quantity_available);
+            const newQty = Math.min(maxQty, Math.max(1, quantity));
+            return { ...item, quantity: newQty };
+          }
+          return item;
+        })
+    );
+  };
+
+  const handleRemoveFromCart = (productId: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
+  };
+
+  const handleClearCart = () => {
+    setCart([]);
+  };
 
   const categories = useMemo(
     () => ["All", ...Array.from(new Set(products.map((product) => product.category))).filter(Boolean)],
@@ -105,6 +151,10 @@ export function CatalogPage() {
       if (sort === "price-desc") return second.price_vnd - first.price_vnd;
       if (sort === "quantity") return second.quantity_available - first.quantity_available;
       if (sort === "name") return first.name.localeCompare(second.name);
+      
+      // Default / Recommended: sort featured first, then by sort_order
+      if (first.featured && !second.featured) return -1;
+      if (!first.featured && second.featured) return 1;
       return first.sort_order - second.sort_order;
     });
   }, [activeCategory, products, sort, searchQuery]);
@@ -134,26 +184,19 @@ export function CatalogPage() {
             products={visibleProducts}
             totalProducts={products.length}
             activeCategory={activeCategory}
-            selectedProduct={selectedProduct}
+            selectedProduct={cart.length > 0 ? cart[cart.length - 1].product : undefined}
             viewMode={viewMode}
-            onSelect={(product) => {
-              const isSoldOut = product.quantity_available <= 0;
-              if (!isSoldOut) {
-                setSelectedProduct(product);
-                setSelectedQuantity(1);
-              }
-            }}
+            onSelect={handleAddToCart}
             onResetFilters={() => setActiveCategory("All")}
           />
         </section>
         <section className="catalog-side">
           <SelectedItemPanel
-            product={selectedProduct}
-            payment={payment}
-            quantity={selectedQuantity}
-            onQuantityChange={setSelectedQuantity}
+            cart={cart}
+            onQuantityChange={handleUpdateCartQuantity}
+            onRemove={handleRemoveFromCart}
             onOpenPayment={() => setIsQrOpen(true)}
-            onClose={() => setSelectedProduct(undefined)}
+            onClearCart={handleClearCart}
           />
           <BoothInfoPanel booth={booth} />
         </section>
@@ -161,11 +204,11 @@ export function CatalogPage() {
       <PaymentQrModal
         isOpen={isQrOpen}
         payment={payment}
-        product={selectedProduct}
-        quantity={selectedQuantity}
+        cart={cart}
         onClose={() => setIsQrOpen(false)}
+        onSuccess={handleClearCart}
       />
-      <Modal title="Booth Info" isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
+      <Modal title="Booth Info" isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} className="booth-info-modal-container">
         <div className="booth-info-modal">
           <div className="booth-info-header">
             <div className="booth-info-icon-wrap">

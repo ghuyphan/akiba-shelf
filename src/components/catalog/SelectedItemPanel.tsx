@@ -1,82 +1,99 @@
-import { Banknote, MousePointer2, PackageOpen, Minus, Plus, Trash2, X } from "lucide-react";
-import type { PaymentSettings, Product } from "../../types/catalog";
+import { Banknote, ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
+import type { CartItem } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { Button } from "../ui/Button";
 
 type SelectedItemPanelProps = {
-  product?: Product;
-  payment: PaymentSettings;
-  quantity: number;
-  onQuantityChange: (quantity: number) => void;
+  cart: CartItem[];
+  onQuantityChange: (productId: string, quantity: number) => void;
+  onRemove: (productId: string) => void;
   onOpenPayment: () => void;
-  onClose: () => void;
+  onClearCart: () => void;
 };
 
-export function SelectedItemPanel({ product, payment, quantity, onQuantityChange, onOpenPayment, onClose }: SelectedItemPanelProps) {
-  if (!product) {
+export function SelectedItemPanel({ cart, onQuantityChange, onRemove, onOpenPayment, onClearCart }: SelectedItemPanelProps) {
+  if (cart.length === 0) {
     return (
       <aside className="selected-panel selected-panel-empty">
         <div className="selected-empty-centered">
-          <PackageOpen size={48} className="empty-icon" />
-          <h3>No item selected</h3>
-          <p>Tap a merch card to view details and generate a payment QR.</p>
+          <ShoppingBag size={48} className="empty-icon" />
+          <h3>No items in order</h3>
+          <p>Tap merch cards to add items to the order.</p>
         </div>
       </aside>
     );
   }
 
-  const primaryImage = product.images.find(Boolean);
-  const maxQuantity = Math.max(1, product.quantity_available);
-  const canDecrease = quantity > 1;
-  const canIncrease = quantity < maxQuantity;
+  const totalAmount = cart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0);
 
   return (
     <aside className="selected-panel">
       <div className="selected-header">
-        <h2>Selected Item</h2>
-        <Button variant="ghost" icon={<X size={20} />} aria-label="Close selected item" onClick={onClose} />
+        <h2>Current Order</h2>
+        <Button variant="ghost" className="clear-button" onClick={onClearCart}>
+          Clear All
+        </Button>
       </div>
-      <div className="selected-cart-item">
-        {primaryImage ? (
-          <img className="selected-image" src={primaryImage} alt={product.name} />
-        ) : (
-          <div className="selected-image selected-image-placeholder" aria-hidden="true" />
-        )}
-        <div className="selected-copy">
-          <h3>{product.name}</h3>
-          <p>{product.collection}</p>
-          <strong className="selected-price">{formatVnd(product.price_vnd)}</strong>
-          <span className="large-code">{product.item_code}</span>
+
+      <div className="cart-items-container">
+        {cart.map((item) => {
+          const primaryImage = item.product.images.find(Boolean);
+          const maxQuantity = Math.max(1, item.product.quantity_available);
+          const canDecrease = item.quantity > 1;
+          const canIncrease = item.quantity < maxQuantity;
+
+          return (
+            <div key={item.product.id} className="cart-item-row">
+              {primaryImage ? (
+                <img className="cart-item-thumb" src={primaryImage} alt={item.product.name} />
+              ) : (
+                <div className="cart-item-thumb cart-item-placeholder" aria-hidden="true" />
+              )}
+              <div className="cart-item-details">
+                <h4>{item.product.name}</h4>
+                <span className="cart-item-code">{item.product.item_code}</span>
+                <strong className="cart-item-price">{formatVnd(item.product.price_vnd)}</strong>
+              </div>
+              <div className="cart-item-actions">
+                <div className="cart-quantity-stepper">
+                  <button
+                    type="button"
+                    disabled={!canDecrease}
+                    onClick={() => onQuantityChange(item.product.id, item.quantity - 1)}
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <span>{item.quantity}</span>
+                  <button
+                    type="button"
+                    disabled={!canIncrease}
+                    onClick={() => onQuantityChange(item.product.id, item.quantity + 1)}
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+                <button
+                  className="cart-item-remove"
+                  type="button"
+                  aria-label="Remove item"
+                  onClick={() => onRemove(item.product.id)}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="selected-actions" style={{ marginTop: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", padding: "0 4px" }}>
+          <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--muted)" }}>Total Price</span>
+          <strong style={{ fontSize: "16px", fontWeight: "800", color: "var(--ink)" }}>{formatVnd(totalAmount)}</strong>
         </div>
-      </div>
-      <div className="quantity-row">
-        <div className="quantity-stepper" aria-label="Quantity">
-          <button
-            type="button"
-            aria-label="Decrease quantity"
-            disabled={!canDecrease}
-            onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-          >
-            <Minus size={16} />
-          </button>
-          <span>{quantity}</span>
-          <button
-            type="button"
-            aria-label="Increase quantity"
-            disabled={!canIncrease}
-            onClick={() => onQuantityChange(Math.min(maxQuantity, quantity + 1))}
-          >
-            <Plus size={16} />
-          </button>
-        </div>
-        <button className="trash-button" type="button" aria-label="Remove selected item" onClick={onClose}>
-          <Trash2 size={18} />
-        </button>
-      </div>
-      <div className="selected-actions">
         <Button variant="primary" className="button-checkout" icon={<Banknote size={18} />} onClick={onOpenPayment}>
           <span className="checkout-btn-label">Pay Now</span>
-          <span className="checkout-btn-price">{formatVnd(product.price_vnd * quantity)}</span>
+          <span className="checkout-btn-price">{formatVnd(totalAmount)}</span>
         </Button>
       </div>
     </aside>

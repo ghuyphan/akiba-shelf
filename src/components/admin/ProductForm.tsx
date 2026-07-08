@@ -84,14 +84,9 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
     setDeleteError("");
     let didSave = false;
     await runSave(async () => {
-      const finalQty = Math.max(0, draft.quantity_available);
-      const finalStatus = (finalQty === 0 ? "sold_out" : finalQty <= 5 ? "limited" : "in_stock") as StockStatus;
-      const finalNote = finalQty === 0 ? "Sold out" : finalQty <= 5 ? "Limited stock" : "In stock";
       const finalProduct = {
         ...draft,
         id: draft.id || normalizeSlug(`${draft.item_code}-${draft.name}`),
-        stock_status: finalStatus,
-        stock_note: finalNote,
       };
       await onSave(finalProduct);
       didSave = true;
@@ -182,7 +177,17 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
               step="1"
               value={draft.quantity_available}
               disabled={!isEditing}
-              onChange={(event) => setField("quantity_available", Math.max(0, Math.floor(readNumber(event.target.value))))}
+              onChange={(event) => {
+                const qty = Math.max(0, Math.floor(readNumber(event.target.value)));
+                const status = qty === 0 ? "sold_out" : qty <= 5 ? "limited" : "in_stock";
+                const note = qty === 0 ? "Sold out" : qty <= 5 ? "Limited stock" : "In stock";
+                setDraft((current) => ({
+                  ...current,
+                  quantity_available: qty,
+                  stock_status: status as StockStatus,
+                  stock_note: note,
+                }));
+              }}
             />
           </Field>
           <Field label="Badge">
