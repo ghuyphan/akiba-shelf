@@ -18,6 +18,17 @@ import { SelectedItemPanel } from "../components/catalog/SelectedItemPanel";
 import { SocialQrCard } from "../components/catalog/SocialQrCard";
 import { Alert } from "../components/ui/Alert";
 import { Modal } from "../components/ui/Modal";
+import { safeUuid } from "../lib/supabase";
+
+type FlyingItem = {
+  id: string;
+  imageUrl: string;
+  startX: number;
+  startY: number;
+  tx: number;
+  ty: number;
+  tyHalf: number;
+};
 
 export function CatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -31,6 +42,8 @@ export function CatalogPage() {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
 
   const loadCatalog = useCallback(() => {
     return getCatalogData()
@@ -81,10 +94,8 @@ export function CatalogPage() {
     applyPageTheme(booth);
   }, [booth]);
 
-  const handleAddToCart = (product: Product) => {
-    const isSoldOut = product.quantity_available <= 0;
-    if (isSoldOut) return;
-
+  const handleAddToCart = (product: Product, event?: React.MouseEvent) => {
+    setSelectedProductId(product.id);
     setCart((prevCart) => {
       const existingIndex = prevCart.findIndex((item) => item.product.id === product.id);
       if (existingIndex > -1) {
@@ -102,6 +113,36 @@ export function CatalogPage() {
       }
       return [...prevCart, { product, quantity: 1 }];
     });
+
+    if (event) {
+      const imageUrl = product.images[0] || "";
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const id = safeUuid();
+
+      const targetElement = document.querySelector(".catalog-side");
+      let targetX = window.innerWidth - 180;
+      let targetY = 250;
+      if (targetElement) {
+        const rect = targetElement.getBoundingClientRect();
+        targetX = rect.left + 60;
+        targetY = rect.top + 100;
+      }
+
+      const tx = targetX - startX;
+      const ty = targetY - startY;
+      const peakY = 40;
+      const tyHalf = peakY - startY;
+
+      setFlyingItems((current) => [
+        ...current,
+        { id, imageUrl, startX, startY, tx, ty, tyHalf },
+      ]);
+
+      setTimeout(() => {
+        setFlyingItems((current) => current.filter((item) => item.id !== id));
+      }, 800);
+    }
   };
 
   const handleUpdateCartQuantity = (productId: string, quantity: number) => {
@@ -120,10 +161,14 @@ export function CatalogPage() {
 
   const handleRemoveFromCart = (productId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
+    if (selectedProductId === productId) {
+      setSelectedProductId(null);
+    }
   };
 
   const handleClearCart = () => {
     setCart([]);
+    setSelectedProductId(null);
   };
 
   const categories = useMemo(
@@ -160,7 +205,7 @@ export function CatalogPage() {
   }, [activeCategory, products, sort, searchQuery]);
 
   return (
-    <main className="app-shell" style={getThemeStyle(booth)}>
+    <main className="app-shell" style={getThemeStyle(booth)} onClick={() => setSelectedProductId(null)}>
       <CatalogHeader booth={booth} onOpenInfo={() => setIsInfoOpen(true)} />
       {loadError && (
         <Alert variant="error" title="Catalog unavailable" onClose={() => setLoadError("")}>
@@ -169,7 +214,7 @@ export function CatalogPage() {
       )}
       <div className="catalog-layout">
         <section className="catalog-main">
-          <div className="catalog-controls">
+          <div className="catalog-controls" onClick={(event) => event.stopPropagation()}>
             <CategoryFilters categories={categories} activeCategory={activeCategory} onChange={setActiveCategory} />
             <CatalogToolbar
               searchQuery={searchQuery}
@@ -181,16 +226,17 @@ export function CatalogPage() {
             />
           </div>
           <ProductGrid
+            key={`grid-${activeCategory}-${sort}-${searchQuery.trim()}-${viewMode}`}
             products={visibleProducts}
             totalProducts={products.length}
             activeCategory={activeCategory}
-            selectedProduct={cart.length > 0 ? cart[cart.length - 1].product : undefined}
+            selectedProduct={products.find((p) => p.id === selectedProductId)}
             viewMode={viewMode}
             onSelect={handleAddToCart}
             onResetFilters={() => setActiveCategory("All")}
           />
         </section>
-        <section className="catalog-side">
+        <section className="catalog-side" onClick={(event) => event.stopPropagation()}>
           <SelectedItemPanel
             cart={cart}
             onQuantityChange={handleUpdateCartQuantity}
@@ -290,6 +336,25 @@ export function CatalogPage() {
           })()}
         </div>
       </Modal>
+
+      {flyingItems.map((item) => (
+        <img
+          key={item.id}
+          src={item.imageUrl}
+          alt="Flying product"
+          className="flying-product-item"
+          style={{
+            left: item.startX - 30,
+            top: item.startY - 30,
+            ...({
+              "--tx": `${item.tx}px`,
+              "--ty": `${item.ty}px`,
+              "--tx-half": `${item.tx * 0.5}px`,
+              "--ty-half": `${item.tyHalf}px`
+            } as React.CSSProperties)
+          }}
+        />
+      ))}
     </main>
   );
 }

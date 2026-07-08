@@ -201,20 +201,6 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
               ))}
             </SelectInput>
           </Field>
-          <Field label="Stock Status">
-            <SelectInput
-              value={draft.stock_status}
-              disabled={!isEditing}
-              onChange={(event) => setField("stock_status", event.target.value as StockStatus)}
-            >
-              <option value="in_stock">In stock</option>
-              <option value="limited">Limited</option>
-              <option value="sold_out">Sold out</option>
-            </SelectInput>
-          </Field>
-          <Field label="Stock Note">
-            <TextInput value={draft.stock_note} disabled={!isEditing} onChange={(event) => setField("stock_note", event.target.value)} />
-          </Field>
         </div>
         <Field label="Description">
           <TextArea value={draft.description} disabled={!isEditing} onChange={(event) => setField("description", event.target.value)} />

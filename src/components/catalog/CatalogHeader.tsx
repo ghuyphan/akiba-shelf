@@ -9,7 +9,7 @@ type CatalogHeaderProps = {
 
 export function CatalogHeader({ booth, onOpenInfo }: CatalogHeaderProps) {
   return (
-    <header className="catalog-header">
+    <header className="catalog-header" onClick={(e) => e.stopPropagation()}>
       <div className="brand-lockup">
         <div className="brand-mark">
           {booth.logo_url ? (

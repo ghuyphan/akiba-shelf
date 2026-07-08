@@ -15,7 +15,7 @@ import { defaultPayment } from "../lib/constants";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme";
-import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import { isSupabaseConfigured, safeUuid, supabase } from "../lib/supabase";
 import type { BoothSettings, PaymentSettings, Product } from "../types/catalog";
 import { LoginPanel } from "../components/admin/LoginPanel";
 import { ProductForm } from "../components/admin/ProductForm";
@@ -27,7 +27,7 @@ import { Button } from "../components/ui/Button";
 
 function createBlankProduct(nextSort: number): Product {
   return {
-    id: crypto.randomUUID(),
+    id: safeUuid(),
     name: "",
     collection: "",
     description: "",

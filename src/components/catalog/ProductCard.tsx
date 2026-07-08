@@ -6,10 +6,11 @@ type ProductCardProps = {
   product: Product;
   selected: boolean;
   viewMode: "grid" | "list";
-  onSelect: (product: Product) => void;
+  onSelect: (product: Product, event?: React.MouseEvent) => void;
+  style?: React.CSSProperties;
 };
 
-export function ProductCard({ product, selected, viewMode, onSelect }: ProductCardProps) {
+export function ProductCard({ product, selected, viewMode, onSelect, style }: ProductCardProps) {
   const primaryImage = product.images.find(Boolean);
   const isSoldOut = product.quantity_available <= 0;
 
@@ -25,8 +26,12 @@ export function ProductCard({ product, selected, viewMode, onSelect }: ProductCa
       role="button"
       tabIndex={0}
       className={`product-card ${selected ? "product-card-selected" : ""} ${viewMode === "list" ? "product-card-list" : ""} ${isSoldOut ? "product-card-soldout" : ""}`}
-      onClick={() => onSelect(product)}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect(product, event);
+      }}
       onKeyDown={handleKeyDown}
+      style={style}
     >
       <div className="product-image-wrap">
         {product.badge ? (

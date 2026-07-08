@@ -1,5 +1,5 @@
-import { ArrowDownUp, Grid2X2, List, Search, X } from "lucide-react";
-import { SelectInput } from "../ui/Field";
+import { ArrowDownUp, Check, ChevronDown, Grid2X2, List, Search, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 type CatalogToolbarProps = {
   searchQuery: string;
@@ -10,6 +10,14 @@ type CatalogToolbarProps = {
   onViewModeChange: (mode: "grid" | "list") => void;
 };
 
+const sortOptions = [
+  { value: "recommended", label: "Recommended" },
+  { value: "price-asc", label: "Price ↑" },
+  { value: "price-desc", label: "Price ↓" },
+  { value: "quantity", label: "Most stock" },
+  { value: "name", label: "Name" },
+];
+
 export function CatalogToolbar({
   searchQuery,
   onSearchChange,
@@ -18,6 +26,21 @@ export function CatalogToolbar({
   onSortChange,
   onViewModeChange,
 }: CatalogToolbarProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = sortOptions.find((opt) => opt.value === sort) || sortOptions[0];
+
   return (
     <div className="catalog-toolbar">
       <div className={`search-control${searchQuery ? " search-active" : ""}`}>
@@ -40,16 +63,40 @@ export function CatalogToolbar({
           </button>
         )}
       </div>
-      <label className="sort-control">
-        <ArrowDownUp size={15} />
-        <SelectInput value={sort} aria-label="Sort products" onChange={(event) => onSortChange(event.target.value)}>
-          <option value="recommended">Recommended</option>
-          <option value="price-asc">Price ↑</option>
-          <option value="price-desc">Price ↓</option>
-          <option value="quantity">Most stock</option>
-          <option value="name">Name</option>
-        </SelectInput>
-      </label>
+
+      <div className="sort-control-dropdown-wrapper" ref={dropdownRef}>
+        <button
+          type="button"
+          className={`sort-control-trigger ${isOpen ? "open" : ""}`}
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label="Sort products dropdown"
+        >
+          <ArrowDownUp size={15} />
+          <span>{selectedOption.label}</span>
+          <ChevronDown size={13} className={`sort-chevron ${isOpen ? "open" : ""}`} />
+        </button>
+
+        {isOpen && (
+          <ul className="sort-dropdown-menu">
+            {sortOptions.map((opt) => (
+              <li key={opt.value}>
+                <button
+                  type="button"
+                  className={`sort-dropdown-item ${opt.value === sort ? "active" : ""}`}
+                  onClick={() => {
+                    onSortChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                >
+                  <span>{opt.label}</span>
+                  {opt.value === sort && <Check size={13} className="check-icon" />}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div className="view-toggle" aria-label="View mode">
         <button
           type="button"

@@ -10,7 +10,7 @@ type ProductGridProps = {
   activeCategory: string;
   selectedProduct?: Product;
   viewMode: "grid" | "list";
-  onSelect: (product: Product) => void;
+  onSelect: (product: Product, event?: React.MouseEvent) => void;
   onResetFilters: () => void;
 };
 
@@ -37,13 +37,14 @@ export function ProductGrid({ products, totalProducts, activeCategory, selectedP
 
   return (
     <div className={`product-grid ${viewMode === "list" ? "product-grid-list" : ""}`}>
-      {products.map((product) => (
+      {products.map((product, index) => (
         <ProductCard
           key={product.id}
           product={product}
           selected={product.id === selectedProduct?.id}
           viewMode={viewMode}
           onSelect={onSelect}
+          style={{ animationDelay: `${Math.min(index * 45, 600)}ms` }}
         />
       ))}
     </div>

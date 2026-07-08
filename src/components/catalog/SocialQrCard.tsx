@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import QRCode from "qrcode";
+import { Modal } from "../ui/Modal";
 
 type SocialQrCardProps = {
   label: string;
@@ -53,6 +54,7 @@ async function generateSocialQr(url: string, dotColor: string, logoUrl?: string)
 
 export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradient, showLabel = true }: SocialQrCardProps) {
   const [qrSrc, setQrSrc] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const dotColor = "#0f172a";
 
   useEffect(() => {
@@ -77,18 +79,62 @@ export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradi
     : undefined;
 
   return (
-    <article
-      className={`social-qr-card${accentGradient ? " social-qr-branded" : ""}`}
-      style={cardStyle}
-    >
-      <div className="social-qr-header" style={brandColor ? { color: brandColor } : undefined}>
-        {icon}
-        {showLabel && <span>{label}</span>}
-      </div>
-      <div className="social-qr-code">
-        {qrSrc ? <img src={qrSrc} alt={`${label} QR code`} /> : <div className="qr-loading" />}
-      </div>
-    </article>
+    <>
+      <article
+        role="button"
+        tabIndex={0}
+        className={`social-qr-card${accentGradient ? " social-qr-branded" : ""}`}
+        style={{ ...cardStyle, cursor: "pointer" }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsModalOpen(true);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsModalOpen(true);
+          }
+        }}
+      >
+        <div className="social-qr-header" style={brandColor ? { color: brandColor } : undefined}>
+          {icon}
+          {showLabel && <span>{label}</span>}
+        </div>
+        <div className="social-qr-code">
+          {qrSrc ? <img src={qrSrc} alt={`${label} QR code`} /> : <div className="qr-loading" />}
+        </div>
+      </article>
+
+      <Modal
+        title={`${label} Link`}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        className="social-qr-zoom-modal"
+      >
+        <div className="social-qr-zoom-content" onClick={(e) => e.stopPropagation()}>
+          <div className="social-qr-zoom-icon" style={brandColor ? { color: brandColor } : undefined}>
+            {icon}
+            <span>{label}</span>
+          </div>
+          <div className="social-qr-zoom-image">
+            {qrSrc ? (
+              <img src={qrSrc} alt={`${label} enlarged QR code`} />
+            ) : (
+              <div className="qr-loading" />
+            )}
+          </div>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social-qr-zoom-link"
+            style={brandColor ? { color: brandColor, borderColor: brandColor } : undefined}
+          >
+            Open Profile Link
+          </a>
+        </div>
+      </Modal>
+    </>
   );
 }
 

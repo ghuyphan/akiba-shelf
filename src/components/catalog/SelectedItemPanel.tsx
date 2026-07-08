@@ -17,8 +17,8 @@ export function SelectedItemPanel({ cart, onQuantityChange, onRemove, onOpenPaym
       <aside className="selected-panel selected-panel-empty">
         <div className="selected-empty-centered">
           <ShoppingBag size={48} className="empty-icon" />
-          <h3>No items in order</h3>
-          <p>Tap merch cards to add items to the order.</p>
+          <h3>Your cart is empty</h3>
+          <p>Tap merch cards to add items to the cart.</p>
         </div>
       </aside>
     );
@@ -29,7 +29,7 @@ export function SelectedItemPanel({ cart, onQuantityChange, onRemove, onOpenPaym
   return (
     <aside className="selected-panel">
       <div className="selected-header">
-        <h2>Current Order</h2>
+        <h2>Cart</h2>
         <Button variant="ghost" className="clear-button" onClick={onClearCart}>
           Clear All
         </Button>

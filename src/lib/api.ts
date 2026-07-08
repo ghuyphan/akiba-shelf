@@ -1,5 +1,5 @@
 import { defaultBooth, defaultPayment } from "./constants";
-import { isSupabaseConfigured, supabase } from "./supabase";
+import { isSupabaseConfigured, safeUuid, supabase } from "./supabase";
 import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus } from "../types/catalog";
 
 const stockStatuses: StockStatus[] = ["in_stock", "limited", "sold_out"];
@@ -38,7 +38,7 @@ function inferQuantity(product: Product) {
 
 function normalizeProduct(product: Partial<Product>): Product {
   const normalized: Product = {
-    id: text(product.id, crypto.randomUUID()),
+    id: text(product.id, safeUuid()),
     name: text(product.name),
     collection: text(product.collection),
     description: text(product.description),
@@ -154,7 +154,7 @@ export async function uploadImage(bucket: string, file: File) {
   const client = requireSupabase();
 
   const extension = file.name.split(".").pop() ?? "png";
-  const path = `${crypto.randomUUID()}.${extension}`;
+  const path = `${safeUuid()}.${extension}`;
   const { error } = await client.storage.from(bucket).upload(path, file, { upsert: false });
   if (error) throw error;
 
