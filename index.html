@@ -32,6 +32,14 @@
         }
       })();
     </script>
+    <script>
+      (() => {
+        const redirect = new URLSearchParams(window.location.search).get("redirect");
+        if (redirect) {
+          window.history.replaceState(null, "", `/akiba-shelf${redirect}`);
+        }
+      })();
+    </script>
     <title>Akiba Shelf</title>
   </head>
   <body>

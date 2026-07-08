@@ -4,7 +4,7 @@ import { CatalogPage } from "./pages/CatalogPage";
 
 export function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<CatalogPage />} />
         <Route path="/admin" element={<AdminPage />} />

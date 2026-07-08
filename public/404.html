@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Akiba Shelf</title>
+    <script>
+      (() => {
+        const base = "/akiba-shelf";
+        const path = window.location.pathname.startsWith(base)
+          ? window.location.pathname.slice(base.length)
+          : window.location.pathname;
+        const redirect = `${path || "/"}${window.location.search}${window.location.hash}`;
+        window.location.replace(`${base}/?redirect=${encodeURIComponent(redirect)}`);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
