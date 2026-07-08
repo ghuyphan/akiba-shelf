@@ -6,6 +6,8 @@ type SocialQrCardProps = {
   url: string;
   logoUrl?: string;
   icon: ReactNode;
+  brandColor?: string;
+  brandGradient?: string;
 };
 
 function loadImage(src: string) {
@@ -18,11 +20,11 @@ function loadImage(src: string) {
   });
 }
 
-async function generateSocialQr(url: string, logoUrl?: string) {
+async function generateSocialQr(url: string, dotColor: string, logoUrl?: string) {
   const qrUrl = await QRCode.toDataURL(url, {
     margin: 1,
     width: 520,
-    color: { dark: "#061b34", light: "#ffffff" },
+    color: { dark: dotColor, light: "#ffffff" },
   });
 
   if (!logoUrl) return qrUrl;
@@ -48,13 +50,14 @@ async function generateSocialQr(url: string, logoUrl?: string) {
   return canvas.toDataURL("image/png");
 }
 
-export function SocialQrCard({ label, url, logoUrl, icon }: SocialQrCardProps) {
+export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradient }: SocialQrCardProps) {
   const [qrSrc, setQrSrc] = useState("");
+  const dotColor = brandColor ?? "#061b34";
 
   useEffect(() => {
     let cancelled = false;
 
-    generateSocialQr(url, logoUrl)
+    generateSocialQr(url, dotColor, logoUrl)
       .then((src) => {
         if (!cancelled) setQrSrc(src);
       })
@@ -65,11 +68,19 @@ export function SocialQrCard({ label, url, logoUrl, icon }: SocialQrCardProps) {
     return () => {
       cancelled = true;
     };
-  }, [logoUrl, url]);
+  }, [logoUrl, url, dotColor]);
+
+  const accentGradient = brandGradient ?? brandColor ?? undefined;
+  const cardStyle = accentGradient
+    ? { "--social-accent": accentGradient } as React.CSSProperties
+    : undefined;
 
   return (
-    <article className="social-qr-card">
-      <div className="social-qr-header">
+    <article
+      className={`social-qr-card${accentGradient ? " social-qr-branded" : ""}`}
+      style={cardStyle}
+    >
+      <div className="social-qr-header" style={brandColor ? { color: brandColor } : undefined}>
         {icon}
         <span>{label}</span>
       </div>
@@ -79,3 +90,4 @@ export function SocialQrCard({ label, url, logoUrl, icon }: SocialQrCardProps) {
     </article>
   );
 }
+

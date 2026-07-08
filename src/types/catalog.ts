@@ -27,6 +27,7 @@ export type BoothSettings = {
   open_hours: string;
   hero_title: string;
   hero_text: string;
+  logo_url?: string;
   instagram_url?: string;
   facebook_url?: string;
   tiktok_url?: string;

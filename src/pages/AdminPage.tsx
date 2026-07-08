@@ -50,6 +50,7 @@ export function AdminPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(isSupabaseConfigured);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
+  const [activeTab, setActiveTab] = useState<"list" | "form">("list");
   const [booth, setBooth] = useState<BoothSettings>(() => getStoredBoothTheme());
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const [status, setStatus] = useState("");
@@ -93,7 +94,10 @@ export function AdminPage() {
     setBooth(catalog.booth);
     setPayment(catalog.payment);
     setProducts(adminProducts);
-    setSelectedProduct((current) => current ?? adminProducts[0] ?? createBlankProduct(1));
+    setSelectedProduct((current) => {
+      if (!current) return undefined;
+      return adminProducts.find((p) => p.id === current.id);
+    });
   }
 
   useEffect(() => {
@@ -225,15 +229,50 @@ export function AdminPage() {
           {status}
         </Alert>
       )}
+      <div className="admin-mobile-tabs">
+        <button
+          type="button"
+          className={`admin-tab-btn ${activeTab === "list" ? "active" : ""}`}
+          onClick={() => setActiveTab("list")}
+        >
+          Products List ({products.length})
+        </button>
+        <button
+          type="button"
+          className={`admin-tab-btn ${activeTab === "form" ? "active" : ""}`}
+          disabled={!selectedProduct}
+          onClick={() => setActiveTab("form")}
+        >
+          Edit Details
+        </button>
+      </div>
       <div className="admin-grid">
-        <ProductList
-          products={products}
-          selectedId={selectedProduct?.id}
-          onSelect={setSelectedProduct}
-          onCreate={() => setSelectedProduct(createBlankProduct(nextSort))}
-        />
-        {selectedProduct && (
-          <ProductForm product={selectedProduct} onSave={handleSaveProduct} onDelete={handleDeleteProduct} />
+        <div className={`admin-grid-col-list ${activeTab === "list" ? "show" : "hide"}`}>
+          <ProductList
+            products={products}
+            selectedId={selectedProduct?.id}
+            onSelect={(product) => {
+              setSelectedProduct(product);
+              setActiveTab("form");
+            }}
+            onCreate={() => {
+              setSelectedProduct(createBlankProduct(nextSort));
+              setActiveTab("form");
+            }}
+          />
+        </div>
+        {selectedProduct ? (
+          <div className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}>
+            <ProductForm product={selectedProduct} onSave={handleSaveProduct} onDelete={handleDeleteProduct} />
+          </div>
+        ) : (
+          <div className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}>
+            <div className="admin-empty-state">
+              <Package size={36} />
+              <h2>No item selected</h2>
+              <p>Select an item from the products list to edit details, or click "New Item" to create one.</p>
+            </div>
+          </div>
         )}
       </div>
       <div className="admin-settings-grid">

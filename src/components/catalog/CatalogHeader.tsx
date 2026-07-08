@@ -12,7 +12,11 @@ export function CatalogHeader({ booth, onOpenInfo }: CatalogHeaderProps) {
     <header className="catalog-header">
       <div className="brand-lockup">
         <div className="brand-mark">
-          <ShoppingBag size={30} />
+          {booth.logo_url ? (
+            <img src={booth.logo_url} alt={booth.booth_name} className="brand-logo-img" />
+          ) : (
+            <ShoppingBag size={30} />
+          )}
         </div>
         <div>
           <h1>{booth.booth_name}</h1>

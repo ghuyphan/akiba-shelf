@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { Clock, Facebook, Instagram, MapPin, Music2 } from "lucide-react";
+import { Clock, Facebook, Instagram, MapPin, Music2, ShoppingBag } from "lucide-react";
 import type { BoothSettings } from "../../types/catalog";
+import { SOCIAL_BRAND_COLORS } from "../../lib/social";
 import { SocialQrCard } from "./SocialQrCard";
 
 type BoothInfoPanelProps = {
@@ -12,28 +13,40 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
     { label: "Instagram", url: booth.instagram_url, icon: <Instagram size={18} /> },
     { label: "Facebook", url: booth.facebook_url, icon: <Facebook size={18} /> },
     { label: "TikTok", url: booth.tiktok_url, icon: <Music2 size={18} /> },
-  ].flatMap((item): { label: string; url: string; icon: ReactNode }[] => {
+  ].flatMap((item): { label: string; url: string; icon: ReactNode; brandColor: string; brandGradient: string }[] => {
     const url = item.url?.trim();
-    return url ? [{ ...item, url }] : [];
+    const brand = SOCIAL_BRAND_COLORS[item.label];
+    return url && brand ? [{ ...item, url, brandColor: brand.color, brandGradient: brand.gradient }] : [];
   });
 
   return (
     <aside className="booth-card">
-      <div className="info-list booth-info-list">
-        <div>
-          <MapPin size={20} />
-          <span>
-            <strong>Booth {booth.booth_code}</strong>
-            {booth.location}
-          </span>
+      <div className="booth-hero">
+        <div className="booth-hero-logo">
+          {booth.logo_url ? (
+            <img src={booth.logo_url} alt={booth.booth_name} />
+          ) : (
+            <ShoppingBag size={22} />
+          )}
         </div>
-        <div>
-          <Clock size={20} />
-          <span>
-            <strong>Open {booth.open_hours}</strong>
-            Festival hours
-          </span>
+        <div className="booth-hero-info">
+          <strong className="booth-hero-name">{booth.booth_name}</strong>
+          <span className="booth-hero-code">Booth {booth.booth_code}</span>
         </div>
+      </div>
+      <div className="booth-detail-chips">
+        {booth.location && (
+          <div className="booth-chip">
+            <MapPin size={14} />
+            <span>{booth.location}</span>
+          </div>
+        )}
+        {booth.open_hours && (
+          <div className="booth-chip">
+            <Clock size={14} />
+            <span>{booth.open_hours}</span>
+          </div>
+        )}
       </div>
       {socialLinks.length > 0 && (
         <div className="social-qr-grid" aria-label="Social QR codes">
@@ -44,6 +57,8 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
               url={item.url}
               logoUrl={booth.social_qr_logo_url}
               icon={item.icon}
+              brandColor={item.brandColor}
+              brandGradient={item.brandGradient}
             />
           ))}
         </div>

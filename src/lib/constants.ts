@@ -12,10 +12,10 @@ export const defaultBooth: BoothSettings = {
   facebook_url: "",
   tiktok_url: "",
   social_qr_logo_url: "",
-  theme_primary: "#ff6fae",
-  theme_secondary: "#24324f",
-  theme_accent: "#6fc7ff",
-  theme_background: "#fff3f8",
+  theme_primary: "#6366f1",
+  theme_secondary: "#0f172a",
+  theme_accent: "#10b981",
+  theme_background: "#f8fafc",
 };
 
 export const defaultPayment: PaymentSettings = {

@@ -29,6 +29,25 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
   const isNewProduct = !product.name && !product.item_code;
   const hasLegacyBadge = Boolean(draft.badge) && !productBadges.includes(draft.badge ?? "");
 
+  const getFieldError = (fieldName: string) => {
+    switch (fieldName) {
+      case "name":
+        return errors.find((e) => e.toLowerCase().includes("name"));
+      case "item_code":
+        return errors.find((e) => e.toLowerCase().includes("code"));
+      case "category":
+        return errors.find((e) => e.toLowerCase().includes("category"));
+      case "price_vnd":
+        return errors.find((e) => e.toLowerCase().includes("price"));
+      case "quantity_available":
+        return errors.find((e) => e.toLowerCase().includes("quantity"));
+      case "images":
+        return errors.find((e) => e.toLowerCase().includes("image"));
+      default:
+        return undefined;
+    }
+  };
+
   useEffect(() => {
     setDraft(product);
     setIsEditing(!product.name);
@@ -65,7 +84,16 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
     setDeleteError("");
     let didSave = false;
     await runSave(async () => {
-      await onSave({ ...draft, id: draft.id || normalizeSlug(`${draft.item_code}-${draft.name}`) });
+      const finalQty = Math.max(0, draft.quantity_available);
+      const finalStatus = (finalQty === 0 ? "sold_out" : finalQty <= 5 ? "limited" : "in_stock") as StockStatus;
+      const finalNote = finalQty === 0 ? "Sold out" : finalQty <= 5 ? "Limited stock" : "In stock";
+      const finalProduct = {
+        ...draft,
+        id: draft.id || normalizeSlug(`${draft.item_code}-${draft.name}`),
+        stock_status: finalStatus,
+        stock_note: finalNote,
+      };
+      await onSave(finalProduct);
       didSave = true;
     }).catch(() => undefined);
     if (!didSave) return;
@@ -125,19 +153,19 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
           </div>
         )}
         <div className="form-grid">
-          <Field label="Name">
+          <Field label="Name" error={getFieldError("name")}>
             <TextInput value={draft.name} disabled={!isEditing} onChange={(event) => setField("name", event.target.value)} />
           </Field>
-          <Field label="Item Code">
+          <Field label="Item Code" error={getFieldError("item_code")}>
             <TextInput value={draft.item_code} disabled={!isEditing} onChange={(event) => setField("item_code", event.target.value)} />
           </Field>
           <Field label="Collection">
             <TextInput value={draft.collection} disabled={!isEditing} onChange={(event) => setField("collection", event.target.value)} />
           </Field>
-          <Field label="Category">
+          <Field label="Category" error={getFieldError("category")}>
             <TextInput value={draft.category} disabled={!isEditing} onChange={(event) => setField("category", event.target.value)} />
           </Field>
-          <Field label="Price VND" hint={isEditing ? formatVnd(draft.price_vnd) : undefined}>
+          <Field label="Price VND" hint={isEditing ? formatVnd(draft.price_vnd) : undefined} error={getFieldError("price_vnd")}>
             <TextInput
               type="number"
               min="0"
@@ -147,7 +175,7 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
               onChange={(event) => setField("price_vnd", readNumber(event.target.value))}
             />
           </Field>
-          <Field label="Quantity" hint={isEditing ? `${formatNumber(draft.quantity_available)} units` : undefined}>
+          <Field label="Quantity" hint={isEditing ? `${formatNumber(draft.quantity_available)} units` : undefined} error={getFieldError("quantity_available")}>
             <TextInput
               type="number"
               min="0"
@@ -214,6 +242,9 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
             ) : (
               <div className="image-admin-note">Image uploads are available while editing.</div>
             )}
+            {getFieldError("images") && (
+              <div className="field-error-msg" style={{ marginTop: "6px" }}>{getFieldError("images")}</div>
+            )}
           </div>
         </div>
         {asyncError && (
@@ -227,13 +258,6 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
           >
             {asyncError}
           </Alert>
-        )}
-        {errors.length > 0 && (
-          <div className="form-error">
-            {errors.map((error) => (
-              <p key={error}>{error}</p>
-            ))}
-          </div>
         )}
         <div className="form-actions">
           {isEditing && (

@@ -46,9 +46,13 @@ export function ProductList({ products, selectedId, onSelect, onCreate }: Produc
                 {primaryImage ? <img src={primaryImage} alt="" /> : <ImageIcon size={24} className="admin-product-thumb-placeholder" />}
               </span>
               <span>
-                <strong>{product.name}</strong>
+                <span className="admin-product-title-row">
+                  <strong>{product.name}</strong>
+                  {product.featured && <span className="admin-badge-featured">Featured</span>}
+                  {!product.active && <span className="admin-badge-hidden">Hidden</span>}
+                </span>
                 <small>
-                  {product.item_code} · {formatVnd(product.price_vnd)}
+                  {product.item_code} · {formatVnd(product.price_vnd)} · {product.quantity_available} units
                 </small>
               </span>
             </button>

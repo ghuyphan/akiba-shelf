@@ -3,15 +3,20 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTML
 type FieldProps = {
   label: string;
   hint?: string;
+  error?: string;
   children: ReactNode;
 };
 
-export function Field({ label, hint, children }: FieldProps) {
+export function Field({ label, hint, error, children }: FieldProps) {
   return (
     <label className="field">
       <span className="field-label">{label}</span>
       {children}
-      {hint && <span className="field-hint">{hint}</span>}
+      {error ? (
+        <span className="field-error-msg">{error}</span>
+      ) : (
+        hint && <span className="field-hint">{hint}</span>
+      )}
     </label>
   );
 }

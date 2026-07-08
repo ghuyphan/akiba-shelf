@@ -16,26 +16,10 @@ export function SelectedItemPanel({ product, payment, quantity, onQuantityChange
   if (!product) {
     return (
       <aside className="selected-panel selected-panel-empty">
-        <div className="selected-header">
-          <h2>Selected Item</h2>
-        </div>
-        <div className="selected-empty-body">
-          <div className="selected-empty-thumb">
-            <PackageOpen size={34} />
-          </div>
-          <div>
-            <h3>No item selected</h3>
-            <p>Tap a merch card to preview details and generate a payment QR.</p>
-            <span className="selected-empty-hint">
-              <MousePointer2 size={14} />
-              Waiting for selection
-            </span>
-          </div>
-        </div>
-        <div className="selected-actions">
-          <Button variant="secondary" icon={<Banknote size={18} />} disabled>
-            {payment.bank_label}
-          </Button>
+        <div className="selected-empty-centered">
+          <PackageOpen size={48} className="empty-icon" />
+          <h3>No item selected</h3>
+          <p>Tap a merch card to view details and generate a payment QR.</p>
         </div>
       </aside>
     );
@@ -50,10 +34,7 @@ export function SelectedItemPanel({ product, payment, quantity, onQuantityChange
     <aside className="selected-panel">
       <div className="selected-header">
         <h2>Selected Item</h2>
-        <button className="clear-button" type="button" onClick={onClose}>
-          Clear
-        </button>
-        <Button variant="ghost" icon={<X size={22} />} aria-label="Close selected item" onClick={onClose} />
+        <Button variant="ghost" icon={<X size={20} />} aria-label="Close selected item" onClick={onClose} />
       </div>
       <div className="selected-cart-item">
         {primaryImage ? (
@@ -93,8 +74,8 @@ export function SelectedItemPanel({ product, payment, quantity, onQuantityChange
         </button>
       </div>
       <div className="selected-actions">
-        <Button variant="secondary" icon={<Banknote size={18} />} onClick={onOpenPayment}>
-          {payment.bank_label}
+        <Button variant="primary" icon={<Banknote size={18} />} onClick={onOpenPayment}>
+          Pay Now
         </Button>
       </div>
     </aside>

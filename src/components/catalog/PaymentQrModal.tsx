@@ -4,6 +4,8 @@ import type { PaymentSettings, Product } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { canGenerateVietQr, generateVietQr } from "../../lib/vietqr";
 import { Modal } from "../ui/Modal";
+import { saveProduct } from "../../lib/api";
+import { supabase } from "../../lib/supabase";
 
 type PaymentQrModalProps = {
   isOpen: boolean;
@@ -16,6 +18,13 @@ type PaymentQrModalProps = {
 export function PaymentQrModal({ isOpen, payment, product, quantity, onClose }: PaymentQrModalProps) {
   const [qrSrc, setQrSrc] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [isConfirming, setIsConfirming] = useState(false);
+
   const paymentProduct = useMemo(
     () => (product ? { ...product, price_vnd: product.price_vnd * quantity } : undefined),
     [product, quantity],
@@ -40,6 +49,75 @@ export function PaymentQrModal({ isOpen, payment, product, quantity, onClose }: 
     };
   }, [isOpen, payment, paymentProduct]);
 
+  useEffect(() => {
+    if (!supabase) return undefined;
+
+    supabase.auth.getSession().then(({ data }) => {
+      setIsStaff(Boolean(data.session));
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsStaff(Boolean(session));
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleConfirm = async () => {
+    if (!product) return;
+    setIsConfirming(true);
+    try {
+      const newQty = Math.max(0, product.quantity_available - quantity);
+      const newStatus = newQty === 0 ? "sold_out" : newQty <= 5 ? "limited" : "in_stock";
+      const updatedProduct: Product = {
+        ...product,
+        quantity_available: newQty,
+        stock_status: newStatus,
+        stock_note: newQty === 0 ? "Sold out" : newQty <= 5 ? "Limited stock" : "In stock",
+      };
+      await saveProduct(updatedProduct);
+      alert("Payment confirmed! Stock updated successfully.");
+      onClose();
+    } catch (err: any) {
+      alert("Error confirming payment: " + (err.message || err));
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  const handleLoginAndConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase || !product) return;
+    setIsConfirming(true);
+    setLoginError("");
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      setIsStaff(true);
+      setShowLoginForm(false);
+
+      const newQty = Math.max(0, product.quantity_available - quantity);
+      const newStatus = newQty === 0 ? "sold_out" : newQty <= 5 ? "limited" : "in_stock";
+      const updatedProduct: Product = {
+        ...product,
+        quantity_available: newQty,
+        stock_status: newStatus,
+        stock_note: newQty === 0 ? "Sold out" : newQty <= 5 ? "Limited stock" : "In stock",
+      };
+      await saveProduct(updatedProduct);
+      alert("Payment confirmed! Stock updated successfully.");
+      onClose();
+    } catch (err: any) {
+      setLoginError(err.message || "Invalid credentials");
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
   const title = canGenerateVietQr(payment) ? payment.bank_label : payment.momo_label;
 
   return (
@@ -48,39 +126,138 @@ export function PaymentQrModal({ isOpen, payment, product, quantity, onClose }: 
         <div className="qr-display">
           {qrSrc && !isGenerating ? <img src={qrSrc} alt="Payment QR code" /> : <div className="qr-loading" />}
         </div>
-        <div className="qr-copy">
-          <div className="qr-note">
-            <CheckCircle2 size={22} />
-            <span>
-              <strong>Thank you!</strong>
-              <small>Scan the QR when you are ready.</small>
-            </span>
+        <div className="payment-receipt">
+          <div className="receipt-header">
+            <div className="receipt-success-icon">
+              <CheckCircle2 size={22} />
+            </div>
+            <div>
+              <h3>Thank you!</h3>
+              <p>Scan the QR code to complete transfer</p>
+            </div>
           </div>
+
+          <div className="receipt-divider" />
+
           {product && (
-            <div className="qr-total">
-              <ReceiptText size={22} />
-              <span>
-                <small>Total</small>
-                <strong>{formatVnd(product.price_vnd * quantity)}</strong>
-                <em>
+            <div className="receipt-section">
+              <span className="receipt-label">Order Details</span>
+              <div className="receipt-row">
+                <span className="receipt-item-name">
                   {quantity} x {product.name}
-                </em>
-              </span>
+                </span>
+                <span className="receipt-item-price">{formatVnd(product.price_vnd * quantity)}</span>
+              </div>
             </div>
           )}
-          <div className="qr-total">
-            <Banknote size={22} />
-            <span>
-              <small>Payment</small>
-              <strong>{title}</strong>
-              <em>{payment.bank_account_name || payment.bank_account_no || "Show this QR to staff after transfer."}</em>
-            </span>
+
+          <div className="receipt-divider" />
+
+          <div className="receipt-section">
+            <span className="receipt-label">Transfer Details</span>
+            <div className="receipt-details-list">
+              <div className="receipt-detail-row">
+                <span>Account Name</span>
+                <strong>{payment.bank_account_name || "N/A"}</strong>
+              </div>
+              <div className="receipt-detail-row">
+                <span>Account Number</span>
+                <strong
+                  style={{ cursor: "pointer" }}
+                  title="Click to copy account number"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(payment.bank_account_no || "");
+                  }}
+                >
+                  {payment.bank_account_no || "N/A"}
+                </strong>
+              </div>
+              <div className="receipt-detail-row">
+                <span>Bank Name</span>
+                <strong>{title}</strong>
+              </div>
+            </div>
           </div>
+
           {payment.payment_instructions && (
-            <p className="qr-instructions">
-              <Sparkles size={15} />
-              {payment.payment_instructions}
-            </p>
+            <>
+              <div className="receipt-divider" />
+              <div className="receipt-instructions">
+                <Sparkles size={14} />
+                <span>{payment.payment_instructions}</span>
+              </div>
+            </>
+          )}
+
+          <div className="receipt-divider" />
+
+          {isStaff ? (
+            <button
+              type="button"
+              className="button button-primary"
+              style={{ width: "100%", minHeight: "40px", height: "40px" }}
+              disabled={isConfirming}
+              onClick={handleConfirm}
+            >
+              {isConfirming ? "Confirming..." : "Confirm Payment & Update Stock"}
+            </button>
+          ) : showLoginForm ? (
+            <form onSubmit={handleLoginAndConfirm} className="stack" style={{ display: "grid", gap: "8px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "600", color: "var(--muted)", textTransform: "uppercase" }}>Staff Verification</div>
+              <input
+                type="email"
+                placeholder="Staff Email"
+                className="input"
+                style={{ minHeight: "36px", height: "36px", padding: "0 10px", fontSize: "13px" }}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                className="input"
+                style={{ minHeight: "36px", height: "36px", padding: "0 10px", fontSize: "13px" }}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              {loginError && <div style={{ color: "var(--red)", fontSize: "12px" }}>{loginError}</div>}
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  style={{ flex: 1, minHeight: "36px", height: "36px" }}
+                  disabled={isConfirming}
+                >
+                  {isConfirming ? "Verifying..." : "Confirm"}
+                </button>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  style={{ flex: 1, minHeight: "36px", height: "36px" }}
+                  onClick={() => setShowLoginForm(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              type="button"
+              className="button button-ghost"
+              style={{
+                width: "100%",
+                fontSize: "12px",
+                color: "var(--muted)",
+                textDecoration: "underline",
+                cursor: "pointer",
+                padding: "4px"
+              }}
+              onClick={() => setShowLoginForm(true)}
+            >
+              Staff: Confirm Payment
+            </button>
           )}
         </div>
       </div>

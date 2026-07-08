@@ -11,15 +11,30 @@ type ProductCardProps = {
 
 export function ProductCard({ product, selected, viewMode, onSelect }: ProductCardProps) {
   const primaryImage = product.images.find(Boolean);
+  const isSoldOut = product.quantity_available <= 0;
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect(product);
+    }
+  };
 
   return (
-    <button
-      type="button"
-      className={`product-card ${selected ? "product-card-selected" : ""} ${viewMode === "list" ? "product-card-list" : ""}`}
+    <div
+      role="button"
+      tabIndex={0}
+      className={`product-card ${selected ? "product-card-selected" : ""} ${viewMode === "list" ? "product-card-list" : ""} ${isSoldOut ? "product-card-soldout" : ""}`}
       onClick={() => onSelect(product)}
+      onKeyDown={handleKeyDown}
     >
       <div className="product-image-wrap">
         {product.badge && <span className="product-badge">{product.badge}</span>}
+        {isSoldOut && (
+          <div className="product-soldout-overlay">
+            <span>Sold Out</span>
+          </div>
+        )}
         {primaryImage ? (
           <img src={primaryImage} alt={product.name} loading="lazy" />
         ) : (
@@ -48,6 +63,6 @@ export function ProductCard({ product, selected, viewMode, onSelect }: ProductCa
           </span>
         </div>
       </div>
-    </button>
+    </div>
   );
 }

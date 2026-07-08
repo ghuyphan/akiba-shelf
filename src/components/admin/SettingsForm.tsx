@@ -73,6 +73,31 @@ export function SettingsForm({ settings, onSave }: SettingsFormProps) {
             </span>
           </div>
         )}
+        {isEditing && (
+          <div className="logo-upload-row">
+            <div className="logo-upload-preview">
+              {draft.logo_url ? (
+                <img src={draft.logo_url} alt="Booth logo" />
+              ) : (
+                <Store size={24} />
+              )}
+            </div>
+            <div className="logo-upload-controls">
+              <Field label="Booth Logo">
+                <TextInput
+                  value={draft.logo_url ?? ""}
+                  placeholder="Logo image URL"
+                  onChange={(event) => setDraft({ ...draft, logo_url: event.target.value })}
+                />
+              </Field>
+              <ImageUpload
+                bucket="payment-qr"
+                label="Upload Logo"
+                onUploaded={(url) => setDraft({ ...draft, logo_url: url })}
+              />
+            </div>
+          </div>
+        )}
         <div className="form-grid">
           <Field label="Booth Name">
             <TextInput
