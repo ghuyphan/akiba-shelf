@@ -240,10 +240,9 @@ export function AdminPage() {
         <button
           type="button"
           className={`admin-tab-btn ${activeTab === "form" ? "active" : ""}`}
-          disabled={!selectedProduct}
           onClick={() => setActiveTab("form")}
         >
-          Edit Details
+          Edit Product
         </button>
       </div>
       <div className="admin-grid">

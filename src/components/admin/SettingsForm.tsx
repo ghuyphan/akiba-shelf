@@ -161,7 +161,7 @@ export function SettingsForm({ settings, onSave }: SettingsFormProps) {
               onChange={(event) => setDraft({ ...draft, tiktok_url: event.target.value })}
             />
           </Field>
-          <div className="social-logo-admin">
+          <div className="social-logo-row">
             <div className="social-logo-preview" aria-label="Social QR logo preview">
               {draft.social_qr_logo_url ? (
                 <img src={draft.social_qr_logo_url} alt="Social QR logo" />
@@ -173,22 +173,24 @@ export function SettingsForm({ settings, onSave }: SettingsFormProps) {
                 </span>
               )}
             </div>
-            <Field label="QR Center Logo URL">
-              <TextInput
-                value={draft.social_qr_logo_url ?? ""}
-                disabled={!isEditing}
-                onChange={(event) => setDraft({ ...draft, social_qr_logo_url: event.target.value })}
-              />
-            </Field>
-            {isEditing ? (
-              <ImageUpload
-                bucket="payment-qr"
-                label="Upload Logo"
-                onUploaded={(url) => setDraft({ ...draft, social_qr_logo_url: url })}
-              />
-            ) : (
-              <div className="image-admin-note">Logo upload is available while editing.</div>
-            )}
+            <div className="social-logo-controls">
+              <Field label="QR Center Logo URL">
+                <TextInput
+                  value={draft.social_qr_logo_url ?? ""}
+                  disabled={!isEditing}
+                  onChange={(event) => setDraft({ ...draft, social_qr_logo_url: event.target.value })}
+                />
+              </Field>
+              {isEditing ? (
+                <ImageUpload
+                  bucket="payment-qr"
+                  label="Upload Logo"
+                  onUploaded={(url) => setDraft({ ...draft, social_qr_logo_url: url })}
+                />
+              ) : (
+                <div className="image-admin-note">Logo upload is available while editing.</div>
+              )}
+            </div>
           </div>
         </div>
         <div className="palette-grid">

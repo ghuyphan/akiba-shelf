@@ -15,6 +15,7 @@ import { BoothInfoPanel } from "../components/catalog/BoothInfoPanel";
 import { PaymentQrModal } from "../components/catalog/PaymentQrModal";
 import { ProductGrid } from "../components/catalog/ProductGrid";
 import { SelectedItemPanel } from "../components/catalog/SelectedItemPanel";
+import { StackedFeatured } from "../components/catalog/StackedFeatured";
 import { SocialQrCard } from "../components/catalog/SocialQrCard";
 import { Alert } from "../components/ui/Alert";
 import { Modal } from "../components/ui/Modal";
@@ -44,6 +45,7 @@ export function CatalogPage() {
   const [loadError, setLoadError] = useState("");
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
+  const [isCartExpanded, setIsCartExpanded] = useState(false);
 
   const loadCatalog = useCallback(() => {
     return getCatalogData()
@@ -169,6 +171,7 @@ export function CatalogPage() {
   const handleClearCart = () => {
     setCart([]);
     setSelectedProductId(null);
+    setIsCartExpanded(false);
   };
 
   const categories = useMemo(
@@ -214,6 +217,9 @@ export function CatalogPage() {
       )}
       <div className="catalog-layout">
         <section className="catalog-main">
+          {activeCategory === "All" && !searchQuery.trim() && (
+            <StackedFeatured products={products} onSelect={handleAddToCart} />
+          )}
           <div className="catalog-controls" onClick={(event) => event.stopPropagation()}>
             <CategoryFilters categories={categories} activeCategory={activeCategory} onChange={setActiveCategory} />
             <CatalogToolbar
@@ -237,16 +243,24 @@ export function CatalogPage() {
           />
         </section>
         <section className="catalog-side" onClick={(event) => event.stopPropagation()}>
+          <BoothInfoPanel booth={booth} />
           <SelectedItemPanel
             cart={cart}
             onQuantityChange={handleUpdateCartQuantity}
             onRemove={handleRemoveFromCart}
-            onOpenPayment={() => setIsQrOpen(true)}
+            onOpenPayment={() => {
+              setIsQrOpen(true);
+              setIsCartExpanded(false);
+            }}
             onClearCart={handleClearCart}
+            isExpanded={isCartExpanded}
+            onToggleExpand={() => setIsCartExpanded(!isCartExpanded)}
           />
-          <BoothInfoPanel booth={booth} />
         </section>
       </div>
+      {isCartExpanded && (
+        <div className="bottomsheet-backdrop" onClick={() => setIsCartExpanded(false)} />
+      )}
       <PaymentQrModal
         isOpen={isQrOpen}
         payment={payment}
