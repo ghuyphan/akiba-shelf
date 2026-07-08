@@ -8,6 +8,7 @@ type SocialQrCardProps = {
   icon: ReactNode;
   brandColor?: string;
   brandGradient?: string;
+  showLabel?: boolean;
 };
 
 function loadImage(src: string) {
@@ -50,7 +51,7 @@ async function generateSocialQr(url: string, dotColor: string, logoUrl?: string)
   return canvas.toDataURL("image/png");
 }
 
-export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradient }: SocialQrCardProps) {
+export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradient, showLabel = true }: SocialQrCardProps) {
   const [qrSrc, setQrSrc] = useState("");
   const dotColor = "#0f172a";
 
@@ -82,7 +83,7 @@ export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradi
     >
       <div className="social-qr-header" style={brandColor ? { color: brandColor } : undefined}>
         {icon}
-        <span>{label}</span>
+        {showLabel && <span>{label}</span>}
       </div>
       <div className="social-qr-code">
         {qrSrc ? <img src={qrSrc} alt={`${label} QR code`} /> : <div className="qr-loading" />}

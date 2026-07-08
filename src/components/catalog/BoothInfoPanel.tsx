@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { Clock, Facebook, Instagram, MapPin, Music2, ShoppingBag } from "lucide-react";
+import { Clock, Facebook, Instagram, MapPin, ShoppingBag } from "lucide-react";
 import type { BoothSettings } from "../../types/catalog";
 import { SOCIAL_BRAND_COLORS } from "../../lib/social";
 import { SocialQrCard } from "./SocialQrCard";
+import { TiktokIcon } from "../ui/TiktokIcon";
 
 type BoothInfoPanelProps = {
   booth: BoothSettings;
@@ -12,7 +13,7 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
   const socialLinks = [
     { label: "Instagram", url: booth.instagram_url, icon: <Instagram size={18} /> },
     { label: "Facebook", url: booth.facebook_url, icon: <Facebook size={18} /> },
-    { label: "TikTok", url: booth.tiktok_url, icon: <Music2 size={18} /> },
+    { label: "TikTok", url: booth.tiktok_url, icon: <TiktokIcon size={18} /> },
   ].flatMap((item): { label: string; url: string; icon: ReactNode; brandColor: string; brandGradient: string }[] => {
     const url = item.url?.trim();
     const brand = SOCIAL_BRAND_COLORS[item.label];
@@ -31,7 +32,7 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
         </div>
         <div className="booth-hero-info">
           <strong className="booth-hero-name">{booth.booth_name}</strong>
-          <span className="booth-hero-code">Booth {booth.booth_code}</span>
+          <span className="booth-hero-code">{booth.subtitle || "Official Shop"}</span>
         </div>
       </div>
       <div className="booth-detail-chips">
@@ -59,6 +60,7 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
               icon={item.icon}
               brandColor={item.brandColor}
               brandGradient={item.brandGradient}
+              showLabel={false}
             />
           ))}
         </div>

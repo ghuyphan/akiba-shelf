@@ -22,7 +22,7 @@ export function CatalogHeader({ booth, onOpenInfo }: CatalogHeaderProps) {
           <h1>{booth.booth_name}</h1>
           <div className="brand-meta">
             {booth.booth_code && <span className="brand-meta-code">Booth {booth.booth_code}</span>}
-            <span className="brand-meta-subtitle">{booth.subtitle || "Official Shop"}</span>
+            <span className="brand-meta-subtitle">Official Shop</span>
           </div>
         </div>
       </div>

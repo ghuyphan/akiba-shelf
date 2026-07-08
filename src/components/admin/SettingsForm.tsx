@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Clock3, Edit3, Facebook, Instagram, Link2, MapPin, Music2, Palette, Store, X } from "lucide-react";
+import { Clock3, Edit3, Facebook, Instagram, Link2, MapPin, Palette, Store, X } from "lucide-react";
+import { TiktokIcon } from "../ui/TiktokIcon";
 import type { BoothSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { Alert } from "../ui/Alert";
@@ -170,7 +171,7 @@ export function SettingsForm({ settings, onSave }: SettingsFormProps) {
                 <span>
                   <Instagram size={17} />
                   <Facebook size={17} />
-                  <Music2 size={17} />
+                  <TiktokIcon size={17} />
                 </span>
               )}
             </div>

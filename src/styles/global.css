@@ -503,7 +503,7 @@ a {
 .search-control:focus-within {
   border-color: var(--coral);
   background: #fff;
-  box-shadow: 0 0 0 3px rgb(255 111 174 / 12%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 12%, transparent);
 }
 
 .search-active {
@@ -574,7 +574,7 @@ a {
 .sort-control:focus-within {
   border-color: var(--coral);
   background: #fff;
-  box-shadow: 0 0 0 3px rgb(255 111 174 / 12%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 12%, transparent);
 }
 
 .sort-control select.input,
@@ -672,7 +672,7 @@ a {
   inset: 3px auto 3px 3px;
   width: 36px;
   border-radius: 6px;
-  background: #fff5fa;
+  background: color-mix(in srgb, var(--coral) 6%, var(--surface));
   transform: translateX(0);
   transition:
     transform 220ms var(--ease-out),
@@ -765,7 +765,7 @@ a {
 
 .product-card-selected {
   border-color: var(--coral);
-  box-shadow: 0 8px 24px rgba(255, 111, 174, 0.12);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--coral) 12%, transparent);
 }
 
 .product-card-selected::after {
@@ -1377,10 +1377,11 @@ a {
   place-items: center;
   width: 52px;
   height: 52px;
-  background: var(--surface-soft);
+  background: #fff;
   color: var(--coral);
-  border-radius: 12px;
-  border: 1px solid var(--line);
+  border-radius: 50%;
+  border: 2px solid var(--coral);
+  overflow: hidden;
   flex-shrink: 0;
 }
 
@@ -2111,10 +2112,10 @@ a {
   place-items: center;
   width: 64px;
   height: 64px;
-  border: 1px solid rgb(231 53 124 / 18%);
+  border: 1px solid color-mix(in srgb, var(--coral) 18%, transparent);
   border-radius: 8px;
   color: var(--coral);
-  background: #fff4f9;
+  background: color-mix(in srgb, var(--coral) 4%, var(--surface));
 }
 
 .empty-state-copy {
@@ -2555,7 +2556,7 @@ a {
   width: var(--active-width);
   border-radius: 999px;
   background: var(--coral);
-  box-shadow: 0 10px 22px rgb(231 53 124 / 22%);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--coral) 22%, transparent);
   transform: translateX(var(--active-left));
   transition:
     transform 260ms var(--ease-out),
@@ -2621,7 +2622,7 @@ a {
 .product-card-selected {
   border-color: var(--coral) !important;
   background: #fff;
-  box-shadow: 0 8px 24px rgba(255, 111, 174, 0.12) !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--coral) 12%, transparent) !important;
 }
 
 .product-card-selected::after {
@@ -2802,10 +2803,10 @@ a {
   width: 100%;
   min-height: 40px;
   margin-top: 18px;
-  border: 1px solid #f4b7cf;
+  border: 1px solid color-mix(in srgb, var(--coral) 30%, transparent);
   border-radius: 7px;
   color: var(--coral);
-  background: #fff5fa;
+  background: color-mix(in srgb, var(--coral) 5%, var(--surface));
   font-weight: 800;
 }
 
@@ -3034,9 +3035,10 @@ a {
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 10px;
-  background: var(--teal-dark);
-  color: #fff;
+  border-radius: 50%;
+  border: 2px solid var(--coral);
+  background: #fff;
+  color: var(--coral);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -3045,6 +3047,7 @@ a {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
 }
 
 .booth-hero-info {
@@ -3171,7 +3174,7 @@ a {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 50%;
 }
 
 .booth-modal-social-section {
@@ -3278,7 +3281,7 @@ a {
 
 .admin-metrics span:hover {
   transform: translateY(-1px);
-  border-color: rgb(231 53 124 / 42%);
+  border-color: color-mix(in srgb, var(--coral) 42%, transparent);
   box-shadow: 0 8px 18px rgb(7 24 50 / 8%);
 }
 
@@ -3351,10 +3354,10 @@ a {
   width: 36px;
   height: 36px;
   flex: 0 0 auto;
-  border: 1px solid rgb(231 53 124 / 18%);
+  border: 1px solid color-mix(in srgb, var(--coral) 18%, transparent);
   border-radius: 8px;
   color: var(--coral);
-  background: #fff4f9;
+  background: color-mix(in srgb, var(--coral) 4%, var(--surface));
 }
 
 .admin-card h2 {
@@ -3421,15 +3424,15 @@ a {
 
 .admin-product:hover {
   transform: translateY(-2px);
-  border-color: #f1b7ce;
-  background: #fff9fc;
+  border-color: color-mix(in srgb, var(--coral) 30%, transparent);
+  background: color-mix(in srgb, var(--coral) 3%, var(--surface));
   box-shadow: 0 10px 24px rgb(7 24 50 / 8%);
 }
 
 .admin-product.active {
   border-color: var(--coral);
-  background: #fff5fa;
-  box-shadow: 0 0 0 2px rgb(231 53 124 / 14%);
+  background: color-mix(in srgb, var(--coral) 5%, var(--surface));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--coral) 14%, transparent);
   transform: none;
 }
 
@@ -3562,9 +3565,9 @@ a {
 
 .input:focus {
   outline: 0;
-  border-color: #f1a5c4;
+  border-color: color-mix(in srgb, var(--coral) 40%, transparent);
   background: #fff;
-  box-shadow: 0 0 0 3px rgb(231 53 124 / 10%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 10%, transparent);
 }
 
 .input:disabled {
@@ -3615,8 +3618,8 @@ select.input {
 
 .admin-switch-row label:hover {
   transform: translateY(-1px);
-  border-color: #f1b7ce;
-  background: #fff9fc;
+  border-color: color-mix(in srgb, var(--coral) 30%, transparent);
+  background: color-mix(in srgb, var(--coral) 3%, var(--surface));
 }
 
 .admin-switch-row input {
@@ -3670,9 +3673,9 @@ select.input {
 }
 
 .upload-button-face {
-  border-color: #f1a5c4;
+  border-color: color-mix(in srgb, var(--coral) 40%, transparent);
   color: var(--coral);
-  background: #fff5fa;
+  background: color-mix(in srgb, var(--coral) 5%, var(--surface));
   transition:
     transform 150ms var(--ease-standard),
     border-color 150ms var(--ease-standard),
@@ -3684,7 +3687,7 @@ select.input {
   transform: translateY(-1px);
   border-color: var(--coral);
   background: #fff;
-  box-shadow: 0 10px 22px rgb(231 53 124 / 12%);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--coral) 12%, transparent);
 }
 
 .upload-button-loading {
@@ -3732,7 +3735,7 @@ select.input {
 
 .admin-login {
   background:
-    radial-gradient(circle at 18% 18%, rgb(231 53 124 / 10%), transparent 28%),
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--coral) 10%, transparent), transparent 28%),
     radial-gradient(circle at 80% 26%, rgb(40 119 219 / 12%), transparent 30%),
     linear-gradient(180deg, rgb(255 255 255 / 64%), rgb(238 242 247 / 96%)),
     #eef2f7;

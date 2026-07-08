@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Clock, Facebook, Instagram, MapPin, Music2, ShoppingBag, Sparkles } from "lucide-react";
+import { Clock, Facebook, Instagram, MapPin, ShoppingBag, Sparkles } from "lucide-react";
 import { SOCIAL_BRAND_COLORS } from "../lib/social";
 import { getCatalogData } from "../lib/api";
 import { defaultPayment } from "../lib/constants";
@@ -7,6 +7,7 @@ import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme";
 import type { BoothSettings, PaymentSettings, Product } from "../types/catalog";
+import { TiktokIcon } from "../components/ui/TiktokIcon";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
 import { CategoryFilters } from "../components/catalog/CategoryFilters";
@@ -214,7 +215,7 @@ export function CatalogPage() {
             const modalSocialLinks = [
               { label: "Instagram", url: booth.instagram_url, icon: <Instagram size={18} /> },
               { label: "Facebook", url: booth.facebook_url, icon: <Facebook size={18} /> },
-              { label: "TikTok", url: booth.tiktok_url, icon: <Music2 size={18} /> },
+              { label: "TikTok", url: booth.tiktok_url, icon: <TiktokIcon size={18} /> },
             ].filter((item) => item.url?.trim());
 
             if (modalSocialLinks.length === 0) return null;
