@@ -3105,10 +3105,18 @@ a {
   display: grid;
   gap: 8px;
   min-width: 0;
-  padding: 9px;
-  border: 1px solid var(--soft-line);
-  border-radius: 8px;
-  background: #fbfcfe;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--soft-shadow);
+  transition: all 0.2s var(--ease-out);
+}
+
+.social-qr-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--muted);
 }
 
 .social-qr-header {
@@ -3132,8 +3140,8 @@ a {
   display: grid;
   place-items: center;
   aspect-ratio: 1;
-  border: 1px solid var(--line);
-  border-radius: 7px;
+  border: 1px solid var(--soft-line);
+  border-radius: 8px;
   background: #fff;
 }
 
@@ -3149,17 +3157,13 @@ a {
 .social-qr-branded {
   border-color: transparent;
   background:
-    linear-gradient(#fbfcfe, #fbfcfe) padding-box,
+    linear-gradient(var(--surface), var(--surface)) padding-box,
     var(--social-accent) border-box;
-  border: 2px solid transparent;
+  border: 1.5px solid transparent;
 }
 
 .social-qr-branded .social-qr-code {
-  border-color: transparent;
-  background:
-    linear-gradient(#fff, #fff) padding-box,
-    var(--social-accent) border-box;
-  border: 1.5px solid transparent;
+  border: 1px solid var(--soft-line);
 }
 
 /* Booth info modal social section */
@@ -3185,12 +3189,16 @@ a {
 }
 
 .booth-modal-social-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 12px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
 }
 
 .booth-modal-social-grid .social-qr-card {
+  width: 170px;
+  flex-shrink: 0;
   padding: 12px;
   border-radius: 10px;
 }

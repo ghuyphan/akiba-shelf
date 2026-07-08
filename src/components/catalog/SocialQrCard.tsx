@@ -52,7 +52,7 @@ async function generateSocialQr(url: string, dotColor: string, logoUrl?: string)
 
 export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradient }: SocialQrCardProps) {
   const [qrSrc, setQrSrc] = useState("");
-  const dotColor = brandColor ?? "#061b34";
+  const dotColor = "#0f172a";
 
   useEffect(() => {
     let cancelled = false;
