@@ -1,11 +1,12 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Clock3, Edit3, MapPin, Palette, Store, X } from "lucide-react";
+import { Clock3, Edit3, Facebook, Instagram, Link2, MapPin, Music2, Palette, Store, X } from "lucide-react";
 import type { BoothSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
 import { Field, TextArea, TextInput } from "../ui/Field";
 import { AdminCard } from "./AdminCard";
+import { ImageUpload } from "./ImageUpload";
 
 type SettingsFormProps = {
   settings: BoothSettings;
@@ -107,6 +108,65 @@ export function SettingsForm({ settings, onSave }: SettingsFormProps) {
         <Field label="Hero Text">
           <TextArea value={draft.hero_text} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, hero_text: event.target.value })} />
         </Field>
+        <div className="social-settings-grid">
+          <div className="palette-heading">
+            <Link2 size={17} />
+            <span>Social QR Links</span>
+          </div>
+          <Field label="Instagram URL">
+            <TextInput
+              type="url"
+              value={draft.instagram_url ?? ""}
+              disabled={!isEditing}
+              onChange={(event) => setDraft({ ...draft, instagram_url: event.target.value })}
+            />
+          </Field>
+          <Field label="Facebook URL">
+            <TextInput
+              type="url"
+              value={draft.facebook_url ?? ""}
+              disabled={!isEditing}
+              onChange={(event) => setDraft({ ...draft, facebook_url: event.target.value })}
+            />
+          </Field>
+          <Field label="TikTok URL">
+            <TextInput
+              type="url"
+              value={draft.tiktok_url ?? ""}
+              disabled={!isEditing}
+              onChange={(event) => setDraft({ ...draft, tiktok_url: event.target.value })}
+            />
+          </Field>
+          <div className="social-logo-admin">
+            <div className="social-logo-preview" aria-label="Social QR logo preview">
+              {draft.social_qr_logo_url ? (
+                <img src={draft.social_qr_logo_url} alt="Social QR logo" />
+              ) : (
+                <span>
+                  <Instagram size={17} />
+                  <Facebook size={17} />
+                  <Music2 size={17} />
+                </span>
+              )}
+            </div>
+            <Field label="QR Center Logo URL">
+              <TextInput
+                value={draft.social_qr_logo_url ?? ""}
+                disabled={!isEditing}
+                onChange={(event) => setDraft({ ...draft, social_qr_logo_url: event.target.value })}
+              />
+            </Field>
+            {isEditing ? (
+              <ImageUpload
+                bucket="payment-qr"
+                label="Upload Logo"
+                onUploaded={(url) => setDraft({ ...draft, social_qr_logo_url: url })}
+              />
+            ) : (
+              <div className="image-admin-note">Logo upload is available while editing.</div>
+            )}
+          </div>
+        </div>
         <div className="palette-grid">
           <div className="palette-heading">
             <Palette size={17} />

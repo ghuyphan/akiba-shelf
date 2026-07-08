@@ -11,9 +11,10 @@ import {
   signInAdmin,
   signOutAdmin,
 } from "../lib/api";
-import { defaultBooth, defaultPayment } from "../lib/constants";
+import { defaultPayment } from "../lib/constants";
+import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
-import { applyPageTheme, getThemeStyle } from "../lib/theme";
+import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import type { BoothSettings, PaymentSettings, Product } from "../types/catalog";
 import { LoginPanel } from "../components/admin/LoginPanel";
@@ -49,7 +50,7 @@ export function AdminPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(isSupabaseConfigured);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
-  const [booth, setBooth] = useState<BoothSettings>(defaultBooth);
+  const [booth, setBooth] = useState<BoothSettings>(() => getStoredBoothTheme());
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const [status, setStatus] = useState("");
   const [statusVariant, setStatusVariant] = useState<"info" | "success" | "error">("info");
@@ -98,8 +99,9 @@ export function AdminPage() {
   useEffect(() => {
     if (!isAuthed) return;
     reload().catch((error) => {
+      if (isSessionNoise(error)) return;
       setStatusVariant("error");
-      setStatus(error instanceof Error ? error.message : "Could not load admin data.");
+      setStatus(getErrorMessage(error, "Could not load admin data."));
     });
   }, [isAuthed]);
 
@@ -112,17 +114,13 @@ export function AdminPage() {
         window.clearTimeout(reloadTimer);
         reloadTimer = window.setTimeout(() => {
           reload().catch((error) => {
+            if (isSessionNoise(error)) return;
             setStatusVariant("error");
-            setStatus(error instanceof Error ? error.message : "Could not refresh admin data.");
+            setStatus(getErrorMessage(error, "Could not refresh admin data."));
           });
         }, 150);
       },
-      onStatus: (status, error) => {
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          setStatusVariant("error");
-          setStatus(error instanceof Error ? error.message : "Realtime connection failed.");
-        }
-      },
+      onStatus: () => undefined,
     });
 
     return () => {

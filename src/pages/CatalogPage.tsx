@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Info } from "lucide-react";
 import { getCatalogData } from "../lib/api";
-import { defaultBooth, defaultPayment } from "../lib/constants";
+import { defaultPayment } from "../lib/constants";
+import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
-import { applyPageTheme, getThemeStyle } from "../lib/theme";
+import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme";
 import type { BoothSettings, PaymentSettings, Product } from "../types/catalog";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
@@ -17,7 +18,7 @@ import { Modal } from "../components/ui/Modal";
 
 export function CatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [booth, setBooth] = useState<BoothSettings>(defaultBooth);
+  const [booth, setBooth] = useState<BoothSettings>(() => getStoredBoothTheme());
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
   const [selectedQuantity, setSelectedQuantity] = useState(1);
@@ -40,7 +41,10 @@ export function CatalogPage() {
         });
         setLoadError("");
       })
-      .catch((error) => setLoadError(error instanceof Error ? error.message : "Could not load catalog."));
+      .catch((error) => {
+        if (isSessionNoise(error)) return;
+        setLoadError(getErrorMessage(error, "Could not load catalog."));
+      });
   }, []);
 
   useEffect(() => {
@@ -55,11 +59,7 @@ export function CatalogPage() {
         window.clearTimeout(reloadTimer);
         reloadTimer = window.setTimeout(() => void loadCatalog(), 150);
       },
-      onStatus: (status, error) => {
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          setLoadError(error instanceof Error ? error.message : "Realtime connection failed.");
-        }
-      },
+      onStatus: () => undefined,
     });
 
     return () => {
@@ -96,7 +96,7 @@ export function CatalogPage() {
 
   return (
     <main className="app-shell" style={getThemeStyle(booth)}>
-      <CatalogHeader booth={booth} onOpenPayment={() => setIsQrOpen(true)} onOpenInfo={() => setIsInfoOpen(true)} />
+      <CatalogHeader booth={booth} onOpenInfo={() => setIsInfoOpen(true)} />
       {loadError && (
         <Alert variant="error" title="Catalog unavailable" onClose={() => setLoadError("")}>
           {loadError}

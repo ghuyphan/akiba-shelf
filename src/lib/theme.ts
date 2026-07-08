@@ -14,6 +14,25 @@ function isThemeSettings(value: unknown): value is Partial<BoothSettings> {
   return Boolean(value && typeof value === "object");
 }
 
+export function getStoredBoothTheme(): BoothSettings {
+  try {
+    const stored = localStorage.getItem(themeStorageKey);
+    if (!stored) return defaultBooth;
+    const parsed = JSON.parse(stored) as unknown;
+    if (isThemeSettings(parsed)) {
+      return { ...defaultBooth, ...parsed };
+    }
+  } catch {
+    try {
+      localStorage.removeItem(themeStorageKey);
+    } catch {
+      // Ignore unavailable storage.
+    }
+  }
+
+  return defaultBooth;
+}
+
 export function getThemeStyle(booth: BoothSettings): ThemeStyle {
   const primary = color(booth.theme_primary, defaultBooth.theme_primary ?? "#ff6fae");
   const secondary = color(booth.theme_secondary, defaultBooth.theme_secondary ?? "#24324f");
@@ -36,6 +55,7 @@ export function applyPageTheme(booth: BoothSettings) {
   Object.entries(style).forEach(([key, value]) => {
     document.documentElement.style.setProperty(key, value);
   });
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", style["--page-bg"]);
 
   try {
     localStorage.setItem(themeStorageKey, JSON.stringify(booth));
@@ -45,18 +65,5 @@ export function applyPageTheme(booth: BoothSettings) {
 }
 
 export function applyStoredPageTheme() {
-  try {
-    const stored = localStorage.getItem(themeStorageKey);
-    if (!stored) return;
-    const parsed = JSON.parse(stored) as unknown;
-    if (isThemeSettings(parsed)) {
-      applyPageTheme({ ...defaultBooth, ...parsed });
-    }
-  } catch {
-    try {
-      localStorage.removeItem(themeStorageKey);
-    } catch {
-      // Ignore unavailable storage.
-    }
-  }
+  applyPageTheme(getStoredBoothTheme());
 }

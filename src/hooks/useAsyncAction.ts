@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { getErrorMessage, isSessionNoise } from "../lib/errors";
 
 export function useAsyncAction() {
   const [busy, setBusy] = useState(false);
@@ -11,8 +12,7 @@ export function useAsyncAction() {
     try {
       return await action();
     } catch (caught) {
-      const message = caught instanceof Error ? caught.message : "Something went wrong.";
-      setError(message);
+      setError(isSessionNoise(caught) ? "" : getErrorMessage(caught));
       throw caught;
     } finally {
       setBusy(false);
