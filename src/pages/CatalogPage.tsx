@@ -217,9 +217,7 @@ export function CatalogPage() {
       )}
       <div className="catalog-layout">
         <section className="catalog-main">
-          {activeCategory === "All" && !searchQuery.trim() && (
-            <StackedFeatured products={products} onSelect={handleAddToCart} />
-          )}
+          <StackedFeatured products={products} onSelect={handleAddToCart} />
           <div className="catalog-controls" onClick={(event) => event.stopPropagation()}>
             <CategoryFilters categories={categories} activeCategory={activeCategory} onChange={setActiveCategory} />
             <CatalogToolbar
