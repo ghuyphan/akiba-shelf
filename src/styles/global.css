@@ -2017,7 +2017,8 @@ a {
 
 .upload-button {
   display: inline-flex;
-  width: max-content;
+  width: 100%;
+  max-width: 100%;
   cursor: pointer;
 }
 
@@ -2033,6 +2034,7 @@ a {
   color: #fff;
   background: var(--teal-dark);
   font-weight: 700;
+  width: 100%;
 }
 
 .upload-button input {
@@ -5374,4 +5376,22 @@ select.input {
   background: var(--surface, #ffffff);
   color: var(--ink);
   box-shadow: var(--soft-shadow);
+}
+
+.order-summary-panel {
+  background: var(--surface-soft, #f8fafc);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .order-summary-panel {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }

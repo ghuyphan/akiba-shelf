@@ -55,6 +55,24 @@ export function OrderQueue({ orders, onOrderUpdated }: OrderQueueProps) {
     return order.status === filter;
   });
 
+  const totalMoney = filteredOrders.reduce((sum, order) => sum + order.total_amount, 0);
+
+  const itemSummary = filteredOrders.reduce((acc, order) => {
+    order.order_items?.forEach((item) => {
+      const name = item.product?.name || "Unknown Product";
+      const code = item.product?.item_code || "";
+      const key = `${name}__${code}`;
+      if (!acc[key]) {
+        acc[key] = { name, code, quantity: 0 };
+      }
+      acc[key].quantity += item.quantity;
+    });
+    return acc;
+  }, {} as Record<string, { name: string; code: string; quantity: number }>);
+
+  const sortedItems = Object.values(itemSummary).sort((a, b) => b.quantity - a.quantity);
+
+
   const handleConfirm = async (orderId: string) => {
     setConfirmingId(orderId);
     setErrorMessage("");
@@ -133,6 +151,85 @@ export function OrderQueue({ orders, onOrderUpdated }: OrderQueueProps) {
         >
           <AlertTriangle size={16} />
           <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {filteredOrders.length > 0 && (
+        <div className="order-summary-panel">
+          {/* Summary Metrics */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div>
+              <span style={{ fontSize: "11px", fontWeight: "700", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Filter Summary
+              </span>
+              <h3 style={{ fontSize: "16px", fontWeight: "900", color: "var(--ink)", margin: "4px 0 0 0" }}>
+                {filter === "all" ? "All Orders" : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Orders`}
+              </h3>
+            </div>
+            
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+              <div style={{ background: "var(--surface, #ffffff)", padding: "10px 12px", borderRadius: "8px", border: "1px solid var(--line)" }}>
+                <div style={{ fontSize: "11px", color: "var(--muted)", fontWeight: "600" }}>Total Orders</div>
+                <div style={{ fontSize: "16px", fontWeight: "800", color: "var(--ink)" }}>{filteredOrders.length}</div>
+              </div>
+              <div style={{ background: "var(--surface, #ffffff)", padding: "10px 12px", borderRadius: "8px", border: "1px solid var(--line)" }}>
+                <div style={{ fontSize: "11px", color: "var(--muted)", fontWeight: "600" }}>Total Money</div>
+                <div style={{ fontSize: "16px", fontWeight: "800", color: "var(--coral, #ff6fae)" }}>{formatVnd(totalMoney)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Itemized Breakdown */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", height: "100%" }}>
+            <span style={{ fontSize: "11px", fontWeight: "700", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Items Purchased ({sortedItems.reduce((sum, item) => sum + item.quantity, 0)} units)
+            </span>
+            <div 
+              style={{ 
+                background: "var(--surface, #ffffff)", 
+                border: "1px solid var(--line)", 
+                borderRadius: "8px", 
+                padding: "10px 12px",
+                maxHeight: "125px",
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px"
+              }}
+            >
+              {sortedItems.length === 0 ? (
+                <div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "12px 0" }}>No items in these orders.</div>
+              ) : (
+                sortedItems.map((item) => (
+                  <div key={`${item.name}__${item.code}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", minWidth: 0 }}>
+                      <span 
+                        style={{ 
+                          background: "color-mix(in srgb, var(--coral) 8%, transparent)", 
+                          borderRadius: "4px", 
+                          padding: "2px 6px",
+                          fontSize: "11px", 
+                          fontWeight: "800",
+                          color: "var(--coral, #ff6fae)",
+                          border: "1px solid color-mix(in srgb, var(--coral) 15%, transparent)"
+                        }}
+                      >
+                        {item.quantity}x
+                      </span>
+                      <span style={{ color: "var(--ink)", fontWeight: "600", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                        {item.name}
+                      </span>
+                    </div>
+                    {item.code && (
+                      <span style={{ color: "var(--muted)", fontSize: "11px", marginLeft: "8px", flexShrink: 0 }}>
+                        [{item.code}]
+                      </span>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
 
