@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Clock, Ban, CheckCircle, AlertTriangle, Inbox } from "lucide-react";
 import type { Order } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
@@ -15,6 +15,40 @@ export function OrderQueue({ orders, onOrderUpdated }: OrderQueueProps) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const rowRef = useRef<HTMLDivElement>(null);
+  const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const categories = ["pending", "confirmed", "cancelled", "all"] as const;
+
+  useEffect(() => {
+    const row = rowRef.current;
+    const activeIndex = categories.indexOf(filter);
+    const activeChip = chipRefs.current[activeIndex];
+    if (!row || !activeChip) return;
+    const currentRow = row;
+    const currentActiveChip = activeChip;
+
+    function updateIndicator() {
+      requestAnimationFrame(() => {
+        const rowRect = currentRow.getBoundingClientRect();
+        const chipRect = currentActiveChip.getBoundingClientRect();
+        if (rowRect.width === 0 || chipRect.width === 0) return;
+        currentRow.style.setProperty("--active-left", `${chipRect.left - rowRect.left + currentRow.scrollLeft}px`);
+        currentRow.style.setProperty("--active-width", `${chipRect.width}px`);
+      });
+    }
+
+    updateIndicator();
+    const observer = new ResizeObserver(updateIndicator);
+    observer.observe(currentRow);
+    observer.observe(currentActiveChip);
+    window.addEventListener("resize", updateIndicator);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [filter]);
 
   const filteredOrders = orders.filter((order) => {
     if (filter === "all") return true;
@@ -58,28 +92,24 @@ export function OrderQueue({ orders, onOrderUpdated }: OrderQueueProps) {
           justifyContent: "space-between", 
           alignItems: "center", 
           flexWrap: "wrap",
-          gap: "12px",
-          borderBottom: "1px solid var(--line)",
-          paddingBottom: "16px"
+          gap: "12px"
         }}
       >
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {(["pending", "confirmed", "cancelled", "all"] as const).map((tab) => {
+        <div className="category-row" ref={rowRef}>
+          {categories.map((tab) => {
             const count = orders.filter((o) => tab === "all" ? true : o.status === tab).length;
             const isActive = filter === tab;
+            const index = categories.indexOf(tab);
             return (
               <button
                 key={tab}
-                type="button"
-                className={`button ${isActive ? "button-primary" : "button-secondary"}`}
-                style={{ 
-                  textTransform: "capitalize", 
-                  padding: "8px 16px",
-                  fontSize: "13px",
-                  height: "36px",
-                  minHeight: "36px"
+                ref={(el) => {
+                  chipRefs.current[index] = el;
                 }}
+                type="button"
+                className={`chip ${isActive ? "chip-active" : ""}`}
                 onClick={() => setFilter(tab)}
+                style={{ textTransform: "capitalize", whiteSpace: "nowrap" }}
               >
                 {tab} ({count})
               </button>
@@ -188,9 +218,9 @@ function OrderCard({ order, isConfirming, isCancelling, onConfirm, onCancel }: O
   }, [order.created_at]);
 
   const statusColors = {
-    pending: { bg: "rgba(99, 102, 241, 0.08)", text: "var(--coral, #6366f1)" },
-    confirmed: { bg: "rgba(16, 185, 129, 0.08)", text: "var(--teal, #10b981)" },
-    cancelled: { bg: "rgba(100, 116, 139, 0.08)", text: "var(--muted, #64748b)" },
+    pending: { bg: "color-mix(in srgb, var(--coral) 8%, transparent)", text: "var(--coral, #ff6fae)" },
+    confirmed: { bg: "color-mix(in srgb, var(--teal) 8%, transparent)", text: "var(--teal, #6fc7ff)" },
+    cancelled: { bg: "color-mix(in srgb, var(--muted) 8%, transparent)", text: "var(--muted, #64748b)" },
   };
 
   const currentColors = statusColors[order.status] || statusColors.pending;

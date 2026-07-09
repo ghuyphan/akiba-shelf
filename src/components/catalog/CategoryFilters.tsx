@@ -19,10 +19,13 @@ export function CategoryFilters({ categories, activeCategory, onChange }: Catego
     const currentActiveChip = activeChip;
 
     function updateIndicator() {
-      const rowRect = currentRow.getBoundingClientRect();
-      const chipRect = currentActiveChip.getBoundingClientRect();
-      currentRow.style.setProperty("--active-left", `${chipRect.left - rowRect.left}px`);
-      currentRow.style.setProperty("--active-width", `${chipRect.width}px`);
+      requestAnimationFrame(() => {
+        const rowRect = currentRow.getBoundingClientRect();
+        const chipRect = currentActiveChip.getBoundingClientRect();
+        if (rowRect.width === 0 || chipRect.width === 0) return;
+        currentRow.style.setProperty("--active-left", `${chipRect.left - rowRect.left + currentRow.scrollLeft}px`);
+        currentRow.style.setProperty("--active-width", `${chipRect.width}px`);
+      });
     }
 
     updateIndicator();

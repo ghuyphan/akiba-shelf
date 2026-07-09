@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Clock, EyeOff, LogOut, Package, ShoppingBag, Sparkles, TriangleAlert } from "lucide-react";
+import { ArrowLeft, LogOut, Package, ShoppingBag } from "lucide-react";
 import {
   deleteProduct,
   getAdminProducts,
@@ -59,6 +59,40 @@ export function AdminPage() {
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const [status, setStatus] = useState("");
   const [statusVariant, setStatusVariant] = useState<"info" | "success" | "error">("info");
+
+  const activeTabRef = useRef<HTMLDivElement>(null);
+  const activeTabChipRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const tabsList = ["list", "form"] as const;
+
+  useEffect(() => {
+    const row = activeTabRef.current;
+    const activeIndex = tabsList.indexOf(activeTab);
+    const activeChip = activeTabChipRefs.current[activeIndex];
+    if (!row || !activeChip) return;
+    const currentRow = row;
+    const currentActiveChip = activeChip;
+
+    function updateIndicator() {
+      requestAnimationFrame(() => {
+        const rowRect = currentRow.getBoundingClientRect();
+        const chipRect = currentActiveChip.getBoundingClientRect();
+        if (rowRect.width === 0 || chipRect.width === 0) return;
+        currentRow.style.setProperty("--active-left", `${chipRect.left - rowRect.left + currentRow.scrollLeft}px`);
+        currentRow.style.setProperty("--active-width", `${chipRect.width}px`);
+      });
+    }
+
+    updateIndicator();
+    const observer = new ResizeObserver(updateIndicator);
+    observer.observe(currentRow);
+    observer.observe(currentActiveChip);
+    window.addEventListener("resize", updateIndicator);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [activeTab, viewTab]);
 
   const nextSort = useMemo(() => Math.max(0, ...products.map((product) => product.sort_order)) + 1, [products]);
   const lowStockCount = useMemo(
@@ -220,55 +254,105 @@ export function AdminPage() {
 
   return (
     <main className="admin-shell" style={getThemeStyle(booth)}>
-      <header className="admin-header">
-        <div className="admin-heading">
-          <div className="admin-header-top-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: "12px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-              <Link to="/" className="back-link" aria-label="Back to catalog" style={{ display: "inline-flex", alignItems: "center", gap: "6px", textDecoration: "none", color: "var(--muted)", fontWeight: "700", fontSize: "14px" }}>
-                <ArrowLeft size={18} />
-                Catalog
-              </Link>
-              <div className="admin-title-row" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div className="brand-mark" style={{ background: "rgba(99, 102, 241, 0.08)", color: "var(--coral, #6366f1)", width: "36px", height: "36px", borderRadius: "50%", display: "grid", placeItems: "center" }}>
-                  <ShoppingBag size={20} />
-                </div>
-                <div>
-                  <h1 style={{ fontSize: "18px", fontWeight: "900", color: "var(--ink)", margin: 0 }}>Merch Admin</h1>
-                </div>
-              </div>
-            </div>
-            
-            <Button variant="secondary" icon={<LogOut size={16} />} onClick={handleSignOut} style={{ height: "36px", padding: "0 12px" }}>
-              Sign Out
-            </Button>
+      <header className="admin-header" style={{ 
+        display: "flex", 
+        flexDirection: "column", 
+        alignItems: "stretch", 
+        padding: "0",
+        borderBottom: "1px solid var(--line, #e2e8f0)",
+        background: "var(--surface, #ffffff)"
+      }}>
+        {/* Top App Bar */}
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          height: "56px", 
+          padding: "0 16px",
+          width: "100%"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Link 
+              to="/" 
+              aria-label="Back to catalog" 
+              style={{ 
+                display: "grid", 
+                placeItems: "center", 
+                width: "36px", 
+                height: "36px", 
+                borderRadius: "50%", 
+                color: "var(--ink)",
+                cursor: "pointer",
+                textDecoration: "none"
+              }}
+            >
+              <ArrowLeft size={20} />
+            </Link>
+            <h1 style={{ fontSize: "16px", fontWeight: "700", color: "var(--ink)", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
+              <ShoppingBag size={18} style={{ color: "var(--coral)" }} />
+              Admin
+            </h1>
           </div>
+          
+          <button 
+            type="button"
+            onClick={handleSignOut}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--muted)",
+              fontSize: "13px",
+              fontWeight: "600",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 12px",
+              borderRadius: "6px",
+              transition: "all 150ms ease"
+            }}
+          >
+            <LogOut size={16} />
+            Sign Out
+          </button>
+        </div>
 
-          <p className="admin-header-desc" style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--muted)" }}>
-            Update booth details, item uploads, and payment QR settings.
-          </p>
-
-          <div className="admin-metrics" aria-label="Catalog summary">
-            <span>
-              <Package size={14} />
-              {products.length} items
-            </span>
-            <span>
-              <Sparkles size={14} />
-              {products.filter((product) => product.featured).length} featured
-            </span>
-            <span>
-              <TriangleAlert size={14} />
-              {lowStockCount} attention
-            </span>
-            <span>
-              <EyeOff size={14} />
-              {hiddenCount} hidden
-            </span>
-            <span>
-              <Clock size={14} />
-              Open {booth.open_hours}
-            </span>
-          </div>
+        {/* Integrated Navigation Tabs */}
+        <div className="admin-nav-tabs" style={{ padding: "0 16px", marginTop: "0" }}>
+          <button
+            type="button"
+            className={`admin-nav-tab ${viewTab === "orders" ? "active" : ""}`}
+            onClick={() => setViewTab("orders")}
+          >
+            <span>Orders Queue</span>
+            {orders.filter(o => o.status === "pending").length > 0 && (
+              <span style={{
+                background: "var(--red, #ef4444)",
+                color: "white",
+                fontSize: "10px",
+                padding: "1px 5px",
+                borderRadius: "10px",
+                fontWeight: "900",
+                marginLeft: "4px"
+              }}>
+                {orders.filter(o => o.status === "pending").length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            className={`admin-nav-tab ${viewTab === "products" ? "active" : ""}`}
+            onClick={() => setViewTab("products")}
+          >
+            Products ({products.length})
+          </button>
+          <button
+            type="button"
+            className={`admin-nav-tab ${viewTab === "settings" ? "active" : ""}`}
+            onClick={() => setViewTab("settings")}
+          >
+            Settings
+          </button>
         </div>
       </header>
 
@@ -279,60 +363,29 @@ export function AdminPage() {
           </Alert>
         )}
 
-        {/* Main Tab Controls */}
-        <div className="admin-tabs-list">
-          <button
-            type="button"
-            className={`admin-tab-item ${viewTab === "orders" ? "active" : ""}`}
-            onClick={() => setViewTab("orders")}
-          >
-            <span>Orders Queue</span>
-            {orders.filter(o => o.status === "pending").length > 0 && (
-              <span style={{
-                background: viewTab === "orders" ? "white" : "var(--red, #ef4444)",
-                color: viewTab === "orders" ? "var(--navy)" : "white",
-                fontSize: "11px",
-                padding: "2px 7px",
-                borderRadius: "10px",
-                fontWeight: "900"
-              }}>
-                {orders.filter(o => o.status === "pending").length}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            className={`admin-tab-item ${viewTab === "products" ? "active" : ""}`}
-            onClick={() => setViewTab("products")}
-          >
-            Products ({products.length})
-          </button>
-          <button
-            type="button"
-            className={`admin-tab-item ${viewTab === "settings" ? "active" : ""}`}
-            onClick={() => setViewTab("settings")}
-          >
-            Settings
-          </button>
-        </div>
-
         {viewTab === "orders" && (
           <OrderQueue orders={orders} onOrderUpdated={() => reload().catch(console.error)} />
         )}
 
         {viewTab === "products" && (
           <>
-            <div className="admin-mobile-tabs">
+            <div className="category-row admin-mobile-tabs-row" ref={activeTabRef} style={{ marginBottom: "16px" }}>
               <button
                 type="button"
-                className={`admin-tab-btn ${activeTab === "list" ? "active" : ""}`}
+                ref={(el) => {
+                  activeTabChipRefs.current[0] = el;
+                }}
+                className={`chip ${activeTab === "list" ? "chip-active" : ""}`}
                 onClick={() => setActiveTab("list")}
               >
                 Products List ({products.length})
               </button>
               <button
                 type="button"
-                className={`admin-tab-btn ${activeTab === "form" ? "active" : ""}`}
+                ref={(el) => {
+                  activeTabChipRefs.current[1] = el;
+                }}
+                className={`chip ${activeTab === "form" ? "chip-active" : ""}`}
                 onClick={() => setActiveTab("form")}
               >
                 Edit Product
