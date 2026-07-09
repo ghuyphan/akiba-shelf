@@ -4012,6 +4012,7 @@ select.input {
 
 .admin-switch-row {
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .admin-switch-row label {
@@ -4043,32 +4044,44 @@ select.input {
 }
 
 .image-admin-row {
-  display: flex;
-  align-items: stretch;
-  gap: 14px;
-  padding: 12px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 16px !important;
   border: 1px solid var(--soft-line);
   border-radius: 8px;
   background: #fbfcfe;
+  width: 100%;
 }
 
 .image-admin-row > img {
-  width: 170px;
-  height: 170px;
-  min-height: 170px;
+  width: 170px !important;
+  height: 170px !important;
+  min-height: 170px !important;
   border-color: var(--soft-line);
   background: #fff;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .image-admin-placeholder {
   display: grid;
   place-items: center;
-  width: 170px;
-  height: 170px;
-  min-height: 170px;
+  width: 170px !important;
+  height: 170px !important;
+  min-height: 170px !important;
   border: 1px dashed var(--soft-line);
   border-radius: 8px;
   background: #fff;
+}
+
+.image-admin-row > div {
+  width: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
 }
 
 .image-admin-note {
@@ -4558,6 +4571,12 @@ select.input {
   .admin-settings-grid {
     margin: 0 !important;
     gap: 16px !important;
+  }
+
+  .admin-settings-grid > * + * {
+    border-top: 1px dashed var(--line, #e2e8f0) !important;
+    padding-top: 32px !important;
+    margin-top: 24px !important;
   }
 
   .catalog-layout {
