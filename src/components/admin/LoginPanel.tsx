@@ -21,7 +21,7 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
   }
 
   return (
-    <section className="admin-login" style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: "24px", background: "var(--page-bg, #f8fafc)" }}>
+    <section className="admin-login" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "grid", placeItems: "center", padding: "24px", background: "var(--page-bg, #f8fafc)", overflowY: "auto", width: "100vw", height: "100vh" }}>
       <div className="admin-card admin-card-narrow" style={{ background: "var(--surface, #ffffff)", border: "1px solid var(--line)", boxShadow: "var(--shadow)", borderRadius: "16px", padding: "28px", width: "min(100%, 420px)" }}>
         <div className="admin-title-row" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "10px", marginBottom: "20px" }}>
           <div className="admin-icon" style={{ background: "rgba(99, 102, 241, 0.08)", color: "var(--coral, #6366f1)", width: "48px", height: "48px", borderRadius: "50%", display: "grid", placeItems: "center" }}>

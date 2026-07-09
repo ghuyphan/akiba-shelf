@@ -222,181 +222,177 @@ export function AdminPage() {
     <main className="admin-shell" style={getThemeStyle(booth)}>
       <header className="admin-header">
         <div className="admin-heading">
-          <Link to="/" className="back-link" aria-label="Back to catalog">
-            <ArrowLeft size={18} />
-            Catalog
-          </Link>
-          <div className="admin-title-row">
-            <div className="brand-mark">
-              <ShoppingBag size={30} />
+          <div className="admin-header-top-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+              <Link to="/" className="back-link" aria-label="Back to catalog" style={{ display: "inline-flex", alignItems: "center", gap: "6px", textDecoration: "none", color: "var(--muted)", fontWeight: "700", fontSize: "14px" }}>
+                <ArrowLeft size={18} />
+                Catalog
+              </Link>
+              <div className="admin-title-row" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div className="brand-mark" style={{ background: "rgba(99, 102, 241, 0.08)", color: "var(--coral, #6366f1)", width: "36px", height: "36px", borderRadius: "50%", display: "grid", placeItems: "center" }}>
+                  <ShoppingBag size={20} />
+                </div>
+                <div>
+                  <h1 style={{ fontSize: "18px", fontWeight: "900", color: "var(--ink)", margin: 0 }}>Merch Admin</h1>
+                </div>
+              </div>
             </div>
-            <div>
-              <h1>Merch Admin</h1>
-              <p>Update booth details, item uploads, and payment QR settings.</p>
-            </div>
+            
+            <Button variant="secondary" icon={<LogOut size={16} />} onClick={handleSignOut} style={{ height: "36px", padding: "0 12px" }}>
+              Sign Out
+            </Button>
           </div>
+
+          <p className="admin-header-desc" style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--muted)" }}>
+            Update booth details, item uploads, and payment QR settings.
+          </p>
+
           <div className="admin-metrics" aria-label="Catalog summary">
             <span>
-              <Package size={16} />
+              <Package size={14} />
               {products.length} items
             </span>
             <span>
-              <Sparkles size={16} />
+              <Sparkles size={14} />
               {products.filter((product) => product.featured).length} featured
             </span>
             <span>
-              <TriangleAlert size={16} />
+              <TriangleAlert size={14} />
               {lowStockCount} attention
             </span>
             <span>
-              <EyeOff size={16} />
+              <EyeOff size={14} />
               {hiddenCount} hidden
             </span>
             <span>
-              <Clock size={16} />
+              <Clock size={14} />
               Open {booth.open_hours}
             </span>
           </div>
         </div>
-        <Button variant="secondary" icon={<LogOut size={18} />} onClick={handleSignOut}>
-          Sign Out
-        </Button>
       </header>
-      {status && (
-        <Alert variant={statusVariant} onClose={() => setStatus("")}>
-          {status}
-        </Alert>
-      )}
 
-      {/* Main Tab Controls */}
-      <div 
-        className="category-row" 
-        style={{ 
-          display: "flex", 
-          gap: "10px", 
-          marginBottom: "20px", 
-          paddingBottom: "4px", 
-          flexWrap: "nowrap",
-          overflowX: "auto",
-          scrollbarWidth: "none"
-        }}
-      >
-        <button
-          type="button"
-          className={`chip ${viewTab === "orders" ? "chip-active" : ""}`}
-          onClick={() => setViewTab("orders")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px"
-          }}
-        >
-          <span>Orders Queue</span>
-          {orders.filter(o => o.status === "pending").length > 0 && (
-            <span style={{
-              background: viewTab === "orders" ? "white" : "var(--red, #ef4444)",
-              color: viewTab === "orders" ? "var(--navy)" : "white",
-              fontSize: "11.5px",
-              padding: "2px 7px",
-              borderRadius: "10px",
-              fontWeight: "900"
-            }}>
-              {orders.filter(o => o.status === "pending").length}
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          className={`chip ${viewTab === "products" ? "chip-active" : ""}`}
-          onClick={() => setViewTab("products")}
-        >
-          Products ({products.length})
-        </button>
-        <button
-          type="button"
-          className={`chip ${viewTab === "settings" ? "chip-active" : ""}`}
-          onClick={() => setViewTab("settings")}
-        >
-          Settings
-        </button>
-      </div>
+      <div className="admin-container">
+        {status && (
+          <Alert variant={statusVariant} onClose={() => setStatus("")}>
+            {status}
+          </Alert>
+        )}
 
-      {viewTab === "orders" && (
-        <OrderQueue orders={orders} onOrderUpdated={() => reload().catch(console.error)} />
-      )}
-
-      {viewTab === "products" && (
-        <>
-          <div className="admin-mobile-tabs">
-            <button
-              type="button"
-              className={`admin-tab-btn ${activeTab === "list" ? "active" : ""}`}
-              onClick={() => setActiveTab("list")}
-            >
-              Products List ({products.length})
-            </button>
-            <button
-              type="button"
-              className={`admin-tab-btn ${activeTab === "form" ? "active" : ""}`}
-              onClick={() => setActiveTab("form")}
-            >
-              Edit Product
-            </button>
-          </div>
-          <div className="admin-grid">
-            <div className={`admin-grid-col-list ${activeTab === "list" ? "show" : "hide"}`}>
-              <ProductList
-                products={products}
-                selectedId={selectedProduct?.id}
-                onSelect={(product) => {
-                  setSelectedProduct(product);
-                  setActiveTab("form");
-                }}
-                onCreate={() => {
-                  setSelectedProduct(createBlankProduct(nextSort));
-                  setActiveTab("form");
-                }}
-              />
-            </div>
-            {selectedProduct ? (
-              <div className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}>
-                <ProductForm product={selectedProduct} onSave={handleSaveProduct} onDelete={handleDeleteProduct} />
-              </div>
-            ) : (
-              <div className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}>
-                <div className="admin-empty-state">
-                  <Package size={36} />
-                  <h2>No item selected</h2>
-                  <p>Select an item from the products list to edit details, or click "New Item" to create one.</p>
-                </div>
-              </div>
+        {/* Main Tab Controls */}
+        <div className="admin-tabs-list">
+          <button
+            type="button"
+            className={`admin-tab-item ${viewTab === "orders" ? "active" : ""}`}
+            onClick={() => setViewTab("orders")}
+          >
+            <span>Orders Queue</span>
+            {orders.filter(o => o.status === "pending").length > 0 && (
+              <span style={{
+                background: viewTab === "orders" ? "white" : "var(--red, #ef4444)",
+                color: viewTab === "orders" ? "var(--navy)" : "white",
+                fontSize: "11px",
+                padding: "2px 7px",
+                borderRadius: "10px",
+                fontWeight: "900"
+              }}>
+                {orders.filter(o => o.status === "pending").length}
+              </span>
             )}
-          </div>
-        </>
-      )}
-
-      {viewTab === "settings" && (
-        <div className="admin-settings-grid">
-          <SettingsForm
-            settings={booth}
-            onSave={(settings) =>
-              runAdminAction(async () => {
-                const saved = await saveBoothSettings(settings);
-                setBooth(saved);
-              }, "Booth info saved.")
-            }
-          />
-          <QrManager
-            settings={payment}
-            onSave={(settings) =>
-              runAdminAction(async () => {
-                const saved = await savePaymentSettings(settings);
-                setPayment(saved);
-              }, "QR settings saved.")
-            }
-          />
+          </button>
+          <button
+            type="button"
+            className={`admin-tab-item ${viewTab === "products" ? "active" : ""}`}
+            onClick={() => setViewTab("products")}
+          >
+            Products ({products.length})
+          </button>
+          <button
+            type="button"
+            className={`admin-tab-item ${viewTab === "settings" ? "active" : ""}`}
+            onClick={() => setViewTab("settings")}
+          >
+            Settings
+          </button>
         </div>
-      )}
+
+        {viewTab === "orders" && (
+          <OrderQueue orders={orders} onOrderUpdated={() => reload().catch(console.error)} />
+        )}
+
+        {viewTab === "products" && (
+          <>
+            <div className="admin-mobile-tabs">
+              <button
+                type="button"
+                className={`admin-tab-btn ${activeTab === "list" ? "active" : ""}`}
+                onClick={() => setActiveTab("list")}
+              >
+                Products List ({products.length})
+              </button>
+              <button
+                type="button"
+                className={`admin-tab-btn ${activeTab === "form" ? "active" : ""}`}
+                onClick={() => setActiveTab("form")}
+              >
+                Edit Product
+              </button>
+            </div>
+            <div className="admin-grid">
+              <div className={`admin-grid-col-list ${activeTab === "list" ? "show" : "hide"}`}>
+                <ProductList
+                  products={products}
+                  selectedId={selectedProduct?.id}
+                  onSelect={(product) => {
+                    setSelectedProduct(product);
+                    setActiveTab("form");
+                  }}
+                  onCreate={() => {
+                    setSelectedProduct(createBlankProduct(nextSort));
+                    setActiveTab("form");
+                  }}
+                />
+              </div>
+              {selectedProduct ? (
+                <div className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}>
+                  <ProductForm product={selectedProduct} onSave={handleSaveProduct} onDelete={handleDeleteProduct} />
+                </div>
+              ) : (
+                <div className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}>
+                  <div className="admin-empty-state">
+                    <Package size={36} />
+                    <h2>No item selected</h2>
+                    <p>Select an item from the products list to edit details, or click "New Item" to create one.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {viewTab === "settings" && (
+          <div className="admin-settings-grid">
+            <SettingsForm
+              settings={booth}
+              onSave={(settings) =>
+                runAdminAction(async () => {
+                  const saved = await saveBoothSettings(settings);
+                  setBooth(saved);
+                }, "Booth info saved.")
+              }
+            />
+            <QrManager
+              settings={payment}
+              onSave={(settings) =>
+                runAdminAction(async () => {
+                  const saved = await savePaymentSettings(settings);
+                  setPayment(saved);
+                }, "QR settings saved.")
+              }
+            />
+          </div>
+        )}
+      </div>
     </main>
   );
 }
