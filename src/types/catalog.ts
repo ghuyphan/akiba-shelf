@@ -63,3 +63,26 @@ export type CartItem = {
   quantity: number;
 };
 
+export type OrderStatus = "pending" | "confirmed" | "cancelled";
+
+export type Order = {
+  id: string;
+  order_code: string;
+  customer_name: string | null;
+  total_amount: number;
+  status: OrderStatus;
+  created_at: string;
+  updated_at: string;
+  order_items?: OrderItem[];
+};
+
+export type OrderItem = {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  product?: Product;
+};
+
+

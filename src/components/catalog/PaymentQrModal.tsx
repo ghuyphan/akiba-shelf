@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { Banknote, CheckCircle2, ReceiptText, Sparkles } from "lucide-react";
-import type { CartItem, PaymentSettings, Product } from "../../types/catalog";
+import { CheckCircle2, Sparkles, Loader2 } from "lucide-react";
+import type { CartItem, PaymentSettings, Order } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { canGenerateVietQr, generateVietQrForCart } from "../../lib/vietqr";
 import { Modal } from "../ui/Modal";
-import { saveProduct } from "../../lib/api";
+import { createOrder } from "../../lib/api";
 import { supabase } from "../../lib/supabase";
 
 type PaymentQrModalProps = {
@@ -18,17 +18,22 @@ type PaymentQrModalProps = {
 export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: PaymentQrModalProps) {
   const [qrSrc, setQrSrc] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isStaff, setIsStaff] = useState(false);
-  const [showLoginForm, setShowLoginForm] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [isConfirming, setIsConfirming] = useState(false);
+  
+  // Order flow states
+  const [customerName, setCustomerName] = useState("");
+  const [order, setOrder] = useState<Order | null>(null);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Reset order state when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
+      setOrder(null);
+      setCustomerName("");
+      setSubmitError("");
       setShowSuccess(false);
+      setQrSrc("");
     }
   }, [isOpen]);
 
@@ -37,13 +42,30 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
     [cart],
   );
 
+  const handlePlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cart.length === 0) return;
+    setIsSubmittingOrder(true);
+    setSubmitError("");
+    try {
+      const created = await createOrder(customerName, cart);
+      setOrder(created);
+    } catch (err: any) {
+      setSubmitError(err.message || "Failed to submit order. Please try again.");
+    } finally {
+      setIsSubmittingOrder(false);
+    }
+  };
+
+  // Generate QR when order is created
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !order) return;
     let cancelled = false;
+    const orderCode = order.order_code;
 
     async function loadQr() {
       setIsGenerating(true);
-      const generated = await generateVietQrForCart(payment, cart).catch(() => null);
+      const generated = await generateVietQrForCart(payment, cart, orderCode).catch(() => null);
       if (!cancelled) {
         setQrSrc(generated?.src || payment.bank_qr_url || payment.momo_qr_url);
         setIsGenerating(false);
@@ -54,90 +76,46 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
     return () => {
       cancelled = true;
     };
-  }, [isOpen, payment, cart]);
+  }, [isOpen, order, payment, cart]);
 
+  // Subscribe to real-time order status updates from Supabase
   useEffect(() => {
-    if (!supabase) return undefined;
+    if (!supabase || !order) return undefined;
 
-    supabase.auth.getSession().then(({ data }) => {
-      setIsStaff(Boolean(data.session));
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsStaff(Boolean(session));
-    });
+    const client = supabase;
+    const orderId = order.id;
+    const channel = client
+      .channel(`order-tracker-${orderId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          if (payload.new.status === "confirmed") {
+            onSuccess();
+            setShowSuccess(true);
+          }
+        }
+      )
+      .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      void client.removeChannel(channel);
     };
-  }, []);
-
-  const handleConfirm = async () => {
-    if (cart.length === 0) return;
-    setIsConfirming(true);
-    try {
-      await Promise.all(
-        cart.map((item) => {
-          const newQty = Math.max(0, item.product.quantity_available - item.quantity);
-          const newStatus = newQty === 0 ? "sold_out" : newQty <= 5 ? "limited" : "in_stock";
-          const updatedProduct: Product = {
-            ...item.product,
-            quantity_available: newQty,
-            stock_status: newStatus,
-            stock_note: newQty === 0 ? "Sold out" : newQty <= 5 ? "Limited stock" : "In stock",
-          };
-          return saveProduct(updatedProduct);
-        })
-      );
-      setShowSuccess(true);
-    } catch (err: any) {
-      alert("Error confirming payment: " + (err.message || err));
-    } finally {
-      setIsConfirming(false);
-    }
-  };
-
-  const handleLoginAndConfirm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase || cart.length === 0) return;
-    setIsConfirming(true);
-    setLoginError("");
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      setIsStaff(true);
-      setShowLoginForm(false);
-
-      await Promise.all(
-        cart.map((item) => {
-          const newQty = Math.max(0, item.product.quantity_available - item.quantity);
-          const newStatus = newQty === 0 ? "sold_out" : newQty <= 5 ? "limited" : "in_stock";
-          const updatedProduct: Product = {
-            ...item.product,
-            quantity_available: newQty,
-            stock_status: newStatus,
-            stock_note: newQty === 0 ? "Sold out" : newQty <= 5 ? "Limited stock" : "In stock",
-          };
-          return saveProduct(updatedProduct);
-        })
-      );
-      setShowSuccess(true);
-    } catch (err: any) {
-      setLoginError(err.message || "Invalid credentials");
-    } finally {
-      setIsConfirming(false);
-    }
-  };
-
-  const title = canGenerateVietQr(payment) ? payment.bank_label : payment.momo_label;
+  }, [order, onSuccess]);
 
   const handleSuccessClose = () => {
     setShowSuccess(false);
-    onSuccess();
     onClose();
   };
+
+  const title = order 
+    ? (canGenerateVietQr(payment) ? payment.bank_label : payment.momo_label)
+    : "Enter Nickname";
 
   if (showSuccess) {
     return (
@@ -182,20 +160,96 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
     );
   }
 
+  // Step 1: Input Nickname/Name before checkout
+  if (!order) {
+    return (
+      <Modal title={title} isOpen={isOpen} onClose={onClose} className="payment-modal">
+        <form onSubmit={handlePlaceOrder} className="stack" style={{ display: "grid", gap: "16px", padding: "10px 0" }}>
+          <div>
+            <h3 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "4px" }}>Pickup Name</h3>
+            <p style={{ fontSize: "13px", color: "var(--muted)" }}>
+              Enter a name or nickname so the staff can match your payment and package your items.
+            </p>
+          </div>
+          <input
+            type="text"
+            placeholder="Nickname (e.g. Huy, Alice)"
+            className="input"
+            style={{ minHeight: "44px", height: "44px", padding: "0 14px", fontSize: "15px", width: "100%" }}
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            maxLength={30}
+            required
+          />
+          {submitError && <div style={{ color: "var(--red)", fontSize: "13px" }}>{submitError}</div>}
+          <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+            <button
+              type="button"
+              className="button button-secondary"
+              style={{ flex: 1, minHeight: "44px" }}
+              onClick={onClose}
+              disabled={isSubmittingOrder}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="button button-primary"
+              style={{ flex: 1, minHeight: "44px" }}
+              disabled={isSubmittingOrder || cart.length === 0}
+            >
+              {isSubmittingOrder ? "Submitting..." : "Get QR Code"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    );
+  }
+
+  // Step 2: Show QR & Wait for Staff approval
   return (
     <Modal title={title} isOpen={isOpen} onClose={onClose} className="payment-modal">
-      <div className="qr-modal-layout">
-        <div className="qr-display">
-          {qrSrc && !isGenerating ? <img src={qrSrc} alt="Payment QR code" /> : <div className="qr-loading" />}
-        </div>
-        <div className="payment-receipt">
-          <div className="receipt-header">
-            <div className="receipt-success-icon">
-              <CheckCircle2 size={22} />
+      <div className="qr-modal-layout" style={{ display: "grid", gap: "20px" }}>
+        <div className="qr-display" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", width: "100%" }}>
+          {qrSrc && !isGenerating ? (
+            <img src={qrSrc} alt="Payment QR code" style={{ maxWidth: "260px", width: "100%", height: "auto", borderRadius: "12px", border: "1px solid var(--line)" }} />
+          ) : (
+            <div className="qr-loading" style={{ width: "260px", height: "260px", background: "var(--surface-soft)", borderRadius: "12px", display: "grid", placeItems: "center" }}>
+              <Loader2 className="animate-spin" size={32} style={{ animation: "spin 1s linear infinite" }} />
             </div>
-            <div>
-              <h3>Thank you!</h3>
-              <p>Scan the QR code to complete transfer</p>
+          )}
+          
+          <div 
+            style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: "8px", 
+              padding: "10px 20px", 
+              background: "rgba(99, 102, 241, 0.08)", 
+              borderRadius: "24px",
+              color: "var(--coral, #6366f1)",
+              fontSize: "13px",
+              fontWeight: "600"
+            }}
+          >
+            <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+            <span>Waiting for staff approval...</span>
+          </div>
+        </div>
+
+        <div className="payment-receipt" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div className="receipt-header" style={{ background: "var(--surface-soft)", padding: "14px", borderRadius: "12px", border: "1px solid var(--line)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+              <div>
+                <span style={{ fontSize: "11px", fontWeight: "600", color: "var(--muted)", textTransform: "uppercase" }}>Order Code</span>
+                <h3 style={{ fontSize: "22px", fontWeight: "900", color: "var(--coral, #6366f1)", margin: 0 }}>{order.order_code}</h3>
+              </div>
+              {order.customer_name && (
+                <div style={{ textAlign: "right" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "600", color: "var(--muted)", textTransform: "uppercase" }}>Nickname</span>
+                  <p style={{ fontSize: "16px", fontWeight: "700", margin: 0 }}>{order.customer_name}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -204,13 +258,13 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
           {cart.length > 0 && (
             <div className="receipt-section">
               <span className="receipt-label">Order Details</span>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {cart.map((item) => (
-                  <div key={item.product.id} className="receipt-row">
-                    <span className="receipt-item-name">
+                  <div key={item.product.id} className="receipt-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                    <span className="receipt-item-name" style={{ color: "var(--ink)", fontWeight: "500" }}>
                       {item.quantity} x {item.product.name}
                     </span>
-                    <span className="receipt-item-price">{formatVnd(item.product.price_vnd * item.quantity)}</span>
+                    <span className="receipt-item-price" style={{ fontWeight: "700" }}>{formatVnd(item.product.price_vnd * item.quantity)}</span>
                   </div>
                 ))}
               </div>
@@ -221,15 +275,15 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
 
           <div className="receipt-section">
             <span className="receipt-label">Transfer Details</span>
-            <div className="receipt-details-list">
-              <div className="receipt-detail-row">
-                <span>Account Name</span>
+            <div className="receipt-details-list" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div className="receipt-detail-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                <span style={{ color: "var(--muted)" }}>Account Name</span>
                 <strong>{payment.bank_account_name || "N/A"}</strong>
               </div>
-              <div className="receipt-detail-row">
-                <span>Account Number</span>
+              <div className="receipt-detail-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                <span style={{ color: "var(--muted)" }}>Account Number</span>
                 <strong
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", textDecoration: "underline" }}
                   title="Click to copy account number"
                   onClick={() => {
                     void navigator.clipboard.writeText(payment.bank_account_no || "");
@@ -238,9 +292,13 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
                   {payment.bank_account_no || "N/A"}
                 </strong>
               </div>
-              <div className="receipt-detail-row">
-                <span>Bank Name</span>
+              <div className="receipt-detail-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                <span style={{ color: "var(--muted)" }}>Bank Name</span>
                 <strong>{title}</strong>
+              </div>
+              <div className="receipt-detail-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                <span style={{ color: "var(--muted)" }}>Transfer Note</span>
+                <strong style={{ color: "var(--coral, #6366f1)" }}>{order.order_code}</strong>
               </div>
             </div>
           </div>
@@ -248,74 +306,11 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
           {payment.payment_instructions && (
             <>
               <div className="receipt-divider" />
-              <div className="receipt-instructions">
-                <Sparkles size={14} />
+              <div className="receipt-instructions" style={{ display: "flex", gap: "8px", alignItems: "flex-start", padding: "10px", background: "var(--surface-soft)", borderRadius: "8px", fontSize: "13px", color: "var(--muted)" }}>
+                <Sparkles size={16} style={{ color: "var(--amber)", marginTop: "2px", flexShrink: 0 }} />
                 <span>{payment.payment_instructions}</span>
               </div>
             </>
-          )}
-
-          <div className="receipt-divider" />
-
-          {isStaff ? (
-            <SwipeConfirmButton onConfirm={handleConfirm} isConfirming={isConfirming} />
-          ) : showLoginForm ? (
-            <form onSubmit={handleLoginAndConfirm} className="stack" style={{ display: "grid", gap: "8px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "600", color: "var(--muted)", textTransform: "uppercase" }}>Staff Verification</div>
-              <input
-                type="email"
-                placeholder="Staff Email"
-                className="input"
-                style={{ minHeight: "36px", height: "36px", padding: "0 10px", fontSize: "13px" }}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                className="input"
-                style={{ minHeight: "36px", height: "36px", padding: "0 10px", fontSize: "13px" }}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              {loginError && <div style={{ color: "var(--red)", fontSize: "12px" }}>{loginError}</div>}
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  type="submit"
-                  className="button button-primary"
-                  style={{ flex: 1, minHeight: "36px", height: "36px" }}
-                  disabled={isConfirming}
-                >
-                  {isConfirming ? "Verifying..." : "Confirm"}
-                </button>
-                <button
-                  type="button"
-                  className="button button-secondary"
-                  style={{ flex: 1, minHeight: "36px", height: "36px" }}
-                  onClick={() => setShowLoginForm(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <button
-              type="button"
-              className="button button-ghost"
-              style={{
-                width: "100%",
-                fontSize: "12px",
-                color: "var(--muted)",
-                textDecoration: "underline",
-                cursor: "pointer",
-                padding: "4px"
-              }}
-              onClick={() => setShowLoginForm(true)}
-            >
-              Staff: Confirm Payment
-            </button>
           )}
         </div>
       </div>
@@ -323,12 +318,13 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
   );
 }
 
+// Re-export SwipeConfirmButton for use in Admin Queue dashboard
 type SwipeConfirmButtonProps = {
   onConfirm: () => void;
   isConfirming: boolean;
 };
 
-function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButtonProps) {
+export function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButtonProps) {
   const [dragOffset, setDragOffset] = useState(0);
   const [isSwiped, setIsSwiped] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -344,7 +340,7 @@ function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButtonProps
   const handleMove = (clientX: number) => {
     if (!isDraggingRef.current || !trackRef.current) return;
     const trackWidth = trackRef.current.clientWidth;
-    const maxOffset = trackWidth - 48; // handle is 46px + borders
+    const maxOffset = trackWidth - 48; // handle is 44px + border/paddings
     const diff = clientX - startXRef.current;
     const offset = Math.max(0, Math.min(diff, maxOffset));
     setDragOffset(offset);
@@ -440,9 +436,9 @@ function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButtonProps
         className="swipe-handle"
         style={{
           position: "absolute",
-          left: `${dragOffset + 1}px`,
-          width: "44px",
-          height: "44px",
+          left: `${dragOffset + 2}px`,
+          width: "42px",
+          height: "42px",
           borderRadius: "50%",
           background: "var(--coral, #6366f1)",
           boxShadow: "0 2px 6px rgba(99, 102, 241, 0.3)",

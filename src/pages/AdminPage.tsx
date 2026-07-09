@@ -5,6 +5,7 @@ import {
   deleteProduct,
   getAdminProducts,
   getCatalogData,
+  getOrders,
   saveBoothSettings,
   savePaymentSettings,
   saveProduct,
@@ -16,12 +17,13 @@ import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme";
 import { isSupabaseConfigured, safeUuid, supabase } from "../lib/supabase";
-import type { BoothSettings, PaymentSettings, Product } from "../types/catalog";
+import type { BoothSettings, PaymentSettings, Product, Order } from "../types/catalog";
 import { LoginPanel } from "../components/admin/LoginPanel";
 import { ProductForm } from "../components/admin/ProductForm";
 import { ProductList } from "../components/admin/ProductList";
 import { QrManager } from "../components/admin/QrManager";
 import { SettingsForm } from "../components/admin/SettingsForm";
+import { OrderQueue } from "../components/admin/OrderQueue";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 
@@ -49,7 +51,9 @@ export function AdminPage() {
   const [isAuthed, setIsAuthed] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(isSupabaseConfigured);
   const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
+  const [viewTab, setViewTab] = useState<"orders" | "products" | "settings">("orders");
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
   const [booth, setBooth] = useState<BoothSettings>(() => getStoredBoothTheme());
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
@@ -90,10 +94,15 @@ export function AdminPage() {
   }, []);
 
   async function reload() {
-    const [catalog, adminProducts] = await Promise.all([getCatalogData(), getAdminProducts()]);
+    const [catalog, adminProducts, adminOrders] = await Promise.all([
+      getCatalogData(),
+      getAdminProducts(),
+      getOrders(),
+    ]);
     setBooth(catalog.booth);
     setPayment(catalog.payment);
     setProducts(adminProducts);
+    setOrders(adminOrders);
     setSelectedProduct((current) => {
       if (!current) return undefined;
       return adminProducts.find((p) => p.id === current.id);
@@ -109,6 +118,7 @@ export function AdminPage() {
     });
   }, [isAuthed]);
 
+  // Real-time catalog subscription
   useEffect(() => {
     if (!isAuthed) return undefined;
 
@@ -130,6 +140,34 @@ export function AdminPage() {
     return () => {
       window.clearTimeout(reloadTimer);
       unsubscribe();
+    };
+  }, [isAuthed]);
+
+  // Real-time orders subscription
+  useEffect(() => {
+    if (!isAuthed || !supabase) return undefined;
+
+    const client = supabase;
+    const channel = client
+      .channel("admin-orders-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        () => {
+          reload().catch(console.error);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "order_items" },
+        () => {
+          reload().catch(console.error);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void client.removeChannel(channel);
     };
   }, [isAuthed]);
 
@@ -229,71 +267,163 @@ export function AdminPage() {
           {status}
         </Alert>
       )}
-      <div className="admin-mobile-tabs">
+
+      {/* Main Tab Controls */}
+      <div 
+        className="admin-main-tabs" 
+        style={{ 
+          display: "flex", 
+          gap: "10px", 
+          marginBottom: "20px", 
+          borderBottom: "2px solid var(--line)", 
+          paddingBottom: "10px", 
+          flexWrap: "wrap" 
+        }}
+      >
         <button
           type="button"
-          className={`admin-tab-btn ${activeTab === "list" ? "active" : ""}`}
-          onClick={() => setActiveTab("list")}
+          className={`admin-tab-btn ${viewTab === "orders" ? "active" : ""}`}
+          onClick={() => setViewTab("orders")}
+          style={{
+            padding: "10px 20px",
+            fontSize: "15px",
+            fontWeight: "700",
+            background: "none",
+            border: "none",
+            color: viewTab === "orders" ? "var(--coral, #6366f1)" : "var(--muted)",
+            borderBottom: viewTab === "orders" ? "3px solid var(--coral, #6366f1)" : "3px solid transparent",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px"
+          }}
         >
-          Products List ({products.length})
+          <span>Orders Queue</span>
+          {orders.filter(o => o.status === "pending").length > 0 && (
+            <span style={{
+              background: "var(--red, #ef4444)",
+              color: "white",
+              fontSize: "11px",
+              padding: "2px 6px",
+              borderRadius: "10px",
+              fontWeight: "900"
+            }}>
+              {orders.filter(o => o.status === "pending").length}
+            </span>
+          )}
         </button>
         <button
           type="button"
-          className={`admin-tab-btn ${activeTab === "form" ? "active" : ""}`}
-          onClick={() => setActiveTab("form")}
+          className={`admin-tab-btn ${viewTab === "products" ? "active" : ""}`}
+          onClick={() => setViewTab("products")}
+          style={{
+            padding: "10px 20px",
+            fontSize: "15px",
+            fontWeight: "700",
+            background: "none",
+            border: "none",
+            color: viewTab === "products" ? "var(--coral, #6366f1)" : "var(--muted)",
+            borderBottom: viewTab === "products" ? "3px solid var(--coral, #6366f1)" : "3px solid transparent",
+            cursor: "pointer"
+          }}
         >
-          Edit Product
+          Products ({products.length})
+        </button>
+        <button
+          type="button"
+          className={`admin-tab-btn ${viewTab === "settings" ? "active" : ""}`}
+          onClick={() => setViewTab("settings")}
+          style={{
+            padding: "10px 20px",
+            fontSize: "15px",
+            fontWeight: "700",
+            background: "none",
+            border: "none",
+            color: viewTab === "settings" ? "var(--coral, #6366f1)" : "var(--muted)",
+            borderBottom: viewTab === "settings" ? "3px solid var(--coral, #6366f1)" : "3px solid transparent",
+            cursor: "pointer"
+          }}
+        >
+          Settings
         </button>
       </div>
-      <div className="admin-grid">
-        <div className={`admin-grid-col-list ${activeTab === "list" ? "show" : "hide"}`}>
-          <ProductList
-            products={products}
-            selectedId={selectedProduct?.id}
-            onSelect={(product) => {
-              setSelectedProduct(product);
-              setActiveTab("form");
-            }}
-            onCreate={() => {
-              setSelectedProduct(createBlankProduct(nextSort));
-              setActiveTab("form");
-            }}
+
+      {viewTab === "orders" && (
+        <OrderQueue orders={orders} onOrderUpdated={() => reload().catch(console.error)} />
+      )}
+
+      {viewTab === "products" && (
+        <>
+          <div className="admin-mobile-tabs">
+            <button
+              type="button"
+              className={`admin-tab-btn ${activeTab === "list" ? "active" : ""}`}
+              onClick={() => setActiveTab("list")}
+            >
+              Products List ({products.length})
+            </button>
+            <button
+              type="button"
+              className={`admin-tab-btn ${activeTab === "form" ? "active" : ""}`}
+              onClick={() => setActiveTab("form")}
+            >
+              Edit Product
+            </button>
+          </div>
+          <div className="admin-grid">
+            <div className={`admin-grid-col-list ${activeTab === "list" ? "show" : "hide"}`}>
+              <ProductList
+                products={products}
+                selectedId={selectedProduct?.id}
+                onSelect={(product) => {
+                  setSelectedProduct(product);
+                  setActiveTab("form");
+                }}
+                onCreate={() => {
+                  setSelectedProduct(createBlankProduct(nextSort));
+                  setActiveTab("form");
+                }}
+              />
+            </div>
+            {selectedProduct ? (
+              <div className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}>
+                <ProductForm product={selectedProduct} onSave={handleSaveProduct} onDelete={handleDeleteProduct} />
+              </div>
+            ) : (
+              <div className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}>
+                <div className="admin-empty-state">
+                  <Package size={36} />
+                  <h2>No item selected</h2>
+                  <p>Select an item from the products list to edit details, or click "New Item" to create one.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {viewTab === "settings" && (
+        <div className="admin-settings-grid">
+          <SettingsForm
+            settings={booth}
+            onSave={(settings) =>
+              runAdminAction(async () => {
+                const saved = await saveBoothSettings(settings);
+                setBooth(saved);
+              }, "Booth info saved.")
+            }
+          />
+          <QrManager
+            settings={payment}
+            onSave={(settings) =>
+              runAdminAction(async () => {
+                const saved = await savePaymentSettings(settings);
+                setPayment(saved);
+              }, "QR settings saved.")
+            }
           />
         </div>
-        {selectedProduct ? (
-          <div className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}>
-            <ProductForm product={selectedProduct} onSave={handleSaveProduct} onDelete={handleDeleteProduct} />
-          </div>
-        ) : (
-          <div className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}>
-            <div className="admin-empty-state">
-              <Package size={36} />
-              <h2>No item selected</h2>
-              <p>Select an item from the products list to edit details, or click "New Item" to create one.</p>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="admin-settings-grid">
-        <SettingsForm
-          settings={booth}
-          onSave={(settings) =>
-            runAdminAction(async () => {
-              const saved = await saveBoothSettings(settings);
-              setBooth(saved);
-            }, "Booth info saved.")
-          }
-        />
-        <QrManager
-          settings={payment}
-          onSave={(settings) =>
-            runAdminAction(async () => {
-              const saved = await savePaymentSettings(settings);
-              setPayment(saved);
-            }, "QR settings saved.")
-          }
-        />
-      </div>
+      )}
     </main>
   );
 }

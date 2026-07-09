@@ -1,6 +1,6 @@
 import { defaultBooth, defaultPayment } from "./constants";
 import { isSupabaseConfigured, safeUuid, supabase } from "./supabase";
-import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus } from "../types/catalog";
+import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus, Order, OrderItem, CartItem } from "../types/catalog";
 
 const stockStatuses: StockStatus[] = ["in_stock", "limited", "sold_out"];
 
@@ -174,5 +174,70 @@ export async function signOutAdmin() {
   const client = requireSupabase();
 
   const { error } = await client.auth.signOut();
+  if (error) throw error;
+}
+
+export async function createOrder(customerName: string | null, cart: CartItem[]): Promise<Order> {
+  const client = requireSupabase();
+
+  const totalAmount = cart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0);
+
+  // 1. Insert order
+  const { data: orderData, error: orderError } = await client
+    .from("orders")
+    .insert({
+      customer_name: customerName ? customerName.trim() : null,
+      total_amount: totalAmount,
+      status: "pending",
+    })
+    .select()
+    .single();
+
+  if (orderError) throw orderError;
+
+  // 2. Insert order items
+  const orderItemsData = cart.map((item) => ({
+    order_id: orderData.id,
+    product_id: item.product.id,
+    quantity: item.quantity,
+    unit_price: item.product.price_vnd,
+  }));
+
+  const { error: itemsError } = await client.from("order_items").insert(orderItemsData);
+  if (itemsError) {
+    await client.from("orders").delete().eq("id", orderData.id);
+    throw itemsError;
+  }
+
+  return orderData as Order;
+}
+
+export async function getOrders(): Promise<Order[]> {
+  const client = requireSupabase();
+
+  const { data, error } = await client
+    .from("orders")
+    .select("*, order_items(*, product:products(*))")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data as Order[];
+}
+
+export async function confirmOrderPayment(orderId: string): Promise<void> {
+  const client = requireSupabase();
+
+  const { error } = await client.rpc("confirm_order_payment", { target_order_id: orderId });
+  if (error) throw error;
+}
+
+export async function cancelOrder(orderId: string): Promise<void> {
+  const client = requireSupabase();
+
+  const { error } = await client
+    .from("orders")
+    .update({ status: "cancelled" })
+    .eq("id", orderId);
+
   if (error) throw error;
 }

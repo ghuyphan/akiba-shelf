@@ -86,7 +86,8 @@ export async function generateVietQr(settings: PaymentSettings, product?: Produc
 
 export async function generateVietQrForCart(
   settings: PaymentSettings,
-  cart: CartItem[]
+  cart: CartItem[],
+  orderCode?: string
 ): Promise<GeneratedVietQr | null> {
   if (!canGenerateVietQr(settings)) return null;
 
@@ -96,14 +97,16 @@ export async function generateVietQrForCart(
   const codesStr = cart.map(item => `${item.product.item_code}${item.quantity > 1 ? `x${item.quantity}` : ""}`).join(" ");
   const itemsStr = cart.map(item => `${item.quantity}x ${item.product.name}`).join(", ");
 
-  const fallback = `Booth order ${codesStr}`;
+  const fallback = orderCode ? `${orderCode}` : `Booth order ${codesStr}`;
   let addInfo = fallback;
   if (settings.bank_add_info_template) {
     addInfo = settings.bank_add_info_template
-      .replace(/\{code\}/g, codesStr)
+      .replace(/\{code\}/g, orderCode ? `${orderCode} ${codesStr}` : codesStr)
       .replace(/\{item\}/g, itemsStr)
       .replace(/\{amount\}/g, String(amount))
       .trim();
+  } else if (orderCode) {
+    addInfo = `${orderCode}`;
   }
 
   if (addInfo.length > 50) {
