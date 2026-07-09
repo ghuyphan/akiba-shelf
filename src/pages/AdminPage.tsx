@@ -270,29 +270,22 @@ export function AdminPage() {
 
       {/* Main Tab Controls */}
       <div 
-        className="admin-main-tabs" 
+        className="category-row" 
         style={{ 
           display: "flex", 
           gap: "10px", 
           marginBottom: "20px", 
-          borderBottom: "2px solid var(--line)", 
-          paddingBottom: "10px", 
-          flexWrap: "wrap" 
+          paddingBottom: "4px", 
+          flexWrap: "nowrap",
+          overflowX: "auto",
+          scrollbarWidth: "none"
         }}
       >
         <button
           type="button"
-          className={`admin-tab-btn ${viewTab === "orders" ? "active" : ""}`}
+          className={`chip ${viewTab === "orders" ? "chip-active" : ""}`}
           onClick={() => setViewTab("orders")}
           style={{
-            padding: "10px 20px",
-            fontSize: "15px",
-            fontWeight: "700",
-            background: "none",
-            border: "none",
-            color: viewTab === "orders" ? "var(--coral, #6366f1)" : "var(--muted)",
-            borderBottom: viewTab === "orders" ? "3px solid var(--coral, #6366f1)" : "3px solid transparent",
-            cursor: "pointer",
             display: "flex",
             alignItems: "center",
             gap: "8px"
@@ -301,10 +294,10 @@ export function AdminPage() {
           <span>Orders Queue</span>
           {orders.filter(o => o.status === "pending").length > 0 && (
             <span style={{
-              background: "var(--red, #ef4444)",
-              color: "white",
-              fontSize: "11px",
-              padding: "2px 6px",
+              background: viewTab === "orders" ? "white" : "var(--red, #ef4444)",
+              color: viewTab === "orders" ? "var(--navy)" : "white",
+              fontSize: "11.5px",
+              padding: "2px 7px",
               borderRadius: "10px",
               fontWeight: "900"
             }}>
@@ -314,35 +307,15 @@ export function AdminPage() {
         </button>
         <button
           type="button"
-          className={`admin-tab-btn ${viewTab === "products" ? "active" : ""}`}
+          className={`chip ${viewTab === "products" ? "chip-active" : ""}`}
           onClick={() => setViewTab("products")}
-          style={{
-            padding: "10px 20px",
-            fontSize: "15px",
-            fontWeight: "700",
-            background: "none",
-            border: "none",
-            color: viewTab === "products" ? "var(--coral, #6366f1)" : "var(--muted)",
-            borderBottom: viewTab === "products" ? "3px solid var(--coral, #6366f1)" : "3px solid transparent",
-            cursor: "pointer"
-          }}
         >
           Products ({products.length})
         </button>
         <button
           type="button"
-          className={`admin-tab-btn ${viewTab === "settings" ? "active" : ""}`}
+          className={`chip ${viewTab === "settings" ? "chip-active" : ""}`}
           onClick={() => setViewTab("settings")}
-          style={{
-            padding: "10px 20px",
-            fontSize: "15px",
-            fontWeight: "700",
-            background: "none",
-            border: "none",
-            color: viewTab === "settings" ? "var(--coral, #6366f1)" : "var(--muted)",
-            borderBottom: viewTab === "settings" ? "3px solid var(--coral, #6366f1)" : "3px solid transparent",
-            cursor: "pointer"
-          }}
         >
           Settings
         </button>

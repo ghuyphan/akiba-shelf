@@ -3575,16 +3575,14 @@ a {
 
 /* Admin redesign */
 .admin-shell {
-  width: min(100% - 20px, 1380px);
-  max-width: 1380px;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 64%);
-  border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 96%), rgb(248 250 253 / 96%)),
-    var(--page-bg);
-  box-shadow: 0 24px 70px rgb(7 24 50 / 13%);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  width: min(100% - 24px, 1500px);
+  max-width: 1500px;
+  margin: 12px auto;
+  padding: 18px 20px 22px;
   animation: shell-rise 420ms var(--ease-out) both;
 }
 
@@ -3593,13 +3591,12 @@ a {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 18px;
-  margin: 0;
-  padding: 20px 26px;
+  margin: 0 0 18px;
+  padding: 0 0 18px;
   border: 0;
   border-bottom: 1px solid var(--soft-line);
   border-radius: 0;
-  background:
-    linear-gradient(135deg, rgb(255 255 255 / 95%) 0%, rgb(245 250 255 / 92%) 56%, rgb(255 246 250 / 88%) 100%);
+  background: none;
   box-shadow: none;
 }
 
@@ -3630,10 +3627,10 @@ a {
   gap: 7px;
   min-height: 34px;
   padding: 0 12px;
-  border: 1px solid rgb(199 211 226 / 72%);
+  border: 1px solid var(--line);
   border-radius: 8px;
-  color: #34465d;
-  background: rgb(255 255 255 / 82%);
+  color: var(--muted);
+  background: var(--surface-soft, #f8fafc);
   font-size: 12px;
   font-weight: 700;
   transition:
@@ -3644,8 +3641,8 @@ a {
 
 .admin-metrics span:hover {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--coral) 42%, transparent);
-  box-shadow: 0 8px 18px rgb(7 24 50 / 8%);
+  border-color: var(--coral-strong);
+  box-shadow: var(--soft-shadow);
 }
 
 .admin-metrics svg {
@@ -3654,19 +3651,19 @@ a {
 
 .admin-grid,
 .admin-settings-grid {
-  margin-right: 28px;
-  margin-left: 28px;
+  margin-right: 0;
+  margin-left: 0;
 }
 
 .admin-grid {
   grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
   align-items: start;
-  margin-top: 24px;
+  margin-top: 20px;
 }
 
 .admin-settings-grid {
-  margin-top: 18px;
-  margin-bottom: 28px;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .admin-card {
@@ -4097,16 +4094,20 @@ select.input {
 }
 
 .admin-login {
-  background:
-    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--coral) 10%, transparent), transparent 28%),
-    radial-gradient(circle at 80% 26%, rgb(40 119 219 / 12%), transparent 30%),
-    linear-gradient(180deg, rgb(255 255 255 / 64%), rgb(238 242 247 / 96%)),
-    #eef2f7;
+  background: var(--page-bg, #f8fafc);
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
 }
 
 .admin-login .admin-card {
-  padding: 24px;
-  box-shadow: 0 24px 70px rgb(7 24 50 / 16%);
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: 16px;
+  padding: 28px;
+  width: min(100%, 420px);
 }
 
 .login-trust-strip {
