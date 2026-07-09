@@ -34,7 +34,7 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
         justifyContent: "center", 
         alignItems: "center", 
         padding: "24px", 
-        background: "var(--surface, #ffffff)", 
+        background: "var(--page-bg, #f8fafc)", 
         overflowY: "auto", 
         width: "100vw", 
         height: "100vh",
