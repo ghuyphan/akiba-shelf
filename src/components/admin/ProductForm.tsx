@@ -10,6 +10,14 @@ import { Button } from "../ui/Button";
 import { Field, SelectInput, TextArea, TextInput } from "../ui/Field";
 import { AdminCard } from "./AdminCard";
 import { ImageUpload } from "./ImageUpload";
+function formatDisplayPrice(value: number | string): string {
+  if (value === undefined || value === null || value === "") return "";
+  const numString = String(value).replace(/\D/g, "");
+  if (!numString) return "";
+  const num = parseInt(numString, 10);
+  return new Intl.NumberFormat("vi-VN").format(num);
+}
+
 
 type ProductFormProps = {
   product: Product;
@@ -160,14 +168,15 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
           <Field label="Category" error={getFieldError("category")}>
             <TextInput value={draft.category} disabled={!isEditing} onChange={(event) => setField("category", event.target.value)} />
           </Field>
-          <Field label="Price VND" hint={isEditing ? formatVnd(draft.price_vnd) : undefined} error={getFieldError("price_vnd")}>
+          <Field label="Price VND" error={getFieldError("price_vnd")}>
             <TextInput
-              type="number"
-              min="0"
-              step="1000"
-              value={draft.price_vnd}
+              type="text"
+              value={formatDisplayPrice(draft.price_vnd)}
               disabled={!isEditing}
-              onChange={(event) => setField("price_vnd", readNumber(event.target.value))}
+              onChange={(event) => {
+                const raw = event.target.value.replace(/\D/g, "");
+                setField("price_vnd", raw ? parseInt(raw, 10) : 0);
+              }}
             />
           </Field>
           <Field label="Quantity" hint={isEditing ? `${formatNumber(draft.quantity_available)} units` : undefined} error={getFieldError("quantity_available")}>
@@ -200,6 +209,26 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
                 </option>
               ))}
             </SelectInput>
+            {draft.badge && (
+              <div style={{ display: "flex", alignItems: "center", marginTop: "8px" }}>
+                <span 
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: "999px",
+                    color: "#fff",
+                    background: "var(--coral, #ff6fae)",
+                    fontSize: "10px",
+                    fontWeight: "700",
+                    letterSpacing: "0.02em",
+                    textTransform: "uppercase",
+                    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.15)",
+                    display: "inline-block"
+                  }}
+                >
+                  {draft.badge}
+                </span>
+              </div>
+            )}
           </Field>
         </div>
         <Field label="Description">
