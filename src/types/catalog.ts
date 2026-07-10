@@ -1,4 +1,6 @@
 export type StockStatus = "in_stock" | "limited" | "sold_out";
+export type CatalogLocale = "en" | "vi";
+export type StorefrontSection = "featured" | "controls" | "products" | "booth" | "cart";
 
 export type Product = {
   id: string;
@@ -36,6 +38,9 @@ export type BoothSettings = {
   theme_secondary?: string;
   theme_accent?: string;
   theme_background?: string;
+  layout_order?: StorefrontSection[];
+  corner_radius?: number;
+  catalog_locale?: CatalogLocale;
 };
 
 export type PaymentSettings = {
@@ -84,5 +89,3 @@ export type OrderItem = {
   unit_price: number;
   product?: Product;
 };
-
-

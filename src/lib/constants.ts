@@ -16,6 +16,9 @@ export const defaultBooth: BoothSettings = {
   theme_secondary: "#0f172a",
   theme_accent: "#10b981",
   theme_background: "#f8fafc",
+  layout_order: ["featured", "booth", "controls", "cart", "products"],
+  corner_radius: 16,
+  catalog_locale: "en",
 };
 
 export const defaultPayment: PaymentSettings = {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import "../styles/admin.css";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CreditCard, LogOut, Package, Settings2, ShoppingBag } from "lucide-react";
+import { ArrowLeft, CreditCard, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag } from "lucide-react";
 import {
   deleteProduct,
   getAdminProducts,
@@ -24,9 +25,11 @@ import { ProductList } from "../components/admin/ProductList";
 import { QrManager } from "../components/admin/QrManager";
 import { SettingsForm } from "../components/admin/SettingsForm";
 import { OrderQueue } from "../components/admin/OrderQueue";
+import { StorefrontDesigner } from "../components/admin/StorefrontDesigner";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
+import { useToast } from "../components/ui/ToastProvider";
 
 function createBlankProduct(nextSort: number): Product {
   return {
@@ -54,14 +57,13 @@ export function AdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
-  const [viewTab, setViewTab] = useState<"orders" | "products" | "settings">("orders");
+  const [viewTab, setViewTab] = useState<"orders" | "products" | "design" | "settings">("orders");
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
   const [settingsTab, setSettingsTab] = useState<"booth" | "payment">("booth");
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [booth, setBooth] = useState<BoothSettings>(() => getStoredBoothTheme());
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
-  const [status, setStatus] = useState("");
-  const [statusVariant, setStatusVariant] = useState<"info" | "success" | "error">("info");
+  const toast = useToast();
 
   const activeTabRef = useRef<HTMLDivElement>(null);
   const activeTabChipRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -152,8 +154,7 @@ export function AdminPage() {
     if (!isAuthed) return;
     reload().catch((error) => {
       if (isSessionNoise(error)) return;
-      setStatusVariant("error");
-      setStatus(getErrorMessage(error, "Could not load admin data."));
+      toast.error(getErrorMessage(error, "Could not load admin data."), "Admin data unavailable");
     });
   }, [isAuthed]);
 
@@ -168,8 +169,7 @@ export function AdminPage() {
         reloadTimer = window.setTimeout(() => {
           reload().catch((error) => {
             if (isSessionNoise(error)) return;
-            setStatusVariant("error");
-            setStatus(getErrorMessage(error, "Could not refresh admin data."));
+            toast.error(getErrorMessage(error, "Could not refresh admin data."), "Refresh failed");
           });
         }, 150);
       },
@@ -216,8 +216,7 @@ export function AdminPage() {
 
   async function runAdminAction(action: () => Promise<void>, message: string) {
     await action();
-    setStatusVariant("success");
-    setStatus(message);
+    toast.success(message);
   }
 
   async function handleLogin(email: string, password: string) {
@@ -271,6 +270,13 @@ export function AdminPage() {
           <div className="admin-nav-tabs">
           <button
             type="button"
+            className={`admin-nav-tab ${viewTab === "design" ? "active" : ""}`}
+            onClick={() => setViewTab("design")}
+          >
+            <LayoutTemplate size={15} /> Storefront
+          </button>
+          <button
+            type="button"
             className={`admin-nav-tab ${viewTab === "orders" ? "active" : ""}`}
             onClick={() => setViewTab("orders")}
           >
@@ -306,22 +312,17 @@ export function AdminPage() {
       <div className="admin-container">
         <section className="admin-view-hero">
           <div>
-            <span>{viewTab === "orders" ? "Live operations" : viewTab === "products" ? "Catalog management" : "Workspace configuration"}</span>
-            <h1>{viewTab === "orders" ? "Orders" : viewTab === "products" ? "Products" : "Settings"}</h1>
-            <p>{viewTab === "orders" ? "Confirm payments and keep fulfilment moving." : viewTab === "products" ? "Manage listings, images, pricing, and availability." : "Control what customers see and how they pay."}</p>
+            <span>{viewTab === "orders" ? "Live operations" : viewTab === "products" ? "Catalog management" : viewTab === "design" ? "Visual storefront" : "Workspace configuration"}</span>
+            <h1>{viewTab === "orders" ? "Orders" : viewTab === "products" ? "Products" : viewTab === "design" ? "Storefront designer" : "Settings"}</h1>
+            <p>{viewTab === "orders" ? "Confirm payments and keep fulfilment moving." : viewTab === "products" ? "Manage listings, images, pricing, and availability." : viewTab === "design" ? "Arrange the selling page and preview its visual system." : "Control what customers see and how they pay."}</p>
           </div>
           <div className="admin-view-chips">
             {viewTab === "orders" && <><span><b>{pendingOrders.length}</b> pending</span><span><b>{pendingValue.toLocaleString("vi-VN")} ₫</b> awaiting confirmation</span></>}
             {viewTab === "products" && <><span><b>{products.length}</b> total</span><span><b>{lowStockCount}</b> need attention</span><span><b>{hiddenCount}</b> hidden</span></>}
+            {viewTab === "design" && <><span><b>{booth.corner_radius ?? 16}px</b> corners</span><span><b>{(booth.catalog_locale ?? "en").toUpperCase()}</b> locale</span></>}
             {viewTab === "settings" && <><span><b>{booth.booth_code || "—"}</b> booth code</span><span><b>{payment.bank_label || "—"}</b> payment label</span></>}
           </div>
         </section>
-        {status && (
-          <Alert variant={statusVariant} onClose={() => setStatus("")}>
-            {status}
-          </Alert>
-        )}
-
         {viewTab === "orders" && (
           <OrderQueue orders={orders} onOrderUpdated={() => reload().catch(console.error)} />
         )}
@@ -382,12 +383,13 @@ export function AdminPage() {
           </>
         )}
 
+        {viewTab === "design" && <StorefrontDesigner settings={booth} onSave={(settings) => runAdminAction(async () => { const saved = await saveBoothSettings(settings); setBooth(saved); }, "Storefront design published.")} />}
+
         {viewTab === "settings" && (
           <section className="admin-settings-workspace">
             <div className="admin-settings-intro">
-              <div><span>Workspace settings</span><h2>Keep booth details easy to scan.</h2><p>Edit one group at a time. Changes only go live when you press save.</p></div>
               <div className="admin-settings-switcher" role="tablist" aria-label="Settings section">
-                <button type="button" className={settingsTab === "booth" ? "active" : ""} onClick={() => setSettingsTab("booth")}><Settings2 size={17} /> Booth & theme</button>
+                <button type="button" className={settingsTab === "booth" ? "active" : ""} onClick={() => setSettingsTab("booth")}><Settings2 size={17} /> Booth information</button>
                 <button type="button" className={settingsTab === "payment" ? "active" : ""} onClick={() => setSettingsTab("payment")}><CreditCard size={17} /> Payment & QR</button>
               </div>
             </div>

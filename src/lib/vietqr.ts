@@ -87,11 +87,12 @@ export async function generateVietQr(settings: PaymentSettings, product?: Produc
 export async function generateVietQrForCart(
   settings: PaymentSettings,
   cart: CartItem[],
-  orderCode?: string
+  orderCode?: string,
+  amountOverride?: number,
 ): Promise<GeneratedVietQr | null> {
   if (!canGenerateVietQr(settings)) return null;
 
-  const amount = cart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0);
+  const amount = amountOverride ?? cart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0);
 
   // Construct combined info
   const codesStr = cart.map(item => `${item.product.item_code}${item.quantity > 1 ? `x${item.quantity}` : ""}`).join(" ");
@@ -149,4 +150,3 @@ export async function generateVietQrForCart(
 
   return null;
 }
-

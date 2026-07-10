@@ -21,8 +21,9 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
   });
 
   return (
-    <aside className="booth-card">
-      <div className="booth-hero">
+    <aside className="booth-card booth-card-redesign">
+      <div className="booth-card-topline"><span>Booth guide</span><small><i /> Open today</small></div>
+      <div className="booth-hero booth-card-identity">
         <div className="booth-hero-logo">
           {booth.logo_url ? (
             <img src={booth.logo_url} alt={booth.booth_name} />
@@ -32,7 +33,7 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
         </div>
         <div className="booth-hero-info">
           <strong className="booth-hero-name">{booth.booth_name}</strong>
-          <span className="booth-hero-code">{booth.subtitle || "Official Shop"}</span>
+          <span className="booth-hero-code">{booth.subtitle || "Official shop"}</span>
         </div>
       </div>
       <div className="booth-detail-chips">
@@ -50,19 +51,21 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
         )}
       </div>
       {socialLinks.length > 0 && (
-        <div className="social-qr-grid" aria-label="Social QR codes">
-          {socialLinks.map((item) => (
-            <SocialQrCard
-              key={item.label}
-              label={item.label}
-              url={item.url}
-              logoUrl={booth.social_qr_logo_url}
-              icon={item.icon}
-              brandColor={item.brandColor}
-              brandGradient={item.brandGradient}
-              showLabel={false}
-            />
-          ))}
+        <div className="booth-card-socials">
+          <div className="social-qr-grid" aria-label="Social QR codes">
+            {socialLinks.map((item) => (
+              <SocialQrCard
+                key={item.label}
+                label={item.label}
+                url={item.url}
+                logoUrl={booth.social_qr_logo_url}
+                icon={item.icon}
+                brandColor={item.brandColor}
+                brandGradient={item.brandGradient}
+                showLabel={false}
+              />
+            ))}
+          </div>
         </div>
       )}
     </aside>

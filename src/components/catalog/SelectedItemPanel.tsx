@@ -2,6 +2,7 @@ import { Banknote, ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
 import type { CartItem } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { Button } from "../ui/Button";
+import { useCatalogCopy } from "../../lib/catalogI18n";
 
 type SelectedItemPanelProps = {
   cart: CartItem[];
@@ -22,13 +23,14 @@ export function SelectedItemPanel({
   isExpanded = false,
   onToggleExpand,
 }: SelectedItemPanelProps) {
+  const copy = useCatalogCopy();
   if (cart.length === 0) {
     return (
       <aside className="selected-panel selected-panel-empty">
         <div className="selected-empty-centered">
           <ShoppingBag size={48} className="empty-icon" />
-          <h3>Your cart is empty</h3>
-          <p>Tap merch cards to add items to the cart.</p>
+          <h3>{copy.emptyCart}</h3>
+          <p>{copy.emptyCartHint}</p>
         </div>
       </aside>
     );
@@ -52,7 +54,7 @@ export function SelectedItemPanel({
             <span className="mobile-cart-count-badge">{totalItems}</span>
           </div>
           <div className="mobile-cart-summary-text">
-            <strong>Cart</strong>
+            <strong>{copy.cart}</strong>
             <span>{formatVnd(totalAmount)}</span>
           </div>
         </div>
@@ -64,16 +66,16 @@ export function SelectedItemPanel({
             if (onToggleExpand) onToggleExpand();
           }}
         >
-          View Cart
+          {copy.viewCart}
         </Button>
       </div>
 
       {/* Full cart content */}
       <div className="cart-full-content">
         <div className="selected-header">
-          <h2>Cart ({totalItems})</h2>
+          <h2>{copy.cart} ({totalItems})</h2>
           <Button variant="ghost" className="clear-button" onClick={onClearCart}>
-            Clear All
+            {copy.clearAll}
           </Button>
         </div>
 
@@ -130,11 +132,11 @@ export function SelectedItemPanel({
 
         <div className="selected-actions" style={{ marginTop: "16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", padding: "0 4px" }}>
-            <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--muted)" }}>Total Price</span>
+            <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--muted)" }}>{copy.totalPrice}</span>
             <strong style={{ fontSize: "16px", fontWeight: "800", color: "var(--ink)" }}>{formatVnd(totalAmount)}</strong>
           </div>
           <Button variant="primary" className="button-checkout" icon={<Banknote size={18} />} onClick={onOpenPayment}>
-            <span className="checkout-btn-label">Pay Now</span>
+            <span className="checkout-btn-label">{copy.payNow}</span>
             <span className="checkout-btn-price">{formatVnd(totalAmount)}</span>
           </Button>
         </div>

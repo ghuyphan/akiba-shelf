@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Ban, CheckCircle2, Clock3, Inbox, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
+import { Ban, CheckCircle2, Clock3, Inbox, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
 import type { Order } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { confirmOrderPayment, cancelOrder } from "../../lib/api";
 import { SwipeConfirmButton } from "../catalog/PaymentQrModal";
+import { useToast } from "../ui/ToastProvider";
 
 type OrderQueueProps = { orders: Order[]; onOrderUpdated: () => void };
 type Filter = "all" | "pending" | "confirmed" | "cancelled";
@@ -12,7 +13,7 @@ export function OrderQueue({ orders, onOrderUpdated }: OrderQueueProps) {
   const [filter, setFilter] = useState<Filter>("pending");
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const toast = useToast();
   const filters: Filter[] = ["pending", "confirmed", "cancelled", "all"];
   const filteredOrders = useMemo(() => orders.filter((order) => filter === "all" || order.status === filter), [filter, orders]);
   const totalMoney = filteredOrders.reduce((sum, order) => sum + order.total_amount, 0);
@@ -30,17 +31,17 @@ export function OrderQueue({ orders, onOrderUpdated }: OrderQueueProps) {
   }, [filteredOrders]);
 
   async function handleConfirm(orderId: string) {
-    setConfirmingId(orderId); setErrorMessage("");
-    try { await confirmOrderPayment(orderId); onOrderUpdated(); }
-    catch (error) { setErrorMessage(error instanceof Error ? error.message : "Failed to confirm payment."); }
+    setConfirmingId(orderId);
+    try { await confirmOrderPayment(orderId); onOrderUpdated(); toast.success("Payment confirmed and stock updated."); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Failed to confirm payment.", "Could not confirm order"); }
     finally { setConfirmingId(null); }
   }
 
   async function handleCancel(orderId: string) {
     if (!window.confirm("Cancel this order? This cannot be undone.")) return;
-    setCancellingId(orderId); setErrorMessage("");
-    try { await cancelOrder(orderId); onOrderUpdated(); }
-    catch (error) { setErrorMessage(error instanceof Error ? error.message : "Failed to cancel order."); }
+    setCancellingId(orderId);
+    try { await cancelOrder(orderId); onOrderUpdated(); toast.success("Order cancelled."); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Failed to cancel order.", "Could not cancel order"); }
     finally { setCancellingId(null); }
   }
 
@@ -52,8 +53,6 @@ export function OrderQueue({ orders, onOrderUpdated }: OrderQueueProps) {
         </div>
         <span className="admin-live-indicator"><i /> Live queue</span>
       </div>
-
-      {errorMessage && <div className="admin-inline-error"><AlertTriangle size={17} /><span>{errorMessage}</span><button type="button" onClick={() => setErrorMessage("")}>Dismiss</button></div>}
 
       <div className="admin-order-metrics">
         <article><span className="admin-metric-icon coral"><ReceiptText size={19} /></span><div><small>Orders shown</small><strong>{filteredOrders.length}</strong><p>{filter === "all" ? "Across every status" : `${filter} orders`}</p></div></article>

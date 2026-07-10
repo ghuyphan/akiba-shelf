@@ -179,37 +179,14 @@ export async function signOutAdmin() {
 
 export async function createOrder(customerName: string | null, cart: CartItem[]): Promise<Order> {
   const client = requireSupabase();
-
-  const totalAmount = cart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0);
-
-  // 1. Insert order
-  const { data: orderData, error: orderError } = await client
-    .from("orders")
-    .insert({
-      customer_name: customerName ? customerName.trim() : null,
-      total_amount: totalAmount,
-      status: "pending",
-    })
-    .select()
-    .single();
-
-  if (orderError) throw orderError;
-
-  // 2. Insert order items
-  const orderItemsData = cart.map((item) => ({
-    order_id: orderData.id,
-    product_id: item.product.id,
-    quantity: item.quantity,
-    unit_price: item.product.price_vnd,
-  }));
-
-  const { error: itemsError } = await client.from("order_items").insert(orderItemsData);
-  if (itemsError) {
-    await client.from("orders").delete().eq("id", orderData.id);
-    throw itemsError;
-  }
-
-  return orderData as Order;
+  const { data, error } = await client.rpc("create_order", {
+    p_customer_name: customerName?.trim() || null,
+    p_items: cart.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
+  });
+  if (error) throw error;
+  const createdOrder = Array.isArray(data) ? data[0] : data;
+  if (!createdOrder) throw new Error("The order was created but no order details were returned.");
+  return createdOrder as Order;
 }
 
 export async function getOrders(): Promise<Order[]> {

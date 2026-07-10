@@ -38,6 +38,7 @@ export function getThemeStyle(booth: BoothSettings): ThemeStyle {
   const secondary = color(booth.theme_secondary, defaultBooth.theme_secondary ?? "#24324f");
   const accent = color(booth.theme_accent, defaultBooth.theme_accent ?? "#6fc7ff");
   const background = color(booth.theme_background, defaultBooth.theme_background ?? "#fff3f8");
+  const cornerRadius = Math.min(32, Math.max(0, booth.corner_radius ?? defaultBooth.corner_radius ?? 16));
 
   return {
     "--coral": primary,
@@ -47,6 +48,7 @@ export function getThemeStyle(booth: BoothSettings): ThemeStyle {
     "--blue": accent,
     "--teal": accent,
     "--page-bg": background,
+    "--store-radius": `${cornerRadius}px`,
   };
 }
 

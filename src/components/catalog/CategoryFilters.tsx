@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useCatalogCopy } from "../../lib/catalogI18n";
 
 type CategoryFiltersProps = {
   categories: string[];
@@ -7,6 +8,7 @@ type CategoryFiltersProps = {
 };
 
 export function CategoryFilters({ categories, activeCategory, onChange }: CategoryFiltersProps) {
+  const copy = useCatalogCopy();
   const rowRef = useRef<HTMLDivElement>(null);
   const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -52,7 +54,7 @@ export function CategoryFilters({ categories, activeCategory, onChange }: Catego
           type="button"
           onClick={() => onChange(category)}
         >
-          {category}
+          {category === "All" ? copy.all : category}
         </button>
       ))}
     </div>

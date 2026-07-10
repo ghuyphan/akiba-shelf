@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { CheckCircle2, Sparkles, Loader2 } from "lucide-react";
+import { CheckCircle2, Copy, Loader2, ReceiptText, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import type { CartItem, PaymentSettings, Order } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
+import { useCatalogCopy } from "../../lib/catalogI18n";
 import { canGenerateVietQr, generateVietQrForCart } from "../../lib/vietqr";
 import { Modal } from "../ui/Modal";
 import { createOrder } from "../../lib/api";
@@ -16,6 +17,7 @@ type PaymentQrModalProps = {
 };
 
 export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: PaymentQrModalProps) {
+  const copy = useCatalogCopy();
   const [qrSrc, setQrSrc] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   
@@ -62,10 +64,11 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
     if (!isOpen || !order) return;
     let cancelled = false;
     const orderCode = order.order_code;
+    const orderTotal = order.total_amount;
 
     async function loadQr() {
       setIsGenerating(true);
-      const generated = await generateVietQrForCart(payment, cart, orderCode).catch(() => null);
+      const generated = await generateVietQrForCart(payment, cart, orderCode, orderTotal).catch(() => null);
       if (!cancelled) {
         setQrSrc(generated?.src || payment.bank_qr_url || payment.momo_qr_url);
         setIsGenerating(false);
@@ -113,48 +116,18 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
     onClose();
   };
 
-  const title = order 
-    ? (canGenerateVietQr(payment) ? payment.bank_label : payment.momo_label)
-    : "Enter Nickname";
+  const paymentLabel = canGenerateVietQr(payment) ? payment.bank_label : payment.momo_label;
 
   if (showSuccess) {
     return (
-      <Modal title="Success!" isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal success-modal">
-        <div className="payment-success-state" style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "40px 20px",
-          textAlign: "center",
-          gap: "20px"
-        }}>
-          <div className="success-icon-wrap" style={{
-            width: "80px",
-            height: "80px",
-            borderRadius: "50%",
-            background: "color-mix(in srgb, var(--teal) 10%, transparent)",
-            color: "var(--teal)",
-            display: "grid",
-            placeItems: "center",
-            animation: "success-pop 500ms var(--ease-out)"
-          }}>
-            <CheckCircle2 size={48} style={{ animation: "success-rotate 600ms var(--ease-out)" }} />
-          </div>
-          <h2 style={{ fontSize: "22px", fontWeight: "800", color: "var(--ink)", margin: 0 }}>
-            Payment Confirmed!
-          </h2>
-          <p style={{ fontSize: "14px", color: "var(--muted)", margin: 0, maxWidth: "280px" }}>
-            The order is complete and stock levels have been updated. Thank you!
-          </p>
-          <button
-            type="button"
-            className="button button-primary"
-            style={{ width: "100%", marginTop: "12px", minHeight: "44px", height: "44px" }}
-            onClick={handleSuccessClose}
-          >
-            Close
-          </button>
+      <Modal title={copy.paymentComplete} isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal">
+        <div className="payment-success-state">
+          <div className="success-icon-wrap"><CheckCircle2 size={42} /></div>
+          <span className="payment-success-eyebrow">Order {order?.order_code}</span>
+          <h2>{copy.allSet}</h2>
+          <p>{copy.reservedPickup}</p>
+          <div className="payment-success-summary"><span>{copy.totalPaid}</span><strong>{formatVnd(order?.total_amount ?? totalAmount)}</strong></div>
+          <button type="button" className="button button-primary" onClick={handleSuccessClose}>{copy.backShop}</button>
         </div>
       </Modal>
     );
@@ -163,43 +136,18 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
   // Step 1: Input Nickname/Name before checkout
   if (!order) {
     return (
-      <Modal title={title} isOpen={isOpen} onClose={onClose} className="payment-modal">
-        <form onSubmit={handlePlaceOrder} className="stack" style={{ display: "grid", gap: "16px", padding: "10px 0" }}>
-          <div>
-            <h3 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "4px" }}>Pickup Name</h3>
-            <p style={{ fontSize: "13px", color: "var(--muted)" }}>
-              Enter a name or nickname so the staff can match your payment and package your items.
-            </p>
+      <Modal title={copy.confirmOrder} isOpen={isOpen} onClose={onClose} className="payment-modal order-confirm-modal">
+        <form onSubmit={handlePlaceOrder} className="order-confirm-layout">
+          <div className="order-confirm-main">
+            <div className="order-confirm-intro"><span><ReceiptText size={20} /></span><div><h3>{copy.lastCheck}</h3><p>{copy.reviewCart}</p></div></div>
+            <div className="order-confirm-items">{cart.map((item) => { const image = item.product.images.find(Boolean); return <div key={item.product.id}>{image ? <img src={image} alt="" /> : <span className="order-confirm-placeholder" />}<div><strong>{item.product.name}</strong><small>{item.quantity} × {formatVnd(item.product.price_vnd)}</small></div><b>{formatVnd(item.product.price_vnd * item.quantity)}</b></div>; })}</div>
+            <div className="order-confirm-total"><span>{copy.total}</span><strong>{formatVnd(totalAmount)}</strong></div>
           </div>
-          <input
-            type="text"
-            placeholder="Nickname (e.g. Huy, Alice)"
-            className="input"
-            style={{ minHeight: "44px", height: "44px", padding: "0 14px", fontSize: "15px", width: "100%" }}
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            maxLength={30}
-            required
-          />
-          {submitError && <div style={{ color: "var(--red)", fontSize: "13px" }}>{submitError}</div>}
-          <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-            <button
-              type="button"
-              className="button button-secondary"
-              style={{ flex: 1, minHeight: "44px" }}
-              onClick={onClose}
-              disabled={isSubmittingOrder}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="button button-primary"
-              style={{ flex: 1, minHeight: "44px" }}
-              disabled={isSubmittingOrder || cart.length === 0}
-            >
-              {isSubmittingOrder ? "Submitting..." : "Get QR Code"}
-            </button>
+          <div className="order-confirm-side">
+            <label className="order-confirm-name"><span>{copy.pickupName}</span><div><UserRound size={18} /><input type="text" placeholder={copy.pickupPlaceholder} value={customerName} onChange={(event) => setCustomerName(event.target.value)} maxLength={30} required autoFocus /></div><small>{copy.pickupHint}</small></label>
+            <div className="order-confirm-secure"><ShieldCheck size={17} /><span>{copy.secureCheck}</span></div>
+            {submitError && <div className="payment-submit-error">{submitError}</div>}
+            <div className="order-confirm-actions"><button type="button" className="button button-secondary" onClick={onClose} disabled={isSubmittingOrder}>{copy.keepShopping}</button><button type="submit" className="button button-primary" disabled={isSubmittingOrder || cart.length === 0}>{isSubmittingOrder ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.createPay}</button></div>
           </div>
         </form>
       </Modal>
@@ -208,110 +156,27 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
 
   // Step 2: Show QR & Wait for Staff approval
   return (
-    <Modal title={title} isOpen={isOpen} onClose={onClose} className="payment-modal">
-      <div className="qr-modal-layout" style={{ display: "grid", gap: "20px" }}>
-        <div className="qr-display" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", width: "100%" }}>
+    <Modal title={copy.scanPay} isOpen={isOpen} onClose={onClose} className="payment-modal payment-qr-modal-redesign">
+      <div className="payment-qr-layout">
+        <div className="payment-qr-pane">
+          <div className="payment-qr-heading"><span>{paymentLabel}</span><strong>{formatVnd(order.total_amount)}</strong><small>{copy.exactNote}</small></div>
+          <div className="qr-display payment-qr-display">
           {qrSrc && !isGenerating ? (
-            <img src={qrSrc} alt="Payment QR code" style={{ maxWidth: "260px", width: "100%", height: "auto", borderRadius: "12px", border: "1px solid var(--line)" }} />
+            <img src={qrSrc} alt="Payment QR code" className="payment-qr-image" />
           ) : (
-            <div className="qr-loading" style={{ width: "260px", height: "260px", background: "var(--surface-soft)", borderRadius: "12px", display: "grid", placeItems: "center" }}>
-              <Loader2 className="animate-spin" size={32} style={{ animation: "spin 1s linear infinite" }} />
+            <div className="qr-loading payment-qr-loading"><Loader2 size={32} className="spin-icon" />
             </div>
           )}
-          
-          <div 
-            style={{ 
-              display: "flex", 
-              alignItems: "center", 
-              gap: "8px", 
-              padding: "10px 20px", 
-              background: "rgba(99, 102, 241, 0.08)", 
-              borderRadius: "24px",
-              color: "var(--coral, #6366f1)",
-              fontSize: "13px",
-              fontWeight: "600"
-            }}
-          >
-            <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
-            <span>Waiting for staff approval...</span>
+          </div>
+          <div className="payment-waiting-pill"><Loader2 size={14} className="spin-icon" /><span>{copy.waitingConfirmation}</span>
           </div>
         </div>
 
-        <div className="payment-receipt" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div className="receipt-header" style={{ background: "var(--surface-soft)", padding: "14px", borderRadius: "12px", border: "1px solid var(--line)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-              <div>
-                <span style={{ fontSize: "11px", fontWeight: "600", color: "var(--muted)", textTransform: "uppercase" }}>Order Code</span>
-                <h3 style={{ fontSize: "22px", fontWeight: "900", color: "var(--coral, #6366f1)", margin: 0 }}>{order.order_code}</h3>
-              </div>
-              {order.customer_name && (
-                <div style={{ textAlign: "right" }}>
-                  <span style={{ fontSize: "11px", fontWeight: "600", color: "var(--muted)", textTransform: "uppercase" }}>Nickname</span>
-                  <p style={{ fontSize: "16px", fontWeight: "700", margin: 0 }}>{order.customer_name}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="receipt-divider" />
-
-          {cart.length > 0 && (
-            <div className="receipt-section">
-              <span className="receipt-label">Order Details</span>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {cart.map((item) => (
-                  <div key={item.product.id} className="receipt-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                    <span className="receipt-item-name" style={{ color: "var(--ink)", fontWeight: "500" }}>
-                      {item.quantity} x {item.product.name}
-                    </span>
-                    <span className="receipt-item-price" style={{ fontWeight: "700" }}>{formatVnd(item.product.price_vnd * item.quantity)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="receipt-divider" />
-
-          <div className="receipt-section">
-            <span className="receipt-label">Transfer Details</span>
-            <div className="receipt-details-list" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div className="receipt-detail-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                <span style={{ color: "var(--muted)" }}>Account Name</span>
-                <strong>{payment.bank_account_name || "N/A"}</strong>
-              </div>
-              <div className="receipt-detail-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                <span style={{ color: "var(--muted)" }}>Account Number</span>
-                <strong
-                  style={{ cursor: "pointer", textDecoration: "underline" }}
-                  title="Click to copy account number"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(payment.bank_account_no || "");
-                  }}
-                >
-                  {payment.bank_account_no || "N/A"}
-                </strong>
-              </div>
-              <div className="receipt-detail-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                <span style={{ color: "var(--muted)" }}>Bank Name</span>
-                <strong>{title}</strong>
-              </div>
-              <div className="receipt-detail-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                <span style={{ color: "var(--muted)" }}>Transfer Note</span>
-                <strong style={{ color: "var(--coral, #6366f1)" }}>{order.order_code}</strong>
-              </div>
-            </div>
-          </div>
-
-          {payment.payment_instructions && (
-            <>
-              <div className="receipt-divider" />
-              <div className="receipt-instructions" style={{ display: "flex", gap: "8px", alignItems: "flex-start", padding: "10px", background: "var(--surface-soft)", borderRadius: "8px", fontSize: "13px", color: "var(--muted)" }}>
-                <Sparkles size={16} style={{ color: "var(--amber)", marginTop: "2px", flexShrink: 0 }} />
-                <span>{payment.payment_instructions}</span>
-              </div>
-            </>
-          )}
+        <div className="payment-receipt payment-receipt-redesign">
+          <div className="payment-order-identity"><div><span>{copy.orderCode}</span><strong>{order.order_code}</strong></div>{order.customer_name && <div><span>{copy.pickupName}</span><strong>{order.customer_name}</strong></div>}</div>
+          <div className="payment-transfer-card"><span>{copy.transferTo}</span><div><small>{copy.accountName}</small><strong>{payment.bank_account_name || "N/A"}</strong></div><div><small>{copy.accountNumber}</small><button type="button" onClick={() => void navigator.clipboard.writeText(payment.bank_account_no || "")}><strong>{payment.bank_account_no || "N/A"}</strong><Copy size={14} /></button></div><div><small>{copy.bank}</small><strong>{paymentLabel}</strong></div><div className="payment-transfer-note"><small>{copy.transferNote}</small><strong>{order.order_code}</strong></div></div>
+          <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{cart.map((item) => <div key={item.product.id}><span>{item.quantity} × {item.product.name}</span><strong>{formatVnd(item.product.price_vnd * item.quantity)}</strong></div>)}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
+          {payment.payment_instructions && <div className="receipt-instructions"><Sparkles size={16} /><span>{payment.payment_instructions}</span></div>}
         </div>
       </div>
     </Modal>

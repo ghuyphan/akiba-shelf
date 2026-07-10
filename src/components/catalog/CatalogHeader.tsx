@@ -1,6 +1,6 @@
-import { Info, ShoppingBag } from "lucide-react";
+import { ChevronRight, Info, ShoppingBag } from "lucide-react";
 import type { BoothSettings } from "../../types/catalog";
-import { Button } from "../ui/Button";
+import { useCatalogCopy } from "../../lib/catalogI18n";
 
 type CatalogHeaderProps = {
   booth: BoothSettings;
@@ -8,6 +8,7 @@ type CatalogHeaderProps = {
 };
 
 export function CatalogHeader({ booth, onOpenInfo }: CatalogHeaderProps) {
+  const copy = useCatalogCopy();
   return (
     <header className="catalog-header" onClick={(e) => e.stopPropagation()}>
       <div className="brand-lockup">
@@ -22,14 +23,16 @@ export function CatalogHeader({ booth, onOpenInfo }: CatalogHeaderProps) {
           <h1>{booth.booth_name}</h1>
           <div className="brand-meta">
             {booth.booth_code && <span className="brand-meta-code">Booth {booth.booth_code}</span>}
-            <span className="brand-meta-subtitle">Official Shop</span>
+            <span className="brand-meta-subtitle">{copy.officialShop}</span>
           </div>
         </div>
       </div>
       <div className="header-actions">
-        <Button variant="secondary" icon={<Info size={20} />} onClick={onOpenInfo}>
-          Booth Info
-        </Button>
+        <button type="button" className="booth-info-trigger" onClick={onOpenInfo}>
+          <span className="booth-info-trigger-icon"><Info size={18} /></span>
+          <span className="booth-info-trigger-copy"><strong>{copy.boothInfo}</strong><small>{copy.boothInfoHint}</small></span>
+          <ChevronRight size={17} className="booth-info-trigger-arrow" />
+        </button>
       </div>
     </header>
   );

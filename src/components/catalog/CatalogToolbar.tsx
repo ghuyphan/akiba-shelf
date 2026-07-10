@@ -1,5 +1,6 @@
 import { ArrowDownUp, Check, ChevronDown, Grid2X2, List, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useCatalogCopy } from "../../lib/catalogI18n";
 
 type CatalogToolbarProps = {
   searchQuery: string;
@@ -10,14 +11,6 @@ type CatalogToolbarProps = {
   onViewModeChange: (mode: "grid" | "list") => void;
 };
 
-const sortOptions = [
-  { value: "recommended", label: "Recommended" },
-  { value: "price-asc", label: "Price ↑" },
-  { value: "price-desc", label: "Price ↓" },
-  { value: "quantity", label: "Most stock" },
-  { value: "name", label: "Name" },
-];
-
 export function CatalogToolbar({
   searchQuery,
   onSearchChange,
@@ -26,6 +19,14 @@ export function CatalogToolbar({
   onSortChange,
   onViewModeChange,
 }: CatalogToolbarProps) {
+  const copy = useCatalogCopy();
+  const sortOptions = [
+    { value: "recommended", label: copy.recommended },
+    { value: "price-asc", label: copy.priceLow },
+    { value: "price-desc", label: copy.priceHigh },
+    { value: "quantity", label: copy.mostStock },
+    { value: "name", label: copy.name },
+  ];
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -47,16 +48,16 @@ export function CatalogToolbar({
         <Search size={16} className="search-icon" />
         <input
           type="text"
-          placeholder="Search items..."
+          placeholder={copy.searchItems}
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
-          aria-label="Search catalog"
+          aria-label={copy.searchCatalog}
         />
         {searchQuery && (
           <button
             type="button"
             className="search-clear"
-            aria-label="Clear search"
+            aria-label={copy.clearSearch}
             onClick={() => onSearchChange("")}
           >
             <X size={14} />
@@ -101,7 +102,7 @@ export function CatalogToolbar({
         <button
           type="button"
           className={viewMode === "grid" ? "active" : ""}
-          aria-label="Grid view"
+          aria-label={copy.gridView}
           onClick={() => onViewModeChange("grid")}
         >
           <Grid2X2 size={16} />
@@ -109,7 +110,7 @@ export function CatalogToolbar({
         <button
           type="button"
           className={viewMode === "list" ? "active" : ""}
-          aria-label="List view"
+          aria-label={copy.listView}
           onClick={() => onViewModeChange("list")}
         >
           <List size={16} />
@@ -118,4 +119,3 @@ export function CatalogToolbar({
     </div>
   );
 }
-
