@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, LogOut, Package, ShoppingBag } from "lucide-react";
+import { ArrowLeft, CreditCard, LogOut, Package, Settings2, ShoppingBag } from "lucide-react";
 import {
   deleteProduct,
   getAdminProducts,
@@ -26,6 +26,7 @@ import { SettingsForm } from "../components/admin/SettingsForm";
 import { OrderQueue } from "../components/admin/OrderQueue";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
+import { Modal } from "../components/ui/Modal";
 
 function createBlankProduct(nextSort: number): Product {
   return {
@@ -55,6 +56,8 @@ export function AdminPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product>();
   const [viewTab, setViewTab] = useState<"orders" | "products" | "settings">("orders");
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
+  const [settingsTab, setSettingsTab] = useState<"booth" | "payment">("booth");
+  const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [booth, setBooth] = useState<BoothSettings>(() => getStoredBoothTheme());
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const [status, setStatus] = useState("");
@@ -100,6 +103,8 @@ export function AdminPage() {
     [products],
   );
   const hiddenCount = useMemo(() => products.filter((product) => !product.active).length, [products]);
+  const pendingOrders = useMemo(() => orders.filter((order) => order.status === "pending"), [orders]);
+  const pendingValue = useMemo(() => pendingOrders.reduce((sum, order) => sum + order.total_amount, 0), [pendingOrders]);
 
   useEffect(() => {
     if (!supabase) {
@@ -239,6 +244,7 @@ export function AdminPage() {
 
   async function handleSignOut() {
     await signOutAdmin();
+    setIsSignOutOpen(false);
     setIsAuthed(false);
   }
 
@@ -254,71 +260,15 @@ export function AdminPage() {
 
   return (
     <main className="admin-shell" style={getThemeStyle(booth)}>
-      <header className="admin-header" style={{ 
-        display: "flex", 
-        flexDirection: "column", 
-        alignItems: "stretch", 
-        padding: "0",
-        borderBottom: "1px solid var(--line, #e2e8f0)",
-        background: "var(--surface, #ffffff)"
-      }}>
-        {/* Top App Bar */}
-        <div style={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center", 
-          height: "56px", 
-          padding: "0 16px",
-          width: "100%"
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Link 
-              to="/" 
-              aria-label="Back to catalog" 
-              style={{ 
-                display: "grid", 
-                placeItems: "center", 
-                width: "36px", 
-                height: "36px", 
-                borderRadius: "50%", 
-                color: "var(--ink)",
-                cursor: "pointer",
-                textDecoration: "none"
-              }}
-            >
-              <ArrowLeft size={20} />
-            </Link>
-            <h1 style={{ fontSize: "16px", fontWeight: "700", color: "var(--ink)", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
-              <ShoppingBag size={18} style={{ color: "var(--coral)" }} />
-              Admin
-            </h1>
+      <header className="admin-header">
+        <div className="admin-header-pill">
+          <div className="admin-header-brand">
+            <Link to="/" aria-label="Back to catalog" className="admin-header-icon-button"><ArrowLeft size={19} /></Link>
+            <span className="admin-header-mark"><ShoppingBag size={18} /></span>
+            <span><strong>Merch desk</strong><small>Admin workspace</small></span>
           </div>
-          
-          <button 
-            type="button"
-            onClick={handleSignOut}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--muted)",
-              fontSize: "13px",
-              fontWeight: "600",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              transition: "all 150ms ease"
-            }}
-          >
-            <LogOut size={16} />
-            Sign Out
-          </button>
-        </div>
 
-        {/* Integrated Navigation Tabs */}
-        <div className="admin-nav-tabs" style={{ padding: "0 16px", marginTop: "0" }}>
+          <div className="admin-nav-tabs">
           <button
             type="button"
             className={`admin-nav-tab ${viewTab === "orders" ? "active" : ""}`}
@@ -326,15 +276,7 @@ export function AdminPage() {
           >
             <span>Orders Queue</span>
             {orders.filter(o => o.status === "pending").length > 0 && (
-              <span style={{
-                background: "var(--red, #ef4444)",
-                color: "white",
-                fontSize: "10px",
-                padding: "1px 5px",
-                borderRadius: "10px",
-                fontWeight: "900",
-                marginLeft: "4px"
-              }}>
+              <span className="admin-nav-count">
                 {orders.filter(o => o.status === "pending").length}
               </span>
             )}
@@ -353,10 +295,27 @@ export function AdminPage() {
           >
             Settings
           </button>
+          </div>
+
+          <button type="button" onClick={() => setIsSignOutOpen(true)} className="admin-signout-button">
+            <LogOut size={16} /><span>Sign out</span>
+          </button>
         </div>
       </header>
 
       <div className="admin-container">
+        <section className="admin-view-hero">
+          <div>
+            <span>{viewTab === "orders" ? "Live operations" : viewTab === "products" ? "Catalog management" : "Workspace configuration"}</span>
+            <h1>{viewTab === "orders" ? "Orders" : viewTab === "products" ? "Products" : "Settings"}</h1>
+            <p>{viewTab === "orders" ? "Confirm payments and keep fulfilment moving." : viewTab === "products" ? "Manage listings, images, pricing, and availability." : "Control what customers see and how they pay."}</p>
+          </div>
+          <div className="admin-view-chips">
+            {viewTab === "orders" && <><span><b>{pendingOrders.length}</b> pending</span><span><b>{pendingValue.toLocaleString("vi-VN")} ₫</b> awaiting confirmation</span></>}
+            {viewTab === "products" && <><span><b>{products.length}</b> total</span><span><b>{lowStockCount}</b> need attention</span><span><b>{hiddenCount}</b> hidden</span></>}
+            {viewTab === "settings" && <><span><b>{booth.booth_code || "—"}</b> booth code</span><span><b>{payment.bank_label || "—"}</b> payment label</span></>}
+          </div>
+        </section>
         {status && (
           <Alert variant={statusVariant} onClose={() => setStatus("")}>
             {status}
@@ -424,8 +383,16 @@ export function AdminPage() {
         )}
 
         {viewTab === "settings" && (
-          <div className="admin-settings-grid">
-            <SettingsForm
+          <section className="admin-settings-workspace">
+            <div className="admin-settings-intro">
+              <div><span>Workspace settings</span><h2>Keep booth details easy to scan.</h2><p>Edit one group at a time. Changes only go live when you press save.</p></div>
+              <div className="admin-settings-switcher" role="tablist" aria-label="Settings section">
+                <button type="button" className={settingsTab === "booth" ? "active" : ""} onClick={() => setSettingsTab("booth")}><Settings2 size={17} /> Booth & theme</button>
+                <button type="button" className={settingsTab === "payment" ? "active" : ""} onClick={() => setSettingsTab("payment")}><CreditCard size={17} /> Payment & QR</button>
+              </div>
+            </div>
+            <div className="admin-settings-panel">
+            {settingsTab === "booth" ? <SettingsForm
               settings={booth}
               onSave={(settings) =>
                 runAdminAction(async () => {
@@ -433,8 +400,7 @@ export function AdminPage() {
                   setBooth(saved);
                 }, "Booth info saved.")
               }
-            />
-            <QrManager
+            /> : <QrManager
               settings={payment}
               onSave={(settings) =>
                 runAdminAction(async () => {
@@ -442,10 +408,21 @@ export function AdminPage() {
                   setPayment(saved);
                 }, "QR settings saved.")
               }
-            />
-          </div>
+            />}
+            </div>
+          </section>
         )}
       </div>
+      <Modal title="Sign out of admin?" isOpen={isSignOutOpen} onClose={() => setIsSignOutOpen(false)} className="signout-modal">
+        <div className="signout-confirmation">
+          <span className="signout-confirmation-icon"><LogOut size={22} /></span>
+          <div><h3>Your work is saved.</h3><p>You’ll return to the staff login screen. The public catalog stays open for customers.</p></div>
+          <div className="signout-confirmation-actions">
+            <Button variant="secondary" onClick={() => setIsSignOutOpen(false)}>Stay signed in</Button>
+            <Button onClick={() => void handleSignOut()}>Sign out</Button>
+          </div>
+        </div>
+      </Modal>
     </main>
   );
 }

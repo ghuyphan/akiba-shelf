@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { ArrowLeft, ArrowRight, Lock, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, Mail, ShieldCheck, ShoppingBag, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
@@ -20,198 +20,50 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
   }
 
   return (
-    <section 
-      className="admin-login" 
-      style={{ 
-        position: "fixed", 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
-        zIndex: 9999, 
-        display: "flex", 
-        flexDirection: "column",
-        justifyContent: "center", 
-        alignItems: "center", 
-        padding: "24px", 
-        background: "var(--page-bg, #f8fafc)", 
-        overflowY: "auto", 
-        width: "100vw", 
-        height: "100vh",
-        userSelect: "none"
-      }}
-    >
-      <div 
-        className="admin-card"
-        style={{ 
-          width: "min(100%, 390px)", 
-          zIndex: 1, 
-          display: "flex", 
-          flexDirection: "column",
-          alignItems: "stretch",
-          background: "var(--surface, #ffffff)",
-          border: "1px solid var(--line, #e2e8f0)",
-          borderRadius: "16px",
-          padding: "28px",
-          boxShadow: "var(--shadow, 0 10px 25px -5px rgba(0, 0, 0, 0.05))"
-        }}
-      >
-        {/* Title Block */}
-        <div style={{ marginBottom: "36px", alignSelf: "flex-start" }}>
-          <h1 
-            style={{ 
-              fontSize: "36px", 
-              fontWeight: "900", 
-              color: "var(--ink, #1e293b)", 
-              margin: "0 0 6px 0", 
-              letterSpacing: "-0.5px" 
-            }}
-          >
-            Login
-          </h1>
-          <p style={{ fontSize: "15px", color: "var(--muted, #64748b)", margin: 0, fontWeight: "500" }}>
-            Please sign in to continue.
-          </p>
+    <main className="admin-login">
+      <section className="admin-login-card">
+        <div className="admin-login-intro">
+          <div className="admin-login-brand">
+            <span><ShoppingBag size={22} /></span>
+            Merch desk
+          </div>
+          <div>
+            <p className="admin-login-kicker"><Sparkles size={15} /> Booth operations</p>
+            <h1>Run the booth without the clutter.</h1>
+            <p>Review orders, update inventory, and keep payment details current from one calm workspace.</p>
+          </div>
+          <div className="admin-login-trust">
+            <ShieldCheck size={18} />
+            <span><strong>Staff-only access</strong><small>Protected by your Supabase account</small></span>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: "24px" }}>
-          {/* Email Container */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <span style={{ fontSize: "11px", fontWeight: "800", color: "var(--muted, #94a3b8)", letterSpacing: "0.8px" }}>
-              EMAIL
-            </span>
-            <div 
-              style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                gap: "12px", 
-                background: "var(--surface, #ffffff)", 
-                border: "1px solid var(--line, #e2e8f0)",
-                borderRadius: "10px", 
-                padding: "0 16px",
-                height: "52px",
-                boxShadow: "var(--shadow-sm)"
-              }}
-            >
-              <Mail size={18} style={{ color: "var(--muted, #94a3b8)" }} />
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={!isSupabaseConfigured}
-                placeholder="user123@email.com"
-                style={{
-                  border: "none",
-                  outline: "none",
-                  width: "100%",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  color: "var(--ink, #1e293b)",
-                  background: "transparent"
-                }}
-              />
-            </div>
+        <div className="admin-login-form-wrap">
+          <Link to="/" className="admin-login-back"><ArrowLeft size={16} /> Back to catalog</Link>
+          <div className="admin-login-heading">
+            <span className="admin-login-icon"><Lock size={22} /></span>
+            <div><h2>Welcome back</h2><p>Sign in to open the admin workspace.</p></div>
           </div>
 
-          {/* Password Container */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "11px", fontWeight: "800", color: "var(--muted, #94a3b8)", letterSpacing: "0.8px" }}>
-                PASSWORD
-              </span>
-            </div>
-            <div 
-              style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                gap: "12px", 
-                background: "var(--surface, #ffffff)", 
-                border: "1px solid var(--line, #e2e8f0)",
-                borderRadius: "10px", 
-                padding: "0 16px",
-                height: "52px",
-                boxShadow: "var(--shadow-sm)"
-              }}
-            >
-              <Lock size={18} style={{ color: "var(--muted, #94a3b8)" }} />
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={!isSupabaseConfigured}
-                placeholder="••••••••"
-                style={{
-                  border: "none",
-                  outline: "none",
-                  width: "100%",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  color: "var(--ink, #1e293b)",
-                  background: "transparent"
-                }}
-              />
-            </div>
-          </div>
+          <form onSubmit={handleSubmit} className="admin-login-form">
+            <label>
+              <span>Email address</span>
+              <div className="admin-login-input"><Mail size={19} /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required disabled={!isSupabaseConfigured} autoComplete="email" placeholder="staff@example.com" /></div>
+            </label>
+            <label>
+              <span>Password</span>
+              <div className="admin-login-input"><Lock size={19} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required disabled={!isSupabaseConfigured} autoComplete="current-password" placeholder="Enter your password" /></div>
+            </label>
 
-          {error && (
-            <Alert variant="error" title="Sign in failed" onClose={() => setError("")}>
-              {error}
-            </Alert>
-          )}
+            {error && <Alert variant="error" title="Sign in failed" onClose={() => setError("")}>{error}</Alert>}
+            {!isSupabaseConfigured && <Alert variant="error" title="Supabase is not configured">Add the Supabase URL and public key before signing in.</Alert>}
 
-          {/* Right Aligned Submit Pill Button */}
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
-            <button
-              type="submit"
-              disabled={busy || !isSupabaseConfigured}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                background: "var(--coral, #ff6fae)", 
-                border: "none",
-                borderRadius: "999px",
-                padding: "0 28px",
-                height: "46px",
-                color: "#ffffff",
-                fontSize: "13px",
-                fontWeight: "800",
-                letterSpacing: "1px",
-                cursor: busy ? "not-allowed" : "pointer",
-                boxShadow: "0 8px 18px rgba(0, 0, 0, 0.08)",
-                transition: "transform 150ms ease, opacity 150ms ease",
-                opacity: busy ? 0.8 : 1
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
-            >
-              {busy ? "SIGNING IN..." : "LOGIN"}
-              <ArrowRight size={16} />
+            <button type="submit" className="admin-login-submit" disabled={busy || !isSupabaseConfigured}>
+              <span>{busy ? "Signing in…" : "Open admin"}</span><ArrowRight size={18} />
             </button>
-          </div>
-        </form>
-
-        {/* Back Link */}
-        <div style={{ marginTop: "48px", textAlign: "center" }}>
-          <Link 
-            to="/" 
-            style={{ 
-              display: "inline-flex", 
-              alignItems: "center", 
-              gap: "6px", 
-              fontSize: "13px", 
-              color: "var(--muted, #64748b)", 
-              textDecoration: "none",
-              fontWeight: "600" 
-            }}
-          >
-            <ArrowLeft size={16} />
-            Go back to catalog
-          </Link>
+          </form>
         </div>
-      </div>
-    </section>
+      </section>
+    </main>
   );
 }

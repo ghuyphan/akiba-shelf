@@ -20,7 +20,7 @@ export function AdminCard({ title, description, action, icon, className = "", ch
             {description && <p>{description}</p>}
           </div>
         </div>
-        {action}
+        {action && <div className="admin-card-header-action">{action}</div>}
       </div>
       {children}
     </section>

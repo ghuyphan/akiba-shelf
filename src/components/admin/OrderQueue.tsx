@@ -1,449 +1,98 @@
-import { useEffect, useRef, useState } from "react";
-import { Clock, Ban, CheckCircle, AlertTriangle, Inbox } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Ban, CheckCircle2, Clock3, Inbox, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
 import type { Order } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { confirmOrderPayment, cancelOrder } from "../../lib/api";
 import { SwipeConfirmButton } from "../catalog/PaymentQrModal";
 
-type OrderQueueProps = {
-  orders: Order[];
-  onOrderUpdated: () => void;
-};
+type OrderQueueProps = { orders: Order[]; onOrderUpdated: () => void };
+type Filter = "all" | "pending" | "confirmed" | "cancelled";
 
 export function OrderQueue({ orders, onOrderUpdated }: OrderQueueProps) {
-  const [filter, setFilter] = useState<"all" | "pending" | "confirmed" | "cancelled">("pending");
+  const [filter, setFilter] = useState<Filter>("pending");
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
-
-  const rowRef = useRef<HTMLDivElement>(null);
-  const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const categories = ["pending", "confirmed", "cancelled", "all"] as const;
-
-  useEffect(() => {
-    const row = rowRef.current;
-    const activeIndex = categories.indexOf(filter);
-    const activeChip = chipRefs.current[activeIndex];
-    if (!row || !activeChip) return;
-    const currentRow = row;
-    const currentActiveChip = activeChip;
-
-    function updateIndicator() {
-      requestAnimationFrame(() => {
-        const rowRect = currentRow.getBoundingClientRect();
-        const chipRect = currentActiveChip.getBoundingClientRect();
-        if (rowRect.width === 0 || chipRect.width === 0) return;
-        currentRow.style.setProperty("--active-left", `${chipRect.left - rowRect.left + currentRow.scrollLeft}px`);
-        currentRow.style.setProperty("--active-width", `${chipRect.width}px`);
-      });
-    }
-
-    updateIndicator();
-    const observer = new ResizeObserver(updateIndicator);
-    observer.observe(currentRow);
-    observer.observe(currentActiveChip);
-    window.addEventListener("resize", updateIndicator);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", updateIndicator);
-    };
-  }, [filter]);
-
-  const filteredOrders = orders.filter((order) => {
-    if (filter === "all") return true;
-    return order.status === filter;
-  });
-
+  const filters: Filter[] = ["pending", "confirmed", "cancelled", "all"];
+  const filteredOrders = useMemo(() => orders.filter((order) => filter === "all" || order.status === filter), [filter, orders]);
   const totalMoney = filteredOrders.reduce((sum, order) => sum + order.total_amount, 0);
-
-  const itemSummary = filteredOrders.reduce((acc, order) => {
-    order.order_items?.forEach((item) => {
-      const name = item.product?.name || "Unknown Product";
+  const totalUnits = filteredOrders.reduce((sum, order) => sum + (order.order_items?.reduce((itemSum, item) => itemSum + item.quantity, 0) ?? 0), 0);
+  const itemSummary = useMemo(() => {
+    const summary = new Map<string, { name: string; code: string; quantity: number; imageUrl: string }>();
+    filteredOrders.forEach((order) => order.order_items?.forEach((item) => {
+      const name = item.product?.name || "Unknown product";
       const code = item.product?.item_code || "";
       const key = `${name}__${code}`;
-      if (!acc[key]) {
-        acc[key] = { name, code, quantity: 0 };
-      }
-      acc[key].quantity += item.quantity;
-    });
-    return acc;
-  }, {} as Record<string, { name: string; code: string; quantity: number }>);
+      const current = summary.get(key);
+      summary.set(key, { name, code, quantity: (current?.quantity ?? 0) + item.quantity, imageUrl: current?.imageUrl || item.product?.images?.find(Boolean) || "" });
+    }));
+    return [...summary.values()].sort((first, second) => second.quantity - first.quantity);
+  }, [filteredOrders]);
 
-  const sortedItems = Object.values(itemSummary).sort((a, b) => b.quantity - a.quantity);
+  async function handleConfirm(orderId: string) {
+    setConfirmingId(orderId); setErrorMessage("");
+    try { await confirmOrderPayment(orderId); onOrderUpdated(); }
+    catch (error) { setErrorMessage(error instanceof Error ? error.message : "Failed to confirm payment."); }
+    finally { setConfirmingId(null); }
+  }
 
-
-  const handleConfirm = async (orderId: string) => {
-    setConfirmingId(orderId);
-    setErrorMessage("");
-    try {
-      await confirmOrderPayment(orderId);
-      onOrderUpdated();
-    } catch (err: any) {
-      setErrorMessage(err.message || "Failed to confirm payment.");
-    } finally {
-      setConfirmingId(null);
-    }
-  };
-
-  const handleCancel = async (orderId: string) => {
-    if (!window.confirm("Are you sure you want to cancel this order? This cannot be undone.")) return;
-    setCancellingId(orderId);
-    setErrorMessage("");
-    try {
-      await cancelOrder(orderId);
-      onOrderUpdated();
-    } catch (err: any) {
-      setErrorMessage(err.message || "Failed to cancel order.");
-    } finally {
-      setCancellingId(null);
-    }
-  };
+  async function handleCancel(orderId: string) {
+    if (!window.confirm("Cancel this order? This cannot be undone.")) return;
+    setCancellingId(orderId); setErrorMessage("");
+    try { await cancelOrder(orderId); onOrderUpdated(); }
+    catch (error) { setErrorMessage(error instanceof Error ? error.message : "Failed to cancel order."); }
+    finally { setCancellingId(null); }
+  }
 
   return (
-    <div className="order-queue-container" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      {/* Header & Filter Controls */}
-      <div 
-        className="queue-controls" 
-        style={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center", 
-          flexWrap: "wrap",
-          gap: "12px"
-        }}
-      >
-        <div className="category-row" ref={rowRef}>
-          {categories.map((tab) => {
-            const count = orders.filter((o) => tab === "all" ? true : o.status === tab).length;
-            const isActive = filter === tab;
-            const index = categories.indexOf(tab);
-            return (
-              <button
-                key={tab}
-                ref={(el) => {
-                  chipRefs.current[index] = el;
-                }}
-                type="button"
-                className={`chip ${isActive ? "chip-active" : ""}`}
-                onClick={() => setFilter(tab)}
-                style={{ textTransform: "capitalize", whiteSpace: "nowrap" }}
-              >
-                {tab} ({count})
-              </button>
-            );
-          })}
+    <section className="admin-orders-view">
+      <div className="admin-filter-bar">
+        <div className="admin-filter-tabs" role="tablist" aria-label="Order status">
+          {filters.map((item) => <button key={item} type="button" className={filter === item ? "active" : ""} onClick={() => setFilter(item)}><span>{item}</span><b>{orders.filter((order) => item === "all" || order.status === item).length}</b></button>)}
         </div>
+        <span className="admin-live-indicator"><i /> Live queue</span>
       </div>
 
-      {errorMessage && (
-        <div 
-          style={{ 
-            padding: "12px 16px", 
-            background: "rgba(239, 68, 68, 0.08)", 
-            color: "var(--red, #ef4444)", 
-            borderRadius: "8px", 
-            fontSize: "14px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px"
-          }}
-        >
-          <AlertTriangle size={16} />
-          <span>{errorMessage}</span>
-        </div>
-      )}
+      {errorMessage && <div className="admin-inline-error"><AlertTriangle size={17} /><span>{errorMessage}</span><button type="button" onClick={() => setErrorMessage("")}>Dismiss</button></div>}
 
-      {filteredOrders.length > 0 && (
-        <div className="order-summary-panel">
-          {/* Summary Metrics */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div>
-              <span style={{ fontSize: "11px", fontWeight: "700", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                Filter Summary
-              </span>
-              <h3 style={{ fontSize: "16px", fontWeight: "900", color: "var(--ink)", margin: "4px 0 0 0" }}>
-                {filter === "all" ? "All Orders" : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Orders`}
-              </h3>
-            </div>
-            
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-              <div style={{ background: "var(--surface, #ffffff)", padding: "10px 12px", borderRadius: "8px", border: "1px solid var(--line)" }}>
-                <div style={{ fontSize: "11px", color: "var(--muted)", fontWeight: "600" }}>Total Orders</div>
-                <div style={{ fontSize: "16px", fontWeight: "800", color: "var(--ink)" }}>{filteredOrders.length}</div>
-              </div>
-              <div style={{ background: "var(--surface, #ffffff)", padding: "10px 12px", borderRadius: "8px", border: "1px solid var(--line)" }}>
-                <div style={{ fontSize: "11px", color: "var(--muted)", fontWeight: "600" }}>Total Money</div>
-                <div style={{ fontSize: "16px", fontWeight: "800", color: "var(--coral, #ff6fae)" }}>{formatVnd(totalMoney)}</div>
-              </div>
-            </div>
-          </div>
+      <div className="admin-order-metrics">
+        <article><span className="admin-metric-icon coral"><ReceiptText size={19} /></span><div><small>Orders shown</small><strong>{filteredOrders.length}</strong><p>{filter === "all" ? "Across every status" : `${filter} orders`}</p></div></article>
+        <article><span className="admin-metric-icon teal"><WalletCards size={19} /></span><div><small>Order value</small><strong>{formatVnd(totalMoney)}</strong><p>Current filtered total</p></div></article>
+        <article><span className="admin-metric-icon mustard"><PackageCheck size={19} /></span><div><small>Units requested</small><strong>{totalUnits}</strong><p>{itemSummary.length} unique products</p></div></article>
+      </div>
 
-          {/* Itemized Breakdown */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", height: "100%" }}>
-            <span style={{ fontSize: "11px", fontWeight: "700", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Items Purchased ({sortedItems.reduce((sum, item) => sum + item.quantity, 0)} units)
-            </span>
-            <div 
-              style={{ 
-                background: "var(--surface, #ffffff)", 
-                border: "1px solid var(--line)", 
-                borderRadius: "8px", 
-                padding: "10px 12px",
-                maxHeight: "125px",
-                overflowY: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px"
-              }}
-            >
-              {sortedItems.length === 0 ? (
-                <div style={{ fontSize: "12px", color: "var(--muted)", textAlign: "center", padding: "12px 0" }}>No items in these orders.</div>
-              ) : (
-                sortedItems.map((item) => (
-                  <div key={`${item.name}__${item.code}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center", minWidth: 0 }}>
-                      <span 
-                        style={{ 
-                          background: "color-mix(in srgb, var(--coral) 8%, transparent)", 
-                          borderRadius: "4px", 
-                          padding: "2px 6px",
-                          fontSize: "11px", 
-                          fontWeight: "800",
-                          color: "var(--coral, #ff6fae)",
-                          border: "1px solid color-mix(in srgb, var(--coral) 15%, transparent)"
-                        }}
-                      >
-                        {item.quantity}x
-                      </span>
-                      <span style={{ color: "var(--ink)", fontWeight: "600", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
-                        {item.name}
-                      </span>
-                    </div>
-                    {item.code && (
-                      <span style={{ color: "var(--muted)", fontSize: "11px", marginLeft: "8px", flexShrink: 0 }}>
-                        [{item.code}]
-                      </span>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+      {filteredOrders.length > 0 && <section className="admin-items-summary">
+        <div className="admin-section-heading"><div><span>Fulfilment overview</span><h2>What needs to be packed</h2></div><small>{totalUnits} total units</small></div>
+        <div className="admin-items-summary-grid">
+          {itemSummary.map((item) => <article key={`${item.name}-${item.code}`}>{item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span className="admin-item-placeholder"><ShoppingBag size={17} /></span>}<div><strong>{item.name}</strong><small>{item.code || "No item code"}</small></div><b>{item.quantity}×</b></article>)}
         </div>
-      )}
+      </section>}
 
-      {/* Grid List */}
-      {filteredOrders.length === 0 ? (
-        <div 
-          style={{ 
-            display: "flex", 
-            flexDirection: "column", 
-            alignItems: "center", 
-            justifyContent: "center", 
-            padding: "60px 20px", 
-            background: "var(--surface-soft)", 
-            borderRadius: "16px",
-            border: "1px dashed var(--line)",
-            color: "var(--muted)",
-            textAlign: "center",
-            gap: "12px"
-          }}
-        >
-          <Inbox size={48} style={{ strokeWidth: 1.2, color: "var(--muted)" }} />
-          <div>
-            <h3 style={{ fontSize: "16px", fontWeight: "700", color: "var(--ink)", margin: "0 0 4px 0" }}>No orders found</h3>
-            <p style={{ fontSize: "13px", margin: 0 }}>There are no {filter} orders at the moment.</p>
-          </div>
-        </div>
-      ) : (
-        <div 
-          className="orders-grid" 
-          style={{ 
-            display: "grid", 
-            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", 
-            gap: "16px" 
-          }}
-        >
-          {filteredOrders.map((order) => (
-            <OrderCard 
-              key={order.id} 
-              order={order} 
-              isConfirming={confirmingId === order.id}
-              isCancelling={cancellingId === order.id}
-              onConfirm={() => handleConfirm(order.id)}
-              onCancel={() => handleCancel(order.id)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+      <div className="admin-section-heading"><div><span>Order queue</span><h2>{filter === "all" ? "All orders" : `${filter[0].toUpperCase()}${filter.slice(1)} orders`}</h2></div><small>Newest first</small></div>
+      {filteredOrders.length === 0 ? <div className="admin-orders-empty"><Inbox size={44} /><h3>No {filter === "all" ? "" : filter} orders</h3><p>New orders will appear here automatically.</p></div> : <div className="admin-orders-grid">{filteredOrders.map((order) => <OrderCard key={order.id} order={order} isConfirming={confirmingId === order.id} isCancelling={cancellingId === order.id} onConfirm={() => handleConfirm(order.id)} onCancel={() => handleCancel(order.id)} />)}</div>}
+    </section>
   );
 }
 
-type OrderCardProps = {
-  order: Order;
-  isConfirming: boolean;
-  isCancelling: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-};
+type OrderCardProps = { order: Order; isConfirming: boolean; isCancelling: boolean; onConfirm: () => void; onCancel: () => void };
 
 function OrderCard({ order, isConfirming, isCancelling, onConfirm, onCancel }: OrderCardProps) {
   const [elapsedTime, setElapsedTime] = useState("");
-
   useEffect(() => {
-    const updateTime = () => {
-      const diff = Date.now() - new Date(order.created_at).getTime();
-      const seconds = Math.floor(diff / 1000);
-      if (seconds < 60) {
-        setElapsedTime("Just now");
-      } else {
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) {
-          setElapsedTime(`${minutes}m ago`);
-        } else {
-          const hours = Math.floor(minutes / 60);
-          setElapsedTime(`${hours}h ago`);
-        }
-      }
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 15000); // refresh every 15s
-    return () => clearInterval(interval);
+    function updateTime() { const seconds = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 1000); const minutes = Math.floor(seconds / 60); setElapsedTime(seconds < 60 ? "Just now" : minutes < 60 ? `${minutes}m ago` : `${Math.floor(minutes / 60)}h ago`); }
+    updateTime(); const interval = window.setInterval(updateTime, 15000); return () => window.clearInterval(interval);
   }, [order.created_at]);
 
-  const statusColors = {
-    pending: { bg: "color-mix(in srgb, var(--coral) 8%, transparent)", text: "var(--coral, #ff6fae)" },
-    confirmed: { bg: "color-mix(in srgb, var(--teal) 8%, transparent)", text: "var(--teal, #6fc7ff)" },
-    cancelled: { bg: "color-mix(in srgb, var(--muted) 8%, transparent)", text: "var(--muted, #64748b)" },
-  };
-
-  const currentColors = statusColors[order.status] || statusColors.pending;
-
+  const statusIcon = order.status === "confirmed" ? <CheckCircle2 size={14} /> : order.status === "cancelled" ? <Ban size={14} /> : <Clock3 size={14} />;
   return (
-    <div 
-      className="order-card" 
-      style={{ 
-        background: "var(--card-bg, #ffffff)", 
-        border: "1px solid var(--line, #e2e8f0)", 
-        borderRadius: "16px", 
-        padding: "16px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "14px",
-        boxShadow: "var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05))",
-        position: "relative",
-        animation: "card-enter 300ms var(--ease-out)"
-      }}
-    >
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <h4 style={{ fontSize: "18px", fontWeight: "900", color: "var(--ink)", margin: "0 0 2px 0", letterSpacing: "0.5px" }}>
-            {order.order_code}
-          </h4>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--muted)" }}>
-            <Clock size={12} />
-            <span>{elapsedTime}</span>
-          </div>
-        </div>
-        
-        <span 
-          style={{ 
-            fontSize: "11px", 
-            fontWeight: "700", 
-            textTransform: "uppercase", 
-            padding: "4px 8px", 
-            borderRadius: "12px",
-            background: currentColors.bg,
-            color: currentColors.text
-          }}
-        >
-          {order.status}
-        </span>
+    <article className={`admin-order-card status-${order.status}`}>
+      <header><div><span className="admin-order-code">{order.order_code}</span><span className="admin-order-time"><Clock3 size={13} /> {elapsedTime}</span></div><span className={`admin-order-status ${order.status}`}>{statusIcon}{order.status}</span></header>
+      {order.customer_name && <div className="admin-order-customer"><span>Pickup name</span><strong>{order.customer_name}</strong></div>}
+      <div className="admin-order-items">
+        {order.order_items?.map((item) => { const image = item.product?.images?.find(Boolean); return <div key={item.id} className="admin-order-item">{image ? <img src={image} alt="" /> : <span className="admin-order-item-placeholder"><ShoppingBag size={15} /></span>}<div><strong>{item.product?.name || "Unknown product"}</strong><small>{item.product?.item_code || "No code"}</small></div><b>{item.quantity}×</b></div>; })}
       </div>
-
-      {/* Customer Name */}
-      {order.customer_name && (
-        <div style={{ background: "var(--surface-soft)", padding: "6px 12px", borderRadius: "8px", fontSize: "13px" }}>
-          <span style={{ color: "var(--muted)", marginRight: "6px" }}>Customer:</span>
-          <strong style={{ color: "var(--ink)" }}>{order.customer_name}</strong>
-        </div>
-      )}
-
-      {/* Items List */}
-      <div style={{ flex: 1 }}>
-        <span style={{ fontSize: "11px", fontWeight: "600", color: "var(--muted)", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-          Items
-        </span>
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          {order.order_items?.map((item) => (
-            <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                <span 
-                  style={{ 
-                    background: "var(--surface-soft)", 
-                    borderRadius: "4px", 
-                    width: "20px", 
-                    height: "20px", 
-                    display: "grid", 
-                    placeItems: "center", 
-                    fontSize: "11px", 
-                    fontWeight: "700",
-                    border: "1px solid var(--line)"
-                  }}
-                >
-                  {item.quantity}
-                </span>
-                <span style={{ color: "var(--ink)", fontWeight: "500" }}>{item.product?.name || "Unknown Product"}</span>
-              </div>
-              <span style={{ color: "var(--muted)", fontSize: "12px" }}>
-                {item.product?.item_code && `[${item.product.item_code}]`}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ borderTop: "1px dashed var(--line)", margin: "4px 0" }} />
-
-      {/* Footer */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: "12px", color: "var(--muted)" }}>Total Value</span>
-        <strong style={{ fontSize: "16px", fontWeight: "800", color: "var(--ink)" }}>
-          {formatVnd(order.total_amount)}
-        </strong>
-      </div>
-
-      {/* Action Buttons (Only for pending) */}
-      {order.status === "pending" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
-          <SwipeConfirmButton onConfirm={onConfirm} isConfirming={isConfirming} />
-          
-          <button
-            type="button"
-            className="button button-ghost"
-            style={{ 
-              width: "100%", 
-              color: "var(--red, #ef4444)", 
-              fontSize: "12px",
-              minHeight: "32px",
-              height: "32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px"
-            }}
-            onClick={onCancel}
-            disabled={isConfirming || isCancelling}
-          >
-            <Ban size={12} />
-            <span>Cancel Order</span>
-          </button>
-        </div>
-      )}
-    </div>
+      <footer><span>Total</span><strong>{formatVnd(order.total_amount)}</strong></footer>
+      {order.status === "pending" && <div className="admin-order-actions"><SwipeConfirmButton onConfirm={onConfirm} isConfirming={isConfirming} /><button type="button" className="admin-cancel-order" onClick={onCancel} disabled={isConfirming || isCancelling}><Ban size={15} />{isCancelling ? "Cancelling…" : "Cancel order"}</button></div>}
+    </article>
   );
 }
