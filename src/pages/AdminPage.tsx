@@ -214,6 +214,17 @@ export function AdminPage() {
     applyPageTheme(booth);
   }, [booth]);
 
+  useEffect(() => {
+    const leaveDesignerOnPhone = () => {
+      if (window.innerWidth <= 760) {
+        setViewTab((current) => current === "design" ? "orders" : current);
+      }
+    };
+    leaveDesignerOnPhone();
+    window.addEventListener("resize", leaveDesignerOnPhone);
+    return () => window.removeEventListener("resize", leaveDesignerOnPhone);
+  }, []);
+
   async function runAdminAction(action: () => Promise<void>, message: string) {
     await action();
     toast.success(message);
@@ -270,7 +281,7 @@ export function AdminPage() {
           <div className="admin-nav-tabs">
           <button
             type="button"
-            className={`admin-nav-tab ${viewTab === "design" ? "active" : ""}`}
+            className={`admin-nav-tab admin-nav-storefront ${viewTab === "design" ? "active" : ""}`}
             onClick={() => setViewTab("design")}
           >
             <LayoutTemplate size={15} /> Storefront

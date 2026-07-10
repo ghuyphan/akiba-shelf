@@ -276,6 +276,8 @@ export function CatalogPage() {
       />
     ),
   };
+  const mainStorefrontSections = storefrontOrder.filter((section) => section !== "booth" && section !== "cart");
+  const sideStorefrontSections = storefrontOrder.filter((section) => section === "booth" || section === "cart");
 
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
@@ -287,15 +289,12 @@ export function CatalogPage() {
         </Alert>
       )}
       <div className="catalog-layout storefront-layout-grid">
-        {storefrontOrder.map((section) => (
-          <section
-            className={`storefront-module storefront-module-${section} ${section === "booth" || section === "cart" ? "catalog-side" : "catalog-main"}`}
-            key={section}
-            onClick={section === "booth" || section === "cart" ? (event) => event.stopPropagation() : undefined}
-          >
-            {storefrontBlocks[section]}
-          </section>
-        ))}
+        <section className="catalog-main storefront-lane-main">
+          {mainStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section}>{storefrontBlocks[section]}</div>)}
+        </section>
+        <section className="catalog-side storefront-lane-side" onClick={(event) => event.stopPropagation()}>
+          {sideStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section}>{storefrontBlocks[section]}</div>)}
+        </section>
       </div>
       {isCartBackdropMounted && (
         <div className={`bottomsheet-backdrop ${isCartExpanded ? "is-open" : "is-closing"}`} onClick={() => setIsCartExpanded(false)} />

@@ -51,6 +51,8 @@ export function StorefrontDesigner({ settings, products, onSave }: StorefrontDes
   }, [products]);
   const categories = useMemo(() => ["All", ...Array.from(new Set(previewProducts.map((product) => product.category))).filter(Boolean)], [previewProducts]);
   const previewCartProduct = previewProducts.find((product) => product.quantity_available > 0);
+  const mainPreviewSections = order.filter((section) => section !== "booth" && section !== "cart");
+  const sidePreviewSections = order.filter((section) => section === "booth" || section === "cart");
 
   function move(section: StorefrontSection, target: StorefrontSection) {
     if (section === target) return;
@@ -107,7 +109,12 @@ export function StorefrontDesigner({ settings, products, onSave }: StorefrontDes
             <div className="designer-live-storefront app-shell" style={getThemeStyle(draft)}>
               <CatalogHeader booth={draft} onOpenInfo={() => undefined} />
               <div className="catalog-layout storefront-layout-grid">
-                {order.map((section) => <section key={section} className={`storefront-module storefront-module-${section} designer-live-module ${section === "booth" || section === "cart" ? "catalog-side" : "catalog-main"}`} onDragOver={(event) => event.preventDefault()} onDrop={() => dropOn(section)}><button type="button" className="designer-module-handle" draggable onDragStart={() => setDragged(section)} onDragEnd={() => setDragged(null)} aria-label={`Drag ${sectionMeta[section].title}`}><GripVertical size={15} />{sectionMeta[section].title}</button>{previewBlocks[section]}</section>)}
+                <section className="catalog-main storefront-lane-main">
+                  {mainPreviewSections.map((section) => <div key={section} className={`storefront-module storefront-module-${section} designer-live-module`} onDragOver={(event) => event.preventDefault()} onDrop={() => dropOn(section)}><button type="button" className="designer-module-handle" draggable onDragStart={() => setDragged(section)} onDragEnd={() => setDragged(null)} aria-label={`Drag ${sectionMeta[section].title}`}><GripVertical size={15} />{sectionMeta[section].title}</button>{previewBlocks[section]}</div>)}
+                </section>
+                <section className="catalog-side storefront-lane-side">
+                  {sidePreviewSections.map((section) => <div key={section} className={`storefront-module storefront-module-${section} designer-live-module`} onDragOver={(event) => event.preventDefault()} onDrop={() => dropOn(section)}><button type="button" className="designer-module-handle" draggable onDragStart={() => setDragged(section)} onDragEnd={() => setDragged(null)} aria-label={`Drag ${sectionMeta[section].title}`}><GripVertical size={15} />{sectionMeta[section].title}</button>{previewBlocks[section]}</div>)}
+                </section>
               </div>
             </div>
           </CatalogLocaleProvider>
