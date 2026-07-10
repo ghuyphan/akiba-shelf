@@ -9,7 +9,7 @@ Akiba Shelf is a touch-friendly merch booth storefront and admin workspace. Cust
 - VietQR payment flow with live order confirmation.
 - Realtime catalog and order updates through Supabase.
 - Authenticated admin for orders, products, booth/payment settings, and storefront design.
-- Storefront designer with section ordering, theme colors, corner radius, preview, and English/Vietnamese UI.
+- Storefront designer with drag-and-drop ordering of the real featured, booth, controls, cart, and product modules; fixed safe grid spans; theme colors; corner radius; and English/Vietnamese UI.
 - Shared queued toast system through `useToast()`.
 
 ## Stack

@@ -383,7 +383,7 @@ export function AdminPage() {
           </>
         )}
 
-        {viewTab === "design" && <StorefrontDesigner settings={booth} onSave={(settings) => runAdminAction(async () => { const saved = await saveBoothSettings(settings); setBooth(saved); }, "Storefront design published.")} />}
+        {viewTab === "design" && <StorefrontDesigner settings={booth} products={products} onSave={(settings) => runAdminAction(async () => { const saved = await saveBoothSettings(settings); setBooth(saved); }, "Storefront design published.")} />}
 
         {viewTab === "settings" && (
           <section className="admin-settings-workspace">

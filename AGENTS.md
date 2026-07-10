@@ -70,7 +70,7 @@ Supabase is the source of truth. Catalog and order screens subscribe to Realtime
 
 The designer persists these `booth_settings` fields:
 
-- `layout_order`: permutation of `featured`, `controls`, `products`
+- `layout_order`: permutation of `featured`, `booth`, `controls`, `cart`, `products`; wide and side modules retain fixed safe spans
 - `corner_radius`: integer from 0 through 32
 - `catalog_locale`: `en` or `vi`
 - existing theme color fields
