@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Boxes, Edit3, Eye, ImageIcon, PackagePlus, RotateCcw, Tags, Trash2, X } from "lucide-react";
+import { Boxes, Edit3, Eye, ImageIcon, PackagePlus, RotateCcw, Sparkles, Tags, Trash2, X } from "lucide-react";
 import type { Product, StockStatus } from "../../types/catalog";
 import { formatNumber, formatVnd, normalizeSlug } from "../../lib/format";
 import { productBadges } from "../../lib/constants";
@@ -37,12 +37,25 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!isEditing) return;
-    const nextErrors = validateProduct(draft);
+    const quantity = Math.max(0, Math.floor(Number(draft.quantity_available) || 0));
+    const normalizedDraft: Product = {
+      ...draft,
+      name: draft.name.trim(),
+      item_code: draft.item_code.trim().toUpperCase(),
+      collection: draft.collection.trim(),
+      category: draft.category.trim(),
+      description: draft.description.trim(),
+      images,
+      quantity_available: quantity,
+      stock_status: quantity === 0 ? "sold_out" : quantity <= 5 ? "limited" : "in_stock",
+      stock_note: quantity === 0 ? "Sold out" : quantity <= 5 ? "Limited stock" : "In stock",
+    };
+    const nextErrors = validateProduct(normalizedDraft);
     setErrors(nextErrors);
     if (nextErrors.length) return;
     let didSave = false;
     setDeleteError("");
-    await runSave(async () => { await onSave({ ...draft, id: draft.id || normalizeSlug(`${draft.item_code}-${draft.name}`) }); didSave = true; }).catch(() => undefined);
+    await runSave(async () => { await onSave({ ...normalizedDraft, id: normalizedDraft.id || normalizeSlug(`${normalizedDraft.item_code}-${normalizedDraft.name}`) }); didSave = true; }).catch(() => undefined);
     if (didSave) setIsEditing(false);
   }
 
@@ -60,22 +73,22 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span>01</span><div><h3>Listing details</h3><p>The information customers use to identify this item.</p></div></div>
           <div className="form-grid">
-            <Field label="Name" error={getFieldError("name")}><TextInput value={draft.name} disabled={!isEditing} onChange={(event) => setField("name", event.target.value)} /></Field>
-            <Field label="Item code" error={getFieldError("item_code")}><TextInput value={draft.item_code} disabled={!isEditing} onChange={(event) => setField("item_code", event.target.value)} /></Field>
-            <Field label="Collection"><TextInput value={draft.collection} disabled={!isEditing} onChange={(event) => setField("collection", event.target.value)} /></Field>
-            <Field label="Category" error={getFieldError("category")}><TextInput value={draft.category} disabled={!isEditing} onChange={(event) => setField("category", event.target.value)} /></Field>
+            <Field label="Product name · Required" error={getFieldError("name")}><TextInput autoFocus={isNewProduct} placeholder="e.g. Moonlight acrylic stand" value={draft.name} disabled={!isEditing} aria-invalid={Boolean(getFieldError("name"))} onChange={(event) => setField("name", event.target.value)} /></Field>
+            <Field label="Item code · Required" hint="A short unique code used by staff."><TextInput placeholder="e.g. AST-001" value={draft.item_code} disabled={!isEditing} aria-invalid={Boolean(getFieldError("item_code"))} onChange={(event) => setField("item_code", event.target.value.toUpperCase())} />{getFieldError("item_code") && <span className="field-error-msg">{getFieldError("item_code")}</span>}</Field>
+            <Field label="Collection" hint="Optional grouping, such as Spring 2026."><TextInput placeholder="e.g. Starry Days" value={draft.collection} disabled={!isEditing} onChange={(event) => setField("collection", event.target.value)} /></Field>
+            <Field label="Category · Required" error={getFieldError("category")}><TextInput placeholder="e.g. Acrylic, Print, Apparel" value={draft.category} disabled={!isEditing} aria-invalid={Boolean(getFieldError("category"))} onChange={(event) => setField("category", event.target.value)} /></Field>
           </div>
-          <Field label="Description"><TextArea value={draft.description} disabled={!isEditing} onChange={(event) => setField("description", event.target.value)} /></Field>
+          <Field label="Description" hint={isEditing ? `${draft.description.length}/500 characters` : undefined}><TextArea maxLength={500} placeholder="What should customers know about this item?" value={draft.description} disabled={!isEditing} onChange={(event) => setField("description", event.target.value)} /></Field>
         </section>
 
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span>02</span><div><h3>Price & availability</h3><p>Stock status updates automatically from the quantity.</p></div></div>
           <div className="form-grid">
-            <Field label="Price (VND)" error={getFieldError("price_vnd")}><TextInput type="text" inputMode="numeric" value={formatDisplayPrice(draft.price_vnd)} disabled={!isEditing} onChange={(event) => { const raw = event.target.value.replace(/\D/g, ""); setField("price_vnd", raw ? Number(raw) : 0); }} /></Field>
-            <Field label="Quantity" hint={isEditing ? `${formatNumber(draft.quantity_available)} units` : undefined} error={getFieldError("quantity_available")}><TextInput type="number" min="0" step="1" value={draft.quantity_available} disabled={!isEditing} onChange={(event) => { const qty = Math.max(0, Math.floor(Number(event.target.value) || 0)); const status: StockStatus = qty === 0 ? "sold_out" : qty <= 5 ? "limited" : "in_stock"; setDraft((current) => ({ ...current, quantity_available: qty, stock_status: status, stock_note: qty === 0 ? "Sold out" : qty <= 5 ? "Limited stock" : "In stock" })); }} /></Field>
-            <Field label="Badge"><SelectInput value={draft.badge ?? ""} disabled={!isEditing} onChange={(event) => setField("badge", event.target.value)}><option value="">No badge</option>{hasLegacyBadge && <option value={draft.badge}>{draft.badge}</option>}{productBadges.map((badge) => <option key={badge} value={badge}>{badge}</option>)}</SelectInput>{draft.badge && <span className="admin-badge-preview">{draft.badge}</span>}</Field>
+            <Field label="Price · Required" error={getFieldError("price_vnd")}><div className="admin-input-affix"><TextInput type="text" inputMode="numeric" placeholder="0" value={formatDisplayPrice(draft.price_vnd)} disabled={!isEditing} aria-invalid={Boolean(getFieldError("price_vnd"))} onChange={(event) => { const raw = event.target.value.replace(/\D/g, ""); setField("price_vnd", raw ? Number(raw) : 0); }} /><span>VND</span></div></Field>
+            <Field label="Quantity" error={getFieldError("quantity_available")}><TextInput type="number" min="0" step="1" value={draft.quantity_available} disabled={!isEditing} onChange={(event) => { const qty = Math.max(0, Math.floor(Number(event.target.value) || 0)); const status: StockStatus = qty === 0 ? "sold_out" : qty <= 5 ? "limited" : "in_stock"; setDraft((current) => ({ ...current, quantity_available: qty, stock_status: status, stock_note: qty === 0 ? "Sold out" : qty <= 5 ? "Limited stock" : "In stock" })); }} /></Field>
+            <Field label="Customer badge" hint="Optional label shown on product artwork."><SelectInput value={draft.badge ?? ""} disabled={!isEditing} onChange={(event) => setField("badge", event.target.value)}><option value="">No badge</option>{hasLegacyBadge && <option value={draft.badge}>{draft.badge}</option>}{productBadges.map((badge) => <option key={badge} value={badge}>{badge}</option>)}</SelectInput>{draft.badge && <div className="admin-badge-customizer"><span className="admin-color-well" title="Choose badge color"><input type="color" aria-label="Badge color" value={draft.badge_color || "#5f8d55"} disabled={!isEditing} onChange={(event) => setField("badge_color", event.target.value)} /><span style={{ background: draft.badge_color || "#5f8d55" }} /></span><span className="admin-badge-preview" style={{ background: draft.badge_color || "#5f8d55" }}><Sparkles size={12} />{draft.badge}</span></div>}</Field>
           </div>
-          <div className="admin-switch-row"><label><input type="checkbox" checked={draft.featured} disabled={!isEditing} onChange={(event) => setField("featured", event.target.checked)} /> Featured item</label><label><input type="checkbox" checked={draft.active} disabled={!isEditing} onChange={(event) => setField("active", event.target.checked)} /> Visible in catalog</label></div>
+          <div className="admin-switch-row"><label><span><strong>Feature this item</strong><small>Give it extra prominence on the storefront.</small></span><input type="checkbox" checked={draft.featured} disabled={!isEditing} onChange={(event) => setField("featured", event.target.checked)} /></label><label><span><strong>Visible in catalog</strong><small>Customers can find and purchase this item.</small></span><input type="checkbox" checked={draft.active} disabled={!isEditing} onChange={(event) => setField("active", event.target.checked)} /></label></div>
         </section>
 
         <section className="admin-form-section">
@@ -85,7 +98,7 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
             {images.length === 0 && <div className="admin-image-empty"><ImageIcon size={25} /><span>No product images yet</span></div>}
             {isEditing && images.length < 4 && <div className="admin-image-upload-tile"><ImageUpload bucket="product-images" label={images.length ? "Add another image" : "Upload product image"} onUploaded={(url) => setField("images", [...images, url])} /></div>}
           </div>
-          {getFieldError("images") && <div className="field-error-msg">{getFieldError("images")}</div>}
+          {getFieldError("images") && <div className="field-error-msg admin-gallery-error">{getFieldError("images")}</div>}
         </section>
 
         {(saveError || deleteError) && <Alert variant="error" title="Could not update item" onClose={() => { setSaveError(""); setDeleteError(""); }}>{saveError || deleteError}</Alert>}

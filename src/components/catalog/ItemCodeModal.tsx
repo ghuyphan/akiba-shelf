@@ -30,7 +30,7 @@ export function ItemCodeModal({ isOpen, product, onClose }: ItemCodeModalProps) 
   const primaryImage = product.images.find(Boolean);
 
   return (
-    <Modal title="Item QR" isOpen={isOpen} onClose={onClose}>
+    <Modal title="Item QR" isOpen={isOpen} onClose={onClose} mobileSheet>
       <div className="code-modal-layout">
         <div className="item-qr-card">
           {qrUrl ? <img src={qrUrl} alt={`QR for ${product.item_code}`} /> : <div className="qr-loading" />}

@@ -10,6 +10,7 @@ type ModalProps = {
   children: ReactNode;
   wide?: boolean;
   className?: string;
+  mobileSheet?: boolean;
 };
 
 let openModalsCount = 0;
@@ -31,7 +32,7 @@ function unlockScroll() {
   }
 }
 
-export function Modal({ title, isOpen, onClose, children, wide = false, className = "" }: ModalProps) {
+export function Modal({ title, isOpen, onClose, children, wide = false, className = "", mobileSheet = false }: ModalProps) {
   const [shouldRender, setShouldRender] = useState(isOpen);
 
   useEffect(() => {
@@ -58,14 +59,15 @@ export function Modal({ title, isOpen, onClose, children, wide = false, classNam
   if (!shouldRender) return null;
 
   const modal = (
-    <div className={`modal-backdrop ${isOpen ? "is-open" : "is-closing"}`} role="presentation" onClick={onClose}>
+    <div className={`modal-backdrop ${mobileSheet ? "mobile-sheet-backdrop" : ""} ${isOpen ? "is-open" : "is-closing"}`} role="presentation" onClick={onClose}>
       <section
-        className={`modal ${isOpen ? "is-open" : "is-closing"} ${wide ? "modal-wide" : ""} ${className}`}
+        className={`modal ${mobileSheet ? "mobile-sheet-modal" : ""} ${isOpen ? "is-open" : "is-closing"} ${wide ? "modal-wide" : ""} ${className}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
       >
+        {mobileSheet && <div className="mobile-sheet-handle" aria-hidden="true"><span /></div>}
         <header className="modal-header">
           <h2>{title}</h2>
           <Button variant="ghost" icon={<X size={22} />} aria-label="Close modal" onClick={onClose} />

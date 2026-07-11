@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "../styles/catalog.css";
 import { Check, Clock, Facebook, Instagram, MapPin, ShoppingBag, Sparkles } from "lucide-react";
@@ -8,8 +8,8 @@ import { defaultPayment } from "../lib/constants";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme";
-import type { BoothSettings, CartItem, PaymentSettings, Product, StorefrontSection } from "../types/catalog";
-import { CatalogLocaleProvider } from "../lib/catalogI18n";
+import type { BoothSettings, CartItem, Order, PaymentSettings, Product, StorefrontSection } from "../types/catalog";
+import { CatalogLocaleProvider, useCatalogCopy } from "../lib/catalogI18n";
 import { TiktokIcon } from "../components/ui/TiktokIcon";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
@@ -25,6 +25,8 @@ import { Alert } from "../components/ui/Alert";
 import { Modal } from "../components/ui/Modal";
 import { safeUuid } from "../lib/supabase";
 import { useToast } from "../components/ui/ToastProvider";
+import { loadOrderRecovery } from "../lib/orderRecovery";
+import { formatVnd } from "../lib/format";
 
 type FlyingItem = {
   id: string;
@@ -54,6 +56,9 @@ export function CatalogPage() {
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [isCartExpanded, setIsCartExpanded] = useState(false);
   const [isCartBackdropMounted, setIsCartBackdropMounted] = useState(false);
+  const initialOrder = loadOrderRecovery()?.order ?? null;
+  const [activeOrder, setActiveOrder] = useState<Order | null>(initialOrder);
+  const activeOrderRef = useRef<Order | null>(initialOrder);
 
   const loadCatalog = useCallback(() => {
     return getCatalogData()
@@ -149,7 +154,7 @@ export function CatalogPage() {
       const startY = event.clientY;
       const id = safeUuid();
 
-      const targetElement = document.querySelector(".catalog-side .selected-panel");
+      const targetElement = document.querySelector(".storefront-module-cart .selected-panel");
       let targetX = window.innerWidth - 180;
       let targetY = 250;
       if (targetElement) {
@@ -240,7 +245,7 @@ export function CatalogPage() {
   }, [booth.layout_order]);
 
   const storefrontBlocks: Record<StorefrontSection, React.ReactNode> = {
-    featured: <StackedFeatured products={products} onSelect={handleAddToCart} />,
+    featured: <StackedFeatured products={products} onSelect={handleAddToCart} autoRotate={booth.featured_autoplay ?? true} />,
     controls: (
       <div className="catalog-controls" onClick={(event) => event.stopPropagation()}>
         <CategoryFilters categories={categories} activeCategory={activeCategory} onChange={setActiveCategory} />
@@ -276,9 +281,28 @@ export function CatalogPage() {
       />
     ),
   };
+  const handleOrderChange = useCallback((nextOrder: Order | null) => {
+    if (!activeOrderRef.current && nextOrder?.status === "pending") handleClearCart();
+    activeOrderRef.current = nextOrder;
+    setActiveOrder(nextOrder);
+  }, []);
+
   const heroStorefrontSections = storefrontOrder.filter((section) => section === "featured" || section === "booth");
   const mainStorefrontSections = storefrontOrder.filter((section) => section === "controls" || section === "products");
   const sideStorefrontSections = storefrontOrder.filter((section) => section === "cart");
+  const contentStorefrontColumns = [
+    {
+      key: "main",
+      position: mainStorefrontSections.reduce((sum, section) => sum + storefrontOrder.indexOf(section), 0) / mainStorefrontSections.length,
+      node: <section key="main" className="storefront-content-main">{mainStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section}>{storefrontBlocks[section]}</div>)}</section>,
+    },
+    {
+      key: "side",
+      position: storefrontOrder.indexOf("cart") - 0.01,
+      node: <section key="side" className="storefront-content-side" onClick={(event) => event.stopPropagation()}>{sideStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section}>{storefrontBlocks[section]}</div>)}</section>,
+    },
+  ].sort((first, second) => first.position - second.position);
+
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
     <main className="app-shell" style={getThemeStyle(booth)} onClick={() => setSelectedProductId(null)}>
@@ -293,10 +317,10 @@ export function CatalogPage() {
           {heroStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section} onClick={section === "booth" ? (event) => event.stopPropagation() : undefined}>{storefrontBlocks[section]}</div>)}
         </div>
         <div className="storefront-content-grid">
-          <section className="storefront-content-main">{mainStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section}>{storefrontBlocks[section]}</div>)}</section>
-          <section className="storefront-content-side" onClick={(event) => event.stopPropagation()}>{sideStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section}>{storefrontBlocks[section]}</div>)}</section>
+          {contentStorefrontColumns.map((column) => column.node)}
         </div>
       </div>
+      {activeOrder?.status === "pending" && <PendingOrderBar order={activeOrder} onOpen={() => setIsQrOpen(true)} />}
       {isCartBackdropMounted && (
         <div className={`bottomsheet-backdrop ${isCartExpanded ? "is-open" : "is-closing"}`} onClick={() => setIsCartExpanded(false)} />
       )}
@@ -305,10 +329,11 @@ export function CatalogPage() {
         payment={payment}
         cart={cart}
         onClose={() => setIsQrOpen(false)}
-        onSuccess={handleClearCart}
+        onSuccess={() => void loadCatalog()}
+        onOrderChange={handleOrderChange}
       />
       <ProductDetailModal product={detailProduct} onClose={() => setDetailProduct(null)} onAddToCart={handleAddToCart} />
-      <Modal title="Booth details" isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} className="booth-info-modal-container booth-modal-redesign">
+      <Modal title="Booth details" isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} className="booth-info-modal-container booth-modal-redesign" mobileSheet>
         <div className="booth-info-modal booth-modal-content">
           <div className="booth-modal-hero">
             <div className="booth-info-icon-wrap booth-modal-logo">
@@ -397,5 +422,17 @@ export function CatalogPage() {
       )), document.body)}
     </main>
     </CatalogLocaleProvider>
+  );
+}
+
+function PendingOrderBar({ order, onOpen }: { order: Order; onOpen: () => void }) {
+  const copy = useCatalogCopy();
+  return (
+    <aside className="pending-order-bar" role="status">
+      <span className="pending-order-bar-icon"><Clock size={18} /></span>
+      <span><strong>{copy.pendingOrder} · {order.order_code}</strong><small>{copy.pendingOrderHint}</small></span>
+      <b>{formatVnd(order.total_amount)}</b>
+      <button type="button" onClick={onOpen}>{copy.viewPayment}</button>
+    </aside>
   );
 }

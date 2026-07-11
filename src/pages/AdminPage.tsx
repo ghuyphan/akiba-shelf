@@ -48,6 +48,7 @@ function createBlankProduct(nextSort: number): Product {
     quantity_available: 0,
     category: "Acrylic",
     badge: "",
+    badge_color: "#5f8d55",
     stock_status: "in_stock",
     stock_note: "In stock",
     images: [""],
@@ -265,10 +266,9 @@ export function AdminPage() {
 
   async function handleSaveProduct(product: Product) {
     await runAdminAction(async () => {
-      const wasNewProduct = !products.some((current) => current.id === product.id);
       await saveProduct(product);
       await reloadCatalogAdmin();
-      setSelectedProduct(wasNewProduct ? createBlankProduct(product.sort_order + 1) : product);
+      setSelectedProduct(product);
     }, "Item saved.");
   }
 

@@ -7,9 +7,10 @@ import { useCatalogCopy } from "../../lib/catalogI18n";
 type StackedFeaturedProps = {
   products: Product[];
   onSelect: (product: Product, event?: React.MouseEvent) => void;
+  autoRotate?: boolean;
 };
 
-export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
+export function StackedFeatured({ products, onSelect, autoRotate = true }: StackedFeaturedProps) {
   const copy = useCatalogCopy();
   const [active, setActive] = useState(0);
   const dragStartRef = useRef<number | null>(null);
@@ -23,7 +24,7 @@ export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
   }, [active, featured.length]);
 
   useEffect(() => {
-    if (featured.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!autoRotate || featured.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const interval = window.setInterval(() => {
       if (autoScrollPausedRef.current || Date.now() < autoScrollResumeAtRef.current || document.hidden) return;
@@ -31,7 +32,7 @@ export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
     }, 4500);
 
     return () => window.clearInterval(interval);
-  }, [featured.length]);
+  }, [autoRotate, featured.length]);
 
   if (featured.length === 0) return null;
 
@@ -78,7 +79,7 @@ export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
           <div className="featured-banner-meta">
             <strong>{formatVnd(activeProduct.price_vnd)}</strong>
             <span><PackageCheck size={15} /> {activeProduct.quantity_available > 10 ? copy.inStock : copy.onlyLeft(activeProduct.quantity_available)}</span>
-            {activeProduct.badge && <span className="featured-banner-badge">{activeProduct.badge}</span>}
+            {activeProduct.badge && <span className="featured-banner-badge" style={{ backgroundColor: activeProduct.badge_color || undefined }}>{activeProduct.badge}</span>}
           </div>
           <div className="featured-banner-actions">
             <button type="button" className="featured-banner-add" onClick={(event) => onSelect(activeProduct, event)}><ShoppingCart size={17} /><span>{copy.addToCart}</span></button>
@@ -111,7 +112,7 @@ export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
                   aria-label={isActive ? `${product.name}, current featured item` : `Show ${product.name}`}
                   tabIndex={isActive ? 0 : -1}
                 >
-                  <span className="featured-deck-image">{image ? <img src={image} alt={isActive ? product.name : ""} draggable="false" /> : <span className="image-placeholder" />}{product.badge && <i>{product.badge}</i>}</span>
+                  <span className="featured-deck-image">{image ? <img src={image} alt={isActive ? product.name : ""} draggable="false" /> : <span className="image-placeholder" />}{product.badge && <i style={{ backgroundColor: product.badge_color || undefined }}>{product.badge}</i>}</span>
                   <span className="featured-deck-footer"><strong>{product.name}</strong><small>{formatVnd(product.price_vnd)}</small></span>
                 </button>
               );

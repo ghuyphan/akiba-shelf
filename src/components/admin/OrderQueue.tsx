@@ -46,8 +46,8 @@ export function OrderQueue({ orders, filter, counts, page, pageSize, total, load
 
   async function handleConfirm(orderId: string) {
     setConfirmingId(orderId);
-    try { await confirmOrderPayment(orderId); onOrderUpdated(); toast.success("Payment confirmed and stock updated."); }
-    catch (error) { toast.error(error instanceof Error ? error.message : "Failed to confirm payment.", "Could not confirm order"); }
+    try { await confirmOrderPayment(orderId); onOrderUpdated(); toast.success("Payment confirmed and stock updated."); return true; }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Failed to confirm payment.", "Could not confirm order"); return false; }
     finally { setConfirmingId(null); }
   }
 
@@ -96,7 +96,7 @@ export function OrderQueue({ orders, filter, counts, page, pageSize, total, load
   );
 }
 
-type OrderCardProps = { order: Order; isConfirming: boolean; isCancelling: boolean; onConfirm: () => void; onCancel: () => void };
+type OrderCardProps = { order: Order; isConfirming: boolean; isCancelling: boolean; onConfirm: () => Promise<boolean>; onCancel: () => void };
 
 function OrderCard({ order, isConfirming, isCancelling, onConfirm, onCancel }: OrderCardProps) {
   const [elapsedTime, setElapsedTime] = useState("");

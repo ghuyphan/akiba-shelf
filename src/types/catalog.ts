@@ -12,6 +12,7 @@ export type Product = {
   quantity_available: number;
   category: string;
   badge?: string;
+  badge_color?: string;
   stock_status: StockStatus;
   stock_note: string;
   images: string[];
@@ -40,6 +41,7 @@ export type BoothSettings = {
   layout_order?: StorefrontSection[];
   corner_radius?: number;
   catalog_locale?: CatalogLocale;
+  featured_autoplay?: boolean;
 };
 
 export type PaymentSettings = {

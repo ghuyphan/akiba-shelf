@@ -70,7 +70,9 @@ export function CatalogToolbar({
           type="button"
           className={`sort-control-trigger ${isOpen ? "open" : ""}`}
           onClick={() => setIsOpen(!isOpen)}
-          aria-label="Sort products dropdown"
+          aria-label={selectedOption.label}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
         >
           <ArrowDownUp size={15} />
           <span>{selectedOption.label}</span>
@@ -78,12 +80,14 @@ export function CatalogToolbar({
         </button>
 
         {isOpen && (
-          <ul className="sort-dropdown-menu">
+          <ul className="sort-dropdown-menu" role="listbox">
             {sortOptions.map((opt) => (
               <li key={opt.value}>
                 <button
                   type="button"
                   className={`sort-dropdown-item ${opt.value === sort ? "active" : ""}`}
+                  role="option"
+                  aria-selected={opt.value === sort}
                   onClick={() => {
                     onSortChange(opt.value);
                     setIsOpen(false);

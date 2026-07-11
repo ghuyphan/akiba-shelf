@@ -110,6 +110,7 @@ export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradi
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         className="social-qr-zoom-modal"
+        mobileSheet
       >
         <div className="social-qr-zoom-content" onClick={(e) => e.stopPropagation()}>
           <div className="social-qr-zoom-icon" style={brandColor ? { color: brandColor } : undefined}>
@@ -137,4 +138,3 @@ export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradi
     </>
   );
 }
-

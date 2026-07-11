@@ -18,6 +18,7 @@ export const defaultBooth: BoothSettings = {
   layout_order: ["featured", "booth", "controls", "cart", "products"],
   corner_radius: 16,
   catalog_locale: "en",
+  featured_autoplay: true,
 };
 
 export const defaultPayment: PaymentSettings = {

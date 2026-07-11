@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState, useRef } from "react";
-import { CheckCircle2, Copy, Loader2, ReceiptText, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { Ban, Check, CheckCircle2, CloudOff, Copy, Loader2, ReceiptText, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import type { CartItem, PaymentSettings, Order } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { useCatalogCopy } from "../../lib/catalogI18n";
 import { canGenerateVietQr, generateVietQrForCart } from "../../lib/vietqr";
 import { Modal } from "../ui/Modal";
-import { createOrder } from "../../lib/api";
-import { supabase } from "../../lib/supabase";
+import { createOrder, getCustomerOrder } from "../../lib/api";
+import { clearOrderRecovery, createOrderRecovery, loadOrderRecovery, saveOrderRecovery, type ActiveOrderRecovery } from "../../lib/orderRecovery";
 
 type PaymentQrModalProps = {
   isOpen: boolean;
@@ -14,9 +14,10 @@ type PaymentQrModalProps = {
   cart: CartItem[];
   onClose: () => void;
   onSuccess: () => void;
+  onOrderChange?: (order: Order | null) => void;
 };
 
-export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: PaymentQrModalProps) {
+export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOrderChange }: PaymentQrModalProps) {
   const copy = useCatalogCopy();
   const [qrSrc, setQrSrc] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -27,36 +28,54 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [recovery, setRecovery] = useState<ActiveOrderRecovery | null>(() => loadOrderRecovery());
+  const [connectionState, setConnectionState] = useState<"online" | "reconnecting">(navigator.onLine ? "online" : "reconnecting");
+  const completionHandledRef = useRef(false);
+  const checkoutCart = recovery?.cart ?? cart;
 
-  // Reset order state when modal opens/closes
   useEffect(() => {
-    if (!isOpen) {
-      setOrder(null);
-      setCustomerName("");
-      setSubmitError("");
-      setShowSuccess(false);
-      setQrSrc("");
+    if (!recovery) return;
+    setCustomerName(recovery.customerName);
+    if (recovery.order) {
+      setOrder(recovery.order);
+      onOrderChange?.(recovery.order);
     }
-  }, [isOpen]);
+  }, []);
 
   const totalAmount = useMemo(
-    () => cart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0),
-    [cart],
+    () => checkoutCart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0),
+    [checkoutCart],
   );
+
+  const submitOrder = useCallback(async (activeRecovery: ActiveOrderRecovery) => {
+    setIsSubmittingOrder(true);
+    setSubmitError("");
+    try {
+      const created = await createOrder(activeRecovery.customerName, activeRecovery.cart, activeRecovery.clientRequestId, activeRecovery.recoveryToken);
+      const saved = { ...activeRecovery, order: created };
+      saveOrderRecovery(saved);
+      setRecovery(saved);
+      setOrder(created);
+      onOrderChange?.(created);
+    } catch (err: unknown) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to submit order. Please try again.");
+    } finally {
+      setIsSubmittingOrder(false);
+    }
+  }, [onOrderChange]);
+
+  useEffect(() => {
+    if (recovery && !recovery.order && !isSubmittingOrder && !submitError) void submitOrder(recovery);
+  }, []);
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) return;
-    setIsSubmittingOrder(true);
-    setSubmitError("");
-    try {
-      const created = await createOrder(customerName, cart);
-      setOrder(created);
-    } catch (err: any) {
-      setSubmitError(err.message || "Failed to submit order. Please try again.");
-    } finally {
-      setIsSubmittingOrder(false);
-    }
+    const activeRecovery = recovery ?? createOrderRecovery(cart, customerName);
+    activeRecovery.customerName = customerName;
+    saveOrderRecovery(activeRecovery);
+    setRecovery(activeRecovery);
+    await submitOrder(activeRecovery);
   };
 
   // Generate QR when order is created
@@ -68,7 +87,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
 
     async function loadQr() {
       setIsGenerating(true);
-      const generated = await generateVietQrForCart(payment, cart, orderCode, orderTotal).catch(() => null);
+      const generated = await generateVietQrForCart(payment, checkoutCart, orderCode, orderTotal).catch(() => null);
       if (!cancelled) {
         setQrSrc(generated?.src || payment.bank_qr_url || payment.momo_qr_url);
         setIsGenerating(false);
@@ -79,40 +98,60 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
     return () => {
       cancelled = true;
     };
-  }, [isOpen, order, payment, cart]);
+  }, [isOpen, order, payment, checkoutCart]);
 
-  // Subscribe to real-time order status updates from Supabase
+  const reconcileOrder = useCallback(async () => {
+    if (!order || !recovery) return;
+    if (!navigator.onLine) {
+      setConnectionState("reconnecting");
+      return;
+    }
+    try {
+      const fresh = await getCustomerOrder(order.id, recovery.recoveryToken);
+      if (!fresh) throw new Error("Order recovery details are no longer valid.");
+      const saved = { ...recovery, order: fresh };
+      saveOrderRecovery(saved);
+      setRecovery(saved);
+      setOrder(fresh);
+      onOrderChange?.(fresh);
+      setConnectionState("online");
+      if (fresh.status === "confirmed" && !completionHandledRef.current) {
+        completionHandledRef.current = true;
+        onSuccess();
+        setShowSuccess(true);
+      }
+    } catch {
+      setConnectionState("reconnecting");
+    }
+  }, [order, recovery, onOrderChange, onSuccess]);
+
   useEffect(() => {
-    if (!supabase || !order) return undefined;
-
-    const client = supabase;
-    const orderId = order.id;
-    const channel = client
-      .channel(`order-tracker-${orderId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: `id=eq.${orderId}`,
-        },
-        (payload) => {
-          if (payload.new.status === "confirmed") {
-            onSuccess();
-            setShowSuccess(true);
-          }
-        }
-      )
-      .subscribe();
-
+    if (!order || order.status !== "pending") return;
+    void reconcileOrder();
+    const poll = window.setInterval(() => void reconcileOrder(), connectionState === "online" ? 5000 : 2500);
+    const handleOnline = () => void reconcileOrder();
+    const handleOffline = () => setConnectionState("reconnecting");
+    const handleFocus = () => void reconcileOrder();
+    const handleVisibility = () => { if (document.visibilityState === "visible") void reconcileOrder(); };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
     return () => {
-      void client.removeChannel(channel);
+      window.clearInterval(poll);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [order, onSuccess]);
+  }, [order?.id, order?.status, reconcileOrder, connectionState]);
 
   const handleSuccessClose = () => {
     setShowSuccess(false);
+    clearOrderRecovery();
+    setRecovery(null);
+    setOrder(null);
+    onOrderChange?.(null);
     onClose();
   };
 
@@ -120,7 +159,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
 
   if (showSuccess) {
     return (
-      <Modal title={copy.paymentComplete} isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal">
+      <Modal title={copy.paymentComplete} isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal" mobileSheet>
         <div className="payment-success-state">
           <div className="success-icon-wrap"><CheckCircle2 size={42} /></div>
           <span className="payment-success-eyebrow">Order {order?.order_code}</span>
@@ -133,21 +172,35 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
     );
   }
 
+  if (order?.status === "cancelled") {
+    return (
+      <Modal title={copy.orderCancelled} isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal" mobileSheet>
+        <div className="payment-success-state payment-cancelled-state">
+          <div className="success-icon-wrap"><Ban size={38} /></div>
+          <span className="payment-success-eyebrow">{copy.orderCode} {order.order_code}</span>
+          <h2>{copy.orderCancelled}</h2>
+          <p>{copy.cancelledPaymentNote}</p>
+          <button type="button" className="button button-primary" onClick={handleSuccessClose}>{copy.backShop}</button>
+        </div>
+      </Modal>
+    );
+  }
+
   // Step 1: Input Nickname/Name before checkout
   if (!order) {
     return (
-      <Modal title={copy.confirmOrder} isOpen={isOpen} onClose={onClose} className="payment-modal order-confirm-modal">
+      <Modal title={copy.confirmOrder} isOpen={isOpen} onClose={onClose} className="payment-modal order-confirm-modal" mobileSheet>
         <form onSubmit={handlePlaceOrder} className="order-confirm-layout">
           <div className="order-confirm-main">
             <div className="order-confirm-intro"><span><ReceiptText size={20} /></span><div><h3>{copy.lastCheck}</h3><p>{copy.reviewCart}</p></div></div>
-            <div className="order-confirm-items">{cart.map((item) => { const image = item.product.images.find(Boolean); return <div key={item.product.id}>{image ? <img src={image} alt="" /> : <span className="order-confirm-placeholder" />}<div><strong>{item.product.name}</strong><small>{item.quantity} × {formatVnd(item.product.price_vnd)}</small></div><b>{formatVnd(item.product.price_vnd * item.quantity)}</b></div>; })}</div>
+            <div className="order-confirm-items">{checkoutCart.map((item) => { const image = item.product.images.find(Boolean); return <div key={item.product.id}>{image ? <img src={image} alt="" /> : <span className="order-confirm-placeholder" />}<div><strong>{item.product.name}</strong><small>{item.quantity} × {formatVnd(item.product.price_vnd)}</small></div><b>{formatVnd(item.product.price_vnd * item.quantity)}</b></div>; })}</div>
             <div className="order-confirm-total"><span>{copy.total}</span><strong>{formatVnd(totalAmount)}</strong></div>
           </div>
           <div className="order-confirm-side">
             <label className="order-confirm-name"><span>{copy.pickupName}</span><div><UserRound size={18} /><input type="text" placeholder={copy.pickupPlaceholder} value={customerName} onChange={(event) => setCustomerName(event.target.value)} maxLength={30} required autoFocus /></div><small>{copy.pickupHint}</small></label>
             <div className="order-confirm-secure"><ShieldCheck size={17} /><span>{copy.secureCheck}</span></div>
             {submitError && <div className="payment-submit-error">{submitError}</div>}
-            <div className="order-confirm-actions"><button type="button" className="button button-secondary" onClick={onClose} disabled={isSubmittingOrder}>{copy.keepShopping}</button><button type="submit" className="button button-primary" disabled={isSubmittingOrder || cart.length === 0}>{isSubmittingOrder ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.createPay}</button></div>
+            <div className="order-confirm-actions"><button type="button" className="button button-secondary" onClick={onClose} disabled={isSubmittingOrder}>{copy.keepShopping}</button><button type="submit" className="button button-primary" disabled={isSubmittingOrder || checkoutCart.length === 0}>{isSubmittingOrder ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : recovery ? copy.retryOrder : copy.createPay}</button></div>
           </div>
         </form>
       </Modal>
@@ -156,7 +209,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
 
   // Step 2: Show QR & Wait for Staff approval
   return (
-    <Modal title={copy.scanPay} isOpen={isOpen} onClose={onClose} className="payment-modal payment-qr-modal-redesign">
+    <Modal title={copy.scanPay} isOpen={isOpen} onClose={onClose} className="payment-modal payment-qr-modal-redesign" mobileSheet>
       <div className="payment-qr-layout">
         <div className="payment-qr-pane">
           <div className="payment-qr-heading"><span>{paymentLabel}</span><strong>{formatVnd(order.total_amount)}</strong><small>{copy.exactNote}</small></div>
@@ -168,14 +221,15 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
             </div>
           )}
           </div>
-          <div className="payment-waiting-pill"><Loader2 size={14} className="spin-icon" /><span>{copy.waitingConfirmation}</span>
+          <div className={`payment-waiting-pill ${connectionState === "reconnecting" ? "is-offline" : ""}`}>{connectionState === "reconnecting" ? <CloudOff size={14} /> : <Loader2 size={14} className="spin-icon" />}<span>{connectionState === "reconnecting" ? copy.reconnectingOrder : copy.waitingConfirmation}</span>
           </div>
         </div>
 
         <div className="payment-receipt payment-receipt-redesign">
           <div className="payment-order-identity"><div><span>{copy.orderCode}</span><strong>{order.order_code}</strong></div>{order.customer_name && <div><span>{copy.pickupName}</span><strong>{order.customer_name}</strong></div>}</div>
           <div className="payment-transfer-card"><span>{copy.transferTo}</span><div><small>{copy.accountName}</small><strong>{payment.bank_account_name || "N/A"}</strong></div><div><small>{copy.accountNumber}</small><button type="button" onClick={() => void navigator.clipboard.writeText(payment.bank_account_no || "")}><strong>{payment.bank_account_no || "N/A"}</strong><Copy size={14} /></button></div><div><small>{copy.bank}</small><strong>{paymentLabel}</strong></div><div className="payment-transfer-note"><small>{copy.transferNote}</small><strong>{order.order_code}</strong></div></div>
-          <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{cart.map((item) => <div key={item.product.id}><span>{item.quantity} × {item.product.name}</span><strong>{formatVnd(item.product.price_vnd * item.quantity)}</strong></div>)}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
+          <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => <div key={item.product.id}><span>{item.quantity} × {item.product.name}</span><strong>{formatVnd(item.product.price_vnd * item.quantity)}</strong></div>)}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
+          <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button>
           {payment.payment_instructions && <div className="receipt-instructions"><Sparkles size={16} /><span>{payment.payment_instructions}</span></div>}
         </div>
       </div>
@@ -185,140 +239,82 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess }: Pa
 
 // Re-export SwipeConfirmButton for use in Admin Queue dashboard
 type SwipeConfirmButtonProps = {
-  onConfirm: () => void;
+  onConfirm: () => boolean | Promise<boolean>;
   isConfirming: boolean;
 };
 
 export function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButtonProps) {
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isSwiped, setIsSwiped] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState<"idle" | "dragging" | "committing" | "success" | "error">("idle");
   const trackRef = useRef<HTMLDivElement>(null);
-  const isDraggingRef = useRef(false);
+  const progressRef = useRef(0);
+  const phaseRef = useRef<typeof phase>("idle");
   const startXRef = useRef(0);
+  const lastXRef = useRef(0);
+  const lastTimeRef = useRef(0);
 
-  const handleStart = (clientX: number) => {
-    if (isConfirming || isSwiped) return;
-    isDraggingRef.current = true;
-    startXRef.current = clientX;
-  };
+  const updateProgress = (next: number) => { progressRef.current = next; setProgress(next); };
+  const updatePhase = (next: typeof phase) => { phaseRef.current = next; setPhase(next); };
 
-  const handleMove = (clientX: number) => {
-    if (!isDraggingRef.current || !trackRef.current) return;
-    const trackWidth = trackRef.current.clientWidth;
-    const maxOffset = trackWidth - 48; // handle is 44px + border/paddings
-    const diff = clientX - startXRef.current;
-    const offset = Math.max(0, Math.min(diff, maxOffset));
-    setDragOffset(offset);
-
-    if (offset >= maxOffset * 0.96) {
-      isDraggingRef.current = false;
-      setIsSwiped(true);
-      setDragOffset(maxOffset);
-      onConfirm();
+  const commit = useCallback(async () => {
+    if (phaseRef.current === "committing" || phaseRef.current === "success" || isConfirming) return;
+    updateProgress(1);
+    updatePhase("committing");
+    const succeeded = await onConfirm();
+    if (succeeded) {
+      updatePhase("success");
+      return;
     }
+    updatePhase("error");
+    window.setTimeout(() => { updateProgress(0); updatePhase("idle"); }, 700);
+  }, [isConfirming, onConfirm]);
+
+  const finishGesture = (velocity = 0) => {
+    if (phaseRef.current !== "dragging") return;
+    if (progressRef.current >= 0.88 || (progressRef.current >= 0.68 && velocity > 0.55)) void commit();
+    else { updateProgress(0); updatePhase("idle"); }
   };
-
-  const handleEnd = () => {
-    if (!isDraggingRef.current) return;
-    isDraggingRef.current = false;
-    if (!isSwiped) {
-      setDragOffset(0);
-    }
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => handleStart(e.touches[0].clientX);
-  const onTouchMove = (e: React.TouchEvent) => handleMove(e.touches[0].clientX);
-  const onTouchEnd = handleEnd;
-
-  const onMouseDown = (e: React.MouseEvent) => handleStart(e.clientX);
-  const onMouseMove = (e: React.MouseEvent) => handleMove(e.clientX);
-  const onMouseUp = handleEnd;
-  const onMouseLeave = handleEnd;
-
-  useEffect(() => {
-    if (!isConfirming && isSwiped) {
-      setIsSwiped(false);
-      setDragOffset(0);
-    }
-  }, [isConfirming, isSwiped]);
 
   return (
     <div
-      className="swipe-track"
+      className={`swipe-track phase-${phase}`}
       ref={trackRef}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onMouseLeave={onMouseLeave}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "48px",
-        background: "var(--surface-soft, #f8fafc)",
-        border: "1px solid var(--line, #e2e8f0)",
-        borderRadius: "24px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
-        cursor: isConfirming ? "not-allowed" : "grab",
-        userSelect: "none"
+      role="button"
+      tabIndex={isConfirming ? -1 : 0}
+      aria-label="Swipe right or press Enter to confirm payment and update stock"
+      aria-disabled={isConfirming || phase === "committing"}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void commit();
+        }
       }}
+      onPointerDown={(event) => {
+        if (isConfirming || phaseRef.current !== "idle") return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        startXRef.current = event.clientX;
+        lastXRef.current = event.clientX;
+        lastTimeRef.current = performance.now();
+        updatePhase("dragging");
+      }}
+      onPointerMove={(event) => {
+        if (phaseRef.current !== "dragging" || !trackRef.current) return;
+        const maxTravel = Math.max(1, trackRef.current.clientWidth - 54);
+        updateProgress(Math.max(0, Math.min(1, (event.clientX - startXRef.current) / maxTravel)));
+        lastXRef.current = event.clientX;
+        lastTimeRef.current = performance.now();
+      }}
+      onPointerUp={(event) => {
+        const elapsed = Math.max(1, performance.now() - lastTimeRef.current);
+        finishGesture((event.clientX - lastXRef.current) / elapsed);
+      }}
+      onPointerCancel={() => finishGesture()}
+      style={{ "--swipe-progress": progress } as React.CSSProperties}
     >
-      <div
-        className="swipe-bg"
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: `${dragOffset + 24}px`,
-          background: "rgba(99, 102, 241, 0.12)",
-          borderRadius: "24px",
-          transition: isDraggingRef.current ? "none" : "width 0.3s ease"
-        }}
-      />
-
-      <span
-        className="swipe-text"
-        style={{
-          fontSize: "12px",
-          fontWeight: "800",
-          color: isSwiped ? "var(--coral, #6366f1)" : "var(--muted, #64748b)",
-          zIndex: 1,
-          pointerEvents: "none",
-          transition: "opacity 0.2s ease",
-          opacity: 1 - dragOffset / 160
-        }}
-      >
-        {isConfirming ? "Confirming..." : isSwiped ? "Updating stock..." : "→ Swipe to Confirm Payment"}
-      </span>
-
-      <div
-        className="swipe-handle"
-        style={{
-          position: "absolute",
-          left: `${dragOffset + 2}px`,
-          width: "42px",
-          height: "42px",
-          borderRadius: "50%",
-          background: "var(--coral, #6366f1)",
-          boxShadow: "0 2px 6px rgba(99, 102, 241, 0.3)",
-          display: "grid",
-          placeItems: "center",
-          color: "white",
-          transition: isDraggingRef.current ? "none" : "left 0.3s ease",
-          zIndex: 2,
-          pointerEvents: "none",
-          fontWeight: "900",
-          fontSize: "16px"
-        }}
-      >
-        ›
-      </div>
+      <div className="swipe-bg" />
+      <span className="swipe-text">{phase === "committing" || isConfirming ? "Confirming payment…" : phase === "success" ? "Payment confirmed" : phase === "error" ? "Could not confirm — try again" : "Swipe to confirm payment"}</span>
+      <div className="swipe-handle">{phase === "success" ? <Check size={19} /> : phase === "committing" ? <Loader2 size={18} className="spin-icon" /> : <span>›</span>}</div>
+      <span className="sr-only" aria-live="polite">{phase === "success" ? "Payment confirmed and stock updated" : phase === "error" ? "Confirmation failed. Try again." : ""}</span>
     </div>
   );
 }

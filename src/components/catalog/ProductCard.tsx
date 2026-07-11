@@ -33,7 +33,7 @@ export function ProductCard({ product, selected, viewMode, onSelect, onViewDetai
     >
       <div className="product-image-wrap">
         {product.badge ? (
-          <span className="product-badge">{product.badge}</span>
+          <span className="product-badge" style={{ backgroundColor: product.badge_color || undefined }}>{product.badge}</span>
         ) : product.featured ? (
           <span className="product-badge product-badge-featured">★ {copy.featured}</span>
         ) : null}

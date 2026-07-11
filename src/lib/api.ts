@@ -47,6 +47,7 @@ function normalizeProduct(product: Partial<Product>): Product {
     quantity_available: numberValue(product.quantity_available, Number.NaN),
     category: text(product.category),
     badge: text(product.badge),
+    badge_color: text(product.badge_color, "#5f8d55"),
     stock_status: stockStatus(product.stock_status),
     stock_note: text(product.stock_note, "In stock"),
     images: textArray(product.images),
@@ -177,17 +178,30 @@ export async function signOutAdmin() {
   if (error) throw error;
 }
 
-export async function createOrder(customerName: string | null, cart: CartItem[]): Promise<Order> {
+export async function createOrder(customerName: string | null, cart: CartItem[], clientRequestId: string, recoveryToken: string): Promise<Order> {
   const client = requireSupabase();
   const { data, error } = await client.rpc("create_order", {
     p_customer_name: customerName?.trim() || null,
     p_items: cart.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
+    p_client_request_id: clientRequestId,
+    p_recovery_token: recoveryToken,
   });
   if (error) throw error;
   const createdOrder = Array.isArray(data) ? data[0] : data;
   if (!createdOrder) throw new Error("The order was created but no order details were returned.");
   void client.functions.invoke("notify-new-order", { body: { orderId: createdOrder.id } }).catch(() => undefined);
   return createdOrder as Order;
+}
+
+export async function getCustomerOrder(orderId: string, recoveryToken: string): Promise<Order | null> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("get_customer_order", {
+    p_order_id: orderId,
+    p_recovery_token: recoveryToken,
+  });
+  if (error) throw error;
+  const order = Array.isArray(data) ? data[0] : data;
+  return (order as Order | undefined) ?? null;
 }
 
 export type OrderFilter = OrderStatus | "all";
