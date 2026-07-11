@@ -14,11 +14,24 @@ export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
   const [active, setActive] = useState(0);
   const dragStartRef = useRef<number | null>(null);
   const touchStartRef = useRef<number | null>(null);
+  const autoScrollPausedRef = useRef(false);
+  const autoScrollResumeAtRef = useRef(0);
   const featured = products.filter((product) => product.featured && product.quantity_available > 0 && product.active !== false);
 
   useEffect(() => {
     if (active >= featured.length) setActive(0);
   }, [active, featured.length]);
+
+  useEffect(() => {
+    if (featured.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const interval = window.setInterval(() => {
+      if (autoScrollPausedRef.current || Date.now() < autoScrollResumeAtRef.current || document.hidden) return;
+      setActive((current) => (current + 1) % featured.length);
+    }, 4500);
+
+    return () => window.clearInterval(interval);
+  }, [featured.length]);
 
   if (featured.length === 0) return null;
 
@@ -27,9 +40,14 @@ export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
   const previous = () => setActive((current) => (current - 1 + featured.length) % featured.length);
   const swipeThreshold = 48;
 
+  function pauseAfterInteraction() {
+    autoScrollResumeAtRef.current = Date.now() + 6000;
+  }
+
   function finishSwipe(endX: number, startX: number | null) {
     if (startX === null || featured.length < 2) return;
     const distance = startX - endX;
+    if (Math.abs(distance) > swipeThreshold) pauseAfterInteraction();
     if (distance > swipeThreshold) next();
     if (distance < -swipeThreshold) previous();
   }
@@ -39,6 +57,12 @@ export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
       className="featured-banner"
       aria-label="Featured merchandise"
       onClick={(event) => event.stopPropagation()}
+      onMouseEnter={() => { autoScrollPausedRef.current = true; }}
+      onMouseLeave={() => { autoScrollPausedRef.current = false; }}
+      onFocusCapture={() => { autoScrollPausedRef.current = true; }}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) autoScrollPausedRef.current = false;
+      }}
       onTouchStart={(event) => { touchStartRef.current = event.targetTouches[0].clientX; }}
       onTouchEnd={(event) => { finishSwipe(event.changedTouches[0].clientX, touchStartRef.current); touchStartRef.current = null; }}
     >
@@ -58,7 +82,7 @@ export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
           </div>
           <div className="featured-banner-actions">
             <button type="button" className="featured-banner-add" onClick={(event) => onSelect(activeProduct, event)}><ShoppingCart size={17} /><span>{copy.addToCart}</span></button>
-            {featured.length > 1 && <div className="featured-banner-nav"><button type="button" onClick={(event) => { event.stopPropagation(); previous(); }} aria-label="Previous featured item"><ChevronLeft size={18} /></button><div>{featured.map((product, index) => <button key={product.id} type="button" className={index === active ? "active" : ""} onClick={(event) => { event.stopPropagation(); setActive(index); }} aria-label={`Show ${product.name}`} />)}</div><button type="button" onClick={(event) => { event.stopPropagation(); next(); }} aria-label="Next featured item"><ChevronRight size={18} /></button></div>}
+            {featured.length > 1 && <div className="featured-banner-nav"><button type="button" onClick={(event) => { event.stopPropagation(); pauseAfterInteraction(); previous(); }} aria-label="Previous featured item"><ChevronLeft size={18} /></button><div>{featured.map((product, index) => <button key={product.id} type="button" className={index === active ? "active" : ""} onClick={(event) => { event.stopPropagation(); pauseAfterInteraction(); setActive(index); }} aria-label={`Show ${product.name}`} />)}</div><button type="button" onClick={(event) => { event.stopPropagation(); pauseAfterInteraction(); next(); }} aria-label="Next featured item"><ChevronRight size={18} /></button></div>}
           </div>
         </div>
 
@@ -68,7 +92,6 @@ export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
           onMouseUp={(event) => { finishSwipe(event.clientX, dragStartRef.current); dragStartRef.current = null; }}
           onMouseLeave={() => { dragStartRef.current = null; }}
         >
-          <div className="featured-banner-orbit" aria-hidden="true" />
           <div className="featured-card-deck">
             {featured.map((product, index) => {
               const offset = getFeaturedOffset(index, active, featured.length);
@@ -84,7 +107,7 @@ export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
                     zIndex: 20 - Math.abs(offset),
                     opacity: Math.abs(offset) > 2 ? 0 : 1,
                   }}
-                  onClick={(event) => { event.stopPropagation(); if (!isActive) setActive(index); }}
+                  onClick={(event) => { event.stopPropagation(); if (!isActive) { pauseAfterInteraction(); setActive(index); } }}
                   aria-label={isActive ? `${product.name}, current featured item` : `Show ${product.name}`}
                   tabIndex={isActive ? 0 : -1}
                 >

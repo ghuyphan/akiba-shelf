@@ -6,8 +6,7 @@ export const defaultBooth: BoothSettings = {
   booth_code: "",
   location: "",
   open_hours: "",
-  hero_title: "",
-  hero_text: "",
+
   instagram_url: "",
   facebook_url: "",
   tiktok_url: "",
