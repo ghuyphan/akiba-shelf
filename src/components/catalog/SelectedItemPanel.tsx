@@ -4,6 +4,7 @@ import { formatVnd } from "../../lib/format";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { useCatalogCopy } from "../../lib/catalogI18n";
+import { MobileSheetShell, SheetHandle } from "../ui/MobileSheetShell";
 
 type SelectedItemPanelProps = {
   cart: CartItem[];
@@ -37,14 +38,30 @@ export function SelectedItemPanel({
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <aside className={`selected-panel ${isExpanded ? "mobile-expanded" : "mobile-collapsed"}`}>
-      {/* Mobile drag handle (only visible on mobile expanded bottomsheet) */}
-      <div className="mobile-drag-handle" onClick={onToggleExpand} aria-label="Collapse cart">
-        <span className="drag-handle-bar" />
+    <MobileSheetShell
+      open={isExpanded}
+      onDismiss={() => onToggleExpand?.()}
+      mode="expandable"
+      className={`selected-panel ${isExpanded ? "mobile-expanded" : "mobile-collapsed"}`}
+    >
+      <div className="mobile-drag-handle">
+        <SheetHandle onClick={onToggleExpand} label="Collapse cart" />
       </div>
 
       {/* Mobile collapsed summary bar (only visible on mobile collapsed state) */}
-      <div className="mobile-cart-summary-bar" onClick={onToggleExpand} role="button" tabIndex={0} aria-label="Expand cart details">
+      <div
+        className="mobile-cart-summary-bar"
+        onClick={onToggleExpand}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onToggleExpand?.();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Expand cart details"
+      >
         <div className="mobile-cart-summary-info">
           <div className="mobile-cart-summary-icon-wrap">
             <ShoppingBag size={20} />
@@ -138,6 +155,6 @@ export function SelectedItemPanel({
           </Button>
         </div>
       </div>
-    </aside>
+    </MobileSheetShell>
   );
 }

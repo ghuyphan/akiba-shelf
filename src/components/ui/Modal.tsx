@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "./Button";
+import { MobileSheetShell, SheetHandle } from "./MobileSheetShell";
 
 type ModalProps = {
   title: string;
@@ -12,25 +13,6 @@ type ModalProps = {
   className?: string;
   mobileSheet?: boolean;
 };
-
-let openModalsCount = 0;
-
-function lockScroll() {
-  if (openModalsCount === 0) {
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    document.body.style.paddingRight = `${scrollbarWidth}px`;
-    document.body.style.overflow = "hidden";
-  }
-  openModalsCount++;
-}
-
-function unlockScroll() {
-  openModalsCount = Math.max(0, openModalsCount - 1);
-  if (openModalsCount === 0) {
-    document.body.style.overflow = "";
-    document.body.style.paddingRight = "";
-  }
-}
 
 export function Modal({ title, isOpen, onClose, children, wide = false, className = "", mobileSheet = false }: ModalProps) {
   const [shouldRender, setShouldRender] = useState(isOpen);
@@ -54,8 +36,6 @@ export function Modal({ title, isOpen, onClose, children, wide = false, classNam
     if (!shouldRender) return;
 
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    lockScroll();
-
     const dialog = dialogRef.current;
     const focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const focusable = () => Array.from(dialog?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
@@ -90,7 +70,6 @@ export function Modal({ title, isOpen, onClose, children, wide = false, classNam
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      unlockScroll();
       previousFocusRef.current?.focus();
     };
   }, [shouldRender]);
@@ -98,24 +77,25 @@ export function Modal({ title, isOpen, onClose, children, wide = false, classNam
   if (!shouldRender) return null;
 
   const modal = (
-    <div className={`modal-backdrop ${mobileSheet ? "mobile-sheet-backdrop" : ""} ${isOpen ? "is-open" : "is-closing"}`} role="presentation" onClick={onClose}>
-      <section
-        ref={dialogRef}
-        className={`modal ${mobileSheet ? "mobile-sheet-modal" : ""} ${isOpen ? "is-open" : "is-closing"} ${wide ? "modal-wide" : ""} ${className}`}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        tabIndex={-1}
-        onClick={(event) => event.stopPropagation()}
-      >
-        {mobileSheet && <div className="mobile-sheet-handle" aria-hidden="true"><span /></div>}
+    <MobileSheetShell
+      open={isOpen}
+      onDismiss={onClose}
+      mode="modal"
+      containerRef={dialogRef}
+      className={`modal ${mobileSheet ? "mobile-sheet-modal" : ""} ${wide ? "modal-wide" : ""} ${className}`}
+      backdropClassName={`modal-backdrop ${mobileSheet ? "mobile-sheet-backdrop" : ""}`}
+      role="dialog"
+      ariaModal
+      ariaLabel={title}
+      tabIndex={-1}
+    >
+        {mobileSheet && <SheetHandle />}
         <header className="modal-header">
           <h2>{title}</h2>
           <Button variant="ghost" icon={<X size={22} />} aria-label="Close modal" onClick={onClose} />
         </header>
         {children}
-      </section>
-    </div>
+    </MobileSheetShell>
   );
 
   return createPortal(modal, document.body);

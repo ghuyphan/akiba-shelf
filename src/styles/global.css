@@ -123,6 +123,18 @@ a {
   padding: 18px 20px 22px;
 }
 
+:root {
+  --sheet-radius: 24px;
+  --sheet-shadow: 0 -20px 55px rgb(15 23 42 / 20%);
+  --sheet-backdrop: rgb(15 23 42 / 40%);
+  --sheet-max-height: min(88dvh, 760px);
+  --sheet-horizontal-padding: 14px;
+  --sheet-bottom-padding: max(14px, env(safe-area-inset-bottom));
+  --sheet-animation-duration: 240ms;
+  --sheet-handle-width: 42px;
+  --sheet-handle-color: #d4dae2;
+}
+
 .app-shell {
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -1214,6 +1226,18 @@ a {
   padding: 20px;
   background: rgb(6 14 24 / 58%);
   backdrop-filter: blur(10px);
+}
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--sheet-backdrop);
+  backdrop-filter: blur(4px);
+}
+.sheet-backdrop.is-open { animation: fade-in var(--sheet-animation-duration) ease-out both; }
+.sheet-backdrop.is-closing {
+  pointer-events: none;
+  animation: fade-out var(--sheet-animation-duration) ease-in both;
 }
 .modal-backdrop.is-open {
   animation: fade-in 220ms ease-out both;

@@ -58,7 +58,6 @@ export function CatalogPage() {
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [isCartExpanded, setIsCartExpanded] = useState(false);
-  const [isCartBackdropMounted, setIsCartBackdropMounted] = useState(false);
   const initialOrder = loadOrderRecovery()?.order ?? null;
   const [activeOrder, setActiveOrder] = useState<Order | null>(initialOrder);
   const activeOrderRef = useRef<Order | null>(initialOrder);
@@ -125,16 +124,6 @@ export function CatalogPage() {
     if (cart.length === 0) setIsCartExpanded(false);
   }, [cart.length]);
 
-  useEffect(() => {
-    let exitTimer: number | undefined;
-    if (isCartExpanded) {
-      setIsCartBackdropMounted(true);
-    } else {
-      exitTimer = window.setTimeout(() => setIsCartBackdropMounted(false), 240);
-    }
-    return () => window.clearTimeout(exitTimer);
-  }, [isCartExpanded]);
-
   const handleAddToCart = (product: Product, event?: React.MouseEvent) => {
     if (!product.active || product.quantity_available <= 0 || product.stock_status === "sold_out") {
       toast.error("This item is sold out and cannot be added to your cart.", "Item unavailable");
@@ -161,14 +150,34 @@ export function CatalogPage() {
     });
 
     if (event) {
+      const trigger = event.currentTarget as HTMLElement;
+      trigger.classList.remove("is-adding-to-cart");
+      void trigger.offsetWidth;
+      trigger.classList.add("is-adding-to-cart");
+      window.setTimeout(() => trigger.classList.remove("is-adding-to-cart"), 560);
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          const cartSurface = document.querySelector<HTMLElement>(".selected-panel:not(.selected-panel-empty)");
+          if (!cartSurface) return;
+          cartSurface.classList.remove("cart-just-updated");
+          void cartSurface.offsetWidth;
+          cartSurface.classList.add("cart-just-updated");
+          window.setTimeout(() => cartSurface.classList.remove("cart-just-updated"), 560);
+        });
+      });
+    }
+
+    if (event) {
       const imageUrl = product.images[0] || "";
       const startX = event.clientX;
       const startY = event.clientY;
       const id = safeUuid();
 
       const targetElement = document.querySelector(".storefront-module-cart .selected-panel");
-      let targetX = window.innerWidth - 180;
-      let targetY = 250;
+      const mobileCart = window.matchMedia("(max-width: 760px)").matches;
+      let targetX = mobileCart ? window.innerWidth * 0.5 : window.innerWidth - 180;
+      let targetY = mobileCart ? window.innerHeight - 36 : 250;
       if (targetElement) {
         const rect = targetElement.getBoundingClientRect();
         targetX = rect.left + rect.width * 0.5;
@@ -334,9 +343,6 @@ export function CatalogPage() {
         </div>
       </div>
       {activeOrder?.status === "pending" && <PendingOrderBar order={activeOrder} onOpen={() => setIsQrOpen(true)} />}
-      {isCartBackdropMounted && (
-        <div className={`bottomsheet-backdrop ${isCartExpanded ? "is-open" : "is-closing"}`} onClick={() => setIsCartExpanded(false)} />
-      )}
       <PaymentQrModal
         isOpen={isQrOpen}
         payment={payment}
