@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, PackageCheck, ShoppingCart, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, PackageCheck, ShoppingCart, Sparkles, MoveHorizontal } from "lucide-react";
 import type { Product } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { useCatalogCopy } from "../../lib/catalogI18n";
@@ -117,7 +117,7 @@ export function StackedFeatured({ products, onSelect }: StackedFeaturedProps) {
               );
             })}
           </div>
-          <span className="featured-banner-swipe-hint">{copy.swipeToBrowse}</span>
+          <span className="featured-banner-swipe-hint" aria-label={copy.swipeToBrowse}><MoveHorizontal size={14} /></span>
         </div>
       </div>
     </section>
