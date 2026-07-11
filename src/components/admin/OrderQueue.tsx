@@ -1,26 +1,40 @@
 import { useEffect, useMemo, useState } from "react";
-import { Ban, CheckCircle2, Clock3, Inbox, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
+import { Ban, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Inbox, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
 import type { Order } from "../../types/catalog";
+import type { OrderFilter, OrderStatusCounts } from "../../lib/api";
 import { formatVnd } from "../../lib/format";
 import { confirmOrderPayment, cancelOrder } from "../../lib/api";
 import { SwipeConfirmButton } from "../catalog/PaymentQrModal";
 import { useToast } from "../ui/ToastProvider";
+import { EmptyState } from "../ui/EmptyState";
+import { Button } from "../ui/Button";
 
-type OrderQueueProps = { orders: Order[]; onOrderUpdated: () => void };
-type Filter = "all" | "pending" | "confirmed" | "cancelled";
+type OrderQueueProps = {
+  orders: Order[];
+  filter: OrderFilter;
+  counts: OrderStatusCounts;
+  page: number;
+  pageSize: number;
+  total: number;
+  loading: boolean;
+  onFilterChange: (filter: OrderFilter) => void;
+  onPageChange: (page: number) => void;
+  onOrderUpdated: () => void;
+};
 
-export function OrderQueue({ orders, onOrderUpdated }: OrderQueueProps) {
-  const [filter, setFilter] = useState<Filter>("pending");
+export function OrderQueue({ orders, filter, counts, page, pageSize, total, loading, onFilterChange, onPageChange, onOrderUpdated }: OrderQueueProps) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const toast = useToast();
-  const filters: Filter[] = ["pending", "confirmed", "cancelled", "all"];
-  const filteredOrders = useMemo(() => orders.filter((order) => filter === "all" || order.status === filter), [filter, orders]);
-  const totalMoney = filteredOrders.reduce((sum, order) => sum + order.total_amount, 0);
-  const totalUnits = filteredOrders.reduce((sum, order) => sum + (order.order_items?.reduce((itemSum, item) => itemSum + item.quantity, 0) ?? 0), 0);
+  const filters: OrderFilter[] = ["pending", "confirmed", "cancelled", "all"];
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const firstOrder = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const lastOrder = Math.min(page * pageSize, total);
+  const totalMoney = orders.reduce((sum, order) => sum + order.total_amount, 0);
+  const totalUnits = orders.reduce((sum, order) => sum + (order.order_items?.reduce((itemSum, item) => itemSum + item.quantity, 0) ?? 0), 0);
   const itemSummary = useMemo(() => {
     const summary = new Map<string, { name: string; code: string; quantity: number; imageUrl: string }>();
-    filteredOrders.forEach((order) => order.order_items?.forEach((item) => {
+    orders.forEach((order) => order.order_items?.forEach((item) => {
       const name = item.product?.name || "Unknown product";
       const code = item.product?.item_code || "";
       const key = `${name}__${code}`;
@@ -28,7 +42,7 @@ export function OrderQueue({ orders, onOrderUpdated }: OrderQueueProps) {
       summary.set(key, { name, code, quantity: (current?.quantity ?? 0) + item.quantity, imageUrl: current?.imageUrl || item.product?.images?.find(Boolean) || "" });
     }));
     return [...summary.values()].sort((first, second) => second.quantity - first.quantity);
-  }, [filteredOrders]);
+  }, [orders]);
 
   async function handleConfirm(orderId: string) {
     setConfirmingId(orderId);
@@ -49,26 +63,35 @@ export function OrderQueue({ orders, onOrderUpdated }: OrderQueueProps) {
     <section className="admin-orders-view">
       <div className="admin-filter-bar">
         <div className="admin-filter-tabs" role="tablist" aria-label="Order status">
-          {filters.map((item) => <button key={item} type="button" className={filter === item ? "active" : ""} onClick={() => setFilter(item)}><span>{item}</span><b>{orders.filter((order) => item === "all" || order.status === item).length}</b></button>)}
+          {filters.map((item) => <button key={item} type="button" className={filter === item ? "active" : ""} onClick={() => onFilterChange(item)}><span>{item}</span><b>{counts[item]}</b></button>)}
         </div>
         <span className="admin-live-indicator"><i /> Live queue</span>
       </div>
 
       <div className="admin-order-metrics">
-        <article><span className="admin-metric-icon coral"><ReceiptText size={19} /></span><div><small>Orders shown</small><strong>{filteredOrders.length}</strong><p>{filter === "all" ? "Across every status" : `${filter} orders`}</p></div></article>
-        <article><span className="admin-metric-icon teal"><WalletCards size={19} /></span><div><small>Order value</small><strong>{formatVnd(totalMoney)}</strong><p>Current filtered total</p></div></article>
+        <article><span className="admin-metric-icon coral"><ReceiptText size={19} /></span><div><small>Orders shown</small><strong>{orders.length}</strong><p>{total} matching orders</p></div></article>
+        <article><span className="admin-metric-icon teal"><WalletCards size={19} /></span><div><small>Order value</small><strong>{formatVnd(totalMoney)}</strong><p>Current page total</p></div></article>
         <article><span className="admin-metric-icon mustard"><PackageCheck size={19} /></span><div><small>Units requested</small><strong>{totalUnits}</strong><p>{itemSummary.length} unique products</p></div></article>
       </div>
 
-      {filteredOrders.length > 0 && <section className="admin-items-summary">
+      {orders.length > 0 && <section className="admin-items-summary">
         <div className="admin-section-heading"><div><span>Fulfilment overview</span><h2>What needs to be packed</h2></div><small>{totalUnits} total units</small></div>
         <div className="admin-items-summary-grid">
           {itemSummary.map((item) => <article key={`${item.name}-${item.code}`}>{item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span className="admin-item-placeholder"><ShoppingBag size={17} /></span>}<div><strong>{item.name}</strong><small>{item.code || "No item code"}</small></div><b>{item.quantity}×</b></article>)}
         </div>
       </section>}
 
-      <div className="admin-section-heading"><div><span>Order queue</span><h2>{filter === "all" ? "All orders" : `${filter[0].toUpperCase()}${filter.slice(1)} orders`}</h2></div><small>Newest first</small></div>
-      {filteredOrders.length === 0 ? <div className="admin-orders-empty"><Inbox size={44} /><h3>No {filter === "all" ? "" : filter} orders</h3><p>New orders will appear here automatically.</p></div> : <div className="admin-orders-grid">{filteredOrders.map((order) => <OrderCard key={order.id} order={order} isConfirming={confirmingId === order.id} isCancelling={cancellingId === order.id} onConfirm={() => handleConfirm(order.id)} onCancel={() => handleCancel(order.id)} />)}</div>}
+      <div className="admin-section-heading"><div><span>Order queue</span><h2>{filter === "all" ? "All orders" : `${filter[0].toUpperCase()}${filter.slice(1)} orders`}</h2></div><small>{loading ? "Refreshing…" : `${firstOrder}–${lastOrder} of ${total} · newest first`}</small></div>
+      {orders.length === 0 ? (
+        <EmptyState
+          icon={<Inbox size={27} />}
+          title={loading ? "Loading orders…" : filter === "all" ? "No orders yet" : `No ${filter} orders`}
+          message={loading ? "Fetching the latest queue from the server." : filter === "pending" ? "You’re all caught up. New orders will appear here automatically." : "There are no orders with this status yet."}
+          meta={loading ? [] : [filter === "all" ? "All statuses" : `${filter[0].toUpperCase()}${filter.slice(1)}`, "Live updates on"]}
+          action={!loading && filter !== "all" ? <Button type="button" variant="secondary" onClick={() => onFilterChange("all")}>View all orders</Button> : undefined}
+        />
+      ) : <div className={`admin-orders-grid ${loading ? "is-loading" : ""}`}>{orders.map((order) => <OrderCard key={order.id} order={order} isConfirming={confirmingId === order.id} isCancelling={cancellingId === order.id} onConfirm={() => handleConfirm(order.id)} onCancel={() => handleCancel(order.id)} />)}</div>}
+      {totalPages > 1 && <nav className="admin-orders-pagination" aria-label="Order pages"><button type="button" disabled={page <= 1 || loading} onClick={() => onPageChange(page - 1)}><ChevronLeft size={16} /> Previous</button><span>Page <b>{page}</b> of {totalPages}</span><button type="button" disabled={page >= totalPages || loading} onClick={() => onPageChange(page + 1)}>Next <ChevronRight size={16} /></button></nav>}
     </section>
   );
 }

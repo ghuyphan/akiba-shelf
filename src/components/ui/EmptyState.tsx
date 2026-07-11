@@ -6,11 +6,13 @@ type EmptyStateProps = {
   icon?: ReactNode;
   meta?: string[];
   action?: ReactNode;
+  variant?: "default" | "compact";
+  className?: string;
 };
 
-export function EmptyState({ title, message, icon, meta = [], action }: EmptyStateProps) {
+export function EmptyState({ title, message, icon, meta = [], action, variant = "default", className = "" }: EmptyStateProps) {
   return (
-    <div className="empty-state">
+    <div className={`empty-state empty-state-${variant} ${className}`.trim()}>
       {icon && <div className="empty-state-icon">{icon}</div>}
       <div className="empty-state-copy">
         <h3>{title}</h3>

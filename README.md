@@ -32,9 +32,26 @@ Required frontend variables:
 ```bash
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-publishable-or-anon-key
+VITE_VAPID_PUBLIC_KEY=your-public-vapid-key
 ```
 
 Never commit `.env.local` or service-role credentials.
+
+## PWA and Android order notifications
+
+The storefront/admin app includes a service worker and installable manifest. The installed app name, browser title, theme color, and favicon follow the current booth settings and logo.
+
+To enable background order notifications:
+
+1. Apply `supabase/migrations/20260711100000_add_web_push_subscriptions.sql`.
+2. Generate a VAPID key pair, put the public key in `VITE_VAPID_PUBLIC_KEY`, and configure the Edge Function secrets:
+
+```bash
+npx supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:you@example.com
+npx supabase functions deploy notify-new-order
+```
+
+3. Install the PWA on the Android device, sign into admin, and tap **Enable alerts**. Push requires HTTPS in production.
 
 Production verification:
 

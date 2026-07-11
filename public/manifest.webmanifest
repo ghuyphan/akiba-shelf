@@ -1,0 +1,13 @@
+{
+  "name": "Akiba Shelf",
+  "short_name": "Akiba Shelf",
+  "description": "Merch booth orders and storefront management",
+  "start_url": "./admin",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#6366f1",
+  "icons": [
+    { "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

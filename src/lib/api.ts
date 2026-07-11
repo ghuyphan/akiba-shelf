@@ -1,6 +1,6 @@
 import { defaultBooth, defaultPayment } from "./constants";
 import { isSupabaseConfigured, safeUuid, supabase } from "./supabase";
-import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus, Order, OrderItem, CartItem } from "../types/catalog";
+import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus, Order, OrderItem, OrderStatus, CartItem } from "../types/catalog";
 
 const stockStatuses: StockStatus[] = ["in_stock", "limited", "sold_out"];
 
@@ -186,19 +186,43 @@ export async function createOrder(customerName: string | null, cart: CartItem[])
   if (error) throw error;
   const createdOrder = Array.isArray(data) ? data[0] : data;
   if (!createdOrder) throw new Error("The order was created but no order details were returned.");
+  void client.functions.invoke("notify-new-order", { body: { orderId: createdOrder.id } }).catch(() => undefined);
   return createdOrder as Order;
 }
 
-export async function getOrders(): Promise<Order[]> {
-  const client = requireSupabase();
+export type OrderFilter = OrderStatus | "all";
+export type OrderStatusCounts = Record<OrderFilter, number>;
 
-  const { data, error } = await client
+export async function getOrders({ page = 1, pageSize = 12, status = "all" }: { page?: number; pageSize?: number; status?: OrderFilter } = {}): Promise<{ orders: Order[]; total: number }> {
+  const client = requireSupabase();
+  const from = Math.max(0, page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = client
     .from("orders")
-    .select("*, order_items(*, product:products(*))")
-    .order("created_at", { ascending: false });
+    .select("*, order_items(*, product:products(*))", { count: "exact" });
+
+  if (status !== "all") query = query.eq("status", status);
+
+  const { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(from, to);
 
   if (error) throw error;
-  return data as Order[];
+  return { orders: data as Order[], total: count ?? 0 };
+}
+
+export async function getOrderStatusCounts(): Promise<OrderStatusCounts> {
+  const client = requireSupabase();
+  const statuses: OrderStatus[] = ["pending", "confirmed", "cancelled"];
+  const counts = await Promise.all(statuses.map(async (status) => {
+    const { count, error } = await client.from("orders").select("id", { count: "exact", head: true }).eq("status", status);
+    if (error) throw error;
+    return [status, count ?? 0] as const;
+  }));
+  const result = Object.fromEntries(counts) as Record<OrderStatus, number>;
+  return { ...result, all: statuses.reduce((sum, status) => sum + result[status], 0) };
 }
 
 export async function confirmOrderPayment(orderId: string): Promise<void> {

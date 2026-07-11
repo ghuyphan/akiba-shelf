@@ -2,6 +2,7 @@ import { Banknote, ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
 import type { CartItem } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { Button } from "../ui/Button";
+import { EmptyState } from "../ui/EmptyState";
 import { useCatalogCopy } from "../../lib/catalogI18n";
 
 type SelectedItemPanelProps = {
@@ -27,11 +28,7 @@ export function SelectedItemPanel({
   if (cart.length === 0) {
     return (
       <aside className="selected-panel selected-panel-empty">
-        <div className="selected-empty-centered">
-          <ShoppingBag size={48} className="empty-icon" />
-          <h3>{copy.emptyCart}</h3>
-          <p>{copy.emptyCartHint}</p>
-        </div>
+        <EmptyState variant="compact" icon={<ShoppingBag size={26} />} title={copy.emptyCart} message={copy.emptyCartHint} />
       </aside>
     );
   }

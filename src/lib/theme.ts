@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { defaultBooth } from "./constants";
 import type { BoothSettings } from "../types/catalog";
+import { applyPwaIdentity } from "./pwa";
 
 type ThemeStyle = CSSProperties & Record<`--${string}`, string>;
 
@@ -58,6 +59,7 @@ export function applyPageTheme(booth: BoothSettings) {
     document.documentElement.style.setProperty(key, value);
   });
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", style["--page-bg"]);
+  applyPwaIdentity(booth);
 
   try {
     localStorage.setItem(themeStorageKey, JSON.stringify(booth));

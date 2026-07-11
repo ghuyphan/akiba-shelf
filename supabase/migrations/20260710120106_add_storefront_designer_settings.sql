@@ -13,7 +13,15 @@ alter table public.booth_settings
   drop constraint if exists booth_settings_layout_order_check,
   add constraint booth_settings_layout_order_check
     check (
-      cardinality(layout_order) = 3
-      and layout_order @> array['featured', 'controls', 'products']::text[]
-      and layout_order <@ array['featured', 'controls', 'products']::text[]
+      (
+        cardinality(layout_order) = 3
+        and layout_order @> array['featured', 'controls', 'products']::text[]
+        and layout_order <@ array['featured', 'controls', 'products']::text[]
+      )
+      or
+      (
+        cardinality(layout_order) = 5
+        and layout_order @> array['featured', 'controls', 'products', 'booth', 'cart']::text[]
+        and layout_order <@ array['featured', 'controls', 'products', 'booth', 'cart']::text[]
+      )
     );

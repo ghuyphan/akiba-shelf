@@ -4,8 +4,10 @@ import "./styles/global.css";
 import "./styles/legacy.css";
 import { App } from "./App";
 import { applyStoredPageTheme } from "./lib/theme";
+import { registerPwa } from "./lib/pwa";
 
 applyStoredPageTheme();
+registerPwa();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
