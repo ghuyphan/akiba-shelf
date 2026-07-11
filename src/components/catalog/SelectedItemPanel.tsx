@@ -5,6 +5,7 @@ import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { useCatalogCopy } from "../../lib/catalogI18n";
 import { MobileSheetShell, SheetHandle } from "../ui/MobileSheetShell";
+import { useOverlayHistory } from "../../hooks/useOverlayHistory";
 
 type SelectedItemPanelProps = {
   cart: CartItem[];
@@ -26,6 +27,7 @@ export function SelectedItemPanel({
   onToggleExpand,
 }: SelectedItemPanelProps) {
   const copy = useCatalogCopy();
+  const requestCollapse = useOverlayHistory(isExpanded, () => onToggleExpand?.());
   if (cart.length === 0) {
     return (
       <aside className="selected-panel selected-panel-empty">
@@ -40,12 +42,12 @@ export function SelectedItemPanel({
   return (
     <MobileSheetShell
       open={isExpanded}
-      onDismiss={() => onToggleExpand?.()}
+      onDismiss={requestCollapse}
       mode="expandable"
       className={`selected-panel ${isExpanded ? "mobile-expanded" : "mobile-collapsed"}`}
     >
       <div className="mobile-drag-handle">
-        <SheetHandle onClick={onToggleExpand} label="Collapse cart" />
+        <SheetHandle onClick={requestCollapse} label="Collapse cart" />
       </div>
 
       {/* Mobile collapsed summary bar (only visible on mobile collapsed state) */}

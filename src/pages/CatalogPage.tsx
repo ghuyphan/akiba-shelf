@@ -55,6 +55,7 @@ export function CatalogPage() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const selectedFeedbackTimerRef = useRef<number | undefined>(undefined);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [isCartExpanded, setIsCartExpanded] = useState(false);
@@ -121,6 +122,22 @@ export function CatalogPage() {
   }, [booth]);
 
   useEffect(() => {
+    document.body.classList.add("catalog-screen");
+    const handlePointerInput = () => document.body.classList.remove("catalog-keyboard-navigation");
+    const handleKeyboardInput = (event: KeyboardEvent) => {
+      if (event.key === "Tab") document.body.classList.add("catalog-keyboard-navigation");
+    };
+    document.addEventListener("pointerdown", handlePointerInput, true);
+    document.addEventListener("keydown", handleKeyboardInput, true);
+    return () => {
+      document.body.classList.remove("catalog-screen", "catalog-keyboard-navigation");
+      document.removeEventListener("pointerdown", handlePointerInput, true);
+      document.removeEventListener("keydown", handleKeyboardInput, true);
+      window.clearTimeout(selectedFeedbackTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     if (cart.length === 0) setIsCartExpanded(false);
   }, [cart.length]);
 
@@ -131,6 +148,10 @@ export function CatalogPage() {
     }
 
     setSelectedProductId(product.id);
+    window.clearTimeout(selectedFeedbackTimerRef.current);
+    selectedFeedbackTimerRef.current = window.setTimeout(() => {
+      setSelectedProductId((current) => current === product.id ? null : current);
+    }, 650);
     setCart((prevCart) => {
       const existingIndex = prevCart.findIndex((item) => item.product.id === product.id);
       if (existingIndex > -1) {
@@ -351,7 +372,7 @@ export function CatalogPage() {
         onSuccess={() => void loadCatalog()}
         onOrderChange={handleOrderChange}
       />
-      <ProductDetailModal product={detailProduct} onClose={() => setDetailProduct(null)} onAddToCart={handleAddToCart} />
+      <ProductDetailModal product={detailProduct} onClose={() => { setDetailProduct(null); setSelectedProductId(null); }} onAddToCart={handleAddToCart} />
       <Modal title="Booth details" isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} className="booth-info-modal-container booth-modal-redesign" mobileSheet>
         <div className="booth-info-modal booth-modal-content">
           <div className="booth-modal-hero">

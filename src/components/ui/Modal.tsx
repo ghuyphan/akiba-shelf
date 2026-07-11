@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "./Button";
 import { MobileSheetShell, SheetHandle } from "./MobileSheetShell";
+import { useOverlayHistory } from "../../hooks/useOverlayHistory";
 
 type ModalProps = {
   title: string;
@@ -18,8 +19,9 @@ export function Modal({ title, isOpen, onClose, children, wide = false, classNam
   const [shouldRender, setShouldRender] = useState(isOpen);
   const dialogRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  const requestClose = useOverlayHistory(isOpen, onClose, mobileSheet);
+  const requestCloseRef = useRef(requestClose);
+  requestCloseRef.current = requestClose;
 
   useEffect(() => {
     if (isOpen) {
@@ -46,7 +48,7 @@ export function Modal({ title, isOpen, onClose, children, wide = false, classNam
       if (dialogs[dialogs.length - 1] !== dialog) return;
       if (event.key === "Escape") {
         event.preventDefault();
-        onCloseRef.current();
+        requestCloseRef.current();
         return;
       }
       if (event.key !== "Tab") return;
@@ -79,7 +81,7 @@ export function Modal({ title, isOpen, onClose, children, wide = false, classNam
   const modal = (
     <MobileSheetShell
       open={isOpen}
-      onDismiss={onClose}
+      onDismiss={requestClose}
       mode="modal"
       containerRef={dialogRef}
       className={`modal ${mobileSheet ? "mobile-sheet-modal" : ""} ${wide ? "modal-wide" : ""} ${className}`}
@@ -92,7 +94,7 @@ export function Modal({ title, isOpen, onClose, children, wide = false, classNam
         {mobileSheet && <SheetHandle />}
         <header className="modal-header">
           <h2>{title}</h2>
-          <Button variant="ghost" icon={<X size={22} />} aria-label="Close modal" onClick={onClose} />
+          <Button variant="ghost" icon={<X size={22} />} aria-label="Close modal" onClick={requestClose} />
         </header>
         {children}
     </MobileSheetShell>

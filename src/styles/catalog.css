@@ -184,8 +184,12 @@
   }
 
   .selected-panel:not(.selected-panel-empty).mobile-expanded {
+    right: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
     height: min(var(--sheet-max-height), 640px);
     max-height: min(var(--sheet-max-height), 640px);
+    transform: none !important;
     padding: 0 var(--sheet-horizontal-padding) var(--sheet-bottom-padding);
     border-radius: var(--sheet-radius) var(--sheet-radius) 0 0 !important;
     box-shadow: var(--sheet-shadow);
@@ -902,13 +906,13 @@
 
 /* Compact payment experience on phone screens. */
 @media (max-width: 700px) {
-  .mobile-sheet-backdrop { align-items: end; padding: 8px 8px 0; }
-  .mobile-sheet-modal { width: 100%; max-height: var(--sheet-max-height); margin: 0; padding: 8px var(--sheet-horizontal-padding) var(--sheet-bottom-padding); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; border-radius: var(--sheet-radius) var(--sheet-radius) 0 0 !important; box-shadow: var(--sheet-shadow); scrollbar-width: thin; }
+  .mobile-sheet-backdrop { align-items: end; padding: 0; }
+  .mobile-sheet-modal { width: 100% !important; max-width: none; max-height: var(--sheet-max-height); margin: 0; padding: 0 var(--sheet-horizontal-padding) var(--sheet-bottom-padding); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; border-radius: var(--sheet-radius) var(--sheet-radius) 0 0 !important; box-shadow: var(--sheet-shadow); scrollbar-width: thin; }
   .mobile-sheet-modal.is-open { animation: storefront-sheet-enter 420ms cubic-bezier(.22, 1, .36, 1) both; }
   .mobile-sheet-modal.is-closing { animation: storefront-sheet-exit 240ms ease-in both; }
-  .mobile-sheet-handle { position: sticky; z-index: 3; top: 0; display: grid; place-items: center; height: 18px; margin: -2px 0 2px; background: linear-gradient(#fff 70%, transparent); }
+  .mobile-sheet-handle { position: sticky; z-index: 3; top: 0; display: grid; place-items: center; height: 14px; margin: 0; background: var(--surface); }
   .mobile-sheet-handle span { width: var(--sheet-handle-width); height: 4px; border-radius: 999px; background: var(--sheet-handle-color); }
-  .mobile-sheet-modal .modal-header { position: sticky; z-index: 2; top: 16px; padding-bottom: 8px; background: #fff; }
+  .mobile-sheet-modal .modal-header { position: sticky; z-index: 2; top: 14px; margin-bottom: 8px; padding: 4px 0 8px; background: var(--surface); }
   .order-confirm-modal,.payment-qr-modal-redesign { width: 100%; max-height: min(90dvh, 780px); padding-inline: 12px; }
   .order-confirm-modal .modal-header,.payment-qr-modal-redesign .modal-header { margin-bottom: 8px; }
   .order-confirm-modal .modal-header h2,.payment-qr-modal-redesign .modal-header h2 { font-size: 18px; }
@@ -941,8 +945,12 @@
 }
 
 /* Touch storefront feedback: avoid sticky hover states and native blue tap flashes. */
-.app-shell :is(a, button, [role="button"], input, select, textarea, summary) {
+.catalog-screen :is(a, button, [role="button"], input, select, textarea, summary) {
   -webkit-tap-highlight-color: transparent;
+}
+
+.catalog-screen:not(.catalog-keyboard-navigation) :focus {
+  outline: none;
 }
 
 @keyframes storefront-add-confirm {
@@ -966,46 +974,46 @@
 }
 
 @media (hover: none), (pointer: coarse), (max-width: 1100px) {
-  .app-shell :is(a, button, [role="button"]) { touch-action: manipulation; }
+  .catalog-screen :is(a, button, [role="button"]) { touch-action: manipulation; }
 
-  .app-shell .button:hover,
-  .app-shell .chip:hover,
-  .app-shell .search-clear:hover,
-  .app-shell .view-toggle button:hover,
-  .app-shell .clear-button:hover,
-  .app-shell .mobile-drag-handle:hover .drag-handle-bar,
-  .app-shell .product-add-button:hover:not(:disabled),
-  .app-shell .featured-banner-add:hover,
-  .app-shell .featured-banner-nav>button:hover,
-  .app-shell .booth-info-trigger:hover,
-  .app-shell .social-qr-card:hover,
-  .app-shell .social-qr-zoom-link:hover,
-  .app-shell .sort-control-trigger:hover,
-  .app-shell .sort-control:hover,
-  .app-shell .sort-dropdown-item:hover,
-  .app-shell .cart-quantity-stepper button:hover:not(:disabled),
-  .app-shell .cart-item-remove:hover {
+  .catalog-screen .button:hover,
+  .catalog-screen .chip:hover,
+  .catalog-screen .search-clear:hover,
+  .catalog-screen .view-toggle button:hover,
+  .catalog-screen .clear-button:hover,
+  .catalog-screen .mobile-drag-handle:hover .drag-handle-bar,
+  .catalog-screen .product-add-button:hover:not(:disabled),
+  .catalog-screen .featured-banner-add:hover,
+  .catalog-screen .featured-banner-nav>button:hover,
+  .catalog-screen .booth-info-trigger:hover,
+  .catalog-screen .social-qr-card:hover,
+  .catalog-screen .social-qr-zoom-link:hover,
+  .catalog-screen .sort-control-trigger:hover,
+  .catalog-screen .sort-control:hover,
+  .catalog-screen .sort-dropdown-item:hover,
+  .catalog-screen .cart-quantity-stepper button:hover:not(:disabled),
+  .catalog-screen .cart-item-remove:hover {
     transform: none !important;
     box-shadow: none;
   }
 
-  .app-shell .product-card:hover {
+  .catalog-screen .product-card:hover {
     transform: none !important;
     border-color: var(--line) !important;
     box-shadow: 0 10px 26px rgb(15 23 42 / 5%) !important;
   }
 
-  .app-shell .product-card:hover .product-image-wrap>img { transform: none; }
-  .app-shell .booth-info-trigger:hover { border-color: var(--line); }
-  .app-shell .booth-info-trigger:hover .booth-info-trigger-arrow { transform: none; }
-  .app-shell .sort-control-trigger:hover,
-  .app-shell .sort-control-trigger:hover span { color: inherit; }
-  .app-shell .sort-control-trigger:hover { border-color: var(--soft-line); background: var(--surface); }
-  .app-shell .sort-dropdown-item:hover { color: #405067; background: transparent; }
-  .app-shell .sort-dropdown-item.active:hover { color: #fff; background: var(--coral); }
+  .catalog-screen .product-card:hover .product-image-wrap>img { transform: none; }
+  .catalog-screen .booth-info-trigger:hover { border-color: var(--line); }
+  .catalog-screen .booth-info-trigger:hover .booth-info-trigger-arrow { transform: none; }
+  .catalog-screen .sort-control-trigger:hover,
+  .catalog-screen .sort-control-trigger:hover span { color: inherit; }
+  .catalog-screen .sort-control-trigger:hover { border-color: var(--soft-line); background: var(--surface); }
+  .catalog-screen .sort-dropdown-item:hover { color: #405067; background: transparent; }
+  .catalog-screen .sort-dropdown-item.active:hover { color: #fff; background: var(--coral); }
 
-  .app-shell .is-adding-to-cart { animation: storefront-add-confirm 520ms cubic-bezier(.22, 1, .36, 1) both !important; }
-  .app-shell .selected-panel.cart-just-updated { animation: storefront-cart-confirm 520ms cubic-bezier(.22, 1, .36, 1) both !important; }
+  .catalog-screen .is-adding-to-cart { animation: storefront-add-confirm 520ms cubic-bezier(.22, 1, .36, 1) both !important; }
+  .catalog-screen .selected-panel.cart-just-updated { animation: storefront-cart-confirm 520ms cubic-bezier(.22, 1, .36, 1) both !important; }
   .flying-product-item {
     display: grid !important;
     width: 44px;
@@ -1021,6 +1029,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-shell .is-adding-to-cart,
-  .app-shell .selected-panel.cart-just-updated { animation: none !important; }
+  .catalog-screen .is-adding-to-cart,
+  .catalog-screen .selected-panel.cart-just-updated { animation: none !important; }
 }
