@@ -324,7 +324,7 @@ export function AdminPage() {
           <button
             type="button"
             ref={registerDesktopTab("orders")}
-            className={`admin-nav-tab ${viewTab === "orders" ? "active" : ""}`}
+            className={`admin-nav-tab admin-nav-orders ${viewTab === "orders" ? "active" : ""}`}
             onClick={() => setViewTab("orders")}
           >
             <ClipboardList size={15} />

@@ -363,7 +363,7 @@
   transition: color 220ms var(--ease-out);
 }
 .admin-header .admin-nav-tab.active { border: 0; color: var(--ink); background: transparent; box-shadow: none; }
-.admin-nav-count { display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; color: #fff; background: var(--red); font-size: 10px; font-weight: 900; }
+.admin-nav-count { position: absolute; top: 2px; right: -9px; z-index: 2; display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 3px; border-radius: 999px; color: #fff; background: var(--red); font-size: 10px; font-weight: 900; pointer-events: none; }
 .admin-signout-button { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 13px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); background: #fff; cursor: pointer; font-size: 12px; font-weight: 800; }
 
 .admin-settings-workspace { display: grid; grid-template-columns: minmax(230px, 290px) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); padding: 8px; }
