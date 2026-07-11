@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin.css";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CreditCard, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag } from "lucide-react";
 import {
   deleteProduct,
   getAdminProducts,
   getCatalogData,
+  getOrderStatusCounts,
   getOrders,
   saveBoothSettings,
   savePaymentSettings,
@@ -13,6 +14,7 @@ import {
   signInAdmin,
   signOutAdmin,
 } from "../lib/api";
+import type { OrderFilter, OrderStatusCounts } from "../lib/api";
 import { defaultPayment } from "../lib/constants";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
@@ -29,7 +31,11 @@ import { StorefrontDesigner } from "../components/admin/StorefrontDesigner";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
+import { EmptyState } from "../components/ui/EmptyState";
 import { useToast } from "../components/ui/ToastProvider";
+import { canUsePush, disableOrderNotifications, enableOrderNotifications, getPushEnabled } from "../lib/pwa";
+import { useTabIndicator } from "../hooks/useTabIndicator";
+
 
 function createBlankProduct(nextSort: number): Product {
   return {
@@ -51,53 +57,33 @@ function createBlankProduct(nextSort: number): Product {
   };
 }
 
+const orderPageSize = 12;
+const emptyOrderCounts: OrderStatusCounts = { all: 0, pending: 0, confirmed: 0, cancelled: 0 };
+
 export function AdminPage() {
   const [isAuthed, setIsAuthed] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(isSupabaseConfigured);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [orderFilter, setOrderFilter] = useState<OrderFilter>("pending");
+  const [orderPage, setOrderPage] = useState(1);
+  const [orderTotal, setOrderTotal] = useState(0);
+  const [orderCounts, setOrderCounts] = useState<OrderStatusCounts>(emptyOrderCounts);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
   const [viewTab, setViewTab] = useState<"orders" | "products" | "design" | "settings">("orders");
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
-  const [settingsTab, setSettingsTab] = useState<"booth" | "payment">("booth");
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
   const [booth, setBooth] = useState<BoothSettings>(() => getStoredBoothTheme());
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const toast = useToast();
 
-  const activeTabRef = useRef<HTMLDivElement>(null);
-  const activeTabChipRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const tabsList = ["list", "form"] as const;
+  const orderRequestRef = useRef(0);
+  const { containerRef: desktopNavRef, registerItem: registerDesktopTab } = useTabIndicator<string, HTMLDivElement>(viewTab, [products.length, orderCounts.pending]);
+  const { containerRef: mobileTabsRef, registerItem: registerMobileTab } = useTabIndicator<string, HTMLDivElement>(activeTab, [products.length, viewTab]);
 
-  useEffect(() => {
-    const row = activeTabRef.current;
-    const activeIndex = tabsList.indexOf(activeTab);
-    const activeChip = activeTabChipRefs.current[activeIndex];
-    if (!row || !activeChip) return;
-    const currentRow = row;
-    const currentActiveChip = activeChip;
-
-    function updateIndicator() {
-      requestAnimationFrame(() => {
-        const rowRect = currentRow.getBoundingClientRect();
-        const chipRect = currentActiveChip.getBoundingClientRect();
-        if (rowRect.width === 0 || chipRect.width === 0) return;
-        currentRow.style.setProperty("--active-left", `${chipRect.left - rowRect.left + currentRow.scrollLeft}px`);
-        currentRow.style.setProperty("--active-width", `${chipRect.width}px`);
-      });
-    }
-
-    updateIndicator();
-    const observer = new ResizeObserver(updateIndicator);
-    observer.observe(currentRow);
-    observer.observe(currentActiveChip);
-    window.addEventListener("resize", updateIndicator);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", updateIndicator);
-    };
-  }, [activeTab, viewTab]);
 
   const nextSort = useMemo(() => Math.max(0, ...products.map((product) => product.sort_order)) + 1, [products]);
   const lowStockCount = useMemo(
@@ -105,9 +91,6 @@ export function AdminPage() {
     [products],
   );
   const hiddenCount = useMemo(() => products.filter((product) => !product.active).length, [products]);
-  const pendingOrders = useMemo(() => orders.filter((order) => order.status === "pending"), [orders]);
-  const pendingValue = useMemo(() => pendingOrders.reduce((sum, order) => sum + order.total_amount, 0), [pendingOrders]);
-
   useEffect(() => {
     if (!supabase) {
       setIsCheckingAuth(false);
@@ -134,29 +117,57 @@ export function AdminPage() {
     };
   }, []);
 
-  async function reload() {
-    const [catalog, adminProducts, adminOrders] = await Promise.all([
+  async function reloadCatalogAdmin() {
+    const [catalog, adminProducts] = await Promise.all([
       getCatalogData(),
       getAdminProducts(),
-      getOrders(),
     ]);
     setBooth(catalog.booth);
     setPayment(catalog.payment);
     setProducts(adminProducts);
-    setOrders(adminOrders);
     setSelectedProduct((current) => {
       if (!current) return undefined;
       return adminProducts.find((p) => p.id === current.id);
     });
   }
 
+  async function reloadOrders() {
+    const requestId = ++orderRequestRef.current;
+    setOrdersLoading(true);
+    try {
+      const [result, counts] = await Promise.all([
+        getOrders({ page: orderPage, pageSize: orderPageSize, status: orderFilter }),
+        getOrderStatusCounts(),
+      ]);
+      if (requestId !== orderRequestRef.current) return;
+      const lastPage = Math.max(1, Math.ceil(result.total / orderPageSize));
+      if (orderPage > lastPage) {
+        setOrderPage(lastPage);
+        return;
+      }
+      setOrders(result.orders);
+      setOrderTotal(result.total);
+      setOrderCounts(counts);
+    } finally {
+      if (requestId === orderRequestRef.current) setOrdersLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (!isAuthed) return;
-    reload().catch((error) => {
+    reloadCatalogAdmin().catch((error) => {
       if (isSessionNoise(error)) return;
       toast.error(getErrorMessage(error, "Could not load admin data."), "Admin data unavailable");
     });
   }, [isAuthed]);
+
+  useEffect(() => {
+    if (!isAuthed) return;
+    reloadOrders().catch((error) => {
+      if (isSessionNoise(error)) return;
+      toast.error(getErrorMessage(error, "Could not load orders."), "Orders unavailable");
+    });
+  }, [isAuthed, orderFilter, orderPage]);
 
   // Real-time catalog subscription
   useEffect(() => {
@@ -167,7 +178,7 @@ export function AdminPage() {
       onChange: () => {
         window.clearTimeout(reloadTimer);
         reloadTimer = window.setTimeout(() => {
-          reload().catch((error) => {
+          reloadCatalogAdmin().catch((error) => {
             if (isSessionNoise(error)) return;
             toast.error(getErrorMessage(error, "Could not refresh admin data."), "Refresh failed");
           });
@@ -193,14 +204,14 @@ export function AdminPage() {
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
         () => {
-          reload().catch(console.error);
+          reloadOrders().catch(console.error);
         }
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "order_items" },
         () => {
-          reload().catch(console.error);
+          reloadOrders().catch(console.error);
         }
       )
       .subscribe();
@@ -208,21 +219,38 @@ export function AdminPage() {
     return () => {
       void client.removeChannel(channel);
     };
-  }, [isAuthed]);
+  }, [isAuthed, orderFilter, orderPage]);
 
   useEffect(() => {
     applyPageTheme(booth);
   }, [booth]);
 
   useEffect(() => {
-    const leaveDesignerOnPhone = () => {
-      if (window.innerWidth <= 760) {
-        setViewTab((current) => current === "design" ? "orders" : current);
-      }
+    if (isAuthed) void getPushEnabled().then(setPushEnabled).catch(() => setPushEnabled(false));
+  }, [isAuthed]);
+
+  async function togglePushNotifications() {
+    setPushBusy(true);
+    try {
+      if (pushEnabled) await disableOrderNotifications();
+      else await enableOrderNotifications();
+      setPushEnabled(!pushEnabled);
+      toast.success(pushEnabled ? "Order notifications disabled." : "Order notifications enabled on this device.");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Could not update notifications."), "Notifications unavailable");
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    const matchWorkspaceToScreen = () => {
+      if (window.innerWidth <= 760) setViewTab((current) => current === "design" ? "settings" : current);
+      else setViewTab((current) => current === "settings" ? "design" : current);
     };
-    leaveDesignerOnPhone();
-    window.addEventListener("resize", leaveDesignerOnPhone);
-    return () => window.removeEventListener("resize", leaveDesignerOnPhone);
+    matchWorkspaceToScreen();
+    window.addEventListener("resize", matchWorkspaceToScreen);
+    return () => window.removeEventListener("resize", matchWorkspaceToScreen);
   }, []);
 
   async function runAdminAction(action: () => Promise<void>, message: string) {
@@ -239,7 +267,7 @@ export function AdminPage() {
     await runAdminAction(async () => {
       const wasNewProduct = !products.some((current) => current.id === product.id);
       await saveProduct(product);
-      await reload();
+      await reloadCatalogAdmin();
       setSelectedProduct(wasNewProduct ? createBlankProduct(product.sort_order + 1) : product);
     }, "Item saved.");
   }
@@ -248,7 +276,7 @@ export function AdminPage() {
     await runAdminAction(async () => {
       await deleteProduct(id);
       setSelectedProduct(undefined);
-      await reload();
+      await reloadCatalogAdmin();
     }, "Item deleted.");
   }
 
@@ -266,7 +294,7 @@ export function AdminPage() {
     );
   }
 
-  if (!isAuthed) return <LoginPanel onLogin={handleLogin} />;
+  if (!isAuthed) return <LoginPanel onLogin={handleLogin} booth={booth} />;
 
   return (
     <main className="admin-shell" style={getThemeStyle(booth)}>
@@ -274,13 +302,20 @@ export function AdminPage() {
         <div className="admin-header-pill">
           <div className="admin-header-brand">
             <Link to="/" aria-label="Back to catalog" className="admin-header-icon-button"><ArrowLeft size={19} /></Link>
-            <span className="admin-header-mark"><ShoppingBag size={18} /></span>
-            <span><strong>Merch desk</strong><small>Admin workspace</small></span>
+            <span className="admin-header-mark" style={booth.logo_url ? { background: "transparent", overflow: "hidden" } : undefined}>
+              {booth.logo_url ? (
+                <img src={booth.logo_url} alt={booth.booth_name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              ) : (
+                <ShoppingBag size={18} />
+              )}
+            </span>
+            <span><strong>{booth.booth_name || "Merch desk"}</strong><small>Admin workspace</small></span>
           </div>
 
-          <div className="admin-nav-tabs">
+          <div className="admin-nav-tabs" ref={desktopNavRef}>
           <button
             type="button"
+            ref={registerDesktopTab("design")}
             className={`admin-nav-tab admin-nav-storefront ${viewTab === "design" ? "active" : ""}`}
             onClick={() => setViewTab("design")}
           >
@@ -288,64 +323,67 @@ export function AdminPage() {
           </button>
           <button
             type="button"
+            ref={registerDesktopTab("orders")}
             className={`admin-nav-tab ${viewTab === "orders" ? "active" : ""}`}
             onClick={() => setViewTab("orders")}
           >
+            <ClipboardList size={15} />
             <span>Orders Queue</span>
-            {orders.filter(o => o.status === "pending").length > 0 && (
+            {orderCounts.pending > 0 && (
               <span className="admin-nav-count">
-                {orders.filter(o => o.status === "pending").length}
+                {orderCounts.pending}
               </span>
             )}
           </button>
           <button
             type="button"
+            ref={registerDesktopTab("products")}
             className={`admin-nav-tab ${viewTab === "products" ? "active" : ""}`}
             onClick={() => setViewTab("products")}
           >
-            Products ({products.length})
+            <Package size={15} />
+            <span>Products ({products.length})</span>
           </button>
           <button
             type="button"
-            className={`admin-nav-tab ${viewTab === "settings" ? "active" : ""}`}
+            ref={registerDesktopTab("settings")}
+            className={`admin-nav-tab admin-nav-mobile-settings ${viewTab === "settings" ? "active" : ""}`}
             onClick={() => setViewTab("settings")}
           >
-            Settings
+            <Settings2 size={15} /> Settings
           </button>
           </div>
 
-          <button type="button" onClick={() => setIsSignOutOpen(true)} className="admin-signout-button">
-            <LogOut size={16} /><span>Sign out</span>
-          </button>
+          <div className="admin-header-actions">
+            {canUsePush() && <button type="button" disabled={pushBusy} onClick={() => void togglePushNotifications()} className={`admin-notification-button ${pushEnabled ? "active" : ""}`} aria-label={pushEnabled ? "Disable order notifications" : "Enable order notifications"}>{pushEnabled ? <Bell size={16} /> : <BellOff size={16} />}<span>{pushEnabled ? "Alerts on" : "Enable alerts"}</span></button>}
+            <button type="button" onClick={() => setIsSignOutOpen(true)} className="admin-signout-button"><LogOut size={16} /><span>Sign out</span></button>
+          </div>
         </div>
       </header>
 
       <div className="admin-container">
         <section className="admin-view-hero">
           <div>
-            <span>{viewTab === "orders" ? "Live operations" : viewTab === "products" ? "Catalog management" : viewTab === "design" ? "Visual storefront" : "Workspace configuration"}</span>
-            <h1>{viewTab === "orders" ? "Orders" : viewTab === "products" ? "Products" : viewTab === "design" ? "Storefront designer" : "Settings"}</h1>
-            <p>{viewTab === "orders" ? "Confirm payments and keep fulfilment moving." : viewTab === "products" ? "Manage listings, images, pricing, and availability." : viewTab === "design" ? "Arrange the selling page and preview its visual system." : "Control what customers see and how they pay."}</p>
+            <span>{viewTab === "orders" ? "Live operations" : viewTab === "products" ? "Catalog management" : viewTab === "settings" ? "Mobile configuration" : "Visual storefront"}</span>
+            <h1>{viewTab === "orders" ? "Orders" : viewTab === "products" ? "Products" : viewTab === "settings" ? "Settings" : "Storefront designer"}</h1>
+            <p>{viewTab === "orders" ? "Confirm payments and fulfil orders." : viewTab === "products" ? "Manage products, prices, and stock." : viewTab === "settings" ? "Update booth and payment details." : "Build your storefront and checkout."}</p>
           </div>
           <div className="admin-view-chips">
-            {viewTab === "orders" && <><span><b>{pendingOrders.length}</b> pending</span><span><b>{pendingValue.toLocaleString("vi-VN")} ₫</b> awaiting confirmation</span></>}
+            {viewTab === "orders" && <><span><b>{orderCounts.pending}</b> pending</span><span><b>{orderTotal}</b> matching orders</span></>}
             {viewTab === "products" && <><span><b>{products.length}</b> total</span><span><b>{lowStockCount}</b> need attention</span><span><b>{hiddenCount}</b> hidden</span></>}
             {viewTab === "design" && <><span><b>{booth.corner_radius ?? 16}px</b> corners</span><span><b>{(booth.catalog_locale ?? "en").toUpperCase()}</b> locale</span></>}
-            {viewTab === "settings" && <><span><b>{booth.booth_code || "—"}</b> booth code</span><span><b>{payment.bank_label || "—"}</b> payment label</span></>}
           </div>
         </section>
         {viewTab === "orders" && (
-          <OrderQueue orders={orders} onOrderUpdated={() => reload().catch(console.error)} />
+          <OrderQueue orders={orders} filter={orderFilter} counts={orderCounts} page={orderPage} pageSize={orderPageSize} total={orderTotal} loading={ordersLoading} onFilterChange={(filter) => { setOrderFilter(filter); setOrderPage(1); }} onPageChange={setOrderPage} onOrderUpdated={() => reloadOrders().catch(console.error)} />
         )}
 
         {viewTab === "products" && (
           <>
-            <div className="category-row admin-mobile-tabs-row" ref={activeTabRef} style={{ marginBottom: "16px" }}>
+            <div className="category-row admin-mobile-tabs-row" ref={mobileTabsRef} style={{ marginBottom: "16px" }}>
               <button
                 type="button"
-                ref={(el) => {
-                  activeTabChipRefs.current[0] = el;
-                }}
+                ref={registerMobileTab("list")}
                 className={`chip ${activeTab === "list" ? "chip-active" : ""}`}
                 onClick={() => setActiveTab("list")}
               >
@@ -353,9 +391,7 @@ export function AdminPage() {
               </button>
               <button
                 type="button"
-                ref={(el) => {
-                  activeTabChipRefs.current[1] = el;
-                }}
+                ref={registerMobileTab("form")}
                 className={`chip ${activeTab === "form" ? "chip-active" : ""}`}
                 onClick={() => setActiveTab("form")}
               >
@@ -383,48 +419,27 @@ export function AdminPage() {
                 </div>
               ) : (
                 <div className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}>
-                  <div className="admin-empty-state">
-                    <Package size={36} />
-                    <h2>No item selected</h2>
-                    <p>Select an item from the products list to edit details, or click "New Item" to create one.</p>
-                  </div>
+                  <EmptyState
+                    variant="compact"
+                    icon={<Package size={26} />}
+                    title="No product selected"
+                    message="Choose a product from the list to edit it, or start a fresh listing."
+                    action={<Button icon={<Package size={16} />} onClick={() => { setSelectedProduct(createBlankProduct(nextSort)); setActiveTab("form"); }}>Create product</Button>}
+                  />
                 </div>
               )}
             </div>
           </>
         )}
 
-        {viewTab === "design" && <StorefrontDesigner settings={booth} products={products} onSave={(settings) => runAdminAction(async () => { const saved = await saveBoothSettings(settings); setBooth(saved); }, "Storefront design published.")} />}
-
-        {viewTab === "settings" && (
-          <section className="admin-settings-workspace">
-            <div className="admin-settings-intro">
-              <div className="admin-settings-switcher" role="tablist" aria-label="Settings section">
-                <button type="button" className={settingsTab === "booth" ? "active" : ""} onClick={() => setSettingsTab("booth")}><Settings2 size={17} /> Booth information</button>
-                <button type="button" className={settingsTab === "payment" ? "active" : ""} onClick={() => setSettingsTab("payment")}><CreditCard size={17} /> Payment & QR</button>
-              </div>
-            </div>
-            <div className="admin-settings-panel">
-            {settingsTab === "booth" ? <SettingsForm
-              settings={booth}
-              onSave={(settings) =>
-                runAdminAction(async () => {
-                  const saved = await saveBoothSettings(settings);
-                  setBooth(saved);
-                }, "Booth info saved.")
-              }
-            /> : <QrManager
-              settings={payment}
-              onSave={(settings) =>
-                runAdminAction(async () => {
-                  const saved = await savePaymentSettings(settings);
-                  setPayment(saved);
-                }, "QR settings saved.")
-              }
-            />}
-            </div>
-          </section>
-        )}
+        {viewTab === "design" && <StorefrontDesigner
+          settings={booth}
+          products={products}
+          payment={payment}
+          onSave={(settings) => runAdminAction(async () => { const saved = await saveBoothSettings(settings); setBooth(saved); }, "Storefront design published.")}
+          onSavePayment={(settings) => runAdminAction(async () => { const saved = await savePaymentSettings(settings); setPayment(saved); }, "Checkout settings saved.")}
+        />}
+        {viewTab === "settings" && <section className="admin-mobile-settings-page"><SettingsForm settings={booth} onSave={async (settings) => { const saved = await saveBoothSettings(settings); setBooth(saved); toast.success("Booth settings saved."); }} /><QrManager settings={payment} onSave={async (settings) => { const saved = await savePaymentSettings(settings); setPayment(saved); toast.success("Checkout settings saved."); }} /></section>}
       </div>
       <Modal title="Sign out of admin?" isOpen={isSignOutOpen} onClose={() => setIsSignOutOpen(false)} className="signout-modal">
         <div className="signout-confirmation">

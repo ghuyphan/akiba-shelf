@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "./Button";
@@ -32,22 +32,35 @@ function unlockScroll() {
 }
 
 export function Modal({ title, isOpen, onClose, children, wide = false, className = "" }: ModalProps) {
+  const [shouldRender, setShouldRender] = useState(isOpen);
+
   useEffect(() => {
-    if (!isOpen) return;
+    if (isOpen) {
+      setShouldRender(true);
+    } else if (shouldRender) {
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 220);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, shouldRender]);
+
+  useEffect(() => {
+    if (!shouldRender) return;
 
     lockScroll();
 
     return () => {
       unlockScroll();
     };
-  }, [isOpen]);
+  }, [shouldRender]);
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   const modal = (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div className={`modal-backdrop ${isOpen ? "is-open" : "is-closing"}`} role="presentation" onClick={onClose}>
       <section
-        className={`modal ${wide ? "modal-wide" : ""} ${className}`}
+        className={`modal ${isOpen ? "is-open" : "is-closing"} ${wide ? "modal-wide" : ""} ${className}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}

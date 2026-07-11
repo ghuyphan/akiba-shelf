@@ -19,7 +19,16 @@ const icons = { info: Info, success: CheckCircle2, error: AlertCircle };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const dismiss = useCallback((id: string) => setToasts((current) => current.filter((toast) => toast.id !== id)), []);
+  const [exitingIds, setExitingIds] = useState<string[]>([]);
+
+  const dismiss = useCallback((id: string) => {
+    setExitingIds((prev) => [...prev, id]);
+    setTimeout(() => {
+      setToasts((current) => current.filter((toast) => toast.id !== id));
+      setExitingIds((prev) => prev.filter((x) => x !== id));
+    }, 280);
+  }, []);
+
   const show = useCallback((input: ToastInput) => {
     const id = safeUuid();
     const toast: ToastItem = { ...input, id, variant: input.variant ?? "info" };
@@ -27,6 +36,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     window.setTimeout(() => dismiss(id), input.duration ?? (toast.variant === "error" ? 6500 : 4000));
     return id;
   }, [dismiss]);
+
   const api = useMemo<ToastApi>(() => ({
     show,
     info: (message, title) => show({ message, title, variant: "info" }),
@@ -39,7 +49,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <div className="toast-region" aria-live="polite" aria-atomic="false">
       {toasts.map((toast) => {
         const Icon = icons[toast.variant];
-        return <div key={toast.id} className={`toast toast-${toast.variant}`} role={toast.variant === "error" ? "alert" : "status"}>
+        const isClosing = exitingIds.includes(toast.id);
+        return <div
+          key={toast.id}
+          className={`toast toast-${toast.variant} ${isClosing ? "is-closing" : "is-open"}`}
+          role={toast.variant === "error" ? "alert" : "status"}
+        >
           <span className="toast-icon"><Icon size={17} /></span>
           <div><strong>{toast.title ?? (toast.variant === "success" ? "Done" : toast.variant === "error" ? "Something went wrong" : "Notice")}</strong><p>{toast.message}</p></div>
           <button type="button" aria-label="Dismiss notification" onClick={() => dismiss(toast.id)}><X size={14} /></button>
