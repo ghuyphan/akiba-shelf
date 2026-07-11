@@ -266,7 +266,6 @@ export function CatalogPage() {
     ),
     products: (
       <ProductGrid
-        key={`grid-${activeCategory}-${sort}-${searchQuery.trim()}-${viewMode}`}
         products={visibleProducts}
         totalProducts={products.length}
         activeCategory={activeCategory}

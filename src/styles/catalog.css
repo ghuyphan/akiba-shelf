@@ -499,7 +499,6 @@
 .featured-banner-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .featured-banner-meta>strong { margin-right: 3px; color: var(--coral); font-size: 16px; letter-spacing: -.025em; }
 .featured-banner-meta>span { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 8px; border-radius: 999px; color: #34755e; background: #edf8f4; font-size: 9px; font-weight: 850; }
-.featured-banner-meta>.featured-banner-badge { color: #fff; background: #5f8d55; text-transform: uppercase; }
 .featured-banner-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 10px; }
 .featured-banner-add { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 34px; padding: 0 14px; border: 0; border-radius: 999px; color: #fff; background: var(--coral); box-shadow: 0 8px 20px color-mix(in srgb, var(--coral) 20%, transparent); cursor: pointer; font-size: 10px; font-weight: 900; transition: transform 160ms ease, box-shadow 160ms ease; }
 .featured-banner-add:hover { transform: translateY(-2px); box-shadow: 0 12px 24px color-mix(in srgb, var(--coral) 28%, transparent); }

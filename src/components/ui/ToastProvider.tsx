@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 import { safeUuid } from "../../lib/supabase";
@@ -20,20 +20,32 @@ const icons = { info: Info, success: CheckCircle2, error: AlertCircle };
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [exitingIds, setExitingIds] = useState<string[]>([]);
+  const timersRef = useRef(new Map<string, number>());
+
+  useEffect(() => () => {
+    timersRef.current.forEach((timer) => window.clearTimeout(timer));
+    timersRef.current.clear();
+  }, []);
 
   const dismiss = useCallback((id: string) => {
-    setExitingIds((prev) => [...prev, id]);
-    setTimeout(() => {
+    const timer = timersRef.current.get(id);
+    if (timer) window.clearTimeout(timer);
+    timersRef.current.delete(id);
+    setExitingIds((prev) => prev.includes(id) ? prev : [...prev, id]);
+    const exitTimer = window.setTimeout(() => {
       setToasts((current) => current.filter((toast) => toast.id !== id));
       setExitingIds((prev) => prev.filter((x) => x !== id));
+      timersRef.current.delete(id);
     }, 280);
+    timersRef.current.set(id, exitTimer);
   }, []);
 
   const show = useCallback((input: ToastInput) => {
     const id = safeUuid();
     const toast: ToastItem = { ...input, id, variant: input.variant ?? "info" };
     setToasts((current) => [...current.slice(-3), toast]);
-    window.setTimeout(() => dismiss(id), input.duration ?? (toast.variant === "error" ? 6500 : 4000));
+    const timer = window.setTimeout(() => dismiss(id), input.duration ?? (toast.variant === "error" ? 6500 : 4000));
+    timersRef.current.set(id, timer);
     return id;
   }, [dismiss]);
 

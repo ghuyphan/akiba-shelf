@@ -3,11 +3,17 @@ import webpush from "npm:web-push@3.6.7";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 
+async function sha256(value: string) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
-    const { orderId } = await request.json();
-    if (!orderId) throw new Error("Missing order ID.");
+    if (request.method !== "POST") return Response.json({ error: "Method not allowed." }, { status: 405, headers: cors });
+    const { orderId, recoveryToken } = await request.json();
+    if (!orderId || typeof recoveryToken !== "string" || recoveryToken.length < 32) throw new Error("Missing order credentials.");
     const url = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const publicKey = Deno.env.get("VAPID_PUBLIC_KEY")!;
@@ -15,7 +21,8 @@ Deno.serve(async (request) => {
     const subject = Deno.env.get("VAPID_SUBJECT") || "mailto:admin@example.com";
     if (!publicKey || !privateKey) throw new Error("VAPID keys are not configured.");
     const admin = createClient(url, serviceKey);
-    const { data: order, error: orderError } = await admin.from("orders").select("id, order_code, total_amount, status").eq("id", orderId).eq("status", "pending").single();
+    const recoveryTokenHash = await sha256(recoveryToken);
+    const { data: order, error: orderError } = await admin.from("orders").select("id, order_code, total_amount, status").eq("id", orderId).eq("status", "pending").eq("recovery_token_hash", recoveryTokenHash).single();
     if (orderError || !order) throw new Error("Pending order not found.");
     const { error: eventError } = await admin.from("order_notification_events").insert({ order_id: order.id });
     if (eventError?.code === "23505") return Response.json({ duplicate: true }, { headers: cors });

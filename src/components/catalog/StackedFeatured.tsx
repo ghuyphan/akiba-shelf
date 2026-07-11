@@ -79,7 +79,6 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
           <div className="featured-banner-meta">
             <strong>{formatVnd(activeProduct.price_vnd)}</strong>
             <span><PackageCheck size={15} /> {activeProduct.quantity_available > 10 ? copy.inStock : copy.onlyLeft(activeProduct.quantity_available)}</span>
-            {activeProduct.badge && <span className="featured-banner-badge" style={{ backgroundColor: activeProduct.badge_color || undefined }}>{activeProduct.badge}</span>}
           </div>
           <div className="featured-banner-actions">
             <button type="button" className="featured-banner-add" onClick={(event) => onSelect(activeProduct, event)}><ShoppingCart size={17} /><span>{copy.addToCart}</span></button>

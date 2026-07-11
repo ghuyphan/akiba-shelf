@@ -4,8 +4,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag } from "lucide-react";
 import {
   deleteProduct,
-  getAdminProducts,
-  getCatalogData,
+  getAdminCatalogData,
   getOrderStatusCounts,
   getOrders,
   saveBoothSettings,
@@ -82,6 +81,7 @@ export function AdminPage() {
   const toast = useToast();
 
   const orderRequestRef = useRef(0);
+  const orderReloadTimerRef = useRef<number | undefined>(undefined);
   const { containerRef: desktopNavRef, registerItem: registerDesktopTab } = useTabIndicator<string, HTMLDivElement>(viewTab, [products.length, orderCounts.pending]);
   const { containerRef: mobileTabsRef, registerItem: registerMobileTab } = useTabIndicator<string, HTMLDivElement>(activeTab, [products.length, viewTab]);
 
@@ -119,26 +119,33 @@ export function AdminPage() {
   }, []);
 
   async function reloadCatalogAdmin() {
-    const [catalog, adminProducts] = await Promise.all([
-      getCatalogData(),
-      getAdminProducts(),
-    ]);
+    const catalog = await getAdminCatalogData();
     setBooth(catalog.booth);
     setPayment(catalog.payment);
-    setProducts(adminProducts);
+    setProducts(catalog.products);
     setSelectedProduct((current) => {
       if (!current) return undefined;
-      return adminProducts.find((p) => p.id === current.id);
+      return catalog.products.find((p) => p.id === current.id);
     });
   }
 
-  async function reloadOrders() {
+  function scheduleOrdersReload() {
+    window.clearTimeout(orderReloadTimerRef.current);
+    orderReloadTimerRef.current = window.setTimeout(() => {
+      reloadOrders(true).catch((error) => {
+        if (isSessionNoise(error)) return;
+        toast.error(getErrorMessage(error, "Could not refresh orders."), "Refresh failed");
+      });
+    }, 200);
+  }
+
+  async function reloadOrders(refreshCounts = false) {
     const requestId = ++orderRequestRef.current;
     setOrdersLoading(true);
     try {
       const [result, counts] = await Promise.all([
         getOrders({ page: orderPage, pageSize: orderPageSize, status: orderFilter }),
-        getOrderStatusCounts(),
+        refreshCounts ? getOrderStatusCounts() : Promise.resolve(null),
       ]);
       if (requestId !== orderRequestRef.current) return;
       const lastPage = Math.max(1, Math.ceil(result.total / orderPageSize));
@@ -148,7 +155,7 @@ export function AdminPage() {
       }
       setOrders(result.orders);
       setOrderTotal(result.total);
-      setOrderCounts(counts);
+      if (counts) setOrderCounts(counts);
     } finally {
       if (requestId === orderRequestRef.current) setOrdersLoading(false);
     }
@@ -169,6 +176,14 @@ export function AdminPage() {
       toast.error(getErrorMessage(error, "Could not load orders."), "Orders unavailable");
     });
   }, [isAuthed, orderFilter, orderPage]);
+
+  useEffect(() => {
+    if (!isAuthed) return;
+    getOrderStatusCounts().then(setOrderCounts).catch((error) => {
+      if (isSessionNoise(error)) return;
+      toast.error(getErrorMessage(error, "Could not load order totals."), "Order totals unavailable");
+    });
+  }, [isAuthed]);
 
   // Real-time catalog subscription
   useEffect(() => {
@@ -204,20 +219,17 @@ export function AdminPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
-        () => {
-          reloadOrders().catch(console.error);
-        }
+        scheduleOrdersReload
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "order_items" },
-        () => {
-          reloadOrders().catch(console.error);
-        }
+        scheduleOrdersReload
       )
       .subscribe();
 
     return () => {
+      window.clearTimeout(orderReloadTimerRef.current);
       void client.removeChannel(channel);
     };
   }, [isAuthed, orderFilter, orderPage]);
@@ -375,7 +387,7 @@ export function AdminPage() {
           </div>
         </section>
         {viewTab === "orders" && (
-          <OrderQueue orders={orders} filter={orderFilter} counts={orderCounts} page={orderPage} pageSize={orderPageSize} total={orderTotal} loading={ordersLoading} onFilterChange={(filter) => { setOrderFilter(filter); setOrderPage(1); }} onPageChange={setOrderPage} onOrderUpdated={() => reloadOrders().catch(console.error)} />
+          <OrderQueue orders={orders} filter={orderFilter} counts={orderCounts} page={orderPage} pageSize={orderPageSize} total={orderTotal} loading={ordersLoading} onFilterChange={(filter) => { setOrderFilter(filter); setOrderPage(1); }} onPageChange={setOrderPage} onOrderUpdated={scheduleOrdersReload} />
         )}
 
         {viewTab === "products" && (

@@ -23,25 +23,31 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
   const [isGenerating, setIsGenerating] = useState(false);
   
   // Order flow states
-  const [customerName, setCustomerName] = useState("");
-  const [order, setOrder] = useState<Order | null>(null);
+  const [recovery, setRecovery] = useState<ActiveOrderRecovery | null>(() => loadOrderRecovery());
+  const [customerName, setCustomerName] = useState(() => recovery?.customerName ?? "");
+  const [order, setOrder] = useState<Order | null>(() => recovery?.order ?? null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
-  const [recovery, setRecovery] = useState<ActiveOrderRecovery | null>(() => loadOrderRecovery());
   const [connectionState, setConnectionState] = useState<"online" | "reconnecting">(navigator.onLine ? "online" : "reconnecting");
   const [remaining, setRemaining] = useState(0);
   const [isCancelling, setIsCancelling] = useState(false);
   const completionHandledRef = useRef(false);
+  const recoveryAttemptedRef = useRef(false);
+  const orderRef = useRef<Order | null>(null);
+  const recoveryRef = useRef<ActiveOrderRecovery | null>(recovery);
+  const onOrderChangeRef = useRef(onOrderChange);
+  const onSuccessRef = useRef(onSuccess);
+  const reconcileInFlightRef = useRef(false);
   const checkoutCart = recovery?.cart ?? cart;
 
+  orderRef.current = order;
+  recoveryRef.current = recovery;
+  onOrderChangeRef.current = onOrderChange;
+  onSuccessRef.current = onSuccess;
+
   useEffect(() => {
-    if (!recovery) return;
-    setCustomerName(recovery.customerName);
-    if (recovery.order) {
-      setOrder(recovery.order);
-      onOrderChange?.(recovery.order);
-    }
+    if (recovery?.order) onOrderChangeRef.current?.(recovery.order);
   }, []);
 
   const totalAmount = useMemo(
@@ -67,8 +73,10 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
   }, [onOrderChange]);
 
   useEffect(() => {
-    if (recovery && !recovery.order && !isSubmittingOrder && !submitError) void submitOrder(recovery);
-  }, []);
+    if (recoveryAttemptedRef.current || !recovery || recovery.order) return;
+    recoveryAttemptedRef.current = true;
+    void submitOrder(recovery);
+  }, [recovery, submitOrder]);
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,29 +111,37 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
   }, [isOpen, order, payment, checkoutCart]);
 
   const reconcileOrder = useCallback(async () => {
-    if (!order || !recovery) return;
+    if (reconcileInFlightRef.current) return;
+    const currentOrder = orderRef.current;
+    const currentRecovery = recoveryRef.current;
+    if (!currentOrder || !currentRecovery) return;
     if (!navigator.onLine) {
       setConnectionState("reconnecting");
       return;
     }
+    reconcileInFlightRef.current = true;
     try {
-      const fresh = await getCustomerOrder(order.id, recovery.recoveryToken);
+      const fresh = await getCustomerOrder(currentOrder.id, currentRecovery.recoveryToken);
       if (!fresh) throw new Error("Order recovery details are no longer valid.");
-      const saved = { ...recovery, order: fresh };
+      const saved = { ...currentRecovery, order: fresh };
       saveOrderRecovery(saved);
+      recoveryRef.current = saved;
+      orderRef.current = fresh;
       setRecovery(saved);
       setOrder(fresh);
-      onOrderChange?.(fresh);
+      onOrderChangeRef.current?.(fresh);
       setConnectionState("online");
       if (fresh.status === "confirmed" && !completionHandledRef.current) {
         completionHandledRef.current = true;
-        onSuccess();
+        onSuccessRef.current();
         setShowSuccess(true);
       }
     } catch {
       setConnectionState("reconnecting");
+    } finally {
+      reconcileInFlightRef.current = false;
     }
-  }, [order, recovery, onOrderChange, onSuccess]);
+  }, []);
 
   useEffect(() => {
     if (!order || order.status !== "pending") return;

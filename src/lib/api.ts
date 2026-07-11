@@ -113,6 +113,26 @@ export async function getAdminProducts(): Promise<Product[]> {
   return ((data as Product[]) ?? []).map(normalizeProduct);
 }
 
+export async function getAdminCatalogData(): Promise<CatalogData> {
+  const client = requireSupabase();
+
+  const [products, booth, payment] = await Promise.all([
+    client.from("products").select("id,name,collection,description,price_vnd,item_code,quantity_available,category,badge,badge_color,stock_status,stock_note,images,image_variants,featured,sort_order,active").order("sort_order", { ascending: true }),
+    client.from("booth_settings").select("id,booth_name,subtitle,booth_code,location,open_hours,logo_url,instagram_url,facebook_url,tiktok_url,social_qr_logo_url,theme_primary,theme_secondary,theme_accent,theme_background,layout_order,corner_radius,catalog_locale,featured_autoplay").limit(1).maybeSingle(),
+    client.from("payment_settings").select("id,momo_qr_url,bank_qr_url,momo_label,bank_label,bank_code,bank_acq_id,bank_account_no,bank_account_name,bank_add_info_template,payment_instructions").limit(1).maybeSingle(),
+  ]);
+
+  if (products.error) throw products.error;
+  if (booth.error) throw booth.error;
+  if (payment.error) throw payment.error;
+
+  return {
+    products: ((products.data as Product[]) ?? []).map(normalizeProduct),
+    booth: normalizeBooth((booth.data as BoothSettings | null) ?? defaultBooth),
+    payment: normalizePayment((payment.data as PaymentSettings | null) ?? defaultPayment),
+  };
+}
+
 export async function saveProduct(product: Product): Promise<Product> {
   const client = requireSupabase();
 
@@ -203,7 +223,9 @@ export async function createOrder(customerName: string | null, cart: CartItem[],
   if (error) throw error;
   const createdOrder = Array.isArray(data) ? data[0] : data;
   if (!createdOrder) throw new Error("The order was created but no order details were returned.");
-  void client.functions.invoke("notify-new-order", { body: { orderId: createdOrder.id } }).catch(() => undefined);
+  void client.functions.invoke("notify-new-order", {
+    body: { orderId: createdOrder.id, recoveryToken },
+  }).catch(() => undefined);
   return createdOrder as Order;
 }
 
