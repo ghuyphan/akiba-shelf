@@ -1,6 +1,6 @@
 import { defaultBooth, defaultPayment } from "./constants";
 import { isSupabaseConfigured, safeUuid, supabase } from "./supabase";
-import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus, Order, OrderItem, OrderStatus, CartItem } from "../types/catalog";
+import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus, Order, OrderItem, OrderStatus, CartItem, OrderMutationResult } from "../types/catalog";
 
 const stockStatuses: StockStatus[] = ["in_stock", "limited", "sold_out"];
 
@@ -51,6 +51,7 @@ function normalizeProduct(product: Partial<Product>): Product {
     stock_status: stockStatus(product.stock_status),
     stock_note: text(product.stock_note, "In stock"),
     images: textArray(product.images),
+    image_variants: Array.isArray(product.image_variants) ? product.image_variants.filter((item): item is { thumbnail: string; detail: string } => Boolean(item && typeof item.thumbnail === "string" && typeof item.detail === "string")) : [],
     featured: booleanValue(product.featured),
     sort_order: numberValue(product.sort_order),
     active: booleanValue(product.active, true),
@@ -88,9 +89,9 @@ export async function getCatalogData(): Promise<CatalogData> {
   const client = requireSupabase();
 
   const [products, booth, payment] = await Promise.all([
-    client.from("products").select("*").eq("active", true).order("sort_order", { ascending: true }),
-    client.from("booth_settings").select("*").limit(1).maybeSingle(),
-    client.from("payment_settings").select("*").limit(1).maybeSingle(),
+    client.from("products").select("id,name,collection,description,price_vnd,item_code,quantity_available,category,badge,badge_color,stock_status,stock_note,images,image_variants,featured,sort_order,active").eq("active", true).order("sort_order", { ascending: true }),
+    client.from("booth_settings").select("id,booth_name,subtitle,booth_code,location,open_hours,logo_url,instagram_url,facebook_url,tiktok_url,social_qr_logo_url,theme_primary,theme_secondary,theme_accent,theme_background,layout_order,corner_radius,catalog_locale,featured_autoplay").limit(1).maybeSingle(),
+    client.from("payment_settings").select("id,momo_qr_url,bank_qr_url,momo_label,bank_label,bank_code,bank_acq_id,bank_account_no,bank_account_name,bank_add_info_template,payment_instructions").limit(1).maybeSingle(),
   ]);
 
   if (products.error) throw products.error;
@@ -156,11 +157,24 @@ export async function uploadImage(bucket: string, file: File) {
 
   const extension = file.name.split(".").pop() ?? "png";
   const path = `${safeUuid()}.${extension}`;
-  const { error } = await client.storage.from(bucket).upload(path, file, { upsert: false });
+  const { error } = await client.storage.from(bucket).upload(path, file, { upsert: false, contentType: file.type, cacheControl: "31536000" });
   if (error) throw error;
 
   const { data } = client.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
+}
+
+export async function uploadProductImages(thumbnail: File, detail: File) {
+  const client = requireSupabase();
+  const id = safeUuid();
+  async function upload(suffix: string, file: File) {
+    const path = `${id}-${suffix}.jpg`;
+    const { error } = await client.storage.from("product-images").upload(path, file, { upsert: false, contentType: file.type, cacheControl: "31536000" });
+    if (error) throw error;
+    return client.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+  }
+  const [thumbnailUrl, detailUrl] = await Promise.all([upload("thumb", thumbnail), upload("detail", detail)]);
+  return { thumbnail: thumbnailUrl, detail: detailUrl };
 }
 
 export async function signInAdmin(email: string, password: string) {
@@ -229,7 +243,7 @@ export async function getOrders({ page = 1, pageSize = 12, status = "all" }: { p
 
 export async function getOrderStatusCounts(): Promise<OrderStatusCounts> {
   const client = requireSupabase();
-  const statuses: OrderStatus[] = ["pending", "confirmed", "cancelled"];
+  const statuses: OrderStatus[] = ["pending", "confirmed", "cancelled", "expired"];
   const counts = await Promise.all(statuses.map(async (status) => {
     const { count, error } = await client.from("orders").select("id", { count: "exact", head: true }).eq("status", status);
     if (error) throw error;
@@ -239,20 +253,24 @@ export async function getOrderStatusCounts(): Promise<OrderStatusCounts> {
   return { ...result, all: statuses.reduce((sum, status) => sum + result[status], 0) };
 }
 
-export async function confirmOrderPayment(orderId: string): Promise<void> {
+export async function confirmOrderPayment(orderId: string): Promise<OrderMutationResult> {
   const client = requireSupabase();
 
-  const { error } = await client.rpc("confirm_order_payment", { target_order_id: orderId });
+  const { data, error } = await client.rpc("confirm_order_payment", { target_order_id: orderId });
   if (error) throw error;
+  return data as OrderMutationResult;
 }
 
-export async function cancelOrder(orderId: string): Promise<void> {
+export async function cancelOrder(orderId: string): Promise<OrderMutationResult> {
   const client = requireSupabase();
 
-  const { error } = await client
-    .from("orders")
-    .update({ status: "cancelled" })
-    .eq("id", orderId);
-
+  const { data, error } = await client.rpc("cancel_order", { target_order_id: orderId });
   if (error) throw error;
+  return data as OrderMutationResult;
+}
+export async function cancelCustomerOrder(orderId: string, recoveryToken: string): Promise<OrderMutationResult> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("cancel_customer_order", { p_order_id: orderId, p_recovery_token: recoveryToken });
+  if (error) throw error;
+  return data as OrderMutationResult;
 }

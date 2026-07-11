@@ -5,7 +5,7 @@ import { formatVnd } from "../../lib/format";
 import { useCatalogCopy } from "../../lib/catalogI18n";
 import { canGenerateVietQr, generateVietQrForCart } from "../../lib/vietqr";
 import { Modal } from "../ui/Modal";
-import { createOrder, getCustomerOrder } from "../../lib/api";
+import { cancelCustomerOrder, createOrder, getCustomerOrder } from "../../lib/api";
 import { clearOrderRecovery, createOrderRecovery, loadOrderRecovery, saveOrderRecovery, type ActiveOrderRecovery } from "../../lib/orderRecovery";
 
 type PaymentQrModalProps = {
@@ -30,6 +30,8 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
   const [showSuccess, setShowSuccess] = useState(false);
   const [recovery, setRecovery] = useState<ActiveOrderRecovery | null>(() => loadOrderRecovery());
   const [connectionState, setConnectionState] = useState<"online" | "reconnecting">(navigator.onLine ? "online" : "reconnecting");
+  const [remaining, setRemaining] = useState(0);
+  const [isCancelling, setIsCancelling] = useState(false);
   const completionHandledRef = useRef(false);
   const checkoutCart = recovery?.cart ?? cart;
 
@@ -157,6 +159,21 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
 
   const paymentLabel = canGenerateVietQr(payment) ? payment.bank_label : payment.momo_label;
 
+  useEffect(() => {
+    if (!order?.expires_at || order.status !== "pending") { setRemaining(0); return; }
+    const update = () => setRemaining(Math.max(0, Math.ceil((new Date(order.expires_at!).getTime() - Date.now()) / 1000)));
+    update(); const timer = window.setInterval(update, 1000); return () => window.clearInterval(timer);
+  }, [order?.expires_at, order?.status]);
+
+  useEffect(() => { if (order?.status === "pending" && remaining === 0 && order.expires_at) void reconcileOrder(); }, [remaining, order?.status, order?.expires_at, reconcileOrder]);
+
+  async function handleCancel() {
+    if (!order || !recovery || !navigator.onLine || !window.confirm("Cancel this reservation and release the items?")) return;
+    setIsCancelling(true);
+    try { const result = await cancelCustomerOrder(order.id, recovery.recoveryToken); if (result.order) { setOrder(result.order); onOrderChange?.(result.order); saveOrderRecovery({ ...recovery, order: result.order }); } }
+    finally { setIsCancelling(false); }
+  }
+
   if (showSuccess) {
     return (
       <Modal title={copy.paymentComplete} isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal" mobileSheet>
@@ -184,6 +201,10 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
         </div>
       </Modal>
     );
+  }
+
+  if (order?.status === "expired") {
+    return <Modal title="Reservation expired" isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal" mobileSheet><div className="payment-success-state payment-cancelled-state"><Ban size={38} /><h2>Reservation expired.</h2><p>Payment may have been sent after this reservation expired. Please ask booth staff for assistance.</p><button type="button" className="button button-primary" onClick={handleSuccessClose}>Back to shop</button></div></Modal>;
   }
 
   // Step 1: Input Nickname/Name before checkout
@@ -223,13 +244,14 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
           </div>
           <div className={`payment-waiting-pill ${connectionState === "reconnecting" ? "is-offline" : ""}`}>{connectionState === "reconnecting" ? <CloudOff size={14} /> : <Loader2 size={14} className="spin-icon" />}<span>{connectionState === "reconnecting" ? copy.reconnectingOrder : copy.waitingConfirmation}</span>
           </div>
+          <p className="payment-reservation-copy"><strong>Reserved for {String(Math.floor(remaining / 60)).padStart(2, "0")}:{String(remaining % 60).padStart(2, "0")}</strong><br />Your items are reserved while you complete payment.</p>
         </div>
 
         <div className="payment-receipt payment-receipt-redesign">
           <div className="payment-order-identity"><div><span>{copy.orderCode}</span><strong>{order.order_code}</strong></div>{order.customer_name && <div><span>{copy.pickupName}</span><strong>{order.customer_name}</strong></div>}</div>
           <div className="payment-transfer-card"><span>{copy.transferTo}</span><div><small>{copy.accountName}</small><strong>{payment.bank_account_name || "N/A"}</strong></div><div><small>{copy.accountNumber}</small><button type="button" onClick={() => void navigator.clipboard.writeText(payment.bank_account_no || "")}><strong>{payment.bank_account_no || "N/A"}</strong><Copy size={14} /></button></div><div><small>{copy.bank}</small><strong>{paymentLabel}</strong></div><div className="payment-transfer-note"><small>{copy.transferNote}</small><strong>{order.order_code}</strong></div></div>
           <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => <div key={item.product.id}><span>{item.quantity} × {item.product.name}</span><strong>{formatVnd(item.product.price_vnd * item.quantity)}</strong></div>)}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
-          <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button>
+          <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button><button type="button" className="button button-secondary" onClick={() => void handleCancel()} disabled={isCancelling || connectionState !== "online"}>{isCancelling ? "Cancelling…" : "Cancel order"}</button>
           {payment.payment_instructions && <div className="receipt-instructions"><Sparkles size={16} /><span>{payment.payment_instructions}</span></div>}
         </div>
       </div>

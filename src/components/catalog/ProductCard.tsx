@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import type { Product } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
@@ -17,8 +16,7 @@ type ProductCardProps = {
 export function ProductCard({ product, selected, viewMode, onSelect, onViewDetails, style }: ProductCardProps) {
   const copy = useCatalogCopy();
   const images = product.images.filter(Boolean);
-  const [activeImage, setActiveImage] = useState(0);
-  const primaryImage = images[activeImage] || images[0];
+  const primaryImage = product.image_variants?.[0]?.thumbnail || images[0];
   const isSoldOut = product.quantity_available <= 0;
 
   return (
@@ -43,11 +41,10 @@ export function ProductCard({ product, selected, viewMode, onSelect, onViewDetai
           </div>
         )}
         {primaryImage ? (
-          <img src={primaryImage} alt={product.name} loading="lazy" />
+          <img src={primaryImage} alt={product.name} loading="lazy" decoding="async" width="600" height="600" />
         ) : (
           <div className="product-image-placeholder" aria-hidden="true" />
         )}
-        {images.length > 1 && <div className="product-image-thumbs" aria-label={`${product.name} images`}>{images.slice(0, 4).map((image, index) => <button key={`${image}-${index}`} type="button" className={index === activeImage ? "active" : ""} onClick={(event) => { event.stopPropagation(); setActiveImage(index); }} aria-label={`Show image ${index + 1}`}><img src={image} alt="" /></button>)}</div>}
       </div>
       <div className="product-card-body">
         <div>

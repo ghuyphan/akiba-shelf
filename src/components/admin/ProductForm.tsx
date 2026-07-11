@@ -96,7 +96,7 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
           <div className="admin-image-gallery">
             {images.map((image, index) => <div className="admin-image-tile" key={`${image}-${index}`}><img src={image} alt={`${draft.name || "Product"} ${index + 1}`} />{index === 0 && <span>Cover</span>}{isEditing && <button type="button" onClick={() => setField("images", images.filter((_, imageIndex) => imageIndex !== index))} aria-label={`Remove image ${index + 1}`}><X size={15} /></button>}</div>)}
             {images.length === 0 && <div className="admin-image-empty"><ImageIcon size={25} /><span>No product images yet</span></div>}
-            {isEditing && images.length < 4 && <div className="admin-image-upload-tile"><ImageUpload bucket="product-images" label={images.length ? "Add another image" : "Upload product image"} onUploaded={(url) => setField("images", [...images, url])} /></div>}
+            {isEditing && images.length < 4 && <div className="admin-image-upload-tile"><ImageUpload bucket="product-images" label={images.length ? "Add another image" : "Upload product image"} onUploaded={(url) => setField("images", [...images, url])} onProductUploaded={(variant) => setDraft((current) => ({ ...current, images: [...current.images.filter(Boolean), variant.detail], image_variants: [...(current.image_variants ?? []), variant] }))} /></div>}
           </div>
           {getFieldError("images") && <div className="field-error-msg admin-gallery-error">{getFieldError("images")}</div>}
         </section>

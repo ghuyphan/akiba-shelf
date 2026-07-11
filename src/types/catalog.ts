@@ -16,6 +16,7 @@ export type Product = {
   stock_status: StockStatus;
   stock_note: string;
   images: string[];
+  image_variants?: Array<{ thumbnail: string; detail: string }>;
   featured: boolean;
   sort_order: number;
   active: boolean;
@@ -69,7 +70,7 @@ export type CartItem = {
   quantity: number;
 };
 
-export type OrderStatus = "pending" | "confirmed" | "cancelled";
+export type OrderStatus = "pending" | "confirmed" | "cancelled" | "expired";
 
 export type Order = {
   id: string;
@@ -79,8 +80,15 @@ export type Order = {
   status: OrderStatus;
   created_at: string;
   updated_at: string;
+  expires_at: string | null;
+  confirmed_at: string | null;
+  cancelled_at: string | null;
+  expired_at: string | null;
   order_items?: OrderItem[];
 };
+
+export type OrderMutationOutcome = "confirmed" | "cancelled" | "expired" | "already_confirmed" | "already_cancelled" | "already_expired" | "not_found" | "invalid_state";
+export type OrderMutationResult = { outcome: OrderMutationOutcome; order: Order | null };
 
 export type OrderItem = {
   id: string;

@@ -68,3 +68,11 @@ export async function compressImage(file: File, maxDimension = 1200, quality = 0
     reader.readAsDataURL(file);
   });
 }
+
+export async function createProductImageVariants(file: File) {
+  const [thumbnail, detail] = await Promise.all([
+    compressImage(file, 600, 0.78),
+    compressImage(file, 1400, 0.84),
+  ]);
+  return { thumbnail, detail };
+}

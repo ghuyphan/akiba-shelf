@@ -96,8 +96,9 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
           <div className="featured-card-deck">
             {featured.map((product, index) => {
               const offset = getFeaturedOffset(index, active, featured.length);
+              if (Math.abs(offset) > 1) return null;
               const isActive = offset === 0;
-              const image = product.images.find(Boolean);
+              const image = product.image_variants?.[0]?.thumbnail || product.images.find(Boolean);
               return (
                 <button
                   key={product.id}

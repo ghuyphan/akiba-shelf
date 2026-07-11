@@ -23,7 +23,7 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
   }, [product?.id]);
   if (!displayedProduct) return null;
 
-  const images = displayedProduct.images.filter(Boolean);
+  const images = displayedProduct.image_variants?.length ? displayedProduct.image_variants.map((variant) => variant.detail) : displayedProduct.images.filter(Boolean);
   const image = images[activeImage] || images[0];
   const isSoldOut = displayedProduct.quantity_available <= 0 || displayedProduct.stock_status === "sold_out";
 

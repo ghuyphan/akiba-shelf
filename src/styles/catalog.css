@@ -158,6 +158,17 @@
 }
 
 @media (max-width: 760px) {
+  .selected-panel.mobile-collapsed .mobile-cart-count-badge {
+    top: 1px;
+    right: 1px;
+    min-width: 17px;
+    height: 17px;
+    padding-inline: 4px;
+    border: 2px solid var(--surface);
+    line-height: 1;
+    box-sizing: content-box;
+  }
+
   .selected-panel:not(.selected-panel-empty) {
     animation: cart-sheet-enter 420ms cubic-bezier(.22, 1, .36, 1) both;
     transition:

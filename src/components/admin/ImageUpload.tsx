@@ -1,16 +1,17 @@
 import { ImageUp, LoaderCircle } from "lucide-react";
 import { useState } from "react";
-import { uploadImage } from "../../lib/api";
-import { compressImage } from "../../lib/image";
+import { uploadImage, uploadProductImages } from "../../lib/api";
+import { compressImage, createProductImageVariants } from "../../lib/image";
 import { Alert } from "../ui/Alert";
 
 type ImageUploadProps = {
   bucket: string;
   label: string;
   onUploaded: (url: string) => void;
+  onProductUploaded?: (variant: { thumbnail: string; detail: string }) => void;
 };
 
-export function ImageUpload({ bucket, label, onUploaded }: ImageUploadProps) {
+export function ImageUpload({ bucket, label, onUploaded, onProductUploaded }: ImageUploadProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,9 +21,14 @@ export function ImageUpload({ bucket, label, onUploaded }: ImageUploadProps) {
     setError("");
 
     try {
-      const compressedFile = await compressImage(file);
-      const url = await uploadImage(bucket, compressedFile);
-      onUploaded(url);
+      if (bucket === "product-images" && onProductUploaded) {
+        const variants = await createProductImageVariants(file);
+        const uploaded = await uploadProductImages(variants.thumbnail, variants.detail);
+        onProductUploaded(uploaded);
+      } else {
+        const compressedFile = await compressImage(file);
+        onUploaded(await uploadImage(bucket, compressedFile));
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not upload image.");
     } finally {

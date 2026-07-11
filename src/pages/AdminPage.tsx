@@ -59,7 +59,7 @@ function createBlankProduct(nextSort: number): Product {
 }
 
 const orderPageSize = 12;
-const emptyOrderCounts: OrderStatusCounts = { all: 0, pending: 0, confirmed: 0, cancelled: 0 };
+const emptyOrderCounts: OrderStatusCounts = { all: 0, pending: 0, confirmed: 0, cancelled: 0, expired: 0 };
 
 export function AdminPage() {
   const [isAuthed, setIsAuthed] = useState(false);

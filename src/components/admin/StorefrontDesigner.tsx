@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import "../../styles/catalog.css";
 import { createPortal, flushSync } from "react-dom";
 import {
   ArrowDown,

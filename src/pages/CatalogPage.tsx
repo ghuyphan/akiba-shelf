@@ -27,6 +27,7 @@ import { safeUuid } from "../lib/supabase";
 import { useToast } from "../components/ui/ToastProvider";
 import { loadOrderRecovery } from "../lib/orderRecovery";
 import { formatVnd } from "../lib/format";
+import { loadCatalogSnapshot, loadCart, saveCart, saveCatalogSnapshot } from "../lib/offline";
 
 type FlyingItem = {
   id: string;
@@ -40,10 +41,12 @@ type FlyingItem = {
 
 export function CatalogPage() {
   const toast = useToast();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [booth, setBooth] = useState<BoothSettings>(() => getStoredBoothTheme());
+  const cached = useMemo(() => loadCatalogSnapshot(), []);
+  const [products, setProducts] = useState<Product[]>(() => cached?.products ?? []);
+  const [booth, setBooth] = useState<BoothSettings>(() => cached?.booth ?? getStoredBoothTheme());
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(loadCart);
+  const [online, setOnline] = useState(navigator.onLine);
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [sort, setSort] = useState("recommended");
@@ -63,6 +66,7 @@ export function CatalogPage() {
   const loadCatalog = useCallback(() => {
     return getCatalogData()
       .then((data) => {
+        saveCatalogSnapshot(data);
         setProducts(data.products);
         setBooth(data.booth);
         setPayment(data.payment);
@@ -86,6 +90,14 @@ export function CatalogPage() {
 
   useEffect(() => {
     void loadCatalog();
+  }, [loadCatalog]);
+
+  useEffect(() => { saveCart(cart); }, [cart]);
+  useEffect(() => {
+    const handleOnline = () => { setOnline(true); void loadCatalog(); };
+    const handleOffline = () => setOnline(false);
+    window.addEventListener("online", handleOnline); window.addEventListener("offline", handleOffline);
+    return () => { window.removeEventListener("online", handleOnline); window.removeEventListener("offline", handleOffline); };
   }, [loadCatalog]);
 
   useEffect(() => {
@@ -272,6 +284,7 @@ export function CatalogPage() {
         onQuantityChange={handleUpdateCartQuantity}
         onRemove={handleRemoveFromCart}
         onOpenPayment={() => {
+          if (!online) { toast.info("Your cart is saved locally, but stock must be verified online before payment.", "Reconnect to checkout"); return; }
           setIsQrOpen(true);
           setIsCartExpanded(false);
         }}
@@ -312,6 +325,7 @@ export function CatalogPage() {
           {loadError}
         </Alert>
       )}
+      {!online && <Alert variant="info" title="You are offline.">Your cart is saved on this device. Reconnect to verify stock and continue checkout.</Alert>}
       <div className="catalog-layout storefront-layout-grid">
         <div className="storefront-hero-grid">
           {heroStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section} onClick={section === "booth" ? (event) => event.stopPropagation() : undefined}>{storefrontBlocks[section]}</div>)}
