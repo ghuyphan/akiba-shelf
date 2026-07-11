@@ -276,9 +276,9 @@ export function CatalogPage() {
       />
     ),
   };
-  const mainStorefrontSections = storefrontOrder.filter((section) => section !== "booth" && section !== "cart");
-  const sideStorefrontSections = storefrontOrder.filter((section) => section === "booth" || section === "cart");
-
+  const heroStorefrontSections = storefrontOrder.filter((section) => section === "featured" || section === "booth");
+  const mainStorefrontSections = storefrontOrder.filter((section) => section === "controls" || section === "products");
+  const sideStorefrontSections = storefrontOrder.filter((section) => section === "cart");
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
     <main className="app-shell" style={getThemeStyle(booth)} onClick={() => setSelectedProductId(null)}>
@@ -289,12 +289,13 @@ export function CatalogPage() {
         </Alert>
       )}
       <div className="catalog-layout storefront-layout-grid">
-        <section className="catalog-main storefront-lane-main">
-          {mainStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section}>{storefrontBlocks[section]}</div>)}
-        </section>
-        <section className="catalog-side storefront-lane-side" onClick={(event) => event.stopPropagation()}>
-          {sideStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section}>{storefrontBlocks[section]}</div>)}
-        </section>
+        <div className="storefront-hero-grid">
+          {heroStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section} onClick={section === "booth" ? (event) => event.stopPropagation() : undefined}>{storefrontBlocks[section]}</div>)}
+        </div>
+        <div className="storefront-content-grid">
+          <section className="storefront-content-main">{mainStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section}>{storefrontBlocks[section]}</div>)}</section>
+          <section className="storefront-content-side" onClick={(event) => event.stopPropagation()}>{sideStorefrontSections.map((section) => <div className={`storefront-module storefront-module-${section}`} key={section}>{storefrontBlocks[section]}</div>)}</section>
+        </div>
       </div>
       {isCartBackdropMounted && (
         <div className={`bottomsheet-backdrop ${isCartExpanded ? "is-open" : "is-closing"}`} onClick={() => setIsCartExpanded(false)} />

@@ -94,9 +94,6 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
   }, [products]);
   const categories = useMemo(() => ["All", ...Array.from(new Set(previewProducts.map((product) => product.category))).filter(Boolean)], [previewProducts]);
   const previewCartProduct = previewProducts.find((product) => product.quantity_available > 0);
-  const mainPreviewSections = order.filter((section) => section !== "booth" && section !== "cart");
-  const sidePreviewSections = order.filter((section) => section === "booth" || section === "cart");
-
   function update<K extends keyof BoothSettings>(key: K, value: BoothSettings[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
@@ -139,6 +136,9 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
     booth: <BoothInfoPanel booth={draft} />,
     cart: <SelectedItemPanel cart={previewCartProduct ? [{ product: previewCartProduct, quantity: 1 }] : []} onQuantityChange={() => undefined} onRemove={() => undefined} onOpenPayment={() => undefined} onClearCart={() => undefined} />,
   };
+  const heroPreviewSections = order.filter((section) => section === "featured" || section === "booth");
+  const mainPreviewSections = order.filter((section) => section === "controls" || section === "products");
+  const sidePreviewSections = order.filter((section) => section === "cart");
 
   function renderModule(section: StorefrontSection) {
     return <div
@@ -213,8 +213,11 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
               <div className="designer-live-storefront app-shell" style={{ ...getThemeStyle(draft), transform: `scale(${previewScale})` }}>
                 <CatalogHeader booth={draft} onOpenInfo={() => undefined} />
                 <div className="catalog-layout storefront-layout-grid">
-                  <section className="catalog-main storefront-lane-main">{mainPreviewSections.map(renderModule)}</section>
-                  <section className="catalog-side storefront-lane-side">{sidePreviewSections.map(renderModule)}</section>
+                  <div className="storefront-hero-grid">{heroPreviewSections.map(renderModule)}</div>
+                  <div className="storefront-content-grid">
+                    <section className="storefront-content-main">{mainPreviewSections.map(renderModule)}</section>
+                    <section className="storefront-content-side">{sidePreviewSections.map(renderModule)}</section>
+                  </div>
                 </div>
               </div>
             </CatalogLocaleProvider>
