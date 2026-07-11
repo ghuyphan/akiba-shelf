@@ -52,7 +52,7 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
       </div>
       {socialLinks.length > 0 && (
         <div className="booth-card-socials">
-          <div className="social-qr-grid" aria-label="Social QR codes">
+          <div className="social-links-row" aria-label="Social profiles and QR codes">
             {socialLinks.map((item) => (
               <SocialQrCard
                 key={item.label}
@@ -63,6 +63,7 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
                 brandColor={item.brandColor}
                 brandGradient={item.brandGradient}
                 showLabel={false}
+                variant="button"
               />
             ))}
           </div>
