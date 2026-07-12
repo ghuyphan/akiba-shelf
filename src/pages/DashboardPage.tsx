@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Store, ExternalLink, LogOut, ArrowLeft, Layout, Edit3, X, ShieldCheck } from "lucide-react";
+import { Plus, Store, ExternalLink, LogOut, ArrowLeft, Layout, Edit3, X } from "lucide-react";
 import { useAdminSession } from "../hooks/useAdminSession";
 import { signInAdmin, signOutAdmin, updateShop } from "../lib/api";
-import { AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
+import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
 import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
 import { Alert } from "../components/ui/Alert";
 import { Field, TextInput } from "../components/ui/Field";
 import { useAsyncAction } from "../hooks/useAsyncAction";
 import type { ShopMembership } from "../types/catalog";
-import { PageLoading } from "../components/ui/PageLoading";
 import "../styles/admin.css";
 
 export function DashboardPage() {
@@ -93,7 +92,7 @@ export function DashboardPage() {
   }
 
   if (adminSession.status === "checking") {
-    return <PageLoading title="Checking your access" message="We’re securely confirming your admin permissions…" icon={<ShieldCheck size={28} />} />;
+    return <AdminAccessCheck />;
   }
 
   if (adminSession.status === "unauthenticated") {

@@ -1167,10 +1167,18 @@
 .shop-state-details summary { cursor: pointer; font-weight: 800; text-align: center; }
 .shop-state-details p { margin: 10px 0 0; overflow-wrap: anywhere; line-height: 1.5; }
 .shop-state-footnote { margin: 0; color: var(--muted); font-size: 11px; text-align: center; }
+.shop-state-loading .shop-state-icon { margin-bottom: 20px; animation: shop-state-float 1.8s ease-in-out infinite; }
+.shop-state-loading-line { width: min(100%, 260px); height: 5px; margin-top: 25px; overflow: hidden; border-radius: 999px; background: var(--surface-soft); }
+.shop-state-loading-line::after { content: ""; display: block; width: 42%; height: 100%; border-radius: inherit; background: var(--coral); animation: shop-state-progress 1.25s ease-in-out infinite; }
+@keyframes shop-state-float { 50% { transform: translateY(-5px); } }
+@keyframes shop-state-progress { from { transform: translateX(-110%); } to { transform: translateX(340%); } }
 
 @media (max-width: 560px) {
   .shop-state-shell { place-content: center; padding: 18px 14px; }
   .shop-state-card { padding: 30px 20px; border-radius: 23px; }
   .shop-state-actions { width: 100%; flex-direction: column; }
   .shop-state-actions .button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shop-state-loading .shop-state-icon,.shop-state-loading-line::after { animation: none; }
 }

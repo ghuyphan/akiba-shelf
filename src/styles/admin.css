@@ -550,6 +550,18 @@
   box-shadow: none;
 }
 .admin-login-security { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 22px 0 0; color: var(--muted); font-size: 10px; font-weight: 700; }
+.admin-auth-check { display: grid; justify-items: center; width: min(100%,460px); padding: 52px 48px 44px; border: 1px solid rgb(205 216 229 / 78%); border-radius: 28px; background: rgb(255 255 255 / 94%); box-shadow: 0 30px 80px rgb(15 23 42 / 12%); text-align: center; }
+.admin-auth-check-mark { position: relative; display: grid; place-items: center; width: 92px; height: 92px; margin-bottom: 26px; }
+.admin-auth-check-mark>span { z-index: 1; display: grid; place-items: center; width: 64px; height: 64px; overflow: hidden; border-radius: 20px; color: #fff; background: var(--coral); box-shadow: 0 12px 28px color-mix(in srgb,var(--coral) 26%,transparent); }
+.admin-auth-check-mark img { width: 100%; height: 100%; object-fit: cover; }
+.admin-auth-check-mark i { position: absolute; inset: 0; border: 2px solid color-mix(in srgb,var(--coral) 14%,transparent); border-top-color: var(--coral); border-radius: 50%; animation: admin-auth-spin 1.15s linear infinite; }
+.admin-auth-check h1 { margin: 9px 0 10px; color: var(--ink); font-size: 27px; letter-spacing: -.035em; }
+.admin-auth-check p { max-width: 37ch; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.admin-auth-progress { width: 100%; height: 5px; margin: 30px 0 13px; overflow: hidden; border-radius: 999px; background: var(--surface-tint); }
+.admin-auth-progress span { display: block; width: 42%; height: 100%; border-radius: inherit; background: var(--coral); animation: admin-auth-progress 1.45s ease-in-out infinite; }
+.admin-auth-check small { color: var(--muted); font-size: 10px; }
+@keyframes admin-auth-spin { to { transform: rotate(360deg); } }
+@keyframes admin-auth-progress { 0% { transform: translateX(-110%); } 100% { transform: translateX(340%); } }
 
 .admin-header {
   position: sticky;
@@ -663,6 +675,7 @@
   .admin-access-card { border-radius: 22px; }
   .admin-login-panel { padding: 24px 22px 22px; }
   .admin-login-topbar { margin-bottom: 34px; }
+  .admin-auth-check { padding: 42px 24px 36px; border-radius: 22px; }
   .admin-login-input input {
     font-size: 16px;
   }
@@ -709,6 +722,9 @@
   .signout-confirmation-actions { display: grid; grid-template-columns: 1fr 1fr; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .admin-auth-check-mark i,.admin-auth-progress span { animation-duration: 3s; }
+}
 
 /* Storefront designer */
 .storefront-designer { display: grid; grid-template-columns: minmax(320px, .82fr) minmax(420px, 1.18fr); gap: 22px; align-items: start; }

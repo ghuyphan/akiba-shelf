@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin.css";
 import { Link, useNavigate, Navigate } from "react-router-dom";
-import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Store, ChevronDown, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Store, ChevronDown, LayoutDashboard } from "lucide-react";
 import {
   deleteProduct,
   getAdminCatalogData,
@@ -21,8 +21,7 @@ import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme
 import { supabase } from "../lib/supabase";
 import { safeUuid } from "../lib/id";
 import type { BoothSettings, PaymentSettings, Product, Order } from "../types/catalog";
-import { AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
-import { PageLoading } from "../components/ui/PageLoading";
+import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
 import { ProductForm } from "../components/admin/ProductForm";
 import { ProductList } from "../components/admin/ProductList";
 import { QrManager } from "../components/admin/QrManager";
@@ -77,7 +76,6 @@ export function AdminPage() {
   const [orderCounts, setOrderCounts] = useState<OrderStatusCounts>(emptyOrderCounts);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
   const [viewTab, setViewTab] = useState<"orders" | "products" | "design" | "settings">("orders");
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
@@ -102,7 +100,6 @@ export function AdminPage() {
   const hiddenCount = useMemo(() => products.filter((product) => !product.active).length, [products]);
   useEffect(() => {
     setProducts([]); setOrders([]); setOrderCounts(emptyOrderCounts); setOrderTotal(0); setSelectedProduct(undefined); setBooth(defaultBooth); setPayment(defaultPayment);
-    setIsInitialLoading(true);
   }, [shopId]);
   async function reloadCatalogAdmin() {
     setCatalogLoading(true);
@@ -150,77 +147,33 @@ export function AdminPage() {
     }
   }
 
-  // Load initial workspace data in parallel before showing the admin panel
-  useEffect(() => {
-    if (!isAuthed) {
-      setIsInitialLoading(true);
-      return;
-    }
-    if (!isInitialLoading) return;
-
-    let active = true;
-    async function loadWorkspaceData() {
-      try {
-        if (canManageCatalog) {
-          await Promise.all([
-            reloadCatalogAdmin(),
-            reloadOrders(true)
-          ]);
-        } else {
-          await reloadOrders(true);
-        }
-      } catch (error) {
-        if (!isSessionNoise(error)) {
-          toast.error("Could not load workspace data.", "Connection error");
-        }
-      } finally {
-        if (active) {
-          setIsInitialLoading(false);
-        }
-      }
-    }
-
-    void loadWorkspaceData();
-
-    return () => {
-      active = false;
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, canManageCatalog, shopId, isInitialLoading]);
-
   useEffect(() => {
     if (!canManageCatalog) return;
-    if (isInitialLoading) return;
-
     reloadCatalogAdmin().catch((error) => {
       if (isSessionNoise(error)) return;
       toast.error("Could not load the admin workspace.", "Admin unavailable");
     });
   // Reload helpers intentionally use the current pagination refs/state for this authorization transition.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canManageCatalog, shopId, isInitialLoading]);
+  }, [canManageCatalog, shopId]);
 
   useEffect(() => {
     if (!isAuthed) return;
-    if (isInitialLoading) return;
-
     reloadOrders().catch((error) => {
       if (isSessionNoise(error)) return;
       toast.error("Could not load the admin workspace.", "Admin unavailable");
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, orderFilter, orderPage, shopId, isInitialLoading]);
+  }, [isAuthed, orderFilter, orderPage, shopId]);
 
   useEffect(() => {
     if (!isAuthed) return;
-    if (isInitialLoading) return;
-
     getOrderStatusCounts(shopId).then(setOrderCounts).catch((error) => {
       if (isSessionNoise(error)) return;
       toast.error("Could not load the admin workspace.", "Admin unavailable");
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, shopId, isInitialLoading]);
+  }, [isAuthed, shopId]);
 
   // Real-time catalog subscription
   useEffect(() => {
@@ -275,9 +228,8 @@ export function AdminPage() {
   }, [isAuthed, orderFilter, orderPage, shopId]);
 
   useEffect(() => {
-    if (isInitialLoading) return;
     applyPageTheme(booth);
-  }, [booth, isInitialLoading]);
+  }, [booth]);
 
   useEffect(() => {
     if (isAuthed) void getPushEnabled(shopId).then(setPushEnabled).catch(() => setPushEnabled(false));
@@ -344,15 +296,8 @@ export function AdminPage() {
     await refreshAdminSession();
   }
 
-  if (adminSession.status === "checking" || (adminSession.status === "authorized" && isInitialLoading)) {
-    const isAccessChecking = adminSession.status === "checking";
-    return (
-      <PageLoading
-        title={isAccessChecking ? "Checking your access" : "Opening your workspace…"}
-        message={isAccessChecking ? "We’re securely confirming your admin permissions…" : "Gathering your latest orders, catalog, and settings…"}
-        icon={<ShieldCheck size={28} />}
-      />
-    );
+  if (adminSession.status === "checking") {
+    return <AdminAccessCheck booth={booth} />;
   }
 
   if (adminSession.status === "unauthenticated") return <LoginPanel onLogin={handleLogin} booth={booth} />;
