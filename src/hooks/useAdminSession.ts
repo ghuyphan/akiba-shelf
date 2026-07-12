@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { getShopMemberships } from "../lib/api";
 import type { ShopMembership } from "../types/catalog";
@@ -13,22 +13,32 @@ export type AdminSessionState =
 
 export function useAdminSession() {
   const [state, setState] = useState<AdminSessionState>(isSupabaseConfigured ? { status: "checking" } : { status: "unauthenticated" });
+  const resolvedUserId = useRef<string | null>(null);
+  const resolvingUserId = useRef<string | null>(null);
+  const requestId = useRef(0);
 
-  const resolve = useCallback(async () => {
+  const resolve = useCallback(async (showChecking = true) => {
     if (!supabase) { setState({ status: "unauthenticated" }); return; }
-    setState({ status: "checking" });
+    const currentRequest = ++requestId.current;
+    if (showChecking) setState({ status: "checking" });
     const { data, error } = await supabase.auth.getSession();
-    if (error) { setState({ status: "error", message: error.message }); return; }
+    if (currentRequest !== requestId.current) return;
+    if (error) { resolvingUserId.current = null; setState({ status: "error", message: error.message }); return; }
     const user = data.session?.user;
-    if (!user) { setState({ status: "unauthenticated" }); return; }
+    if (!user) { resolvedUserId.current = null; resolvingUserId.current = null; setState({ status: "unauthenticated" }); return; }
+    resolvingUserId.current = user.id;
     try {
       const memberships = await getShopMemberships();
+      if (currentRequest !== requestId.current) return;
+      resolvedUserId.current = user.id;
+      resolvingUserId.current = null;
       if (!memberships.length) { setState({ status: "unauthorized", userId: user.id, email: user.email }); return; }
       const stored = localStorage.getItem(STORAGE_KEY);
       const access = memberships.find((item) => item.shop_id === stored) ?? memberships[0];
       localStorage.setItem(STORAGE_KEY, access.shop_id);
       setState({ status: "authorized", access, memberships });
     } catch (caught) {
+      resolvingUserId.current = null;
       setState({ status: "error", message: caught instanceof Error ? caught.message : "Could not verify shop access." });
     }
   }, []);
@@ -36,7 +46,20 @@ export function useAdminSession() {
   useEffect(() => {
     void resolve();
     if (!supabase) return;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => { void resolve(); });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "TOKEN_REFRESHED") return;
+      if (event === "SIGNED_OUT") {
+        requestId.current += 1;
+        resolvedUserId.current = null;
+        resolvingUserId.current = null;
+        setState({ status: "unauthenticated" });
+        return;
+      }
+      const nextUserId = session?.user.id ?? null;
+      if (!nextUserId || nextUserId === resolvedUserId.current || nextUserId === resolvingUserId.current) return;
+      // Leave an already-authorized workspace mounted while Supabase confirms the same session.
+      window.setTimeout(() => { void resolve(false); }, 0);
+    });
     return () => subscription.unsubscribe();
   }, [resolve]);
 
@@ -50,5 +73,7 @@ export function useAdminSession() {
     });
   }, []);
 
-  return { state, refresh: resolve, selectShop };
+  const refresh = useCallback(() => resolve(true), [resolve]);
+
+  return { state, refresh, selectShop };
 }

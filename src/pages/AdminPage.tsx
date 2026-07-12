@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin.css";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Plus } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Plus, Store } from "lucide-react";
 import {
   deleteProduct,
   getAdminCatalogData,
@@ -368,10 +368,11 @@ export function AdminPage() {
 
           <div className="admin-header-actions">
             <label className="admin-shop-switcher">
-              <span className="sr-only">Active shop</span>
-              <select value={shopId} onChange={(event) => selectShop(event.target.value)}>
+              <span className="admin-shop-switcher-icon"><Store size={16} /></span>
+              <span className="admin-shop-switcher-copy"><small><i />Active shop</small>
+              <select aria-label="Active shop" value={shopId} onChange={(event) => selectShop(event.target.value)}>
                 {adminSession.memberships.map((membership) => <option key={membership.shop_id} value={membership.shop_id}>{membership.shop_name} · {membership.role}</option>)}
-              </select>
+              </select></span>
             </label>
             {adminSession.access.role === "owner" && <button type="button" className="admin-notification-button" onClick={() => { const name=window.prompt("Shop name"); if(!name?.trim())return; const suggested=name.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); const slug=window.prompt("Shop URL slug",suggested); if(!slug)return; void createShop(name,slug).then(refreshAdminSession).catch((error)=>toast.error(getErrorMessage(error),"Could not create shop")); }}><Plus size={16}/><span>New shop</span></button>}
             {canUsePush() && <button type="button" disabled={pushBusy} onClick={() => void togglePushNotifications()} className={`admin-notification-button ${pushEnabled ? "active" : ""}`} aria-label={pushEnabled ? "Disable order notifications" : "Enable order notifications"}>{pushEnabled ? <Bell size={16} /> : <BellOff size={16} />}<span>{pushEnabled ? "Alerts on" : "Enable alerts"}</span></button>}

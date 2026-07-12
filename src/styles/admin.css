@@ -61,7 +61,13 @@
 .admin-notification-button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 1px solid var(--soft-line); border-radius: 11px; color: var(--muted); background: #fff; cursor: pointer; font-size: 9px; font-weight: 850; }
 .admin-notification-button.active { color: #2f8e6c; background: #eaf8f2; }
 .admin-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-.admin-shop-switcher select { min-height: 36px; max-width: 190px; padding: 0 30px 0 10px; border: 1px solid var(--soft-line); border-radius: 11px; background: #fff; color: var(--ink); font: inherit; font-size: 11px; font-weight: 800; }
+.admin-shop-switcher { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 8px; min-width: 210px; min-height: 48px; padding: 6px 9px; border: 1px solid color-mix(in srgb, var(--teal) 20%, var(--soft-line)); border-radius: 14px; background: color-mix(in srgb, var(--teal) 4%, #fff); cursor: pointer; }
+.admin-shop-switcher-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--teal); background: color-mix(in srgb, var(--teal) 11%, #fff); }
+.admin-shop-switcher-copy { display: grid; min-width: 0; }
+.admin-shop-switcher-copy small { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 8px; font-weight: 850; letter-spacing: .06em; line-height: 1; text-transform: uppercase; }
+.admin-shop-switcher-copy small i { width: 6px; height: 6px; border-radius: 50%; background: #2f9b71; box-shadow: 0 0 0 3px rgb(47 155 113 / 11%); }
+.admin-shop-switcher select { width: 100%; min-height: 22px; padding: 0 24px 0 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; font-size: 11px; font-weight: 850; cursor: pointer; }
+.admin-shop-switcher:focus-within { border-color: color-mix(in srgb, var(--teal) 48%, var(--line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 10%, transparent); }
 .admin-container .builder-checkout-panel .admin-card { padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
 .admin-container .builder-checkout-panel .admin-card-header { display: flex !important; min-height: 0; margin: 0 0 12px !important; padding: 0 0 12px !important; border-bottom: 1px solid var(--soft-line) !important; }
 .builder-checkout-panel .admin-card-header p { font-size: 8px !important; }
@@ -559,7 +565,9 @@
   .admin-header { padding: 8px 8px 0 !important; }
   .admin-header-pill { gap: 8px; padding: 7px; border-radius: 17px; }
   .admin-header-brand>span:last-child,.admin-signout-button span,.admin-notification-button span { display: none; }
-  .admin-shop-switcher select { max-width: 130px; }
+  .admin-shop-switcher { grid-template-columns: 30px minmax(0,1fr); min-width: 154px; min-height: 44px; padding: 5px 7px; }
+  .admin-shop-switcher-icon { width: 30px; height: 30px; }
+  .admin-shop-switcher select { font-size: 10px; }
   .admin-header .admin-nav-tabs { gap: 2px; }
   .admin-header .admin-nav-tab { min-height: 40px; padding: 0 10px; font-size: 11px; }
   .admin-settings-workspace { grid-template-columns: 1fr; gap: 16px; padding: 0; }
