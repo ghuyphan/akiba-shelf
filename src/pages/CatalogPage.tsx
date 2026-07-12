@@ -20,6 +20,7 @@ import { useCatalogData } from "../hooks/useCatalogData";
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
 import { BoothDetailsModal, FlyingItemsLayer, PendingOrderBar } from "../components/catalog/CatalogOverlays";
 import { layoutOrderSchema } from "../lib/schemas";
+import { PageLoading } from "../components/ui/PageLoading";
 import { Link, useParams } from "react-router-dom";
 import { getPublicShop } from "../lib/api";
 import type { Shop } from "../types/catalog";
@@ -279,7 +280,7 @@ export function CatalogPage() {
     },
   ].sort((first, second) => first.position - second.position);
 
-  if (shop === undefined) return <main className="shop-state-shell"><section className="shop-state-card shop-state-loading" aria-live="polite"><span className="shop-state-icon"><StoreIcon size={28}/></span><span className="shop-state-eyebrow">Akiba Shelf</span><h1>Opening the shop…</h1><p>Getting the shelves ready for you.</p><div className="shop-state-loading-line"/></section></main>;
+  if (shop === undefined) return <PageLoading title="Opening the shop…" message="Getting the shelves ready for you." icon={<StoreIcon size={28} />} />;
   if (shop === null) return <main className="shop-state-shell"><section className="shop-state-card" role="alert">
     <div className="shop-state-illustration" aria-hidden="true"><span className="shop-state-orbit shop-state-orbit-one"/><span className="shop-state-orbit shop-state-orbit-two"/><span className="shop-state-icon"><Store size={30}/></span></div>
     <span className="shop-state-eyebrow">Storefront unavailable</span>

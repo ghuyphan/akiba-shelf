@@ -7,6 +7,7 @@ import { Alert } from "../ui/Alert";
 
 import type { BoothSettings } from "../../types/catalog";
 import { getThemeStyle } from "../../lib/theme";
+import { PageLoading } from "../ui/PageLoading";
 
 type LoginPanelProps = {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -116,20 +117,19 @@ export function LoginPanel({ onLogin, booth }: LoginPanelProps) {
 }
 
 export function AdminAccessCheck({ booth }: { booth?: BoothSettings }) {
+  const icon = booth?.logo_url ? (
+    <img src={booth.logo_url} alt="" style={{ width: "100%", height: "100%", borderRadius: "inherit", objectFit: "cover", display: "block" }} />
+  ) : (
+    <ShieldCheck size={28} />
+  );
+
   return (
-    <main className="admin-login" style={booth ? getThemeStyle(booth) : undefined}>
-      <section className="admin-auth-check" role="status" aria-live="polite">
-        <div className="admin-auth-check-mark">
-          <span>{booth?.logo_url ? <img src={booth.logo_url} alt="" /> : <ShieldCheck size={28} />}</span>
-          <i aria-hidden="true" />
-        </div>
-        <span className="admin-access-eyebrow">Staff workspace</span>
-        <h1>Checking your access</h1>
-        <p>We’re securely confirming your admin permissions. This should only take a moment.</p>
-        <div className="admin-auth-progress" aria-hidden="true"><span /></div>
-        <small>Connecting to {booth?.booth_name || "your merch booth"}…</small>
-      </section>
-    </main>
+    <PageLoading
+      title="Checking your access"
+      message={`Connecting to ${booth?.booth_name || "your merch booth"}…`}
+      icon={icon}
+      style={booth ? getThemeStyle(booth) : undefined}
+    />
   );
 }
 
