@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin.css";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Plus, Store, ChevronDown } from "lucide-react";
+import { Link, useNavigate, Navigate } from "react-router-dom";
+import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Store, ChevronDown, LayoutDashboard } from "lucide-react";
 import {
   deleteProduct,
   getAdminCatalogData,
@@ -12,7 +12,6 @@ import {
   saveProduct,
   signInAdmin,
   signOutAdmin,
-  createShop,
 } from "../lib/api";
 import type { OrderFilter, OrderStatusCounts } from "../lib/api";
 import { defaultBooth, defaultPayment } from "../lib/constants";
@@ -65,6 +64,7 @@ const emptyOrderCounts: OrderStatusCounts = { all: 0, pending: 0, confirmed: 0, 
 
 export function AdminPage() {
   const { state: adminSession, refresh: refreshAdminSession, selectShop } = useAdminSession();
+  const navigate = useNavigate();
   const isAuthed = adminSession.status === "authorized";
   const shopId = isAuthed ? adminSession.access.shop_id : "";
   const canManageCatalog = isAuthed && adminSession.access.role !== "staff";
@@ -302,7 +302,10 @@ export function AdminPage() {
 
   if (adminSession.status === "unauthenticated") return <LoginPanel onLogin={handleLogin} booth={booth} />;
   if (adminSession.status === "unauthorized") {
-    return <main className="admin-shell"><section className="admin-container"><EmptyState icon={<ShoppingBag size={28}/>} title="Create your first shop" message="Your account does not belong to a shop yet. Create one to become its owner." action={<Button icon={<Plus size={16}/>} onClick={() => { const name=window.prompt("Shop name","Akiba Shelf"); if(!name?.trim())return; const suggested=name.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); const slug=window.prompt("Shop URL slug",suggested); if(!slug)return; void createShop(name,slug).then(refreshAdminSession).catch((error)=>toast.error(getErrorMessage(error),"Could not create shop")); }}>Create shop</Button>}/></section></main>;
+    return <Navigate to="/dashboard/shops/new" replace />;
+  }
+  if (adminSession.status === "inactive") {
+    return <AdminAccessDenied kind="inactive" onSignOut={handleSignOut} />;
   }
   if (adminSession.status === "error") {
     return <AdminAccessDenied kind="error" message={adminSession.message} onRetry={refreshAdminSession} onSignOut={handleSignOut} />;
@@ -314,6 +317,7 @@ export function AdminPage() {
         <div className="admin-header-pill">
           <div className="admin-header-brand">
             <Link to={`/s/${adminSession.access.shop_slug}`} aria-label="Back to catalog" className="admin-header-icon-button"><ArrowLeft size={19} /></Link>
+            <Link to="/dashboard" aria-label="Go to dashboard" className="admin-header-icon-button"><LayoutDashboard size={19} /></Link>
             <span className="admin-header-mark" style={booth.logo_url ? { background: "transparent", overflow: "hidden" } : undefined}>
               {booth.logo_url ? (
                 <img src={booth.logo_url} alt={booth.booth_name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -370,8 +374,23 @@ export function AdminPage() {
             <label className="admin-shop-switcher">
               <span className="admin-shop-switcher-icon"><Store size={15} /></span>
               <span className="admin-shop-switcher-copy"><small><i />Active shop</small>
-              <select aria-label="Active shop" value={shopId} onChange={(event) => selectShop(event.target.value)}>
-                {adminSession.memberships.map((membership) => <option key={membership.shop_id} value={membership.shop_id}>{membership.shop_name} · {membership.role}</option>)}
+              <select aria-label="Active shop" value={shopId} onChange={(event) => {
+                const val = event.target.value;
+                if (val === "__new") {
+                  navigate("/dashboard/shops/new");
+                } else if (val === "__dashboard") {
+                  navigate("/dashboard");
+                } else {
+                  selectShop(val);
+                }
+              }}>
+                <optgroup label="My Shops">
+                  {adminSession.memberships.map((membership) => <option key={membership.shop_id} value={membership.shop_id}>{membership.shop_name} · {membership.role}</option>)}
+                </optgroup>
+                <optgroup label="Actions">
+                  <option value="__dashboard">Go to Dashboard</option>
+                  <option value="__new">Create another shop</option>
+                </optgroup>
               </select></span>
               <span className="admin-shop-switcher-chevron"><ChevronDown size={14} /></span>
             </label>

@@ -8,7 +8,7 @@ test("rejects an authenticated non-staff user", async ({ page }) => {
   await page.getByPlaceholder("Enter your password").fill("password123");
   await page.getByRole("button", { name: "Open admin" }).click();
   await expect(
-    page.getByRole("heading", { name: "Staff access required" }),
+    page.getByRole("heading", { name: "Create your shop" }),
   ).toBeVisible();
 });
 
@@ -84,6 +84,7 @@ test("designer phone rules apply inside the preview iframe", async ({
   );
   await expect(preview.locator("body")).toHaveClass(/device-phone/);
   await expect(preview.locator(".product-grid")).toBeVisible();
+  await page.waitForTimeout(500);
   await preview.getByRole("button", { name: /Booth info/ }).click();
   await expect(page.locator(".builder-section-heading strong")).toHaveText(
     "Booth information",

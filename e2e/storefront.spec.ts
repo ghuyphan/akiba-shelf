@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mockSupabase } from "./fixtures";
 
-test.beforeEach(async ({ page }) => { await mockSupabase(page); await page.goto("./"); });
+test.beforeEach(async ({ page }) => { await mockSupabase(page); await page.goto("./s/akiba-shelf"); });
 
 test("browses, filters, searches, opens details, and enforces quantity limits", async ({ page }) => {
   await expect(page.getByText("Fixture Booth").first()).toBeVisible();

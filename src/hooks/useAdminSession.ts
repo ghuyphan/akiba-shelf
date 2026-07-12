@@ -8,7 +8,8 @@ export type AdminSessionState =
   | { status: "checking" }
   | { status: "unauthenticated" }
   | { status: "unauthorized"; userId: string; email?: string }
-  | { status: "authorized"; access: ShopMembership; memberships: ShopMembership[] }
+  | { status: "authorized"; access: ShopMembership; memberships: ShopMembership[]; userId: string; email?: string }
+  | { status: "inactive"; userId: string; email?: string }
   | { status: "error"; message: string };
 
 export function useAdminSession() {
@@ -35,8 +36,9 @@ export function useAdminSession() {
       if (!memberships.length) { setState({ status: "unauthorized", userId: user.id, email: user.email }); return; }
       const stored = localStorage.getItem(STORAGE_KEY);
       const access = memberships.find((item) => item.shop_id === stored) ?? memberships[0];
+      if (!access.active) { setState({ status: "inactive", userId: user.id, email: user.email }); return; }
       localStorage.setItem(STORAGE_KEY, access.shop_id);
-      setState({ status: "authorized", access, memberships });
+      setState({ status: "authorized", access, memberships, userId: user.id, email: user.email });
     } catch (caught) {
       resolvingUserId.current = null;
       setState({ status: "error", message: caught instanceof Error ? caught.message : "Could not verify shop access." });
