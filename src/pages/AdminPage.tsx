@@ -76,6 +76,7 @@ export function AdminPage() {
   const [orderCounts, setOrderCounts] = useState<OrderStatusCounts>(emptyOrderCounts);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
   const [viewTab, setViewTab] = useState<"orders" | "products" | "design" | "settings">("orders");
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
@@ -100,6 +101,7 @@ export function AdminPage() {
   const hiddenCount = useMemo(() => products.filter((product) => !product.active).length, [products]);
   useEffect(() => {
     setProducts([]); setOrders([]); setOrderCounts(emptyOrderCounts); setOrderTotal(0); setSelectedProduct(undefined); setBooth(defaultBooth); setPayment(defaultPayment);
+    setIsInitialLoading(true);
   }, [shopId]);
   async function reloadCatalogAdmin() {
     setCatalogLoading(true);
@@ -147,33 +149,77 @@ export function AdminPage() {
     }
   }
 
+  // Load initial workspace data in parallel before showing the admin panel
+  useEffect(() => {
+    if (!isAuthed) {
+      setIsInitialLoading(true);
+      return;
+    }
+    if (!isInitialLoading) return;
+
+    let active = true;
+    async function loadWorkspaceData() {
+      try {
+        if (canManageCatalog) {
+          await Promise.all([
+            reloadCatalogAdmin(),
+            reloadOrders(true)
+          ]);
+        } else {
+          await reloadOrders(true);
+        }
+      } catch (error) {
+        if (!isSessionNoise(error)) {
+          toast.error("Could not load workspace data.", "Connection error");
+        }
+      } finally {
+        if (active) {
+          setIsInitialLoading(false);
+        }
+      }
+    }
+
+    void loadWorkspaceData();
+
+    return () => {
+      active = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthed, canManageCatalog, shopId, isInitialLoading]);
+
   useEffect(() => {
     if (!canManageCatalog) return;
+    if (isInitialLoading) return;
+
     reloadCatalogAdmin().catch((error) => {
       if (isSessionNoise(error)) return;
       toast.error("Could not load the admin workspace.", "Admin unavailable");
     });
   // Reload helpers intentionally use the current pagination refs/state for this authorization transition.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canManageCatalog, shopId]);
+  }, [canManageCatalog, shopId, isInitialLoading]);
 
   useEffect(() => {
     if (!isAuthed) return;
+    if (isInitialLoading) return;
+
     reloadOrders().catch((error) => {
       if (isSessionNoise(error)) return;
       toast.error("Could not load the admin workspace.", "Admin unavailable");
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, orderFilter, orderPage, shopId]);
+  }, [isAuthed, orderFilter, orderPage, shopId, isInitialLoading]);
 
   useEffect(() => {
     if (!isAuthed) return;
+    if (isInitialLoading) return;
+
     getOrderStatusCounts(shopId).then(setOrderCounts).catch((error) => {
       if (isSessionNoise(error)) return;
       toast.error("Could not load the admin workspace.", "Admin unavailable");
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, shopId]);
+  }, [isAuthed, shopId, isInitialLoading]);
 
   // Real-time catalog subscription
   useEffect(() => {
@@ -228,8 +274,9 @@ export function AdminPage() {
   }, [isAuthed, orderFilter, orderPage, shopId]);
 
   useEffect(() => {
+    if (isInitialLoading) return;
     applyPageTheme(booth);
-  }, [booth]);
+  }, [booth, isInitialLoading]);
 
   useEffect(() => {
     if (isAuthed) void getPushEnabled(shopId).then(setPushEnabled).catch(() => setPushEnabled(false));
@@ -296,7 +343,7 @@ export function AdminPage() {
     await refreshAdminSession();
   }
 
-  if (adminSession.status === "checking") {
+  if (adminSession.status === "checking" || (adminSession.status === "authorized" && isInitialLoading)) {
     return <AdminAccessCheck booth={booth} />;
   }
 

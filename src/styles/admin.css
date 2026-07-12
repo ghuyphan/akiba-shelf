@@ -9,10 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background:
-    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--coral) 12%, transparent), transparent 32%),
-    radial-gradient(circle at 88% 82%, color-mix(in srgb, var(--teal) 13%, transparent), transparent 34%),
-    var(--page-bg, #f6f8fb);
+  background: var(--page-bg, #f6f8fb);
 }
 
 .admin-access-card {
