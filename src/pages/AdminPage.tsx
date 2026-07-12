@@ -275,8 +275,9 @@ export function AdminPage() {
   }, [isAuthed, orderFilter, orderPage, shopId]);
 
   useEffect(() => {
+    if (isInitialLoading) return;
     applyPageTheme(booth);
-  }, [booth]);
+  }, [booth, isInitialLoading]);
 
   useEffect(() => {
     if (isAuthed) void getPushEnabled(shopId).then(setPushEnabled).catch(() => setPushEnabled(false));
