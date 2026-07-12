@@ -12,7 +12,6 @@ import {
   saveProduct,
   signInAdmin,
   signOutAdmin,
-  updateShopName,
 } from "../lib/api";
 import type { OrderFilter, OrderStatusCounts } from "../lib/api";
 import { defaultBooth, defaultPayment } from "../lib/constants";
@@ -478,25 +477,11 @@ export function AdminPage() {
           settings={booth}
           products={products}
           payment={payment}
-          onSave={(settings) => runAdminAction(async () => {
-            const saved = await saveBoothSettings(shopId, settings);
-            setBooth(saved);
-            if (adminSession.access.role === "owner" && settings.booth_name !== booth.booth_name) {
-              await updateShopName(shopId, settings.booth_name).then(refreshAdminSession);
-            }
-          }, "Storefront design published.")}
+          onSave={(settings) => runAdminAction(async () => { const saved = await saveBoothSettings(shopId, settings); setBooth(saved); }, "Storefront design published.")}
           onSavePayment={(settings) => runAdminAction(async () => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); }, "Checkout settings saved.")}
           isOwner={adminSession.access.role === "owner"}
         />}
-        {canManageCatalog && viewTab === "settings" && <section className="admin-mobile-settings-page"><SettingsForm shopId={shopId} settings={booth} onSave={async (settings) => {
-          const saved = await saveBoothSettings(shopId, settings);
-          setBooth(saved);
-          if (adminSession.access.role === "owner" && settings.booth_name !== booth.booth_name) {
-            await updateShopName(shopId, settings.booth_name).then(refreshAdminSession).catch((err) => toast.error(getErrorMessage(err), "Could not update shop name"));
-          } else {
-            toast.success("Booth settings saved.");
-          }
-        }} /><QrManager shopId={shopId} settings={payment} onSave={async (settings) => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); toast.success("Checkout settings saved."); }} />{adminSession.access.role === "owner" && <StaffManager shopId={shopId} />}</section>}
+        {canManageCatalog && viewTab === "settings" && <section className="admin-mobile-settings-page"><SettingsForm shopId={shopId} settings={booth} onSave={async (settings) => { const saved = await saveBoothSettings(shopId, settings); setBooth(saved); toast.success("Booth settings saved."); }} /><QrManager shopId={shopId} settings={payment} onSave={async (settings) => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); toast.success("Checkout settings saved."); }} />{adminSession.access.role === "owner" && <StaffManager shopId={shopId} />}</section>}
       </div>
       <Modal title="Sign out of admin?" isOpen={isSignOutOpen} onClose={() => setIsSignOutOpen(false)} className="signout-modal">
         <div className="signout-confirmation">

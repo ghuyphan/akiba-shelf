@@ -219,12 +219,6 @@ export async function saveBoothSettings(shopId: string, settings: BoothSettings)
   return normalizeBooth(data);
 }
 
-export async function updateShopName(shopId: string, name: string): Promise<void> {
-  const client = requireSupabase();
-  const { error } = await client.from("shops").update({ name }).eq("id", shopId);
-  if (error) throw error;
-}
-
 export async function savePaymentSettings(shopId: string, settings: PaymentSettings) {
   const client = requireSupabase();
 
