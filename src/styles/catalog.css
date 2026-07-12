@@ -165,6 +165,10 @@
 }
 
 @media (max-width: 760px) {
+  .selected-panel-empty {
+    display: none !important;
+  }
+
   .selected-panel.mobile-collapsed .mobile-cart-count-badge {
     top: -2px;
     right: -2px;
