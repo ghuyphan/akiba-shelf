@@ -1185,3 +1185,287 @@
   .designer-preview-stage { height: 540px; }
   .designer-live-storefront { transform: scale(.42); }
 }
+.admin-staff-list { display: grid; gap: 12px; margin-top: 18px; }
+.admin-staff-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 14px 18px;
+  border-radius: var(--store-radius, 16px);
+  background: var(--surface-muted, #f7f8fa);
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+.admin-staff-row:hover {
+  background: var(--surface-hover, #f0f2f5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+.admin-staff-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.admin-staff-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  color: var(--navy);
+  flex-shrink: 0;
+}
+.admin-staff-avatar .role-icon-owner {
+  color: #5f8d55;
+}
+.admin-staff-avatar .role-icon-admin {
+  color: #2b6cb0;
+}
+.admin-staff-avatar .role-icon-staff {
+  color: #718096;
+}
+.admin-staff-row code {
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  color: var(--navy);
+  font-weight: 500;
+}
+.admin-staff-copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: #718096;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.admin-staff-copy-btn:hover {
+  background: #fff;
+  color: var(--navy);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+.admin-staff-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.admin-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy);
+  cursor: pointer;
+  user-select: none;
+}
+.admin-toggle-label input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #5f8d55;
+  width: 16px;
+  height: 16px;
+}
+.admin-empty-state {
+  text-align: center;
+  padding: 24px;
+  color: #718096;
+  font-size: 14px;
+  background: var(--surface-muted, #f7f8fa);
+  border-radius: var(--store-radius, 16px);
+  border: 1px dashed rgba(0, 0, 0, 0.08);
+}
+@media (max-width: 760px) {
+  .admin-staff-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 16px;
+  }
+  .admin-staff-controls {
+    justify-content: space-between;
+    width: 100%;
+    gap: 10px;
+  }
+  .admin-staff-controls select {
+    flex-grow: 1;
+    max-width: 140px;
+  }
+}
+.admin-account-identity { margin-top: 12px; font-size: 14px; }
+.admin-login-secondary { margin-top: 10px; background: transparent; color: var(--navy); border: 1px solid #d7dee8; box-shadow: none; }
+
+/* Builder staff access styling inside sidebar */
+.builder-staff-grant {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.builder-staff-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.builder-staff-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--surface-soft, #f8fafc);
+  border: 1px solid var(--line);
+}
+
+.builder-staff-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.builder-staff-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--navy);
+  flex-shrink: 0;
+}
+
+.builder-staff-avatar .role-icon-owner { color: #5f8d55; }
+.builder-staff-avatar .role-icon-admin { color: #2b6cb0; }
+.builder-staff-avatar .role-icon-staff { color: #718096; }
+
+.builder-staff-item code {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--navy);
+  font-weight: 500;
+  flex-grow: 1;
+}
+
+.builder-staff-copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  color: #718096;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.builder-staff-copy-btn:hover {
+  background: var(--line);
+  color: var(--navy);
+}
+
+.builder-staff-item-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.builder-staff-item-controls select {
+  font-size: 11px;
+  height: 28px;
+  padding: 0 24px 0 8px !important;
+  flex-grow: 1;
+}
+
+.builder-sidebar select.input {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 14px 14px !important;
+  padding-right: 32px !important;
+}
+
+.builder-staff-active-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.builder-staff-active-checkbox input {
+  accent-color: #5f8d55;
+  cursor: pointer;
+}
+
+.builder-staff-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: #e53e3e;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, #e53e3e 20%, transparent);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.builder-staff-delete-btn:hover {
+  background: #e53e3e;
+  color: #fff;
+}
+
+/* Designer hover indicator for header booth info button */
+.designer-header-trigger-wrapper {
+  position: relative;
+  transition: outline-color 150ms ease;
+  outline: 2px solid transparent;
+  outline-offset: 4px;
+  border-radius: 18px;
+}
+
+.designer-header-trigger-wrapper:hover {
+  outline-color: color-mix(in srgb, var(--coral) 55%, transparent) !important;
+}
+
+/* Selected state highlight for header booth info button */
+.designer-header-trigger-wrapper.is-selected::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  z-index: 45;
+  border: 2px solid var(--coral);
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+/* Staff access grey pill handle positioning */
+.designer-module-handle.designer-staff-handle {
+  top: -14px;
+  right: 12px;
+  cursor: pointer !important;
+  pointer-events: auto;
+}
+
+.designer-module-handle.designer-staff-handle:active {
+  cursor: pointer !important;
+}

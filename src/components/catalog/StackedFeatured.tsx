@@ -34,7 +34,34 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
     return () => window.clearInterval(interval);
   }, [autoRotate, featured.length]);
 
-  if (featured.length === 0) return null;
+  if (featured.length === 0) {
+    if (products.length === 0) {
+      return (
+        <section className="booth-card booth-card-redesign featured-banner-empty" onClick={(e) => e.stopPropagation()}>
+          <div className="booth-card-topline">
+            <span>Featured spotlight</span>
+            <small style={{ color: autoRotate ? "color-mix(in srgb, var(--coral) 75%, var(--muted))" : "var(--muted)" }}>
+              <i style={{
+                background: autoRotate ? "var(--coral)" : "var(--muted)",
+                boxShadow: autoRotate ? "0 0 0 4px color-mix(in srgb, var(--coral) 12%, transparent)" : "none"
+              }} />
+              {autoRotate ? "Spotlight active" : "Spotlight static"}
+            </small>
+          </div>
+          <div className="booth-hero booth-card-identity" style={{ borderBottom: "0", paddingBottom: "0" }}>
+            <div className="booth-hero-logo" style={{ color: "var(--coral)", background: "color-mix(in srgb, var(--coral) 8%, #fff)" }}>
+              <Sparkles size={22} />
+            </div>
+            <div className="booth-hero-info">
+              <strong className="booth-hero-name">No featured items yet</strong>
+              <span className="booth-hero-code">Hand-picked items and special bundles will appear here in the spotlight deck.</span>
+            </div>
+          </div>
+        </section>
+      );
+    }
+    return null;
+  }
 
   const activeProduct = featured[active] ?? featured[0];
   const next = () => setActive((current) => (current + 1) % featured.length);

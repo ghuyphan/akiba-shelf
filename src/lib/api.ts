@@ -2,7 +2,12 @@ import { defaultBooth, defaultPayment } from "./constants";
 import { isSupabaseConfigured, supabase } from "./supabase";
 import { safeUuid } from "./id";
 import { BOOTH_COLUMNS, PAYMENT_COLUMNS, PRODUCT_COLUMNS } from "./catalogQueries";
-import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus, Order, OrderItem, OrderStatus, CartItem, OrderMutationResult } from "../types/catalog";
+import { LIMITED_STOCK_THRESHOLD } from "./constants";
+import { boothSettingsSchema, orderMutationSchema, orderSchema, paymentSettingsSchema, productRowSchema } from "./schemas";
+import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus, Order, OrderStatus, CartItem, OrderMutationResult } from "../types/catalog";
+
+export type StaffRole = "owner" | "admin" | "staff";
+export type StaffAccess = { user_id?: string; role: StaffRole; active: boolean; created_at?: string; updated_at?: string };
 
 const stockStatuses: StockStatus[] = ["in_stock", "limited", "sold_out"];
 
@@ -38,7 +43,7 @@ function inferQuantity(product: Product) {
   return 12;
 }
 
-function normalizeProduct(product: Partial<Product>): Product {
+export function normalizeProduct(product: Partial<Product>): Product {
   const normalized: Product = {
     id: text(product.id, safeUuid()),
     name: text(product.name),
@@ -54,28 +59,31 @@ function normalizeProduct(product: Partial<Product>): Product {
     stock_note: text(product.stock_note, "In stock"),
     images: textArray(product.images),
     image_variants: Array.isArray(product.image_variants) ? product.image_variants.filter((item): item is { thumbnail: string; detail: string } => Boolean(item && typeof item.thumbnail === "string" && typeof item.detail === "string")) : [],
+    image_paths: textArray(product.image_paths),
     featured: booleanValue(product.featured),
     sort_order: numberValue(product.sort_order),
     active: booleanValue(product.active, true),
   };
 
+  const quantity = inferQuantity(normalized);
   return {
     ...normalized,
-    quantity_available: inferQuantity(normalized),
+    quantity_available: quantity,
+    stock_status: quantity === 0 ? "sold_out" : quantity <= LIMITED_STOCK_THRESHOLD ? "limited" : "in_stock",
   };
 }
 
-function normalizePayment(payment: PaymentSettings): PaymentSettings {
+function normalizePayment(payment: unknown): PaymentSettings {
   return {
     ...defaultPayment,
-    ...payment,
+    ...paymentSettingsSchema.parse(payment),
   };
 }
 
-function normalizeBooth(booth: BoothSettings): BoothSettings {
+function normalizeBooth(booth: unknown): BoothSettings {
   return {
     ...defaultBooth,
-    ...booth,
+    ...boothSettingsSchema.parse(booth),
   };
 }
 
@@ -96,21 +104,21 @@ export async function getPublicProducts(): Promise<Product[]> {
   const client = requireSupabase();
   const { data, error } = await client.from("products").select(PRODUCT_COLUMNS).eq("active", true).order("sort_order", { ascending: true });
   if (error) throw error;
-  return ((data as Product[]) ?? []).map(normalizeProduct);
+  return (data ?? []).map((row) => normalizeProduct(productRowSchema.parse(row)));
 }
 
 export async function getPublicBoothSettings(): Promise<BoothSettings> {
   const client = requireSupabase();
   const { data, error } = await client.from("booth_settings").select(BOOTH_COLUMNS).limit(1).maybeSingle();
   if (error) throw error;
-  return normalizeBooth((data as BoothSettings | null) ?? defaultBooth);
+  return normalizeBooth(data ?? defaultBooth);
 }
 
 export async function getPublicPaymentSettings(): Promise<PaymentSettings> {
   const client = requireSupabase();
   const { data, error } = await client.from("payment_settings").select(PAYMENT_COLUMNS).limit(1).maybeSingle();
   if (error) throw error;
-  return normalizePayment((data as PaymentSettings | null) ?? defaultPayment);
+  return normalizePayment(data ?? defaultPayment);
 }
 
 export async function getCatalogData(): Promise<CatalogData> {
@@ -121,9 +129,9 @@ export async function getCatalogData(): Promise<CatalogData> {
 export async function getAdminProducts(): Promise<Product[]> {
   const client = requireSupabase();
 
-  const { data, error } = await client.from("products").select("*").order("sort_order", { ascending: true });
+  const { data, error } = await client.from("products").select(PRODUCT_COLUMNS).order("sort_order", { ascending: true });
   if (error) throw error;
-  return ((data as Product[]) ?? []).map(normalizeProduct);
+  return (data ?? []).map((row) => normalizeProduct(productRowSchema.parse(row)));
 }
 
 export async function getAdminCatalogData(): Promise<CatalogData> {
@@ -140,37 +148,62 @@ export async function getAdminCatalogData(): Promise<CatalogData> {
   if (payment.error) throw payment.error;
 
   return {
-    products: ((products.data as Product[]) ?? []).map(normalizeProduct),
-    booth: normalizeBooth((booth.data as BoothSettings | null) ?? defaultBooth),
-    payment: normalizePayment((payment.data as PaymentSettings | null) ?? defaultPayment),
+    products: (products.data ?? []).map((row) => normalizeProduct(productRowSchema.parse(row))),
+    booth: normalizeBooth(booth.data ?? defaultBooth),
+    payment: normalizePayment(payment.data ?? defaultPayment),
   };
 }
 
 export async function saveProduct(product: Product): Promise<Product> {
   const client = requireSupabase();
-
-  const { data, error } = await client.from("products").upsert(product).select().single();
+  const { data: previous } = await client.from("products").select("image_paths").eq("id", product.id).maybeSingle();
+  const { data, error } = await client.from("products").upsert(product).select(PRODUCT_COLUMNS).single();
   if (error) throw error;
-  return data as Product;
+  const removedPaths = textArray(previous?.image_paths).filter((path) => !textArray(product.image_paths).includes(path));
+  if (removedPaths.length) await removeUnreferencedProductImages(client, removedPaths);
+  return normalizeProduct(productRowSchema.parse(data));
+}
+
+async function removeUnreferencedProductImages(client: ReturnType<typeof requireSupabase>, paths: string[]) {
+  const { data: references, error: referenceError } = await client.from("products").select("image_paths").overlaps("image_paths", paths);
+  if (referenceError) throw referenceError;
+  const referenced = new Set((references ?? []).flatMap((row) => textArray(row.image_paths)));
+  const removable = paths.filter((path) => !referenced.has(path));
+  if (removable.length) {
+    const { error } = await client.storage.from("product-images").remove(removable);
+    if (error) throw error;
+  }
 }
 
 export async function deleteProduct(id: string) {
   const client = requireSupabase();
-
+  const { data: product, error: readError } = await client.from("products").select("id, image_paths").eq("id", id).single();
+  if (readError) throw readError;
   const { error } = await client.from("products").delete().eq("id", id);
   if (error) throw error;
+  const paths = textArray(product.image_paths);
+  if (paths.length) await removeUnreferencedProductImages(client, paths);
 }
 
 export async function saveBoothSettings(settings: BoothSettings) {
   const client = requireSupabase();
-
+  const { data: previous } = await client.from("booth_settings").select("logo_path, social_qr_logo_path").eq("id", "main").maybeSingle();
   const { data, error } = await client
     .from("booth_settings")
     .upsert({ id: "main", ...settings })
-    .select()
+    .select(BOOTH_COLUMNS)
     .single();
   if (error) throw error;
-  return data as BoothSettings;
+  const removed = [previous?.logo_path, previous?.social_qr_logo_path].filter((path): path is string => Boolean(path) && path !== settings.logo_path && path !== settings.social_qr_logo_path);
+  if (removed.length) {
+    const { data: references, error: referenceError } = await client.from("booth_settings").select("logo_path, social_qr_logo_path").or(removed.flatMap((path) => [`logo_path.eq.${path}`, `social_qr_logo_path.eq.${path}`]).join(","));
+    if (referenceError) throw referenceError;
+    if (!references?.length) {
+      const { error: removeError } = await client.storage.from("payment-qr").remove(removed);
+      if (removeError) throw removeError;
+    }
+  }
+  return normalizeBooth(data);
 }
 
 export async function savePaymentSettings(settings: PaymentSettings) {
@@ -179,13 +212,13 @@ export async function savePaymentSettings(settings: PaymentSettings) {
   const { data, error } = await client
     .from("payment_settings")
     .upsert({ id: "main", ...settings })
-    .select()
+    .select(PAYMENT_COLUMNS)
     .single();
   if (error) throw error;
-  return data as PaymentSettings;
+  return normalizePayment(data);
 }
 
-export async function uploadImage(bucket: string, file: File) {
+export async function uploadImage(bucket: string, file: File): Promise<{ url: string; path: string }> {
   const client = requireSupabase();
 
   const extension = file.name.split(".").pop() ?? "png";
@@ -194,20 +227,28 @@ export async function uploadImage(bucket: string, file: File) {
   if (error) throw error;
 
   const { data } = client.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
+  return { url: data.publicUrl, path };
 }
 
 export async function uploadProductImages(thumbnail: File, detail: File) {
   const client = requireSupabase();
   const id = safeUuid();
+  const uploadedPaths: string[] = [];
   async function upload(suffix: string, file: File) {
     const path = `${id}-${suffix}.jpg`;
     const { error } = await client.storage.from("product-images").upload(path, file, { upsert: false, contentType: file.type, cacheControl: "31536000" });
     if (error) throw error;
+    uploadedPaths.push(path);
     return client.storage.from("product-images").getPublicUrl(path).data.publicUrl;
   }
-  const [thumbnailUrl, detailUrl] = await Promise.all([upload("thumb", thumbnail), upload("detail", detail)]);
-  return { thumbnail: thumbnailUrl, detail: detailUrl };
+  try {
+    const thumbnailUrl = await upload("thumb", thumbnail);
+    const detailUrl = await upload("detail", detail);
+    return { thumbnail: thumbnailUrl, detail: detailUrl, paths: [...uploadedPaths] };
+  } catch (error) {
+    if (uploadedPaths.length) await client.storage.from("product-images").remove(uploadedPaths);
+    throw error;
+  }
 }
 
 export async function signInAdmin(email: string, password: string) {
@@ -225,6 +266,35 @@ export async function signOutAdmin() {
   if (error) throw error;
 }
 
+export async function getStaffAccess(): Promise<StaffAccess | null> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("get_staff_access");
+  if (error) throw error;
+  const value = Array.isArray(data) ? data[0] : data;
+  if (!value || !["owner", "admin", "staff"].includes(value.role) || typeof value.active !== "boolean") return null;
+  return value as StaffAccess;
+}
+
+export async function getStaffMembers(): Promise<StaffAccess[]> {
+  const client = requireSupabase();
+  const { data, error } = await client.from("staff_members").select("user_id, role, active, created_at, updated_at").order("created_at");
+  if (error) throw error;
+  return (data ?? []) as StaffAccess[];
+}
+
+export async function saveStaffMember(member: { user_id: string; role: StaffRole; active: boolean }) {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("save_staff_member", { p_user_id: member.user_id, p_role: member.role, p_active: member.active });
+  if (error) throw error;
+  return data as StaffAccess;
+}
+
+export async function deleteStaffMember(userId: string) {
+  const client = requireSupabase();
+  const { error } = await client.rpc("delete_staff_member", { p_user_id: userId });
+  if (error) throw error;
+}
+
 export async function createOrder(customerName: string | null, cart: CartItem[], clientRequestId: string, recoveryToken: string): Promise<Order> {
   const client = requireSupabase();
   const { data, error } = await client.rpc("create_order", {
@@ -239,7 +309,7 @@ export async function createOrder(customerName: string | null, cart: CartItem[],
   void client.functions.invoke("notify-new-order", {
     body: { orderId: createdOrder.id, recoveryToken },
   }).catch(() => undefined);
-  return createdOrder as Order;
+  return orderSchema.parse(createdOrder) as Order;
 }
 
 export async function getCustomerOrder(orderId: string, recoveryToken: string): Promise<Order | null> {
@@ -250,7 +320,7 @@ export async function getCustomerOrder(orderId: string, recoveryToken: string): 
   });
   if (error) throw error;
   const order = Array.isArray(data) ? data[0] : data;
-  return (order as Order | undefined) ?? null;
+  return order ? orderSchema.parse(order) as Order : null;
 }
 
 export type OrderFilter = OrderStatus | "all";
@@ -263,7 +333,7 @@ export async function getOrders({ page = 1, pageSize = 12, status = "all" }: { p
 
   let query = client
     .from("orders")
-    .select("*, order_items(*, product:products(*))", { count: "exact" });
+    .select(`id,order_code,customer_name,total_amount,status,created_at,updated_at,expires_at,confirmed_at,cancelled_at,expired_at,order_items(id,order_id,product_id,quantity,unit_price,product:products(${PRODUCT_COLUMNS}))`, { count: "exact" });
 
   if (status !== "all") query = query.eq("status", status);
 
@@ -273,7 +343,8 @@ export async function getOrders({ page = 1, pageSize = 12, status = "all" }: { p
     .range(from, to);
 
   if (error) throw error;
-  return { orders: data as Order[], total: count ?? 0 };
+  const orders = (data ?? []).map((row) => ({ ...orderSchema.parse(row), order_items: (row.order_items ?? []).map((item) => ({ ...item, product: Array.isArray(item.product) ? normalizeProduct(productRowSchema.parse(item.product[0])) : item.product ? normalizeProduct(productRowSchema.parse(item.product)) : undefined })) })) as Order[];
+  return { orders, total: count ?? 0 };
 }
 
 export async function getOrderStatusCounts(): Promise<OrderStatusCounts> {
@@ -293,7 +364,7 @@ export async function confirmOrderPayment(orderId: string): Promise<OrderMutatio
 
   const { data, error } = await client.rpc("confirm_order_payment", { target_order_id: orderId });
   if (error) throw error;
-  return data as OrderMutationResult;
+  return orderMutationSchema.parse(data) as unknown as OrderMutationResult;
 }
 
 export async function cancelOrder(orderId: string): Promise<OrderMutationResult> {
@@ -301,11 +372,11 @@ export async function cancelOrder(orderId: string): Promise<OrderMutationResult>
 
   const { data, error } = await client.rpc("cancel_order", { target_order_id: orderId });
   if (error) throw error;
-  return data as OrderMutationResult;
+  return orderMutationSchema.parse(data) as unknown as OrderMutationResult;
 }
 export async function cancelCustomerOrder(orderId: string, recoveryToken: string): Promise<OrderMutationResult> {
   const client = requireSupabase();
   const { data, error } = await client.rpc("cancel_customer_order", { p_order_id: orderId, p_recovery_token: recoveryToken });
   if (error) throw error;
-  return data as OrderMutationResult;
+  return orderMutationSchema.parse(data) as unknown as OrderMutationResult;
 }

@@ -17,7 +17,7 @@ export function QrManager({ settings, onSave }: QrManagerProps) {
   const { busy, error, run, setError } = useAsyncAction();
   const banks = getVietQrBanks();
   const selectedBank = getPaymentBank(draft.bank_code, draft.bank_acq_id);
-  useEffect(() => { setDraft(settings); setIsEditing(false); setError(""); }, [settings]);
+  useEffect(() => { setDraft(settings); setIsEditing(false); setError(""); }, [settings, setError]);
   function resetDraft() { setDraft(settings); setIsEditing(false); setError(""); }
   async function handleSubmit(event: FormEvent) { event.preventDefault(); let saved = false; await run(async () => { await onSave(draft); saved = true; }).catch(() => undefined); if (saved) setIsEditing(false); }
 

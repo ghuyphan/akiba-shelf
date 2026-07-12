@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Boxes, Edit3, Eye, ImageIcon, PackagePlus, RotateCcw, Sparkles, Tags, Trash2, X } from "lucide-react";
 import type { Product, StockStatus } from "../../types/catalog";
 import { formatNumber, formatVnd, normalizeSlug } from "../../lib/format";
-import { productBadges } from "../../lib/constants";
+import { LIMITED_STOCK_THRESHOLD, productBadges } from "../../lib/constants";
 import { validateProduct } from "../../lib/validation";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { Alert } from "../ui/Alert";
@@ -29,10 +29,22 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
   const hasLegacyBadge = Boolean(draft.badge) && !productBadges.includes(draft.badge ?? "");
   const images = draft.images.filter(Boolean);
 
-  useEffect(() => { setDraft(product); setIsEditing(!product.name); setErrors([]); setSaveError(""); setDeleteError(""); }, [product]);
+  useEffect(() => { setDraft(product); setIsEditing(!product.name); setErrors([]); setSaveError(""); setDeleteError(""); }, [product, setDeleteError, setSaveError]);
   function setField<Key extends keyof Product>(key: Key, value: Product[Key]) { setDraft((current) => ({ ...current, [key]: value })); }
   function getFieldError(name: string) { return errors.find((error) => error.toLowerCase().includes(name === "item_code" ? "code" : name === "price_vnd" ? "price" : name === "quantity_available" ? "quantity" : name)); }
   function resetDraft() { setDraft(product); setErrors([]); setSaveError(""); setDeleteError(""); setIsEditing(isNewProduct); }
+  function removeImage(index: number) {
+    setDraft((current) => {
+      const variants = current.image_variants ?? [];
+      const paths = current.image_paths ?? [];
+      return {
+        ...current,
+        images: current.images.filter((_, imageIndex) => imageIndex !== index),
+        image_variants: variants.length === current.images.filter(Boolean).length ? variants.filter((_, imageIndex) => imageIndex !== index) : variants,
+        image_paths: variants.length === current.images.filter(Boolean).length ? paths.filter((_, pathIndex) => Math.floor(pathIndex / 2) !== index) : paths,
+      };
+    });
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -47,8 +59,8 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
       description: draft.description.trim(),
       images,
       quantity_available: quantity,
-      stock_status: quantity === 0 ? "sold_out" : quantity <= 5 ? "limited" : "in_stock",
-      stock_note: quantity === 0 ? "Sold out" : quantity <= 5 ? "Limited stock" : "In stock",
+      stock_status: quantity === 0 ? "sold_out" : quantity <= LIMITED_STOCK_THRESHOLD ? "limited" : "in_stock",
+      stock_note: quantity === 0 ? "Sold out" : quantity <= LIMITED_STOCK_THRESHOLD ? "Limited stock" : "In stock",
     };
     const nextErrors = validateProduct(normalizedDraft);
     setErrors(nextErrors);
@@ -85,7 +97,7 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
           <div className="admin-form-section-heading"><span>02</span><div><h3>Price & availability</h3><p>Stock status updates automatically from the quantity.</p></div></div>
           <div className="form-grid">
             <Field label="Price · Required" error={getFieldError("price_vnd")}><div className="admin-input-affix"><TextInput type="text" inputMode="numeric" placeholder="0" value={formatDisplayPrice(draft.price_vnd)} disabled={!isEditing} aria-invalid={Boolean(getFieldError("price_vnd"))} onChange={(event) => { const raw = event.target.value.replace(/\D/g, ""); setField("price_vnd", raw ? Number(raw) : 0); }} /><span>VND</span></div></Field>
-            <Field label="Quantity" error={getFieldError("quantity_available")}><TextInput type="number" min="0" step="1" value={draft.quantity_available} disabled={!isEditing} onChange={(event) => { const qty = Math.max(0, Math.floor(Number(event.target.value) || 0)); const status: StockStatus = qty === 0 ? "sold_out" : qty <= 5 ? "limited" : "in_stock"; setDraft((current) => ({ ...current, quantity_available: qty, stock_status: status, stock_note: qty === 0 ? "Sold out" : qty <= 5 ? "Limited stock" : "In stock" })); }} /></Field>
+            <Field label="Quantity" error={getFieldError("quantity_available")}><TextInput type="number" min="0" step="1" value={draft.quantity_available} disabled={!isEditing} onChange={(event) => { const qty = Math.max(0, Math.floor(Number(event.target.value) || 0)); const status: StockStatus = qty === 0 ? "sold_out" : qty <= LIMITED_STOCK_THRESHOLD ? "limited" : "in_stock"; setDraft((current) => ({ ...current, quantity_available: qty, stock_status: status, stock_note: qty === 0 ? "Sold out" : qty <= LIMITED_STOCK_THRESHOLD ? "Limited stock" : "In stock" })); }} /></Field>
             <Field label="Customer badge" hint="Optional label shown on product artwork."><SelectInput value={draft.badge ?? ""} disabled={!isEditing} onChange={(event) => setField("badge", event.target.value)}><option value="">No badge</option>{hasLegacyBadge && <option value={draft.badge}>{draft.badge}</option>}{productBadges.map((badge) => <option key={badge} value={badge}>{badge}</option>)}</SelectInput>{draft.badge && <div className="admin-badge-customizer"><span className="admin-color-well" title="Choose badge color"><input type="color" aria-label="Badge color" value={draft.badge_color || "#5f8d55"} disabled={!isEditing} onChange={(event) => setField("badge_color", event.target.value)} /><span style={{ background: draft.badge_color || "#5f8d55" }} /></span><span className="admin-badge-preview" style={{ background: draft.badge_color || "#5f8d55" }}><Sparkles size={12} />{draft.badge}</span></div>}</Field>
           </div>
           <div className="admin-switch-row"><label><span><strong>Feature this item</strong><small>Give it extra prominence on the storefront.</small></span><input type="checkbox" checked={draft.featured} disabled={!isEditing} onChange={(event) => setField("featured", event.target.checked)} /></label><label><span><strong>Visible in catalog</strong><small>Customers can find and purchase this item.</small></span><input type="checkbox" checked={draft.active} disabled={!isEditing} onChange={(event) => setField("active", event.target.checked)} /></label></div>
@@ -94,9 +106,9 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span>03</span><div><h3>Product gallery</h3><p>Add up to four images. The first image becomes the cover.</p></div></div>
           <div className="admin-image-gallery">
-            {images.map((image, index) => <div className="admin-image-tile" key={`${image}-${index}`}><img src={image} alt={`${draft.name || "Product"} ${index + 1}`} />{index === 0 && <span>Cover</span>}{isEditing && <button type="button" onClick={() => setField("images", images.filter((_, imageIndex) => imageIndex !== index))} aria-label={`Remove image ${index + 1}`}><X size={15} /></button>}</div>)}
+            {images.map((image, index) => <div className="admin-image-tile" key={`${image}-${index}`}><img src={image} alt={`${draft.name || "Product"} ${index + 1}`} />{index === 0 && <span>Cover</span>}{isEditing && <button type="button" onClick={() => removeImage(index)} aria-label={`Remove image ${index + 1}`}><X size={15} /></button>}</div>)}
             {images.length === 0 && <div className="admin-image-empty"><ImageIcon size={25} /><span>No product images yet</span></div>}
-            {isEditing && images.length < 4 && <div className="admin-image-upload-tile"><ImageUpload bucket="product-images" label={images.length ? "Add another image" : "Upload product image"} onUploaded={(url) => setField("images", [...images, url])} onProductUploaded={(variant) => setDraft((current) => ({ ...current, images: [...current.images.filter(Boolean), variant.detail], image_variants: [...(current.image_variants ?? []), variant] }))} /></div>}
+            {isEditing && images.length < 4 && <div className="admin-image-upload-tile"><ImageUpload bucket="product-images" label={images.length ? "Add another image" : "Upload product image"} onUploaded={(url) => setField("images", [...images, url])} onProductUploaded={(variant) => setDraft((current) => ({ ...current, images: [...current.images.filter(Boolean), variant.detail], image_variants: [...(current.image_variants ?? []), { thumbnail: variant.thumbnail, detail: variant.detail }], image_paths: [...(current.image_paths ?? []), ...variant.paths] }))} /></div>}
           </div>
           {getFieldError("images") && <div className="field-error-msg admin-gallery-error">{getFieldError("images")}</div>}
         </section>

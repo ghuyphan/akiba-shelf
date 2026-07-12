@@ -6,6 +6,7 @@ export function useTabIndicator<TValue, TElement extends HTMLElement = HTMLEleme
 ) {
   const containerRef = useRef<TElement | null>(null);
   const itemRefs = useRef<Map<TValue, HTMLElement | null>>(new Map());
+  const dependencyKey = JSON.stringify(dependencies);
 
   const registerItem = (value: TValue) => (el: HTMLElement | null) => {
     if (el) {
@@ -43,7 +44,7 @@ export function useTabIndicator<TValue, TElement extends HTMLElement = HTMLEleme
       observer.disconnect();
       window.removeEventListener("resize", updateIndicator);
     };
-  }, [activeValue, ...dependencies]);
+  }, [activeValue, dependencyKey]);
 
   return { containerRef, registerItem };
 }

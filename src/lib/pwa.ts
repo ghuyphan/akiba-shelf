@@ -6,7 +6,9 @@ let manifestUrl = "";
 export function registerPwa() {
   if (!("serviceWorker" in navigator)) return;
   window.addEventListener("load", () => {
-    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL });
+    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL, updateViaCache: "none" }).then((registration) => {
+      window.setInterval(() => { void registration.update(); }, 60 * 60 * 1000);
+    }).catch(() => undefined);
   });
 }
 
@@ -56,8 +58,8 @@ export async function getPushEnabled() {
 }
 
 export async function enableOrderNotifications() {
-  const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim() || "BJnCTB3TuOPXM3r5rHbo3CWdq5dWK2uJx5yaGrQDGAil1IU65w4QJyIAiImH3nv0ds_Lj1oRtQFrfJr9j5VNXQs";
-  if (!publicKey) throw new Error("Push notifications are not configured yet.");
+  const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim();
+  if (!publicKey) throw new Error("Push notifications are not configured. Set VITE_VAPID_PUBLIC_KEY.");
   if (!supabase) throw new Error("Supabase is not configured.");
   const permission = await Notification.requestPermission();
   if (permission !== "granted") throw new Error("Notification permission was not granted.");
@@ -73,7 +75,7 @@ export async function enableOrderNotifications() {
     auth: json.keys?.auth,
     user_agent: navigator.userAgent,
   }, { onConflict: "endpoint" });
-  if (error) throw error;
+  if (error) { await subscription.unsubscribe(); throw error; }
 }
 
 export async function disableOrderNotifications() {

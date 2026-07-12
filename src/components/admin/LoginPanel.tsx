@@ -132,3 +132,21 @@ export function AdminAccessCheck({ booth }: { booth?: BoothSettings }) {
     </main>
   );
 }
+
+export function AdminAccessDenied({ kind, message, userId, email, onRetry, onSignOut }: { kind: "unauthorized" | "inactive" | "error"; message?: string; userId?: string; email?: string; onRetry?: () => Promise<void>; onSignOut: () => Promise<void> }) {
+  return (
+    <main className="admin-login">
+      <section className="admin-access-card admin-login-card">
+        <div className="admin-login-panel">
+          <div className="admin-login-heading">
+            <h1>{kind === "inactive" ? "Staff access inactive" : kind === "error" ? "Access check failed" : "Staff access required"}</h1>
+            <p>{message || (kind === "inactive" ? "An owner must reactivate your staff membership." : "This signed-in account is not an authorized staff member.")}</p>
+            {kind === "unauthorized" && userId && <p className="admin-account-identity">Signed in as <strong>{email || userId}</strong>. Ask an owner to grant this account access.</p>}
+          </div>
+          {onRetry && <button type="button" className="admin-login-submit" onClick={() => void onRetry()}>Check access again</button>}
+          <button type="button" className="admin-login-submit admin-login-secondary" onClick={() => void onSignOut()}>Sign out</button>
+        </div>
+      </section>
+    </main>
+  );
+}

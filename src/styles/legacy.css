@@ -2779,9 +2779,10 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px dashed var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--store-radius, 16px);
   background: var(--surface);
+  box-shadow: var(--soft-shadow);
   min-height: 480px;
   padding: 40px;
   text-align: center;

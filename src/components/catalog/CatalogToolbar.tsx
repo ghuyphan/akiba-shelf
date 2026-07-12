@@ -80,7 +80,7 @@ export function CatalogToolbar({
         </button>
 
         {isOpen && (
-          <ul className="sort-dropdown-menu" role="listbox">
+          <ul className="sort-dropdown-menu">
             {sortOptions.map((opt) => (
               <li key={opt.value}>
                 <button

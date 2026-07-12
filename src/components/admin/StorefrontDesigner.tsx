@@ -5,9 +5,11 @@ import {
   ArrowDown,
   ArrowUp,
   Building2,
-  CreditCard,
+  Check,
   ChevronLeft,
   ChevronRight,
+  Copy,
+  CreditCard,
   GripVertical,
   Languages,
   LayoutTemplate,
@@ -22,10 +24,15 @@ import {
   Redo2,
   RotateCcw,
   Save,
+  ShieldCheck,
   Smartphone,
   Store,
+  Trash2,
   Type,
   Undo2,
+  User,
+  UserCheck,
+  UserPlus,
 } from "lucide-react";
 import type { BoothSettings, PaymentSettings, Product, StorefrontSection } from "../../types/catalog";
 import { getThemeStyle } from "../../lib/theme";
@@ -43,6 +50,8 @@ import { BoothInfoPanel } from "../catalog/BoothInfoPanel";
 import { SelectedItemPanel } from "../catalog/SelectedItemPanel";
 import { ImageUpload } from "./ImageUpload";
 import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../lib/banks";
+import { deleteStaffMember, getStaffMembers, saveStaffMember, type StaffAccess, type StaffRole } from "../../lib/api";
+import { getErrorMessage } from "../../lib/errors";
 
 type StorefrontDesignerProps = {
   settings: BoothSettings;
@@ -50,6 +59,7 @@ type StorefrontDesignerProps = {
   payment: PaymentSettings;
   onSave: (settings: BoothSettings) => Promise<void>;
   onSavePayment: (settings: PaymentSettings) => Promise<void>;
+  isOwner?: boolean;
 };
 
 type InspectorTab = "layout" | "content" | "style";
@@ -58,6 +68,7 @@ type PreviewZoom = "fit" | number;
 type DropEdge = "before" | "after";
 type DropTarget = { section: StorefrontSection; edge: DropEdge };
 type DesignerSnapshot = { booth: BoothSettings; payment: PaymentSettings };
+type SelectedSection = StorefrontSection | "staff";
 
 const allowedSections: StorefrontSection[] = ["featured", "booth", "controls", "cart", "products"];
 const sectionMeta: Record<StorefrontSection, { title: string; description: string; size: string }> = {
@@ -72,7 +83,7 @@ function normalizedOrder(order?: StorefrontSection[]) {
   return order?.length === allowedSections.length && allowedSections.every((item) => order.includes(item)) ? order : allowedSections;
 }
 
-export function StorefrontDesigner({ settings, products, payment, onSave, onSavePayment }: StorefrontDesignerProps) {
+export function StorefrontDesigner({ settings, products, payment, onSave, onSavePayment, isOwner = false }: StorefrontDesignerProps) {
   const [draft, setDraft] = useState(settings);
   const [paymentDraft, setPaymentDraft] = useState(payment);
   const draftRef = useRef(settings);
@@ -81,7 +92,7 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
   const [future, setFuture] = useState<DesignerSnapshot[]>([]);
   const [dragged, setDragged] = useState<StorefrontSection | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
-  const [selected, setSelected] = useState<StorefrontSection>("featured");
+  const [selected, setSelected] = useState<SelectedSection>("featured");
   const [tab, setTab] = useState<InspectorTab>("layout");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [device, setDevice] = useState<PreviewDevice>("desktop");
@@ -97,10 +108,85 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewSort, setPreviewSort] = useState("recommended");
   const [previewView, setPreviewView] = useState<"grid" | "list">("grid");
+  const [boothSubTab, setBoothSubTab] = useState<"info" | "staff">("info");
   const { busy, error, run, setError } = useAsyncAction();
   const order = normalizedOrder(draft.layout_order);
 
-  useEffect(() => { draftRef.current = settings; paymentDraftRef.current = payment; setDraft(settings); setPaymentDraft(payment); setHistory([]); setFuture([]); setError(""); }, [settings, payment, setError]);
+  // Staff management state
+  const [staffMembers, setStaffMembers] = useState<StaffAccess[]>([]);
+  const [staffUserId, setStaffUserId] = useState("");
+  const [staffRole, setStaffRole] = useState<StaffRole>("staff");
+  const [staffBusy, setStaffBusy] = useState(false);
+  const [staffError, setStaffError] = useState("");
+  const [copiedStaffId, setCopiedStaffId] = useState<string | null>(null);
+
+  async function reloadStaff() {
+    if (isOwner) {
+      setStaffMembers(await getStaffMembers());
+    }
+  }
+
+  useEffect(() => {
+    void reloadStaff().catch((caught) => setStaffError(getErrorMessage(caught)));
+  }, [isOwner]);
+
+  async function handleAddStaff() {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(staffUserId)) {
+      setStaffError("Enter an existing Supabase Auth user UUID.");
+      return;
+    }
+    setStaffBusy(true);
+    setStaffError("");
+    try {
+      await saveStaffMember({ user_id: staffUserId, role: staffRole, active: true });
+      setStaffUserId("");
+      await reloadStaff();
+    } catch (caught) {
+      setStaffError(getErrorMessage(caught));
+    } finally {
+      setStaffBusy(false);
+    }
+  }
+
+  async function handleUpdateStaff(member: StaffAccess, changes: Partial<Pick<StaffAccess, "role" | "active">>) {
+    if (!member.user_id) return;
+    setStaffBusy(true);
+    setStaffError("");
+    try {
+      await saveStaffMember({
+        user_id: member.user_id,
+        role: changes.role ?? member.role,
+        active: changes.active ?? member.active,
+      });
+      await reloadStaff();
+    } catch (caught) {
+      setStaffError(getErrorMessage(caught));
+    } finally {
+      setStaffBusy(false);
+    }
+  }
+
+  async function handleRemoveStaff(member: StaffAccess) {
+    if (!member.user_id || !window.confirm("Remove this staff membership?")) return;
+    setStaffBusy(true);
+    setStaffError("");
+    try {
+      await deleteStaffMember(member.user_id);
+      await reloadStaff();
+    } catch (caught) {
+      setStaffError(getErrorMessage(caught));
+    } finally {
+      setStaffBusy(false);
+    }
+  }
+
+  const copyStaffId = (text: string) => {
+    void navigator.clipboard.writeText(text);
+    setCopiedStaffId(text);
+    setTimeout(() => setCopiedStaffId(null), 2000);
+  };
+
+  useEffect(() => { draftRef.current = settings; paymentDraftRef.current = payment; setDraft(settings); setPaymentDraft(payment); setHistory([]); setFuture([]); setError(""); reloadStaff().catch(() => undefined); }, [settings, payment, setError]);
 
   useEffect(() => {
     const stage = previewStageRef.current;
@@ -150,6 +236,8 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
       previewDocument.removeEventListener("pointerup", pointerEnd);
       previewDocument.removeEventListener("pointercancel", pointerEnd);
     };
+  // Gesture helpers intentionally read current refs; rebinding on every render would interrupt an active pinch.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewDocument, device]);
 
   const previewScale = previewZoom === "fit" ? fitScale : previewZoom / 100;
@@ -375,9 +463,9 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
   function renderModule(section: StorefrontSection) {
     return <div
       key={section}
-      className={`storefront-module storefront-module-${section} designer-live-module ${section === "featured" || section === "booth" ? "drop-axis-horizontal" : "drop-axis-vertical"} ${selected === section ? "is-selected" : ""} ${dragged === section ? "is-dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `is-drag-over drop-${dropTarget.edge}` : ""}`}
+      className={`storefront-module storefront-module-${section} designer-live-module ${section === "featured" || section === "booth" ? "drop-axis-horizontal" : "drop-axis-vertical"} ${selected === section && (section !== "booth" || boothSubTab === "info") ? "is-selected" : ""} ${dragged === section ? "is-dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `is-drag-over drop-${dropTarget.edge}` : ""}`}
       style={{ viewTransitionName: `designer-${section}` } as React.CSSProperties}
-      onClick={(event) => { event.stopPropagation(); selectModule(section); }}
+      onClick={(event) => { event.stopPropagation(); selectModule(section); if (section === "booth") { setBoothSubTab("info"); } }}
       onDragOver={(event) => markDropTarget(event, section, section === "featured" || section === "booth" ? "horizontal" : "vertical")}
       onDrop={(event) => dropOn(event, section)}
     >
@@ -431,18 +519,135 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
             {tab === "layout" && <>
               <div className="builder-section-heading"><div><strong>Page sections</strong><small>Drag to reorder the public page.</small></div></div>
               <div className="designer-block-list">
-                {order.map((section, index) => <article key={section} data-designer-section={section} style={{ viewTransitionName: `designer-list-${section}` } as React.CSSProperties} onClick={() => selectModule(section)} onDragOver={(event) => markDropTarget(event, section, "vertical")} onDrop={(event) => dropOn(event, section)} className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""}`}><button type="button" className="designer-list-grip" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} onClick={(event) => event.stopPropagation()} aria-label={`Drag ${sectionMeta[section].title}`}><GripVertical size={17} /></button><span><strong>{index + 1}. {sectionMeta[section].title}</strong><small>{sectionMeta[section].description}</small></span><em>{sectionMeta[section].size}</em><div><button type="button" disabled={index === 0} onClick={(event) => { event.stopPropagation(); nudge(section, -1); }} aria-label={`Move ${sectionMeta[section].title} up`}><ArrowUp size={14} /></button><button type="button" disabled={index === order.length - 1} onClick={(event) => { event.stopPropagation(); nudge(section, 1); }} aria-label={`Move ${sectionMeta[section].title} down`}><ArrowDown size={14} /></button></div></article>)}
+                {order.map((section, index) => <article key={section} data-designer-section={section} style={{ viewTransitionName: `designer-list-${section}` } as React.CSSProperties} onClick={() => { selectModule(section); if (section === "booth") { setBoothSubTab("info"); } }} onDragOver={(event) => markDropTarget(event, section, "vertical")} onDrop={(event) => dropOn(event, section)} className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""}`}><button type="button" className="designer-list-grip" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} onClick={(event) => event.stopPropagation()} aria-label={`Drag ${sectionMeta[section].title}`}><GripVertical size={17} /></button><span><strong>{index + 1}. {sectionMeta[section].title}</strong><small>{sectionMeta[section].description}</small></span><em>{sectionMeta[section].size}</em><div><button type="button" disabled={index === 0} onClick={(event) => { event.stopPropagation(); nudge(section, -1); }} aria-label={`Move ${sectionMeta[section].title} up`}><ArrowUp size={14} /></button><button type="button" disabled={index === order.length - 1} onClick={(event) => { event.stopPropagation(); nudge(section, 1); }} aria-label={`Move ${sectionMeta[section].title} down`}><ArrowDown size={14} /></button></div></article>)}
               </div>
               <p className="builder-help">Wide and side modules keep safe column widths. Dragging changes their order within those responsive lanes.</p>
             </>}
 
             {tab === "content" && <div className="builder-fields">
-              <div className="builder-section-heading"><div><strong>{sectionMeta[selected].title}</strong><small>Only settings for the selected section are shown.</small></div></div>
+              <div className="builder-section-heading"><div><strong>{selected === "staff" ? "Staff access" : sectionMeta[selected].title}</strong><small>{selected === "staff" ? "Only owners grant user access." : "Only settings for the selected section are shown."}</small></div></div>
               {selected === "featured" && <div className="builder-fields">
                 <p className="builder-empty-inspector">The Featured banner displays details directly from active featured products. Mark products as Featured in the Products workspace.</p>
                 <label className="builder-toggle"><span><strong>Auto-rotate products</strong><small>Advance to the next featured item every 4.5 seconds. Pauses after customer interaction and respects reduced motion.</small></span><input type="checkbox" checked={draft.featured_autoplay ?? true} onChange={(event) => update("featured_autoplay", event.target.checked)} /></label>
               </div>}
-              {selected === "booth" && <><div className="builder-field-group"><h3><Store size={15} /> Booth identity</h3><Field label="Booth name"><TextInput value={draft.booth_name} onChange={(event) => update("booth_name", event.target.value)} /></Field><Field label="Header subtitle"><TextInput value={draft.subtitle} onChange={(event) => update("subtitle", event.target.value)} /></Field><div className="builder-field-row"><Field label="Booth code"><TextInput value={draft.booth_code} onChange={(event) => update("booth_code", event.target.value)} /></Field><Field label="Open hours"><TextInput value={draft.open_hours} onChange={(event) => update("open_hours", event.target.value)} /></Field></div><Field label="Location"><TextInput value={draft.location} onChange={(event) => update("location", event.target.value)} /></Field><Field label="Logo URL"><TextInput value={draft.logo_url ?? ""} placeholder="https://…" onChange={(event) => update("logo_url", event.target.value)} /></Field><ImageUpload bucket="payment-qr" label="Upload booth logo" onUploaded={(url) => update("logo_url", url)} /></div><div className="builder-field-group"><h3><Link2 size={15} /> Social links</h3><Field label="Instagram URL"><TextInput type="url" value={draft.instagram_url ?? ""} onChange={(event) => update("instagram_url", event.target.value)} /></Field><Field label="Facebook URL"><TextInput type="url" value={draft.facebook_url ?? ""} onChange={(event) => update("facebook_url", event.target.value)} /></Field><Field label="TikTok URL"><TextInput type="url" value={draft.tiktok_url ?? ""} onChange={(event) => update("tiktok_url", event.target.value)} /></Field><Field label="Social QR center logo"><TextInput value={draft.social_qr_logo_url ?? ""} onChange={(event) => update("social_qr_logo_url", event.target.value)} /></Field></div></>}
+              {selected === "booth" && <>
+                <div className="builder-field-group">
+                  <h3><Store size={15} /> Booth identity</h3>
+                  <Field label="Booth name"><TextInput value={draft.booth_name} onChange={(event) => update("booth_name", event.target.value)} /></Field>
+                  <Field label="Header subtitle"><TextInput value={draft.subtitle} onChange={(event) => update("subtitle", event.target.value)} /></Field>
+                  <div className="builder-field-row">
+                    <Field label="Booth code"><TextInput value={draft.booth_code} onChange={(event) => update("booth_code", event.target.value)} /></Field>
+                    <Field label="Open hours"><TextInput value={draft.open_hours} onChange={(event) => update("open_hours", event.target.value)} /></Field>
+                  </div>
+                  <Field label="Location"><TextInput value={draft.location} onChange={(event) => update("location", event.target.value)} /></Field>
+                  <Field label="Logo URL"><TextInput value={draft.logo_url ?? ""} placeholder="https://…" onChange={(event) => update("logo_url", event.target.value)} /></Field>
+                  <ImageUpload bucket="payment-qr" label="Upload booth logo" onUploaded={(url) => update("logo_url", url)} />
+                </div>
+                <div className="builder-field-group">
+                  <h3><Link2 size={15} /> Social links</h3>
+                  <Field label="Instagram URL"><TextInput type="url" value={draft.instagram_url ?? ""} onChange={(event) => update("instagram_url", event.target.value)} /></Field>
+                  <Field label="Facebook URL"><TextInput type="url" value={draft.facebook_url ?? ""} onChange={(event) => update("facebook_url", event.target.value)} /></Field>
+                  <Field label="TikTok URL"><TextInput type="url" value={draft.tiktok_url ?? ""} onChange={(event) => update("tiktok_url", event.target.value)} /></Field>
+                  <Field label="Social QR center logo"><TextInput value={draft.social_qr_logo_url ?? ""} onChange={(event) => update("social_qr_logo_url", event.target.value)} /></Field>
+                </div>
+              </>}
+              {selected === "staff" && isOwner && (
+                <div className="builder-fields">
+                  <div className="builder-field-group">
+                    <h3><UserPlus size={15} /> Grant staff access</h3>
+                    <Field label="Auth user UUID" hint="Create the user in Supabase Auth first.">
+                      <TextInput
+                        value={staffUserId}
+                        placeholder="00000000-0000-0000-0000-000000000000"
+                        onChange={(event) => setStaffUserId(event.target.value)}
+                      />
+                    </Field>
+                    <Field label="Role">
+                      <SelectInput value={staffRole} onChange={(event) => setStaffRole(event.target.value as StaffRole)}>
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                        <option value="owner">Owner</option>
+                      </SelectInput>
+                    </Field>
+                    <div style={{ marginTop: "12px" }}>
+                      <Button
+                        type="button"
+                        icon={<UserPlus size={14} />}
+                        onClick={handleAddStaff}
+                        loading={staffBusy}
+                        disabled={staffBusy}
+                        style={{ width: "100%" }}
+                      >
+                        Add staff member
+                      </Button>
+                    </div>
+                    {staffError && <Alert variant="error" title="Error" onClose={() => setStaffError("")}>{staffError}</Alert>}
+                  </div>
+
+                  <div className="builder-field-group">
+                    <h3><ShieldCheck size={15} /> Current staff</h3>
+                    {staffMembers.length === 0 ? (
+                      <p className="admin-empty-state" style={{ padding: "16px", fontSize: "12px" }}>No staff configured yet.</p>
+                    ) : (
+                      <div className="builder-staff-items">
+                        {staffMembers.map((member) => {
+                          const displayId = member.user_id ? `${member.user_id.slice(0, 8)}...${member.user_id.slice(-8)}` : "";
+                          return (
+                            <div key={member.user_id} className="builder-staff-item">
+                              <div className="builder-staff-item-meta">
+                                <div className="builder-staff-avatar">
+                                  {member.role === "owner" ? <ShieldCheck size={14} className="role-icon-owner" /> :
+                                   member.role === "admin" ? <UserCheck size={14} className="role-icon-admin" /> :
+                                   <User size={14} className="role-icon-staff" />}
+                                </div>
+                                <code title={member.user_id}>{displayId}</code>
+                                <button
+                                  type="button"
+                                  className="builder-staff-copy-btn"
+                                  onClick={() => member.user_id && copyStaffId(member.user_id)}
+                                  title="Copy full UUID"
+                                >
+                                  {copiedStaffId === member.user_id ? <Check size={12} /> : <Copy size={12} />}
+                                </button>
+                              </div>
+                              <div className="builder-staff-item-controls">
+                                <SelectInput
+                                  aria-label={`Role for ${member.user_id}`}
+                                  value={member.role}
+                                  disabled={staffBusy}
+                                  onChange={(event) => void handleUpdateStaff(member, { role: event.target.value as StaffRole })}
+                                >
+                                  <option value="staff">Staff</option>
+                                  <option value="admin">Admin</option>
+                                  <option value="owner">Owner</option>
+                                </SelectInput>
+                                <label className="builder-staff-active-checkbox">
+                                  <input
+                                    type="checkbox"
+                                    checked={member.active}
+                                    disabled={staffBusy}
+                                    onChange={(event) => void handleUpdateStaff(member, { active: event.target.checked })}
+                                  />
+                                  <span>Active</span>
+                                </label>
+                                <button
+                                  type="button"
+                                  className="builder-staff-delete-btn"
+                                  disabled={staffBusy}
+                                  onClick={() => void handleRemoveStaff(member)}
+                                  title="Remove staff member"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               {selected === "cart" && <div className="builder-fields builder-payment-fields">
                 <div className="builder-field-group">
                   <h3><Building2 size={15} /> Payment account</h3>
@@ -481,7 +686,7 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
 
       <div className="builder-canvas admin-surface">
         <div className="builder-toolbar">
-          <div><strong>{sectionMeta[selected].title}</strong><small>{hasChanges ? "Unpublished changes" : "Published storefront"}</small></div>
+          <div><strong>{selected === "staff" ? "Staff access" : sectionMeta[selected].title}</strong><small>{hasChanges ? "Unpublished changes" : "Published storefront"}</small></div>
           <div className="builder-toolbar-controls">
             <div className="builder-device-switcher" aria-label="Preview size"><button type="button" className={device === "desktop" ? "active" : ""} onClick={() => changeDevice("desktop")}><Monitor size={16} />Desktop</button><button type="button" className={device === "phone" ? "active" : ""} onClick={() => changeDevice("phone")}><Smartphone size={16} />Phone</button></div>
             <div className="builder-zoom-controls" aria-label="Preview zoom"><button type="button" onClick={() => adjustZoom(-10)} disabled={displayedZoom <= 20} aria-label="Zoom out"><Minus size={14} /></button><button type="button" className={previewZoom === "fit" ? "active" : ""} onClick={fitPreview} aria-label="Fit preview"><Maximize2 size={13} /><span>{displayedZoom}%</span></button><button type="button" onClick={() => adjustZoom(10)} disabled={displayedZoom >= 150} aria-label="Zoom in"><Plus size={14} /></button></div>
@@ -509,7 +714,12 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
             {previewDocument && createPortal(
               <CatalogLocaleProvider locale={draft.catalog_locale ?? "en"}>
                 <div className="designer-live-storefront app-shell" style={{ ...getThemeStyle(draft), transform: "none" }}>
-                  <CatalogHeader booth={draft} onOpenInfo={() => undefined} />
+                  <CatalogHeader
+                    booth={draft}
+                    onOpenInfo={() => { setSelected("staff"); setTab("content"); }}
+                    isDesigner={true}
+                    isSelected={selected === "staff"}
+                  />
                   <div className="catalog-layout storefront-layout-grid">
                     <div className="storefront-hero-grid">{heroPreviewSections.map(renderModule)}</div>
                     <div className="storefront-content-grid">{contentPreviewColumns.map((column) => column.node)}</div>

@@ -7,3 +7,7 @@ dist/
 skills-lock.json
 *.tsbuildinfo
 .DS_Store
+supabase/.temp/
+coverage/
+playwright-report/
+test-results/

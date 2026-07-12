@@ -16,7 +16,7 @@ Supabase is the source of truth. Catalog and order screens subscribe to Realtime
 - Use migrations in `supabase/migrations`; never silently change the production schema only through dashboard clicks.
 - Preserve the `create_order` RPC contract. It validates the cart, locks product rows, reads current prices, and creates order records atomically.
 - Never restore anonymous direct inserts into `orders` or `order_items`.
-- Confirmation is the inventory-changing staff action. Keep cancellation and confirmation idempotent and security-definer functions tightly granted.
+- Pending order creation reserves inventory. Confirmation finalizes the reservation without deducting again; cancellation and expiry restore inventory exactly once. Keep all terminal actions idempotent and security-definer functions tightly granted.
 - Keep RLS and explicit grants least-privileged.
 - When changing Supabase code or SQL, follow `.agents/skills/supabase/SKILL.md` and the Postgres best-practices skill.
 

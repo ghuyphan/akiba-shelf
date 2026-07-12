@@ -1,4 +1,7 @@
+import { ZodError } from "zod";
+
 export function getErrorMessage(error: unknown, fallback = "Something went wrong.") {
+  if (error instanceof ZodError) return fallback;
   return error instanceof Error ? error.message : fallback;
 }
 

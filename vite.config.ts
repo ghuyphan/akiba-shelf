@@ -15,6 +15,7 @@ export default defineConfig(({ command }) => ({
   },
   plugins: [react(), VitePWA({
     registerType: "autoUpdate",
+    injectRegister: null,
     includeAssets: ["favicon.svg"],
     manifest: false,
     workbox: {

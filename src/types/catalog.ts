@@ -17,6 +17,7 @@ export type Product = {
   stock_note: string;
   images: string[];
   image_variants?: Array<{ thumbnail: string; detail: string }>;
+  image_paths?: string[];
   featured: boolean;
   sort_order: number;
   active: boolean;
@@ -31,10 +32,12 @@ export type BoothSettings = {
   open_hours: string;
 
   logo_url?: string;
+  logo_path?: string;
   instagram_url?: string;
   facebook_url?: string;
   tiktok_url?: string;
   social_qr_logo_url?: string;
+  social_qr_logo_path?: string;
   theme_primary?: string;
   theme_secondary?: string;
   theme_accent?: string;

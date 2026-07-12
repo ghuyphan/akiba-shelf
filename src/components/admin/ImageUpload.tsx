@@ -7,8 +7,8 @@ import { Alert } from "../ui/Alert";
 type ImageUploadProps = {
   bucket: string;
   label: string;
-  onUploaded: (url: string) => void;
-  onProductUploaded?: (variant: { thumbnail: string; detail: string }) => void;
+  onUploaded: (url: string, path?: string) => void;
+  onProductUploaded?: (variant: { thumbnail: string; detail: string; paths: string[] }) => void;
 };
 
 export function ImageUpload({ bucket, label, onUploaded, onProductUploaded }: ImageUploadProps) {
@@ -27,7 +27,8 @@ export function ImageUpload({ bucket, label, onUploaded, onProductUploaded }: Im
         onProductUploaded(uploaded);
       } else {
         const compressedFile = await compressImage(file);
-        onUploaded(await uploadImage(bucket, compressedFile));
+        const uploaded = await uploadImage(bucket, compressedFile);
+        onUploaded(uploaded.url, uploaded.path);
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not upload image.");

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import type { CatalogLocale } from "../types/catalog";
 
-const translations = {
+export const translations = {
   en: {
     all: "All", officialShop: "Official Shop", boothInfo: "Booth info", boothInfoHint: "Hours, location & socials",
     searchItems: "Search items...", searchCatalog: "Search catalog", clearSearch: "Clear search", recommended: "Recommended",
@@ -18,6 +18,7 @@ const translations = {
     confirmOrder: "Confirm your order", lastCheck: "One last check", reviewCart: "Review your cart and add the name staff should call at pickup.", total: "Total", pickupName: "Pickup name", pickupPlaceholder: "e.g. Huy or Alice", pickupHint: "Use a name you can easily hear at the booth.", secureCheck: "Price and stock are checked securely before your order is created.", keepShopping: "Keep shopping", checking: "Checking…", createPay: "Create order & pay",
     scanPay: "Scan to pay", exactNote: "Use the exact transfer note shown below.", waitingConfirmation: "Waiting for staff confirmation", orderCode: "Order code", transferTo: "Transfer to", accountName: "Account name", accountNumber: "Account number", bank: "Bank", transferNote: "Transfer note", orderSummary: "Order summary",
     retryOrder: "Retry safely", reconnectingOrder: "Reconnecting — your order is safe", hidePayment: "Hide payment details", pendingOrder: "Pending order", viewPayment: "View payment", pendingOrderHint: "Your order stays active if you close this window.", orderCancelled: "Order cancelled", cancelledPaymentNote: "Staff cancelled this order. Please do not send payment for it.",
+    reservedFor: (time: string) => `Reserved for ${time}`, reservedWhilePaying: "Your items are reserved while you complete payment.", cancelOrder: "Cancel order", cancelling: "Cancelling…", qrUnavailable: "Payment QR is unavailable. Please ask booth staff for help.",
   },
   vi: {
     all: "Tất cả", officialShop: "Gian hàng chính thức", boothInfo: "Thông tin gian hàng", boothInfoHint: "Giờ mở cửa, vị trí & mạng xã hội",
@@ -35,6 +36,7 @@ const translations = {
     confirmOrder: "Xác nhận đơn hàng", lastCheck: "Kiểm tra lần cuối", reviewCart: "Kiểm tra giỏ hàng và nhập tên để staff gọi khi nhận hàng.", total: "Tổng cộng", pickupName: "Tên nhận hàng", pickupPlaceholder: "Ví dụ: Huy hoặc Alice", pickupHint: "Dùng tên bạn có thể dễ dàng nghe thấy tại gian hàng.", secureCheck: "Giá và tồn kho được kiểm tra an toàn trước khi tạo đơn.", keepShopping: "Tiếp tục mua", checking: "Đang kiểm tra…", createPay: "Tạo đơn & thanh toán",
     scanPay: "Quét mã để thanh toán", exactNote: "Vui lòng dùng đúng nội dung chuyển khoản bên dưới.", waitingConfirmation: "Đang chờ staff xác nhận", orderCode: "Mã đơn", transferTo: "Chuyển khoản đến", accountName: "Tên tài khoản", accountNumber: "Số tài khoản", bank: "Ngân hàng", transferNote: "Nội dung chuyển khoản", orderSummary: "Chi tiết đơn hàng",
     retryOrder: "Thử lại an toàn", reconnectingOrder: "Đang kết nối lại — đơn hàng vẫn an toàn", hidePayment: "Ẩn thông tin thanh toán", pendingOrder: "Đơn đang chờ", viewPayment: "Xem thanh toán", pendingOrderHint: "Đơn hàng vẫn hoạt động khi bạn đóng cửa sổ này.", orderCancelled: "Đơn đã bị hủy", cancelledPaymentNote: "Staff đã hủy đơn này. Vui lòng không chuyển khoản cho đơn.",
+    reservedFor: (time: string) => `Giữ hàng trong ${time}`, reservedWhilePaying: "Sản phẩm được giữ trong lúc bạn hoàn tất thanh toán.", cancelOrder: "Hủy đơn hàng", cancelling: "Đang hủy…", qrUnavailable: "Không thể tải mã thanh toán. Vui lòng nhờ staff tại gian hàng hỗ trợ.",
   },
 } as const;
 

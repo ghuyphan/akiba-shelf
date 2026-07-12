@@ -26,7 +26,7 @@ export function ProductGrid({ products, totalProducts, activeCategory, selectedP
         icon={hasInventory ? <Tags size={28} /> : <PackageSearch size={28} />}
         title={hasInventory ? copy.nothingCategory : copy.noMerch}
         message={hasInventory ? copy.switchCatalog : copy.addInAdmin}
-        meta={[hasInventory ? (activeCategory === "All" ? copy.all : activeCategory) : copy.catalogEmpty, viewMode === "grid" ? copy.gridView : copy.listView]}
+        meta={hasInventory ? [activeCategory === "All" ? copy.all : activeCategory, viewMode === "grid" ? copy.gridView : copy.listView] : []}
         action={
           hasInventory ? (
             <Button type="button" variant="secondary" icon={<RotateCcw size={18} />} onClick={onResetFilters}>

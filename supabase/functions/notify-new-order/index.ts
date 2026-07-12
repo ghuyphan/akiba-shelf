@@ -33,8 +33,16 @@ Deno.serve(async (request) => {
     ]);
     webpush.setVapidDetails(subject, publicKey, privateKey);
     const payload = JSON.stringify({ title: `New order · ${order.order_code}`, body: `${Number(order.total_amount).toLocaleString("vi-VN")} ₫ awaiting confirmation`, icon: booth?.logo_url, tag: `order-${order.id}`, url: "./admin" });
-    await Promise.allSettled((subscriptions || []).map((subscription) => webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, payload)));
-    return Response.json({ sent: subscriptions?.length || 0 }, { headers: cors });
+    const deliveries = await Promise.allSettled((subscriptions || []).map(async (subscription) => {
+      try {
+        await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, payload);
+      } catch (error) {
+        const statusCode = typeof error === "object" && error && "statusCode" in error ? Number(error.statusCode) : 0;
+        if (statusCode === 404 || statusCode === 410) await admin.from("push_subscriptions").delete().eq("endpoint", subscription.endpoint);
+        throw error;
+      }
+    }));
+    return Response.json({ sent: deliveries.filter((result) => result.status === "fulfilled").length }, { headers: cors });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "Notification failed." }, { status: 400, headers: cors });
   }

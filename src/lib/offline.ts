@@ -1,4 +1,5 @@
 import type { BoothSettings, CartItem, CatalogData, Product } from "../types/catalog";
+import { boothSettingsSchema, productRowSchema } from "./schemas";
 
 const SNAPSHOT_KEY = "akiba-shelf-catalog-v1";
 const CART_KEY = "akiba-shelf-cart-v1";
@@ -10,15 +11,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isProduct(value: unknown): value is Product {
-  if (!isRecord(value)) return false;
-  return typeof value.id === "string"
-    && typeof value.name === "string"
-    && typeof value.price_vnd === "number"
-    && Number.isFinite(value.price_vnd)
-    && typeof value.quantity_available === "number"
-    && Number.isFinite(value.quantity_available)
-    && Array.isArray(value.images)
-    && value.images.every((image) => typeof image === "string");
+  return productRowSchema.safeParse(value).success;
 }
 
 export function isCartItem(value: unknown): value is CartItem {
@@ -32,7 +25,7 @@ export function isCartItem(value: unknown): value is CartItem {
 export function loadCatalogSnapshot(): Pick<CatalogData, "products" | "booth"> | null {
   try {
     const value = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || "null") as unknown;
-    if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.products) || !value.products.every(isProduct) || !isRecord(value.booth)) {
+    if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.products) || !value.products.every(isProduct) || !boothSettingsSchema.safeParse(value.booth).success) {
       localStorage.removeItem(SNAPSHOT_KEY);
       return null;
     }

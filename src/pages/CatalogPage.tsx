@@ -19,6 +19,7 @@ import { usePersistentCart } from "../hooks/usePersistentCart";
 import { useCatalogData } from "../hooks/useCatalogData";
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
 import { BoothDetailsModal, FlyingItemsLayer, PendingOrderBar } from "../components/catalog/CatalogOverlays";
+import { layoutOrderSchema } from "../lib/schemas";
 
 type NetworkConnection = { effectiveType?: string; saveData?: boolean };
 
@@ -58,6 +59,12 @@ export function CatalogPage() {
   useEffect(() => {
     applyPageTheme(booth);
   }, [booth]);
+
+  useEffect(() => {
+    if (!loadError) return;
+    toast.error(loadError, "Catalog unavailable");
+    setLoadError("");
+  }, [loadError, setLoadError, toast]);
 
   useEffect(() => {
     document.body.classList.add("catalog-screen");
@@ -134,11 +141,11 @@ export function CatalogPage() {
     }
   };
 
-  const handleClearCart = () => {
+  const handleClearCart = useCallback(() => {
     setCart([]);
     setSelectedProductId(null);
     setIsCartExpanded(false);
-  };
+  }, [setCart]);
 
   const categories = useMemo(
     () => ["All", ...Array.from(new Set(products.map((product) => product.category))).filter(Boolean)],
@@ -175,8 +182,8 @@ export function CatalogPage() {
 
   const storefrontOrder = useMemo<StorefrontSection[]>(() => {
     const fallback: StorefrontSection[] = ["featured", "booth", "controls", "cart", "products"];
-    const saved = booth.layout_order;
-    return saved?.length === fallback.length && fallback.every((section) => saved.includes(section)) ? saved : fallback;
+    const saved = layoutOrderSchema.safeParse(booth.layout_order);
+    return saved.success ? saved.data : fallback;
   }, [booth.layout_order]);
 
   const storefrontBlocks: Record<StorefrontSection, React.ReactNode> = {
@@ -226,7 +233,7 @@ export function CatalogPage() {
     if (!activeOrderRef.current && nextOrder?.status === "pending") handleClearCart();
     activeOrderRef.current = nextOrder;
     setActiveOrder(nextOrder);
-  }, []);
+  }, [handleClearCart]);
 
   const heroStorefrontSections = storefrontOrder.filter((section) => section === "featured" || section === "booth");
   const mainStorefrontSections = storefrontOrder.filter((section) => section === "controls" || section === "products");
@@ -248,11 +255,6 @@ export function CatalogPage() {
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
     <main className={`app-shell ${lightweightMode ? "catalog-lightweight" : ""}`} style={getThemeStyle(booth)} onClick={() => setSelectedProductId(null)}>
       <CatalogHeader booth={booth} onOpenInfo={() => setIsInfoOpen(true)} />
-      {loadError && (
-        <Alert variant="error" title="Catalog unavailable" onClose={() => setLoadError("")}>
-          {loadError}
-        </Alert>
-      )}
       {!online && <Alert variant="info" title="You are offline.">Your cart is saved on this device. Reconnect to verify stock and continue checkout.</Alert>}
       <div className="catalog-layout storefront-layout-grid">
         <div className="storefront-hero-grid">

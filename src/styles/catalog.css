@@ -898,9 +898,9 @@
 .storefront-hero-grid { align-items: stretch; }
 .storefront-module-featured,
 .storefront-module-booth { display: flex; }
-.storefront-module-featured > .featured-banner,
+.storefront-module-featured > :is(.featured-banner, .featured-banner-empty),
 .storefront-module-booth > .booth-card { width: 100%; height: 100%; }
-.storefront-module-featured > .featured-banner { margin-bottom: 0; }
+.storefront-module-featured > :is(.featured-banner, .featured-banner-empty) { margin-bottom: 0; }
 
 @media (min-width: 981px) {
   .booth-card.booth-card-redesign { height: 100%; }
@@ -942,23 +942,43 @@
   .mobile-sheet-modal .modal-header { position: sticky; z-index: 2; top: 14px; margin-bottom: 8px; padding: 4px 0 8px; background: var(--surface); }
   .order-confirm-modal,.payment-qr-modal-redesign { width: 100%; max-height: min(90dvh, 780px); padding-inline: 12px; }
   .order-confirm-modal .modal-header,.payment-qr-modal-redesign .modal-header { margin-bottom: 8px; }
-  .order-confirm-modal .modal-header h2,.payment-qr-modal-redesign .modal-header h2 { font-size: 18px; }
+  .order-confirm-modal .modal-header h2,.payment-qr-modal-redesign .modal-header h2 { font-size: 22px; line-height: 1.15; }
   .payment-qr-layout { gap: 9px; }
   .payment-qr-pane { gap: 8px; padding: 10px; border-radius: 13px; }
   .payment-qr-heading>strong { font-size: 20px; }
   .payment-qr-heading>small { display: none; }
   .payment-qr-image,.payment-qr-loading { width: min(72vw, 300px) !important; border-radius: 12px; }
-  .payment-waiting-pill { padding: 6px 9px; font-size: 8px; }
+  .payment-waiting-pill { padding: 8px 11px; font-size: 12px; }
+  .payment-reservation-copy { margin: 8px 0 2px; font-size: 14px; line-height: 1.4; }
+  .payment-reservation-copy strong { font-size: 16px; }
   .payment-receipt-redesign { gap: 8px !important; padding: 11px !important; border-radius: 13px !important; }
   .payment-order-identity>div { padding: 8px; }
-  .payment-order-identity strong { font-size: 13px; }
+  .payment-order-identity span,.payment-transfer-card>span,.payment-receipt-items>span { font-size: 11px; }
+  .payment-order-identity strong { font-size: 16px; }
   .payment-transfer-card { gap: 6px; padding: 9px; border-radius: 10px; }
+  .payment-transfer-card small { font-size: 11px; }
+  .payment-transfer-card strong { font-size: 14px; }
+  .payment-transfer-note strong { font-size: 16px; }
   .payment-receipt-items { gap: 5px; }
-  .payment-receipt-redesign .receipt-instructions { padding: 8px; font-size: 8px; }
+  .payment-receipt-items>div { font-size: 12px; }
+  .payment-receipt-total strong { font-size: 16px; }
+  .payment-receipt-redesign .receipt-instructions { padding: 9px; font-size: 11px; }
+  .payment-hide-order { min-height: 46px; font-size: 13px; }
+  .payment-receipt-redesign>.button { min-height: 50px; font-size: 15px; }
   .order-confirm-main,.order-confirm-side { gap: 10px; padding: 11px; border-radius: 13px; }
+  .order-confirm-intro h3 { font-size: 16px; }
+  .order-confirm-intro p { font-size: 13px; }
   .order-confirm-items { max-height: 150px; }
   .order-confirm-items>div { grid-template-columns: 36px minmax(0, 1fr) auto; padding: 6px; }
   .order-confirm-items img,.order-confirm-placeholder { width: 36px; height: 36px; }
+  .order-confirm-items strong { font-size: 13px; }
+  .order-confirm-items small { font-size: 12px; }
+  .order-confirm-items b { font-size: 13px; }
+  .order-confirm-total span { font-size: 13px; }
+  .order-confirm-total strong { font-size: 21px; }
+  .order-confirm-name>span { font-size: 12px; }
+  .order-confirm-name input { font-size: 16px; }
+  .order-confirm-actions .button { min-height: 52px; font-size: 15px; }
   .order-confirm-secure { display: none; }
   .order-confirm-name>small { display: none; }
 }
@@ -1069,4 +1089,28 @@
   .catalog-screen .selected-panel.cart-just-updated { animation: none !important; }
   .flying-product-item { display: none !important; }
   .mobile-cart-summary-icon-wrap.cart-icon-landing { animation: none !important; }
+}
+
+.selected-panel-empty {
+  border: 1px solid var(--line) !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+  height: auto !important;
+  min-height: 230px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 16px !important;
+}
+
+.featured-banner-empty {
+  cursor: pointer;
+  transition: transform 170ms ease, border-color 170ms ease, box-shadow 170ms ease;
+}
+
+.featured-banner-empty:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--coral) 30%, var(--line)) !important;
+  box-shadow: 0 12px 28px rgb(15 23 42 / 11%) !important;
 }

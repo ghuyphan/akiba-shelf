@@ -8,6 +8,7 @@ import { Modal } from "../ui/Modal";
 import { cancelCustomerOrder, createOrder, getCustomerOrder } from "../../lib/api";
 import { clearOrderRecovery, createOrderRecovery, loadOrderRecovery, saveOrderRecovery, type ActiveOrderRecovery } from "../../lib/orderRecovery";
 import { useOrderCountdown, usePaymentQrSource } from "../../hooks/useCheckoutPresentation";
+import { getPaymentBank } from "../../lib/banks";
 
 type PaymentQrModalProps = {
   isOpen: boolean;
@@ -45,7 +46,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
 
   useEffect(() => {
     if (recovery?.order) onOrderChangeRef.current?.(recovery.order);
-  }, []);
+  }, [recovery?.order]);
 
   const totalAmount = useMemo(
     () => checkoutCart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0),
@@ -138,7 +139,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [order?.id, order?.status, reconcileOrder, connectionState]);
+  }, [order, reconcileOrder, connectionState]);
 
   const handleSuccessClose = () => {
     setShowSuccess(false);
@@ -149,7 +150,9 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
     onClose();
   };
 
-  const paymentLabel = canGenerateVietQr(payment) ? payment.bank_label : payment.momo_label;
+  const selectedBank = getPaymentBank(payment.bank_code, payment.bank_acq_id);
+  const paymentLabel = canGenerateVietQr(payment) ? (payment.bank_label || selectedBank?.name || payment.bank_code || "Bank transfer") : payment.momo_label;
+  const bankName = selectedBank?.name || payment.bank_code || payment.bank_label || "N/A";
   const remaining = useOrderCountdown(order, reconcileOrder);
 
   async function handleCancel() {
@@ -223,7 +226,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
           {qrSrc && !isGenerating ? (
             <img src={qrSrc} alt="Payment QR code" className="payment-qr-image" />
           ) : qrUnavailable ? (
-            <div className="qr-loading payment-qr-loading"><CloudOff size={28} /><span>Payment QR is unavailable. Please ask booth staff for help.</span></div>
+            <div className="qr-loading payment-qr-loading"><CloudOff size={28} /><span>{copy.qrUnavailable}</span></div>
           ) : (
             <div className="qr-loading payment-qr-loading"><Loader2 size={32} className="spin-icon" />
             </div>
@@ -231,15 +234,15 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
           </div>
           <div className={`payment-waiting-pill ${connectionState === "reconnecting" ? "is-offline" : ""}`}>{connectionState === "reconnecting" ? <CloudOff size={14} /> : <Loader2 size={14} className="spin-icon" />}<span>{connectionState === "reconnecting" ? copy.reconnectingOrder : copy.waitingConfirmation}</span>
           </div>
-          <p className="payment-reservation-copy"><strong>Reserved for {String(Math.floor(remaining / 60)).padStart(2, "0")}:{String(remaining % 60).padStart(2, "0")}</strong><br />Your items are reserved while you complete payment.</p>
+          <p className="payment-reservation-copy"><strong>{copy.reservedFor(`${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`)}</strong><br />{copy.reservedWhilePaying}</p>
         </div>
 
         <div className="payment-receipt payment-receipt-redesign">
           <div className="payment-order-identity"><div><span>{copy.orderCode}</span><strong>{order.order_code}</strong></div>{order.customer_name && <div><span>{copy.pickupName}</span><strong>{order.customer_name}</strong></div>}</div>
-          <div className="payment-transfer-card"><span>{copy.transferTo}</span><div><small>{copy.accountName}</small><strong>{payment.bank_account_name || "N/A"}</strong></div><div><small>{copy.accountNumber}</small><button type="button" onClick={() => void navigator.clipboard.writeText(payment.bank_account_no || "")}><strong>{payment.bank_account_no || "N/A"}</strong><Copy size={14} /></button></div><div><small>{copy.bank}</small><strong>{paymentLabel}</strong></div><div className="payment-transfer-note"><small>{copy.transferNote}</small><strong>{order.order_code}</strong></div></div>
+          <div className="payment-transfer-card"><span>{copy.transferTo}</span><div><small>{copy.accountName}</small><strong>{payment.bank_account_name || "N/A"}</strong></div><div><small>{copy.accountNumber}</small><button type="button" onClick={() => void navigator.clipboard.writeText(payment.bank_account_no || "")}><strong>{payment.bank_account_no || "N/A"}</strong><Copy size={14} /></button></div><div><small>{copy.bank}</small><strong>{bankName}</strong></div><div className="payment-transfer-note"><small>{copy.transferNote}</small><strong>{order.order_code}</strong></div></div>
           <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => <div key={item.product.id}><span>{item.quantity} × {item.product.name}</span><strong>{formatVnd(item.product.price_vnd * item.quantity)}</strong></div>)}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
-          <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button><button type="button" className="button button-secondary" onClick={() => void handleCancel()} disabled={isCancelling || connectionState !== "online"}>{isCancelling ? "Cancelling…" : "Cancel order"}</button>
-          {payment.payment_instructions && <div className="receipt-instructions"><Sparkles size={16} /><span>{payment.payment_instructions}</span></div>}
+          {payment.payment_instructions.trim() && <div className="receipt-instructions"><Sparkles size={16} /><span>{payment.payment_instructions}</span></div>}
+          <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button><button type="button" className="button button-secondary" onClick={() => void handleCancel()} disabled={isCancelling || connectionState !== "online"}>{isCancelling ? copy.cancelling : copy.cancelOrder}</button>
         </div>
       </div>
     </Modal>
@@ -262,8 +265,8 @@ export function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButt
   const lastXRef = useRef(0);
   const lastTimeRef = useRef(0);
 
-  const updateProgress = (next: number) => { progressRef.current = next; setProgress(next); };
-  const updatePhase = (next: typeof phase) => { phaseRef.current = next; setPhase(next); };
+  const updateProgress = useCallback((next: number) => { progressRef.current = next; setProgress(next); }, []);
+  const updatePhase = useCallback((next: typeof phase) => { phaseRef.current = next; setPhase(next); }, []);
 
   const commit = useCallback(async () => {
     if (phaseRef.current === "committing" || phaseRef.current === "success" || isConfirming) return;
@@ -276,7 +279,7 @@ export function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButt
     }
     updatePhase("error");
     window.setTimeout(() => { updateProgress(0); updatePhase("idle"); }, 700);
-  }, [isConfirming, onConfirm]);
+  }, [isConfirming, onConfirm, updatePhase, updateProgress]);
 
   const finishGesture = (velocity = 0) => {
     if (phaseRef.current !== "dragging") return;

@@ -20,7 +20,7 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
     if (!product) return;
     setDisplayedProduct(product);
     setActiveImage(0);
-  }, [product?.id]);
+  }, [product]);
   if (!displayedProduct) return null;
 
   const images = displayedProduct.image_variants?.length ? displayedProduct.image_variants.map((variant) => variant.detail) : displayedProduct.images.filter(Boolean);

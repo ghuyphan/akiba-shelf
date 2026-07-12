@@ -8,7 +8,7 @@ Akiba Shelf is a touch-friendly merch booth storefront and admin workspace. Cust
 - Server-authoritative ordering: totals and stock are validated inside the `create_order` Postgres function.
 - VietQR payment flow with live order confirmation.
 - Realtime catalog and order updates through Supabase.
-- Authenticated admin for orders, products, booth/payment settings, and storefront design.
+- Role-authorized staff workspace for orders, products, booth/payment settings, and storefront design.
 - Storefront designer with drag-and-drop ordering of the real featured, booth, controls, cart, and product modules; fixed safe grid spans; theme colors; corner radius; and English/Vietnamese UI.
 - Shared queued toast system through `useToast()`.
 
@@ -93,7 +93,7 @@ Core tables:
 - `orders` — customer order header and status.
 - `order_items` — immutable product quantities and unit prices for each order.
 
-The browser does not directly insert orders. `createOrder()` calls the `create_order` RPC, which locks requested product rows, rejects inactive/sold-out/insufficient stock, calculates the total from database prices, and inserts the order atomically. Staff confirmation calls `confirm_order_payment`; cancellation calls `cancelOrder`.
+The browser cannot directly insert orders or order items. `createOrder()` calls the `create_order` RPC, which locks requested product rows, rejects inactive/sold-out/insufficient stock, calculates the total from database prices, creates the order atomically, and immediately reserves inventory. Confirmation finalizes that reservation without deducting stock again. Customer/staff cancellation and expiry restore reserved stock exactly once. Customer recovery requires both the order ID and its recovery token; only the token hash is stored.
 
 Apply migrations in filename order. For a linked project:
 
@@ -102,7 +102,32 @@ npx supabase link --project-ref YOUR_PROJECT_REF
 npx supabase db push
 ```
 
-Create at least one Supabase Auth user for `/admin`. Anonymous users may read active catalog data and execute the safe order RPC; authenticated users manage the booth.
+Create a Supabase Auth user for `/admin`, then bootstrap the first owner from the SQL editor (as the project database owner):
+
+```sql
+insert into public.staff_members (user_id, role)
+values ('AUTH_USER_UUID', 'owner');
+```
+
+To migrate an existing legacy admin by email after applying the staff authorization migration:
+
+```sql
+insert into public.staff_members (user_id, role, active)
+select id, 'owner', true
+from auth.users
+where lower(email) = lower('YOUR_ADMIN_EMAIL')
+on conflict (user_id) do update
+set role = excluded.role, active = excluded.active;
+```
+
+Do not add an automatic auth-user trigger. Owners may manage staff; admins manage the catalog/settings; staff may view and process orders only. Anonymous users may read the active catalog and required public checkout settings, call safe order creation, and recover/cancel only with the matching order ID and recovery token.
+
+## Deployment boundaries
+
+- Frontend: build with the three documented `VITE_*` values, then deploy `dist/`.
+- Database: review and apply `supabase/migrations` in order with `supabase db push`; pull requests never deploy schema.
+- Edge Function: deploy `notify-new-order` separately after migrations.
+- Secrets: set VAPID private material only with `supabase secrets set`; never expose it through Vite variables.
 
 ## UI architecture
 

@@ -5,12 +5,15 @@ import { useCatalogCopy } from "../../lib/catalogI18n";
 type CatalogHeaderProps = {
   booth: BoothSettings;
   onOpenInfo: () => void;
+  className?: string;
+  isDesigner?: boolean;
+  isSelected?: boolean;
 };
 
-export function CatalogHeader({ booth, onOpenInfo }: CatalogHeaderProps) {
+export function CatalogHeader({ booth, onOpenInfo, className = "", isDesigner = false, isSelected = false }: CatalogHeaderProps) {
   const copy = useCatalogCopy();
   return (
-    <header className="catalog-header" onClick={(e) => e.stopPropagation()}>
+    <header className={`catalog-header ${className}`.trim()} onClick={(e) => e.stopPropagation()}>
       <div className="brand-lockup">
         <div className="brand-mark">
           {booth.logo_url ? (
@@ -28,11 +31,24 @@ export function CatalogHeader({ booth, onOpenInfo }: CatalogHeaderProps) {
         </div>
       </div>
       <div className="header-actions">
-        <button type="button" className="booth-info-trigger" onClick={onOpenInfo}>
-          <span className="booth-info-trigger-icon"><Info size={18} /></span>
-          <span className="booth-info-trigger-copy"><strong>{copy.boothInfo}</strong><small>{copy.boothInfoHint}</small></span>
-          <ChevronRight size={17} className="booth-info-trigger-arrow" />
-        </button>
+        {isDesigner ? (
+          <div className={`designer-header-trigger-wrapper ${isSelected ? "is-selected" : ""}`} style={{ position: "relative" }}>
+            <button type="button" className="booth-info-trigger" onClick={onOpenInfo}>
+              <span className="booth-info-trigger-icon"><Info size={18} /></span>
+              <span className="booth-info-trigger-copy"><strong>{copy.boothInfo}</strong><small>{copy.boothInfoHint}</small></span>
+              <ChevronRight size={17} className="booth-info-trigger-arrow" />
+            </button>
+            <button type="button" className="designer-module-handle designer-staff-handle" onClick={onOpenInfo}>
+              <span>Staff access</span>
+            </button>
+          </div>
+        ) : (
+          <button type="button" className="booth-info-trigger" onClick={onOpenInfo}>
+            <span className="booth-info-trigger-icon"><Info size={18} /></span>
+            <span className="booth-info-trigger-copy"><strong>{copy.boothInfo}</strong><small>{copy.boothInfoHint}</small></span>
+            <ChevronRight size={17} className="booth-info-trigger-arrow" />
+          </button>
+        )}
       </div>
     </header>
   );

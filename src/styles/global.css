@@ -81,10 +81,11 @@ img {
   min-width: 0;
   min-height: 260px;
   padding: clamp(26px, 4vw, 40px);
-  border: 1px dashed color-mix(in srgb, var(--line) 88%, var(--muted));
+  border: 1px solid var(--line);
   border-radius: max(16px, var(--store-radius, 16px));
   color: var(--muted);
-  background: color-mix(in srgb, var(--surface-soft) 78%, var(--surface));
+  background: var(--surface);
+  box-shadow: var(--soft-shadow);
   text-align: center;
 }
 
@@ -105,7 +106,7 @@ img {
 .empty-state-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; }
 .empty-state-meta span { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: color-mix(in srgb, var(--surface) 88%, transparent); font-size: 10px; font-weight: 800; }
 .empty-state-action { display: flex; justify-content: center; margin-top: 2px; }
-.empty-state-compact { min-height: 190px; padding: 24px 20px; border: 0; background: transparent; }
+.empty-state-compact { min-height: 190px; padding: 24px 20px; border: 0; background: transparent; box-shadow: none; }
 .empty-state-compact .empty-state-icon { width: 44px; height: 44px; }
 
 @media (prefers-reduced-motion: no-preference) {

@@ -91,7 +91,7 @@ export function MobileSheetShell({
     return () => window.clearTimeout(timer);
   }, [open]);
 
-  useSheetScrollLock(mode === "modal" || open, mode === "expandable");
+  useSheetScrollLock(open, mode === "expandable");
 
   useEffect(() => {
     if (mode !== "expandable" || !open) return;

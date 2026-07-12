@@ -11,10 +11,10 @@ export const defaultBooth: BoothSettings = {
   facebook_url: "",
   tiktok_url: "",
   social_qr_logo_url: "",
-  theme_primary: "#6366f1",
-  theme_secondary: "#0f172a",
-  theme_accent: "#10b981",
-  theme_background: "#f8fafc",
+  theme_primary: "#628555",
+  theme_secondary: "#1e293b",
+  theme_accent: "#ffd17a",
+  theme_background: "#faf7f2",
   layout_order: ["featured", "booth", "controls", "cart", "products"],
   corner_radius: 16,
   catalog_locale: "en",
@@ -35,3 +35,4 @@ export const defaultPayment: PaymentSettings = {
 };
 
 export const productBadges = ["New", "Best Seller", "Limited", "Restock", "Event Exclusive", "Preorder", "Last Call"];
+export const LIMITED_STOCK_THRESHOLD = 5;
