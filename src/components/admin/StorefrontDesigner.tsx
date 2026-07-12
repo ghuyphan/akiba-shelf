@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../styles/catalog.css";
 import { createPortal, flushSync } from "react-dom";
 import {
@@ -120,15 +120,15 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
   const [staffError, setStaffError] = useState("");
   const [copiedStaffId, setCopiedStaffId] = useState<string | null>(null);
 
-  async function reloadStaff() {
+  const reloadStaff = useCallback(async () => {
     if (isOwner) {
       setStaffMembers(await getStaffMembers());
     }
-  }
+  }, [isOwner]);
 
   useEffect(() => {
     void reloadStaff().catch((caught) => setStaffError(getErrorMessage(caught)));
-  }, [isOwner]);
+  }, [reloadStaff]);
 
   async function handleAddStaff() {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(staffUserId)) {
@@ -186,7 +186,7 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
     setTimeout(() => setCopiedStaffId(null), 2000);
   };
 
-  useEffect(() => { draftRef.current = settings; paymentDraftRef.current = payment; setDraft(settings); setPaymentDraft(payment); setHistory([]); setFuture([]); setError(""); reloadStaff().catch(() => undefined); }, [settings, payment, setError]);
+  useEffect(() => { draftRef.current = settings; paymentDraftRef.current = payment; setDraft(settings); setPaymentDraft(payment); setHistory([]); setFuture([]); setError(""); reloadStaff().catch(() => undefined); }, [settings, payment, setError, reloadStaff]);
 
   useEffect(() => {
     const stage = previewStageRef.current;
