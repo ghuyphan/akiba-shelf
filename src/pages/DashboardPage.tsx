@@ -133,6 +133,8 @@ export function DashboardPage() {
             </div>
           </div>
 
+          <div />
+
           <div className="admin-header-actions">
             {adminSession.email && (
               <span className="dashboard-user-email">

@@ -16,6 +16,7 @@ export function HomePage() {
               <small>Artist booth platform</small>
             </div>
           </div>
+          <div />
           <div className="admin-header-actions">
             <Link to="/dashboard" className="button button-ghost platform-home-signin-btn">
               <LogIn size={16} />
