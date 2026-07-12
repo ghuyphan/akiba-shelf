@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin.css";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Plus } from "lucide-react";
 import {
   deleteProduct,
   getAdminCatalogData,
@@ -12,9 +12,10 @@ import {
   saveProduct,
   signInAdmin,
   signOutAdmin,
+  createShop,
 } from "../lib/api";
 import type { OrderFilter, OrderStatusCounts } from "../lib/api";
-import { defaultPayment } from "../lib/constants";
+import { defaultBooth, defaultPayment } from "../lib/constants";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme";
@@ -63,8 +64,9 @@ const orderPageSize = 12;
 const emptyOrderCounts: OrderStatusCounts = { all: 0, pending: 0, confirmed: 0, cancelled: 0, expired: 0 };
 
 export function AdminPage() {
-  const { state: adminSession, refresh: refreshAdminSession } = useAdminSession();
+  const { state: adminSession, refresh: refreshAdminSession, selectShop } = useAdminSession();
   const isAuthed = adminSession.status === "authorized";
+  const shopId = isAuthed ? adminSession.access.shop_id : "";
   const canManageCatalog = isAuthed && adminSession.access.role !== "staff";
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -73,6 +75,7 @@ export function AdminPage() {
   const [orderTotal, setOrderTotal] = useState(0);
   const [orderCounts, setOrderCounts] = useState<OrderStatusCounts>(emptyOrderCounts);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [catalogLoading, setCatalogLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
   const [viewTab, setViewTab] = useState<"orders" | "products" | "design" | "settings">("orders");
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
@@ -95,15 +98,21 @@ export function AdminPage() {
     [products],
   );
   const hiddenCount = useMemo(() => products.filter((product) => !product.active).length, [products]);
+  useEffect(() => {
+    setProducts([]); setOrders([]); setOrderCounts(emptyOrderCounts); setOrderTotal(0); setSelectedProduct(undefined); setBooth(defaultBooth); setPayment(defaultPayment);
+  }, [shopId]);
   async function reloadCatalogAdmin() {
-    const catalog = await getAdminCatalogData();
-    setBooth(catalog.booth);
-    setPayment(catalog.payment);
-    setProducts(catalog.products);
-    setSelectedProduct((current) => {
-      if (!current) return undefined;
-      return catalog.products.find((p) => p.id === current.id);
-    });
+    setCatalogLoading(true);
+    try {
+      const catalog = await getAdminCatalogData(shopId);
+      setBooth(catalog.booth);
+      setPayment(catalog.payment);
+      setProducts(catalog.products);
+      setSelectedProduct((current) => {
+        if (!current) return undefined;
+        return catalog.products.find((p) => p.id === current.id);
+      });
+    } finally { setCatalogLoading(false); }
   }
 
   function scheduleOrdersReload() {
@@ -121,8 +130,8 @@ export function AdminPage() {
     setOrdersLoading(true);
     try {
       const [result, counts] = await Promise.all([
-        getOrders({ page: orderPage, pageSize: orderPageSize, status: orderFilter }),
-        refreshCounts ? getOrderStatusCounts() : Promise.resolve(null),
+        getOrders(shopId, { page: orderPage, pageSize: orderPageSize, status: orderFilter }),
+        refreshCounts ? getOrderStatusCounts(shopId) : Promise.resolve(null),
       ]);
       if (requestId !== orderRequestRef.current) return;
       const lastPage = Math.max(1, Math.ceil(result.total / orderPageSize));
@@ -146,7 +155,7 @@ export function AdminPage() {
     });
   // Reload helpers intentionally use the current pagination refs/state for this authorization transition.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canManageCatalog]);
+  }, [canManageCatalog, shopId]);
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -155,23 +164,23 @@ export function AdminPage() {
       toast.error("Could not load the admin workspace.", "Admin unavailable");
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, orderFilter, orderPage]);
+  }, [isAuthed, orderFilter, orderPage, shopId]);
 
   useEffect(() => {
     if (!isAuthed) return;
-    getOrderStatusCounts().then(setOrderCounts).catch((error) => {
+    getOrderStatusCounts(shopId).then(setOrderCounts).catch((error) => {
       if (isSessionNoise(error)) return;
       toast.error("Could not load the admin workspace.", "Admin unavailable");
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed]);
+  }, [isAuthed, shopId]);
 
   // Real-time catalog subscription
   useEffect(() => {
-    if (!isAuthed) return undefined;
+    if (!canManageCatalog) return undefined;
 
     let reloadTimer: number | undefined;
-    const unsubscribe = subscribeToCatalogChanges({
+    const unsubscribe = subscribeToCatalogChanges(shopId, {
       onChange: () => {
         window.clearTimeout(reloadTimer);
         reloadTimer = window.setTimeout(() => {
@@ -189,7 +198,7 @@ export function AdminPage() {
       unsubscribe();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed]);
+  }, [canManageCatalog, shopId]);
 
   // Real-time orders subscription
   useEffect(() => {
@@ -200,12 +209,12 @@ export function AdminPage() {
       .channel("admin-orders-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "orders" },
+        { event: "*", schema: "public", table: "orders", filter: `shop_id=eq.${shopId}` },
         scheduleOrdersReload
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "order_items" },
+        { event: "*", schema: "public", table: "order_items", filter: `shop_id=eq.${shopId}` },
         scheduleOrdersReload
       )
       .subscribe();
@@ -216,21 +225,21 @@ export function AdminPage() {
     };
   // Re-subscribe only when the visible order window changes; the callback reads current state.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, orderFilter, orderPage]);
+  }, [isAuthed, orderFilter, orderPage, shopId]);
 
   useEffect(() => {
     applyPageTheme(booth);
   }, [booth]);
 
   useEffect(() => {
-    if (isAuthed) void getPushEnabled().then(setPushEnabled).catch(() => setPushEnabled(false));
-  }, [isAuthed]);
+    if (isAuthed) void getPushEnabled(shopId).then(setPushEnabled).catch(() => setPushEnabled(false));
+  }, [isAuthed, shopId]);
 
   async function togglePushNotifications() {
     setPushBusy(true);
     try {
-      if (pushEnabled) await disableOrderNotifications();
-      else await enableOrderNotifications();
+      if (pushEnabled) await disableOrderNotifications(shopId);
+      else await enableOrderNotifications(shopId);
       setPushEnabled(!pushEnabled);
       toast.success(pushEnabled ? "Order notifications disabled." : "Order notifications enabled on this device.");
     } catch (error) {
@@ -241,14 +250,19 @@ export function AdminPage() {
   }
 
   useEffect(() => {
+    if (isAuthed && !canManageCatalog && viewTab !== "orders") setViewTab("orders");
+  }, [isAuthed, canManageCatalog, viewTab]);
+
+  useEffect(() => {
     const matchWorkspaceToScreen = () => {
+      if (!canManageCatalog) { setViewTab("orders"); return; }
       if (window.innerWidth <= 760) setViewTab((current) => current === "design" ? "settings" : current);
       else setViewTab((current) => current === "settings" ? "design" : current);
     };
     matchWorkspaceToScreen();
     window.addEventListener("resize", matchWorkspaceToScreen);
     return () => window.removeEventListener("resize", matchWorkspaceToScreen);
-  }, []);
+  }, [canManageCatalog]);
 
   async function runAdminAction(action: () => Promise<void>, message: string) {
     await action();
@@ -262,7 +276,7 @@ export function AdminPage() {
 
   async function handleSaveProduct(product: Product) {
     await runAdminAction(async () => {
-      await saveProduct(product);
+      await saveProduct(shopId, product);
       await reloadCatalogAdmin();
       setSelectedProduct(product);
     }, "Item saved.");
@@ -270,7 +284,7 @@ export function AdminPage() {
 
   async function handleDeleteProduct(id: string) {
     await runAdminAction(async () => {
-      await deleteProduct(id);
+      await deleteProduct(shopId, id);
       setSelectedProduct(undefined);
       await reloadCatalogAdmin();
     }, "Item deleted.");
@@ -287,8 +301,11 @@ export function AdminPage() {
   }
 
   if (adminSession.status === "unauthenticated") return <LoginPanel onLogin={handleLogin} booth={booth} />;
-  if (adminSession.status === "unauthorized" || adminSession.status === "inactive" || adminSession.status === "error") {
-    return <AdminAccessDenied kind={adminSession.status} message={adminSession.status === "error" ? adminSession.message : undefined} userId={adminSession.status === "unauthorized" ? adminSession.userId : undefined} email={adminSession.status === "unauthorized" ? adminSession.email : undefined} onRetry={refreshAdminSession} onSignOut={handleSignOut} />;
+  if (adminSession.status === "unauthorized") {
+    return <main className="admin-shell"><section className="admin-container"><EmptyState icon={<ShoppingBag size={28}/>} title="Create your first shop" message="Your account does not belong to a shop yet. Create one to become its owner." action={<Button icon={<Plus size={16}/>} onClick={() => { const name=window.prompt("Shop name","Akiba Shelf"); if(!name?.trim())return; const suggested=name.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); const slug=window.prompt("Shop URL slug",suggested); if(!slug)return; void createShop(name,slug).then(refreshAdminSession).catch((error)=>toast.error(getErrorMessage(error),"Could not create shop")); }}>Create shop</Button>}/></section></main>;
+  }
+  if (adminSession.status === "error") {
+    return <AdminAccessDenied kind="error" message={adminSession.message} onRetry={refreshAdminSession} onSignOut={handleSignOut} />;
   }
 
   return (
@@ -296,7 +313,7 @@ export function AdminPage() {
       <header className="admin-header">
         <div className="admin-header-pill">
           <div className="admin-header-brand">
-            <Link to="/" aria-label="Back to catalog" className="admin-header-icon-button"><ArrowLeft size={19} /></Link>
+            <Link to={`/s/${adminSession.access.shop_slug}`} aria-label="Back to catalog" className="admin-header-icon-button"><ArrowLeft size={19} /></Link>
             <span className="admin-header-mark" style={booth.logo_url ? { background: "transparent", overflow: "hidden" } : undefined}>
               {booth.logo_url ? (
                 <img src={booth.logo_url} alt={booth.booth_name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -316,7 +333,7 @@ export function AdminPage() {
           >
             <LayoutTemplate size={15} /> Storefront
           </button>}
-          {canManageCatalog && <button
+          <button
             type="button"
             ref={registerDesktopTab("orders")}
             className={`admin-nav-tab admin-nav-orders ${viewTab === "orders" ? "active" : ""}`}
@@ -329,7 +346,7 @@ export function AdminPage() {
                 {orderCounts.pending}
               </span>
             )}
-          </button>}
+          </button>
           {canManageCatalog && <button
             type="button"
             ref={registerDesktopTab("products")}
@@ -339,17 +356,24 @@ export function AdminPage() {
             <Package size={15} />
             <span>Products ({products.length})</span>
           </button>}
-          <button
+          {canManageCatalog && <button
             type="button"
             ref={registerDesktopTab("settings")}
             className={`admin-nav-tab admin-nav-mobile-settings ${viewTab === "settings" ? "active" : ""}`}
             onClick={() => setViewTab("settings")}
           >
             <Settings2 size={15} /> Settings
-          </button>
+          </button>}
           </div>
 
           <div className="admin-header-actions">
+            <label className="admin-shop-switcher">
+              <span className="sr-only">Active shop</span>
+              <select value={shopId} onChange={(event) => selectShop(event.target.value)}>
+                {adminSession.memberships.map((membership) => <option key={membership.shop_id} value={membership.shop_id}>{membership.shop_name} · {membership.role}</option>)}
+              </select>
+            </label>
+            {adminSession.access.role === "owner" && <button type="button" className="admin-notification-button" onClick={() => { const name=window.prompt("Shop name"); if(!name?.trim())return; const suggested=name.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); const slug=window.prompt("Shop URL slug",suggested); if(!slug)return; void createShop(name,slug).then(refreshAdminSession).catch((error)=>toast.error(getErrorMessage(error),"Could not create shop")); }}><Plus size={16}/><span>New shop</span></button>}
             {canUsePush() && <button type="button" disabled={pushBusy} onClick={() => void togglePushNotifications()} className={`admin-notification-button ${pushEnabled ? "active" : ""}`} aria-label={pushEnabled ? "Disable order notifications" : "Enable order notifications"}>{pushEnabled ? <Bell size={16} /> : <BellOff size={16} />}<span>{pushEnabled ? "Alerts on" : "Enable alerts"}</span></button>}
             <button type="button" onClick={() => setIsSignOutOpen(true)} className="admin-signout-button"><LogOut size={16} /><span>Sign out</span></button>
           </div>
@@ -406,11 +430,12 @@ export function AdminPage() {
                     setSelectedProduct(createBlankProduct(nextSort));
                     setActiveTab("form");
                   }}
+                  loading={catalogLoading}
                 />
               </div>
               {selectedProduct ? (
                 <div className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}>
-                  <ProductForm product={selectedProduct} onSave={handleSaveProduct} onDelete={handleDeleteProduct} />
+                  <ProductForm shopId={shopId} product={selectedProduct} onSave={handleSaveProduct} onDelete={handleDeleteProduct} />
                 </div>
               ) : (
                 <div className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}>
@@ -428,14 +453,15 @@ export function AdminPage() {
         )}
 
         {canManageCatalog && viewTab === "design" && <StorefrontDesigner
+          shopId={shopId}
           settings={booth}
           products={products}
           payment={payment}
-          onSave={(settings) => runAdminAction(async () => { const saved = await saveBoothSettings(settings); setBooth(saved); }, "Storefront design published.")}
-          onSavePayment={(settings) => runAdminAction(async () => { const saved = await savePaymentSettings(settings); setPayment(saved); }, "Checkout settings saved.")}
+          onSave={(settings) => runAdminAction(async () => { const saved = await saveBoothSettings(shopId, settings); setBooth(saved); }, "Storefront design published.")}
+          onSavePayment={(settings) => runAdminAction(async () => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); }, "Checkout settings saved.")}
           isOwner={adminSession.access.role === "owner"}
         />}
-        {canManageCatalog && viewTab === "settings" && <section className="admin-mobile-settings-page"><SettingsForm settings={booth} onSave={async (settings) => { const saved = await saveBoothSettings(settings); setBooth(saved); toast.success("Booth settings saved."); }} /><QrManager settings={payment} onSave={async (settings) => { const saved = await savePaymentSettings(settings); setPayment(saved); toast.success("Checkout settings saved."); }} />{adminSession.access.role === "owner" && <StaffManager />}</section>}
+        {canManageCatalog && viewTab === "settings" && <section className="admin-mobile-settings-page"><SettingsForm shopId={shopId} settings={booth} onSave={async (settings) => { const saved = await saveBoothSettings(shopId, settings); setBooth(saved); toast.success("Booth settings saved."); }} /><QrManager shopId={shopId} settings={payment} onSave={async (settings) => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); toast.success("Checkout settings saved."); }} />{adminSession.access.role === "owner" && <StaffManager shopId={shopId} />}</section>}
       </div>
       <Modal title="Sign out of admin?" isOpen={isSignOutOpen} onClose={() => setIsSignOutOpen(false)} className="signout-modal">
         <div className="signout-confirmation">

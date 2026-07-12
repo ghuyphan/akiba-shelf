@@ -4,6 +4,7 @@ Akiba Shelf is a touch-friendly merch booth storefront and admin workspace. Cust
 
 ## Main features
 
+- Multi-shop storefronts at `/s/:shopSlug`, with `/` preserving the default Akiba Shelf link.
 - Responsive storefront with featured-product swipe deck, grid/list browsing, product details, and mobile cart sheet.
 - Server-authoritative ordering: totals and stock are validated inside the `create_order` Postgres function.
 - VietQR payment flow with live order confirmation.
@@ -62,7 +63,8 @@ git diff --check
 
 ## Routes
 
-- `/` — customer storefront
+- `/` — compatibility redirect to `/s/akiba-shelf`
+- `/s/:shopSlug` — shop-specific customer storefront
 - `/admin` — authenticated admin workspace
 
 ## Project structure
@@ -102,23 +104,16 @@ npx supabase link --project-ref YOUR_PROJECT_REF
 npx supabase db push
 ```
 
-Create a Supabase Auth user for `/admin`, then bootstrap the first owner from the SQL editor (as the project database owner):
+Create a Supabase Auth user and sign into `/admin`. A user with no memberships can create the first shop and becomes its owner atomically. Existing `staff_members` are migrated into the deterministic `akiba-shelf` shop.
 
-```sql
-insert into public.staff_members (user_id, role)
-values ('AUTH_USER_UUID', 'owner');
+Staff invitations require deploying the owner-only Edge Function and setting its public redirect origin:
+
+```bash
+npx supabase secrets set PUBLIC_SITE_URL=https://your-store.example
+npx supabase functions deploy invite-shop-member
 ```
 
-To migrate an existing legacy admin by email after applying the staff authorization migration:
-
-```sql
-insert into public.staff_members (user_id, role, active)
-select id, 'owner', true
-from auth.users
-where lower(email) = lower('YOUR_ADMIN_EMAIL')
-on conflict (user_id) do update
-set role = excluded.role, active = excluded.active;
-```
+Configure Supabase Auth Site URL/Redirect URLs and SMTP email delivery for production invitations. The service-role key is provided only to the Edge Function runtime and must never be exposed through Vite.
 
 Do not add an automatic auth-user trigger. Owners may manage staff; admins manage the catalog/settings; staff may view and process orders only. Anonymous users may read the active catalog and required public checkout settings, call safe order creation, and recover/cancel only with the matching order ID and recovery token.
 

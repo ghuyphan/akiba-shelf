@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import type { CartItem, Product } from "../types/catalog";
 import { loadCart, saveCart } from "../lib/offline";
 
-export function usePersistentCart() {
-  const [cart, setCart] = useState<CartItem[]>(loadCart);
+export function usePersistentCart(shopKey?: string) {
+  const [cart, setCart] = useState<CartItem[]>(() => loadCart(shopKey));
 
-  useEffect(() => { saveCart(cart); }, [cart]);
+  useEffect(() => { setCart(loadCart(shopKey)); }, [shopKey]);
+  useEffect(() => { saveCart(cart, shopKey); }, [cart, shopKey]);
 
   const reconcileCart = useCallback((products: Product[]) => {
     setCart((current) => current

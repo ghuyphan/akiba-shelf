@@ -20,6 +20,9 @@ import { useCatalogData } from "../hooks/useCatalogData";
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
 import { BoothDetailsModal, FlyingItemsLayer, PendingOrderBar } from "../components/catalog/CatalogOverlays";
 import { layoutOrderSchema } from "../lib/schemas";
+import { useParams } from "react-router-dom";
+import { getPublicShop } from "../lib/api";
+import type { Shop } from "../types/catalog";
 
 type NetworkConnection = { effectiveType?: string; saveData?: boolean };
 
@@ -29,10 +32,12 @@ function prefersLightweightCatalog() {
 }
 
 export function CatalogPage() {
+  const { shopSlug = "" } = useParams();
   const toast = useToast();
+  const [shop, setShop] = useState<Shop | null>();
   const [lightweightMode] = useState(prefersLightweightCatalog);
-  const { cart, setCart, reconcileCart } = usePersistentCart();
-  const { products, booth, payment, loadError, setLoadError, reloadAll: loadCatalog, ensurePayment } = useCatalogData(reconcileCart);
+  const { cart, setCart, reconcileCart } = usePersistentCart(shopSlug);
+  const { products, booth, payment, loadError, isLoading, reloadAll: loadCatalog, ensurePayment } = useCatalogData(shop?.id, reconcileCart);
   const { flyingItems, animateAdd } = useAddToCartFeedback(lightweightMode);
   const [online, setOnline] = useState(navigator.onLine);
   const [activeCategory, setActiveCategory] = useState("All");
@@ -45,9 +50,22 @@ export function CatalogPage() {
   const selectedFeedbackTimerRef = useRef<number | undefined>(undefined);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [isCartExpanded, setIsCartExpanded] = useState(false);
-  const initialOrder = loadOrderRecovery()?.order ?? null;
+  const initialOrder = loadOrderRecovery(shopSlug)?.order ?? null;
   const [activeOrder, setActiveOrder] = useState<Order | null>(initialOrder);
   const activeOrderRef = useRef<Order | null>(initialOrder);
+
+  useEffect(() => {
+    const next = loadOrderRecovery(shopSlug)?.order ?? null;
+    setActiveOrder(next); activeOrderRef.current = next;
+  }, [shopSlug]);
+
+  useEffect(() => {
+    setShop(undefined);
+    void getPublicShop(shopSlug).then(setShop).catch((error) => {
+      setShop(null);
+      toast.error(error instanceof Error ? error.message : "Could not load this shop.", "Shop unavailable");
+    });
+  }, [shopSlug, toast]);
 
   useEffect(() => {
     const handleOnline = () => { setOnline(true); void loadCatalog(); };
@@ -63,8 +81,7 @@ export function CatalogPage() {
   useEffect(() => {
     if (!loadError) return;
     toast.error(loadError, "Catalog unavailable");
-    setLoadError("");
-  }, [loadError, setLoadError, toast]);
+  }, [loadError, toast]);
 
   useEffect(() => {
     document.body.classList.add("catalog-screen");
@@ -181,7 +198,7 @@ export function CatalogPage() {
   }, [activeCategory, products, sort, searchQuery]);
 
   const storefrontOrder = useMemo<StorefrontSection[]>(() => {
-    const fallback: StorefrontSection[] = ["featured", "booth", "controls", "cart", "products"];
+    const fallback: StorefrontSection[] = ["featured", "booth", "controls", "products", "cart"];
     const saved = layoutOrderSchema.safeParse(booth.layout_order);
     return saved.success ? saved.data : fallback;
   }, [booth.layout_order]);
@@ -203,7 +220,11 @@ export function CatalogPage() {
         viewMode={viewMode}
         onSelect={handleAddToCart}
         onViewDetails={setDetailProduct}
-        onResetFilters={() => setActiveCategory("All")}
+        onResetFilters={() => { setActiveCategory("All"); setSearchQuery(""); }}
+        loading={isLoading}
+        error={loadError}
+        onRetry={() => void loadCatalog()}
+        searchActive={Boolean(searchQuery.trim())}
       />
     ),
     booth: <BoothInfoPanel booth={booth} />,
@@ -251,6 +272,9 @@ export function CatalogPage() {
     },
   ].sort((first, second) => first.position - second.position);
 
+  if (shop === undefined) return <main className="app-shell"><Alert variant="info" title="Loading shop…">Preparing the storefront.</Alert></main>;
+  if (shop === null) return <main className="app-shell"><Alert variant="error" title="Shop unavailable">This shop does not exist or is currently inactive.</Alert></main>;
+
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
     <main className={`app-shell ${lightweightMode ? "catalog-lightweight" : ""}`} style={getThemeStyle(booth)} onClick={() => setSelectedProductId(null)}>
@@ -266,6 +290,7 @@ export function CatalogPage() {
       </div>
       {activeOrder?.status === "pending" && <PendingOrderBar order={activeOrder} onOpen={() => setIsQrOpen(true)} />}
       <PaymentQrModal
+        shopSlug={shop.slug}
         isOpen={isQrOpen}
         payment={payment}
         cart={cart}

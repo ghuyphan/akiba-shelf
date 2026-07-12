@@ -5,13 +5,14 @@ import { compressImage, createProductImageVariants } from "../../lib/image";
 import { Alert } from "../ui/Alert";
 
 type ImageUploadProps = {
+  shopId: string;
   bucket: string;
   label: string;
   onUploaded: (url: string, path?: string) => void;
   onProductUploaded?: (variant: { thumbnail: string; detail: string; paths: string[] }) => void;
 };
 
-export function ImageUpload({ bucket, label, onUploaded, onProductUploaded }: ImageUploadProps) {
+export function ImageUpload({ shopId, bucket, label, onUploaded, onProductUploaded }: ImageUploadProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,11 +24,11 @@ export function ImageUpload({ bucket, label, onUploaded, onProductUploaded }: Im
     try {
       if (bucket === "product-images" && onProductUploaded) {
         const variants = await createProductImageVariants(file);
-        const uploaded = await uploadProductImages(variants.thumbnail, variants.detail);
+        const uploaded = await uploadProductImages(shopId, variants.thumbnail, variants.detail);
         onProductUploaded(uploaded);
       } else {
         const compressedFile = await compressImage(file);
-        const uploaded = await uploadImage(bucket, compressedFile);
+        const uploaded = await uploadImage(shopId, bucket, compressedFile);
         onUploaded(uploaded.url, uploaded.path);
       }
     } catch (caught) {

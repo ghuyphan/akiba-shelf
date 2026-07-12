@@ -1,64 +1,54 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
-import { getStaffAccess, type StaffAccess } from "../lib/api";
+import { getShopMemberships } from "../lib/api";
+import type { ShopMembership } from "../types/catalog";
 
+const STORAGE_KEY = "akiba-active-shop";
 export type AdminSessionState =
   | { status: "checking" }
   | { status: "unauthenticated" }
   | { status: "unauthorized"; userId: string; email?: string }
-  | { status: "inactive"; access: StaffAccess }
-  | { status: "authorized"; access: StaffAccess }
+  | { status: "authorized"; access: ShopMembership; memberships: ShopMembership[] }
   | { status: "error"; message: string };
 
 export function useAdminSession() {
   const [state, setState] = useState<AdminSessionState>(isSupabaseConfigured ? { status: "checking" } : { status: "unauthenticated" });
 
-  useEffect(() => {
+  const resolve = useCallback(async () => {
     if (!supabase) { setState({ status: "unauthenticated" }); return; }
-    let mounted = true;
-    let lastUserId: string | undefined = undefined;
-
-    async function resolveAccess(hasSession: boolean, userId?: string, email?: string) {
-      if (!mounted) return;
-      if (!hasSession) {
-        lastUserId = undefined;
-        setState({ status: "unauthenticated" });
-        return;
-      }
-      if (userId === lastUserId) return;
-      lastUserId = userId;
-
-      setState({ status: "checking" });
-      try {
-        const access = await getStaffAccess();
-        if (!mounted) return;
-        if (!access) setState({ status: "unauthorized", userId: userId ?? "unknown", email });
-        else if (!access.active) setState({ status: "inactive", access });
-        else setState({ status: "authorized", access });
-      } catch (error) {
-        if (mounted) setState({ status: "error", message: error instanceof Error ? error.message : "Could not verify staff access." });
-      }
+    setState({ status: "checking" });
+    const { data, error } = await supabase.auth.getSession();
+    if (error) { setState({ status: "error", message: error.message }); return; }
+    const user = data.session?.user;
+    if (!user) { setState({ status: "unauthenticated" }); return; }
+    try {
+      const memberships = await getShopMemberships();
+      if (!memberships.length) { setState({ status: "unauthorized", userId: user.id, email: user.email }); return; }
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const access = memberships.find((item) => item.shop_id === stored) ?? memberships[0];
+      localStorage.setItem(STORAGE_KEY, access.shop_id);
+      setState({ status: "authorized", access, memberships });
+    } catch (caught) {
+      setState({ status: "error", message: caught instanceof Error ? caught.message : "Could not verify shop access." });
     }
-    void supabase.auth.getSession().then(({ data, error }) => {
-      if (error) { if (mounted) setState({ status: "error", message: error.message }); return; }
-      void resolveAccess(Boolean(data.session), data.session?.user.id, data.session?.user.email);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      void resolveAccess(Boolean(session), session?.user.id, session?.user.email);
-    });
-    return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
-  return { state, refresh: async () => {
-    setState({ status: "checking" });
-    const { data, error } = await supabase!.auth.getSession();
-    if (error) { setState({ status: "error", message: error.message }); return; }
-    if (!data.session) { setState({ status: "unauthenticated" }); return; }
-    try {
-      const access = await getStaffAccess();
-      if (!access) setState({ status: "unauthorized", userId: data.session.user.id, email: data.session.user.email });
-      else if (!access.active) setState({ status: "inactive", access });
-      else setState({ status: "authorized", access });
-    } catch (error) { setState({ status: "error", message: error instanceof Error ? error.message : "Could not verify staff access." }); }
-  } };
+  useEffect(() => {
+    void resolve();
+    if (!supabase) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => { void resolve(); });
+    return () => subscription.unsubscribe();
+  }, [resolve]);
+
+  const selectShop = useCallback((shopId: string) => {
+    setState((current) => {
+      if (current.status !== "authorized") return current;
+      const access = current.memberships.find((item) => item.shop_id === shopId);
+      if (!access) return current;
+      localStorage.setItem(STORAGE_KEY, access.shop_id);
+      return { ...current, access };
+    });
+  }, []);
+
+  return { state, refresh: resolve, selectShop };
 }

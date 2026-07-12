@@ -9,9 +9,9 @@ import { AdminCard } from "./AdminCard";
 import { ImageUpload } from "./ImageUpload";
 import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../lib/banks";
 
-type QrManagerProps = { settings: PaymentSettings; onSave: (settings: PaymentSettings) => Promise<void> };
+type QrManagerProps = { shopId: string; settings: PaymentSettings; onSave: (settings: PaymentSettings) => Promise<void> };
 
-export function QrManager({ settings, onSave }: QrManagerProps) {
+export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
   const [draft, setDraft] = useState(settings);
   const [isEditing, setIsEditing] = useState(false);
   const { busy, error, run, setError } = useAsyncAction();
@@ -40,7 +40,7 @@ export function QrManager({ settings, onSave }: QrManagerProps) {
 
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span><QrCode size={15} /></span><div><h3>Backup QR</h3><p>Used if VietQR is unavailable.</p></div></div>
-          <div className="admin-fallback-qr"><div>{draft.bank_qr_url ? <img src={draft.bank_qr_url} alt="Fallback payment QR" /> : <QrCode size={32} />}</div><div><Field label="Fallback QR URL"><TextInput value={draft.bank_qr_url} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, bank_qr_url: event.target.value })} /></Field>{isEditing && <ImageUpload bucket="payment-qr" label="Upload fallback QR" onUploaded={(url) => setDraft({ ...draft, bank_qr_url: url })} />}</div></div>
+          <div className="admin-fallback-qr"><div>{draft.bank_qr_url ? <img src={draft.bank_qr_url} alt="Fallback payment QR" /> : <QrCode size={32} />}</div><div><Field label="Fallback QR URL"><TextInput value={draft.bank_qr_url} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, bank_qr_url: event.target.value })} /></Field>{isEditing && <ImageUpload shopId={shopId} bucket="payment-qr" label="Upload fallback QR" onUploaded={(url) => setDraft({ ...draft, bank_qr_url: url })} />}</div></div>
         </section>
 
         {error && <Alert variant="error" title="Could not save payment settings" onClose={() => setError("")}>{error}</Alert>}

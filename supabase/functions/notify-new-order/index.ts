@@ -22,14 +22,14 @@ Deno.serve(async (request) => {
     if (!publicKey || !privateKey) throw new Error("VAPID keys are not configured.");
     const admin = createClient(url, serviceKey);
     const recoveryTokenHash = await sha256(recoveryToken);
-    const { data: order, error: orderError } = await admin.from("orders").select("id, order_code, total_amount, status").eq("id", orderId).eq("status", "pending").eq("recovery_token_hash", recoveryTokenHash).single();
+    const { data: order, error: orderError } = await admin.from("orders").select("id, shop_id, order_code, total_amount, status").eq("id", orderId).eq("status", "pending").eq("recovery_token_hash", recoveryTokenHash).single();
     if (orderError || !order) throw new Error("Pending order not found.");
-    const { error: eventError } = await admin.from("order_notification_events").insert({ order_id: order.id });
+    const { error: eventError } = await admin.from("order_notification_events").insert({ order_id: order.id, shop_id: order.shop_id });
     if (eventError?.code === "23505") return Response.json({ duplicate: true }, { headers: cors });
     if (eventError) throw eventError;
     const [{ data: subscriptions }, { data: booth }] = await Promise.all([
-      admin.from("push_subscriptions").select("endpoint, p256dh, auth"),
-      admin.from("booth_settings").select("booth_name, logo_url").limit(1).maybeSingle(),
+      admin.from("push_subscriptions").select("endpoint, p256dh, auth").eq("shop_id", order.shop_id),
+      admin.from("booth_settings").select("booth_name, logo_url").eq("shop_id", order.shop_id).maybeSingle(),
     ]);
     webpush.setVapidDetails(subject, publicKey, privateKey);
     const payload = JSON.stringify({ title: `New order · ${order.order_code}`, body: `${Number(order.total_amount).toLocaleString("vi-VN")} ₫ awaiting confirmation`, icon: booth?.logo_url, tag: `order-${order.id}`, url: "./admin" });

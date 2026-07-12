@@ -11,6 +11,7 @@ import { useOrderCountdown, usePaymentQrSource } from "../../hooks/useCheckoutPr
 import { getPaymentBank } from "../../lib/banks";
 
 type PaymentQrModalProps = {
+  shopSlug: string;
   isOpen: boolean;
   payment: PaymentSettings;
   cart: CartItem[];
@@ -19,10 +20,10 @@ type PaymentQrModalProps = {
   onOrderChange?: (order: Order | null) => void;
 };
 
-export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOrderChange }: PaymentQrModalProps) {
+export function PaymentQrModal({ shopSlug, isOpen, payment, cart, onClose, onSuccess, onOrderChange }: PaymentQrModalProps) {
   const copy = useCatalogCopy();
   // Order flow states
-  const [recovery, setRecovery] = useState<ActiveOrderRecovery | null>(() => loadOrderRecovery());
+  const [recovery, setRecovery] = useState<ActiveOrderRecovery | null>(() => loadOrderRecovery(shopSlug));
   const [customerName, setCustomerName] = useState(() => recovery?.customerName ?? "");
   const [order, setOrder] = useState<Order | null>(() => recovery?.order ?? null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
@@ -45,6 +46,12 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
   onSuccessRef.current = onSuccess;
 
   useEffect(() => {
+    const next = loadOrderRecovery(shopSlug);
+    setRecovery(next); setOrder(next?.order ?? null); setCustomerName(next?.customerName ?? "");
+    recoveryAttemptedRef.current = false; completionHandledRef.current = false;
+  }, [shopSlug]);
+
+  useEffect(() => {
     if (recovery?.order) onOrderChangeRef.current?.(recovery.order);
   }, [recovery?.order]);
 
@@ -58,9 +65,9 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
     setIsSubmittingOrder(true);
     setSubmitError("");
     try {
-      const created = await createOrder(activeRecovery.customerName, activeRecovery.cart, activeRecovery.clientRequestId, activeRecovery.recoveryToken);
+      const created = await createOrder(shopSlug, activeRecovery.customerName, activeRecovery.cart, activeRecovery.clientRequestId, activeRecovery.recoveryToken);
       const saved = { ...activeRecovery, order: created };
-      saveOrderRecovery(saved);
+      saveOrderRecovery(saved, shopSlug);
       setRecovery(saved);
       setOrder(created);
       onOrderChange?.(created);
@@ -69,7 +76,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
     } finally {
       setIsSubmittingOrder(false);
     }
-  }, [onOrderChange]);
+  }, [onOrderChange, shopSlug]);
 
   useEffect(() => {
     if (recoveryAttemptedRef.current || !recovery || recovery.order) return;
@@ -82,7 +89,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
     if (cart.length === 0) return;
     const activeRecovery = recovery ?? createOrderRecovery(cart, customerName);
     activeRecovery.customerName = customerName;
-    saveOrderRecovery(activeRecovery);
+    saveOrderRecovery(activeRecovery, shopSlug);
     setRecovery(activeRecovery);
     await submitOrder(activeRecovery);
   };
@@ -101,7 +108,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
       const fresh = await getCustomerOrder(currentOrder.id, currentRecovery.recoveryToken);
       if (!fresh) throw new Error("Order recovery details are no longer valid.");
       const saved = { ...currentRecovery, order: fresh };
-      saveOrderRecovery(saved);
+      saveOrderRecovery(saved, shopSlug);
       recoveryRef.current = saved;
       orderRef.current = fresh;
       setRecovery(saved);
@@ -118,7 +125,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
     } finally {
       reconcileInFlightRef.current = false;
     }
-  }, []);
+  }, [shopSlug]);
 
   useEffect(() => {
     if (!order || order.status !== "pending") return;
@@ -143,7 +150,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
 
   const handleSuccessClose = () => {
     setShowSuccess(false);
-    clearOrderRecovery();
+    clearOrderRecovery(shopSlug);
     setRecovery(null);
     setOrder(null);
     onOrderChange?.(null);
@@ -158,7 +165,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
   async function handleCancel() {
     if (!order || !recovery || !navigator.onLine || !window.confirm("Cancel this reservation and release the items?")) return;
     setIsCancelling(true);
-    try { const result = await cancelCustomerOrder(order.id, recovery.recoveryToken); if (result.order) { setOrder(result.order); onOrderChange?.(result.order); saveOrderRecovery({ ...recovery, order: result.order }); } }
+    try { const result = await cancelCustomerOrder(order.id, recovery.recoveryToken); if (result.order) { setOrder(result.order); onOrderChange?.(result.order); saveOrderRecovery({ ...recovery, order: result.order }, shopSlug); } }
     finally { setIsCancelling(false); }
   }
 

@@ -100,6 +100,10 @@ img {
   background: color-mix(in srgb, var(--coral) 7%, var(--surface));
 }
 
+.empty-state-loading .empty-state-icon { color: var(--teal-dark); border-color: color-mix(in srgb, var(--teal-dark) 18%, var(--line)); background: color-mix(in srgb, var(--teal-dark) 7%, var(--surface)); }
+.empty-state-error .empty-state-icon { color: #b43d49; border-color: color-mix(in srgb, #b43d49 20%, var(--line)); background: color-mix(in srgb, #b43d49 7%, var(--surface)); }
+.state-spinner { animation: spin 900ms linear infinite; }
+
 .empty-state-copy { display: grid; gap: 6px; max-width: 40ch; }
 .empty-state h3 { margin: 0; color: var(--ink); font-size: 17px; line-height: 1.25; }
 .empty-state p { margin: 0; font-size: 13px; line-height: 1.55; }
@@ -113,6 +117,17 @@ img {
   .empty-state-icon { animation: empty-state-arrive 260ms var(--ease-out) both; }
   @keyframes empty-state-arrive { from { opacity: 0; transform: translateY(4px); } }
 }
+
+.page-loading { display: grid; place-items: center; align-content: center; gap: 16px; min-height: 100dvh; padding: 24px; color: var(--muted); background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--coral) 9%, transparent), transparent 34%), var(--page-bg); text-align: center; }
+.page-loading-brand { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid color-mix(in srgb, var(--coral) 18%, var(--line)); border-radius: 22px; color: var(--coral); background: var(--surface); box-shadow: var(--soft-shadow); animation: loading-float 1.8s ease-in-out infinite; }
+.page-loading-copy { display: grid; gap: 6px; }
+.page-loading-copy strong { color: var(--ink); font-size: 19px; }
+.page-loading-copy span { font-size: 13px; }
+.page-loading-track { overflow: hidden; width: min(220px, 60vw); height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--coral) 12%, var(--line)); }
+.page-loading-track i { display: block; width: 42%; height: 100%; border-radius: inherit; background: var(--coral); animation: loading-track 1.25s ease-in-out infinite; }
+@keyframes loading-float { 50% { transform: translateY(-4px); } }
+@keyframes loading-track { from { transform: translateX(-110%); } to { transform: translateX(350%); } }
+@media (prefers-reduced-motion: reduce) { .page-loading-brand, .page-loading-track i, .state-spinner { animation-duration: 2.4s; } }
 
 a {
   color: inherit;

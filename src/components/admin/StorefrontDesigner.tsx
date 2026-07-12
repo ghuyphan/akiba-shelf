@@ -1,14 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "../../styles/catalog.css";
 import { createPortal, flushSync } from "react-dom";
 import {
   ArrowDown,
   ArrowUp,
   Building2,
-  Check,
   ChevronLeft,
   ChevronRight,
-  Copy,
   CreditCard,
   GripVertical,
   Languages,
@@ -24,15 +22,10 @@ import {
   Redo2,
   RotateCcw,
   Save,
-  ShieldCheck,
   Smartphone,
   Store,
-  Trash2,
   Type,
   Undo2,
-  User,
-  UserCheck,
-  UserPlus,
 } from "lucide-react";
 import type { BoothSettings, PaymentSettings, Product, StorefrontSection } from "../../types/catalog";
 import { getThemeStyle } from "../../lib/theme";
@@ -50,10 +43,10 @@ import { BoothInfoPanel } from "../catalog/BoothInfoPanel";
 import { SelectedItemPanel } from "../catalog/SelectedItemPanel";
 import { ImageUpload } from "./ImageUpload";
 import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../lib/banks";
-import { deleteStaffMember, getStaffMembers, saveStaffMember, type StaffAccess, type StaffRole } from "../../lib/api";
-import { getErrorMessage } from "../../lib/errors";
+import { StaffManager } from "./StaffManager";
 
 type StorefrontDesignerProps = {
+  shopId: string;
   settings: BoothSettings;
   products: Product[];
   payment: PaymentSettings;
@@ -70,7 +63,7 @@ type DropTarget = { section: StorefrontSection; edge: DropEdge };
 type DesignerSnapshot = { booth: BoothSettings; payment: PaymentSettings };
 type SelectedSection = StorefrontSection | "staff";
 
-const allowedSections: StorefrontSection[] = ["featured", "booth", "controls", "cart", "products"];
+const allowedSections: StorefrontSection[] = ["featured", "booth", "controls", "products", "cart"];
 const sectionMeta: Record<StorefrontSection, { title: string; description: string; size: string }> = {
   featured: { title: "Featured spotlight", description: "Promoted products and swipe deck", size: "Wide" },
   booth: { title: "Booth information", description: "Location, hours, and social QR codes", size: "Side" },
@@ -83,7 +76,7 @@ function normalizedOrder(order?: StorefrontSection[]) {
   return order?.length === allowedSections.length && allowedSections.every((item) => order.includes(item)) ? order : allowedSections;
 }
 
-export function StorefrontDesigner({ settings, products, payment, onSave, onSavePayment, isOwner = false }: StorefrontDesignerProps) {
+export function StorefrontDesigner({ shopId, settings, products, payment, onSave, onSavePayment, isOwner = false }: StorefrontDesignerProps) {
   const [draft, setDraft] = useState(settings);
   const [paymentDraft, setPaymentDraft] = useState(payment);
   const draftRef = useRef(settings);
@@ -112,81 +105,7 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
   const { busy, error, run, setError } = useAsyncAction();
   const order = normalizedOrder(draft.layout_order);
 
-  // Staff management state
-  const [staffMembers, setStaffMembers] = useState<StaffAccess[]>([]);
-  const [staffUserId, setStaffUserId] = useState("");
-  const [staffRole, setStaffRole] = useState<StaffRole>("staff");
-  const [staffBusy, setStaffBusy] = useState(false);
-  const [staffError, setStaffError] = useState("");
-  const [copiedStaffId, setCopiedStaffId] = useState<string | null>(null);
-
-  const reloadStaff = useCallback(async () => {
-    if (isOwner) {
-      setStaffMembers(await getStaffMembers());
-    }
-  }, [isOwner]);
-
-  useEffect(() => {
-    void reloadStaff().catch((caught) => setStaffError(getErrorMessage(caught)));
-  }, [reloadStaff]);
-
-  async function handleAddStaff() {
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(staffUserId)) {
-      setStaffError("Enter an existing Supabase Auth user UUID.");
-      return;
-    }
-    setStaffBusy(true);
-    setStaffError("");
-    try {
-      await saveStaffMember({ user_id: staffUserId, role: staffRole, active: true });
-      setStaffUserId("");
-      await reloadStaff();
-    } catch (caught) {
-      setStaffError(getErrorMessage(caught));
-    } finally {
-      setStaffBusy(false);
-    }
-  }
-
-  async function handleUpdateStaff(member: StaffAccess, changes: Partial<Pick<StaffAccess, "role" | "active">>) {
-    if (!member.user_id) return;
-    setStaffBusy(true);
-    setStaffError("");
-    try {
-      await saveStaffMember({
-        user_id: member.user_id,
-        role: changes.role ?? member.role,
-        active: changes.active ?? member.active,
-      });
-      await reloadStaff();
-    } catch (caught) {
-      setStaffError(getErrorMessage(caught));
-    } finally {
-      setStaffBusy(false);
-    }
-  }
-
-  async function handleRemoveStaff(member: StaffAccess) {
-    if (!member.user_id || !window.confirm("Remove this staff membership?")) return;
-    setStaffBusy(true);
-    setStaffError("");
-    try {
-      await deleteStaffMember(member.user_id);
-      await reloadStaff();
-    } catch (caught) {
-      setStaffError(getErrorMessage(caught));
-    } finally {
-      setStaffBusy(false);
-    }
-  }
-
-  const copyStaffId = (text: string) => {
-    void navigator.clipboard.writeText(text);
-    setCopiedStaffId(text);
-    setTimeout(() => setCopiedStaffId(null), 2000);
-  };
-
-  useEffect(() => { draftRef.current = settings; paymentDraftRef.current = payment; setDraft(settings); setPaymentDraft(payment); setHistory([]); setFuture([]); setError(""); reloadStaff().catch(() => undefined); }, [settings, payment, setError, reloadStaff]);
+  useEffect(() => { draftRef.current = settings; paymentDraftRef.current = payment; setDraft(settings); setPaymentDraft(payment); setHistory([]); setFuture([]); setError(""); }, [settings, payment, setError]);
 
   useEffect(() => {
     const stage = previewStageRef.current;
@@ -541,7 +460,7 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
                   </div>
                   <Field label="Location"><TextInput value={draft.location} onChange={(event) => update("location", event.target.value)} /></Field>
                   <Field label="Logo URL"><TextInput value={draft.logo_url ?? ""} placeholder="https://…" onChange={(event) => update("logo_url", event.target.value)} /></Field>
-                  <ImageUpload bucket="payment-qr" label="Upload booth logo" onUploaded={(url) => update("logo_url", url)} />
+                  <ImageUpload shopId={shopId} bucket="payment-qr" label="Upload booth logo" onUploaded={(url) => update("logo_url", url)} />
                 </div>
                 <div className="builder-field-group">
                   <h3><Link2 size={15} /> Social links</h3>
@@ -551,103 +470,7 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
                   <Field label="Social QR center logo"><TextInput value={draft.social_qr_logo_url ?? ""} onChange={(event) => update("social_qr_logo_url", event.target.value)} /></Field>
                 </div>
               </>}
-              {selected === "staff" && isOwner && (
-                <div className="builder-fields">
-                  <div className="builder-field-group">
-                    <h3><UserPlus size={15} /> Grant staff access</h3>
-                    <Field label="Auth user UUID" hint="Create the user in Supabase Auth first.">
-                      <TextInput
-                        value={staffUserId}
-                        placeholder="00000000-0000-0000-0000-000000000000"
-                        onChange={(event) => setStaffUserId(event.target.value)}
-                      />
-                    </Field>
-                    <Field label="Role">
-                      <SelectInput value={staffRole} onChange={(event) => setStaffRole(event.target.value as StaffRole)}>
-                        <option value="staff">Staff</option>
-                        <option value="admin">Admin</option>
-                        <option value="owner">Owner</option>
-                      </SelectInput>
-                    </Field>
-                    <div style={{ marginTop: "12px" }}>
-                      <Button
-                        type="button"
-                        icon={<UserPlus size={14} />}
-                        onClick={handleAddStaff}
-                        loading={staffBusy}
-                        disabled={staffBusy}
-                        style={{ width: "100%" }}
-                      >
-                        Add staff member
-                      </Button>
-                    </div>
-                    {staffError && <Alert variant="error" title="Error" onClose={() => setStaffError("")}>{staffError}</Alert>}
-                  </div>
-
-                  <div className="builder-field-group">
-                    <h3><ShieldCheck size={15} /> Current staff</h3>
-                    {staffMembers.length === 0 ? (
-                      <p className="admin-empty-state" style={{ padding: "16px", fontSize: "12px" }}>No staff configured yet.</p>
-                    ) : (
-                      <div className="builder-staff-items">
-                        {staffMembers.map((member) => {
-                          const displayId = member.user_id ? `${member.user_id.slice(0, 8)}...${member.user_id.slice(-8)}` : "";
-                          return (
-                            <div key={member.user_id} className="builder-staff-item">
-                              <div className="builder-staff-item-meta">
-                                <div className="builder-staff-avatar">
-                                  {member.role === "owner" ? <ShieldCheck size={14} className="role-icon-owner" /> :
-                                   member.role === "admin" ? <UserCheck size={14} className="role-icon-admin" /> :
-                                   <User size={14} className="role-icon-staff" />}
-                                </div>
-                                <code title={member.user_id}>{displayId}</code>
-                                <button
-                                  type="button"
-                                  className="builder-staff-copy-btn"
-                                  onClick={() => member.user_id && copyStaffId(member.user_id)}
-                                  title="Copy full UUID"
-                                >
-                                  {copiedStaffId === member.user_id ? <Check size={12} /> : <Copy size={12} />}
-                                </button>
-                              </div>
-                              <div className="builder-staff-item-controls">
-                                <SelectInput
-                                  aria-label={`Role for ${member.user_id}`}
-                                  value={member.role}
-                                  disabled={staffBusy}
-                                  onChange={(event) => void handleUpdateStaff(member, { role: event.target.value as StaffRole })}
-                                >
-                                  <option value="staff">Staff</option>
-                                  <option value="admin">Admin</option>
-                                  <option value="owner">Owner</option>
-                                </SelectInput>
-                                <label className="builder-staff-active-checkbox">
-                                  <input
-                                    type="checkbox"
-                                    checked={member.active}
-                                    disabled={staffBusy}
-                                    onChange={(event) => void handleUpdateStaff(member, { active: event.target.checked })}
-                                  />
-                                  <span>Active</span>
-                                </label>
-                                <button
-                                  type="button"
-                                  className="builder-staff-delete-btn"
-                                  disabled={staffBusy}
-                                  onClick={() => void handleRemoveStaff(member)}
-                                  title="Remove staff member"
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              {selected === "staff" && isOwner && <StaffManager shopId={shopId} />}
               {selected === "cart" && <div className="builder-fields builder-payment-fields">
                 <div className="builder-field-group">
                   <h3><Building2 size={15} /> Payment account</h3>
@@ -665,7 +488,7 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
                 <div className="builder-field-group">
                   <h3><QrCode size={15} /> Backup QR</h3>
                   <div className="builder-backup-qr">{paymentDraft.bank_qr_url ? <img src={paymentDraft.bank_qr_url} alt="Backup payment QR" /> : <span><QrCode size={28} /></span>}<Field label="Fallback QR URL"><TextInput value={paymentDraft.bank_qr_url} onChange={(event) => updatePayment("bank_qr_url", event.target.value)} /></Field></div>
-                  <ImageUpload bucket="payment-qr" label="Upload backup QR" onUploaded={(url) => updatePayment("bank_qr_url", url)} />
+                  <ImageUpload shopId={shopId} bucket="payment-qr" label="Upload backup QR" onUploaded={(url) => updatePayment("bank_qr_url", url)} />
                 </div>
               </div>}
               {selected === "controls" && <p className="builder-empty-inspector">Browse controls use the categories and product data from your catalog. Language is available under Style.</p>}
@@ -716,7 +539,9 @@ export function StorefrontDesigner({ settings, products, payment, onSave, onSave
                 <div className="designer-live-storefront app-shell" style={{ ...getThemeStyle(draft), transform: "none" }}>
                   <CatalogHeader
                     booth={draft}
-                    onOpenInfo={() => { setSelected("staff"); setTab("content"); }}
+                    onOpenInfo={() => { setSelected("booth"); setBoothSubTab("info"); setTab("content"); }}
+                    onOpenStaff={() => { setSelected("staff"); setTab("content"); }}
+                    showStaffAccess={isOwner}
                     isDesigner={true}
                     isSelected={selected === "staff"}
                   />

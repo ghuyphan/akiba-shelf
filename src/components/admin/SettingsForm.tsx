@@ -9,9 +9,9 @@ import { Field, TextInput } from "../ui/Field";
 import { AdminCard } from "./AdminCard";
 import { ImageUpload } from "./ImageUpload";
 
-type SettingsFormProps = { settings: BoothSettings; onSave: (settings: BoothSettings) => Promise<void> };
+type SettingsFormProps = { shopId: string; settings: BoothSettings; onSave: (settings: BoothSettings) => Promise<void> };
 
-export function SettingsForm({ settings, onSave }: SettingsFormProps) {
+export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
   const [draft, setDraft] = useState(settings);
   const [isEditing, setIsEditing] = useState(false);
   const { busy, error, run, setError } = useAsyncAction();
@@ -26,7 +26,7 @@ export function SettingsForm({ settings, onSave }: SettingsFormProps) {
 
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span>01</span><div><h3>Booth identity</h3><p>Name, code, logo, hours, and location.</p></div></div>
-          <div className="admin-logo-editor"><div className="admin-logo-preview">{draft.logo_url ? <img src={draft.logo_url} alt="Booth logo" /> : <Store size={25} />}</div><div><Field label="Logo URL"><TextInput value={draft.logo_url ?? ""} placeholder="https://…" disabled={!isEditing} onChange={(event) => setDraft({ ...draft, logo_url: event.target.value, logo_path: undefined })} /></Field>{isEditing && <ImageUpload bucket="payment-qr" label="Upload logo" onUploaded={(url, path) => setDraft({ ...draft, logo_url: url, logo_path: path })} />}</div></div>
+          <div className="admin-logo-editor"><div className="admin-logo-preview">{draft.logo_url ? <img src={draft.logo_url} alt="Booth logo" /> : <Store size={25} />}</div><div><Field label="Logo URL"><TextInput value={draft.logo_url ?? ""} placeholder="https://…" disabled={!isEditing} onChange={(event) => setDraft({ ...draft, logo_url: event.target.value, logo_path: undefined })} /></Field>{isEditing && <ImageUpload shopId={shopId} bucket="payment-qr" label="Upload logo" onUploaded={(url, path) => setDraft({ ...draft, logo_url: url, logo_path: path })} />}</div></div>
           <div className="form-grid"><Field label="Booth name"><TextInput value={draft.booth_name} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, booth_name: event.target.value })} /></Field><Field label="Booth code"><TextInput value={draft.booth_code} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, booth_code: event.target.value })} /></Field><Field label="Open hours"><TextInput value={draft.open_hours} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, open_hours: event.target.value })} /></Field><Field label="Location"><TextInput value={draft.location} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, location: event.target.value })} /></Field></div>
         </section>
 
@@ -38,7 +38,7 @@ export function SettingsForm({ settings, onSave }: SettingsFormProps) {
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span><Link2 size={15} /></span><div><h3>Social links</h3><p>Links shown in booth information.</p></div></div>
           <div className="form-grid"><Field label="Instagram URL"><TextInput type="url" value={draft.instagram_url ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, instagram_url: event.target.value })} /></Field><Field label="Facebook URL"><TextInput type="url" value={draft.facebook_url ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, facebook_url: event.target.value })} /></Field><Field label="TikTok URL"><TextInput type="url" value={draft.tiktok_url ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, tiktok_url: event.target.value })} /></Field><Field label="QR center logo"><TextInput value={draft.social_qr_logo_url ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, social_qr_logo_url: event.target.value })} /></Field></div>
-          <div className="admin-social-preview"><span>{draft.social_qr_logo_url ? <img src={draft.social_qr_logo_url} alt="Social QR logo" /> : <><Instagram size={18} /><Facebook size={18} /><TiktokIcon size={18} /></>}</span><div><strong>Shared QR logo</strong><small>Used in the center of every social QR code.</small></div>{isEditing && <ImageUpload bucket="payment-qr" label="Upload QR logo" onUploaded={(url, path) => setDraft({ ...draft, social_qr_logo_url: url, social_qr_logo_path: path })} />}</div>
+          <div className="admin-social-preview"><span>{draft.social_qr_logo_url ? <img src={draft.social_qr_logo_url} alt="Social QR logo" /> : <><Instagram size={18} /><Facebook size={18} /><TiktokIcon size={18} /></>}</span><div><strong>Shared QR logo</strong><small>Used in the center of every social QR code.</small></div>{isEditing && <ImageUpload shopId={shopId} bucket="payment-qr" label="Upload QR logo" onUploaded={(url, path) => setDraft({ ...draft, social_qr_logo_url: url, social_qr_logo_path: path })} />}</div>
         </section>
 
         {error && <Alert variant="error" title="Could not save booth settings" onClose={() => setError("")}>{error}</Alert>}

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { Product } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { AdminCard } from "./AdminCard";
-import { Boxes, ImageIcon, PackageSearch, Plus, RotateCcw, Search } from "lucide-react";
+import { Boxes, ImageIcon, LoaderCircle, PackageSearch, Plus, RotateCcw, Search } from "lucide-react";
 import { EmptyState } from "../ui/EmptyState";
 import { Button } from "../ui/Button";
 
@@ -11,9 +11,10 @@ type ProductListProps = {
   selectedId?: string;
   onSelect: (product: Product) => void;
   onCreate: () => void;
+  loading?: boolean;
 };
 
-export function ProductList({ products, selectedId, onSelect, onCreate }: ProductListProps) {
+export function ProductList({ products, selectedId, onSelect, onCreate, loading = false }: ProductListProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "live" | "low" | "hidden">("all");
   const visibleProducts = useMemo(() => {
@@ -38,12 +39,13 @@ export function ProductList({ products, selectedId, onSelect, onCreate }: Produc
         {visibleProducts.length === 0 && (
           <EmptyState
             variant="compact"
-            icon={<PackageSearch size={25} />}
-            title={products.length === 0 ? "No products yet" : "No matching products"}
-            message={products.length === 0 ? "Create your first item to start filling the booth." : "Adjust your search or return to all products."}
-            action={products.length === 0
+            tone={loading ? "loading" : "neutral"}
+            icon={loading ? <LoaderCircle className="state-spinner" size={25} /> : <PackageSearch size={25} />}
+            title={loading ? "Loading products…" : products.length === 0 ? "No products yet" : "No matching products"}
+            message={loading ? "Fetching the latest catalog and stock levels." : products.length === 0 ? "Create your first item to start filling the booth." : "Adjust your search or return to all products."}
+            action={!loading && products.length === 0
               ? <Button type="button" icon={<Plus size={16} />} onClick={onCreate}>Create product</Button>
-              : <Button type="button" variant="secondary" icon={<RotateCcw size={16} />} onClick={() => { setQuery(""); setFilter("all"); }}>Clear filters</Button>}
+              : !loading ? <Button type="button" variant="secondary" icon={<RotateCcw size={16} />} onClick={() => { setQuery(""); setFilter("all"); }}>Clear filters</Button> : undefined}
           />
         )}
         {visibleProducts.map((product) => {

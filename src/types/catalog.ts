@@ -1,8 +1,13 @@
 export type StockStatus = "in_stock" | "limited" | "sold_out";
 export type CatalogLocale = "en" | "vi";
 export type StorefrontSection = "featured" | "controls" | "products" | "booth" | "cart";
+export type ShopRole = "owner" | "admin" | "staff";
+
+export type Shop = { id: string; name: string; slug: string; active: boolean };
+export type ShopMembership = { shop_id: string; shop_name: string; shop_slug: string; role: ShopRole; active: boolean };
 
 export type Product = {
+  shop_id?: string;
   id: string;
   name: string;
   collection: string;
@@ -24,6 +29,7 @@ export type Product = {
 };
 
 export type BoothSettings = {
+  shop_id?: string;
   id?: string;
   booth_name: string;
   subtitle: string;
@@ -49,6 +55,7 @@ export type BoothSettings = {
 };
 
 export type PaymentSettings = {
+  shop_id?: string;
   id?: string;
   momo_qr_url: string;
   bank_qr_url: string;
@@ -76,6 +83,7 @@ export type CartItem = {
 export type OrderStatus = "pending" | "confirmed" | "cancelled" | "expired";
 
 export type Order = {
+  shop_id?: string;
   id: string;
   order_code: string;
   customer_name: string | null;

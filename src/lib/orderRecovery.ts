@@ -5,6 +5,7 @@ import { z } from "zod";
 import { orderSchema, productRowSchema } from "./schemas";
 
 const ACTIVE_ORDER_KEY = "akiba-shelf-active-order-v1";
+const recoveryKey = (shopKey?: string) => shopKey ? `${ACTIVE_ORDER_KEY}:${shopKey}` : ACTIVE_ORDER_KEY;
 const MAX_ORDER_AGE_MS = 24 * 60 * 60 * 1000;
 
 export type ActiveOrderRecovery = {
@@ -32,29 +33,29 @@ export function createOrderRecovery(cart: CartItem[], customerName: string): Act
   };
 }
 
-export function loadOrderRecovery(): ActiveOrderRecovery | null {
+export function loadOrderRecovery(shopKey?: string): ActiveOrderRecovery | null {
   try {
-    const raw = window.localStorage.getItem(ACTIVE_ORDER_KEY);
+    const raw = window.localStorage.getItem(recoveryKey(shopKey));
     if (!raw) return null;
     const result = recoverySchema.safeParse(JSON.parse(raw));
-    if (!result.success) { clearOrderRecovery(); return null; }
+    if (!result.success) { clearOrderRecovery(shopKey); return null; }
     const parsed = result.data as ActiveOrderRecovery;
     const startedAt = new Date(parsed.startedAt).getTime();
     if (!parsed.cart.every(isCartItem) || !Number.isFinite(startedAt) || Date.now() - startedAt > MAX_ORDER_AGE_MS) {
-      clearOrderRecovery();
+      clearOrderRecovery(shopKey);
       return null;
     }
     return parsed;
   } catch {
-    clearOrderRecovery();
+    clearOrderRecovery(shopKey);
     return null;
   }
 }
 
-export function saveOrderRecovery(recovery: ActiveOrderRecovery) {
-  window.localStorage.setItem(ACTIVE_ORDER_KEY, JSON.stringify(recovery));
+export function saveOrderRecovery(recovery: ActiveOrderRecovery, shopKey?: string) {
+  window.localStorage.setItem(recoveryKey(shopKey), JSON.stringify(recovery));
 }
 
-export function clearOrderRecovery() {
-  window.localStorage.removeItem(ACTIVE_ORDER_KEY);
+export function clearOrderRecovery(shopKey?: string) {
+  window.localStorage.removeItem(recoveryKey(shopKey));
 }

@@ -15,7 +15,7 @@ export const defaultBooth: BoothSettings = {
   theme_secondary: "#1e293b",
   theme_accent: "#ffd17a",
   theme_background: "#faf7f2",
-  layout_order: ["featured", "booth", "controls", "cart", "products"],
+  layout_order: ["featured", "booth", "controls", "products", "cart"],
   corner_radius: 16,
   catalog_locale: "en",
   featured_autoplay: true,

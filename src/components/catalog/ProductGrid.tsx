@@ -1,4 +1,4 @@
-import { PackageSearch, RotateCcw, Tags } from "lucide-react";
+import { AlertTriangle, LoaderCircle, PackageSearch, RotateCcw, Tags } from "lucide-react";
 import type { Product } from "../../types/catalog";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
@@ -14,18 +14,24 @@ type ProductGridProps = {
   onSelect: (product: Product, event?: React.MouseEvent) => void;
   onViewDetails: (product: Product) => void;
   onResetFilters: () => void;
+  loading?: boolean;
+  error?: string;
+  onRetry?: () => void;
+  searchActive?: boolean;
 };
 
-export function ProductGrid({ products, totalProducts, activeCategory, selectedProduct, viewMode, onSelect, onViewDetails, onResetFilters }: ProductGridProps) {
+export function ProductGrid({ products, totalProducts, activeCategory, selectedProduct, viewMode, onSelect, onViewDetails, onResetFilters, loading = false, error, onRetry, searchActive = false }: ProductGridProps) {
   const copy = useCatalogCopy();
+  if (loading && totalProducts === 0) return <EmptyState tone="loading" icon={<LoaderCircle className="state-spinner" size={28} />} title={copy.loadingCatalog} message={copy.loadingCatalogHint} />;
+  if (error && totalProducts === 0) return <EmptyState tone="error" icon={<AlertTriangle size={28} />} title={copy.catalogUnavailable} message={copy.catalogUnavailableHint} action={onRetry ? <Button type="button" icon={<RotateCcw size={18} />} onClick={onRetry}>{copy.tryAgain}</Button> : undefined} />;
   if (products.length === 0) {
     const hasInventory = totalProducts > 0;
 
     return (
       <EmptyState
         icon={hasInventory ? <Tags size={28} /> : <PackageSearch size={28} />}
-        title={hasInventory ? copy.nothingCategory : copy.noMerch}
-        message={hasInventory ? copy.switchCatalog : copy.addInAdmin}
+        title={hasInventory ? (searchActive ? copy.noSearchResults : copy.nothingCategory) : copy.noMerch}
+        message={hasInventory ? (searchActive ? copy.noSearchResultsHint : copy.switchCatalog) : copy.addInAdmin}
         meta={hasInventory ? [activeCategory === "All" ? copy.all : activeCategory, viewMode === "grid" ? copy.gridView : copy.listView] : []}
         action={
           hasInventory ? (

@@ -8,9 +8,11 @@ type CatalogHeaderProps = {
   className?: string;
   isDesigner?: boolean;
   isSelected?: boolean;
+  onOpenStaff?: () => void;
+  showStaffAccess?: boolean;
 };
 
-export function CatalogHeader({ booth, onOpenInfo, className = "", isDesigner = false, isSelected = false }: CatalogHeaderProps) {
+export function CatalogHeader({ booth, onOpenInfo, className = "", isDesigner = false, isSelected = false, onOpenStaff, showStaffAccess = false }: CatalogHeaderProps) {
   const copy = useCatalogCopy();
   return (
     <header className={`catalog-header ${className}`.trim()} onClick={(e) => e.stopPropagation()}>
@@ -38,9 +40,9 @@ export function CatalogHeader({ booth, onOpenInfo, className = "", isDesigner = 
               <span className="booth-info-trigger-copy"><strong>{copy.boothInfo}</strong><small>{copy.boothInfoHint}</small></span>
               <ChevronRight size={17} className="booth-info-trigger-arrow" />
             </button>
-            <button type="button" className="designer-module-handle designer-staff-handle" onClick={onOpenInfo}>
+            {showStaffAccess && <button type="button" className="designer-module-handle designer-staff-handle" onClick={onOpenStaff}>
               <span>Staff access</span>
-            </button>
+            </button>}
           </div>
         ) : (
           <button type="button" className="booth-info-trigger" onClick={onOpenInfo}>

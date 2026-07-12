@@ -7,12 +7,13 @@ type EmptyStateProps = {
   meta?: string[];
   action?: ReactNode;
   variant?: "default" | "compact";
+  tone?: "neutral" | "loading" | "error";
   className?: string;
 };
 
-export function EmptyState({ title, message, icon, meta = [], action, variant = "default", className = "" }: EmptyStateProps) {
+export function EmptyState({ title, message, icon, meta = [], action, variant = "default", tone = "neutral", className = "" }: EmptyStateProps) {
   return (
-    <div className={`empty-state empty-state-${variant} ${className}`.trim()}>
+    <div className={`empty-state empty-state-${variant} empty-state-${tone} ${className}`.trim()} role={tone === "error" ? "alert" : "status"} aria-live="polite" aria-busy={tone === "loading" || undefined}>
       {icon && <div className="empty-state-icon">{icon}</div>}
       <div className="empty-state-copy">
         <h3>{title}</h3>

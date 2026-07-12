@@ -48,18 +48,22 @@ function urlBase64ToUint8Array(value: string) {
 }
 
 export function canUsePush() {
-  return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  return Boolean(import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim()) && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 }
 
-export async function getPushEnabled() {
+export async function getPushEnabled(shopId?: string) {
   if (!canUsePush()) return false;
   const registration = await navigator.serviceWorker.ready;
-  return Boolean(await registration.pushManager.getSubscription());
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription || !shopId || !supabase) return Boolean(subscription);
+  const { count } = await supabase.from("push_subscriptions").select("endpoint", { count: "exact", head: true }).eq("shop_id", shopId).eq("endpoint", subscription.endpoint);
+  return Boolean(count);
 }
 
-export async function enableOrderNotifications() {
+export async function enableOrderNotifications(shopId = "") {
   const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim();
   if (!publicKey) throw new Error("Push notifications are not configured. Set VITE_VAPID_PUBLIC_KEY.");
+  if (!shopId) throw new Error("Select a shop before enabling notifications.");
   if (!supabase) throw new Error("Supabase is not configured.");
   const permission = await Notification.requestPermission();
   if (permission !== "granted") throw new Error("Notification permission was not granted.");
@@ -70,19 +74,21 @@ export async function enableOrderNotifications() {
   const json = subscription.toJSON();
   const { error } = await supabase.from("push_subscriptions").upsert({
     user_id: auth.user.id,
+    shop_id: shopId,
     endpoint: subscription.endpoint,
     p256dh: json.keys?.p256dh,
     auth: json.keys?.auth,
     user_agent: navigator.userAgent,
-  }, { onConflict: "endpoint" });
+  }, { onConflict: "shop_id,endpoint" });
   if (error) { await subscription.unsubscribe(); throw error; }
 }
 
-export async function disableOrderNotifications() {
+export async function disableOrderNotifications(shopId = "") {
   if (!supabase || !canUsePush()) return;
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription();
   if (!subscription) return;
-  await supabase.from("push_subscriptions").delete().eq("endpoint", subscription.endpoint);
-  await subscription.unsubscribe();
+  await supabase.from("push_subscriptions").delete().eq("shop_id", shopId).eq("endpoint", subscription.endpoint);
+  const { count } = await supabase.from("push_subscriptions").select("endpoint", { count: "exact", head: true }).eq("endpoint", subscription.endpoint);
+  if (!count) await subscription.unsubscribe();
 }

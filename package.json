@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "typecheck": "tsc -b --pretty false",
-    "lint": "eslint --max-warnings 0 src vite.config.ts",
+    "lint": "eslint --max-warnings 0 src e2e vite.config.ts vitest.config.ts playwright.config.ts",
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --write package.json eslint.config.js playwright.config.ts vitest.config.ts",
-    "format:check": "prettier --check package.json eslint.config.js playwright.config.ts vitest.config.ts",
+    "format:check": "prettier --check package.json eslint.config.js playwright.config.ts vitest.config.ts e2e/admin-auth.spec.ts .github/workflows",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

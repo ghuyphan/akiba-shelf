@@ -16,9 +16,9 @@ function formatDisplayPrice(value: number | string): string {
   return digits ? new Intl.NumberFormat("vi-VN").format(Number(digits)) : "";
 }
 
-type ProductFormProps = { product: Product; onSave: (product: Product) => Promise<void>; onDelete: (id: string) => Promise<void> };
+type ProductFormProps = { shopId: string; product: Product; onSave: (product: Product) => Promise<void>; onDelete: (id: string) => Promise<void> };
 
-export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
+export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormProps) {
   const [draft, setDraft] = useState(product);
   const [isEditing, setIsEditing] = useState(!product.name);
   const [errors, setErrors] = useState<string[]>([]);
@@ -108,7 +108,7 @@ export function ProductForm({ product, onSave, onDelete }: ProductFormProps) {
           <div className="admin-image-gallery">
             {images.map((image, index) => <div className="admin-image-tile" key={`${image}-${index}`}><img src={image} alt={`${draft.name || "Product"} ${index + 1}`} />{index === 0 && <span>Cover</span>}{isEditing && <button type="button" onClick={() => removeImage(index)} aria-label={`Remove image ${index + 1}`}><X size={15} /></button>}</div>)}
             {images.length === 0 && <div className="admin-image-empty"><ImageIcon size={25} /><span>No product images yet</span></div>}
-            {isEditing && images.length < 4 && <div className="admin-image-upload-tile"><ImageUpload bucket="product-images" label={images.length ? "Add another image" : "Upload product image"} onUploaded={(url) => setField("images", [...images, url])} onProductUploaded={(variant) => setDraft((current) => ({ ...current, images: [...current.images.filter(Boolean), variant.detail], image_variants: [...(current.image_variants ?? []), { thumbnail: variant.thumbnail, detail: variant.detail }], image_paths: [...(current.image_paths ?? []), ...variant.paths] }))} /></div>}
+            {isEditing && images.length < 4 && <div className="admin-image-upload-tile"><ImageUpload shopId={shopId} bucket="product-images" label={images.length ? "Add another image" : "Upload product image"} onUploaded={(url) => setField("images", [...images, url])} onProductUploaded={(variant) => setDraft((current) => ({ ...current, images: [...current.images.filter(Boolean), variant.detail], image_variants: [...(current.image_variants ?? []), { thumbnail: variant.thumbnail, detail: variant.detail }], image_paths: [...(current.image_paths ?? []), ...variant.paths] }))} /></div>}
           </div>
           {getFieldError("images") && <div className="field-error-msg admin-gallery-error">{getFieldError("images")}</div>}
         </section>

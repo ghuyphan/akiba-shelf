@@ -3,6 +3,7 @@ import { boothSettingsSchema, productRowSchema } from "./schemas";
 
 const SNAPSHOT_KEY = "akiba-shelf-catalog-v1";
 const CART_KEY = "akiba-shelf-cart-v1";
+const scopedKey = (key: string, shopId?: string) => shopId ? `${key}:${shopId}` : key;
 
 type Snapshot = { version: 1; savedAt: string; products: Product[]; booth: BoothSettings };
 
@@ -22,46 +23,48 @@ export function isCartItem(value: unknown): value is CartItem {
     && value.quantity > 0;
 }
 
-export function loadCatalogSnapshot(): Pick<CatalogData, "products" | "booth"> | null {
+export function loadCatalogSnapshot(shopId?: string): Pick<CatalogData, "products" | "booth"> | null {
   try {
-    const value = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || "null") as unknown;
+    const key = scopedKey(SNAPSHOT_KEY, shopId);
+    const value = JSON.parse(localStorage.getItem(key) || "null") as unknown;
     if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.products) || !value.products.every(isProduct) || !boothSettingsSchema.safeParse(value.booth).success) {
-      localStorage.removeItem(SNAPSHOT_KEY);
+      localStorage.removeItem(key);
       return null;
     }
     const snapshot = value as Snapshot;
     return { products: snapshot.products, booth: snapshot.booth };
   } catch {
-    localStorage.removeItem(SNAPSHOT_KEY);
+    localStorage.removeItem(scopedKey(SNAPSHOT_KEY, shopId));
     return null;
   }
 }
 
-export function saveCatalogSnapshot(data: CatalogData) {
+export function saveCatalogSnapshot(data: CatalogData, shopId?: string) {
   try {
-    localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({ version: 1, savedAt: new Date().toISOString(), products: data.products, booth: data.booth }));
+    localStorage.setItem(scopedKey(SNAPSHOT_KEY, shopId), JSON.stringify({ version: 1, savedAt: new Date().toISOString(), products: data.products, booth: data.booth }));
   } catch {
     // Offline caching is best-effort.
   }
 }
 
-export function loadCart(): CartItem[] {
+export function loadCart(shopId?: string): CartItem[] {
   try {
-    const value = JSON.parse(localStorage.getItem(CART_KEY) || "null") as unknown;
+    const key = scopedKey(CART_KEY, shopId);
+    const value = JSON.parse(localStorage.getItem(key) || "null") as unknown;
     if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.items) || !value.items.every(isCartItem)) {
-      localStorage.removeItem(CART_KEY);
+      localStorage.removeItem(key);
       return [];
     }
     return value.items;
   } catch {
-    localStorage.removeItem(CART_KEY);
+    localStorage.removeItem(scopedKey(CART_KEY, shopId));
     return [];
   }
 }
 
-export function saveCart(items: CartItem[]) {
+export function saveCart(items: CartItem[], shopId?: string) {
   try {
-    localStorage.setItem(CART_KEY, JSON.stringify({ version: 1, items }));
+    localStorage.setItem(scopedKey(CART_KEY, shopId), JSON.stringify({ version: 1, items }));
   } catch {
     // Offline persistence is best-effort.
   }

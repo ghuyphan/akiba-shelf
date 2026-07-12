@@ -12,7 +12,7 @@ function json(route: Route, body: unknown, status = 200, headers: Record<string,
   return route.fulfill({ status, contentType: "application/json", headers, body: JSON.stringify(body) });
 }
 
-export async function mockSupabase(page: Page, options: { staffRole?: "owner" | "admin" | "staff" | null; checkoutFails?: boolean } = {}) {
+export async function mockSupabase(page: Page, options: { staffRole?: "owner" | "admin" | "staff" | null; staffActive?: boolean; checkoutFails?: boolean } = {}) {
   await page.route("**/mock-supabase/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -23,7 +23,7 @@ export async function mockSupabase(page: Page, options: { staffRole?: "owner" | 
       return json(route, { access_token: `${header}.${claims}.test`, token_type: "bearer", expires_in: 3600, refresh_token: "fixture-refresh", user: { id: "10000000-0000-4000-8000-000000000001", aud: "authenticated", role: "authenticated", email: payload.email, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() } });
     }
     if (url.pathname.endsWith("/auth/v1/user")) return json(route, { id: "10000000-0000-4000-8000-000000000001", aud: "authenticated", role: "authenticated", email: "staff@test.local", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() });
-    if (url.pathname.includes("/rest/v1/rpc/get_staff_access")) return json(route, options.staffRole ? [{ role: options.staffRole, active: true }] : []);
+    if (url.pathname.includes("/rest/v1/rpc/get_staff_access")) return json(route, options.staffRole ? [{ role: options.staffRole, active: options.staffActive ?? true }] : []);
     if (url.pathname.includes("/rest/v1/rpc/create_order")) return options.checkoutFails ? json(route, { message: "Stock changed" }, 409) : json(route, [{ id: "40000000-0000-4000-8000-000000000001", order_code: "A100", customer_name: "Customer", total_amount: 120000, status: "pending", created_at: new Date().toISOString(), updated_at: new Date().toISOString(), expires_at: new Date(Date.now() + 600000).toISOString(), confirmed_at: null, cancelled_at: null, expired_at: null }]);
     if (url.pathname.includes("/rest/v1/rpc/get_customer_order")) return json(route, []);
     if (url.pathname.includes("/functions/v1/notify-new-order")) return json(route, { sent: 0 });

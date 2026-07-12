@@ -31,3 +31,6 @@ file_size_limit = "10MiB"
 
 [functions.notify-new-order]
 verify_jwt = true
+
+[functions.invite-shop-member]
+verify_jwt = true

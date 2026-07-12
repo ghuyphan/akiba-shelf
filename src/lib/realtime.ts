@@ -9,7 +9,7 @@ type CatalogChangeHandlers = {
   onStatus?: (status: string, error?: unknown) => void;
 };
 
-export function subscribeToCatalogChanges({ onChange, onStatus }: CatalogChangeHandlers) {
+export function subscribeToCatalogChanges(shopId: string, { onChange, onStatus }: CatalogChangeHandlers) {
   const client = supabase;
   if (!client) return () => undefined;
 
@@ -21,10 +21,11 @@ export function subscribeToCatalogChanges({ onChange, onStatus }: CatalogChangeH
           event: "*",
           schema: "public",
           table,
+          filter: `shop_id=eq.${shopId}`,
         },
         () => onChange(table),
       ),
-    client.channel("merch-catalog-db-changes"),
+    client.channel(`shop-${shopId}-catalog-db-changes`),
   );
 
   channel.subscribe((status, error) => {

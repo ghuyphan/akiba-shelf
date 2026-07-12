@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Ban, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Inbox, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
+import { Ban, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Inbox, LoaderCircle, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
 import type { Order } from "../../types/catalog";
 import type { OrderFilter, OrderStatusCounts } from "../../lib/api";
 import { formatVnd } from "../../lib/format";
@@ -84,7 +84,8 @@ export function OrderQueue({ orders, filter, counts, page, pageSize, total, load
       <div className="admin-section-heading"><div><span>Order queue</span><h2>{filter === "all" ? "All orders" : `${filter[0].toUpperCase()}${filter.slice(1)} orders`}</h2></div><small>{loading ? "Refreshing…" : `${firstOrder}–${lastOrder} of ${total} · newest first`}</small></div>
       {orders.length === 0 ? (
         <EmptyState
-          icon={<Inbox size={27} />}
+          tone={loading ? "loading" : "neutral"}
+          icon={loading ? <LoaderCircle className="state-spinner" size={27} /> : <Inbox size={27} />}
           title={loading ? "Loading orders…" : filter === "all" ? "No orders yet" : `No ${filter} orders`}
           message={loading ? "Fetching the latest queue from the server." : filter === "pending" ? "You’re all caught up. New orders will appear here automatically." : "There are no orders with this status yet."}
           meta={loading ? [] : [filter === "all" ? "All statuses" : `${filter[0].toUpperCase()}${filter.slice(1)}`, "Live updates on"]}

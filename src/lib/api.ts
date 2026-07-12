@@ -4,10 +4,11 @@ import { safeUuid } from "./id";
 import { BOOTH_COLUMNS, PAYMENT_COLUMNS, PRODUCT_COLUMNS } from "./catalogQueries";
 import { LIMITED_STOCK_THRESHOLD } from "./constants";
 import { boothSettingsSchema, orderMutationSchema, orderSchema, paymentSettingsSchema, productRowSchema } from "./schemas";
-import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus, Order, OrderStatus, CartItem, OrderMutationResult } from "../types/catalog";
+import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus, Order, OrderStatus, CartItem, OrderMutationResult, Shop, ShopMembership } from "../types/catalog";
 
 export type StaffRole = "owner" | "admin" | "staff";
-export type StaffAccess = { user_id?: string; role: StaffRole; active: boolean; created_at?: string; updated_at?: string };
+export type StaffAccess = { shop_id?: string; user_id?: string; email?: string; role: StaffRole; active: boolean; created_at?: string; updated_at?: string };
+export type ShopInvitation = { id: string; shop_id: string; email: string; role: StaffRole; status: "pending" | "accepted" | "revoked" | "expired"; expires_at: string; created_at: string };
 
 const stockStatuses: StockStatus[] = ["in_stock", "limited", "sold_out"];
 
@@ -46,6 +47,7 @@ function inferQuantity(product: Product) {
 export function normalizeProduct(product: Partial<Product>): Product {
   const normalized: Product = {
     id: text(product.id, safeUuid()),
+    shop_id: text(product.shop_id) || undefined,
     name: text(product.name),
     collection: text(product.collection),
     description: text(product.description),
@@ -95,52 +97,63 @@ function requireSupabase() {
   return supabase;
 }
 
-export async function getCatalogCoreData(): Promise<Pick<CatalogData, "products" | "booth">> {
-  const [products, booth] = await Promise.all([getPublicProducts(), getPublicBoothSettings()]);
+export async function getPublicShop(slug: string): Promise<Shop | null> {
+  const client = requireSupabase();
+  const { data, error } = await client.from("shops").select("id,name,slug,active").eq("slug", slug.toLowerCase()).eq("active", true).maybeSingle();
+  if (error) throw error;
+  return data as Shop | null;
+}
+
+export async function getDefaultShop(): Promise<Shop | null> {
+  return getPublicShop("akiba-shelf");
+}
+
+export async function getCatalogCoreData(shopId: string): Promise<Pick<CatalogData, "products" | "booth">> {
+  const [products, booth] = await Promise.all([getPublicProducts(shopId), getPublicBoothSettings(shopId)]);
   return { products, booth };
 }
 
-export async function getPublicProducts(): Promise<Product[]> {
+export async function getPublicProducts(shopId: string): Promise<Product[]> {
   const client = requireSupabase();
-  const { data, error } = await client.from("products").select(PRODUCT_COLUMNS).eq("active", true).order("sort_order", { ascending: true });
+  const { data, error } = await client.from("products").select(PRODUCT_COLUMNS).eq("shop_id", shopId).eq("active", true).order("sort_order", { ascending: true });
   if (error) throw error;
   return (data ?? []).map((row) => normalizeProduct(productRowSchema.parse(row)));
 }
 
-export async function getPublicBoothSettings(): Promise<BoothSettings> {
+export async function getPublicBoothSettings(shopId: string): Promise<BoothSettings> {
   const client = requireSupabase();
-  const { data, error } = await client.from("booth_settings").select(BOOTH_COLUMNS).limit(1).maybeSingle();
+  const { data, error } = await client.from("booth_settings").select(BOOTH_COLUMNS).eq("shop_id", shopId).maybeSingle();
   if (error) throw error;
   return normalizeBooth(data ?? defaultBooth);
 }
 
-export async function getPublicPaymentSettings(): Promise<PaymentSettings> {
+export async function getPublicPaymentSettings(shopId: string): Promise<PaymentSettings> {
   const client = requireSupabase();
-  const { data, error } = await client.from("payment_settings").select(PAYMENT_COLUMNS).limit(1).maybeSingle();
+  const { data, error } = await client.from("payment_settings").select(PAYMENT_COLUMNS).eq("shop_id", shopId).maybeSingle();
   if (error) throw error;
   return normalizePayment(data ?? defaultPayment);
 }
 
-export async function getCatalogData(): Promise<CatalogData> {
-  const [catalog, payment] = await Promise.all([getCatalogCoreData(), getPublicPaymentSettings()]);
+export async function getCatalogData(shopId: string): Promise<CatalogData> {
+  const [catalog, payment] = await Promise.all([getCatalogCoreData(shopId), getPublicPaymentSettings(shopId)]);
   return { ...catalog, payment };
 }
 
-export async function getAdminProducts(): Promise<Product[]> {
+export async function getAdminProducts(shopId: string): Promise<Product[]> {
   const client = requireSupabase();
 
-  const { data, error } = await client.from("products").select(PRODUCT_COLUMNS).order("sort_order", { ascending: true });
+  const { data, error } = await client.from("products").select(PRODUCT_COLUMNS).eq("shop_id", shopId).order("sort_order", { ascending: true });
   if (error) throw error;
   return (data ?? []).map((row) => normalizeProduct(productRowSchema.parse(row)));
 }
 
-export async function getAdminCatalogData(): Promise<CatalogData> {
+export async function getAdminCatalogData(shopId: string): Promise<CatalogData> {
   const client = requireSupabase();
 
   const [products, booth, payment] = await Promise.all([
-    client.from("products").select(PRODUCT_COLUMNS).order("sort_order", { ascending: true }),
-    client.from("booth_settings").select(BOOTH_COLUMNS).limit(1).maybeSingle(),
-    client.from("payment_settings").select(PAYMENT_COLUMNS).limit(1).maybeSingle(),
+    client.from("products").select(PRODUCT_COLUMNS).eq("shop_id", shopId).order("sort_order", { ascending: true }),
+    client.from("booth_settings").select(BOOTH_COLUMNS).eq("shop_id", shopId).maybeSingle(),
+    client.from("payment_settings").select(PAYMENT_COLUMNS).eq("shop_id", shopId).maybeSingle(),
   ]);
 
   if (products.error) throw products.error;
@@ -154,10 +167,10 @@ export async function getAdminCatalogData(): Promise<CatalogData> {
   };
 }
 
-export async function saveProduct(product: Product): Promise<Product> {
+export async function saveProduct(shopId: string, product: Product): Promise<Product> {
   const client = requireSupabase();
-  const { data: previous } = await client.from("products").select("image_paths").eq("id", product.id).maybeSingle();
-  const { data, error } = await client.from("products").upsert(product).select(PRODUCT_COLUMNS).single();
+  const { data: previous } = await client.from("products").select("image_paths").eq("shop_id", shopId).eq("id", product.id).maybeSingle();
+  const { data, error } = await client.from("products").upsert({ ...product, shop_id: shopId }).select(PRODUCT_COLUMNS).single();
   if (error) throw error;
   const removedPaths = textArray(previous?.image_paths).filter((path) => !textArray(product.image_paths).includes(path));
   if (removedPaths.length) await removeUnreferencedProductImages(client, removedPaths);
@@ -175,22 +188,22 @@ async function removeUnreferencedProductImages(client: ReturnType<typeof require
   }
 }
 
-export async function deleteProduct(id: string) {
+export async function deleteProduct(shopId: string, id: string) {
   const client = requireSupabase();
-  const { data: product, error: readError } = await client.from("products").select("id, image_paths").eq("id", id).single();
+  const { data: product, error: readError } = await client.from("products").select("id, image_paths").eq("shop_id", shopId).eq("id", id).single();
   if (readError) throw readError;
-  const { error } = await client.from("products").delete().eq("id", id);
+  const { error } = await client.from("products").delete().eq("shop_id", shopId).eq("id", id);
   if (error) throw error;
   const paths = textArray(product.image_paths);
   if (paths.length) await removeUnreferencedProductImages(client, paths);
 }
 
-export async function saveBoothSettings(settings: BoothSettings) {
+export async function saveBoothSettings(shopId: string, settings: BoothSettings) {
   const client = requireSupabase();
-  const { data: previous } = await client.from("booth_settings").select("logo_path, social_qr_logo_path").eq("id", "main").maybeSingle();
+  const { data: previous } = await client.from("booth_settings").select("logo_path, social_qr_logo_path").eq("shop_id", shopId).maybeSingle();
   const { data, error } = await client
     .from("booth_settings")
-    .upsert({ id: "main", ...settings })
+    .upsert({ id: settings.id ?? shopId, ...settings, shop_id: shopId })
     .select(BOOTH_COLUMNS)
     .single();
   if (error) throw error;
@@ -206,23 +219,23 @@ export async function saveBoothSettings(settings: BoothSettings) {
   return normalizeBooth(data);
 }
 
-export async function savePaymentSettings(settings: PaymentSettings) {
+export async function savePaymentSettings(shopId: string, settings: PaymentSettings) {
   const client = requireSupabase();
 
   const { data, error } = await client
     .from("payment_settings")
-    .upsert({ id: "main", ...settings })
+    .upsert({ id: settings.id ?? shopId, ...settings, shop_id: shopId })
     .select(PAYMENT_COLUMNS)
     .single();
   if (error) throw error;
   return normalizePayment(data);
 }
 
-export async function uploadImage(bucket: string, file: File): Promise<{ url: string; path: string }> {
+export async function uploadImage(shopId: string, bucket: string, file: File): Promise<{ url: string; path: string }> {
   const client = requireSupabase();
 
   const extension = file.name.split(".").pop() ?? "png";
-  const path = `${safeUuid()}.${extension}`;
+  const path = `${shopId}/${safeUuid()}.${extension}`;
   const { error } = await client.storage.from(bucket).upload(path, file, { upsert: false, contentType: file.type, cacheControl: "31536000" });
   if (error) throw error;
 
@@ -230,12 +243,12 @@ export async function uploadImage(bucket: string, file: File): Promise<{ url: st
   return { url: data.publicUrl, path };
 }
 
-export async function uploadProductImages(thumbnail: File, detail: File) {
+export async function uploadProductImages(shopId: string, thumbnail: File, detail: File) {
   const client = requireSupabase();
   const id = safeUuid();
   const uploadedPaths: string[] = [];
   async function upload(suffix: string, file: File) {
-    const path = `${id}-${suffix}.jpg`;
+    const path = `${shopId}/${id}-${suffix}.jpg`;
     const { error } = await client.storage.from("product-images").upload(path, file, { upsert: false, contentType: file.type, cacheControl: "31536000" });
     if (error) throw error;
     uploadedPaths.push(path);
@@ -266,38 +279,63 @@ export async function signOutAdmin() {
   if (error) throw error;
 }
 
-export async function getStaffAccess(): Promise<StaffAccess | null> {
+export async function getShopMemberships(): Promise<ShopMembership[]> {
   const client = requireSupabase();
-  const { data, error } = await client.rpc("get_staff_access");
+  const { data, error } = await client.rpc("get_my_shop_memberships");
   if (error) throw error;
-  const value = Array.isArray(data) ? data[0] : data;
-  if (!value || !["owner", "admin", "staff"].includes(value.role) || typeof value.active !== "boolean") return null;
-  return value as StaffAccess;
+  return (data ?? []) as ShopMembership[];
 }
 
-export async function getStaffMembers(): Promise<StaffAccess[]> {
+export async function getStaffMembers(shopId: string): Promise<StaffAccess[]> {
   const client = requireSupabase();
-  const { data, error } = await client.from("staff_members").select("user_id, role, active, created_at, updated_at").order("created_at");
+  const { data, error } = await client.rpc("get_shop_members", { p_shop_id: shopId });
   if (error) throw error;
   return (data ?? []) as StaffAccess[];
 }
 
-export async function saveStaffMember(member: { user_id: string; role: StaffRole; active: boolean }) {
+export async function saveStaffMember(shopId: string, member: { user_id: string; role: StaffRole; active: boolean }) {
   const client = requireSupabase();
-  const { data, error } = await client.rpc("save_staff_member", { p_user_id: member.user_id, p_role: member.role, p_active: member.active });
+  const { data, error } = await client.rpc("save_shop_member", { p_shop_id: shopId, p_user_id: member.user_id, p_role: member.role, p_active: member.active });
   if (error) throw error;
   return data as StaffAccess;
 }
 
-export async function deleteStaffMember(userId: string) {
+export async function deleteStaffMember(shopId: string, userId: string) {
   const client = requireSupabase();
-  const { error } = await client.rpc("delete_staff_member", { p_user_id: userId });
+  const { error } = await client.rpc("delete_shop_member", { p_shop_id: shopId, p_user_id: userId });
   if (error) throw error;
 }
 
-export async function createOrder(customerName: string | null, cart: CartItem[], clientRequestId: string, recoveryToken: string): Promise<Order> {
+export async function inviteShopMember(shopId: string, email: string, role: StaffRole): Promise<void> {
+  const client = requireSupabase();
+  const { error } = await client.functions.invoke("invite-shop-member", { body: { action: "invite", shopId, email, role } });
+  if (error) throw error;
+}
+
+export async function getShopInvitations(shopId: string): Promise<ShopInvitation[]> {
+  const client = requireSupabase();
+  const { data, error } = await client.from("shop_invitations").select("id,shop_id,email,role,status,expires_at,created_at").eq("shop_id", shopId).order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as ShopInvitation[];
+}
+
+export async function updateShopInvitation(shopId: string, invitationId: string, action: "resend" | "revoke"): Promise<void> {
+  const client = requireSupabase();
+  const { error } = await client.functions.invoke("invite-shop-member", { body: { action, shopId, invitationId } });
+  if (error) throw error;
+}
+
+export async function createShop(name: string, slug: string): Promise<Shop> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("create_shop", { p_name: name, p_slug: slug });
+  if (error) throw error;
+  return data as Shop;
+}
+
+export async function createOrder(shopSlug: string, customerName: string | null, cart: CartItem[], clientRequestId: string, recoveryToken: string): Promise<Order> {
   const client = requireSupabase();
   const { data, error } = await client.rpc("create_order", {
+    p_shop_slug: shopSlug,
     p_customer_name: customerName?.trim() || null,
     p_items: cart.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
     p_client_request_id: clientRequestId,
@@ -326,14 +364,15 @@ export async function getCustomerOrder(orderId: string, recoveryToken: string): 
 export type OrderFilter = OrderStatus | "all";
 export type OrderStatusCounts = Record<OrderFilter, number>;
 
-export async function getOrders({ page = 1, pageSize = 12, status = "all" }: { page?: number; pageSize?: number; status?: OrderFilter } = {}): Promise<{ orders: Order[]; total: number }> {
+export async function getOrders(shopId: string, { page = 1, pageSize = 12, status = "all" }: { page?: number; pageSize?: number; status?: OrderFilter } = {}): Promise<{ orders: Order[]; total: number }> {
   const client = requireSupabase();
   const from = Math.max(0, page - 1) * pageSize;
   const to = from + pageSize - 1;
 
   let query = client
     .from("orders")
-    .select(`id,order_code,customer_name,total_amount,status,created_at,updated_at,expires_at,confirmed_at,cancelled_at,expired_at,order_items(id,order_id,product_id,quantity,unit_price,product:products(${PRODUCT_COLUMNS}))`, { count: "exact" });
+    .select(`id,shop_id,order_code,customer_name,total_amount,status,created_at,updated_at,expires_at,confirmed_at,cancelled_at,expired_at,order_items(id,order_id,product_id,quantity,unit_price,product:products(${PRODUCT_COLUMNS}))`, { count: "exact" })
+    .eq("shop_id", shopId);
 
   if (status !== "all") query = query.eq("status", status);
 
@@ -347,11 +386,11 @@ export async function getOrders({ page = 1, pageSize = 12, status = "all" }: { p
   return { orders, total: count ?? 0 };
 }
 
-export async function getOrderStatusCounts(): Promise<OrderStatusCounts> {
+export async function getOrderStatusCounts(shopId: string): Promise<OrderStatusCounts> {
   const client = requireSupabase();
   const statuses: OrderStatus[] = ["pending", "confirmed", "cancelled", "expired"];
   const counts = await Promise.all(statuses.map(async (status) => {
-    const { count, error } = await client.from("orders").select("id", { count: "exact", head: true }).eq("status", status);
+    const { count, error } = await client.from("orders").select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("status", status);
     if (error) throw error;
     return [status, count ?? 0] as const;
   }));

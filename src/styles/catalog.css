@@ -1111,12 +1111,14 @@
 }
 
 .featured-banner-empty {
-  cursor: pointer;
-  transition: transform 170ms ease, border-color 170ms ease, box-shadow 170ms ease;
+  cursor: default;
+  background: var(--surface) !important;
+  box-shadow: var(--soft-shadow) !important;
 }
+.featured-banner-empty > .empty-state { flex: 1; width: 100%; min-height: 190px; padding-block: 24px; }
 
 .featured-banner-empty:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--coral) 30%, var(--line)) !important;
-  box-shadow: 0 12px 28px rgb(15 23 42 / 11%) !important;
+  transform: none;
+  border-color: var(--line) !important;
+  box-shadow: var(--soft-shadow) !important;
 }
