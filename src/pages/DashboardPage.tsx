@@ -61,40 +61,42 @@ export function DashboardPage() {
   const { memberships } = adminSession;
 
   return (
-    <div className="dashboard-shell">
-      <header className="dashboard-header">
-        <div className="dashboard-header-brand">
-          <Link to="/" className="admin-header-icon-button" aria-label="Back to home">
-            <ArrowLeft size={19} />
-          </Link>
-          <span className="dashboard-header-logo">
-            <Layout size={18} />
-          </span>
-          <div>
-            <strong>Akiba Shelf</strong>
-            <small>Dashboard</small>
-          </div>
-        </div>
-
-        <div className="dashboard-header-actions">
-          {adminSession.email && (
-            <span className="dashboard-user-email">
-              {adminSession.email}
+    <div className="admin-shell">
+      <header className="admin-header">
+        <div className="admin-header-pill">
+          <div className="admin-header-brand">
+            <Link to="/" className="admin-header-icon-button" aria-label="Back to home">
+              <ArrowLeft size={19} />
+            </Link>
+            <span className="admin-header-mark">
+              <Layout size={18} />
             </span>
-          )}
-          <button
-            type="button"
-            onClick={() => setIsSignOutOpen(true)}
-            className="admin-header-button admin-signout-button"
-          >
-            <LogOut size={15} />
-            <span>Sign out</span>
-          </button>
+            <div>
+              <strong>Akiba Shelf</strong>
+              <small>Platform dashboard</small>
+            </div>
+          </div>
+
+          <div className="admin-header-actions">
+            {adminSession.email && (
+              <span className="dashboard-user-email">
+                {adminSession.email}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsSignOutOpen(true)}
+              className="admin-header-button admin-signout-button"
+            >
+              <LogOut size={15} />
+              <span>Sign out</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="dashboard-container">
-        <section className="dashboard-intro">
+      <main className="admin-container">
+        <section className="admin-view-hero">
           <div>
             <span>Your Account</span>
             <h1>Your shops</h1>

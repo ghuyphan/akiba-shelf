@@ -4,21 +4,28 @@ import "../styles/admin.css";
 
 export function HomePage() {
   return (
-    <div className="platform-home-shell">
-      <header className="platform-home-header">
-        <div className="platform-home-logo">
-          <span className="platform-home-logo-icon">
-            <ShoppingBag size={20} />
-          </span>
-          <strong>Akiba Shelf</strong>
+    <div className="admin-shell platform-home-shell">
+      <header className="admin-header">
+        <div className="admin-header-pill">
+          <div className="admin-header-brand">
+            <span className="admin-header-mark">
+              <ShoppingBag size={18} />
+            </span>
+            <div>
+              <strong>Akiba Shelf</strong>
+              <small>Artist booth platform</small>
+            </div>
+          </div>
+          <div className="admin-header-actions">
+            <Link to="/dashboard" className="button button-ghost platform-home-signin-btn">
+              <LogIn size={16} />
+              <span>Sign in</span>
+            </Link>
+          </div>
         </div>
-        <Link to="/dashboard" className="button button-ghost platform-home-signin-btn">
-          <LogIn size={16} />
-          <span>Sign in</span>
-        </Link>
       </header>
 
-      <main className="platform-home-hero">
+      <main className="admin-container platform-home-container">
         <div className="platform-home-hero-content">
           <span className="platform-home-badge">
             <Sparkles size={12} className="badge-icon" />
