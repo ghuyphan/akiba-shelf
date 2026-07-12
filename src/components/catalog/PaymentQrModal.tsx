@@ -51,7 +51,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
     () => checkoutCart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0),
     [checkoutCart],
   );
-  const { qrSrc, isGenerating } = usePaymentQrSource(isOpen, order, payment, checkoutCart);
+  const { qrSrc, isGenerating, qrUnavailable } = usePaymentQrSource(isOpen, order, payment, checkoutCart);
 
   const submitOrder = useCallback(async (activeRecovery: ActiveOrderRecovery) => {
     setIsSubmittingOrder(true);
@@ -222,6 +222,8 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
           <div className="qr-display payment-qr-display">
           {qrSrc && !isGenerating ? (
             <img src={qrSrc} alt="Payment QR code" className="payment-qr-image" />
+          ) : qrUnavailable ? (
+            <div className="qr-loading payment-qr-loading"><CloudOff size={28} /><span>Payment QR is unavailable. Please ask booth staff for help.</span></div>
           ) : (
             <div className="qr-loading payment-qr-loading"><Loader2 size={32} className="spin-icon" />
             </div>

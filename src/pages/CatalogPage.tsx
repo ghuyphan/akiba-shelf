@@ -31,7 +31,7 @@ export function CatalogPage() {
   const toast = useToast();
   const [lightweightMode] = useState(prefersLightweightCatalog);
   const { cart, setCart, reconcileCart } = usePersistentCart();
-  const { products, booth, payment, loadError, setLoadError, reloadAll: loadCatalog } = useCatalogData(reconcileCart);
+  const { products, booth, payment, loadError, setLoadError, reloadAll: loadCatalog, ensurePayment } = useCatalogData(reconcileCart);
   const { flyingItems, animateAdd } = useAddToCartFeedback(lightweightMode);
   const [online, setOnline] = useState(navigator.onLine);
   const [activeCategory, setActiveCategory] = useState("All");
@@ -207,8 +207,14 @@ export function CatalogPage() {
         onRemove={handleRemoveFromCart}
         onOpenPayment={() => {
           if (!online) { toast.info("Your cart is saved locally, but stock must be verified online before payment.", "Reconnect to checkout"); return; }
-          setIsQrOpen(true);
+          const closingMobileSheet = isCartExpanded && window.matchMedia("(max-width: 760px)").matches;
           setIsCartExpanded(false);
+          const sheetExit = closingMobileSheet
+            ? new Promise<void>((resolve) => window.setTimeout(resolve, 260))
+            : Promise.resolve();
+          void Promise.all([ensurePayment(), sheetExit])
+            .then(() => setIsQrOpen(true))
+            .catch((error) => toast.error(error instanceof Error ? error.message : "Could not load payment settings.", "Checkout unavailable"));
         }}
         onClearCart={handleClearCart}
         isExpanded={isCartExpanded}

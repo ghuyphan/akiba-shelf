@@ -15,6 +15,7 @@ export function useCatalogData(onProductsLoaded: (products: Product[]) => void) 
   const [loadError, setLoadError] = useState("");
   const boothRef = useRef(booth);
   const productsRef = useRef(products);
+  const paymentRequestRef = useRef<Promise<PaymentSettings> | null>(null);
 
   useEffect(() => { boothRef.current = booth; }, [booth]);
   useEffect(() => { productsRef.current = products; }, [products]);
@@ -40,7 +41,17 @@ export function useCatalogData(onProductsLoaded: (products: Product[]) => void) 
     setLoadError("");
   }, []);
 
-  const loadPayment = useCallback(async () => setPayment(await getPublicPaymentSettings()), []);
+  const loadPayment = useCallback(() => {
+    if (paymentRequestRef.current) return paymentRequestRef.current;
+    const request = getPublicPaymentSettings()
+      .then((nextPayment) => {
+        setPayment(nextPayment);
+        return nextPayment;
+      })
+      .finally(() => { paymentRequestRef.current = null; });
+    paymentRequestRef.current = request;
+    return request;
+  }, []);
 
   const reloadAll = useCallback(async () => {
     const paymentRequest = loadPayment().catch(() => undefined);
@@ -78,5 +89,5 @@ export function useCatalogData(onProductsLoaded: (products: Product[]) => void) 
     };
   }, [loadBooth, loadPayment, loadProducts, reportError]);
 
-  return { products, booth, payment, loadError, setLoadError, reloadAll };
+  return { products, booth, payment, loadError, setLoadError, reloadAll, ensurePayment: loadPayment };
 }

@@ -5,22 +5,26 @@ import type { CartItem, Order, PaymentSettings } from "../types/catalog";
 export function usePaymentQrSource(isOpen: boolean, order: Order | null, payment: PaymentSettings, cart: CartItem[]) {
   const [source, setSource] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !order) return;
     let cancelled = false;
     setGenerating(true);
+    setUnavailable(false);
     void generateVietQrForCart(payment, cart, order.order_code, order.total_amount)
       .catch(() => null)
       .then((generated) => {
         if (cancelled) return;
-        setSource(generated?.src || payment.bank_qr_url || payment.momo_qr_url);
+        const nextSource = generated?.src || payment.bank_qr_url || payment.momo_qr_url;
+        setSource(nextSource);
+        setUnavailable(!nextSource);
         setGenerating(false);
       });
     return () => { cancelled = true; };
   }, [cart, isOpen, order, payment]);
 
-  return { qrSrc: source, isGenerating: generating };
+  return { qrSrc: source, isGenerating: generating, qrUnavailable: unavailable };
 }
 
 export function useOrderCountdown(order: Order | null, onExpired: () => void) {
