@@ -23,6 +23,10 @@ test("loads payment settings before checkout and presents API failure", async ({
   await mockSupabase(page, { checkoutFails: true });
   await page.reload();
   await page.getByRole("button", { name: /Add Moon Stand to cart/i }).click();
+  const viewCart = page.getByRole("button", { name: /View cart/i });
+  if (await viewCart.isVisible()) {
+    await viewCart.click();
+  }
   await page.getByRole("button", { name: /Pay now/i }).click();
   await page.getByLabel(/Pickup name/i).fill("Customer");
   await page.getByRole("button", { name: /Create order & pay/i }).click();

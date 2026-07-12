@@ -165,10 +165,6 @@
 }
 
 @media (max-width: 760px) {
-  .selected-panel-empty {
-    display: none !important;
-  }
-
   .selected-panel.mobile-collapsed .mobile-cart-count-badge {
     top: -2px;
     right: -2px;
@@ -1106,6 +1102,12 @@
   justify-content: center !important;
   align-items: center !important;
   padding: 16px !important;
+}
+
+@media (max-width: 760px) {
+  .selected-panel-empty {
+    display: none !important;
+  }
 }
 
 .featured-banner-empty {
