@@ -18,22 +18,23 @@ import { defaultPayment } from "../lib/constants";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme";
-import { isSupabaseConfigured, safeUuid, supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
+import { safeUuid } from "../lib/id";
 import type { BoothSettings, PaymentSettings, Product, Order } from "../types/catalog";
-import { LoginPanel } from "../components/admin/LoginPanel";
+import { AdminAccessCheck, LoginPanel } from "../components/admin/LoginPanel";
 import { ProductForm } from "../components/admin/ProductForm";
 import { ProductList } from "../components/admin/ProductList";
 import { QrManager } from "../components/admin/QrManager";
 import { SettingsForm } from "../components/admin/SettingsForm";
 import { OrderQueue } from "../components/admin/OrderQueue";
 import { StorefrontDesigner } from "../components/admin/StorefrontDesigner";
-import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
 import { EmptyState } from "../components/ui/EmptyState";
 import { useToast } from "../components/ui/ToastProvider";
 import { canUsePush, disableOrderNotifications, enableOrderNotifications, getPushEnabled } from "../lib/pwa";
 import { useTabIndicator } from "../hooks/useTabIndicator";
+import { useAdminSession } from "../hooks/useAdminSession";
 
 
 function createBlankProduct(nextSort: number): Product {
@@ -61,8 +62,7 @@ const orderPageSize = 12;
 const emptyOrderCounts: OrderStatusCounts = { all: 0, pending: 0, confirmed: 0, cancelled: 0, expired: 0 };
 
 export function AdminPage() {
-  const [isAuthed, setIsAuthed] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(isSupabaseConfigured);
+  const { isAuthed, setIsAuthed, isCheckingAuth } = useAdminSession();
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderFilter, setOrderFilter] = useState<OrderFilter>("pending");
@@ -92,32 +92,6 @@ export function AdminPage() {
     [products],
   );
   const hiddenCount = useMemo(() => products.filter((product) => !product.active).length, [products]);
-  useEffect(() => {
-    if (!supabase) {
-      setIsCheckingAuth(false);
-      return undefined;
-    }
-
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setIsAuthed(Boolean(data.session));
-      setIsCheckingAuth(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthed(Boolean(session));
-      setIsCheckingAuth(false);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
   async function reloadCatalogAdmin() {
     const catalog = await getAdminCatalogData();
     setBooth(catalog.booth);
@@ -299,11 +273,7 @@ export function AdminPage() {
   }
 
   if (isCheckingAuth) {
-    return (
-      <main className="admin-shell" style={getThemeStyle(booth)}>
-        <Alert>Checking admin session...</Alert>
-      </main>
-    );
+    return <AdminAccessCheck booth={booth} />;
   }
 
   if (!isAuthed) return <LoginPanel onLogin={handleLogin} booth={booth} />;

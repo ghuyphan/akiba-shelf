@@ -1,5 +1,7 @@
 import { defaultBooth, defaultPayment } from "./constants";
-import { isSupabaseConfigured, safeUuid, supabase } from "./supabase";
+import { isSupabaseConfigured, supabase } from "./supabase";
+import { safeUuid } from "./id";
+import { BOOTH_COLUMNS, PAYMENT_COLUMNS, PRODUCT_COLUMNS } from "./catalogQueries";
 import type { BoothSettings, CatalogData, PaymentSettings, Product, StockStatus, Order, OrderItem, OrderStatus, CartItem, OrderMutationResult } from "../types/catalog";
 
 const stockStatuses: StockStatus[] = ["in_stock", "limited", "sold_out"];
@@ -85,24 +87,35 @@ function requireSupabase() {
   return supabase;
 }
 
-export async function getCatalogData(): Promise<CatalogData> {
+export async function getCatalogCoreData(): Promise<Pick<CatalogData, "products" | "booth">> {
+  const [products, booth] = await Promise.all([getPublicProducts(), getPublicBoothSettings()]);
+  return { products, booth };
+}
+
+export async function getPublicProducts(): Promise<Product[]> {
   const client = requireSupabase();
+  const { data, error } = await client.from("products").select(PRODUCT_COLUMNS).eq("active", true).order("sort_order", { ascending: true });
+  if (error) throw error;
+  return ((data as Product[]) ?? []).map(normalizeProduct);
+}
 
-  const [products, booth, payment] = await Promise.all([
-    client.from("products").select("id,name,collection,description,price_vnd,item_code,quantity_available,category,badge,badge_color,stock_status,stock_note,images,image_variants,featured,sort_order,active").eq("active", true).order("sort_order", { ascending: true }),
-    client.from("booth_settings").select("id,booth_name,subtitle,booth_code,location,open_hours,logo_url,instagram_url,facebook_url,tiktok_url,social_qr_logo_url,theme_primary,theme_secondary,theme_accent,theme_background,layout_order,corner_radius,catalog_locale,featured_autoplay").limit(1).maybeSingle(),
-    client.from("payment_settings").select("id,momo_qr_url,bank_qr_url,momo_label,bank_label,bank_code,bank_acq_id,bank_account_no,bank_account_name,bank_add_info_template,payment_instructions").limit(1).maybeSingle(),
-  ]);
+export async function getPublicBoothSettings(): Promise<BoothSettings> {
+  const client = requireSupabase();
+  const { data, error } = await client.from("booth_settings").select(BOOTH_COLUMNS).limit(1).maybeSingle();
+  if (error) throw error;
+  return normalizeBooth((data as BoothSettings | null) ?? defaultBooth);
+}
 
-  if (products.error) throw products.error;
-  if (booth.error) throw booth.error;
-  if (payment.error) throw payment.error;
+export async function getPublicPaymentSettings(): Promise<PaymentSettings> {
+  const client = requireSupabase();
+  const { data, error } = await client.from("payment_settings").select(PAYMENT_COLUMNS).limit(1).maybeSingle();
+  if (error) throw error;
+  return normalizePayment((data as PaymentSettings | null) ?? defaultPayment);
+}
 
-  return {
-    products: ((products.data as Product[]) ?? []).map(normalizeProduct),
-    booth: normalizeBooth((booth.data as BoothSettings | null) ?? defaultBooth),
-    payment: normalizePayment((payment.data as PaymentSettings | null) ?? defaultPayment),
-  };
+export async function getCatalogData(): Promise<CatalogData> {
+  const [catalog, payment] = await Promise.all([getCatalogCoreData(), getPublicPaymentSettings()]);
+  return { ...catalog, payment };
 }
 
 export async function getAdminProducts(): Promise<Product[]> {
@@ -117,9 +130,9 @@ export async function getAdminCatalogData(): Promise<CatalogData> {
   const client = requireSupabase();
 
   const [products, booth, payment] = await Promise.all([
-    client.from("products").select("id,name,collection,description,price_vnd,item_code,quantity_available,category,badge,badge_color,stock_status,stock_note,images,image_variants,featured,sort_order,active").order("sort_order", { ascending: true }),
-    client.from("booth_settings").select("id,booth_name,subtitle,booth_code,location,open_hours,logo_url,instagram_url,facebook_url,tiktok_url,social_qr_logo_url,theme_primary,theme_secondary,theme_accent,theme_background,layout_order,corner_radius,catalog_locale,featured_autoplay").limit(1).maybeSingle(),
-    client.from("payment_settings").select("id,momo_qr_url,bank_qr_url,momo_label,bank_label,bank_code,bank_acq_id,bank_account_no,bank_account_name,bank_add_info_template,payment_instructions").limit(1).maybeSingle(),
+    client.from("products").select(PRODUCT_COLUMNS).order("sort_order", { ascending: true }),
+    client.from("booth_settings").select(BOOTH_COLUMNS).limit(1).maybeSingle(),
+    client.from("payment_settings").select(PAYMENT_COLUMNS).limit(1).maybeSingle(),
   ]);
 
   if (products.error) throw products.error;

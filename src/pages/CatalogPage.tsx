@@ -1,16 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import "../styles/catalog.css";
-import { Check, Clock, Facebook, Instagram, MapPin, ShoppingBag, Sparkles } from "lucide-react";
-import { SOCIAL_BRAND_COLORS } from "../lib/social";
-import { getCatalogData } from "../lib/api";
-import { defaultPayment } from "../lib/constants";
-import { getErrorMessage, isSessionNoise } from "../lib/errors";
-import { subscribeToCatalogChanges } from "../lib/realtime";
-import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme";
-import type { BoothSettings, CartItem, Order, PaymentSettings, Product, StorefrontSection } from "../types/catalog";
-import { CatalogLocaleProvider, useCatalogCopy } from "../lib/catalogI18n";
-import { TiktokIcon } from "../components/ui/TiktokIcon";
+import { applyPageTheme, getThemeStyle } from "../lib/theme";
+import type { Order, Product, StorefrontSection } from "../types/catalog";
+import { CatalogLocaleProvider } from "../lib/catalogI18n";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
 import { CategoryFilters } from "../components/catalog/CategoryFilters";
@@ -20,32 +12,27 @@ import { ProductGrid } from "../components/catalog/ProductGrid";
 import { ProductDetailModal } from "../components/catalog/ProductDetailModal";
 import { SelectedItemPanel } from "../components/catalog/SelectedItemPanel";
 import { StackedFeatured } from "../components/catalog/StackedFeatured";
-import { SocialQrCard } from "../components/catalog/SocialQrCard";
 import { Alert } from "../components/ui/Alert";
-import { Modal } from "../components/ui/Modal";
-import { safeUuid } from "../lib/supabase";
 import { useToast } from "../components/ui/ToastProvider";
 import { loadOrderRecovery } from "../lib/orderRecovery";
-import { formatVnd } from "../lib/format";
-import { loadCatalogSnapshot, loadCart, saveCart, saveCatalogSnapshot } from "../lib/offline";
+import { usePersistentCart } from "../hooks/usePersistentCart";
+import { useCatalogData } from "../hooks/useCatalogData";
+import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
+import { BoothDetailsModal, FlyingItemsLayer, PendingOrderBar } from "../components/catalog/CatalogOverlays";
 
-type FlyingItem = {
-  id: string;
-  imageUrl: string;
-  startX: number;
-  startY: number;
-  tx: number;
-  ty: number;
-  tyHalf: number;
-};
+type NetworkConnection = { effectiveType?: string; saveData?: boolean };
+
+function prefersLightweightCatalog() {
+  const connection = (navigator as Navigator & { connection?: NetworkConnection }).connection;
+  return Boolean(connection?.saveData || connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g");
+}
 
 export function CatalogPage() {
   const toast = useToast();
-  const cached = useMemo(() => loadCatalogSnapshot(), []);
-  const [products, setProducts] = useState<Product[]>(() => cached?.products ?? []);
-  const [booth, setBooth] = useState<BoothSettings>(() => cached?.booth ?? getStoredBoothTheme());
-  const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
-  const [cart, setCart] = useState<CartItem[]>(loadCart);
+  const [lightweightMode] = useState(prefersLightweightCatalog);
+  const { cart, setCart, reconcileCart } = usePersistentCart();
+  const { products, booth, payment, loadError, setLoadError, reloadAll: loadCatalog } = useCatalogData(reconcileCart);
+  const { flyingItems, animateAdd } = useAddToCartFeedback(lightweightMode);
   const [online, setOnline] = useState(navigator.onLine);
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,68 +40,19 @@ export function CatalogPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-  const [loadError, setLoadError] = useState("");
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const selectedFeedbackTimerRef = useRef<number | undefined>(undefined);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
-  const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [isCartExpanded, setIsCartExpanded] = useState(false);
   const initialOrder = loadOrderRecovery()?.order ?? null;
   const [activeOrder, setActiveOrder] = useState<Order | null>(initialOrder);
   const activeOrderRef = useRef<Order | null>(initialOrder);
 
-  const loadCatalog = useCallback(() => {
-    return getCatalogData()
-      .then((data) => {
-        saveCatalogSnapshot(data);
-        setProducts(data.products);
-        setBooth(data.booth);
-        setPayment(data.payment);
-        setCart((currentCart) => {
-          return currentCart
-            .map((item) => {
-              const freshProduct = data.products.find((p) => p.id === item.product.id);
-              if (!freshProduct || freshProduct.quantity_available <= 0) return null;
-              const nextQty = Math.min(item.quantity, freshProduct.quantity_available);
-              return { product: freshProduct, quantity: nextQty };
-            })
-            .filter((item): item is CartItem => item !== null);
-        });
-        setLoadError("");
-      })
-      .catch((error) => {
-        if (isSessionNoise(error)) return;
-        setLoadError(getErrorMessage(error, "Could not load catalog."));
-      });
-  }, []);
-
-  useEffect(() => {
-    void loadCatalog();
-  }, [loadCatalog]);
-
-  useEffect(() => { saveCart(cart); }, [cart]);
   useEffect(() => {
     const handleOnline = () => { setOnline(true); void loadCatalog(); };
     const handleOffline = () => setOnline(false);
     window.addEventListener("online", handleOnline); window.addEventListener("offline", handleOffline);
     return () => { window.removeEventListener("online", handleOnline); window.removeEventListener("offline", handleOffline); };
-  }, [loadCatalog]);
-
-  useEffect(() => {
-    let reloadTimer: number | undefined;
-
-    const unsubscribe = subscribeToCatalogChanges({
-      onChange: () => {
-        window.clearTimeout(reloadTimer);
-        reloadTimer = window.setTimeout(() => void loadCatalog(), 150);
-      },
-      onStatus: () => undefined,
-    });
-
-    return () => {
-      window.clearTimeout(reloadTimer);
-      unsubscribe();
-    };
   }, [loadCatalog]);
 
   useEffect(() => {
@@ -170,54 +108,7 @@ export function CatalogPage() {
       return [...prevCart, { product, quantity: 1 }];
     });
 
-    if (event) {
-      const trigger = event.currentTarget as HTMLElement;
-      trigger.classList.remove("is-adding-to-cart");
-      void trigger.offsetWidth;
-      trigger.classList.add("is-adding-to-cart");
-      window.setTimeout(() => trigger.classList.remove("is-adding-to-cart"), 560);
-
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          const cartSurface = document.querySelector<HTMLElement>(".selected-panel:not(.selected-panel-empty)");
-          if (!cartSurface) return;
-          cartSurface.classList.remove("cart-just-updated");
-          void cartSurface.offsetWidth;
-          cartSurface.classList.add("cart-just-updated");
-          window.setTimeout(() => cartSurface.classList.remove("cart-just-updated"), 560);
-        });
-      });
-    }
-
-    if (event) {
-      const imageUrl = product.images[0] || "";
-      const startX = event.clientX;
-      const startY = event.clientY;
-      const id = safeUuid();
-
-      const targetElement = document.querySelector(".storefront-module-cart .selected-panel");
-      const mobileCart = window.matchMedia("(max-width: 760px)").matches;
-      let targetX = mobileCart ? window.innerWidth * 0.5 : window.innerWidth - 180;
-      let targetY = mobileCart ? window.innerHeight - 36 : 250;
-      if (targetElement) {
-        const rect = targetElement.getBoundingClientRect();
-        targetX = rect.left + rect.width * 0.5;
-        targetY = rect.top + 54;
-      }
-
-      const tx = targetX - startX;
-      const ty = targetY - startY;
-      const tyHalf = Math.min(ty * 0.45, -90);
-
-      setFlyingItems((current) => [
-        ...current,
-        { id, imageUrl, startX, startY, tx, ty, tyHalf },
-      ]);
-
-      setTimeout(() => {
-        setFlyingItems((current) => current.filter((item) => item.id !== id));
-      }, 800);
-    }
+    if (event) animateAdd(product, event);
   };
 
   const handleUpdateCartQuantity = (productId: string, quantity: number) => {
@@ -287,7 +178,7 @@ export function CatalogPage() {
   }, [booth.layout_order]);
 
   const storefrontBlocks: Record<StorefrontSection, React.ReactNode> = {
-    featured: <StackedFeatured products={products} onSelect={handleAddToCart} autoRotate={booth.featured_autoplay ?? true} />,
+    featured: <StackedFeatured products={products} onSelect={handleAddToCart} autoRotate={!lightweightMode && (booth.featured_autoplay ?? true)} />,
     controls: (
       <div className="catalog-controls" onClick={(event) => event.stopPropagation()}>
         <CategoryFilters categories={categories} activeCategory={activeCategory} onChange={setActiveCategory} />
@@ -347,7 +238,7 @@ export function CatalogPage() {
 
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
-    <main className="app-shell" style={getThemeStyle(booth)} onClick={() => setSelectedProductId(null)}>
+    <main className={`app-shell ${lightweightMode ? "catalog-lightweight" : ""}`} style={getThemeStyle(booth)} onClick={() => setSelectedProductId(null)}>
       <CatalogHeader booth={booth} onOpenInfo={() => setIsInfoOpen(true)} />
       {loadError && (
         <Alert variant="error" title="Catalog unavailable" onClose={() => setLoadError("")}>
@@ -373,106 +264,9 @@ export function CatalogPage() {
         onOrderChange={handleOrderChange}
       />
       <ProductDetailModal product={detailProduct} onClose={() => { setDetailProduct(null); setSelectedProductId(null); }} onAddToCart={handleAddToCart} />
-      <Modal title="Booth details" isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} className="booth-info-modal-container booth-modal-redesign" mobileSheet>
-        <div className="booth-info-modal booth-modal-content">
-          <div className="booth-modal-hero">
-            <div className="booth-info-icon-wrap booth-modal-logo">
-              {booth.logo_url ? (
-                <img src={booth.logo_url} alt={booth.booth_name} className="booth-info-logo-img" />
-              ) : (
-                <ShoppingBag size={28} />
-              )}
-            </div>
-            <div className="booth-modal-identity">
-              <span className="booth-modal-eyebrow">You’re shopping at</span>
-              <h3>{booth.booth_name || "Booth Details"}</h3>
-              <p>{booth.subtitle || "Independent merch booth"}</p>
-            </div>
-            <span className="booth-code-pill">Booth {booth.booth_code}</span>
-          </div>
-
-          <div className="booth-modal-facts">
-            <div>
-              <MapPin size={18} />
-              <span><small>Location</small><strong>{booth.location || "Not specified"}</strong></span>
-            </div>
-            <div>
-              <Clock size={18} />
-              <span><small>Open hours</small><strong>{booth.open_hours || "Not specified"}</strong></span>
-            </div>
-          </div>
-
-          {payment.payment_instructions && <div className="booth-modal-note"><Sparkles size={18} /><div><strong>Before you pay</strong><span>{payment.payment_instructions}</span></div></div>}
-
-          {(() => {
-            const modalSocialLinks = [
-              { label: "Instagram", url: booth.instagram_url, icon: <Instagram size={18} /> },
-              { label: "Facebook", url: booth.facebook_url, icon: <Facebook size={18} /> },
-              { label: "TikTok", url: booth.tiktok_url, icon: <TiktokIcon size={18} /> },
-            ].filter((item) => item.url?.trim());
-
-            if (modalSocialLinks.length === 0) return null;
-
-            return (
-              <>
-                <div className="booth-modal-social-section">
-                  <div className="booth-modal-section-heading"><span>Find us online</span><strong>Follow the booth</strong></div>
-                  <div className="booth-modal-social-grid">
-                    {modalSocialLinks.map((item) => {
-                      const brand = SOCIAL_BRAND_COLORS[item.label];
-                      return (
-                        <SocialQrCard
-                          key={item.label}
-                          label={item.label}
-                          url={item.url!}
-                          logoUrl={booth.social_qr_logo_url}
-                          icon={item.icon}
-                          brandColor={brand?.color}
-                          brandGradient={brand?.gradient}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      </Modal>
-
-      {createPortal(flyingItems.map((item) => (
-        <div
-          key={item.id}
-          className="flying-product-item"
-          style={{
-            left: item.startX - 36,
-            top: item.startY - 41,
-            ...({
-              "--tx": `${item.tx}px`,
-              "--ty": `${item.ty}px`,
-              "--tx-half": `${item.tx * 0.5}px`,
-              "--ty-half": `${item.tyHalf}px`
-            } as React.CSSProperties)
-          }}
-          aria-hidden="true"
-        >
-          {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <ShoppingBag size={24} />}
-          <span><Check size={13} /></span>
-        </div>
-      )), document.body)}
+      <BoothDetailsModal booth={booth} payment={payment} open={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
+      <FlyingItemsLayer items={flyingItems} />
     </main>
     </CatalogLocaleProvider>
-  );
-}
-
-function PendingOrderBar({ order, onOpen }: { order: Order; onOpen: () => void }) {
-  const copy = useCatalogCopy();
-  return (
-    <aside className="pending-order-bar" role="status">
-      <span className="pending-order-bar-icon"><Clock size={18} /></span>
-      <span><strong>{copy.pendingOrder} · {order.order_code}</strong><small>{copy.pendingOrderHint}</small></span>
-      <b>{formatVnd(order.total_amount)}</b>
-      <button type="button" onClick={onOpen}>{copy.viewPayment}</button>
-    </aside>
   );
 }

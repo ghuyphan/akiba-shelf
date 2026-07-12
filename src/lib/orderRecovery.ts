@@ -1,5 +1,5 @@
 import type { CartItem, Order } from "../types/catalog";
-import { safeUuid } from "./supabase";
+import { safeUuid } from "./id";
 import { isCartItem } from "./offline";
 
 const ACTIVE_ORDER_KEY = "akiba-shelf-active-order-v1";

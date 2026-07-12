@@ -112,7 +112,7 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
                   aria-label={isActive ? `${product.name}, current featured item` : `Show ${product.name}`}
                   tabIndex={isActive ? 0 : -1}
                 >
-                  <span className="featured-deck-image">{image ? <img src={image} alt={isActive ? product.name : ""} draggable="false" /> : <span className="image-placeholder" />}{product.badge && <i style={{ backgroundColor: product.badge_color || undefined }}>{product.badge}</i>}</span>
+                  <span className="featured-deck-image">{image ? <img src={image} alt={isActive ? product.name : ""} draggable="false" loading={isActive ? "eager" : "lazy"} fetchPriority={isActive ? "high" : "low"} decoding="async" /> : <span className="image-placeholder" />}{product.badge && <i style={{ backgroundColor: product.badge_color || undefined }}>{product.badge}</i>}</span>
                   <span className="featured-deck-footer"><strong>{product.name}</strong><small>{formatVnd(product.price_vnd)}</small></span>
                 </button>
               );

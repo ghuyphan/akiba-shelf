@@ -3,10 +3,11 @@ import { Ban, Check, CheckCircle2, CloudOff, Copy, Loader2, ReceiptText, ShieldC
 import type { CartItem, PaymentSettings, Order } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { useCatalogCopy } from "../../lib/catalogI18n";
-import { canGenerateVietQr, generateVietQrForCart } from "../../lib/vietqr";
+import { canGenerateVietQr } from "../../lib/vietqr";
 import { Modal } from "../ui/Modal";
 import { cancelCustomerOrder, createOrder, getCustomerOrder } from "../../lib/api";
 import { clearOrderRecovery, createOrderRecovery, loadOrderRecovery, saveOrderRecovery, type ActiveOrderRecovery } from "../../lib/orderRecovery";
+import { useOrderCountdown, usePaymentQrSource } from "../../hooks/useCheckoutPresentation";
 
 type PaymentQrModalProps = {
   isOpen: boolean;
@@ -19,9 +20,6 @@ type PaymentQrModalProps = {
 
 export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOrderChange }: PaymentQrModalProps) {
   const copy = useCatalogCopy();
-  const [qrSrc, setQrSrc] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  
   // Order flow states
   const [recovery, setRecovery] = useState<ActiveOrderRecovery | null>(() => loadOrderRecovery());
   const [customerName, setCustomerName] = useState(() => recovery?.customerName ?? "");
@@ -30,7 +28,6 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
   const [submitError, setSubmitError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [connectionState, setConnectionState] = useState<"online" | "reconnecting">(navigator.onLine ? "online" : "reconnecting");
-  const [remaining, setRemaining] = useState(0);
   const [isCancelling, setIsCancelling] = useState(false);
   const completionHandledRef = useRef(false);
   const recoveryAttemptedRef = useRef(false);
@@ -54,6 +51,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
     () => checkoutCart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0),
     [checkoutCart],
   );
+  const { qrSrc, isGenerating } = usePaymentQrSource(isOpen, order, payment, checkoutCart);
 
   const submitOrder = useCallback(async (activeRecovery: ActiveOrderRecovery) => {
     setIsSubmittingOrder(true);
@@ -87,28 +85,6 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
     setRecovery(activeRecovery);
     await submitOrder(activeRecovery);
   };
-
-  // Generate QR when order is created
-  useEffect(() => {
-    if (!isOpen || !order) return;
-    let cancelled = false;
-    const orderCode = order.order_code;
-    const orderTotal = order.total_amount;
-
-    async function loadQr() {
-      setIsGenerating(true);
-      const generated = await generateVietQrForCart(payment, checkoutCart, orderCode, orderTotal).catch(() => null);
-      if (!cancelled) {
-        setQrSrc(generated?.src || payment.bank_qr_url || payment.momo_qr_url);
-        setIsGenerating(false);
-      }
-    }
-
-    void loadQr();
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, order, payment, checkoutCart]);
 
   const reconcileOrder = useCallback(async () => {
     if (reconcileInFlightRef.current) return;
@@ -174,14 +150,7 @@ export function PaymentQrModal({ isOpen, payment, cart, onClose, onSuccess, onOr
   };
 
   const paymentLabel = canGenerateVietQr(payment) ? payment.bank_label : payment.momo_label;
-
-  useEffect(() => {
-    if (!order?.expires_at || order.status !== "pending") { setRemaining(0); return; }
-    const update = () => setRemaining(Math.max(0, Math.ceil((new Date(order.expires_at!).getTime() - Date.now()) / 1000)));
-    update(); const timer = window.setInterval(update, 1000); return () => window.clearInterval(timer);
-  }, [order?.expires_at, order?.status]);
-
-  useEffect(() => { if (order?.status === "pending" && remaining === 0 && order.expires_at) void reconcileOrder(); }, [remaining, order?.status, order?.expires_at, reconcileOrder]);
+  const remaining = useOrderCountdown(order, reconcileOrder);
 
   async function handleCancel() {
     if (!order || !recovery || !navigator.onLine || !window.confirm("Cancel this reservation and release the items?")) return;

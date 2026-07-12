@@ -54,15 +54,6 @@ export function SelectedItemPanel({
       <div
         className="mobile-cart-summary-bar"
         onClick={onToggleExpand}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onToggleExpand?.();
-          }
-        }}
-        role="button"
-        tabIndex={0}
-        aria-label="Expand cart details"
       >
         <div className="mobile-cart-summary-info">
           <div className="mobile-cart-summary-icon-wrap">
@@ -146,10 +137,10 @@ export function SelectedItemPanel({
           })}
         </div>
 
-        <div className="selected-actions" style={{ marginTop: "16px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px", padding: "0 4px" }}>
-            <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--muted)" }}>{copy.totalPrice}</span>
-            <strong style={{ fontSize: "16px", fontWeight: "800", color: "var(--ink)" }}>{formatVnd(totalAmount)}</strong>
+        <div className="selected-actions cart-total-actions">
+          <div className="cart-total-row">
+            <span>{copy.totalPrice}</span>
+            <strong>{formatVnd(totalAmount)}</strong>
           </div>
           <Button variant="primary" className="button-checkout" icon={<Banknote size={18} />} onClick={onOpenPayment}>
             <span className="checkout-btn-label">{copy.payNow}</span>
