@@ -20,9 +20,10 @@ import { useCatalogData } from "../hooks/useCatalogData";
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
 import { BoothDetailsModal, FlyingItemsLayer, PendingOrderBar } from "../components/catalog/CatalogOverlays";
 import { layoutOrderSchema } from "../lib/schemas";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { getPublicShop } from "../lib/api";
 import type { Shop } from "../types/catalog";
+import { LogIn, RotateCw, Store, StoreIcon } from "lucide-react";
 
 type NetworkConnection = { effectiveType?: string; saveData?: boolean };
 
@@ -35,6 +36,7 @@ export function CatalogPage() {
   const { shopSlug = "" } = useParams();
   const toast = useToast();
   const [shop, setShop] = useState<Shop | null>();
+  const [shopLoadError, setShopLoadError] = useState("");
   const [lightweightMode] = useState(prefersLightweightCatalog);
   const { cart, setCart, reconcileCart } = usePersistentCart(shopSlug);
   const { products, booth, payment, loadError, isLoading, reloadAll: loadCatalog, ensurePayment } = useCatalogData(shop?.id, reconcileCart);
@@ -59,13 +61,18 @@ export function CatalogPage() {
     setActiveOrder(next); activeOrderRef.current = next;
   }, [shopSlug]);
 
-  useEffect(() => {
+  const loadShop = useCallback(async () => {
     setShop(undefined);
-    void getPublicShop(shopSlug).then(setShop).catch((error) => {
+    setShopLoadError("");
+    try {
+      setShop(await getPublicShop(shopSlug));
+    } catch (error) {
       setShop(null);
-      toast.error(error instanceof Error ? error.message : "Could not load this shop.", "Shop unavailable");
-    });
-  }, [shopSlug, toast]);
+      setShopLoadError(error instanceof Error ? error.message : "Could not connect to the shop.");
+    }
+  }, [shopSlug]);
+
+  useEffect(() => { void loadShop(); }, [loadShop]);
 
   useEffect(() => {
     const handleOnline = () => { setOnline(true); void loadCatalog(); };
@@ -272,8 +279,16 @@ export function CatalogPage() {
     },
   ].sort((first, second) => first.position - second.position);
 
-  if (shop === undefined) return <main className="app-shell"><Alert variant="info" title="Loading shop…">Preparing the storefront.</Alert></main>;
-  if (shop === null) return <main className="app-shell"><Alert variant="error" title="Shop unavailable">This shop does not exist or is currently inactive.</Alert></main>;
+  if (shop === undefined) return <main className="shop-state-shell"><section className="shop-state-card shop-state-loading" aria-live="polite"><span className="shop-state-icon"><StoreIcon size={28}/></span><span className="shop-state-eyebrow">Akiba Shelf</span><h1>Opening the shop…</h1><p>Getting the shelves ready for you.</p><div className="shop-state-loading-line"/></section></main>;
+  if (shop === null) return <main className="shop-state-shell"><section className="shop-state-card" role="alert">
+    <div className="shop-state-illustration" aria-hidden="true"><span className="shop-state-orbit shop-state-orbit-one"/><span className="shop-state-orbit shop-state-orbit-two"/><span className="shop-state-icon"><Store size={30}/></span></div>
+    <span className="shop-state-eyebrow">Storefront unavailable</span>
+    <h1>We couldn’t open this shop.</h1>
+    <p>{shopLoadError ? "The storefront could not connect right now." : "This shop link may be incorrect, or the shop is temporarily closed."}</p>
+    <code className="shop-state-slug">/s/{shopSlug}</code>
+    <div className="shop-state-actions"><button type="button" className="button button-primary" onClick={() => void loadShop()}><RotateCw size={17}/><span>Try again</span></button>{shopSlug !== "akiba-shelf" && <Link className="button button-secondary" to="/s/akiba-shelf"><Store size={17}/><span>Visit Akiba Shelf</span></Link>}<Link className="shop-state-admin-link" to="/admin"><LogIn size={15}/> Staff sign in</Link></div>
+    {shopLoadError && <details className="shop-state-details"><summary>Technical details</summary><p>{shopLoadError}</p></details>}
+  </section><p className="shop-state-footnote">If you manage this shop, confirm that it is active and published.</p></main>;
 
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>

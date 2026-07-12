@@ -109,6 +109,13 @@ create or replace function private.has_shop_role(p_shop_id uuid,p_roles text[])
 returns boolean language sql stable security definer set search_path=''
 as $$ select exists(select 1 from public.shop_members m where m.shop_id=p_shop_id and m.user_id=(select auth.uid()) and m.active and m.role=any(p_roles)) $$;
 revoke all on function private.is_shop_member(uuid),private.has_shop_role(uuid,text[]) from public,anon,authenticated;
+-- These helpers are referenced by RLS expressions. The private schema is not
+-- exposed through the Data API, but database roles still need USAGE/EXECUTE
+-- to evaluate policies. The helpers return only booleans and derive identity
+-- from auth.uid(); callers cannot supply a user identity.
+grant usage on schema private to anon,authenticated;
+grant execute on function private.is_shop_member(uuid) to anon,authenticated;
+grant execute on function private.has_shop_role(uuid,text[]) to authenticated;
 
 alter table public.shops enable row level security;
 alter table public.shop_members enable row level security;
