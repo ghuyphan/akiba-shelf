@@ -1,17 +1,27 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Store, ExternalLink, LogOut, ArrowLeft, Layout } from "lucide-react";
+import { Plus, Store, ExternalLink, LogOut, ArrowLeft, Layout, Edit3, X } from "lucide-react";
 import { useAdminSession } from "../hooks/useAdminSession";
-import { signInAdmin, signOutAdmin } from "../lib/api";
+import { signInAdmin, signOutAdmin, updateShop } from "../lib/api";
 import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
 import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
+import { Alert } from "../components/ui/Alert";
+import { Field, TextInput } from "../components/ui/Field";
+import { useAsyncAction } from "../hooks/useAsyncAction";
+import type { ShopMembership } from "../types/catalog";
 import "../styles/admin.css";
 
 export function DashboardPage() {
   const { state: adminSession, refresh: refreshAdminSession } = useAdminSession();
   const navigate = useNavigate();
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
+
+  // Edit shop states
+  const [editingShop, setEditingShop] = useState<ShopMembership | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editSlug, setEditSlug] = useState("");
+  const { busy: editBusy, error: editError, run: runEdit, setError: setEditError } = useAsyncAction();
 
   useEffect(() => {
     if (adminSession.status === "unauthorized") {
@@ -33,6 +43,52 @@ export function DashboardPage() {
   function handleSelectShop(shopId: string) {
     localStorage.setItem("akiba-active-shop", shopId);
     navigate("/admin");
+  }
+
+  function startEditShop(shop: ShopMembership) {
+    setEditingShop(shop);
+    setEditName(shop.shop_name);
+    setEditSlug(shop.shop_slug);
+    setEditError("");
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingShop) return;
+
+    const trimmedName = editName.trim();
+    const trimmedSlug = editSlug.toLowerCase().trim();
+
+    if (!trimmedName) {
+      setEditError("Shop name is required.");
+      return;
+    }
+    if (trimmedSlug.length < 2 || trimmedSlug.length > 63) {
+      setEditError("Slug must be between 2 and 63 characters.");
+      return;
+    }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(trimmedSlug)) {
+      setEditError("Slug must contain only lowercase alphanumeric characters and single dashes.");
+      return;
+    }
+
+    let saved = false;
+    await runEdit(async () => {
+      await updateShop(editingShop.shop_id, trimmedName, trimmedSlug);
+      saved = true;
+    }).catch((err) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("duplicate key") || msg.includes("shops_slug_key")) {
+        setEditError("This shop URL slug is already taken. Please try another one.");
+      } else {
+        setEditError(msg);
+      }
+    });
+
+    if (saved) {
+      setEditingShop(null);
+      await refreshAdminSession();
+    }
   }
 
   if (adminSession.status === "checking") {
@@ -112,7 +168,38 @@ export function DashboardPage() {
                   <Store size={22} />
                 </div>
                 <div className="shop-card-details">
-                  <h3>{shop.shop_name}</h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <h3>{shop.shop_name}</h3>
+                    {shop.role === "owner" && (
+                      <button
+                        type="button"
+                        className="shop-card-edit-btn"
+                        onClick={() => startEditShop(shop)}
+                        title="Edit shop details"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: "4px",
+                          color: "var(--muted)",
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          borderRadius: "4px",
+                          transition: "color 150ms ease, background-color 150ms ease"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "var(--coral)";
+                          e.currentTarget.style.backgroundColor = "var(--surface-soft, rgba(0,0,0,0.04))";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "var(--muted)";
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
+                      >
+                        <Edit3 size={13} />
+                      </button>
+                    )}
+                  </div>
                   <code className="shop-card-slug">/s/{shop.shop_slug}</code>
                 </div>
                 <span className={`role-pill role-${shop.role}`}>
@@ -173,6 +260,62 @@ export function DashboardPage() {
             <Button onClick={() => void handleSignOut()}>Sign out</Button>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        title="Edit shop details"
+        isOpen={editingShop !== null}
+        onClose={() => setEditingShop(null)}
+        className="edit-shop-modal"
+      >
+        <form onSubmit={handleSaveEdit} className="admin-form" style={{ padding: "20px" }}>
+          <section className="admin-form-section" style={{ borderTop: "none", paddingTop: 0, marginTop: 0 }}>
+            <Field label="Shop name">
+              <TextInput
+                value={editName}
+                onChange={(event) => setEditName(event.target.value)}
+                placeholder="My shop name"
+                disabled={editBusy}
+                required
+              />
+            </Field>
+            <Field label="Shop URL slug" hint="Required. Only lowercase letters, numbers, and dashes.">
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: "var(--muted)", fontSize: "14px", userSelect: "none" }}>/s/</span>
+                <TextInput
+                  value={editSlug}
+                  onChange={(event) => setEditSlug(event.target.value)}
+                  placeholder="shop-url-slug"
+                  disabled={editBusy}
+                  required
+                />
+              </div>
+            </Field>
+          </section>
+
+          {editError && (
+            <div style={{ marginTop: "12px" }}>
+              <Alert variant="error" title="Could not save shop details" onClose={() => setEditError("")}>
+                {editError}
+              </Alert>
+            </div>
+          )}
+
+          <div className="admin-sticky-actions" style={{ position: "relative", marginTop: "24px", padding: 0 }}>
+            <Button type="submit" loading={editBusy} loadingText="Saving…">
+              Save changes
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              icon={<X size={17} />}
+              disabled={editBusy}
+              onClick={() => setEditingShop(null)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

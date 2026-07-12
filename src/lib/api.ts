@@ -419,3 +419,12 @@ export async function cancelCustomerOrder(orderId: string, recoveryToken: string
   if (error) throw error;
   return orderMutationSchema.parse(data) as unknown as OrderMutationResult;
 }
+
+export async function updateShop(shopId: string, name: string, slug: string): Promise<void> {
+  const client = requireSupabase();
+  const { error } = await client
+    .from("shops")
+    .update({ name: name.trim(), slug: slug.toLowerCase().trim() })
+    .eq("id", shopId);
+  if (error) throw error;
+}
