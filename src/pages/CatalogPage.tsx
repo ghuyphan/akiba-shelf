@@ -84,6 +84,11 @@ export function CatalogPage() {
       toast.error("This item is sold out and cannot be added to your cart.", "Item unavailable");
       return;
     }
+    const currentItem = cart.find((item) => item.product.id === product.id);
+    if (currentItem && currentItem.quantity >= product.quantity_available) {
+      toast.info(`Only ${product.quantity_available} units are available.`, "Cart limit reached");
+      return;
+    }
 
     setSelectedProductId(product.id);
     window.clearTimeout(selectedFeedbackTimerRef.current);
@@ -94,10 +99,7 @@ export function CatalogPage() {
       const existingIndex = prevCart.findIndex((item) => item.product.id === product.id);
       if (existingIndex > -1) {
         const nextQty = prevCart[existingIndex].quantity + 1;
-        if (nextQty > product.quantity_available) {
-          toast.info(`Only ${product.quantity_available} units are available.`, "Cart limit reached");
-          return prevCart;
-        }
+        if (nextQty > product.quantity_available) return prevCart;
         const nextCart = [...prevCart];
         nextCart[existingIndex] = {
           ...nextCart[existingIndex],
