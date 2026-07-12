@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Plus, ShoppingBag, ShieldCheck } from "lucide-react";
 import { useAdminSession } from "../hooks/useAdminSession";
 import { createShop, signInAdmin } from "../lib/api";
 import { useAsyncAction } from "../hooks/useAsyncAction";
-import { AdminAccessCheck, LoginPanel } from "../components/admin/LoginPanel";
+import { LoginPanel } from "../components/admin/LoginPanel";
+import { PageLoading } from "../components/ui/PageLoading";
 import { Alert } from "../components/ui/Alert";
 import { Field, TextInput } from "../components/ui/Field";
 import { getErrorMessage } from "../lib/errors";
@@ -81,7 +82,7 @@ export function NewShopPage() {
   }
 
   if (adminSession.status === "checking") {
-    return <AdminAccessCheck />;
+    return <PageLoading title="Checking your access" message="We’re securely confirming your admin permissions…" icon={<ShieldCheck size={28} />} />;
   }
 
   if (adminSession.status === "unauthenticated") {

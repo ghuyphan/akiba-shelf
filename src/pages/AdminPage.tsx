@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin.css";
 import { Link, useNavigate, Navigate } from "react-router-dom";
-import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Store, ChevronDown, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Store, ChevronDown, LayoutDashboard, ShieldCheck } from "lucide-react";
 import {
   deleteProduct,
   getAdminCatalogData,
@@ -21,7 +21,8 @@ import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme
 import { supabase } from "../lib/supabase";
 import { safeUuid } from "../lib/id";
 import type { BoothSettings, PaymentSettings, Product, Order } from "../types/catalog";
-import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
+import { AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
+import { PageLoading } from "../components/ui/PageLoading";
 import { ProductForm } from "../components/admin/ProductForm";
 import { ProductList } from "../components/admin/ProductList";
 import { QrManager } from "../components/admin/QrManager";
@@ -297,7 +298,7 @@ export function AdminPage() {
   }
 
   if (adminSession.status === "checking") {
-    return <AdminAccessCheck booth={booth} />;
+    return <PageLoading title="Checking your access" message="We’re securely confirming your admin permissions…" icon={<ShieldCheck size={28} />} />;
   }
 
   if (adminSession.status === "unauthenticated") return <LoginPanel onLogin={handleLogin} booth={booth} />;

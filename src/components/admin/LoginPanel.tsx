@@ -115,24 +115,6 @@ export function LoginPanel({ onLogin, booth }: LoginPanelProps) {
   );
 }
 
-export function AdminAccessCheck({ booth }: { booth?: BoothSettings }) {
-  return (
-    <main className="admin-login" style={booth ? getThemeStyle(booth) : undefined}>
-      <section className="admin-auth-check" role="status" aria-live="polite">
-        <div className="admin-auth-check-mark">
-          <span>{booth?.logo_url ? <img src={booth.logo_url} alt="" /> : <ShieldCheck size={28} />}</span>
-          <i aria-hidden="true" />
-        </div>
-        <span className="admin-access-eyebrow">Staff workspace</span>
-        <h1>Checking your access</h1>
-        <p>We’re securely confirming your admin permissions. This should only take a moment.</p>
-        <div className="admin-auth-progress" aria-hidden="true"><span /></div>
-        <small>Connecting to {booth?.booth_name || "your merch booth"}…</small>
-      </section>
-    </main>
-  );
-}
-
 export function AdminAccessDenied({ kind, message, userId, email, onRetry, onSignOut }: { kind: "unauthorized" | "inactive" | "error"; message?: string; userId?: string; email?: string; onRetry?: () => Promise<void>; onSignOut: () => Promise<void> }) {
   return (
     <main className="admin-login">
