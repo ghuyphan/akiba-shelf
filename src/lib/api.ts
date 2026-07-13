@@ -473,16 +473,19 @@ export async function uploadProductImages(
   thumbnail: File,
   detail: File,
 ) {
+  if (thumbnail.type !== "image/webp" || detail.type !== "image/webp") {
+    throw new Error("Product image variants must be WebP files.");
+  }
   const client = requireSupabase();
   const id = safeUuid();
   const uploadedPaths: string[] = [];
   async function upload(suffix: string, file: File) {
-    const path = `${shopId}/${id}-${suffix}.jpg`;
+    const path = `${shopId}/${id}-${suffix}.webp`;
     const { error } = await client.storage
       .from("product-images")
       .upload(path, file, {
         upsert: false,
-        contentType: file.type,
+        contentType: "image/webp",
         cacheControl: "31536000",
       });
     if (error) throw error;
