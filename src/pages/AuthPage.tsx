@@ -20,6 +20,7 @@ export function AuthPage() {
   ) as Mode;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const toast = useToast();
@@ -27,6 +28,24 @@ export function AuthPage() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!supabase) return;
+    if (mode === "signup") {
+      const hasStrongPassword =
+        password.length >= 10 &&
+        /[a-z]/.test(password) &&
+        /[A-Z]/.test(password) &&
+        /\d/.test(password);
+      if (!hasStrongPassword) {
+        toast.error(
+          "Use at least 10 characters with an uppercase letter, a lowercase letter, and a number.",
+          "Choose a stronger password",
+        );
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast.error("Both passwords must match.", "Check your password");
+        return;
+      }
+    }
     setBusy(true);
     try {
       if (mode === "forgot") {
@@ -71,6 +90,7 @@ export function AuthPage() {
     } finally {
       if (mode !== "forgot") {
         setPassword("");
+        setConfirmPassword("");
         setShowPassword(false);
       }
       setBusy(false);
@@ -78,6 +98,7 @@ export function AuthPage() {
   }
   const choose = (next: Mode) => {
     setPassword("");
+    setConfirmPassword("");
     setShowPassword(false);
     setParams({ mode: next });
   };
@@ -141,7 +162,7 @@ export function AuthPage() {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
-                    minLength={8}
+                    minLength={mode === "signup" ? 10 : 8}
                     autoComplete={
                       mode === "signup" ? "new-password" : "current-password"
                     }
@@ -158,6 +179,28 @@ export function AuthPage() {
                   </button>
                 </div>
               </label>
+            )}
+            {mode === "signup" && (
+              <>
+                <p className="auth-password-hint" id="signup-password-hint">
+                  Use 10+ characters with uppercase, lowercase, and a number.
+                </p>
+                <label className="admin-login-field">
+                  <span>Confirm password</span>
+                  <div className="admin-login-input">
+                    <Lock size={19} />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      minLength={10}
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      aria-describedby="signup-password-hint"
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </div>
+                </label>
+              </>
             )}
             <button className="admin-login-submit" disabled={busy}>
               {busy

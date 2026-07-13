@@ -71,6 +71,8 @@ git diff --check
 
 Production Auth must use the deployed app URL as its Site URL and allow `<app-base>/auth/callback` and `<app-base>/auth/set-password`. GitHub Pages uses `/akiba-shelf/`; its 404 redirect preserves safe relative routes, queries, and Auth fragments. Configure SMTP and email confirmation, set `PUBLIC_SITE_URL` to the exact public app base, and deploy both `invite-shop-member` and `notify-new-order`. CAPTCHA and conservative Auth rate limits are recommended. End users never need Supabase Dashboard access.
 
+For the repository's default GitHub Pages deployment, configure Supabase Auth URL Configuration with Site URL `https://ghuyphan.github.io/akiba-shelf/` and add `https://ghuyphan.github.io/akiba-shelf/auth/callback` plus `https://ghuyphan.github.io/akiba-shelf/auth/set-password` to Redirect URLs. Keep the localhost equivalents as additional development redirects only. If the production callback is missing from the allow-list, Supabase falls back to the Site URL, which is why an unchanged localhost Site URL sends confirmation emails back to localhost.
+
 ## Project structure
 
 ```text

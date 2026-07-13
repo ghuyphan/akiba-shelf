@@ -468,6 +468,12 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+.auth-password-hint {
+  margin: -8px 0 -2px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
 .admin-login-input {
   position: relative;
   display: flex;

@@ -29,6 +29,16 @@ function renderPage() {
   );
 }
 
+function renderSignupPage() {
+  return render(
+    <ToastProvider>
+      <MemoryRouter initialEntries={["/auth?mode=signup"]}>
+        <AuthPage />
+      </MemoryRouter>
+    </ToastProvider>,
+  );
+}
+
 describe("AuthPage credential fields", () => {
   afterEach(cleanup);
 
@@ -81,5 +91,40 @@ describe("AuthPage credential fields", () => {
     );
     await user.click(screen.getByRole("button", { name: "Sign in" }));
     expect(screen.getByLabelText("Password")).toHaveValue("");
+  });
+
+  it("requires a strong matching confirmation before creating an account", async () => {
+    auth.signUp.mockResolvedValue({ data: { session: null }, error: null });
+    const user = userEvent.setup();
+    renderSignupPage();
+
+    await user.type(screen.getByLabelText("Email address"), "artist@example.com");
+    await user.type(screen.getByLabelText("Password"), "weakpassword");
+    await user.type(screen.getByLabelText("Confirm password"), "weakpassword");
+    await user.click(screen.getByRole("button", { name: "Create account" }));
+
+    expect(auth.signUp).not.toHaveBeenCalled();
+    expect(await screen.findByText("Choose a stronger password")).toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText("Password"));
+    await user.clear(screen.getByLabelText("Confirm password"));
+    await user.type(screen.getByLabelText("Password"), "StrongPassword1");
+    await user.type(screen.getByLabelText("Confirm password"), "StrongPassword2");
+    await user.click(screen.getByRole("button", { name: "Create account" }));
+
+    expect(auth.signUp).not.toHaveBeenCalled();
+    expect(await screen.findByText("Check your password")).toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText("Confirm password"));
+    await user.type(screen.getByLabelText("Confirm password"), "StrongPassword1");
+    await user.click(screen.getByRole("button", { name: "Create account" }));
+
+    await waitFor(() =>
+      expect(auth.signUp).toHaveBeenCalledWith({
+        email: "artist@example.com",
+        password: "StrongPassword1",
+        options: { emailRedirectTo: expect.stringContaining("/auth/callback") },
+      }),
+    );
   });
 });
