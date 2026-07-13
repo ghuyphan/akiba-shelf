@@ -36,6 +36,14 @@ const inviteRoles = [
     description: "Manage catalog, settings, and orders",
   },
 ];
+const memberRoles = [
+  ...inviteRoles,
+  {
+    value: "owner",
+    label: "Owner",
+    description: "Full shop and team access",
+  },
+];
 export function StaffManager({ shopId }: { shopId: string }) {
   const [members, setMembers] = useState<StaffAccess[]>([]);
   const [invitations, setInvitations] = useState<ShopInvitation[]>([]);
@@ -143,6 +151,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
       title="Shop staff"
       description="Invite teammates and control access to this shop."
       icon={<ShieldCheck size={18} />}
+      className="admin-team-card"
     >
       <div className="staff-manager-layout">
         <form onSubmit={submit} className="staff-invite-panel">
@@ -230,36 +239,15 @@ export function StaffManager({ shopId }: { shopId: string }) {
                     </span>
                   </div>
                   <div className="admin-staff-controls">
-                    {member.role === "owner" ? (
-                      <span className="role-pill role-owner">Owner</span>
-                    ) : (
-                      <SelectMenu
-                        label={`Role for ${member.email}`}
-                        value={member.role}
-                        options={inviteRoles}
-                        disabled={updatingId === member.user_id}
-                        onChange={(value) =>
-                          void update(member, { role: value as StaffRole })
-                        }
-                      />
-                    )}
-                    <Button
-                      type="button"
-                      variant="ghost"
+                    <SelectMenu
+                      label={`Role for ${member.email}`}
+                      value={member.role}
+                      options={memberRoles}
                       disabled={updatingId === member.user_id}
-                      onClick={() =>
-                        setOwnerChange({
-                          member,
-                          changes: {
-                            role: member.role === "owner" ? "admin" : "owner",
-                          },
-                        })
+                      onChange={(value) =>
+                        void update(member, { role: value as StaffRole })
                       }
-                    >
-                      {member.role === "owner"
-                        ? "Demote owner"
-                        : "Promote to owner"}
-                    </Button>
+                    />
                     <label className="staff-access-toggle">
                       <input
                         type="checkbox"

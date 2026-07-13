@@ -495,7 +495,7 @@ export function AdminPage() {
     adminSession.status === "checking" ||
     (adminSession.status === "authorized" && isInitialLoading)
   ) {
-    return <AdminAccessCheck booth={booth} />;
+    return <AdminAccessCheck />;
   }
 
   if (adminSession.status === "unauthenticated")
@@ -655,6 +655,7 @@ export function AdminPage() {
                 disabled={pushBusy}
                 onClick={() => void togglePushNotifications()}
                 className={`admin-header-button admin-notification-button ${pushEnabled ? "active" : ""}`}
+                title={pushEnabled ? "Disable alerts" : "Enable alerts"}
                 aria-label={
                   pushEnabled
                     ? "Disable order notifications"
@@ -669,6 +670,8 @@ export function AdminPage() {
               type="button"
               onClick={() => setIsSignOutOpen(true)}
               className="admin-header-button admin-signout-button"
+              aria-label="Sign out"
+              title="Sign out"
             >
               <LogOut size={15} />
               <span>Sign out</span>

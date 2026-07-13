@@ -10,8 +10,6 @@ import type { BoothSettings } from "../../types/catalog";
 import { PageLoading } from "../ui/PageLoading";
 import { PlatformMark } from "../ui/PlatformMark";
 import { PLATFORM_BRAND } from "../../lib/branding";
-import { safePublicUrl } from "../../lib/branding";
-import { getThemeStyle } from "../../lib/theme";
 
 type LoginPanelProps = {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -122,15 +120,12 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
   );
 }
 
-export function AdminAccessCheck(props: { booth?: BoothSettings }) {
-  const booth = props.booth;
-  const logo = safePublicUrl(booth?.logo_url);
+export function AdminAccessCheck() {
   return (
     <PageLoading
       title="Checking your access"
       message="Loading your workspace…"
-      icon={logo ? <img src={logo} alt="" /> : <ShieldCheck size={28} />}
-      style={booth ? getThemeStyle(booth) : undefined}
+      icon={<ShieldCheck size={28} />}
     />
   );
 }

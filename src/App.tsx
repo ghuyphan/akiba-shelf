@@ -12,6 +12,7 @@ import { ToastProvider } from "./components/ui/ToastProvider";
 import { PageLoading } from "./components/ui/PageLoading";
 import { PLATFORM_BRAND, resetDocumentBranding } from "./lib/branding";
 import { resetPageTheme } from "./lib/theme";
+import { ShieldCheck } from "lucide-react";
 
 const HomePage = lazy(() =>
   import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
@@ -68,12 +69,26 @@ function KeyedCatalogPage() {
   return <CatalogPage key={shopSlug} />;
 }
 
+function RouteLoading() {
+  const { pathname } = useLocation();
+  if (pathname === "/admin") {
+    return (
+      <PageLoading
+        title="Checking your access"
+        message="Loading your workspace…"
+        icon={<ShieldCheck size={28} />}
+      />
+    );
+  }
+  return <PageLoading />;
+}
+
 export function App() {
   return (
     <ToastProvider>
       <BrowserRouter basename={import.meta.env.BASE_URL}>
         <PlatformRouteBranding />
-        <Suspense fallback={<PageLoading />}>
+        <Suspense fallback={<RouteLoading />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/dashboard" element={<DashboardPage />} />

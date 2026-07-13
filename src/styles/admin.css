@@ -84,6 +84,14 @@
   background: var(--line);
 }
 
+@media (min-width: 761px) {
+  .admin-header-actions > .admin-header-button {
+    width: 42px;
+    padding: 0;
+  }
+  .admin-header-actions > .admin-header-button span { display: none; }
+}
+
 .admin-notification-button {
   min-height: auto;
 }
@@ -2045,6 +2053,10 @@
 .staff-manager-layout{display:grid;grid-template-columns:minmax(260px,.82fr) minmax(0,1.35fr);gap:18px;margin-top:18px}.staff-invite-panel,.staff-members-panel,.staff-invitations{min-width:0;padding:20px;border:1px solid var(--soft-line);border-radius:18px;background:var(--surface-soft)}.staff-section-heading{display:flex;align-items:flex-start;gap:11px;margin-bottom:18px}.staff-section-heading>span{display:grid;place-items:center;width:36px;height:36px;flex:0 0 auto;border-radius:11px;color:var(--coral);background:color-mix(in srgb,var(--coral) 8%,#fff)}.staff-section-heading h3,.staff-section-heading p{margin:0}.staff-section-heading h3{font-size:14px}.staff-section-heading p{margin-top:3px;color:var(--muted);font-size:10px;line-height:1.45}.staff-invite-fields{display:grid;gap:14px}.staff-invite-button{width:100%;margin-top:16px}.admin-staff-list{display:grid;gap:10px}.admin-staff-row{display:grid;grid-template-columns:40px minmax(140px,1fr) minmax(280px,auto);align-items:center;gap:12px;min-width:0;padding:12px;border:1px solid var(--line);border-radius:15px;background:#fff}.admin-staff-row.inactive{background:#fafafa}.staff-avatar{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;color:var(--coral);background:color-mix(in srgb,var(--coral) 9%,#fff);font-size:14px;font-weight:900}.admin-staff-identity{display:grid;gap:5px;min-width:0}.admin-staff-identity strong{overflow:hidden;font-size:12px;text-overflow:ellipsis;white-space:nowrap}.staff-status{display:flex;align-items:center;gap:6px;width:max-content;color:var(--muted);font-size:9px;font-weight:800}.staff-status i{width:6px;height:6px;border-radius:50%;background:currentColor}.staff-status.active{color:#2f8e6c}.admin-staff-controls{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}.admin-staff-controls>.select-menu{width:150px}.staff-access-toggle{display:flex;align-items:center;gap:7px;min-height:40px;cursor:pointer}.staff-access-toggle input{position:absolute;opacity:0;pointer-events:none}.staff-access-toggle>span{position:relative;width:34px;height:20px;border-radius:999px;background:#cbd5e1;transition:background 160ms ease}.staff-access-toggle>span:after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgb(15 23 42 / 24%);transition:transform 160ms ease}.staff-access-toggle input:checked+span{background:#629257}.staff-access-toggle input:checked+span:after{transform:translateX(14px)}.staff-access-toggle input:focus-visible+span{outline:3px solid color-mix(in srgb,var(--coral) 24%,transparent);outline-offset:2px}.staff-access-toggle b{font-size:9px;color:var(--muted)}.staff-invitations{margin-top:18px}.staff-invitation-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.staff-invitation-row>div{display:grid;gap:3px;min-width:0}.staff-invitation-row strong{overflow:hidden;font-size:12px;text-overflow:ellipsis}.staff-invitation-row small{color:var(--muted);font-size:9px}.staff-remove-confirm{padding:20px}.staff-remove-confirm p{margin:0 0 18px;color:var(--muted);line-height:1.55}.staff-remove-confirm>div{display:flex;justify-content:flex-end;gap:8px}
 @media(max-width:1100px){.staff-manager-layout{grid-template-columns:1fr}.admin-staff-row{grid-template-columns:40px minmax(0,1fr)}.admin-staff-controls{grid-column:1/-1;justify-content:flex-start;padding-top:10px;border-top:1px solid var(--soft-line)}}
 @media(max-width:760px){.admin-shop-switcher-menu{width:142px}.admin-shop-switcher-menu .select-menu-trigger{min-height:40px;padding:6px 10px}.admin-shop-switcher-menu .select-menu-trigger .select-menu-icon,.admin-shop-switcher-menu .select-menu-copy small{display:none}.admin-shop-switcher-menu .select-menu-copy strong{font-size:11px}.admin-shop-switcher-menu .select-menu-popover{position:absolute;top:calc(100% + 7px);right:0;bottom:auto;left:auto;width:min(270px,calc(100vw - 32px));max-width:none;max-height:min(420px,65dvh);overflow-y:auto}.staff-invite-panel,.staff-members-panel,.staff-invitations{padding:16px}.admin-staff-row{grid-template-columns:36px minmax(0,1fr)}.staff-avatar{width:36px;height:36px}.admin-staff-controls{display:grid;grid-template-columns:1fr auto}.admin-staff-controls>.select-menu{width:auto}.admin-staff-controls>.button{grid-column:1/-1}.staff-access-toggle b{display:none}}
+
+.admin-team-card :is(.staff-invite-panel,.staff-members-panel,.staff-invitations) {
+  background: var(--admin-inner-bg, #f8fafc);
+}
 
 /* Mobile admin header: preserve the pill header while letting workspaces breathe. */
 @media (max-width:760px) {
