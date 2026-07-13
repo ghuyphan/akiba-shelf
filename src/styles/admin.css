@@ -241,7 +241,6 @@
 .storefront-builder .designer-preview-stage { height: calc(100vh - 190px); min-height: 650px; display: flex; justify-content: flex-start; align-items: flex-start; overflow: auto; padding: 14px; touch-action: none; overscroll-behavior: contain; }
 .designer-preview-frame { position: relative; flex: 0 0 auto; }
 .storefront-builder .designer-live-storefront { flex: 0 0 auto; }
-.designer-live-module.is-selected { }
 .designer-live-module.is-selected::after { content: ""; position: absolute; inset: -6px; z-index: 45; border: 2px solid var(--coral); border-radius: calc(var(--store-radius) + 6px); pointer-events: none; }
 .designer-live-module.is-dragging { opacity: .28; filter: saturate(.65); }
 .designer-live-module.is-drag-over::before { content: ""; position: absolute; z-index: 47; border-radius: 999px; background: var(--coral); box-shadow: 0 0 0 4px color-mix(in srgb, var(--coral) 14%, transparent); pointer-events: none; }
