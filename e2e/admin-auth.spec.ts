@@ -31,6 +31,26 @@ test("allows authorized staff into orders without restricted settings", async ({
   await expect(page.getByRole("button", { name: /Settings/ })).toHaveCount(0);
 });
 
+test("highlights the default Orders navigation tab", async ({ page }) => {
+  await mockSupabase(page, { staffRole: "owner" });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+
+  const ordersTab = page.getByRole("button", { name: /Orders Queue/ });
+  await expect(ordersTab).toHaveClass(/active/);
+  await expect
+    .poll(() =>
+      page.locator(".admin-nav-tabs").evaluate((element) =>
+        Number.parseFloat(
+          getComputedStyle(element).getPropertyValue("--active-width"),
+        ),
+      ),
+    )
+    .toBeGreaterThan(0);
+});
+
 for (const role of ["owner", "admin"] as const) {
   test(`${role} sees every permitted workspace`, async ({ page }) => {
     await mockSupabase(page, { staffRole: role });

@@ -160,6 +160,8 @@ export function AdminPage() {
   const orderReloadTimerRef = useRef<number | undefined>(undefined);
   const { containerRef: desktopNavRef, registerItem: registerDesktopTab } =
     useTabIndicator<string, HTMLDivElement>(viewTab, [
+      isAuthed,
+      canManageCatalog,
       products.length,
       orderCounts.pending,
     ]);

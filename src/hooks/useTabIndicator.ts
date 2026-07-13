@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 export function useTabIndicator<TValue, TElement extends HTMLElement = HTMLElement>(
   activeValue: TValue,
@@ -16,7 +16,7 @@ export function useTabIndicator<TValue, TElement extends HTMLElement = HTMLEleme
     }
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const container = containerRef.current;
     const activeElement = itemRefs.current.get(activeValue);
     if (!container || !activeElement) return;
