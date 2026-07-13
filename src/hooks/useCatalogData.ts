@@ -25,7 +25,7 @@ export function useCatalogData(
   );
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const [loadError, setLoadError] = useState("");
-  const [isLoading, setIsLoading] = useState(() => !cached);
+  const [isLoading, setIsLoading] = useState(true);
   const boothRef = useRef(booth);
   const productsRef = useRef(products);
   const paymentRequestRef = useRef<Promise<PaymentSettings> | null>(null);
@@ -107,11 +107,11 @@ export function useCatalogData(
   }, [shopId]);
 
   const reloadAll = useCallback(async () => {
+    if (!shopId) return;
     setIsLoading(true);
     const identity = requestIdentityRef.current;
     const paymentRequest = loadPayment().catch(() => undefined);
     try {
-      if (!shopId) return;
       const data = await getCatalogCoreData(shopId);
       if (identity !== requestIdentityRef.current) return;
       boothRef.current = data.booth;

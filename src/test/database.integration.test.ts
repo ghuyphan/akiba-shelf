@@ -244,8 +244,7 @@ describe.skipIf(!run)("create_shop authorization and concurrency", () => {
     expect(results.filter((result) => result.error)).toHaveLength(1);
     const shop = successful[0].data as { id: string };
     createdShops.push(shop.id);
-    const [{ count: memberships }, { count: booths }, { count: payments }] =
-      await Promise.all([
+    const [membershipResult, boothResult, paymentResult] = await Promise.all([
         admin
           .from("shop_members")
           .select("shop_id", { count: "exact", head: true })
@@ -260,7 +259,14 @@ describe.skipIf(!run)("create_shop authorization and concurrency", () => {
           .select("shop_id", { count: "exact", head: true })
           .eq("shop_id", shop.id),
       ]);
-    expect([memberships, booths, payments]).toEqual([1, 1, 1]);
+    for (const result of [membershipResult, boothResult, paymentResult]) {
+      if (result.error) throw result.error;
+    }
+    expect([
+      membershipResult.count,
+      boothResult.count,
+      paymentResult.count,
+    ]).toEqual([1, 1, 1]);
   });
 
   it("rejects a sixth owned shop", async () => {
