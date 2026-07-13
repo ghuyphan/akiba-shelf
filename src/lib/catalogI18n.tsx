@@ -19,7 +19,7 @@ export const translations = {
     scanPay: "Scan to pay", exactNote: "Use the exact transfer note shown below.", waitingConfirmation: "Waiting for staff confirmation", orderCode: "Order code", transferTo: "Transfer to", accountName: "Account name", accountNumber: "Account number", bank: "Bank", transferNote: "Transfer note", orderSummary: "Order summary",
     retryOrder: "Retry safely", reconnectingOrder: "Reconnecting — your order is safe", hidePayment: "Hide payment details", pendingOrder: "Pending order", viewPayment: "View payment", pendingOrderHint: "Your order stays active if you close this window.", orderCancelled: "Order cancelled", cancelledPaymentNote: "Staff cancelled this order. Please do not send payment for it.",
     reservedFor: (time: string) => `Reserved for ${time}`, reservedWhilePaying: "Your items are reserved while you complete payment.", cancelOrder: "Cancel order", cancelling: "Cancelling…", qrUnavailable: "Payment QR is unavailable. Please ask booth staff for help.",
-    demoStorefrontTitle: "Demo storefront", demoStorefrontHint: "Explore the real catalog experience and build a sample cart. Checkout is simulated and no order, payment, or stock reservation will be created.", demoCheckout: "Preview checkout", demoCheckoutTitle: "Demo checkout only", demoCheckoutMessage: "This sample cart will not create an order or reserve stock.",
+    demoCheckout: "Preview checkout", demoCheckoutTitle: "Demo checkout only", demoCheckoutMessage: "This sample cart will not create an order or reserve stock.",
   },
   vi: {
     all: "Tất cả", officialShop: "Gian hàng chính thức", boothInfo: "Thông tin gian hàng", boothInfoHint: "Giờ mở cửa, vị trí & mạng xã hội",
@@ -38,7 +38,7 @@ export const translations = {
     scanPay: "Quét mã để thanh toán", exactNote: "Vui lòng dùng đúng nội dung chuyển khoản bên dưới.", waitingConfirmation: "Đang chờ staff xác nhận", orderCode: "Mã đơn", transferTo: "Chuyển khoản đến", accountName: "Tên tài khoản", accountNumber: "Số tài khoản", bank: "Ngân hàng", transferNote: "Nội dung chuyển khoản", orderSummary: "Chi tiết đơn hàng",
     retryOrder: "Thử lại an toàn", reconnectingOrder: "Đang kết nối lại — đơn hàng vẫn an toàn", hidePayment: "Ẩn thông tin thanh toán", pendingOrder: "Đơn đang chờ", viewPayment: "Xem thanh toán", pendingOrderHint: "Đơn hàng vẫn hoạt động khi bạn đóng cửa sổ này.", orderCancelled: "Đơn đã bị hủy", cancelledPaymentNote: "Staff đã hủy đơn này. Vui lòng không chuyển khoản cho đơn.",
     reservedFor: (time: string) => `Giữ hàng trong ${time}`, reservedWhilePaying: "Sản phẩm được giữ trong lúc bạn hoàn tất thanh toán.", cancelOrder: "Hủy đơn hàng", cancelling: "Đang hủy…", qrUnavailable: "Không thể tải mã thanh toán. Vui lòng nhờ staff tại gian hàng hỗ trợ.",
-    demoStorefrontTitle: "Gian hàng demo", demoStorefrontHint: "Khám phá trải nghiệm cửa hàng thật và tạo giỏ hàng mẫu. Thanh toán chỉ là mô phỏng; hệ thống sẽ không tạo đơn, ghi nhận thanh toán hay giữ hàng.", demoCheckout: "Xem thử thanh toán", demoCheckoutTitle: "Chỉ là thanh toán demo", demoCheckoutMessage: "Giỏ hàng mẫu này sẽ không tạo đơn hoặc giữ hàng.",
+    demoCheckout: "Xem thử thanh toán", demoCheckoutTitle: "Chỉ là thanh toán demo", demoCheckoutMessage: "Giỏ hàng mẫu này sẽ không tạo đơn hoặc giữ hàng.",
   },
 } as const;
 

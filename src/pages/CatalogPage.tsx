@@ -538,11 +538,6 @@ export function CatalogPage() {
         onClick={() => setSelectedProductId(null)}
       >
         <CatalogHeader booth={booth} onOpenInfo={() => setIsInfoOpen(true)} />
-        {!orderingEnabled && (
-          <Alert variant="info" title={catalogCopy.demoStorefrontTitle}>
-            {catalogCopy.demoStorefrontHint}
-          </Alert>
-        )}
         {!online && (
           <Alert variant="info" title="You are offline.">
             Your cart is saved on this device. Reconnect to verify stock and
