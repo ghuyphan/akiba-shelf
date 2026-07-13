@@ -64,6 +64,14 @@ describe("AuthPage credential fields", () => {
     const password = screen.getByLabelText("Password");
 
     expect(password).toHaveAttribute("type", "password");
+    expect(screen.getByLabelText("Email address")).toHaveAttribute(
+      "placeholder",
+      "you@example.com",
+    );
+    expect(password).toHaveAttribute("placeholder", "Enter your password");
+    expect(
+      screen.getByText("Secure access to your shops and staff workspaces."),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Show password" }));
     expect(password).toHaveAttribute("type", "text");
     await user.click(screen.getByRole("button", { name: "Hide password" }));

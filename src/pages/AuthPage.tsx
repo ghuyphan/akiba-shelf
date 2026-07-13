@@ -1,13 +1,11 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Mail } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowRight, LoaderCircle, Mail } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { getAppUrl } from "../lib/authUrls";
 import { getShopMemberships } from "../lib/api";
 import { useToast } from "../components/ui/ToastProvider";
 import "../styles/admin.css";
-import { PLATFORM_BRAND } from "../lib/branding";
-import { PlatformMark } from "../components/ui/PlatformMark";
 import { routeAfterAuthentication } from "../lib/authRouting";
 import { getAuthErrorNotice } from "../lib/authErrors";
 import {
@@ -16,9 +14,43 @@ import {
   NEW_PASSWORD_MIN_LENGTH,
 } from "../lib/authValidation";
 import { PasswordField } from "../components/ui/PasswordField";
+import { AuthSecurityNote, AuthShell } from "../components/ui/AuthShell";
 
 type Mode = "signin" | "signup" | "forgot";
 type EmailCompletion = { mode: "signup" | "forgot"; email: string };
+
+const modeCopy: Record<
+  Mode,
+  {
+    title: string;
+    description: string;
+    submit: string;
+    busy: string;
+    security: string;
+  }
+> = {
+  signin: {
+    title: "Welcome back",
+    description: "Sign in to manage your shops.",
+    submit: "Sign in",
+    busy: "Signing in…",
+    security: "Secure access to your shops and staff workspaces.",
+  },
+  signup: {
+    title: "Create your account",
+    description: "Start a storefront or accept a staff invitation.",
+    submit: "Create account",
+    busy: "Creating account…",
+    security: "Email confirmation protects every new account.",
+  },
+  forgot: {
+    title: "Reset your password",
+    description: "We’ll email a secure recovery link.",
+    submit: "Send recovery link",
+    busy: "Sending link…",
+    security: "Recovery never reveals whether an account exists.",
+  },
+};
 
 export function AuthPage() {
   const [params, setParams] = useSearchParams();
@@ -35,6 +67,7 @@ export function AuthPage() {
   const [resendIn, setResendIn] = useState(0);
   const toast = useToast();
   const navigate = useNavigate();
+  const copy = modeCopy[mode];
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -147,139 +180,139 @@ export function AuthPage() {
     setParams({ mode: next });
   };
   return (
-    <main className="admin-login">
-      <section className="admin-access-card admin-login-card">
-        <div className="admin-login-panel">
-          <header className="admin-login-topbar">
-            <div className="admin-login-brand">
-              <span className="admin-login-logo">
-                <PlatformMark />
-              </span>
-              <span>
-                <strong>{PLATFORM_BRAND.name}</strong>
-                <small>{PLATFORM_BRAND.descriptor}</small>
-              </span>
-            </div>
-            <Link to="/" className="admin-login-back">
-              <ArrowLeft size={16} />
-              <span>Back to home</span>
-            </Link>
-          </header>
-          <div className="admin-login-heading">
-            <h1>
-              {completion
-                ? "Check your email"
-                : mode === "signup"
-                  ? "Create your account"
-                  : mode === "forgot"
-                    ? "Reset your password"
-                    : "Welcome back"}
-            </h1>
-            <p>
-              {completion
-                ? completion.mode === "signup"
-                  ? `We sent a confirmation link to ${completion.email}.`
-                  : `If ${completion.email} can be recovered, a secure link is on its way.`
-                : mode === "signup"
-                  ? "Start a storefront or accept a staff invitation."
-                  : mode === "forgot"
-                    ? "We’ll email a secure recovery link."
-                    : "Sign in to manage your shops."}
-            </p>
-          </div>
-          {completion ? (
-            <div className="auth-completion-actions">
-              {completion.mode === "forgot" && (
-                <button
-                  type="button"
-                  className="admin-login-submit"
-                  disabled={busy || resendIn > 0}
-                  onClick={() => void resendEmail()}
-                >
-                  {busy
-                    ? "Sending…"
-                    : resendIn > 0
-                      ? `Send again in ${resendIn}s`
-                      : "Send another email"}
-                </button>
-              )}
-              <button type="button" onClick={() => choose("signin")}>
-                Return to sign in
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={submit} className="admin-login-form">
-              <label className="admin-login-field">
-                <span>Email address</span>
-                <div className="admin-login-input">
-                  <Mail size={19} />
-                  <input
-                    type="email"
-                    required
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-              </label>
-              {mode !== "forgot" && (
-                <PasswordField
-                  label="Password"
-                  value={password}
-                  minLength={mode === "signup" ? NEW_PASSWORD_MIN_LENGTH : 8}
-                  autoComplete={
-                    mode === "signup" ? "new-password" : "current-password"
-                  }
-                  onChange={(event) => setPassword(event.target.value)}
+    <AuthShell>
+      <div className="admin-login-heading">
+        <h1>{completion ? "Check your email" : copy.title}</h1>
+        <p>
+          {completion
+            ? completion.mode === "signup"
+              ? `We sent a confirmation link to ${completion.email}.`
+              : `If ${completion.email} can be recovered, a secure link is on its way.`
+            : copy.description}
+        </p>
+      </div>
+      {completion ? (
+        <div className="auth-completion-actions">
+          {completion.mode === "forgot" && (
+            <button
+              type="button"
+              className="admin-login-submit"
+              disabled={busy || resendIn > 0}
+              onClick={() => void resendEmail()}
+              aria-busy={busy}
+            >
+              {busy && (
+                <LoaderCircle
+                  className="button-spinner"
+                  size={18}
+                  aria-hidden="true"
                 />
               )}
-              {mode === "signup" && (
-                <>
-                  <p className="auth-password-hint" id="signup-password-hint">
-                    {NEW_PASSWORD_HINT}
-                  </p>
-                  <PasswordField
-                    label="Confirm password"
-                    value={confirmPassword}
-                    minLength={NEW_PASSWORD_MIN_LENGTH}
-                    autoComplete="new-password"
-                    describedBy="signup-password-hint"
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                  />
-                </>
-              )}
-              <button className="admin-login-submit" disabled={busy}>
+              <span>
                 {busy
-                  ? "Please wait…"
-                  : mode === "signup"
-                    ? "Create account"
-                    : mode === "forgot"
-                      ? "Send recovery link"
-                      : "Sign in"}
-              </button>
-            </form>
+                  ? "Sending…"
+                  : resendIn > 0
+                    ? `Send again in ${resendIn}s`
+                    : "Send another email"}
+              </span>
+              {!busy && resendIn === 0 && (
+                <ArrowRight size={18} aria-hidden="true" />
+              )}
+            </button>
           )}
-          {!completion && (
-            <div className="auth-mode-links">
-              {mode === "signin" && (
-                <button type="button" onClick={() => choose("forgot")}>
-                  Forgot password?
-                </button>
-              )}
-              {mode !== "signin" && (
-                <button type="button" onClick={() => choose("signin")}>
-                  Sign in
-                </button>
-              )}
-              {mode !== "signup" && (
-                <button type="button" onClick={() => choose("signup")}>
-                  Create account
-                </button>
-              )}
+          <button type="button" onClick={() => choose("signin")}>
+            Return to sign in
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="admin-login-form">
+          <label className="admin-login-field">
+            <span>Email address</span>
+            <div className="admin-login-input">
+              <Mail size={19} className="input-icon" aria-hidden="true" />
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
+          </label>
+          {mode !== "forgot" && (
+            <PasswordField
+              label="Password"
+              value={password}
+              minLength={mode === "signup" ? NEW_PASSWORD_MIN_LENGTH : 8}
+              autoComplete={
+                mode === "signup" ? "new-password" : "current-password"
+              }
+              placeholder={
+                mode === "signup"
+                  ? "Choose a strong password"
+                  : "Enter your password"
+              }
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          )}
+          {mode === "signup" && (
+            <>
+              <p className="auth-password-hint" id="signup-password-hint">
+                {NEW_PASSWORD_HINT}
+              </p>
+              <PasswordField
+                label="Confirm password"
+                value={confirmPassword}
+                minLength={NEW_PASSWORD_MIN_LENGTH}
+                autoComplete="new-password"
+                describedBy="signup-password-hint"
+                placeholder="Repeat your password"
+                onChange={(event) => setConfirmPassword(event.target.value)}
+              />
+            </>
+          )}
+          <button
+            className="admin-login-submit"
+            disabled={busy}
+            aria-busy={busy}
+          >
+            {busy && (
+              <LoaderCircle
+                className="button-spinner"
+                size={18}
+                aria-hidden="true"
+              />
+            )}
+            <span>{busy ? copy.busy : copy.submit}</span>
+            {!busy && <ArrowRight size={18} aria-hidden="true" />}
+          </button>
+        </form>
+      )}
+      {!completion && (
+        <div className="auth-mode-links admin-login-help-links">
+          {mode === "signin" && (
+            <button type="button" onClick={() => choose("forgot")}>
+              Forgot password?
+            </button>
+          )}
+          {mode !== "signin" && (
+            <button type="button" onClick={() => choose("signin")}>
+              Sign in
+            </button>
+          )}
+          {mode !== "signup" && (
+            <button type="button" onClick={() => choose("signup")}>
+              Create account
+            </button>
           )}
         </div>
-      </section>
-    </main>
+      )}
+      <AuthSecurityNote>
+        {completion
+          ? "Secure links are short-lived and can only be used through your email."
+          : copy.security}
+      </AuthSecurityNote>
+    </AuthShell>
   );
 }

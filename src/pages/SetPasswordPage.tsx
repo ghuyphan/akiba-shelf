@@ -1,6 +1,6 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { RotateCw } from "lucide-react";
+import { ArrowRight, LoaderCircle, RotateCw } from "lucide-react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { useToast } from "../components/ui/ToastProvider";
 import { PageLoading } from "../components/ui/PageLoading";
@@ -21,6 +21,7 @@ import {
   NEW_PASSWORD_MIN_LENGTH,
 } from "../lib/authValidation";
 import { PasswordField } from "../components/ui/PasswordField";
+import { AuthSecurityNote, AuthShell } from "../components/ui/AuthShell";
 
 type RouteState = "checking" | "ready" | "invalid";
 const uuidPattern =
@@ -151,116 +152,124 @@ export function SetPasswordPage() {
     );
   if (routeState === "invalid")
     return (
-      <main className="admin-login">
-        <section className="admin-access-card admin-login-card">
-          <div className="admin-login-panel">
-            <div className="admin-login-heading">
-              <h1>Password link unavailable</h1>
-              <p>This password link is invalid or has expired.</p>
-            </div>
-            <div className="auth-mode-links">
-              <Link className="button button-ghost" to="/auth?mode=signin">
-                Return to sign in
-              </Link>
-              <Link className="button button-primary" to="/auth?mode=forgot">
-                Request another recovery email
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
+      <AuthShell>
+        <div className="admin-login-heading">
+          <h1>Password link unavailable</h1>
+          <p>This password link is invalid or has expired.</p>
+        </div>
+        <div className="auth-mode-links">
+          <Link className="button button-ghost" to="/auth?mode=signin">
+            Return to sign in
+          </Link>
+          <Link className="button button-primary" to="/auth?mode=forgot">
+            Request another recovery email
+          </Link>
+        </div>
+        <AuthSecurityNote>
+          Password links are short-lived and protected by your email session.
+        </AuthSecurityNote>
+      </AuthShell>
     );
   if (passwordCompleted && acceptanceFailed)
     return (
-      <main className="admin-login">
-        <section className="admin-access-card admin-login-card">
-          <div className="admin-login-panel">
-            <div className="admin-login-heading">
-              <h1>Finish joining the shop</h1>
-              <p>
-                Your password is saved. Retry the invitation without changing it
-                again.
-              </p>
-            </div>
-            <Button
-              loading={busy}
-              icon={<RotateCw size={17} />}
-              onClick={() => void acceptInvitation()}
-            >
-              Retry invitation
-            </Button>
-            <div className="auth-mode-links">
-              <Link className="button button-ghost" to="/auth?mode=signin">
-                Return to sign in
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
+      <AuthShell>
+        <div className="admin-login-heading">
+          <h1>Finish joining the shop</h1>
+          <p>
+            Your password is saved. Retry the invitation without changing it
+            again.
+          </p>
+        </div>
+        <Button
+          className="admin-login-submit"
+          loading={busy}
+          icon={<RotateCw size={17} />}
+          onClick={() => void acceptInvitation()}
+        >
+          Retry invitation
+        </Button>
+        <div className="auth-mode-links">
+          <Link className="button button-ghost" to="/auth?mode=signin">
+            Return to sign in
+          </Link>
+        </div>
+        <AuthSecurityNote>
+          Your saved password will not be changed when you retry.
+        </AuthSecurityNote>
+      </AuthShell>
     );
   if (passwordCompleted && completionFailed)
     return (
-      <main className="admin-login">
-        <section className="admin-access-card admin-login-card">
-          <div className="admin-login-panel">
-            <div className="admin-login-heading">
-              <h1>Password updated</h1>
-              <p>
-                Your new password is saved. Retry opening your account without
-                changing it again.
-              </p>
-            </div>
-            <Button
-              loading={busy}
-              loadingText="Opening account…"
-              icon={<RotateCw size={17} />}
-              onClick={() => void finishRecovery()}
-            >
-              Open my account
-            </Button>
-            <div className="auth-mode-links">
-              <Link className="button button-ghost" to="/auth?mode=signin">
-                Return to sign in
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
+      <AuthShell>
+        <div className="admin-login-heading">
+          <h1>Password updated</h1>
+          <p>
+            Your new password is saved. Retry opening your account without
+            changing it again.
+          </p>
+        </div>
+        <Button
+          className="admin-login-submit"
+          loading={busy}
+          loadingText="Opening account…"
+          icon={<RotateCw size={17} />}
+          onClick={() => void finishRecovery()}
+        >
+          Open my account
+        </Button>
+        <div className="auth-mode-links">
+          <Link className="button button-ghost" to="/auth?mode=signin">
+            Return to sign in
+          </Link>
+        </div>
+        <AuthSecurityNote>
+          Your saved password will not be changed when you retry.
+        </AuthSecurityNote>
+      </AuthShell>
     );
   return (
-    <main className="admin-login">
-      <section className="admin-access-card admin-login-card">
-        <div className="admin-login-panel">
-          <div className="admin-login-heading">
-            <h1>Set your password</h1>
-            <p>Choose a secure password to finish account setup.</p>
-          </div>
-          <form onSubmit={submit} className="admin-login-form">
-            <PasswordField
-              label="New password"
-              value={password}
-              minLength={NEW_PASSWORD_MIN_LENGTH}
-              autoComplete="new-password"
-              describedBy="set-password-hint"
-              onChange={(event) => setPassword(event.target.value)}
+    <AuthShell>
+      <div className="admin-login-heading">
+        <h1>Set your password</h1>
+        <p>Choose a secure password to finish account setup.</p>
+      </div>
+      <form onSubmit={submit} className="admin-login-form">
+        <PasswordField
+          label="New password"
+          value={password}
+          minLength={NEW_PASSWORD_MIN_LENGTH}
+          autoComplete="new-password"
+          describedBy="set-password-hint"
+          placeholder="Choose a strong password"
+          onChange={(event) => setPassword(event.target.value)}
+        />
+        <p className="auth-password-hint" id="set-password-hint">
+          {NEW_PASSWORD_HINT}
+        </p>
+        <PasswordField
+          label="Confirm password"
+          value={confirm}
+          minLength={NEW_PASSWORD_MIN_LENGTH}
+          autoComplete="new-password"
+          describedBy="set-password-hint"
+          placeholder="Repeat your password"
+          onChange={(event) => setConfirm(event.target.value)}
+        />
+        <button className="admin-login-submit" disabled={busy} aria-busy={busy}>
+          {busy && (
+            <LoaderCircle
+              className="button-spinner"
+              size={18}
+              aria-hidden="true"
             />
-            <p className="auth-password-hint" id="set-password-hint">
-              {NEW_PASSWORD_HINT}
-            </p>
-            <PasswordField
-              label="Confirm password"
-              value={confirm}
-              minLength={NEW_PASSWORD_MIN_LENGTH}
-              autoComplete="new-password"
-              describedBy="set-password-hint"
-              onChange={(event) => setConfirm(event.target.value)}
-            />
-            <button className="admin-login-submit" disabled={busy}>
-              {busy ? "Saving…" : "Save password"}
-            </button>
-          </form>
-        </div>
-      </section>
-    </main>
+          )}
+          <span>{busy ? "Saving…" : "Save password"}</span>
+          {!busy && <ArrowRight size={18} aria-hidden="true" />}
+        </button>
+      </form>
+      <AuthSecurityNote>
+        Your password is encrypted and never shown to shop staff.
+      </AuthSecurityNote>
+    </AuthShell>
   );
 }

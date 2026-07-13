@@ -9,6 +9,7 @@ import {
   storePendingInvitation,
 } from "../lib/authRouting";
 import { getAuthErrorNotice } from "../lib/authErrors";
+import { AuthSecurityNote, AuthShell } from "../components/ui/AuthShell";
 
 export function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -76,18 +77,17 @@ export function AuthCallbackPage() {
   if (!failed)
     return <PageLoading title="Finishing sign in" message={message} />;
   return (
-    <main className="admin-login">
-      <section className="admin-access-card admin-login-card">
-        <div className="admin-login-panel">
-          <div className="admin-login-heading">
-            <h1>Could not finish sign in</h1>
-            <p>{message}</p>
-          </div>
-          <Link className="button button-primary" to="/auth?mode=signin">
-            Back to sign in
-          </Link>
-        </div>
-      </section>
-    </main>
+    <AuthShell>
+      <div className="admin-login-heading">
+        <h1>Could not finish sign in</h1>
+        <p>{message}</p>
+      </div>
+      <Link className="button button-primary" to="/auth?mode=signin">
+        Back to sign in
+      </Link>
+      <AuthSecurityNote>
+        Expired or used secure links cannot be reopened.
+      </AuthSecurityNote>
+    </AuthShell>
   );
 }
