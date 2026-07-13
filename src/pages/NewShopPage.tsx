@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
+import { PLATFORM_BRAND } from "../lib/branding";
+import { PlatformMark } from "../components/ui/PlatformMark";
 import { useAdminSession } from "../hooks/useAdminSession";
 import { createShop, signInAdmin } from "../lib/api";
 import { useAsyncAction } from "../hooks/useAsyncAction";
@@ -99,11 +101,11 @@ export function NewShopPage() {
           <header className="admin-login-topbar">
             <div className="admin-login-brand">
               <span className="admin-login-logo">
-                <ShoppingBag size={20} />
+                <PlatformMark />
               </span>
               <span>
-                <strong>Akiba Shelf</strong>
-                <small>Platform onboarding</small>
+                <strong>{PLATFORM_BRAND.name}</strong>
+                <small>{PLATFORM_BRAND.descriptor}</small>
               </span>
             </div>
             <Link

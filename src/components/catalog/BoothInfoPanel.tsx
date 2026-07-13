@@ -4,6 +4,7 @@ import type { BoothSettings } from "../../types/catalog";
 import { SOCIAL_BRAND_COLORS } from "../../lib/social";
 import { SocialQrCard } from "./SocialQrCard";
 import { TiktokIcon } from "../ui/TiktokIcon";
+import { safePublicUrl } from "../../lib/branding";
 
 type BoothInfoPanelProps = {
   booth: BoothSettings;
@@ -15,7 +16,7 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
     { label: "Facebook", url: booth.facebook_url, icon: <Facebook size={18} /> },
     { label: "TikTok", url: booth.tiktok_url, icon: <TiktokIcon size={18} /> },
   ].flatMap((item): { label: string; url: string; icon: ReactNode; brandColor: string; brandGradient: string }[] => {
-    const url = item.url?.trim();
+    const url = safePublicUrl(item.url);
     const brand = SOCIAL_BRAND_COLORS[item.label];
     return url && brand ? [{ ...item, url, brandColor: brand.color, brandGradient: brand.gradient }] : [];
   });
@@ -25,8 +26,8 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
       <div className="booth-card-topline"><span>Booth guide</span><small><i /> Open today</small></div>
       <div className="booth-hero booth-card-identity">
         <div className="booth-hero-logo">
-          {booth.logo_url ? (
-            <img src={booth.logo_url} alt={booth.booth_name} />
+          {safePublicUrl(booth.logo_url) ? (
+            <img src={safePublicUrl(booth.logo_url)} alt={booth.booth_name} />
           ) : (
             <ShoppingBag size={22} />
           )}
@@ -58,7 +59,7 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
                 key={item.label}
                 label={item.label}
                 url={item.url}
-                logoUrl={booth.social_qr_logo_url}
+                logoUrl={safePublicUrl(booth.social_qr_logo_url)}
                 icon={item.icon}
                 brandColor={item.brandColor}
                 brandGradient={item.brandGradient}

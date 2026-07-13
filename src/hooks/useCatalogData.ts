@@ -4,13 +4,13 @@ import { getCatalogCoreData, getPublicBoothSettings, getPublicPaymentSettings, g
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { loadCatalogSnapshot, saveCatalogSnapshot } from "../lib/offline";
 import { subscribeToCatalogChanges } from "../lib/realtime";
-import { getStoredBoothTheme } from "../lib/theme";
+import { defaultBooth } from "../lib/constants";
 import type { BoothSettings, PaymentSettings, Product } from "../types/catalog";
 
 export function useCatalogData(shopId: string | undefined, onProductsLoaded: (products: Product[]) => void) {
   const cached = useMemo(() => loadCatalogSnapshot(shopId), [shopId]);
   const [products, setProducts] = useState<Product[]>(() => cached?.products ?? []);
-  const [booth, setBooth] = useState<BoothSettings>(() => cached?.booth ?? getStoredBoothTheme());
+  const [booth, setBooth] = useState<BoothSettings>(() => cached?.booth ?? defaultBooth);
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const [loadError, setLoadError] = useState("");
   const [isLoading, setIsLoading] = useState(() => !cached);
@@ -23,7 +23,7 @@ export function useCatalogData(shopId: string | undefined, onProductsLoaded: (pr
   useEffect(() => {
     const next = loadCatalogSnapshot(shopId);
     setProducts(next?.products ?? []);
-    setBooth(next?.booth ?? getStoredBoothTheme());
+    setBooth(next?.booth ?? defaultBooth);
     setPayment(defaultPayment);
     setLoadError("");
     setIsLoading(true);

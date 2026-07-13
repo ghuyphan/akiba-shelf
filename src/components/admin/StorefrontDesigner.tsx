@@ -51,7 +51,6 @@ type StorefrontDesignerProps = {
   payment: PaymentSettings;
   onSave: (settings: BoothSettings) => Promise<void>;
   onSavePayment: (settings: PaymentSettings) => Promise<void>;
-  isOwner?: boolean;
 };
 
 type InspectorTab = "layout" | "content" | "style";

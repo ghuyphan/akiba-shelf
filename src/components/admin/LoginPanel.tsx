@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Lock, Mail, ShoppingBag, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, Mail, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
@@ -7,15 +7,16 @@ import { Alert } from "../ui/Alert";
 import { useToast } from "../ui/ToastProvider";
 
 import type { BoothSettings } from "../../types/catalog";
-import { getThemeStyle } from "../../lib/theme";
 import { PageLoading } from "../ui/PageLoading";
+import { PlatformMark } from "../ui/PlatformMark";
+import { PLATFORM_BRAND } from "../../lib/branding";
 
 type LoginPanelProps = {
   onLogin: (email: string, password: string) => Promise<void>;
   booth?: BoothSettings;
 };
 
-export function LoginPanel({ onLogin, booth }: LoginPanelProps) {
+export function LoginPanel({ onLogin }: LoginPanelProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,19 +30,13 @@ export function LoginPanel({ onLogin, booth }: LoginPanelProps) {
   }
 
   return (
-    <main className="admin-login" style={booth ? getThemeStyle(booth) : undefined}>
+    <main className="admin-login">
       <section className="admin-access-card admin-login-card">
         <div className="admin-login-panel">
         <header className="admin-login-topbar">
           <div className="admin-login-brand">
-            <span className="admin-login-logo" style={booth?.logo_url ? { background: "transparent", overflow: "hidden" } : undefined}>
-              {booth?.logo_url ? (
-                <img src={booth.logo_url} alt={booth.booth_name} style={{ width: "100%", height: "100%", borderRadius: "inherit", objectFit: "cover", display: "block" }} />
-              ) : (
-                <ShoppingBag size={20} />
-              )}
-            </span>
-            <span><strong>{booth?.booth_name || "Merch desk"}</strong><small>Admin</small></span>
+            <span className="admin-login-logo"><PlatformMark /></span>
+            <span><strong>{PLATFORM_BRAND.name}</strong><small>{PLATFORM_BRAND.descriptor}</small></span>
           </div>
           <Link to="/" className="admin-login-back" aria-label="Back to catalog"><ArrowLeft size={17} /></Link>
         </header>
@@ -114,18 +109,13 @@ export function LoginPanel({ onLogin, booth }: LoginPanelProps) {
   );
 }
 
-export function AdminAccessCheck({ booth }: { booth?: BoothSettings }) {
-  const icon = booth?.logo_url ? (
-    <img src={booth.logo_url} alt="" style={{ width: "100%", height: "100%", borderRadius: "inherit", objectFit: "cover", display: "block" }} />
-  ) : (
-    <ShieldCheck size={28} />
-  );
-
+export function AdminAccessCheck(props: { booth?: BoothSettings }) {
+  void props;
   return (
     <PageLoading
       title="Checking your access"
-      message={`Connecting to ${booth?.booth_name || "your merch booth"}…`}
-      icon={icon}
+      message="Loading your workspace…"
+      icon={<ShieldCheck size={28} />}
     />
   );
 }

@@ -9,7 +9,7 @@ export type AdminSessionState =
   | { status: "unauthenticated" }
   | { status: "unauthorized"; userId: string; email?: string }
   | { status: "authorized"; access: ShopMembership; memberships: ShopMembership[]; userId: string; email?: string }
-  | { status: "inactive"; userId: string; email?: string }
+  | { status: "inactive"; memberships: ShopMembership[]; userId: string; email?: string }
   | { status: "error"; message: string };
 
 export function useAdminSession() {
@@ -35,7 +35,7 @@ export function useAdminSession() {
       resolvingUserId.current = null;
       if (!memberships.length) { setState({ status: "unauthorized", userId: user.id, email: user.email }); return; }
       const activeMemberships = memberships.filter((item) => item.active && item.shop_active);
-      if (!activeMemberships.length) { setState({ status: "inactive", userId: user.id, email: user.email }); return; }
+      if (!activeMemberships.length) { setState({ status: "inactive", memberships, userId: user.id, email: user.email }); return; }
       const stored = localStorage.getItem(STORAGE_KEY);
       const access = activeMemberships.find((item) => item.shop_id === stored) ?? activeMemberships[0];
       localStorage.setItem(STORAGE_KEY, access.shop_id);

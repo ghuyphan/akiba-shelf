@@ -1854,6 +1854,7 @@
   border-color: color-mix(in srgb, var(--coral) 30%, var(--line));
   box-shadow: var(--shadow);
 }
+.dashboard-header-pill{grid-template-columns:1fr auto}.dashboard-header-pill .admin-header-actions{justify-self:end}.dashboard-shop-card.inactive{opacity:.72;background:var(--surface-soft)}.dashboard-shop-card.inactive:hover{border-color:var(--line);box-shadow:var(--soft-shadow)}.shop-card-title-row{display:flex;align-items:center;gap:8px}.shop-card-edit-btn{display:inline-flex;align-items:center;padding:4px;border:0;border-radius:4px;color:var(--muted);background:transparent;cursor:pointer;transition:color 150ms ease,background-color 150ms ease}.shop-card-edit-btn:hover{color:var(--coral);background:var(--surface-soft)}.dashboard-edit-form{padding:20px}.dashboard-edit-section{margin-top:0;padding-top:0;border-top:0}.dashboard-edit-actions{position:relative;margin-top:24px;padding:0}
 .shop-card-main {
   display: flex;
   align-items: flex-start;

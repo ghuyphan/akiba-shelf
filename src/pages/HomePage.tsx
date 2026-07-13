@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, LogIn, ShoppingBag, Store, Sparkles } from "lucide-react";
+import { ArrowRight, LogIn, Store, Sparkles } from "lucide-react";
+import { PLATFORM_BRAND } from "../lib/branding";
+import { PlatformMark } from "../components/ui/PlatformMark";
 import "../styles/admin.css";
 
 export function HomePage() {
@@ -9,11 +11,11 @@ export function HomePage() {
         <div className="admin-header-pill">
           <div className="admin-header-brand">
             <span className="admin-header-mark">
-              <ShoppingBag size={18} />
+              <PlatformMark />
             </span>
             <div>
-              <strong>Akiba Shelf</strong>
-              <small>Artist booth platform</small>
+              <strong>{PLATFORM_BRAND.name}</strong>
+              <small>{PLATFORM_BRAND.descriptor}</small>
             </div>
           </div>
           <div />
@@ -34,8 +36,7 @@ export function HomePage() {
           </span>
           <h1>Create your dream merch booth</h1>
           <p>
-            Akiba Shelf is a touch-friendly catalog, cart, and live order management
-            system designed specifically for independent artists, dealers, and fan conventions.
+            {PLATFORM_BRAND.description} {PLATFORM_BRAND.tagline}
           </p>
 
           <div className="platform-home-actions">
@@ -73,7 +74,7 @@ export function HomePage() {
       </main>
 
       <footer className="platform-home-footer">
-        <p>&copy; {new Date().getFullYear()} Akiba Shelf. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} {PLATFORM_BRAND.name}. All rights reserved.</p>
       </footer>
     </div>
   );

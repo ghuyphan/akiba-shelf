@@ -3,37 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#fff3f8" />
+    <meta name="theme-color" content="#faf7f2" />
+    <meta name="description" content="A storefront and live order platform for independent artist booths." />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/favicon.svg" />
-    <script>
-      (() => {
-        const defaults = {
-          theme_primary: "#ff6fae",
-          theme_secondary: "#24324f",
-          theme_accent: "#6fc7ff",
-          theme_background: "#fff3f8",
-        };
-
-        try {
-          const stored = localStorage.getItem("merch-booth-theme");
-          const theme = stored ? { ...defaults, ...JSON.parse(stored) } : defaults;
-          const root = document.documentElement;
-          const pageBg = theme.theme_background || defaults.theme_background;
-
-          root.style.setProperty("--coral", theme.theme_primary || defaults.theme_primary);
-          root.style.setProperty("--coral-strong", theme.theme_primary || defaults.theme_primary);
-          root.style.setProperty("--navy", theme.theme_secondary || defaults.theme_secondary);
-          root.style.setProperty("--teal-dark", theme.theme_secondary || defaults.theme_secondary);
-          root.style.setProperty("--blue", theme.theme_accent || defaults.theme_accent);
-          root.style.setProperty("--teal", theme.theme_accent || defaults.theme_accent);
-          root.style.setProperty("--page-bg", pageBg);
-          document.querySelector('meta[name="theme-color"]')?.setAttribute("content", pageBg);
-        } catch {
-          localStorage.removeItem("merch-booth-theme");
-        }
-      })();
-    </script>
+    <link rel="icon" href="/brand/matsuri-favicon.svg" />
+    <link rel="apple-touch-icon" href="/brand/matsuri-icon-192.png" />
     <script>
       (() => {
         const redirect = new URLSearchParams(window.location.search).get("redirect");
@@ -42,7 +16,7 @@
         }
       })();
     </script>
-    <title>Akiba Shelf</title>
+    <title>Matsuri</title>
   </head>
   <body>
     <div id="root"></div>

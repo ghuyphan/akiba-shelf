@@ -1,10 +1,10 @@
-# Akiba Shelf
+# Matsuri
 
-Akiba Shelf is a touch-friendly merch booth storefront and admin workspace. Customers browse products, build a stock-safe cart, create an order, scan a VietQR payment code, and wait for staff confirmation. Staff manage products, fulfilment, payment settings, booth information, and the public storefront design.
+Matsuri is a touch-friendly storefront and live order platform for independent artist booths. Customers browse products, build a stock-safe cart, create an order, scan VietQR, and wait for staff confirmation. Staff manage products, fulfilment, payment settings, booth information, and each shop's public design.
 
 ## Main features
 
-- Multi-shop storefronts at `/s/:shopSlug`, with `/` preserving the default Akiba Shelf link.
+- Multi-shop storefronts at `/s/:shopSlug`, with Matsuri platform pages kept separate from individual shop branding.
 - Responsive storefront with featured-product swipe deck, grid/list browsing, product details, and mobile cart sheet.
 - Server-authoritative ordering: totals and stock are validated inside the `create_order` Postgres function.
 - VietQR payment flow with live order confirmation.
@@ -40,7 +40,7 @@ Never commit `.env.local` or service-role credentials.
 
 ## PWA and Android order notifications
 
-The storefront/admin app includes a service worker and installable manifest. The installed app name, browser title, theme color, and favicon follow the current booth settings and logo.
+The storefront/admin app includes a service worker and installable manifest. Installed-app branding always uses Matsuri; browser title, theme color, and favicon use a verified shop identity only on shop-owned routes.
 
 To enable background order notifications:
 

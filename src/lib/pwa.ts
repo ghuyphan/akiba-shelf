@@ -1,7 +1,4 @@
-import type { BoothSettings } from "../types/catalog";
 import { supabase } from "./supabase";
-
-let manifestUrl = "";
 
 export function registerPwa() {
   if (!("serviceWorker" in navigator)) return;
@@ -10,35 +7,6 @@ export function registerPwa() {
       window.setInterval(() => { void registration.update(); }, 60 * 60 * 1000);
     }).catch(() => undefined);
   });
-}
-
-export function applyPwaIdentity(booth: BoothSettings) {
-  const name = booth.booth_name?.trim() || "Akiba Shelf";
-  const icon = booth.logo_url?.trim();
-  document.title = name;
-
-  let favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-  if (!favicon) {
-    favicon = document.createElement("link");
-    favicon.rel = "icon";
-    document.head.append(favicon);
-  }
-  favicon.href = icon || `${import.meta.env.BASE_URL}favicon.svg`;
-
-  const manifest = {
-    name,
-    short_name: name.slice(0, 24),
-    description: booth.subtitle?.trim() || `${name} merch booth`,
-    start_url: `${import.meta.env.BASE_URL}admin`,
-    scope: import.meta.env.BASE_URL,
-    display: "standalone",
-    background_color: booth.theme_background || "#f8fafc",
-    theme_color: booth.theme_primary || "#6366f1",
-    icons: icon ? [{ src: icon, sizes: "any", purpose: "any maskable" }] : [{ src: `${import.meta.env.BASE_URL}favicon.svg`, sizes: "any", type: "image/svg+xml", purpose: "any maskable" }],
-  };
-  if (manifestUrl) URL.revokeObjectURL(manifestUrl);
-  manifestUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" }));
-  document.querySelector<HTMLLinkElement>('link[rel="manifest"]')?.setAttribute("href", manifestUrl);
 }
 
 function urlBase64ToUint8Array(value: string) {

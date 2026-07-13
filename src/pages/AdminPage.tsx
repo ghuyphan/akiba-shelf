@@ -17,7 +17,8 @@ import type { OrderFilter, OrderStatusCounts } from "../lib/api";
 import { defaultBooth, defaultPayment } from "../lib/constants";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
-import { applyPageTheme, getStoredBoothTheme, getThemeStyle } from "../lib/theme";
+import { applyPageTheme, getThemeStyle, resetPageTheme } from "../lib/theme";
+import { getAdminBranding, resetDocumentBranding, safePublicUrl, useDocumentBranding } from "../lib/branding";
 import { supabase } from "../lib/supabase";
 import { safeUuid } from "../lib/id";
 import type { BoothSettings, PaymentSettings, Product, Order } from "../types/catalog";
@@ -84,9 +85,13 @@ export function AdminPage() {
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
-  const [booth, setBooth] = useState<BoothSettings>(() => getStoredBoothTheme());
+  const [booth, setBooth] = useState<BoothSettings>(defaultBooth);
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const toast = useToast();
+  const verifiedBranding = isAuthed && booth.shop_id === shopId && !isInitialLoading && !catalogLoading
+    ? getAdminBranding(adminSession.access.shop_name, booth.booth_name, booth.logo_url, booth.theme_background)
+    : null;
+  useDocumentBranding(verifiedBranding);
 
   const orderRequestRef = useRef(0);
   const orderReloadTimerRef = useRef<number | undefined>(undefined);
@@ -275,9 +280,14 @@ export function AdminPage() {
   }, [isAuthed, orderFilter, orderPage, shopId]);
 
   useEffect(() => {
-    if (isInitialLoading) return;
+    if (!verifiedBranding) {
+      resetPageTheme();
+      resetDocumentBranding();
+      return;
+    }
     applyPageTheme(booth);
-  }, [booth, isInitialLoading]);
+    return () => resetPageTheme();
+  }, [booth, verifiedBranding]);
 
   useEffect(() => {
     if (isAuthed) void getPushEnabled(shopId).then(setPushEnabled).catch(() => setPushEnabled(false));
@@ -370,8 +380,8 @@ export function AdminPage() {
             <Link to={`/s/${adminSession.access.shop_slug}`} aria-label="Back to catalog" className="admin-header-icon-button"><ArrowLeft size={19} /></Link>
             <Link to="/dashboard" aria-label="Go to dashboard" className="admin-header-icon-button"><LayoutDashboard size={19} /></Link>
             <span className="admin-header-mark" style={booth.logo_url ? { background: "transparent", overflow: "hidden" } : undefined}>
-              {booth.logo_url ? (
-                <img src={booth.logo_url} alt={booth.booth_name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              {safePublicUrl(booth.logo_url) ? (
+                <img src={safePublicUrl(booth.logo_url)} alt={booth.booth_name} />
               ) : (
                 <ShoppingBag size={18} />
               )}
@@ -528,7 +538,6 @@ export function AdminPage() {
           payment={payment}
           onSave={(settings) => runAdminAction(async () => { const saved = await saveBoothSettings(shopId, settings); setBooth(saved); }, "Storefront design published.")}
           onSavePayment={(settings) => runAdminAction(async () => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); }, "Checkout settings saved.")}
-          isOwner={adminSession.access.role === "owner"}
         />}
         {canManageCatalog && viewTab === "settings" && <section className="admin-mobile-settings-page"><SettingsForm shopId={shopId} settings={booth} onSave={async (settings) => { const saved = await saveBoothSettings(shopId, settings); setBooth(saved); toast.success("Booth settings saved."); }} /><QrManager shopId={shopId} settings={payment} onSave={async (settings) => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); toast.success("Checkout settings saved."); }} /></section>}
         {isAuthed && adminSession.access.role === "owner" && viewTab === "team" && <section className="admin-team-page"><StaffManager shopId={shopId} /></section>}
