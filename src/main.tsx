@@ -4,12 +4,12 @@ import "./styles/global.css";
 import "./styles/legacy.css";
 import { App } from "./App";
 import { resetDocumentBranding } from "./lib/branding";
-import { resetPageTheme } from "./lib/theme";
+import { hydrateInitialPageTheme } from "./lib/theme";
 import { registerPwa } from "./lib/pwa";
 import { restoreRedirect } from "./lib/authUrls";
 
 restoreRedirect();
-resetPageTheme();
+hydrateInitialPageTheme();
 resetDocumentBranding();
 registerPwa();
 

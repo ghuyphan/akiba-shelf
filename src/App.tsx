@@ -18,6 +18,7 @@ const SetPasswordPage = lazy(() => import("./pages/SetPasswordPage").then((m) =>
 function PlatformRouteBranding() {
   const { pathname, search } = useLocation();
   useEffect(() => {
+    if (pathname === "/admin" || pathname.startsWith("/s/")) return;
     resetPageTheme();
     let title: string = PLATFORM_BRAND.name;
     if (pathname === "/auth") title = `${new URLSearchParams(search).get("mode") === "signup" ? "Create account" : "Sign in"} · ${PLATFORM_BRAND.name}`;

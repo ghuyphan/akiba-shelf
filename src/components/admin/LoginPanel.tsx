@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Lock, Mail, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, Mail, Eye, EyeOff, LoaderCircle, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
@@ -10,6 +10,8 @@ import type { BoothSettings } from "../../types/catalog";
 import { PageLoading } from "../ui/PageLoading";
 import { PlatformMark } from "../ui/PlatformMark";
 import { PLATFORM_BRAND } from "../../lib/branding";
+import { safePublicUrl } from "../../lib/branding";
+import { getThemeStyle } from "../../lib/theme";
 
 type LoginPanelProps = {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -38,7 +40,10 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
             <span className="admin-login-logo"><PlatformMark /></span>
             <span><strong>{PLATFORM_BRAND.name}</strong><small>{PLATFORM_BRAND.descriptor}</small></span>
           </div>
-          <Link to="/" className="admin-login-back" aria-label="Back to catalog"><ArrowLeft size={17} /></Link>
+          <Link to="/" className="admin-login-back">
+            <ArrowLeft size={16} />
+            <span>Back to home</span>
+          </Link>
         </header>
 
         <div className="admin-login-heading">
@@ -81,6 +86,7 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
                 className="password-toggle-btn"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
+                disabled={!isSupabaseConfigured}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -97,9 +103,11 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
             type="submit"
             className="admin-login-submit"
             disabled={busy || !isSupabaseConfigured}
+            aria-busy={busy}
           >
+            {busy && <LoaderCircle className="button-spinner" size={18} aria-hidden="true" />}
             <span>{busy ? "Signing in…" : "Open admin"}</span>
-            <ArrowRight size={18} />
+            {!busy && <ArrowRight size={18} aria-hidden="true" />}
           </button>
         </form>
         <p className="admin-login-security"><ShieldCheck size={14} /> Only authorised staff can access this workspace.</p>
@@ -110,12 +118,14 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
 }
 
 export function AdminAccessCheck(props: { booth?: BoothSettings }) {
-  void props;
+  const booth = props.booth;
+  const logo = safePublicUrl(booth?.logo_url);
   return (
     <PageLoading
       title="Checking your access"
       message="Loading your workspace…"
-      icon={<ShieldCheck size={28} />}
+      icon={logo ? <img src={logo} alt="" /> : <ShieldCheck size={28} />}
+      style={booth ? getThemeStyle(booth) : undefined}
     />
   );
 }

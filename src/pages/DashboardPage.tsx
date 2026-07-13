@@ -7,7 +7,6 @@ import {
   LogOut,
   ArrowLeft,
   Edit3,
-  X,
 } from "lucide-react";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { PlatformMark } from "../components/ui/PlatformMark";
@@ -285,7 +284,14 @@ export function DashboardPage() {
           onSubmit={handleSaveEdit}
           className="admin-form dashboard-edit-form"
         >
-          <section className="admin-form-section dashboard-edit-section">
+          <div className="dashboard-edit-intro">
+            <span className="dashboard-edit-icon" aria-hidden="true">
+              <Store size={20} />
+            </span>
+            <p>Update the name customers see across your storefront.</p>
+          </div>
+
+          <section className="dashboard-edit-section">
             <Field label="Shop name">
               <TextInput
                 value={editName}
@@ -295,28 +301,29 @@ export function DashboardPage() {
                 required
               />
             </Field>
-            <Field
-              label="Storefront URL"
-              hint="Shop URLs cannot currently be changed after creation."
-            >
-              <code className="shop-card-slug">
-                /s/{editingShop?.shop_slug}
-              </code>
-            </Field>
+            <div className="dashboard-url-field">
+              <span className="field-label">Storefront URL</span>
+              <div className="dashboard-url-readout">
+                <code>/s/{editingShop?.shop_slug}</code>
+                <span>Fixed</span>
+              </div>
+              <span className="field-hint">
+                Shop URLs cannot currently be changed after creation.
+              </span>
+            </div>
           </section>
 
-          <div className="admin-sticky-actions dashboard-edit-actions">
-            <Button type="submit" loading={editBusy} loadingText="Saving…">
-              Save changes
-            </Button>
+          <div className="dashboard-edit-actions">
             <Button
               type="button"
-              variant="secondary"
-              icon={<X size={17} />}
+              variant="ghost"
               disabled={editBusy}
               onClick={() => setEditingShop(null)}
             >
               Cancel
+            </Button>
+            <Button type="submit" loading={editBusy} loadingText="Saving…">
+              Save changes
             </Button>
           </div>
         </form>

@@ -5,7 +5,7 @@
   "start_url": "./admin",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#faf7f2",
+  "background_color": "#f5f0e8",
   "theme_color": "#5c8657",
   "icons": [
     { "src": "./brand/matsuri-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

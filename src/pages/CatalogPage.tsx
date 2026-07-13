@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/catalog.css";
-import { applyPageTheme, getThemeStyle, resetPageTheme } from "../lib/theme";
+import { applyPageTheme, getStoredBoothTheme, getThemeStyle, resetPageTheme } from "../lib/theme";
 import {
   getShopBranding,
-  resetDocumentBranding,
+  safePublicUrl,
   useDocumentBranding,
 } from "../lib/branding";
 import type { Order, Product, StorefrontSection } from "../types/catalog";
@@ -132,14 +132,10 @@ export function CatalogPage() {
   }, [loadCatalog]);
 
   useEffect(() => {
-    if (!verifiedBranding) {
-      resetPageTheme();
-      resetDocumentBranding();
-      return;
-    }
-    applyPageTheme(booth);
+    if (!verifiedBranding) return;
+    applyPageTheme(booth, `slug:${shopSlug}`);
     return () => resetPageTheme();
-  }, [booth, verifiedBranding]);
+  }, [booth, shopSlug, verifiedBranding]);
 
   useEffect(() => {
     if (!loadError) return;
@@ -449,13 +445,18 @@ export function CatalogPage() {
   ].sort((first, second) => first.position - second.position);
 
   if (shop === undefined)
-    return (
+    {
+      const cachedBooth = getStoredBoothTheme(`slug:${shopSlug}`);
+      const cachedLogo = safePublicUrl(cachedBooth.logo_url);
+      return (
       <PageLoading
         title="Opening the shop…"
         message="Getting the shelves ready for you."
-        icon={<StoreIcon size={28} />}
+        icon={cachedLogo ? <img src={cachedLogo} alt="" /> : <StoreIcon size={28} />}
+        style={getThemeStyle(cachedBooth)}
       />
-    );
+      );
+    }
   if (shop === null)
     return (
       <main className="shop-state-shell">
@@ -506,6 +507,19 @@ export function CatalogPage() {
         </p>
       </main>
     );
+
+  if (isLoading) {
+    const cachedBooth = getStoredBoothTheme(`slug:${shopSlug}`);
+    const cachedLogo = safePublicUrl(cachedBooth.logo_url);
+    return (
+      <PageLoading
+        title="Opening the shop…"
+        message="Getting the shelves ready for you."
+        icon={cachedLogo ? <img src={cachedLogo} alt="" /> : <StoreIcon size={28} />}
+        style={getThemeStyle(cachedBooth)}
+      />
+    );
+  }
 
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>

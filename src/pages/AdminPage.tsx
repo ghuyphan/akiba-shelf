@@ -17,8 +17,8 @@ import type { OrderFilter, OrderStatusCounts } from "../lib/api";
 import { defaultBooth, defaultPayment } from "../lib/constants";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
-import { applyPageTheme, getThemeStyle, resetPageTheme } from "../lib/theme";
-import { getAdminBranding, resetDocumentBranding, safePublicUrl, useDocumentBranding } from "../lib/branding";
+import { applyPageTheme, getStoredBoothTheme, getThemeStyle, resetPageTheme } from "../lib/theme";
+import { getAdminBranding, safePublicUrl, useDocumentBranding } from "../lib/branding";
 import { supabase } from "../lib/supabase";
 import { safeUuid } from "../lib/id";
 import type { BoothSettings, PaymentSettings, Product, Order } from "../types/catalog";
@@ -85,7 +85,10 @@ export function AdminPage() {
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
-  const [booth, setBooth] = useState<BoothSettings>(defaultBooth);
+  const [booth, setBooth] = useState<BoothSettings>(() => {
+    const activeShopId = localStorage.getItem("akiba-active-shop")?.trim();
+    return activeShopId ? getStoredBoothTheme(`id:${activeShopId}`) : defaultBooth;
+  });
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const toast = useToast();
   const verifiedBranding = isAuthed && booth.shop_id === shopId && !isInitialLoading && !catalogLoading
@@ -106,7 +109,7 @@ export function AdminPage() {
   );
   const hiddenCount = useMemo(() => products.filter((product) => !product.active).length, [products]);
   useEffect(() => {
-    setProducts([]); setOrders([]); setOrderCounts(emptyOrderCounts); setOrderTotal(0); setSelectedProduct(undefined); setBooth(defaultBooth); setPayment(defaultPayment);
+    setProducts([]); setOrders([]); setOrderCounts(emptyOrderCounts); setOrderTotal(0); setSelectedProduct(undefined); setBooth(shopId ? getStoredBoothTheme(`id:${shopId}`) : defaultBooth); setPayment(defaultPayment);
     setIsInitialLoading(true);
   }, [shopId]);
   async function reloadCatalogAdmin() {
@@ -280,14 +283,10 @@ export function AdminPage() {
   }, [isAuthed, orderFilter, orderPage, shopId]);
 
   useEffect(() => {
-    if (!verifiedBranding) {
-      resetPageTheme();
-      resetDocumentBranding();
-      return;
-    }
-    applyPageTheme(booth);
+    if (!isAuthed || !shopId) return;
+    applyPageTheme(booth, `id:${shopId}`);
     return () => resetPageTheme();
-  }, [booth, verifiedBranding]);
+  }, [booth, isAuthed, shopId]);
 
   useEffect(() => {
     if (isAuthed) void getPushEnabled(shopId).then(setPushEnabled).catch(() => setPushEnabled(false));
