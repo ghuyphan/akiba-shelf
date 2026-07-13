@@ -31,8 +31,26 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
     <Modal title={copy.itemDetails} isOpen={Boolean(product)} onClose={onClose} className="product-detail-modal" mobileSheet>
       <div className="product-detail-layout">
         <div className="product-detail-gallery">
-          <div className="product-detail-main-image">{image ? <img src={image} alt={displayedProduct.name} /> : <span className="product-image-placeholder" />}{displayedProduct.badge && <span className="product-detail-image-badge" style={{ backgroundColor: displayedProduct.badge_color || undefined }}>{displayedProduct.badge}</span>}</div>
-          {images.length > 1 && <div className="product-detail-thumbnails">{images.slice(0, 6).map((source, index) => <button key={`${source}-${index}`} type="button" className={index === activeImage ? "active" : ""} onClick={() => setActiveImage(index)} aria-label={`Show image ${index + 1}`}><img src={source} alt="" /></button>)}</div>}
+          <div className="product-detail-main-image">
+            {image ? <img src={image} alt={displayedProduct.name} /> : <span className="product-image-placeholder" />}
+            {displayedProduct.badge && <span className="product-detail-image-badge" style={{ backgroundColor: displayedProduct.badge_color || undefined }}>{displayedProduct.badge}</span>}
+            {images.length > 1 && (
+              <div className="product-detail-thumbnails" aria-label="Product images">
+                {images.slice(0, 6).map((source, index) => (
+                  <button
+                    key={`${source}-${index}`}
+                    type="button"
+                    className={index === activeImage ? "active" : ""}
+                    onClick={() => setActiveImage(index)}
+                    aria-label={`Show image ${index + 1}`}
+                    aria-pressed={index === activeImage}
+                  >
+                    <img src={source} alt="" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="product-detail-copy">
