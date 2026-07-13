@@ -128,7 +128,6 @@ export function AdminAccessCheck({ booth }: { booth?: BoothSettings }) {
       title="Checking your access"
       message={`Connecting to ${booth?.booth_name || "your merch booth"}…`}
       icon={icon}
-      style={booth ? getThemeStyle(booth) : undefined}
     />
   );
 }
