@@ -55,6 +55,7 @@ import {
   AdminAccessDenied,
   LoginPanel,
 } from "../components/admin/LoginPanel";
+import { AppHeader } from "../components/ui/AppHeader";
 import { ProductForm } from "../components/admin/ProductForm";
 import { ProductList } from "../components/admin/ProductList";
 import { QrManager } from "../components/admin/QrManager";
@@ -534,9 +535,9 @@ export function AdminPage() {
 
   return (
     <main className="admin-shell" style={getThemeStyle(booth)}>
-      <header className="admin-header">
-        <div className="admin-header-pill">
-          <div className="admin-header-brand">
+      <AppHeader
+        brand={
+          <>
             <Link
               to={`/s/${adminSession.access.shop_slug}`}
               aria-label="Back to catalog"
@@ -568,12 +569,13 @@ export function AdminPage() {
                 <ShoppingBag size={18} />
               )}
             </span>
-            <span>
+            <span className="admin-header-title">
               <strong>{booth.booth_name || "Merch desk"}</strong>
               <small>Admin workspace</small>
             </span>
-          </div>
-
+          </>
+        }
+        navigation={
           <div className="admin-nav-tabs" ref={desktopNavRef}>
             {canManageCatalog && (
               <button
@@ -629,8 +631,9 @@ export function AdminPage() {
               </button>
             )}
           </div>
-
-          <div className="admin-header-actions">
+        }
+        actions={
+          <>
             <SelectMenu
               className="admin-shop-switcher-menu"
               label="Active shop"
@@ -692,9 +695,9 @@ export function AdminPage() {
               <LogOut size={15} />
               <span>Sign out</span>
             </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <div className="admin-container">
         <section className="admin-view-hero">

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { PlatformMark } from "../components/ui/PlatformMark";
+import { AppHeader } from "../components/ui/AppHeader";
 import { useAdminSession } from "../hooks/useAdminSession";
 import { signInAdmin, signOutAdmin, updateShop } from "../lib/api";
 import {
@@ -135,9 +136,9 @@ export function DashboardPage() {
 
   return (
     <div className="admin-shell">
-      <header className="admin-header">
-        <div className="admin-header-pill dashboard-header-pill">
-          <div className="admin-header-brand">
+      <AppHeader
+        brand={
+          <>
             <Link
               to="/"
               className="admin-header-icon-button"
@@ -148,13 +149,14 @@ export function DashboardPage() {
             <span className="admin-header-mark">
               <PlatformMark />
             </span>
-            <div>
+            <span className="admin-header-title">
               <strong>{PLATFORM_BRAND.name}</strong>
               <small>{PLATFORM_BRAND.descriptor}</small>
-            </div>
-          </div>
-
-          <div className="admin-header-actions">
+            </span>
+          </>
+        }
+        actions={
+          <>
             {adminSession.email && (
               <span className="dashboard-user-email">{adminSession.email}</span>
             )}
@@ -167,9 +169,9 @@ export function DashboardPage() {
               <LogOut size={15} />
               <span>Sign out</span>
             </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="admin-container">
         <section className="admin-view-hero">
