@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ToastProvider } from "../components/ui/ToastProvider";
+import { PlatformI18nProvider } from "../lib/platformI18n";
 import {
   clearPasswordFlow,
   clearPendingInvitation,
@@ -34,18 +35,20 @@ import { SetPasswordPage } from "./SetPasswordPage";
 
 function renderPage() {
   return render(
-    <ToastProvider>
-      <MemoryRouter initialEntries={["/auth/set-password"]}>
-        <Routes>
-          <Route path="/auth/set-password" element={<SetPasswordPage />} />
-          <Route path="/admin" element={<p>Admin reached</p>} />
-          <Route
-            path="/dashboard/shops/new"
-            element={<p>New shop reached</p>}
-          />
-        </Routes>
-      </MemoryRouter>
-    </ToastProvider>,
+    <PlatformI18nProvider>
+      <ToastProvider>
+        <MemoryRouter initialEntries={["/auth/set-password"]}>
+          <Routes>
+            <Route path="/auth/set-password" element={<SetPasswordPage />} />
+            <Route path="/admin" element={<p>Admin reached</p>} />
+            <Route
+              path="/dashboard/shops/new"
+              element={<p>New shop reached</p>}
+            />
+          </Routes>
+        </MemoryRouter>
+      </ToastProvider>
+    </PlatformI18nProvider>,
   );
 }
 

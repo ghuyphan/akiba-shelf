@@ -7,7 +7,7 @@ export const PLATFORM_BRAND = {
   description: "A storefront and live order platform for independent artist booths.",
 } as const;
 
-export const PLATFORM_THEME_COLOR = "#b4232c";
+export const PLATFORM_THEME_COLOR = "#d95c64";
 export const PLATFORM_FAVICON = `${import.meta.env.BASE_URL}brand/matsuri-favicon.svg`;
 
 export type DocumentBranding = {

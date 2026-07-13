@@ -11,12 +11,14 @@ import { useToast } from "../components/ui/ToastProvider";
 import { Field, TextInput } from "../components/ui/Field";
 import { getErrorMessage } from "../lib/errors";
 import "../styles/admin.css";
+import { usePlatformI18n } from "../lib/platformI18n";
 
 export function NewShopPage() {
   const { state: adminSession, refresh: refreshAdminSession } = useAdminSession();
   const navigate = useNavigate();
   const { busy, run, setError } = useAsyncAction();
   const toast = useToast();
+  const { t } = usePlatformI18n();
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -57,15 +59,15 @@ export function NewShopPage() {
     const trimmedSlug = slug.trim();
 
     if (!trimmedName) {
-      toast.error("Shop name is required.", "Could not create shop");
+      toast.error(t("Shop name is required."), t("Could not create shop"));
       return;
     }
 
     const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
     if (trimmedSlug.length < 2 || trimmedSlug.length > 63 || !slugRegex.test(trimmedSlug)) {
       toast.error(
-        "Slug must be between 2 and 63 characters, contain only lowercase letters, numbers, and single dashes, and cannot start or end with a dash."
-        , "Could not create shop"
+        t("Slug must be between 2 and 63 characters, contain only lowercase letters, numbers, and single dashes, and cannot start or end with a dash."),
+        t("Could not create shop"),
       );
       return;
     }
@@ -78,7 +80,7 @@ export function NewShopPage() {
       localStorage.setItem("akiba-active-shop", newShop.id);
       navigate("/admin");
     }).catch((caught) => {
-      toast.error(getErrorMessage(caught, "Could not create shop."), "Creation failed");
+      toast.error(t(getErrorMessage(caught, "Could not create shop.")), t("Creation failed"));
       setError("");
     });
   }
@@ -105,37 +107,39 @@ export function NewShopPage() {
               </span>
               <span>
                 <strong>{PLATFORM_BRAND.name}</strong>
-                <small>{PLATFORM_BRAND.descriptor}</small>
+                <small>{t(PLATFORM_BRAND.descriptor)}</small>
               </span>
             </div>
-            <Link
-              to={hasShops ? "/dashboard" : "/"}
-              className="admin-login-back"
-              aria-label={hasShops ? "Back to shops dashboard" : "Back to homepage"}
-            >
-              <ArrowLeft size={17} />
-            </Link>
+            <div className="admin-login-topbar-actions">
+              <Link
+                to={hasShops ? "/dashboard" : "/"}
+                className="admin-login-back"
+                aria-label={t(hasShops ? "Back to shops dashboard" : "Back to homepage")}
+              >
+                <ArrowLeft size={17} />
+              </Link>
+            </div>
           </header>
 
           <div className="admin-login-heading">
-            <h1>Create your shop</h1>
-            <p>Set up your shop name and storefront URL slug to get started.</p>
+            <h1>{t("Create your shop")}</h1>
+            <p>{t("Set up your shop name and storefront URL slug to get started.")}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="admin-login-form">
-            <Field label="Shop name" hint="A friendly name for your merch booth.">
+            <Field label={t("Shop name")} hint={t("A friendly name for your merch booth.")}>
               <TextInput
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="My Artist Booth"
+                placeholder={t("My Artist Booth")}
                 required
                 disabled={busy}
               />
             </Field>
 
             <Field
-              label="Storefront URL slug"
-              hint="Only lowercase letters, numbers, and dashes. No spaces."
+              label={t("Storefront URL slug")}
+              hint={t("Only lowercase letters, numbers, and dashes. No spaces.")}
             >
               <div className="admin-slug-input-wrapper">
                 <TextInput
@@ -147,7 +151,7 @@ export function NewShopPage() {
                 />
                 {slug && (
                   <span className="admin-slug-preview">
-                    Preview URL: <strong>/s/{slug}</strong>
+                    {t("Preview URL:")} <strong>/s/{slug}</strong>
                   </span>
                 )}
               </div>
@@ -159,7 +163,7 @@ export function NewShopPage() {
               className="admin-login-submit"
               disabled={busy || !name.trim() || !slug.trim()}
             >
-              <span>{busy ? "Creating shop…" : "Create shop"}</span>
+              <span>{busy ? t("Creating shop…") : t("Create shop")}</span>
               <Plus size={18} />
             </button>
           </form>

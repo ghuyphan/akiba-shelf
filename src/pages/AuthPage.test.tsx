@@ -3,6 +3,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "../components/ui/ToastProvider";
+import { PlatformI18nProvider } from "../lib/platformI18n";
 
 const auth = vi.hoisted(() => ({
   signInWithPassword: vi.fn(),
@@ -24,31 +25,37 @@ import { AuthPage } from "./AuthPage";
 
 function renderPage() {
   return render(
-    <ToastProvider>
-      <MemoryRouter initialEntries={["/auth"]}>
-        <AuthPage />
-      </MemoryRouter>
-    </ToastProvider>,
+    <PlatformI18nProvider>
+      <ToastProvider>
+        <MemoryRouter initialEntries={["/auth"]}>
+          <AuthPage />
+        </MemoryRouter>
+      </ToastProvider>
+    </PlatformI18nProvider>,
   );
 }
 
 function renderSignupPage() {
   return render(
-    <ToastProvider>
-      <MemoryRouter initialEntries={["/auth?mode=signup"]}>
-        <AuthPage />
-      </MemoryRouter>
-    </ToastProvider>,
+    <PlatformI18nProvider>
+      <ToastProvider>
+        <MemoryRouter initialEntries={["/auth?mode=signup"]}>
+          <AuthPage />
+        </MemoryRouter>
+      </ToastProvider>
+    </PlatformI18nProvider>,
   );
 }
 
 function renderForgotPage() {
   return render(
-    <ToastProvider>
-      <MemoryRouter initialEntries={["/auth?mode=forgot"]}>
-        <AuthPage />
-      </MemoryRouter>
-    </ToastProvider>,
+    <PlatformI18nProvider>
+      <ToastProvider>
+        <MemoryRouter initialEntries={["/auth?mode=forgot"]}>
+          <AuthPage />
+        </MemoryRouter>
+      </ToastProvider>
+    </PlatformI18nProvider>,
   );
 }
 

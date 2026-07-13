@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "../ui/ToastProvider";
+import { PlatformI18nProvider } from "../../lib/platformI18n";
 
 const signInWithGoogle = vi.hoisted(() => vi.fn());
 
@@ -11,17 +12,23 @@ vi.mock("../../lib/api", () => ({ signInWithGoogle }));
 
 import { LoginPanel } from "./LoginPanel";
 
+function renderPanel(onLogin = vi.fn()) {
+  return render(
+    <PlatformI18nProvider>
+      <ToastProvider>
+        <MemoryRouter>
+          <LoginPanel onLogin={onLogin} />
+        </MemoryRouter>
+      </ToastProvider>
+    </PlatformI18nProvider>,
+  );
+}
+
 describe("admin login panel", () => {
   afterEach(cleanup);
 
   it("links directly to account creation and password recovery", () => {
-    render(
-      <ToastProvider>
-        <MemoryRouter>
-          <LoginPanel onLogin={vi.fn()} />
-        </MemoryRouter>
-      </ToastProvider>,
-    );
+    renderPanel();
 
     expect(
       screen.getByRole("link", { name: "Forgot password?" }),
@@ -34,13 +41,7 @@ describe("admin login panel", () => {
   it("offers Google sign in", async () => {
     signInWithGoogle.mockResolvedValue({});
     const user = userEvent.setup();
-    render(
-      <ToastProvider>
-        <MemoryRouter>
-          <LoginPanel onLogin={vi.fn()} />
-        </MemoryRouter>
-      </ToastProvider>,
-    );
+    renderPanel();
 
     await user.click(
       screen.getByRole("button", { name: "Continue with Google" }),
@@ -51,13 +52,7 @@ describe("admin login panel", () => {
   it("preserves useful sanitized authentication errors", async () => {
     const onLogin = vi.fn().mockRejectedValue({ code: "email_not_confirmed" });
     const user = userEvent.setup();
-    render(
-      <ToastProvider>
-        <MemoryRouter>
-          <LoginPanel onLogin={onLogin} />
-        </MemoryRouter>
-      </ToastProvider>,
-    );
+    renderPanel(onLogin);
 
     await user.type(
       screen.getByLabelText("Email address"),

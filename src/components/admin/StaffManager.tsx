@@ -27,6 +27,7 @@ import { Modal } from "../ui/Modal";
 import { SelectMenu } from "../ui/SelectMenu";
 import { AdminCard } from "./AdminCard";
 import { EmptyState } from "../ui/EmptyState";
+import { usePlatformI18n } from "../../lib/platformI18n";
 
 const inviteRoles = [
   { value: "staff", label: "Staff", description: "Process and fulfil orders" },
@@ -61,6 +62,9 @@ export function StaffManager({ shopId }: { shopId: string }) {
     changes: Partial<Pick<StaffAccess, "role" | "active">>;
   } | null>(null);
   const toast = useToast();
+  const { locale, t } = usePlatformI18n();
+  const localizedInviteRoles = inviteRoles.map((option) => ({ ...option, label: t(option.label), description: t(option.description) }));
+  const localizedMemberRoles = memberRoles.map((option) => ({ ...option, label: t(option.label), description: t(option.description) }));
   const reload = useCallback(async () => {
     const [nextMembers, nextInvitations] = await Promise.all([
       getStaffMembers(shopId),
@@ -73,14 +77,14 @@ export function StaffManager({ shopId }: { shopId: string }) {
     setLoading(true);
     void reload()
       .catch((caught) =>
-        toast.error(getErrorMessage(caught), "Could not load staff"),
+        toast.error(t(getErrorMessage(caught)), t("Could not load staff")),
       )
       .finally(() => setLoading(false));
-  }, [reload, toast]);
+  }, [reload, t, toast]);
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-      toast.error("Enter a valid email address.", "Could not send invitation");
+      toast.error(t("Enter a valid email address."), t("Could not send invitation"));
       return;
     }
     setInviteBusy(true);
@@ -88,9 +92,9 @@ export function StaffManager({ shopId }: { shopId: string }) {
       await inviteShopMember(shopId, email.trim().toLowerCase(), role);
       setEmail("");
       await reload();
-      toast.success("Access request processed.");
+      toast.success(t("Access request processed."));
     } catch (caught) {
-      toast.error(getErrorMessage(caught), "Could not send invitation");
+      toast.error(t(getErrorMessage(caught)), t("Could not send invitation"));
     } finally {
       setInviteBusy(false);
     }
@@ -113,9 +117,9 @@ export function StaffManager({ shopId }: { shopId: string }) {
         active: changes.active ?? member.active,
       });
       await reload();
-      toast.success("Staff access updated.");
+      toast.success(t("Staff access updated."));
     } catch (caught) {
-      toast.error(getErrorMessage(caught), "Could not update staff");
+      toast.error(t(getErrorMessage(caught)), t("Could not update staff"));
     } finally {
       setUpdatingId(null);
     }
@@ -127,9 +131,9 @@ export function StaffManager({ shopId }: { shopId: string }) {
       await deleteStaffMember(shopId, removing.user_id);
       setRemoving(null);
       await reload();
-      toast.success("Shop access removed.");
+      toast.success(t("Shop access removed."));
     } catch (caught) {
-      toast.error(getErrorMessage(caught), "Could not remove access");
+      toast.error(t(getErrorMessage(caught)), t("Could not remove access"));
     } finally {
       setRemoveBusy(false);
     }
@@ -139,17 +143,17 @@ export function StaffManager({ shopId }: { shopId: string }) {
     try {
       await updateShopInvitation(shopId, invitation.id, "revoke");
       await reload();
-      toast.success("Invitation revoked.");
+      toast.success(t("Invitation revoked."));
     } catch (caught) {
-      toast.error(getErrorMessage(caught), "Could not revoke invitation");
+      toast.error(t(getErrorMessage(caught)), t("Could not revoke invitation"));
     } finally {
       setRevokingId(null);
     }
   }
   return (
     <AdminCard
-      title="Shop staff"
-      description="Invite teammates and control access to this shop."
+      title={t("Shop staff")}
+      description={t("Invite teammates and control access to this shop.")}
       icon={<ShieldCheck size={18} />}
       className="admin-team-card"
     >
@@ -160,12 +164,12 @@ export function StaffManager({ shopId }: { shopId: string }) {
               <UserPlus size={17} />
             </span>
             <div>
-              <h3>Invite a teammate</h3>
-              <p>They’ll receive secure access for this shop only.</p>
+              <h3>{t("Invite a teammate")}</h3>
+              <p>{t("They’ll receive secure access for this shop only.")}</p>
             </div>
           </div>
           <div className="staff-invite-fields">
-            <Field label="Email">
+            <Field label={t("Email")}>
               <TextInput
                 type="email"
                 autoComplete="email"
@@ -174,11 +178,11 @@ export function StaffManager({ shopId }: { shopId: string }) {
                 onChange={(event) => setEmail(event.target.value)}
               />
             </Field>
-            <Field label="Role">
+            <Field label={t("Role")}>
               <SelectMenu
-                label="Invitation role"
+                label={t("Invitation role")}
                 value={role}
-                options={inviteRoles}
+                options={localizedInviteRoles}
                 onChange={(value) => setRole(value as StaffRole)}
               />
             </Field>
@@ -189,7 +193,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
             loading={inviteBusy}
             className="staff-invite-button"
           >
-            Send invitation
+            {t("Send invitation")}
           </Button>
         </form>
         <section className="staff-members-panel">
@@ -198,10 +202,9 @@ export function StaffManager({ shopId }: { shopId: string }) {
               <Users size={17} />
             </span>
             <div>
-              <h3>Members</h3>
+              <h3>{t("Members")}</h3>
               <p>
-                {members.length} {members.length === 1 ? "person" : "people"}{" "}
-                with shop access
+                {t("{{count}} people with shop access", { count: members.length })}
               </p>
             </div>
           </div>
@@ -217,8 +220,8 @@ export function StaffManager({ shopId }: { shopId: string }) {
                     <Users size={24} />
                   )
                 }
-                title={loading ? "Loading staff…" : "No members yet"}
-                message="Invite a staff member above."
+                title={loading ? t("Loading staff…") : t("No members yet")}
+                message={t("Invite a staff member above.")}
               />
             ) : (
               members.map((member) => (
@@ -230,19 +233,19 @@ export function StaffManager({ shopId }: { shopId: string }) {
                     {(member.email?.[0] ?? "?").toUpperCase()}
                   </div>
                   <div className="admin-staff-identity">
-                    <strong>{member.email ?? "Shop member"}</strong>
+                    <strong>{member.email ?? t("Shop member")}</strong>
                     <span
                       className={`staff-status ${member.active ? "active" : "inactive"}`}
                     >
                       <i />
-                      {member.active ? "Active" : "Inactive"}
+                      {t(member.active ? "Active" : "Inactive")}
                     </span>
                   </div>
                   <div className="admin-staff-controls">
                     <SelectMenu
-                      label={`Role for ${member.email}`}
+                      label={t("Role for {{email}}", { email: member.email ?? "" })}
                       value={member.role}
-                      options={memberRoles}
+                      options={localizedMemberRoles}
                       disabled={updatingId === member.user_id}
                       onChange={(value) =>
                         void update(member, { role: value as StaffRole })
@@ -258,7 +261,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
                         }
                       />
                       <span aria-hidden="true" />
-                      <b>{member.active ? "Enabled" : "Disabled"}</b>
+                      <b>{t(member.active ? "Enabled" : "Disabled")}</b>
                     </label>
                     <Button
                       type="button"
@@ -268,9 +271,9 @@ export function StaffManager({ shopId }: { shopId: string }) {
                         removeBusy && removing?.user_id === member.user_id
                       }
                       onClick={() => setRemoving(member)}
-                      aria-label={`Remove ${member.email}`}
+                      aria-label={t("Remove {{email}}", { email: member.email ?? "" })}
                     >
-                      Remove
+                      {t("Remove")}
                     </Button>
                   </div>
                 </article>
@@ -286,8 +289,8 @@ export function StaffManager({ shopId }: { shopId: string }) {
               <Mail size={17} />
             </span>
             <div>
-              <h3>Invitations</h3>
-              <p>Pending and recent email invitations</p>
+              <h3>{t("Invitations")}</h3>
+              <p>{t("Pending and recent email invitations")}</p>
             </div>
           </div>
           {invitations.map((invitation) => (
@@ -295,8 +298,8 @@ export function StaffManager({ shopId }: { shopId: string }) {
               <div>
                 <strong>{invitation.email}</strong>
                 <small>
-                  {invitation.role} · {invitation.status} · expires{" "}
-                  {new Date(invitation.expires_at).toLocaleDateString()}
+                  {t(invitation.role)} · {t(invitation.status)} · {t("expires")}{" "}
+                  {new Date(invitation.expires_at).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US")}
                 </small>
               </div>
               {invitation.status === "pending" && (
@@ -307,7 +310,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
                   loading={revokingId === invitation.id}
                   onClick={() => void revoke(invitation)}
                 >
-                  Revoke
+                  {t("Revoke")}
                 </Button>
               )}
             </div>
@@ -315,18 +318,17 @@ export function StaffManager({ shopId }: { shopId: string }) {
         </section>
       )}
       <Modal
-        title="Confirm ownership change"
+        title={t("Confirm ownership change")}
         isOpen={Boolean(ownerChange)}
         onClose={() => setOwnerChange(null)}
       >
         <div className="staff-remove-confirm">
           <p>
-            Ownership changes affect full shop and team access. The shop must
-            always retain at least one active owner.
+            {t("Ownership changes affect full shop and team access. The shop must always retain at least one active owner.")}
           </p>
           <div>
             <Button variant="secondary" onClick={() => setOwnerChange(null)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               loading={ownershipBusy}
@@ -342,31 +344,30 @@ export function StaffManager({ shopId }: { shopId: string }) {
                 );
               }}
             >
-              Confirm change
+              {t("Confirm change")}
             </Button>
           </div>
         </div>
       </Modal>
       <Modal
-        title="Remove shop access?"
+        title={t("Remove shop access?")}
         isOpen={Boolean(removing)}
         onClose={() => setRemoving(null)}
       >
         <div className="staff-remove-confirm">
           <p>
-            <strong>{removing?.email}</strong> will immediately lose access to
-            this shop.
+            <strong>{removing?.email}</strong> {t("will immediately lose access to this shop.")}
           </p>
           <div>
             <Button variant="secondary" onClick={() => setRemoving(null)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               variant="danger"
               loading={removeBusy}
               onClick={() => void remove()}
             >
-              Remove access
+              {t("Remove access")}
             </Button>
           </div>
         </div>

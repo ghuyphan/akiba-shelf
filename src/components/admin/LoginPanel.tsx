@@ -12,6 +12,7 @@ import { getAuthErrorNotice } from "../../lib/authErrors";
 import { PasswordField } from "../ui/PasswordField";
 import { AuthSecurityNote, AuthShell } from "../ui/AuthShell";
 import { AuthDivider, GoogleAuthButton } from "../ui/GoogleAuthButton";
+import { usePlatformI18n } from "../../lib/platformI18n";
 
 type LoginPanelProps = {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -23,13 +24,14 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
   const [password, setPassword] = useState("");
   const { busy, run } = useAsyncAction();
   const toast = useToast();
+  const { t } = usePlatformI18n();
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     await run(() => onLogin(email, password))
       .catch((error) => {
         const notice = getAuthErrorNotice(error, "signin");
-        toast.error(notice.message, notice.title);
+        toast.error(t(notice.message), t(notice.title));
       })
       .finally(() => {
         setPassword("");
@@ -39,8 +41,8 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
   return (
     <AuthShell>
       <div className="admin-login-heading">
-        <h1>Staff sign in</h1>
-        <p>Use your admin account to continue.</p>
+        <h1>{t("Staff sign in")}</h1>
+        <p>{t("Use your admin account to continue.")}</p>
       </div>
 
       <div className="auth-oauth-actions">
@@ -50,7 +52,7 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
 
       <form onSubmit={handleSubmit} className="admin-login-form">
         <label className="admin-login-field">
-          <span>Email address</span>
+          <span>{t("Email address")}</span>
           <div className="admin-login-input">
             <Mail size={19} className="input-icon" />
             <input
@@ -60,23 +62,23 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
               required
               disabled={!isSupabaseConfigured}
               autoComplete="email"
-              placeholder="staff@example.com"
+              placeholder={t("staff@example.com")}
             />
           </div>
         </label>
 
         <PasswordField
-          label="Password"
+          label={t("Password")}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           autoComplete="current-password"
           disabled={!isSupabaseConfigured}
-          placeholder="Enter your password"
+          placeholder={t("Enter your password")}
         />
 
         {!isSupabaseConfigured && (
-          <Alert variant="error" title="Supabase is not configured">
-            Add the Supabase URL and public key before signing in.
+          <Alert variant="error" title={t("Supabase is not configured")}>
+            {t("Add the Supabase URL and public key before signing in.")}
           </Alert>
         )}
 
@@ -93,26 +95,27 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
               aria-hidden="true"
             />
           )}
-          <span>{busy ? "Signing in…" : "Open admin"}</span>
+          <span>{busy ? t("Signing in…") : t("Open admin")}</span>
           {!busy && <ArrowRight size={18} aria-hidden="true" />}
         </button>
       </form>
       <div className="auth-mode-links admin-login-help-links">
-        <Link to="/auth?mode=forgot">Forgot password?</Link>
-        <Link to="/auth?mode=signup">Create account</Link>
+        <Link to="/auth?mode=forgot">{t("Forgot password?")}</Link>
+        <Link to="/auth?mode=signup">{t("Create account")}</Link>
       </div>
       <AuthSecurityNote>
-        Only authorised staff can access this workspace.
+        {t("Only authorised staff can access this workspace.")}
       </AuthSecurityNote>
     </AuthShell>
   );
 }
 
 export function AdminAccessCheck() {
+  const { t } = usePlatformI18n();
   return (
     <PageLoading
-      title="Checking your access"
-      message="Loading your workspace…"
+      title={t("Checking your access")}
+      message={t("Loading your workspace…")}
     />
   );
 }
@@ -132,6 +135,7 @@ export function AdminAccessDenied({
   onRetry?: () => Promise<void>;
   onSignOut: () => Promise<void>;
 }) {
+  const { t } = usePlatformI18n();
   return (
     <main className="admin-login">
       <section className="admin-access-card admin-login-card">
@@ -139,21 +143,20 @@ export function AdminAccessDenied({
           <div className="admin-login-heading">
             <h1>
               {kind === "inactive"
-                ? "Staff access inactive"
+                ? t("Staff access inactive")
                 : kind === "error"
-                  ? "Access check failed"
-                  : "Staff access required"}
+                  ? t("Access check failed")
+                  : t("Staff access required")}
             </h1>
             <p>
-              {message ||
+              {(message ? t(message) :
                 (kind === "inactive"
-                  ? "An owner must reactivate your staff membership."
-                  : "This signed-in account is not an authorized staff member.")}
+                  ? t("An owner must reactivate your staff membership.")
+                  : t("This signed-in account is not an authorized staff member.")))}
             </p>
             {kind === "unauthorized" && userId && (
               <p className="admin-account-identity">
-                Signed in as <strong>{email || userId}</strong>. Ask an owner to
-                grant this account access.
+                {t("Signed in as")} <strong>{email || userId}</strong>. {t("Ask an owner to grant this account access.")}
               </p>
             )}
           </div>
@@ -163,7 +166,7 @@ export function AdminAccessDenied({
               className="admin-login-submit"
               onClick={() => void onRetry()}
             >
-              Check access again
+              {t("Check access again")}
             </button>
           )}
           <button
@@ -171,7 +174,7 @@ export function AdminAccessDenied({
             className="admin-login-submit admin-login-secondary"
             onClick={() => void onSignOut()}
           >
-            Sign out
+            {t("Sign out")}
           </button>
         </div>
       </section>

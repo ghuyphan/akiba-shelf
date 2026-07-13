@@ -76,6 +76,8 @@ import { useTabIndicator } from "../hooks/useTabIndicator";
 import { useAdminSession } from "../hooks/useAdminSession";
 import { SelectMenu } from "../components/ui/SelectMenu";
 import { StaffManager } from "../components/admin/StaffManager";
+import { usePlatformI18n } from "../lib/platformI18n";
+import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";
 
 function createBlankProduct(nextSort: number): Product {
   return {
@@ -145,6 +147,7 @@ export function AdminPage() {
   });
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const toast = useToast();
+  const { t } = usePlatformI18n();
   const verifiedBranding =
     isAuthed && booth.shop_id === shopId && !isInitialLoading && !catalogLoading
       ? getAdminBranding(
@@ -227,8 +230,8 @@ export function AdminPage() {
       reloadOrders(true).catch((error) => {
         if (isSessionNoise(error)) return;
         toast.error(
-          getErrorMessage(error, "Could not refresh orders."),
-          "Refresh failed",
+          t(getErrorMessage(error, "Could not refresh orders.")),
+          t("Refresh failed"),
         );
       });
     }, 200);
@@ -291,7 +294,7 @@ export function AdminPage() {
       } catch (error) {
         if (!isSessionNoise(error)) {
           if (active) setWorkspaceLoadFailed(true);
-          toast.error("Could not load workspace data.", "Connection error");
+          toast.error(t("Could not load workspace data."), t("Connection error"));
         }
       } finally {
         if (active) {
@@ -314,7 +317,7 @@ export function AdminPage() {
 
     reloadCatalogAdmin().catch((error) => {
       if (isSessionNoise(error)) return;
-      toast.error("Could not load the admin workspace.", "Admin unavailable");
+      toast.error(t("Could not load the admin workspace."), t("Admin unavailable"));
     });
     // Reload helpers intentionally use the current pagination refs/state for this authorization transition.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -326,7 +329,7 @@ export function AdminPage() {
 
     reloadOrders().catch((error) => {
       if (isSessionNoise(error)) return;
-      toast.error("Could not load the admin workspace.", "Admin unavailable");
+      toast.error(t("Could not load the admin workspace."), t("Admin unavailable"));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthed, orderFilter, orderPage, shopId, isInitialLoading]);
@@ -339,7 +342,7 @@ export function AdminPage() {
       .then(setOrderCounts)
       .catch((error) => {
         if (isSessionNoise(error)) return;
-        toast.error("Could not load the admin workspace.", "Admin unavailable");
+        toast.error(t("Could not load the admin workspace."), t("Admin unavailable"));
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthed, shopId, isInitialLoading]);
@@ -356,8 +359,8 @@ export function AdminPage() {
           reloadCatalogAdmin().catch((error) => {
             if (isSessionNoise(error)) return;
             toast.error(
-              getErrorMessage(error, "Could not refresh admin data."),
-              "Refresh failed",
+              t(getErrorMessage(error, "Could not refresh admin data.")),
+              t("Refresh failed"),
             );
           });
         }, 150);
@@ -428,15 +431,15 @@ export function AdminPage() {
       if (pushEnabled) await disableOrderNotifications(shopId);
       else await enableOrderNotifications(shopId);
       setPushEnabled(!pushEnabled);
-      toast.success(
+      toast.success(t(
         pushEnabled
           ? "Order notifications disabled."
           : "Order notifications enabled on this device.",
-      );
+      ));
     } catch (error) {
       toast.error(
-        getErrorMessage(error, "Could not update notifications."),
-        "Notifications unavailable",
+        t(getErrorMessage(error, "Could not update notifications.")),
+        t("Notifications unavailable"),
       );
     } finally {
       setPushBusy(false);
@@ -470,7 +473,7 @@ export function AdminPage() {
 
   async function runAdminAction(action: () => Promise<void>, message: string) {
     await action();
-    toast.success(message);
+    toast.success(t(message));
   }
 
   async function handleLogin(email: string, password: string) {
@@ -501,7 +504,7 @@ export function AdminPage() {
       setIsSignOutOpen(false);
       await refreshAdminSession();
     } catch {
-      toast.error("Check your connection and try again.", "Could not sign out");
+      toast.error(t("Check your connection and try again."), t("Could not sign out"));
     } finally {
       setSignOutBusy(false);
     }
@@ -540,14 +543,14 @@ export function AdminPage() {
           <>
             <Link
               to={`/s/${adminSession.access.shop_slug}`}
-              aria-label="Back to catalog"
+              aria-label={t("Back to catalog")}
               className="admin-header-icon-button"
             >
               <ArrowLeft size={19} />
             </Link>
             <Link
               to="/dashboard"
-              aria-label="Go to dashboard"
+              aria-label={t("Go to dashboard")}
               className="admin-header-icon-button admin-dashboard-button"
             >
               <LayoutDashboard size={19} />
@@ -570,8 +573,8 @@ export function AdminPage() {
               )}
             </span>
             <span className="admin-header-title">
-              <strong>{booth.booth_name || "Merch desk"}</strong>
-              <small>Admin workspace</small>
+              <strong>{booth.booth_name || t("Merch desk")}</strong>
+              <small>{t("Admin workspace")}</small>
             </span>
           </>
         }
@@ -584,7 +587,7 @@ export function AdminPage() {
                 className={`admin-nav-tab admin-nav-storefront ${viewTab === "design" ? "active" : ""}`}
                 onClick={() => setViewTab("design")}
               >
-                <LayoutTemplate size={15} /> Storefront
+                <LayoutTemplate size={15} /> {t("Storefront")}
               </button>
             )}
             <button
@@ -594,7 +597,7 @@ export function AdminPage() {
               onClick={() => setViewTab("orders")}
             >
               <ClipboardList size={15} />
-              <span>Orders Queue</span>
+              <span>{t("Orders Queue")}</span>
               {orderCounts.pending > 0 && (
                 <span className="admin-nav-count">{orderCounts.pending}</span>
               )}
@@ -607,7 +610,7 @@ export function AdminPage() {
                 onClick={() => setViewTab("products")}
               >
                 <Package size={15} />
-                <span>Products ({products.length})</span>
+                <span>{t("Products ({{count}})", { count: products.length })}</span>
               </button>
             )}
             {isAuthed && adminSession.access.role === "owner" && (
@@ -617,7 +620,7 @@ export function AdminPage() {
                 className={`admin-nav-tab ${viewTab === "team" ? "active" : ""}`}
                 onClick={() => setViewTab("team")}
               >
-                <Users size={15} /> Team
+                <Users size={15} /> {t("Team")}
               </button>
             )}
             {canManageCatalog && (
@@ -627,7 +630,7 @@ export function AdminPage() {
                 className={`admin-nav-tab admin-nav-mobile-settings ${viewTab === "settings" ? "active" : ""}`}
                 onClick={() => setViewTab("settings")}
               >
-                <Settings2 size={15} /> Settings
+                <Settings2 size={15} /> {t("Settings")}
               </button>
             )}
           </div>
@@ -636,25 +639,25 @@ export function AdminPage() {
           <>
             <SelectMenu
               className="admin-shop-switcher-menu"
-              label="Active shop"
+              label={t("Active shop")}
               value={shopId}
               options={[
                 ...adminSession.memberships.map((membership) => ({
                   value: membership.shop_id,
                   label: membership.shop_name,
-                  description: `${membership.active && membership.shop_active ? "Active" : "Unavailable"} · ${membership.role}`,
+                  description: `${t(membership.active && membership.shop_active ? "Active" : "Unavailable")} · ${t(membership.role)}`,
                   icon: <Store size={15} />,
                   disabled: !membership.active || !membership.shop_active,
                 })),
                 {
                   value: "__dashboard",
-                  label: "All shops",
-                  description: "Open platform dashboard",
+                  label: t("All shops"),
+                  description: t("Open platform dashboard"),
                 },
                 {
                   value: "__new",
-                  label: "Create another shop",
-                  description: "Set up a new storefront",
+                  label: t("Create another shop"),
+                  description: t("Set up a new storefront"),
                 },
               ]}
               onChange={(val) => {
@@ -667,21 +670,22 @@ export function AdminPage() {
                 }
               }}
             />
+            <PlatformLanguageToggle />
             {canUsePush() && (
               <button
                 type="button"
                 disabled={pushBusy}
                 onClick={() => void togglePushNotifications()}
                 className={`admin-header-button admin-notification-button ${pushEnabled ? "active" : ""}`}
-                title={pushEnabled ? "Disable alerts" : "Enable alerts"}
+                title={t(pushEnabled ? "Disable alerts" : "Enable alerts")}
                 aria-label={
                   pushEnabled
-                    ? "Disable order notifications"
-                    : "Enable order notifications"
+                    ? t("Disable order notifications")
+                    : t("Enable order notifications")
                 }
               >
                 {pushEnabled ? <Bell size={15} /> : <BellOff size={15} />}
-                <span>{pushEnabled ? "Alerts on" : "Enable alerts"}</span>
+                <span>{t(pushEnabled ? "Alerts on" : "Enable alerts")}</span>
               </button>
             )}
             <button
@@ -689,11 +693,11 @@ export function AdminPage() {
               disabled={signOutBusy}
               onClick={() => setIsSignOutOpen(true)}
               className="admin-header-button admin-signout-button"
-              aria-label="Sign out"
-              title="Sign out"
+              aria-label={t("Sign out")}
+              title={t("Sign out")}
             >
               <LogOut size={15} />
-              <span>Sign out</span>
+              <span>{t("Sign out")}</span>
             </button>
           </>
         }
@@ -703,7 +707,7 @@ export function AdminPage() {
         <section className="admin-view-hero">
           <div>
             <span>
-              {viewTab === "orders"
+              {t(viewTab === "orders"
                 ? "Live operations"
                 : viewTab === "products"
                   ? "Catalog management"
@@ -711,10 +715,10 @@ export function AdminPage() {
                     ? "Mobile configuration"
                     : viewTab === "team"
                       ? "Access management"
-                      : "Visual storefront"}
+                      : "Visual storefront")}
             </span>
             <h1>
-              {viewTab === "orders"
+              {t(viewTab === "orders"
                 ? "Orders"
                 : viewTab === "products"
                   ? "Products"
@@ -722,10 +726,10 @@ export function AdminPage() {
                     ? "Settings"
                     : viewTab === "team"
                       ? "Team"
-                      : "Storefront designer"}
+                      : "Storefront designer")}
             </h1>
             <p>
-              {viewTab === "orders"
+              {t(viewTab === "orders"
                 ? "Confirm payments and fulfil orders."
                 : viewTab === "products"
                   ? "Manage products, prices, and stock."
@@ -733,40 +737,40 @@ export function AdminPage() {
                     ? "Update booth and payment details."
                     : viewTab === "team"
                       ? "Invite teammates and control access to this shop."
-                      : "Build your storefront and checkout."}
+                      : "Build your storefront and checkout.")}
             </p>
           </div>
           <div className="admin-view-chips">
             {viewTab === "orders" && (
               <>
                 <span>
-                  <b>{orderCounts.pending}</b> pending
+                  <b>{orderCounts.pending}</b> {t("pending")}
                 </span>
                 <span>
-                  <b>{orderTotal}</b> matching orders
+                  <b>{orderTotal}</b> {t("matching orders")}
                 </span>
               </>
             )}
             {viewTab === "products" && (
               <>
                 <span>
-                  <b>{products.length}</b> total
+                  <b>{products.length}</b> {t("total")}
                 </span>
                 <span>
-                  <b>{lowStockCount}</b> need attention
+                  <b>{lowStockCount}</b> {t("need attention")}
                 </span>
                 <span>
-                  <b>{hiddenCount}</b> hidden
+                  <b>{hiddenCount}</b> {t("hidden")}
                 </span>
               </>
             )}
             {viewTab === "design" && (
               <>
                 <span>
-                  <b>{booth.corner_radius ?? 16}px</b> corners
+                  <b>{booth.corner_radius ?? 16}px</b> {t("corners")}
                 </span>
                 <span>
-                  <b>{(booth.catalog_locale ?? "en").toUpperCase()}</b> locale
+                  <b>{(booth.catalog_locale ?? "en").toUpperCase()}</b> {t("locale")}
                 </span>
               </>
             )}
@@ -775,8 +779,8 @@ export function AdminPage() {
         {workspaceLoadFailed ? (
           <EmptyState
             tone="error"
-            title="Workspace unavailable"
-            message="We could not load this shop's workspace. Check your connection and retry."
+            title={t("Workspace unavailable")}
+            message={t("We could not load this shop's workspace. Check your connection and retry.")}
             action={
               <Button
                 onClick={() => {
@@ -784,7 +788,7 @@ export function AdminPage() {
                   setIsInitialLoading(true);
                 }}
               >
-                Retry loading
+                {t("Retry loading")}
               </Button>
             }
           />
@@ -821,7 +825,7 @@ export function AdminPage() {
                     className={`chip ${activeTab === "list" ? "chip-active" : ""}`}
                     onClick={() => setActiveTab("list")}
                   >
-                    Products List ({products.length})
+                    {t("Products List ({{count}})", { count: products.length })}
                   </button>
                   <button
                     type="button"
@@ -829,7 +833,7 @@ export function AdminPage() {
                     className={`chip ${activeTab === "form" ? "chip-active" : ""}`}
                     onClick={() => setActiveTab("form")}
                   >
-                    Edit Product
+                    {t("Edit Product")}
                   </button>
                 </div>
                 <div className="admin-grid">
@@ -868,8 +872,8 @@ export function AdminPage() {
                       <EmptyState
                         variant="compact"
                         icon={<Package size={26} />}
-                        title="No product selected"
-                        message="Choose a product from the list to edit it, or start a fresh listing."
+                        title={t("No product selected")}
+                        message={t("Choose a product from the list to edit it, or start a fresh listing.")}
                         action={
                           <Button
                             icon={<Package size={16} />}
@@ -878,7 +882,7 @@ export function AdminPage() {
                               setActiveTab("form");
                             }}
                           >
-                            Create product
+                            {t("Create product")}
                           </Button>
                         }
                       />
@@ -916,7 +920,7 @@ export function AdminPage() {
                   onSave={async (settings) => {
                     const saved = await saveBoothSettings(shopId, settings);
                     setBooth(saved);
-                    toast.success("Booth settings saved.");
+                    toast.success(t("Booth settings saved."));
                   }}
                 />
                 <QrManager
@@ -925,7 +929,7 @@ export function AdminPage() {
                   onSave={async (settings) => {
                     const saved = await savePaymentSettings(shopId, settings);
                     setPayment(saved);
-                    toast.success("Checkout settings saved.");
+                    toast.success(t("Checkout settings saved."));
                   }}
                 />
               </section>
@@ -941,7 +945,7 @@ export function AdminPage() {
         )}
       </div>
       <Modal
-        title="Sign out of admin?"
+        title={t("Sign out of admin?")}
         isOpen={isSignOutOpen}
         onClose={() => {
           if (!signOutBusy) setIsSignOutOpen(false);
@@ -953,10 +957,9 @@ export function AdminPage() {
             <LogOut size={22} />
           </span>
           <div>
-            <h3>Your work is saved.</h3>
+            <h3>{t("Your work is saved.")}</h3>
             <p>
-              You’ll return to the staff login screen. The public catalog stays
-              open for customers.
+              {t("You’ll return to the staff login screen. The public catalog stays open for customers.")}
             </p>
           </div>
           <div className="signout-confirmation-actions">
@@ -965,14 +968,14 @@ export function AdminPage() {
               disabled={signOutBusy}
               onClick={() => setIsSignOutOpen(false)}
             >
-              Stay signed in
+              {t("Stay signed in")}
             </Button>
             <Button
               loading={signOutBusy}
-              loadingText="Signing out…"
+              loadingText={t("Signing out…")}
               onClick={() => void handleSignOut()}
             >
-              Sign out
+              {t("Sign out")}
             </Button>
           </div>
         </div>

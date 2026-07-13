@@ -5,6 +5,7 @@ import { AdminCard } from "./AdminCard";
 import { Boxes, ImageIcon, LoaderCircle, PackageSearch, Plus, RotateCcw, Search } from "lucide-react";
 import { EmptyState } from "../ui/EmptyState";
 import { Button } from "../ui/Button";
+import { usePlatformI18n } from "../../lib/platformI18n";
 
 type ProductListProps = {
   products: Product[];
@@ -15,6 +16,7 @@ type ProductListProps = {
 };
 
 export function ProductList({ products, selectedId, onSelect, onCreate, loading = false }: ProductListProps) {
+  const { t } = usePlatformI18n();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "live" | "low" | "hidden">("all");
   const visibleProducts = useMemo(() => {
@@ -27,13 +29,13 @@ export function ProductList({ products, selectedId, onSelect, onCreate, loading 
   }, [filter, products, query]);
 
   return (
-    <AdminCard title="Products" description={`${products.length} catalog items`} icon={<Boxes size={18} />} className="product-manager-list">
+    <AdminCard title={t("Products")} description={t("{{count}} catalog items", { count: products.length })} icon={<Boxes size={18} />} className="product-manager-list">
       <div className="admin-list-toolbar">
-        <label className="admin-list-search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products" aria-label="Search products" /></label>
-        <button type="button" className="admin-new-item-button" onClick={onCreate}><Plus size={17} /> New item</button>
+        <label className="admin-list-search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search products")} aria-label={t("Search products")} /></label>
+        <button type="button" className="admin-new-item-button" onClick={onCreate}><Plus size={17} /> {t("New item")}</button>
       </div>
-      <div className="admin-list-filters" aria-label="Product filters">
-        {(["all", "live", "low", "hidden"] as const).map((item) => <button key={item} type="button" className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>{item === "low" ? "Low / sold out" : item}</button>)}
+      <div className="admin-list-filters" aria-label={t("Product filters")}>
+        {(["all", "live", "low", "hidden"] as const).map((item) => <button key={item} type="button" className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>{t(item === "low" ? "Low / sold out" : item)}</button>)}
       </div>
       <div className="admin-product-list">
         {visibleProducts.length === 0 && (
@@ -41,11 +43,11 @@ export function ProductList({ products, selectedId, onSelect, onCreate, loading 
             variant="compact"
             tone={loading ? "loading" : "neutral"}
             icon={loading ? <LoaderCircle className="state-spinner" size={25} /> : <PackageSearch size={25} />}
-            title={loading ? "Loading products…" : products.length === 0 ? "No products yet" : "No matching products"}
-            message={loading ? "Fetching the latest catalog and stock levels." : products.length === 0 ? "Create your first item to start filling the booth." : "Adjust your search or return to all products."}
+            title={loading ? t("Loading products…") : products.length === 0 ? t("No products yet") : t("No matching products")}
+            message={loading ? t("Fetching the latest catalog and stock levels.") : products.length === 0 ? t("Create your first item to start filling the booth.") : t("Adjust your search or return to all products.")}
             action={!loading && products.length === 0
-              ? <Button type="button" icon={<Plus size={16} />} onClick={onCreate}>Create product</Button>
-              : !loading ? <Button type="button" variant="secondary" icon={<RotateCcw size={16} />} onClick={() => { setQuery(""); setFilter("all"); }}>Clear filters</Button> : undefined}
+              ? <Button type="button" icon={<Plus size={16} />} onClick={onCreate}>{t("Create product")}</Button>
+              : !loading ? <Button type="button" variant="secondary" icon={<RotateCcw size={16} />} onClick={() => { setQuery(""); setFilter("all"); }}>{t("Clear filters")}</Button> : undefined}
           />
         )}
         {visibleProducts.map((product) => {
@@ -55,9 +57,9 @@ export function ProductList({ products, selectedId, onSelect, onCreate, loading 
             <button key={product.id} type="button" className={product.id === selectedId ? "admin-product active" : "admin-product"} onClick={() => onSelect(product)}>
               <span className="admin-product-thumb">{primaryImage ? <img src={primaryImage} alt="" /> : <ImageIcon size={24} className="admin-product-thumb-placeholder" />}</span>
               <span className="admin-product-copy">
-                <span className="admin-product-title-row"><strong>{product.name || "Untitled item"}</strong>{product.featured && <span className="admin-status-pill featured">Featured</span>}{!product.active && <span className="admin-status-pill hidden">Hidden</span>}</span>
-                <small>{product.item_code || "No code"} · {formatVnd(product.price_vnd)}</small>
-                <span className={`admin-stock-pill ${stockTone}`}><i />{product.quantity_available <= 0 ? "Sold out" : `${product.quantity_available} in stock`}</span>
+                <span className="admin-product-title-row"><strong>{product.name || t("Untitled item")}</strong>{product.featured && <span className="admin-status-pill featured">{t("Featured")}</span>}{!product.active && <span className="admin-status-pill hidden">{t("Hidden")}</span>}</span>
+                <small>{product.item_code || t("No code")} · {formatVnd(product.price_vnd)}</small>
+                <span className={`admin-stock-pill ${stockTone}`}><i />{product.quantity_available <= 0 ? t("Sold out") : t("{{count}} in stock", { count: product.quantity_available })}</span>
               </span>
             </button>
           );

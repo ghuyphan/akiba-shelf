@@ -19,6 +19,7 @@ import {
   AuthDivider,
   GoogleAuthButton,
 } from "../components/ui/GoogleAuthButton";
+import { usePlatformI18n } from "../lib/platformI18n";
 
 type Mode = "signin" | "signup" | "forgot";
 type EmailCompletion = { mode: "signup" | "forgot"; email: string };
@@ -71,7 +72,10 @@ export function AuthPage() {
   const [resendIn, setResendIn] = useState(0);
   const toast = useToast();
   const navigate = useNavigate();
-  const copy = modeCopy[mode];
+  const { t } = usePlatformI18n();
+  const copy = Object.fromEntries(
+    Object.entries(modeCopy[mode]).map(([key, value]) => [key, t(value)]),
+  ) as (typeof modeCopy)[Mode];
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -114,10 +118,10 @@ export function AuthPage() {
       const passwordError = getNewPasswordError(password, confirmPassword);
       if (passwordError) {
         toast.error(
-          passwordError,
+          t(passwordError),
           passwordError === NEW_PASSWORD_HINT
-            ? "Choose a stronger password"
-            : "Check your password",
+            ? t("Choose a stronger password")
+            : t("Check your password"),
         );
         return;
       }
@@ -148,7 +152,7 @@ export function AuthPage() {
             ? "signup"
             : "signin";
       const notice = getAuthErrorNotice(error, action);
-      toast.error(notice.message, notice.title);
+      toast.error(t(notice.message), t(notice.title));
     } finally {
       if (mode !== "forgot") {
         setPassword("");
@@ -164,13 +168,13 @@ export function AuthPage() {
     setBusy(true);
     try {
       await requestAccountEmail(completion.mode, completion.email);
-      toast.success("A new secure link is on its way.", "Email sent");
+      toast.success(t("A new secure link is on its way."), t("Email sent"));
     } catch (error) {
       const notice = getAuthErrorNotice(
         error,
         completion.mode === "forgot" ? "recovery" : "signup",
       );
-      toast.error(notice.message, notice.title);
+      toast.error(t(notice.message), t(notice.title));
     } finally {
       setBusy(false);
     }
@@ -186,12 +190,12 @@ export function AuthPage() {
   return (
     <AuthShell>
       <div className="admin-login-heading">
-        <h1>{completion ? "Check your email" : copy.title}</h1>
+        <h1>{completion ? t("Check your email") : copy.title}</h1>
         <p>
           {completion
             ? completion.mode === "signup"
-              ? `We sent a confirmation link to ${completion.email}.`
-              : `If ${completion.email} can be recovered, a secure link is on its way.`
+              ? t("We sent a confirmation link to {{email}}.", { email: completion.email })
+              : t("If {{email}} can be recovered, a secure link is on its way.", { email: completion.email })
             : copy.description}
         </p>
       </div>
@@ -214,10 +218,10 @@ export function AuthPage() {
               )}
               <span>
                 {busy
-                  ? "Sending…"
+                  ? t("Sending…")
                   : resendIn > 0
-                    ? `Send again in ${resendIn}s`
-                    : "Send another email"}
+                    ? t("Send again in {{seconds}}s", { seconds: resendIn })
+                    : t("Send another email")}
               </span>
               {!busy && resendIn === 0 && (
                 <ArrowRight size={18} aria-hidden="true" />
@@ -225,7 +229,7 @@ export function AuthPage() {
             </button>
           )}
           <button type="button" onClick={() => choose("signin")}>
-            Return to sign in
+            {t("Return to sign in")}
           </button>
         </div>
       ) : (
@@ -233,21 +237,21 @@ export function AuthPage() {
           {mode !== "forgot" && (
             <div className="auth-oauth-actions">
               <GoogleAuthButton
-                label={mode === "signup" ? "Sign up with Google" : undefined}
+                label={mode === "signup" ? t("Sign up with Google") : undefined}
               />
               <AuthDivider />
             </div>
           )}
           <form onSubmit={submit} className="admin-login-form">
             <label className="admin-login-field">
-              <span>Email address</span>
+              <span>{t("Email address")}</span>
               <div className="admin-login-input">
                 <Mail size={19} className="input-icon" aria-hidden="true" />
                 <input
                   type="email"
                   required
                   autoComplete="email"
-                  placeholder="you@example.com"
+                  placeholder={t("you@example.com")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -255,7 +259,7 @@ export function AuthPage() {
             </label>
             {mode !== "forgot" && (
               <PasswordField
-                label="Password"
+                label={t("Password")}
                 value={password}
                 minLength={mode === "signup" ? NEW_PASSWORD_MIN_LENGTH : 8}
                 autoComplete={
@@ -263,8 +267,8 @@ export function AuthPage() {
                 }
                 placeholder={
                   mode === "signup"
-                    ? "Choose a strong password"
-                    : "Enter your password"
+                    ? t("Choose a strong password")
+                    : t("Enter your password")
                 }
                 onChange={(event) => setPassword(event.target.value)}
               />
@@ -272,15 +276,15 @@ export function AuthPage() {
             {mode === "signup" && (
               <>
                 <p className="auth-password-hint" id="signup-password-hint">
-                  {NEW_PASSWORD_HINT}
+                  {t(NEW_PASSWORD_HINT)}
                 </p>
                 <PasswordField
-                  label="Confirm password"
+                  label={t("Confirm password")}
                   value={confirmPassword}
                   minLength={NEW_PASSWORD_MIN_LENGTH}
                   autoComplete="new-password"
                   describedBy="signup-password-hint"
-                  placeholder="Repeat your password"
+                  placeholder={t("Repeat your password")}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                 />
               </>
@@ -307,24 +311,24 @@ export function AuthPage() {
         <div className="auth-mode-links admin-login-help-links">
           {mode === "signin" && (
             <button type="button" onClick={() => choose("forgot")}>
-              Forgot password?
+              {t("Forgot password?")}
             </button>
           )}
           {mode !== "signin" && (
             <button type="button" onClick={() => choose("signin")}>
-              Sign in
+              {t("Sign in")}
             </button>
           )}
           {mode !== "signup" && (
             <button type="button" onClick={() => choose("signup")}>
-              Create account
+              {t("Create account")}
             </button>
           )}
         </div>
       )}
       <AuthSecurityNote>
         {completion
-          ? "Secure links are short-lived and can only be used through your email."
+          ? t("Secure links are short-lived and can only be used through your email.")
           : copy.security}
       </AuthSecurityNote>
     </AuthShell>

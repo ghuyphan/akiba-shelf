@@ -10,11 +10,13 @@ import {
 } from "../lib/authRouting";
 import { getAuthErrorNotice } from "../lib/authErrors";
 import { AuthSecurityNote, AuthShell } from "../components/ui/AuthShell";
+import { usePlatformI18n } from "../lib/platformI18n";
 
 export function AuthCallbackPage() {
+  const { t } = usePlatformI18n();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [message, setMessage] = useState("Confirming your secure link…");
+  const [message, setMessage] = useState(() => t("Confirming your secure link…"));
   const [failed, setFailed] = useState(false);
   const started = useRef(false);
 
@@ -70,23 +72,23 @@ export function AuthCallbackPage() {
     })().catch((error) => {
       const notice = getAuthErrorNotice(error, "callback");
       setFailed(true);
-      setMessage(notice.message);
+      setMessage(t(notice.message));
     });
-  }, [navigate, params]);
+  }, [navigate, params, t]);
 
   if (!failed)
-    return <PageLoading title="Finishing sign in" message={message} />;
+    return <PageLoading title={t("Finishing sign in")} message={message} />;
   return (
     <AuthShell>
       <div className="admin-login-heading">
-        <h1>Could not finish sign in</h1>
+        <h1>{t("Could not finish sign in")}</h1>
         <p>{message}</p>
       </div>
       <Link className="button button-primary" to="/auth?mode=signin">
-        Back to sign in
+        {t("Back to sign in")}
       </Link>
       <AuthSecurityNote>
-        Expired or used secure links cannot be reopened.
+        {t("Expired or used secure links cannot be reopened.")}
       </AuthSecurityNote>
     </AuthShell>
   );

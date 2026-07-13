@@ -4,6 +4,7 @@ import { signInWithGoogle } from "../../lib/api";
 import { getAuthErrorNotice } from "../../lib/authErrors";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { useToast } from "./ToastProvider";
+import { usePlatformI18n } from "../../lib/platformI18n";
 
 function GoogleMark() {
   return (
@@ -29,12 +30,13 @@ function GoogleMark() {
 }
 
 export function GoogleAuthButton({
-  label = "Continue with Google",
+  label,
 }: {
   label?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const toast = useToast();
+  const { t } = usePlatformI18n();
 
   async function startGoogleSignIn() {
     setBusy(true);
@@ -42,7 +44,7 @@ export function GoogleAuthButton({
       await signInWithGoogle();
     } catch (error) {
       const notice = getAuthErrorNotice(error, "signin");
-      toast.error(notice.message, notice.title);
+      toast.error(t(notice.message), t(notice.title));
       setBusy(false);
     }
   }
@@ -60,15 +62,16 @@ export function GoogleAuthButton({
       ) : (
         <GoogleMark />
       )}
-      <span>{busy ? "Opening Google…" : label}</span>
+      <span>{busy ? t("Opening Google…") : (label ?? t("Continue with Google"))}</span>
     </button>
   );
 }
 
 export function AuthDivider() {
+  const { t } = usePlatformI18n();
   return (
     <div className="auth-divider" aria-hidden="true">
-      <span>or</span>
+      <span>{t("or")}</span>
     </div>
   );
 }

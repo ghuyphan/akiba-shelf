@@ -3,6 +3,7 @@ import { useState } from "react";
 import { uploadImage, uploadProductImages } from "../../lib/api";
 import { compressImage, createProductImageVariants } from "../../lib/image";
 import { useToast } from "../ui/ToastProvider";
+import { usePlatformI18n } from "../../lib/platformI18n";
 
 type ImageUploadProps = {
   shopId: string;
@@ -15,6 +16,7 @@ type ImageUploadProps = {
 export function ImageUpload({ shopId, bucket, label, onUploaded, onProductUploaded }: ImageUploadProps) {
   const [busy, setBusy] = useState(false);
   const toast = useToast();
+  const { t } = usePlatformI18n();
 
   async function handleChange(file?: File) {
     if (!file) return;
@@ -31,7 +33,7 @@ export function ImageUpload({ shopId, bucket, label, onUploaded, onProductUpload
         onUploaded(uploaded.url, uploaded.path);
       }
     } catch (caught) {
-      toast.error(caught instanceof Error ? caught.message : "Could not upload image.", "Upload failed");
+      toast.error(t(caught instanceof Error ? caught.message : "Could not upload image."), t("Upload failed"));
     } finally {
       setBusy(false);
     }
@@ -51,7 +53,7 @@ export function ImageUpload({ shopId, bucket, label, onUploaded, onProductUpload
         />
         <span className="upload-button-face">
           {busy ? <LoaderCircle className="button-spinner" size={18} /> : <ImageUp size={18} />}
-          {busy ? "Uploading..." : label}
+          {busy ? t("Uploading…") : label}
         </span>
       </label>
     </>

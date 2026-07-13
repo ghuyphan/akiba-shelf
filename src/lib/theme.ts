@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { defaultBooth } from "./constants";
+import { DEFAULT_STOREFRONT_PALETTE, defaultBooth } from "./constants";
 import type { BoothSettings } from "../types/catalog";
 import { PLATFORM_THEME_COLOR } from "./branding";
 import { boothSettingsSchema } from "./schemas";
@@ -40,10 +40,10 @@ export function getStoredBoothTheme(scope?: string): BoothSettings {
 }
 
 export function getThemeStyle(booth: BoothSettings): ThemeStyle {
-  const primary = color(booth.theme_primary, defaultBooth.theme_primary ?? "#b4232c");
-  const secondary = color(booth.theme_secondary, defaultBooth.theme_secondary ?? "#20304a");
-  const accent = color(booth.theme_accent, defaultBooth.theme_accent ?? "#f6c85f");
-  const background = color(booth.theme_background, defaultBooth.theme_background ?? "#f5f0e8");
+  const primary = color(booth.theme_primary, DEFAULT_STOREFRONT_PALETTE.primary);
+  const secondary = color(booth.theme_secondary, DEFAULT_STOREFRONT_PALETTE.secondary);
+  const accent = color(booth.theme_accent, DEFAULT_STOREFRONT_PALETTE.accent);
+  const background = color(booth.theme_background, DEFAULT_STOREFRONT_PALETTE.background);
   const cornerRadius = Math.min(32, Math.max(0, booth.corner_radius ?? defaultBooth.corner_radius ?? 16));
 
   return {

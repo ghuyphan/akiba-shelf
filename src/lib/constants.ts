@@ -1,5 +1,12 @@
 import type { BoothSettings, PaymentSettings } from "../types/catalog";
 
+export const DEFAULT_STOREFRONT_PALETTE = {
+  primary: "#d95c64",
+  secondary: "#2d2730",
+  accent: "#f4cf78",
+  background: "#fffaf2",
+} as const;
+
 export const defaultBooth: BoothSettings = {
   booth_name: "",
   subtitle: "",
@@ -11,10 +18,10 @@ export const defaultBooth: BoothSettings = {
   facebook_url: "",
   tiktok_url: "",
   social_qr_logo_url: "",
-  theme_primary: "#b4232c",
-  theme_secondary: "#20304a",
-  theme_accent: "#f6c85f",
-  theme_background: "#f5f0e8",
+  theme_primary: DEFAULT_STOREFRONT_PALETTE.primary,
+  theme_secondary: DEFAULT_STOREFRONT_PALETTE.secondary,
+  theme_accent: DEFAULT_STOREFRONT_PALETTE.accent,
+  theme_background: DEFAULT_STOREFRONT_PALETTE.background,
   layout_order: ["featured", "booth", "controls", "products", "cart"],
   corner_radius: 16,
   catalog_locale: "en",

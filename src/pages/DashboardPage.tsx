@@ -25,6 +25,8 @@ import { Field, TextInput } from "../components/ui/Field";
 import { useAsyncAction } from "../hooks/useAsyncAction";
 import type { ShopMembership } from "../types/catalog";
 import "../styles/admin.css";
+import { usePlatformI18n } from "../lib/platformI18n";
+import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";
 
 export function DashboardPage() {
   const { state: adminSession, refresh: refreshAdminSession } =
@@ -33,6 +35,7 @@ export function DashboardPage() {
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [signOutBusy, setSignOutBusy] = useState(false);
   const toast = useToast();
+  const { t } = usePlatformI18n();
 
   // Edit shop states
   const [editingShop, setEditingShop] = useState<ShopMembership | null>(null);
@@ -61,7 +64,7 @@ export function DashboardPage() {
       setIsSignOutOpen(false);
       await refreshAdminSession();
     } catch {
-      toast.error("Check your connection and try again.", "Could not sign out");
+      toast.error(t("Check your connection and try again."), t("Could not sign out"));
     } finally {
       setSignOutBusy(false);
     }
@@ -85,7 +88,7 @@ export function DashboardPage() {
     const trimmedName = editName.trim();
 
     if (!trimmedName) {
-      toast.error("Shop name is required.", "Could not save shop details");
+      toast.error(t("Shop name is required."), t("Could not save shop details"));
       return;
     }
 
@@ -95,8 +98,8 @@ export function DashboardPage() {
       saved = true;
     }).catch((err) =>
       toast.error(
-        err instanceof Error ? err.message : String(err),
-        "Could not save shop details",
+        t(err instanceof Error ? err.message : String(err)),
+        t("Could not save shop details"),
       ),
     );
 
@@ -142,7 +145,7 @@ export function DashboardPage() {
             <Link
               to="/"
               className="admin-header-icon-button"
-              aria-label="Back to home"
+              aria-label={t("Back to home")}
             >
               <ArrowLeft size={19} />
             </Link>
@@ -151,7 +154,7 @@ export function DashboardPage() {
             </span>
             <span className="admin-header-title">
               <strong>{PLATFORM_BRAND.name}</strong>
-              <small>{PLATFORM_BRAND.descriptor}</small>
+              <small>{t(PLATFORM_BRAND.descriptor)}</small>
             </span>
           </>
         }
@@ -160,6 +163,7 @@ export function DashboardPage() {
             {adminSession.email && (
               <span className="dashboard-user-email">{adminSession.email}</span>
             )}
+            <PlatformLanguageToggle />
             <button
               type="button"
               disabled={signOutBusy}
@@ -167,7 +171,7 @@ export function DashboardPage() {
               className="admin-header-button admin-signout-button"
             >
               <LogOut size={15} />
-              <span>Sign out</span>
+              <span>{t("Sign out")}</span>
             </button>
           </>
         }
@@ -176,11 +180,10 @@ export function DashboardPage() {
       <main className="admin-container">
         <section className="admin-view-hero">
           <div>
-            <span>Your Account</span>
-            <h1>Your shops</h1>
+            <span>{t("Your Account")}</span>
+            <h1>{t("Your shops")}</h1>
             <p>
-              Select a shop workspace to manage orders, products, and designs,
-              or preview its public storefront.
+              {t("Select a shop workspace to manage orders, products, and designs, or preview its public storefront.")}
             </p>
           </div>
         </section>
@@ -205,7 +208,7 @@ export function DashboardPage() {
                           type="button"
                           className="shop-card-edit-btn"
                           onClick={() => startEditShop(shop)}
-                          title="Edit shop details"
+                          title={t("Edit shop details")}
                         >
                           <Edit3 size={13} />
                         </button>
@@ -215,10 +218,10 @@ export function DashboardPage() {
                   </div>
                   <span className={`role-pill role-${shop.role}`}>
                     {available
-                      ? shop.role
+                      ? t(shop.role)
                       : shop.shop_active
-                        ? "Access disabled"
-                        : "Shop unavailable"}
+                        ? t("Access disabled")
+                        : t("Shop unavailable")}
                   </span>
                 </div>
                 <div className="shop-card-actions">
@@ -228,7 +231,7 @@ export function DashboardPage() {
                       onClick={() => handleSelectShop(shop.shop_id)}
                       className="shop-card-manage-btn"
                     >
-                      Manage shop
+                      {t("Manage shop")}
                     </Button>
                   )}
                   {shop.shop_active && (
@@ -239,7 +242,7 @@ export function DashboardPage() {
                       className="button button-secondary shop-card-preview-btn"
                     >
                       <ExternalLink size={15} />
-                      <span>Storefront</span>
+                      <span>{t("Storefront")}</span>
                     </Link>
                   )}
                 </div>
@@ -252,10 +255,9 @@ export function DashboardPage() {
               <span className="create-card-plus">
                 <Plus size={24} />
               </span>
-              <h3>Create another shop</h3>
+              <h3>{t("Create another shop")}</h3>
               <p>
-                Add a new storefront and manage its inventory, custom design,
-                and orders.
+                {t("Add a new storefront and manage its inventory, custom design, and orders.")}
               </p>
             </div>
           </Link>
@@ -263,7 +265,7 @@ export function DashboardPage() {
       </main>
 
       <Modal
-        title="Sign out of your account?"
+        title={t("Sign out of your account?")}
         isOpen={isSignOutOpen}
         onClose={() => {
           if (!signOutBusy) setIsSignOutOpen(false);
@@ -275,8 +277,8 @@ export function DashboardPage() {
             <LogOut size={22} />
           </span>
           <div>
-            <h3>Your work is saved.</h3>
-            <p>You’ll sign out of the platform dashboard and all shops.</p>
+            <h3>{t("Your work is saved.")}</h3>
+            <p>{t("You’ll sign out of the platform dashboard and all shops.")}</p>
           </div>
           <div className="signout-confirmation-actions">
             <Button
@@ -284,21 +286,21 @@ export function DashboardPage() {
               disabled={signOutBusy}
               onClick={() => setIsSignOutOpen(false)}
             >
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               loading={signOutBusy}
-              loadingText="Signing out…"
+              loadingText={t("Signing out…")}
               onClick={() => void handleSignOut()}
             >
-              Sign out
+              {t("Sign out")}
             </Button>
           </div>
         </div>
       </Modal>
 
       <Modal
-        title="Edit shop details"
+        title={t("Edit shop details")}
         isOpen={editingShop !== null}
         onClose={() => setEditingShop(null)}
         className="edit-shop-modal"
@@ -311,27 +313,27 @@ export function DashboardPage() {
             <span className="dashboard-edit-icon" aria-hidden="true">
               <Store size={20} />
             </span>
-            <p>Update the name customers see across your storefront.</p>
+            <p>{t("Update the name customers see across your storefront.")}</p>
           </div>
 
           <section className="dashboard-edit-section">
-            <Field label="Shop name">
+            <Field label={t("Shop name")}>
               <TextInput
                 value={editName}
                 onChange={(event) => setEditName(event.target.value)}
-                placeholder="My shop name"
+                placeholder={t("My shop name")}
                 disabled={editBusy}
                 required
               />
             </Field>
             <div className="dashboard-url-field">
-              <span className="field-label">Storefront URL</span>
+              <span className="field-label">{t("Storefront URL")}</span>
               <div className="dashboard-url-readout">
                 <code>/s/{editingShop?.shop_slug}</code>
-                <span>Fixed</span>
+                <span>{t("Fixed")}</span>
               </div>
               <span className="field-hint">
-                Shop URLs cannot currently be changed after creation.
+                {t("Shop URLs cannot currently be changed after creation.")}
               </span>
             </div>
           </section>
@@ -343,10 +345,10 @@ export function DashboardPage() {
               disabled={editBusy}
               onClick={() => setEditingShop(null)}
             >
-              Cancel
+              {t("Cancel")}
             </Button>
-            <Button type="submit" loading={editBusy} loadingText="Saving…">
-              Save changes
+            <Button type="submit" loading={editBusy} loadingText={t("Saving…")}>
+              {t("Save changes")}
             </Button>
           </div>
         </form>

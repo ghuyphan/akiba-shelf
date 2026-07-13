@@ -3,6 +3,7 @@ import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PLATFORM_BRAND } from "../../lib/branding";
 import { PlatformMark } from "./PlatformMark";
+import { usePlatformI18n } from "../../lib/platformI18n";
 
 type AuthShellProps = {
   children: ReactNode;
@@ -13,8 +14,9 @@ type AuthShellProps = {
 export function AuthShell({
   children,
   backTo = "/",
-  backLabel = "Back to home",
+  backLabel,
 }: AuthShellProps) {
+  const { t } = usePlatformI18n();
   return (
     <main className="admin-login">
       <section className="admin-access-card admin-login-card">
@@ -26,13 +28,15 @@ export function AuthShell({
               </span>
               <span>
                 <strong>{PLATFORM_BRAND.name}</strong>
-                <small>{PLATFORM_BRAND.descriptor}</small>
+                <small>{t(PLATFORM_BRAND.descriptor)}</small>
               </span>
             </div>
-            <Link to={backTo} className="admin-login-back">
-              <ArrowLeft size={16} />
-              <span>{backLabel}</span>
-            </Link>
+            <div className="admin-login-topbar-actions">
+              <Link to={backTo} className="admin-login-back">
+                <ArrowLeft size={16} />
+                <span>{backLabel ?? t("Back to home")}</span>
+              </Link>
+            </div>
           </header>
           {children}
         </div>

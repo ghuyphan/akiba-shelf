@@ -43,6 +43,8 @@ import { BoothInfoPanel } from "../catalog/BoothInfoPanel";
 import { SelectedItemPanel } from "../catalog/SelectedItemPanel";
 import { ImageUpload } from "./ImageUpload";
 import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../lib/banks";
+import { DEFAULT_STOREFRONT_PALETTE } from "../../lib/constants";
+import { usePlatformI18n } from "../../lib/platformI18n";
 
 type StorefrontDesignerProps = {
   shopId: string;
@@ -101,7 +103,8 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   const [previewView, setPreviewView] = useState<"grid" | "list">("grid");
   const { busy, error, run, setError } = useAsyncAction();
   const toast = useToast();
-  useEffect(() => { if (error) { toast.error(error, "Could not publish"); setError(""); } }, [error, setError, toast]);
+  const { t } = usePlatformI18n();
+  useEffect(() => { if (error) { toast.error(t(error), t("Could not publish")); setError(""); } }, [error, setError, t, toast]);
   const order = normalizedOrder(draft.layout_order);
 
   useEffect(() => { draftRef.current = settings; paymentDraftRef.current = payment; setDraft(settings); setPaymentDraft(payment); setHistory([]); setFuture([]); setError(""); }, [settings, payment, setError]);
@@ -387,7 +390,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
       onDragOver={(event) => markDropTarget(event, section, section === "featured" || section === "booth" ? "horizontal" : "vertical")}
       onDrop={(event) => dropOn(event, section)}
     >
-      <button type="button" className="designer-module-handle" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} aria-label={`Drag ${sectionMeta[section].title}`}><GripVertical size={15} /><i>{order.indexOf(section) + 1}</i><span>{sectionMeta[section].title}</span>{section === "cart" && <em><CreditCard size={11} /> Payment settings</em>}</button>
+      <button type="button" className="designer-module-handle" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} aria-label={t("Drag {{section}}", { section: t(sectionMeta[section].title) })}><GripVertical size={15} /><i>{order.indexOf(section) + 1}</i><span>{t(sectionMeta[section].title)}</span>{section === "cart" && <em><CreditCard size={11} /> {t("Payment settings")}</em>}</button>
       {previewBlocks[section]}
     </div>;
   }
@@ -424,80 +427,80 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
       <aside className="builder-sidebar admin-surface">
         <div className="builder-sidebar-head">
           <span className="builder-logo"><LayoutTemplate size={18} /></span>
-          {sidebarOpen && <div><strong>Storefront builder</strong><small>Click anything in the preview to edit it.</small></div>}
-          <button type="button" className="builder-collapse" onClick={() => setSidebarOpen((open) => !open)} aria-label={sidebarOpen ? "Collapse builder sidebar" : "Expand builder sidebar"}>{sidebarOpen ? <ChevronLeft size={17} /> : <ChevronRight size={17} />}</button>
+          {sidebarOpen && <div><strong>{t("Storefront builder")}</strong><small>{t("Click anything in the preview to edit it.")}</small></div>}
+          <button type="button" className="builder-collapse" onClick={() => setSidebarOpen((open) => !open)} aria-label={t(sidebarOpen ? "Collapse builder sidebar" : "Expand builder sidebar")}>{sidebarOpen ? <ChevronLeft size={17} /> : <ChevronRight size={17} />}</button>
         </div>
 
         {sidebarOpen && <>
-          <div className="builder-tabs" role="tablist" aria-label="Builder tools">
-            {([['layout', LayoutTemplate, 'Layout'], ['content', Type, 'Content'], ['style', Palette, 'Style']] as const).map(([value, Icon, label]) => <button key={value} type="button" className={tab === value ? "active" : ""} onClick={() => setTab(value)}><Icon size={15} />{label}</button>)}
+          <div className="builder-tabs" role="tablist" aria-label={t("Builder tools")}>
+            {([['layout', LayoutTemplate, 'Layout'], ['content', Type, 'Content'], ['style', Palette, 'Style']] as const).map(([value, Icon, label]) => <button key={value} type="button" className={tab === value ? "active" : ""} onClick={() => setTab(value)}><Icon size={15} />{t(label)}</button>)}
           </div>
 
           <div className="builder-inspector">
             {tab === "layout" && <>
-              <div className="builder-section-heading"><div><strong>Page sections</strong><small>Drag to reorder the public page.</small></div></div>
+              <div className="builder-section-heading"><div><strong>{t("Page sections")}</strong><small>{t("Drag to reorder the public page.")}</small></div></div>
               <div className="designer-block-list">
-                {order.map((section, index) => <article key={section} data-designer-section={section} style={{ viewTransitionName: `designer-list-${section}` } as React.CSSProperties} onClick={() => selectModule(section)} onDragOver={(event) => markDropTarget(event, section, "vertical")} onDrop={(event) => dropOn(event, section)} className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""}`}><button type="button" className="designer-list-grip" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} onClick={(event) => event.stopPropagation()} aria-label={`Drag ${sectionMeta[section].title}`}><GripVertical size={17} /></button><span><strong>{index + 1}. {sectionMeta[section].title}</strong><small>{sectionMeta[section].description}</small></span><em>{sectionMeta[section].size}</em><div><button type="button" disabled={index === 0} onClick={(event) => { event.stopPropagation(); nudge(section, -1); }} aria-label={`Move ${sectionMeta[section].title} up`}><ArrowUp size={14} /></button><button type="button" disabled={index === order.length - 1} onClick={(event) => { event.stopPropagation(); nudge(section, 1); }} aria-label={`Move ${sectionMeta[section].title} down`}><ArrowDown size={14} /></button></div></article>)}
+                {order.map((section, index) => <article key={section} data-designer-section={section} style={{ viewTransitionName: `designer-list-${section}` } as React.CSSProperties} onClick={() => selectModule(section)} onDragOver={(event) => markDropTarget(event, section, "vertical")} onDrop={(event) => dropOn(event, section)} className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""}`}><button type="button" className="designer-list-grip" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} onClick={(event) => event.stopPropagation()} aria-label={t("Drag {{section}}", { section: t(sectionMeta[section].title) })}><GripVertical size={17} /></button><span><strong>{index + 1}. {t(sectionMeta[section].title)}</strong><small>{t(sectionMeta[section].description)}</small></span><em>{t(sectionMeta[section].size)}</em><div><button type="button" disabled={index === 0} onClick={(event) => { event.stopPropagation(); nudge(section, -1); }} aria-label={t("Move {{section}} up", { section: t(sectionMeta[section].title) })}><ArrowUp size={14} /></button><button type="button" disabled={index === order.length - 1} onClick={(event) => { event.stopPropagation(); nudge(section, 1); }} aria-label={t("Move {{section}} down", { section: t(sectionMeta[section].title) })}><ArrowDown size={14} /></button></div></article>)}
               </div>
-              <p className="builder-help">Wide and side modules keep safe column widths. Dragging changes their order within those responsive lanes.</p>
+              <p className="builder-help">{t("Wide and side modules keep safe column widths. Dragging changes their order within those responsive lanes.")}</p>
             </>}
 
             {tab === "content" && <div className="builder-fields">
-              <div className="builder-section-heading"><div><strong>{sectionMeta[selected].title}</strong><small>Only settings for the selected section are shown.</small></div></div>
+              <div className="builder-section-heading"><div><strong>{t(sectionMeta[selected].title)}</strong><small>{t("Only settings for the selected section are shown.")}</small></div></div>
               {selected === "featured" && <div className="builder-fields">
-                <p className="builder-empty-inspector">The Featured banner displays details directly from active featured products. Mark products as Featured in the Products workspace.</p>
-                <label className="builder-toggle"><span><strong>Auto-rotate products</strong><small>Advance to the next featured item every 4.5 seconds. Pauses after customer interaction and respects reduced motion.</small></span><input type="checkbox" checked={draft.featured_autoplay ?? true} onChange={(event) => update("featured_autoplay", event.target.checked)} /></label>
+                <p className="builder-empty-inspector">{t("The Featured banner displays details directly from active featured products. Mark products as Featured in the Products workspace.")}</p>
+                <label className="builder-toggle"><span><strong>{t("Auto-rotate products")}</strong><small>{t("Advance to the next featured item every 4.5 seconds. Pauses after customer interaction and respects reduced motion.")}</small></span><input type="checkbox" checked={draft.featured_autoplay ?? true} onChange={(event) => update("featured_autoplay", event.target.checked)} /></label>
               </div>}
               {selected === "booth" && <>
                 <div className="builder-field-group">
-                  <h3><Store size={15} /> Booth identity</h3>
-                  <Field label="Booth name"><TextInput value={draft.booth_name} onChange={(event) => update("booth_name", event.target.value)} /></Field>
-                  <Field label="Header subtitle"><TextInput value={draft.subtitle} onChange={(event) => update("subtitle", event.target.value)} /></Field>
+                  <h3><Store size={15} /> {t("Booth identity")}</h3>
+                  <Field label={t("Booth name")}><TextInput value={draft.booth_name} onChange={(event) => update("booth_name", event.target.value)} /></Field>
+                  <Field label={t("Header subtitle")}><TextInput value={draft.subtitle} onChange={(event) => update("subtitle", event.target.value)} /></Field>
                   <div className="builder-field-row">
-                    <Field label="Booth code"><TextInput value={draft.booth_code} onChange={(event) => update("booth_code", event.target.value)} /></Field>
-                    <Field label="Open hours"><TextInput value={draft.open_hours} onChange={(event) => update("open_hours", event.target.value)} /></Field>
+                    <Field label={t("Booth code")}><TextInput value={draft.booth_code} onChange={(event) => update("booth_code", event.target.value)} /></Field>
+                    <Field label={t("Open hours")}><TextInput value={draft.open_hours} onChange={(event) => update("open_hours", event.target.value)} /></Field>
                   </div>
-                  <Field label="Location"><TextInput value={draft.location} onChange={(event) => update("location", event.target.value)} /></Field>
-                  <Field label="Logo URL"><TextInput value={draft.logo_url ?? ""} placeholder="https://…" onChange={(event) => update("logo_url", event.target.value)} /></Field>
-                  <ImageUpload shopId={shopId} bucket="payment-qr" label="Upload booth logo" onUploaded={(url) => update("logo_url", url)} />
+                  <Field label={t("Location")}><TextInput value={draft.location} onChange={(event) => update("location", event.target.value)} /></Field>
+                  <Field label={t("Logo URL")}><TextInput value={draft.logo_url ?? ""} placeholder="https://…" onChange={(event) => update("logo_url", event.target.value)} /></Field>
+                  <ImageUpload shopId={shopId} bucket="payment-qr" label={t("Upload booth logo")} onUploaded={(url) => update("logo_url", url)} />
                 </div>
                 <div className="builder-field-group">
-                  <h3><Link2 size={15} /> Social links</h3>
-                  <Field label="Instagram URL"><TextInput type="url" value={draft.instagram_url ?? ""} onChange={(event) => update("instagram_url", event.target.value)} /></Field>
-                  <Field label="Facebook URL"><TextInput type="url" value={draft.facebook_url ?? ""} onChange={(event) => update("facebook_url", event.target.value)} /></Field>
-                  <Field label="TikTok URL"><TextInput type="url" value={draft.tiktok_url ?? ""} onChange={(event) => update("tiktok_url", event.target.value)} /></Field>
-                  <Field label="Social QR center logo"><TextInput value={draft.social_qr_logo_url ?? ""} onChange={(event) => update("social_qr_logo_url", event.target.value)} /></Field>
+                  <h3><Link2 size={15} /> {t("Social links")}</h3>
+                  <Field label={t("Instagram URL")}><TextInput type="url" value={draft.instagram_url ?? ""} onChange={(event) => update("instagram_url", event.target.value)} /></Field>
+                  <Field label={t("Facebook URL")}><TextInput type="url" value={draft.facebook_url ?? ""} onChange={(event) => update("facebook_url", event.target.value)} /></Field>
+                  <Field label={t("TikTok URL")}><TextInput type="url" value={draft.tiktok_url ?? ""} onChange={(event) => update("tiktok_url", event.target.value)} /></Field>
+                  <Field label={t("Social QR center logo")}><TextInput value={draft.social_qr_logo_url ?? ""} onChange={(event) => update("social_qr_logo_url", event.target.value)} /></Field>
                 </div>
               </>}
               {selected === "cart" && <div className="builder-fields builder-payment-fields">
                 <div className="builder-field-group">
-                  <h3><Building2 size={15} /> Payment account</h3>
-                  <div className="builder-bank-summary"><img src={getBankLogoUrl(selectedBank)} alt="" onError={(event) => { event.currentTarget.src = getBankLogoUrl(); }} /><span><strong>{selectedBank?.name ?? "Choose a bank"}</strong><small>{paymentDraft.bank_account_no || "No account configured"}</small></span></div>
-                  <Field label="Payment label"><TextInput value={paymentDraft.bank_label} onChange={(event) => updatePayment("bank_label", event.target.value)} /></Field>
-                  <Field label="Bank"><SelectInput value={selectedBank?.code ?? ""} onChange={(event) => { const bank = banks.find((item) => item.code === event.target.value); commitSnapshot({ booth: draftRef.current, payment: { ...paymentDraftRef.current, bank_code: bank?.code ?? "", bank_acq_id: bank?.bin ?? "" } }); }}><option value="">Select bank</option>{banks.map((bank) => <option key={bank.code} value={bank.code}>{bank.name}</option>)}</SelectInput></Field>
-                  <Field label="Account number"><TextInput value={paymentDraft.bank_account_no ?? ""} onChange={(event) => updatePayment("bank_account_no", event.target.value)} /></Field>
-                  <Field label="Account name"><TextInput value={paymentDraft.bank_account_name ?? ""} onChange={(event) => updatePayment("bank_account_name", event.target.value)} /></Field>
+                  <h3><Building2 size={15} /> {t("Payment account")}</h3>
+                  <div className="builder-bank-summary"><img src={getBankLogoUrl(selectedBank)} alt="" onError={(event) => { event.currentTarget.src = getBankLogoUrl(); }} /><span><strong>{selectedBank?.name ?? t("Choose a bank")}</strong><small>{paymentDraft.bank_account_no || t("No account configured")}</small></span></div>
+                  <Field label={t("Payment label")}><TextInput value={paymentDraft.bank_label} onChange={(event) => updatePayment("bank_label", event.target.value)} /></Field>
+                  <Field label={t("Bank")}><SelectInput value={selectedBank?.code ?? ""} onChange={(event) => { const bank = banks.find((item) => item.code === event.target.value); commitSnapshot({ booth: draftRef.current, payment: { ...paymentDraftRef.current, bank_code: bank?.code ?? "", bank_acq_id: bank?.bin ?? "" } }); }}><option value="">{t("Select bank")}</option>{banks.map((bank) => <option key={bank.code} value={bank.code}>{bank.name}</option>)}</SelectInput></Field>
+                  <Field label={t("Account number")}><TextInput value={paymentDraft.bank_account_no ?? ""} onChange={(event) => updatePayment("bank_account_no", event.target.value)} /></Field>
+                  <Field label={t("Account name")}><TextInput value={paymentDraft.bank_account_name ?? ""} onChange={(event) => updatePayment("bank_account_name", event.target.value)} /></Field>
                 </div>
                 <div className="builder-field-group">
-                  <h3><MessageSquareText size={15} /> Transfer message</h3>
-                  <Field label="Transfer message template" hint="Available tokens: {code}, {item}, {amount}"><TextInput value={paymentDraft.bank_add_info_template ?? ""} onChange={(event) => updatePayment("bank_add_info_template", event.target.value)} /></Field>
-                  <Field label="Customer payment instructions"><TextArea value={paymentDraft.payment_instructions} onChange={(event) => updatePayment("payment_instructions", event.target.value)} /></Field>
+                  <h3><MessageSquareText size={15} /> {t("Transfer message")}</h3>
+                  <Field label={t("Transfer message template")} hint={t("Available tokens: {code}, {item}, {amount}")}><TextInput value={paymentDraft.bank_add_info_template ?? ""} onChange={(event) => updatePayment("bank_add_info_template", event.target.value)} /></Field>
+                  <Field label={t("Customer payment instructions")}><TextArea value={paymentDraft.payment_instructions} onChange={(event) => updatePayment("payment_instructions", event.target.value)} /></Field>
                 </div>
                 <div className="builder-field-group">
-                  <h3><QrCode size={15} /> Backup QR</h3>
-                  <div className="builder-backup-qr">{paymentDraft.bank_qr_url ? <img src={paymentDraft.bank_qr_url} alt="Backup payment QR" /> : <span><QrCode size={28} /></span>}<Field label="Fallback QR URL"><TextInput value={paymentDraft.bank_qr_url} onChange={(event) => updatePayment("bank_qr_url", event.target.value)} /></Field></div>
-                  <ImageUpload shopId={shopId} bucket="payment-qr" label="Upload backup QR" onUploaded={(url) => updatePayment("bank_qr_url", url)} />
+                  <h3><QrCode size={15} /> {t("Backup QR")}</h3>
+                  <div className="builder-backup-qr">{paymentDraft.bank_qr_url ? <img src={paymentDraft.bank_qr_url} alt={t("Backup payment QR")} /> : <span><QrCode size={28} /></span>}<Field label={t("Fallback QR URL")}><TextInput value={paymentDraft.bank_qr_url} onChange={(event) => updatePayment("bank_qr_url", event.target.value)} /></Field></div>
+                  <ImageUpload shopId={shopId} bucket="payment-qr" label={t("Upload backup QR")} onUploaded={(url) => updatePayment("bank_qr_url", url)} />
                 </div>
               </div>}
-              {selected === "controls" && <p className="builder-empty-inspector">Browse controls use the categories and product data from your catalog. Language is available under Style.</p>}
-              {selected === "products" && <p className="builder-empty-inspector">Product content is managed from the Products workspace. This section follows the customer’s grid or list choice.</p>}
+              {selected === "controls" && <p className="builder-empty-inspector">{t("Browse controls use the categories and product data from your catalog. Language is available under Style.")}</p>}
+              {selected === "products" && <p className="builder-empty-inspector">{t("Product content is managed from the Products workspace. This section follows the customer’s grid or list choice.")}</p>}
             </div>}
 
             {tab === "style" && <>
-              <div className="builder-section-heading"><div><strong>Look & feel</strong><small>Changes update the canvas instantly.</small></div></div>
-              <div className="designer-color-grid">{([['theme_primary','Primary','#b4232c'],['theme_secondary','Dark','#20304a'],['theme_accent','Accent','#f6c85f'],['theme_background','Page','#f5f0e8']] as const).map(([key,label,fallback]) => <label key={key}><span>{label}</span><div><input type="color" value={draft[key] ?? fallback} onChange={(event) => update(key, event.target.value)} /><code>{draft[key] ?? fallback}</code></div></label>)}</div>
-              <div className="designer-setting-group"><div><Palette size={16} /><span><strong>Corner radius</strong><small>{draft.corner_radius ?? 16}px across storefront cards</small></span></div><input type="range" min="0" max="32" step="1" value={draft.corner_radius ?? 16} onChange={(event) => update("corner_radius", Number(event.target.value))} /></div>
-              <div className="designer-locale"><Languages size={17} /><span><strong>Storefront language</strong><small>Customer-facing interface copy.</small></span><div><button type="button" className={(draft.catalog_locale ?? "en") === "en" ? "active" : ""} onClick={() => update("catalog_locale", "en")}>EN</button><button type="button" className={draft.catalog_locale === "vi" ? "active" : ""} onClick={() => update("catalog_locale", "vi")}>VI</button></div></div>
+              <div className="builder-section-heading"><div><strong>{t("Look & feel")}</strong><small>{t("Changes update the canvas instantly.")}</small></div></div>
+              <div className="designer-color-grid">{([['theme_primary','Primary',DEFAULT_STOREFRONT_PALETTE.primary],['theme_secondary','Dark',DEFAULT_STOREFRONT_PALETTE.secondary],['theme_accent','Accent',DEFAULT_STOREFRONT_PALETTE.accent],['theme_background','Page',DEFAULT_STOREFRONT_PALETTE.background]] as const).map(([key,label,fallback]) => <label key={key}><span>{t(label)}</span><div><input type="color" value={draft[key] ?? fallback} onChange={(event) => update(key, event.target.value)} /><code>{draft[key] ?? fallback}</code></div></label>)}</div>
+              <div className="designer-setting-group"><div><Palette size={16} /><span><strong>{t("Corner radius")}</strong><small>{t("{{radius}}px across storefront cards", { radius: draft.corner_radius ?? 16 })}</small></span></div><input type="range" min="0" max="32" step="1" value={draft.corner_radius ?? 16} onChange={(event) => update("corner_radius", Number(event.target.value))} /></div>
+              <div className="designer-locale"><Languages size={17} /><span><strong>{t("Storefront language")}</strong><small>{t("Customer-facing interface copy.")}</small></span><div><button type="button" className={(draft.catalog_locale ?? "en") === "en" ? "active" : ""} onClick={() => update("catalog_locale", "en")}>EN</button><button type="button" className={draft.catalog_locale === "vi" ? "active" : ""} onClick={() => update("catalog_locale", "vi")}>VI</button></div></div>
             </>}
 
           </div>
@@ -507,16 +510,16 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
 
       <div className="builder-canvas admin-surface">
         <div className="builder-toolbar">
-          <div><strong>{sectionMeta[selected].title}</strong><small>{hasChanges ? "Unpublished changes" : "Published storefront"}</small></div>
+          <div><strong>{t(sectionMeta[selected].title)}</strong><small>{t(hasChanges ? "Unpublished changes" : "Published storefront")}</small></div>
           <div className="builder-toolbar-controls">
-            <div className="builder-device-switcher" aria-label="Preview size"><button type="button" className={device === "desktop" ? "active" : ""} onClick={() => changeDevice("desktop")}><Monitor size={16} />Desktop</button><button type="button" className={device === "phone" ? "active" : ""} onClick={() => changeDevice("phone")}><Smartphone size={16} />Phone</button></div>
-            <div className="builder-zoom-controls" aria-label="Preview zoom"><button type="button" onClick={() => adjustZoom(-10)} disabled={displayedZoom <= 20} aria-label="Zoom out"><Minus size={14} /></button><button type="button" className={previewZoom === "fit" ? "active" : ""} onClick={fitPreview} aria-label="Fit preview"><Maximize2 size={13} /><span>{displayedZoom}%</span></button><button type="button" onClick={() => adjustZoom(10)} disabled={displayedZoom >= 150} aria-label="Zoom in"><Plus size={14} /></button></div>
+            <div className="builder-device-switcher" aria-label={t("Preview size")}><button type="button" className={device === "desktop" ? "active" : ""} onClick={() => changeDevice("desktop")}><Monitor size={16} />{t("Desktop")}</button><button type="button" className={device === "phone" ? "active" : ""} onClick={() => changeDevice("phone")}><Smartphone size={16} />{t("Phone")}</button></div>
+            <div className="builder-zoom-controls" aria-label={t("Preview zoom")}><button type="button" onClick={() => adjustZoom(-10)} disabled={displayedZoom <= 20} aria-label={t("Zoom out")}><Minus size={14} /></button><button type="button" className={previewZoom === "fit" ? "active" : ""} onClick={fitPreview} aria-label={t("Fit preview")}><Maximize2 size={13} /><span>{displayedZoom}%</span></button><button type="button" onClick={() => adjustZoom(10)} disabled={displayedZoom >= 150} aria-label={t("Zoom in")}><Plus size={14} /></button></div>
           </div>
           <div className="builder-history-actions">
-            <button type="button" onClick={undo} disabled={history.length === 0} aria-label="Undo"><Undo2 size={15} /></button>
-            <button type="button" onClick={redo} disabled={future.length === 0} aria-label="Redo"><Redo2 size={15} /></button>
-            <button type="button" onClick={resetDraft} disabled={!hasChanges} aria-label="Reset unpublished changes"><RotateCcw size={15} /><span>Reset</span></button>
-            <Button icon={<Save size={15} />} loading={busy} loadingText="Publishing…" disabled={!hasChanges || busy} onClick={() => void save()}>Publish</Button>
+            <button type="button" onClick={undo} disabled={history.length === 0} aria-label={t("Undo")}><Undo2 size={15} /></button>
+            <button type="button" onClick={redo} disabled={future.length === 0} aria-label={t("Redo")}><Redo2 size={15} /></button>
+            <button type="button" onClick={resetDraft} disabled={!hasChanges} aria-label={t("Reset unpublished changes")}><RotateCcw size={15} /><span>{t("Reset")}</span></button>
+            <Button icon={<Save size={15} />} loading={busy} loadingText={t("Publishing…")} disabled={!hasChanges || busy} onClick={() => void save()}>{t("Publish")}</Button>
           </div>
         </div>
         <div
@@ -526,7 +529,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
           <div className="designer-preview-frame" style={{ width: `${(device === "phone" ? 390 : 1380) * previewScale}px`, minHeight: `${(device === "phone" ? 844 : 1120) * previewScale}px` }}>
             <iframe
               className="designer-preview-iframe"
-              title={`${device} storefront preview`}
+              title={t("{{device}} storefront preview", { device: t(device) })}
               srcDoc={'<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="designer-preview-root"></div></body></html>'}
               onLoad={loadPreviewFrame}
               style={{ width: device === "phone" ? 390 : 1380, height: device === "phone" ? 844 : 1120, transform: `scale(${previewScale})` }}
