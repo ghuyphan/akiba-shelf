@@ -2,9 +2,7 @@ import { defaultBooth, defaultPayment } from "./constants";
 import { isSupabaseConfigured, supabase } from "./supabase";
 import { safeUuid } from "./id";
 import {
-  ADMIN_BOOTH_COLUMNS,
   ADMIN_PAYMENT_COLUMNS,
-  ADMIN_PRODUCT_COLUMNS,
   PUBLIC_BOOTH_COLUMNS,
   PUBLIC_PAYMENT_COLUMNS,
   PUBLIC_PRODUCT_COLUMNS,
@@ -204,7 +202,7 @@ export async function getPublicProducts(shopId: string): Promise<Product[]> {
     .eq("active", true)
     .order("sort_order", { ascending: true });
   if (error) throw error;
-  return (data ?? []).map((row) =>
+  return ((data ?? []) as unknown[]).map((row) =>
     normalizeProduct(productRowSchema.parse(row)),
   );
 }
@@ -245,14 +243,11 @@ export async function getCatalogData(shopId: string): Promise<CatalogData> {
 
 export async function getAdminProducts(shopId: string): Promise<Product[]> {
   const client = requireSupabase();
-
-  const { data, error } = await client
-    .from("products")
-    .select(ADMIN_PRODUCT_COLUMNS)
-    .eq("shop_id", shopId)
-    .order("sort_order", { ascending: true });
+  const { data, error } = await client.rpc("get_admin_products", {
+    p_shop_id: shopId,
+  });
   if (error) throw error;
-  return (data ?? []).map((row) =>
+  return ((data ?? []) as unknown[]).map((row) =>
     normalizeProduct(productRowSchema.parse(row)),
   );
 }
@@ -263,16 +258,8 @@ export async function getAdminCatalogData(
   const client = requireSupabase();
 
   const [products, booth, payment] = await Promise.all([
-    client
-      .from("products")
-      .select(ADMIN_PRODUCT_COLUMNS)
-      .eq("shop_id", shopId)
-      .order("sort_order", { ascending: true }),
-    client
-      .from("booth_settings")
-      .select(ADMIN_BOOTH_COLUMNS)
-      .eq("shop_id", shopId)
-      .maybeSingle(),
+    client.rpc("get_admin_products", { p_shop_id: shopId }),
+    client.rpc("get_admin_booth_settings", { p_shop_id: shopId }).maybeSingle(),
     client
       .from("payment_settings")
       .select(ADMIN_PAYMENT_COLUMNS)
@@ -285,11 +272,40 @@ export async function getAdminCatalogData(
   if (payment.error) throw payment.error;
 
   return {
-    products: (products.data ?? []).map((row) =>
+    products: ((products.data ?? []) as unknown[]).map((row) =>
       normalizeProduct(productRowSchema.parse(row)),
     ),
     booth: normalizeBooth(booth.data ?? { ...defaultBooth, shop_id: shopId }),
     payment: normalizePayment(payment.data ?? defaultPayment),
+  };
+}
+
+export async function getShopWorkspaceSummary(
+  shopId: string,
+): Promise<
+  Pick<Shop, "id" | "name" | "slug"> &
+    Pick<BoothSettings, "booth_name" | "logo_url" | "theme_background">
+> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .rpc("get_shop_workspace_summary", { p_shop_id: shopId })
+    .single();
+  if (error) throw error;
+  const summary = data as {
+    shop_id: string;
+    shop_name: string;
+    shop_slug: string;
+    booth_name?: string;
+    logo_url?: string;
+    theme_background?: string;
+  };
+  return {
+    id: summary.shop_id,
+    name: summary.shop_name,
+    slug: summary.shop_slug,
+    booth_name: summary.booth_name ?? summary.shop_name,
+    logo_url: summary.logo_url ?? "",
+    theme_background: summary.theme_background ?? defaultBooth.theme_background,
   };
 }
 
@@ -298,37 +314,33 @@ export async function saveProduct(
   product: Product,
 ): Promise<Product> {
   const client = requireSupabase();
-  const { data: previous } = await client
-    .from("products")
-    .select("image_paths")
-    .eq("shop_id", shopId)
-    .eq("id", product.id)
-    .maybeSingle();
+  const previous = (await getAdminProducts(shopId)).find(
+    (item) => item.id === product.id,
+  );
   const { data, error } = await client
     .from("products")
     .upsert({ ...product, shop_id: shopId })
-    .select(ADMIN_PRODUCT_COLUMNS)
+    .select(PUBLIC_PRODUCT_COLUMNS)
     .single();
   if (error) throw error;
   const removedPaths = textArray(previous?.image_paths).filter(
     (path) => !textArray(product.image_paths).includes(path),
   );
   if (removedPaths.length)
-    await removeUnreferencedProductImages(client, removedPaths);
-  return normalizeProduct(productRowSchema.parse(data));
+    await removeUnreferencedProductImages(client, shopId, removedPaths);
+  return normalizeProduct(
+    productRowSchema.parse({ ...data, image_paths: product.image_paths }),
+  );
 }
 
 async function removeUnreferencedProductImages(
   client: ReturnType<typeof requireSupabase>,
+  shopId: string,
   paths: string[],
 ) {
-  const { data: references, error: referenceError } = await client
-    .from("products")
-    .select("image_paths")
-    .overlaps("image_paths", paths);
-  if (referenceError) throw referenceError;
+  const references = await getAdminProducts(shopId);
   const referenced = new Set(
-    (references ?? []).flatMap((row) => textArray(row.image_paths)),
+    references.flatMap((row) => textArray(row.image_paths)),
   );
   const removable = paths.filter((path) => !referenced.has(path));
   if (removable.length) {
@@ -341,13 +353,10 @@ async function removeUnreferencedProductImages(
 
 export async function deleteProduct(shopId: string, id: string) {
   const client = requireSupabase();
-  const { data: product, error: readError } = await client
-    .from("products")
-    .select("id, image_paths")
-    .eq("shop_id", shopId)
-    .eq("id", id)
-    .single();
-  if (readError) throw readError;
+  const product = (await getAdminProducts(shopId)).find(
+    (item) => item.id === id,
+  );
+  if (!product) throw new Error("Product not found.");
   const { error } = await client
     .from("products")
     .delete()
@@ -355,7 +364,8 @@ export async function deleteProduct(shopId: string, id: string) {
     .eq("id", id);
   if (error) throw error;
   const paths = textArray(product.image_paths);
-  if (paths.length) await removeUnreferencedProductImages(client, paths);
+  if (paths.length)
+    await removeUnreferencedProductImages(client, shopId, paths);
 }
 
 export async function saveBoothSettings(
@@ -363,15 +373,17 @@ export async function saveBoothSettings(
   settings: BoothSettings,
 ) {
   const client = requireSupabase();
-  const { data: previous } = await client
-    .from("booth_settings")
-    .select("logo_path, social_qr_logo_path")
-    .eq("shop_id", shopId)
+  const { data: previousData } = await client
+    .rpc("get_admin_booth_settings", { p_shop_id: shopId })
     .maybeSingle();
+  const previous = previousData as {
+    logo_path?: string;
+    social_qr_logo_path?: string;
+  } | null;
   const { data, error } = await client
     .from("booth_settings")
     .upsert({ id: settings.id ?? shopId, ...settings, shop_id: shopId })
-    .select(ADMIN_BOOTH_COLUMNS)
+    .select(PUBLIC_BOOTH_COLUMNS)
     .single();
   if (error) throw error;
   const removed = [previous?.logo_path, previous?.social_qr_logo_path].filter(
@@ -381,26 +393,16 @@ export async function saveBoothSettings(
       path !== settings.social_qr_logo_path,
   );
   if (removed.length) {
-    const { data: references, error: referenceError } = await client
-      .from("booth_settings")
-      .select("logo_path, social_qr_logo_path")
-      .or(
-        removed
-          .flatMap((path) => [
-            `logo_path.eq.${path}`,
-            `social_qr_logo_path.eq.${path}`,
-          ])
-          .join(","),
-      );
-    if (referenceError) throw referenceError;
-    if (!references?.length) {
-      const { error: removeError } = await client.storage
-        .from("payment-qr")
-        .remove(removed);
-      if (removeError) throw removeError;
-    }
+    const { error: removeError } = await client.storage
+      .from("payment-qr")
+      .remove(removed);
+    if (removeError) throw removeError;
   }
-  return normalizeBooth(data);
+  return normalizeBooth({
+    ...data,
+    logo_path: settings.logo_path,
+    social_qr_logo_path: settings.social_qr_logo_path,
+  });
 }
 
 export async function savePaymentSettings(
@@ -427,13 +429,11 @@ export async function uploadImage(
 
   const extension = file.name.split(".").pop() ?? "png";
   const path = `${shopId}/${safeUuid()}.${extension}`;
-  const { error } = await client.storage
-    .from(bucket)
-    .upload(path, file, {
-      upsert: false,
-      contentType: file.type,
-      cacheControl: "31536000",
-    });
+  const { error } = await client.storage.from(bucket).upload(path, file, {
+    upsert: false,
+    contentType: file.type,
+    cacheControl: "31536000",
+  });
   if (error) throw error;
 
   const { data } = client.storage.from(bucket).getPublicUrl(path);
@@ -535,11 +535,7 @@ export async function deleteStaffMember(shopId: string, userId: string) {
   if (error) throw error;
 }
 
-export type InvitationOutcome =
-  | "membership_granted"
-  | "invitation_sent"
-  | "already_member"
-  | "already_owner";
+export type InvitationOutcome = "processed";
 export async function inviteShopMember(
   shopId: string,
   email: string,
@@ -550,7 +546,9 @@ export async function inviteShopMember(
     body: { action: "invite", shopId, email, role },
   });
   if (error) throw error;
-  return (data as { outcome: InvitationOutcome }).outcome;
+  if ((data as { outcome?: string })?.outcome !== "processed")
+    throw new Error("Invitation response was invalid.");
+  return "processed";
 }
 
 export async function getShopInvitations(
@@ -652,7 +650,7 @@ export async function getOrders(
   let query = client
     .from("orders")
     .select(
-      `id,shop_id,order_code,customer_name,total_amount,status,created_at,updated_at,expires_at,confirmed_at,cancelled_at,expired_at,order_items(id,order_id,product_id,quantity,unit_price,product:products(${ADMIN_PRODUCT_COLUMNS}))`,
+      `id,shop_id,order_code,customer_name,total_amount,status,created_at,updated_at,expires_at,confirmed_at,cancelled_at,expired_at,order_items(id,order_id,product_id,quantity,unit_price,product:products(${PUBLIC_PRODUCT_COLUMNS}))`,
       { count: "exact" },
     )
     .eq("shop_id", shopId);

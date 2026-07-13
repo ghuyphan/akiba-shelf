@@ -119,6 +119,14 @@ npx supabase functions deploy invite-shop-member
 
 Configure Supabase Auth Site URL/Redirect URLs and SMTP email delivery for production invitations. The service-role key is provided only to the Edge Function runtime and must never be exposed through Vite.
 
+Invitation processing intentionally returns one generic success result; it does not reveal whether an Auth account exists or whether access was granted immediately. Existing inactive non-owner members are reactivated with their previous role, active members are not reassigned, owners are never changed by an invitation, and inactive shops reject invitation operations.
+
+Invitation and recovery callbacks create a short-lived session marker. Password completion and invitation acceptance are separate retryable steps: temporary acceptance or metadata-cleanup failures retain the invitation identifier so completion can be retried without changing the password again. Direct or expired `/auth/set-password` visits are rejected.
+
+Apply `20260713140000_production_hardening.sql` before deploying the updated frontend and Edge Function. It adds explicit public-safe column grants, role-checked private admin projections, a member-safe workspace summary, protected confirmed-account membership processing, and the per-user shop-creation advisory lock.
+
+GitHub Pages deep-link generation belongs to `public/404.html`. Runtime restoration is owned only by `restoreRedirect()` and derives its prefix from `import.meta.env.BASE_URL`; do not add a second inline restoration script to `index.html`.
+
 Do not add an automatic auth-user trigger. Owners may manage staff; admins manage the catalog/settings; staff may view and process orders only. Anonymous users may read the active catalog and required public checkout settings, call safe order creation, and recover/cancel only with the matching order ID and recovery token.
 
 ## Deployment boundaries

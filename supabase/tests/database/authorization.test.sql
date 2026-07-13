@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(33);
+select plan(43);
 
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values
 ('10000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner@test.local','',now(),now(),now()),
@@ -40,6 +40,12 @@ select is_empty($$select id from public.products where id='auth-b-active'$$,'ano
 set local role authenticated;
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000004';
 select throws_ok($$select created_by from public.shops$$,'42501',null,'authenticated non-member cannot select shop ownership metadata');
+select throws_ok($$select image_paths from public.products$$,'42501',null,'authenticated non-member cannot select product storage paths');
+select throws_ok($$select logo_path from public.booth_settings$$,'42501',null,'authenticated non-member cannot select booth logo paths');
+select throws_ok($$select social_qr_logo_path from public.booth_settings$$,'42501',null,'authenticated non-member cannot select social QR storage paths');
+select lives_ok($$select id,name,images from public.products$$,'authenticated non-member can select public product fields');
+select lives_ok($$select id,booth_name,logo_url from public.booth_settings$$,'authenticated non-member can select public booth fields');
+select ok(not has_function_privilege('authenticated','public.resolve_invitation_user(text)','execute'),'authenticated cannot execute internal Auth lookup');
 select throws_ok($$update public.shops set name='attack' where id='11000000-0000-4000-8000-000000000001'$$,'42501',null,'direct authenticated shop update is denied');
 
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000001';
@@ -50,6 +56,11 @@ set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000002';
 select throws_ok($$select * from public.update_shop_details('11000000-0000-4000-8000-000000000001','Attack')$$,'42501','Active shop owner access required','admin cannot update shop details');
 
 reset role;
+select is(public.process_existing_shop_member('11000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002','staff','10000000-0000-4000-8000-000000000001'),'existing_member','active member is not silently reassigned');
+select is((select role from public.shop_members where shop_id='11000000-0000-4000-8000-000000000001' and user_id='10000000-0000-4000-8000-000000000002'),'admin','active member keeps existing role');
+update public.shop_members set active=false where shop_id='11000000-0000-4000-8000-000000000001' and user_id='10000000-0000-4000-8000-000000000003';
+select is(public.process_existing_shop_member('11000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000003','admin','10000000-0000-4000-8000-000000000001'),'reactivated_previous_role','inactive member is deliberately reactivated');
+select is((select role from public.shop_members where shop_id='11000000-0000-4000-8000-000000000001' and user_id='10000000-0000-4000-8000-000000000003'),'staff','reactivated member keeps previous role');
 insert into public.shop_invitations(id,shop_id,email,role,invited_by,status,expires_at) values
 ('12000000-0000-4000-8000-000000000001','11000000-0000-4000-8000-000000000001','outsider@test.local','staff','10000000-0000-4000-8000-000000000001','pending',now()+interval '1 day'),
 ('12000000-0000-4000-8000-000000000002','11000000-0000-4000-8000-000000000001','staff@test.local','admin','10000000-0000-4000-8000-000000000001','pending',now()-interval '1 day'),
@@ -66,7 +77,7 @@ select throws_ok($$select public.accept_shop_invitation('12000000-0000-4000-8000
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000004';
 set local request.jwt.claims='{"sub":"10000000-0000-4000-8000-000000000004","email":"outsider@test.local"}';
 select is(public.accept_shop_invitation('12000000-0000-4000-8000-000000000001'),'11000000-0000-4000-8000-000000000001'::uuid,'matching account accepts the intended invitation');
-select throws_ok($$select public.accept_shop_invitation('12000000-0000-4000-8000-000000000001')$$,null,null,'accepted invitation cannot be used twice');
+select is(public.accept_shop_invitation('12000000-0000-4000-8000-000000000001'),'11000000-0000-4000-8000-000000000001'::uuid,'accepted invitation retry is idempotent');
 select is((select role from public.shop_members where shop_id='11000000-0000-4000-8000-000000000001' and user_id='10000000-0000-4000-8000-000000000004'),'staff','accepted invitation creates the requested membership');
 
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000001';

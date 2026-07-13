@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Mail, Lock } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { getAppUrl } from "../lib/authUrls";
 import { getShopMemberships } from "../lib/api";
@@ -20,6 +20,7 @@ export function AuthPage() {
   ) as Mode;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
@@ -68,10 +69,18 @@ export function AuthPage() {
         "Request failed",
       );
     } finally {
+      if (mode !== "forgot") {
+        setPassword("");
+        setShowPassword(false);
+      }
       setBusy(false);
     }
   }
-  const choose = (next: Mode) => setParams({ mode: next });
+  const choose = (next: Mode) => {
+    setPassword("");
+    setShowPassword(false);
+    setParams({ mode: next });
+  };
   return (
     <main className="admin-login">
       <section className="admin-access-card admin-login-card">
@@ -130,7 +139,7 @@ export function AuthPage() {
                 <div className="admin-login-input">
                   <Lock size={19} />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     minLength={8}
                     autoComplete={
@@ -139,6 +148,14 @@ export function AuthPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
+                  <button
+                    type="button"
+                    className="password-toggle-btn"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
               </label>
             )}

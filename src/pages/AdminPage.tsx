@@ -1,10 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin.css";
 import { Link, useNavigate, Navigate } from "react-router-dom";
-import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Store, LayoutDashboard, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  Bell,
+  BellOff,
+  ClipboardList,
+  LayoutTemplate,
+  LogOut,
+  Package,
+  Settings2,
+  ShoppingBag,
+  Store,
+  LayoutDashboard,
+  Users,
+} from "lucide-react";
 import {
   deleteProduct,
   getAdminCatalogData,
+  getShopWorkspaceSummary,
   getOrderStatusCounts,
   getOrders,
   saveBoothSettings,
@@ -17,12 +31,30 @@ import type { OrderFilter, OrderStatusCounts } from "../lib/api";
 import { defaultBooth, defaultPayment } from "../lib/constants";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
-import { applyPageTheme, getStoredBoothTheme, getThemeStyle, resetPageTheme } from "../lib/theme";
-import { getAdminBranding, safePublicUrl, useDocumentBranding } from "../lib/branding";
+import {
+  applyPageTheme,
+  getStoredBoothTheme,
+  getThemeStyle,
+  resetPageTheme,
+} from "../lib/theme";
+import {
+  getAdminBranding,
+  safePublicUrl,
+  useDocumentBranding,
+} from "../lib/branding";
 import { supabase } from "../lib/supabase";
 import { safeUuid } from "../lib/id";
-import type { BoothSettings, PaymentSettings, Product, Order } from "../types/catalog";
-import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
+import type {
+  BoothSettings,
+  PaymentSettings,
+  Product,
+  Order,
+} from "../types/catalog";
+import {
+  AdminAccessCheck,
+  AdminAccessDenied,
+  LoginPanel,
+} from "../components/admin/LoginPanel";
 import { ProductForm } from "../components/admin/ProductForm";
 import { ProductList } from "../components/admin/ProductList";
 import { QrManager } from "../components/admin/QrManager";
@@ -33,12 +65,16 @@ import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
 import { EmptyState } from "../components/ui/EmptyState";
 import { useToast } from "../components/ui/ToastProvider";
-import { canUsePush, disableOrderNotifications, enableOrderNotifications, getPushEnabled } from "../lib/pwa";
+import {
+  canUsePush,
+  disableOrderNotifications,
+  enableOrderNotifications,
+  getPushEnabled,
+} from "../lib/pwa";
 import { useTabIndicator } from "../hooks/useTabIndicator";
 import { useAdminSession } from "../hooks/useAdminSession";
 import { SelectMenu } from "../components/ui/SelectMenu";
 import { StaffManager } from "../components/admin/StaffManager";
-
 
 function createBlankProduct(nextSort: number): Product {
   return {
@@ -62,10 +98,20 @@ function createBlankProduct(nextSort: number): Product {
 }
 
 const orderPageSize = 12;
-const emptyOrderCounts: OrderStatusCounts = { all: 0, pending: 0, confirmed: 0, cancelled: 0, expired: 0 };
+const emptyOrderCounts: OrderStatusCounts = {
+  all: 0,
+  pending: 0,
+  confirmed: 0,
+  cancelled: 0,
+  expired: 0,
+};
 
 export function AdminPage() {
-  const { state: adminSession, refresh: refreshAdminSession, selectShop } = useAdminSession();
+  const {
+    state: adminSession,
+    refresh: refreshAdminSession,
+    selectShop,
+  } = useAdminSession();
   const navigate = useNavigate();
   const isAuthed = adminSession.status === "authorized";
   const shopId = isAuthed ? adminSession.access.shop_id : "";
@@ -75,47 +121,87 @@ export function AdminPage() {
   const [orderFilter, setOrderFilter] = useState<OrderFilter>("pending");
   const [orderPage, setOrderPage] = useState(1);
   const [orderTotal, setOrderTotal] = useState(0);
-  const [orderCounts, setOrderCounts] = useState<OrderStatusCounts>(emptyOrderCounts);
+  const [orderCounts, setOrderCounts] =
+    useState<OrderStatusCounts>(emptyOrderCounts);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
-  const [viewTab, setViewTab] = useState<"orders" | "products" | "design" | "settings" | "team">("orders");
+  const [viewTab, setViewTab] = useState<
+    "orders" | "products" | "design" | "settings" | "team"
+  >("orders");
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [booth, setBooth] = useState<BoothSettings>(() => {
     const activeShopId = localStorage.getItem("akiba-active-shop")?.trim();
-    return activeShopId ? getStoredBoothTheme(`id:${activeShopId}`) : defaultBooth;
+    return activeShopId
+      ? getStoredBoothTheme(`id:${activeShopId}`)
+      : defaultBooth;
   });
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const toast = useToast();
-  const verifiedBranding = isAuthed && booth.shop_id === shopId && !isInitialLoading && !catalogLoading
-    ? getAdminBranding(adminSession.access.shop_name, booth.booth_name, booth.logo_url, booth.theme_background)
-    : null;
+  const verifiedBranding =
+    isAuthed && booth.shop_id === shopId && !isInitialLoading && !catalogLoading
+      ? getAdminBranding(
+          adminSession.access.shop_name,
+          booth.booth_name,
+          booth.logo_url,
+          booth.theme_background,
+        )
+      : null;
   useDocumentBranding(verifiedBranding);
 
   const orderRequestRef = useRef(0);
+  const catalogRequestRef = useRef(0);
   const orderReloadTimerRef = useRef<number | undefined>(undefined);
-  const { containerRef: desktopNavRef, registerItem: registerDesktopTab } = useTabIndicator<string, HTMLDivElement>(viewTab, [products.length, orderCounts.pending]);
-  const { containerRef: mobileTabsRef, registerItem: registerMobileTab } = useTabIndicator<string, HTMLDivElement>(activeTab, [products.length, viewTab]);
+  const { containerRef: desktopNavRef, registerItem: registerDesktopTab } =
+    useTabIndicator<string, HTMLDivElement>(viewTab, [
+      products.length,
+      orderCounts.pending,
+    ]);
+  const { containerRef: mobileTabsRef, registerItem: registerMobileTab } =
+    useTabIndicator<string, HTMLDivElement>(activeTab, [
+      products.length,
+      viewTab,
+    ]);
 
-
-  const nextSort = useMemo(() => Math.max(0, ...products.map((product) => product.sort_order)) + 1, [products]);
-  const lowStockCount = useMemo(
-    () => products.filter((product) => product.active && product.stock_status !== "in_stock").length,
+  const nextSort = useMemo(
+    () => Math.max(0, ...products.map((product) => product.sort_order)) + 1,
     [products],
   );
-  const hiddenCount = useMemo(() => products.filter((product) => !product.active).length, [products]);
+  const lowStockCount = useMemo(
+    () =>
+      products.filter(
+        (product) => product.active && product.stock_status !== "in_stock",
+      ).length,
+    [products],
+  );
+  const hiddenCount = useMemo(
+    () => products.filter((product) => !product.active).length,
+    [products],
+  );
   useEffect(() => {
-    setProducts([]); setOrders([]); setOrderCounts(emptyOrderCounts); setOrderTotal(0); setSelectedProduct(undefined); setBooth(shopId ? getStoredBoothTheme(`id:${shopId}`) : defaultBooth); setPayment(defaultPayment);
+    catalogRequestRef.current += 1;
+    orderRequestRef.current += 1;
+    setProducts([]);
+    setOrders([]);
+    setOrderCounts(emptyOrderCounts);
+    setOrderTotal(0);
+    setSelectedProduct(undefined);
+    setBooth(shopId ? getStoredBoothTheme(`id:${shopId}`) : defaultBooth);
+    setPayment(defaultPayment);
     setIsInitialLoading(true);
   }, [shopId]);
   async function reloadCatalogAdmin() {
+    const requestId = ++catalogRequestRef.current;
+    const requestedShopId = shopId;
     setCatalogLoading(true);
     try {
       const catalog = await getAdminCatalogData(shopId);
+      if (requestId !== catalogRequestRef.current || requestedShopId !== shopId)
+        return;
       setBooth(catalog.booth);
       setPayment(catalog.payment);
       setProducts(catalog.products);
@@ -123,7 +209,9 @@ export function AdminPage() {
         if (!current) return undefined;
         return catalog.products.find((p) => p.id === current.id);
       });
-    } finally { setCatalogLoading(false); }
+    } finally {
+      if (requestId === catalogRequestRef.current) setCatalogLoading(false);
+    }
   }
 
   function scheduleOrdersReload() {
@@ -131,7 +219,10 @@ export function AdminPage() {
     orderReloadTimerRef.current = window.setTimeout(() => {
       reloadOrders(true).catch((error) => {
         if (isSessionNoise(error)) return;
-        toast.error(getErrorMessage(error, "Could not refresh orders."), "Refresh failed");
+        toast.error(
+          getErrorMessage(error, "Could not refresh orders."),
+          "Refresh failed",
+        );
       });
     }, 200);
   }
@@ -141,7 +232,11 @@ export function AdminPage() {
     setOrdersLoading(true);
     try {
       const [result, counts] = await Promise.all([
-        getOrders(shopId, { page: orderPage, pageSize: orderPageSize, status: orderFilter }),
+        getOrders(shopId, {
+          page: orderPage,
+          pageSize: orderPageSize,
+          status: orderFilter,
+        }),
         refreshCounts ? getOrderStatusCounts(shopId) : Promise.resolve(null),
       ]);
       if (requestId !== orderRequestRef.current) return;
@@ -170,12 +265,20 @@ export function AdminPage() {
     async function loadWorkspaceData() {
       try {
         if (canManageCatalog) {
-          await Promise.all([
-            reloadCatalogAdmin(),
-            reloadOrders(true)
-          ]);
+          await Promise.all([reloadCatalogAdmin(), reloadOrders(true)]);
         } else {
-          await reloadOrders(true);
+          const [summary] = await Promise.all([
+            getShopWorkspaceSummary(shopId),
+            reloadOrders(true),
+          ]);
+          if (!active) return;
+          setBooth({
+            ...defaultBooth,
+            shop_id: summary.id,
+            booth_name: summary.booth_name,
+            logo_url: summary.logo_url,
+            theme_background: summary.theme_background,
+          });
         }
       } catch (error) {
         if (!isSessionNoise(error)) {
@@ -193,7 +296,7 @@ export function AdminPage() {
     return () => {
       active = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthed, canManageCatalog, shopId, isInitialLoading]);
 
   useEffect(() => {
@@ -204,8 +307,8 @@ export function AdminPage() {
       if (isSessionNoise(error)) return;
       toast.error("Could not load the admin workspace.", "Admin unavailable");
     });
-  // Reload helpers intentionally use the current pagination refs/state for this authorization transition.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Reload helpers intentionally use the current pagination refs/state for this authorization transition.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canManageCatalog, shopId, isInitialLoading]);
 
   useEffect(() => {
@@ -216,18 +319,20 @@ export function AdminPage() {
       if (isSessionNoise(error)) return;
       toast.error("Could not load the admin workspace.", "Admin unavailable");
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthed, orderFilter, orderPage, shopId, isInitialLoading]);
 
   useEffect(() => {
     if (!isAuthed) return;
     if (isInitialLoading) return;
 
-    getOrderStatusCounts(shopId).then(setOrderCounts).catch((error) => {
-      if (isSessionNoise(error)) return;
-      toast.error("Could not load the admin workspace.", "Admin unavailable");
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    getOrderStatusCounts(shopId)
+      .then(setOrderCounts)
+      .catch((error) => {
+        if (isSessionNoise(error)) return;
+        toast.error("Could not load the admin workspace.", "Admin unavailable");
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthed, shopId, isInitialLoading]);
 
   // Real-time catalog subscription
@@ -241,7 +346,10 @@ export function AdminPage() {
         reloadTimer = window.setTimeout(() => {
           reloadCatalogAdmin().catch((error) => {
             if (isSessionNoise(error)) return;
-            toast.error(getErrorMessage(error, "Could not refresh admin data."), "Refresh failed");
+            toast.error(
+              getErrorMessage(error, "Could not refresh admin data."),
+              "Refresh failed",
+            );
           });
         }, 150);
       },
@@ -252,7 +360,7 @@ export function AdminPage() {
       window.clearTimeout(reloadTimer);
       unsubscribe();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canManageCatalog, shopId]);
 
   // Real-time orders subscription
@@ -264,13 +372,23 @@ export function AdminPage() {
       .channel("admin-orders-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "orders", filter: `shop_id=eq.${shopId}` },
-        scheduleOrdersReload
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+          filter: `shop_id=eq.${shopId}`,
+        },
+        scheduleOrdersReload,
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "order_items", filter: `shop_id=eq.${shopId}` },
-        scheduleOrdersReload
+        {
+          event: "*",
+          schema: "public",
+          table: "order_items",
+          filter: `shop_id=eq.${shopId}`,
+        },
+        scheduleOrdersReload,
       )
       .subscribe();
 
@@ -278,8 +396,8 @@ export function AdminPage() {
       window.clearTimeout(orderReloadTimerRef.current);
       void client.removeChannel(channel);
     };
-  // Re-subscribe only when the visible order window changes; the callback reads current state.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Re-subscribe only when the visible order window changes; the callback reads current state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthed, orderFilter, orderPage, shopId]);
 
   useEffect(() => {
@@ -289,7 +407,10 @@ export function AdminPage() {
   }, [booth, isAuthed, shopId]);
 
   useEffect(() => {
-    if (isAuthed) void getPushEnabled(shopId).then(setPushEnabled).catch(() => setPushEnabled(false));
+    if (isAuthed)
+      void getPushEnabled(shopId)
+        .then(setPushEnabled)
+        .catch(() => setPushEnabled(false));
   }, [isAuthed, shopId]);
 
   async function togglePushNotifications() {
@@ -298,26 +419,40 @@ export function AdminPage() {
       if (pushEnabled) await disableOrderNotifications(shopId);
       else await enableOrderNotifications(shopId);
       setPushEnabled(!pushEnabled);
-      toast.success(pushEnabled ? "Order notifications disabled." : "Order notifications enabled on this device.");
+      toast.success(
+        pushEnabled
+          ? "Order notifications disabled."
+          : "Order notifications enabled on this device.",
+      );
     } catch (error) {
-      toast.error(getErrorMessage(error, "Could not update notifications."), "Notifications unavailable");
+      toast.error(
+        getErrorMessage(error, "Could not update notifications."),
+        "Notifications unavailable",
+      );
     } finally {
       setPushBusy(false);
     }
   }
 
   useEffect(() => {
-    if (isAuthed && !canManageCatalog && viewTab !== "orders") setViewTab("orders");
+    if (isAuthed && !canManageCatalog && viewTab !== "orders")
+      setViewTab("orders");
   }, [isAuthed, canManageCatalog, viewTab]);
   useEffect(() => {
-    if (isAuthed && viewTab === "team" && adminSession.access.role !== "owner") setViewTab("orders");
+    if (isAuthed && viewTab === "team" && adminSession.access.role !== "owner")
+      setViewTab("orders");
   }, [isAuthed, adminSession, viewTab]);
 
   useEffect(() => {
     const matchWorkspaceToScreen = () => {
-      if (!canManageCatalog) { setViewTab("orders"); return; }
-      if (window.innerWidth <= 760) setViewTab((current) => current === "design" ? "settings" : current);
-      else setViewTab((current) => current === "settings" ? "design" : current);
+      if (!canManageCatalog) {
+        setViewTab("orders");
+        return;
+      }
+      if (window.innerWidth <= 760)
+        setViewTab((current) => (current === "design" ? "settings" : current));
+      else
+        setViewTab((current) => (current === "settings" ? "design" : current));
     };
     matchWorkspaceToScreen();
     window.addEventListener("resize", matchWorkspaceToScreen);
@@ -356,11 +491,15 @@ export function AdminPage() {
     await refreshAdminSession();
   }
 
-  if (adminSession.status === "checking" || (adminSession.status === "authorized" && isInitialLoading)) {
+  if (
+    adminSession.status === "checking" ||
+    (adminSession.status === "authorized" && isInitialLoading)
+  ) {
     return <AdminAccessCheck booth={booth} />;
   }
 
-  if (adminSession.status === "unauthenticated") return <LoginPanel onLogin={handleLogin} booth={booth} />;
+  if (adminSession.status === "unauthenticated")
+    return <LoginPanel onLogin={handleLogin} booth={booth} />;
   if (adminSession.status === "unauthorized") {
     return <Navigate to="/dashboard/shops/new" replace />;
   }
@@ -368,7 +507,14 @@ export function AdminPage() {
     return <AdminAccessDenied kind="inactive" onSignOut={handleSignOut} />;
   }
   if (adminSession.status === "error") {
-    return <AdminAccessDenied kind="error" message={adminSession.message} onRetry={refreshAdminSession} onSignOut={handleSignOut} />;
+    return (
+      <AdminAccessDenied
+        kind="error"
+        message={adminSession.message}
+        onRetry={refreshAdminSession}
+        onSignOut={handleSignOut}
+      />
+    );
   }
 
   return (
@@ -376,74 +522,124 @@ export function AdminPage() {
       <header className="admin-header">
         <div className="admin-header-pill">
           <div className="admin-header-brand">
-            <Link to={`/s/${adminSession.access.shop_slug}`} aria-label="Back to catalog" className="admin-header-icon-button"><ArrowLeft size={19} /></Link>
-            <Link to="/dashboard" aria-label="Go to dashboard" className="admin-header-icon-button"><LayoutDashboard size={19} /></Link>
-            <span className="admin-header-mark" style={booth.logo_url ? { background: "transparent", overflow: "hidden" } : undefined}>
+            <Link
+              to={`/s/${adminSession.access.shop_slug}`}
+              aria-label="Back to catalog"
+              className="admin-header-icon-button"
+            >
+              <ArrowLeft size={19} />
+            </Link>
+            <Link
+              to="/dashboard"
+              aria-label="Go to dashboard"
+              className="admin-header-icon-button"
+            >
+              <LayoutDashboard size={19} />
+            </Link>
+            <span
+              className="admin-header-mark"
+              style={
+                booth.logo_url
+                  ? { background: "transparent", overflow: "hidden" }
+                  : undefined
+              }
+            >
               {safePublicUrl(booth.logo_url) ? (
-                <img src={safePublicUrl(booth.logo_url)} alt={booth.booth_name} />
+                <img
+                  src={safePublicUrl(booth.logo_url)}
+                  alt={booth.booth_name}
+                />
               ) : (
                 <ShoppingBag size={18} />
               )}
             </span>
-            <span><strong>{booth.booth_name || "Merch desk"}</strong><small>Admin workspace</small></span>
+            <span>
+              <strong>{booth.booth_name || "Merch desk"}</strong>
+              <small>Admin workspace</small>
+            </span>
           </div>
 
           <div className="admin-nav-tabs" ref={desktopNavRef}>
-          {canManageCatalog && <button
-            type="button"
-            ref={registerDesktopTab("design")}
-            className={`admin-nav-tab admin-nav-storefront ${viewTab === "design" ? "active" : ""}`}
-            onClick={() => setViewTab("design")}
-          >
-            <LayoutTemplate size={15} /> Storefront
-          </button>}
-          {isAuthed && adminSession.access.role === "owner" && <button
-            type="button"
-            ref={registerDesktopTab("team")}
-            className={`admin-nav-tab ${viewTab === "team" ? "active" : ""}`}
-            onClick={() => setViewTab("team")}
-          >
-            <Users size={15} /> Team
-          </button>}
-          <button
-            type="button"
-            ref={registerDesktopTab("orders")}
-            className={`admin-nav-tab admin-nav-orders ${viewTab === "orders" ? "active" : ""}`}
-            onClick={() => setViewTab("orders")}
-          >
-            <ClipboardList size={15} />
-            <span>Orders Queue</span>
-            {orderCounts.pending > 0 && (
-              <span className="admin-nav-count">
-                {orderCounts.pending}
-              </span>
+            {canManageCatalog && (
+              <button
+                type="button"
+                ref={registerDesktopTab("design")}
+                className={`admin-nav-tab admin-nav-storefront ${viewTab === "design" ? "active" : ""}`}
+                onClick={() => setViewTab("design")}
+              >
+                <LayoutTemplate size={15} /> Storefront
+              </button>
             )}
-          </button>
-          {canManageCatalog && <button
-            type="button"
-            ref={registerDesktopTab("products")}
-            className={`admin-nav-tab ${viewTab === "products" ? "active" : ""}`}
-            onClick={() => setViewTab("products")}
-          >
-            <Package size={15} />
-            <span>Products ({products.length})</span>
-          </button>}
-          {canManageCatalog && <button
-            type="button"
-            ref={registerDesktopTab("settings")}
-            className={`admin-nav-tab admin-nav-mobile-settings ${viewTab === "settings" ? "active" : ""}`}
-            onClick={() => setViewTab("settings")}
-          >
-            <Settings2 size={15} /> Settings
-          </button>}
+            {isAuthed && adminSession.access.role === "owner" && (
+              <button
+                type="button"
+                ref={registerDesktopTab("team")}
+                className={`admin-nav-tab ${viewTab === "team" ? "active" : ""}`}
+                onClick={() => setViewTab("team")}
+              >
+                <Users size={15} /> Team
+              </button>
+            )}
+            <button
+              type="button"
+              ref={registerDesktopTab("orders")}
+              className={`admin-nav-tab admin-nav-orders ${viewTab === "orders" ? "active" : ""}`}
+              onClick={() => setViewTab("orders")}
+            >
+              <ClipboardList size={15} />
+              <span>Orders Queue</span>
+              {orderCounts.pending > 0 && (
+                <span className="admin-nav-count">{orderCounts.pending}</span>
+              )}
+            </button>
+            {canManageCatalog && (
+              <button
+                type="button"
+                ref={registerDesktopTab("products")}
+                className={`admin-nav-tab ${viewTab === "products" ? "active" : ""}`}
+                onClick={() => setViewTab("products")}
+              >
+                <Package size={15} />
+                <span>Products ({products.length})</span>
+              </button>
+            )}
+            {canManageCatalog && (
+              <button
+                type="button"
+                ref={registerDesktopTab("settings")}
+                className={`admin-nav-tab admin-nav-mobile-settings ${viewTab === "settings" ? "active" : ""}`}
+                onClick={() => setViewTab("settings")}
+              >
+                <Settings2 size={15} /> Settings
+              </button>
+            )}
           </div>
 
           <div className="admin-header-actions">
-            <SelectMenu className="admin-shop-switcher-menu" label="Active shop" value={shopId} options={[
-              ...adminSession.memberships.map(membership=>({value:membership.shop_id,label:membership.shop_name,description:`${membership.active&&membership.shop_active?"Active":"Unavailable"} · ${membership.role}`,icon:<Store size={15}/>,disabled:!membership.active||!membership.shop_active})),
-              {value:"__dashboard",label:"All shops",description:"Open platform dashboard"},
-              {value:"__new",label:"Create another shop",description:"Set up a new storefront"}
-            ]} onChange={(val) => {
+            <SelectMenu
+              className="admin-shop-switcher-menu"
+              label="Active shop"
+              value={shopId}
+              options={[
+                ...adminSession.memberships.map((membership) => ({
+                  value: membership.shop_id,
+                  label: membership.shop_name,
+                  description: `${membership.active && membership.shop_active ? "Active" : "Unavailable"} · ${membership.role}`,
+                  icon: <Store size={15} />,
+                  disabled: !membership.active || !membership.shop_active,
+                })),
+                {
+                  value: "__dashboard",
+                  label: "All shops",
+                  description: "Open platform dashboard",
+                },
+                {
+                  value: "__new",
+                  label: "Create another shop",
+                  description: "Set up a new storefront",
+                },
+              ]}
+              onChange={(val) => {
                 if (val === "__new") {
                   navigate("/dashboard/shops/new");
                 } else if (val === "__dashboard") {
@@ -451,9 +647,32 @@ export function AdminPage() {
                 } else {
                   selectShop(val);
                 }
-              }} />
-            {canUsePush() && <button type="button" disabled={pushBusy} onClick={() => void togglePushNotifications()} className={`admin-header-button admin-notification-button ${pushEnabled ? "active" : ""}`} aria-label={pushEnabled ? "Disable order notifications" : "Enable order notifications"}>{pushEnabled ? <Bell size={15} /> : <BellOff size={15} />}<span>{pushEnabled ? "Alerts on" : "Enable alerts"}</span></button>}
-            <button type="button" onClick={() => setIsSignOutOpen(true)} className="admin-header-button admin-signout-button"><LogOut size={15} /><span>Sign out</span></button>
+              }}
+            />
+            {canUsePush() && (
+              <button
+                type="button"
+                disabled={pushBusy}
+                onClick={() => void togglePushNotifications()}
+                className={`admin-header-button admin-notification-button ${pushEnabled ? "active" : ""}`}
+                aria-label={
+                  pushEnabled
+                    ? "Disable order notifications"
+                    : "Enable order notifications"
+                }
+              >
+                {pushEnabled ? <Bell size={15} /> : <BellOff size={15} />}
+                <span>{pushEnabled ? "Alerts on" : "Enable alerts"}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsSignOutOpen(true)}
+              className="admin-header-button admin-signout-button"
+            >
+              <LogOut size={15} />
+              <span>Sign out</span>
+            </button>
           </div>
         </div>
       </header>
@@ -461,23 +680,101 @@ export function AdminPage() {
       <div className="admin-container">
         <section className="admin-view-hero">
           <div>
-            <span>{viewTab === "orders" ? "Live operations" : viewTab === "products" ? "Catalog management" : viewTab === "settings" ? "Mobile configuration" : viewTab === "team" ? "Access management" : "Visual storefront"}</span>
-            <h1>{viewTab === "orders" ? "Orders" : viewTab === "products" ? "Products" : viewTab === "settings" ? "Settings" : viewTab === "team" ? "Team" : "Storefront designer"}</h1>
-            <p>{viewTab === "orders" ? "Confirm payments and fulfil orders." : viewTab === "products" ? "Manage products, prices, and stock." : viewTab === "settings" ? "Update booth and payment details." : viewTab === "team" ? "Invite teammates and control access to this shop." : "Build your storefront and checkout."}</p>
+            <span>
+              {viewTab === "orders"
+                ? "Live operations"
+                : viewTab === "products"
+                  ? "Catalog management"
+                  : viewTab === "settings"
+                    ? "Mobile configuration"
+                    : viewTab === "team"
+                      ? "Access management"
+                      : "Visual storefront"}
+            </span>
+            <h1>
+              {viewTab === "orders"
+                ? "Orders"
+                : viewTab === "products"
+                  ? "Products"
+                  : viewTab === "settings"
+                    ? "Settings"
+                    : viewTab === "team"
+                      ? "Team"
+                      : "Storefront designer"}
+            </h1>
+            <p>
+              {viewTab === "orders"
+                ? "Confirm payments and fulfil orders."
+                : viewTab === "products"
+                  ? "Manage products, prices, and stock."
+                  : viewTab === "settings"
+                    ? "Update booth and payment details."
+                    : viewTab === "team"
+                      ? "Invite teammates and control access to this shop."
+                      : "Build your storefront and checkout."}
+            </p>
           </div>
           <div className="admin-view-chips">
-            {viewTab === "orders" && <><span><b>{orderCounts.pending}</b> pending</span><span><b>{orderTotal}</b> matching orders</span></>}
-            {viewTab === "products" && <><span><b>{products.length}</b> total</span><span><b>{lowStockCount}</b> need attention</span><span><b>{hiddenCount}</b> hidden</span></>}
-            {viewTab === "design" && <><span><b>{booth.corner_radius ?? 16}px</b> corners</span><span><b>{(booth.catalog_locale ?? "en").toUpperCase()}</b> locale</span></>}
+            {viewTab === "orders" && (
+              <>
+                <span>
+                  <b>{orderCounts.pending}</b> pending
+                </span>
+                <span>
+                  <b>{orderTotal}</b> matching orders
+                </span>
+              </>
+            )}
+            {viewTab === "products" && (
+              <>
+                <span>
+                  <b>{products.length}</b> total
+                </span>
+                <span>
+                  <b>{lowStockCount}</b> need attention
+                </span>
+                <span>
+                  <b>{hiddenCount}</b> hidden
+                </span>
+              </>
+            )}
+            {viewTab === "design" && (
+              <>
+                <span>
+                  <b>{booth.corner_radius ?? 16}px</b> corners
+                </span>
+                <span>
+                  <b>{(booth.catalog_locale ?? "en").toUpperCase()}</b> locale
+                </span>
+              </>
+            )}
           </div>
         </section>
         {viewTab === "orders" && (
-          <OrderQueue orders={orders} filter={orderFilter} counts={orderCounts} page={orderPage} pageSize={orderPageSize} total={orderTotal} loading={ordersLoading} onFilterChange={(filter) => { setOrderFilter(filter); setOrderPage(1); }} onPageChange={setOrderPage} onOrderUpdated={scheduleOrdersReload} />
+          <OrderQueue
+            orders={orders}
+            filter={orderFilter}
+            counts={orderCounts}
+            page={orderPage}
+            pageSize={orderPageSize}
+            total={orderTotal}
+            loading={ordersLoading}
+            onFilterChange={(filter) => {
+              setOrderFilter(filter);
+              setOrderPage(1);
+            }}
+            onPageChange={setOrderPage}
+            onOrderUpdated={scheduleOrdersReload}
+          />
         )}
 
         {canManageCatalog && viewTab === "products" && (
           <>
-            <div className="category-row admin-mobile-tabs-row" ref={mobileTabsRef} style={{ marginBottom: "16px" }}>
+            <div
+              className="category-row admin-mobile-tabs-row"
+              ref={mobileTabsRef}
+              style={{ marginBottom: "16px" }}
+            >
               <button
                 type="button"
                 ref={registerMobileTab("list")}
@@ -496,7 +793,9 @@ export function AdminPage() {
               </button>
             </div>
             <div className="admin-grid">
-              <div className={`admin-grid-col-list ${activeTab === "list" ? "show" : "hide"}`}>
+              <div
+                className={`admin-grid-col-list ${activeTab === "list" ? "show" : "hide"}`}
+              >
                 <ProductList
                   products={products}
                   selectedId={selectedProduct?.id}
@@ -512,17 +811,36 @@ export function AdminPage() {
                 />
               </div>
               {selectedProduct ? (
-                <div className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}>
-                  <ProductForm shopId={shopId} product={selectedProduct} onSave={handleSaveProduct} onDelete={handleDeleteProduct} />
+                <div
+                  className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}
+                >
+                  <ProductForm
+                    shopId={shopId}
+                    product={selectedProduct}
+                    onSave={handleSaveProduct}
+                    onDelete={handleDeleteProduct}
+                  />
                 </div>
               ) : (
-                <div className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}>
+                <div
+                  className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}
+                >
                   <EmptyState
                     variant="compact"
                     icon={<Package size={26} />}
                     title="No product selected"
                     message="Choose a product from the list to edit it, or start a fresh listing."
-                    action={<Button icon={<Package size={16} />} onClick={() => { setSelectedProduct(createBlankProduct(nextSort)); setActiveTab("form"); }}>Create product</Button>}
+                    action={
+                      <Button
+                        icon={<Package size={16} />}
+                        onClick={() => {
+                          setSelectedProduct(createBlankProduct(nextSort));
+                          setActiveTab("form");
+                        }}
+                      >
+                        Create product
+                      </Button>
+                    }
                   />
                 </div>
               )}
@@ -530,23 +848,77 @@ export function AdminPage() {
           </>
         )}
 
-        {canManageCatalog && viewTab === "design" && <StorefrontDesigner
-          shopId={shopId}
-          settings={booth}
-          products={products}
-          payment={payment}
-          onSave={(settings) => runAdminAction(async () => { const saved = await saveBoothSettings(shopId, settings); setBooth(saved); }, "Storefront design published.")}
-          onSavePayment={(settings) => runAdminAction(async () => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); }, "Checkout settings saved.")}
-        />}
-        {canManageCatalog && viewTab === "settings" && <section className="admin-mobile-settings-page"><SettingsForm shopId={shopId} settings={booth} onSave={async (settings) => { const saved = await saveBoothSettings(shopId, settings); setBooth(saved); toast.success("Booth settings saved."); }} /><QrManager shopId={shopId} settings={payment} onSave={async (settings) => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); toast.success("Checkout settings saved."); }} /></section>}
-        {isAuthed && adminSession.access.role === "owner" && viewTab === "team" && <section className="admin-team-page"><StaffManager shopId={shopId} /></section>}
+        {canManageCatalog && viewTab === "design" && (
+          <StorefrontDesigner
+            shopId={shopId}
+            settings={booth}
+            products={products}
+            payment={payment}
+            onSave={(settings) =>
+              runAdminAction(async () => {
+                const saved = await saveBoothSettings(shopId, settings);
+                setBooth(saved);
+              }, "Storefront design published.")
+            }
+            onSavePayment={(settings) =>
+              runAdminAction(async () => {
+                const saved = await savePaymentSettings(shopId, settings);
+                setPayment(saved);
+              }, "Checkout settings saved.")
+            }
+          />
+        )}
+        {canManageCatalog && viewTab === "settings" && (
+          <section className="admin-mobile-settings-page">
+            <SettingsForm
+              shopId={shopId}
+              settings={booth}
+              onSave={async (settings) => {
+                const saved = await saveBoothSettings(shopId, settings);
+                setBooth(saved);
+                toast.success("Booth settings saved.");
+              }}
+            />
+            <QrManager
+              shopId={shopId}
+              settings={payment}
+              onSave={async (settings) => {
+                const saved = await savePaymentSettings(shopId, settings);
+                setPayment(saved);
+                toast.success("Checkout settings saved.");
+              }}
+            />
+          </section>
+        )}
+        {isAuthed &&
+          adminSession.access.role === "owner" &&
+          viewTab === "team" && (
+            <section className="admin-team-page">
+              <StaffManager shopId={shopId} />
+            </section>
+          )}
       </div>
-      <Modal title="Sign out of admin?" isOpen={isSignOutOpen} onClose={() => setIsSignOutOpen(false)} className="signout-modal">
+      <Modal
+        title="Sign out of admin?"
+        isOpen={isSignOutOpen}
+        onClose={() => setIsSignOutOpen(false)}
+        className="signout-modal"
+      >
         <div className="signout-confirmation">
-          <span className="signout-confirmation-icon"><LogOut size={22} /></span>
-          <div><h3>Your work is saved.</h3><p>You’ll return to the staff login screen. The public catalog stays open for customers.</p></div>
+          <span className="signout-confirmation-icon">
+            <LogOut size={22} />
+          </span>
+          <div>
+            <h3>Your work is saved.</h3>
+            <p>
+              You’ll return to the staff login screen. The public catalog stays
+              open for customers.
+            </p>
+          </div>
           <div className="signout-confirmation-actions">
-            <Button variant="secondary" onClick={() => setIsSignOutOpen(false)}>Stay signed in</Button>
+            <Button variant="secondary" onClick={() => setIsSignOutOpen(false)}>
+              Stay signed in
+            </Button>
             <Button onClick={() => void handleSignOut()}>Sign out</Button>
           </div>
         </div>

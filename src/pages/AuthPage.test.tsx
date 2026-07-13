@@ -1,0 +1,85 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
+import { ToastProvider } from "../components/ui/ToastProvider";
+
+const auth = vi.hoisted(() => ({
+  signInWithPassword: vi.fn(),
+  signUp: vi.fn(),
+  resetPasswordForEmail: vi.fn(),
+}));
+
+vi.mock("../lib/supabase", () => ({
+  supabase: { auth },
+}));
+vi.mock("../lib/api", () => ({
+  getShopMemberships: vi.fn().mockResolvedValue([]),
+}));
+
+import { AuthPage } from "./AuthPage";
+
+function renderPage() {
+  return render(
+    <ToastProvider>
+      <MemoryRouter initialEntries={["/auth"]}>
+        <AuthPage />
+      </MemoryRouter>
+    </ToastProvider>,
+  );
+}
+
+describe("AuthPage credential fields", () => {
+  afterEach(cleanup);
+
+  beforeEach(() => {
+    auth.signInWithPassword.mockReset();
+    auth.signUp.mockReset();
+    auth.resetPasswordForEmail.mockReset();
+  });
+
+  it("shows and hides the password with an accessible control", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const password = screen.getByLabelText("Password");
+
+    expect(password).toHaveAttribute("type", "password");
+    await user.click(screen.getByRole("button", { name: "Show password" }));
+    expect(password).toHaveAttribute("type", "text");
+    await user.click(screen.getByRole("button", { name: "Hide password" }));
+    expect(password).toHaveAttribute("type", "password");
+  });
+
+  it("keeps the email but clears and hides the password after a failed sign in", async () => {
+    auth.signInWithPassword.mockResolvedValue({
+      error: new Error("Invalid credentials"),
+    });
+    const user = userEvent.setup();
+    renderPage();
+    const email = screen.getByLabelText("Email address");
+    const password = screen.getByLabelText("Password");
+
+    await user.type(email, "artist@example.com");
+    await user.type(password, "password123");
+    await user.click(screen.getByRole("button", { name: "Show password" }));
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await waitFor(() => expect(password).toHaveValue(""));
+    expect(password).toHaveAttribute("type", "password");
+    expect(email).toHaveValue("artist@example.com");
+  });
+
+  it("keeps the email while clearing password state between auth modes", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.type(screen.getByLabelText("Email address"), "artist@example.com");
+    await user.type(screen.getByLabelText("Password"), "password123");
+
+    await user.click(screen.getByRole("button", { name: "Forgot password?" }));
+    expect(screen.getByLabelText("Email address")).toHaveValue(
+      "artist@example.com",
+    );
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(screen.getByLabelText("Password")).toHaveValue("");
+  });
+});

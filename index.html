@@ -8,14 +8,6 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/brand/matsuri-favicon.svg" />
     <link rel="apple-touch-icon" href="/brand/matsuri-icon-192.png" />
-    <script>
-      (() => {
-        const redirect = new URLSearchParams(window.location.search).get("redirect");
-        if (redirect) {
-          window.history.replaceState(null, "", `/akiba-shelf${redirect}`);
-        }
-      })();
-    </script>
     <title>Matsuri</title>
   </head>
   <body>

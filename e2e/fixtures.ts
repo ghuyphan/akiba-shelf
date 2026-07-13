@@ -101,6 +101,7 @@ export async function mockSupabase(
     staffRole?: "owner" | "admin" | "staff" | null;
     staffActive?: boolean;
     checkoutFails?: boolean;
+    multiShop?: boolean;
   } = {},
 ) {
   await page.route("**/mock-supabase/**", async (route) => {
@@ -158,15 +159,32 @@ export async function mockSupabase(
             ]
           : [],
       );
-    if (url.pathname.includes("/rest/v1/shops"))
+    if (url.pathname.includes("/rest/v1/rpc/get_shop_workspace_summary"))
+      return json(route, {
+        shop_id: "main",
+        shop_name: "Fixture Booth",
+        shop_slug: "akiba-shelf",
+        booth_name: booth.booth_name,
+        logo_url: booth.logo_url,
+        theme_background: booth.theme_background,
+      });
+    if (url.pathname.includes("/rest/v1/rpc/get_admin_products"))
+      return json(route, products);
+    if (url.pathname.includes("/rest/v1/rpc/get_admin_booth_settings"))
+      return json(route, booth);
+    if (url.pathname.includes("/rest/v1/shops")) {
+      const requestedSlug =
+        url.searchParams.get("slug")?.replace(/^eq\./, "") ?? "akiba-shelf";
+      const slug = options.multiShop ? requestedSlug : "akiba-shelf";
       return json(route, [
         {
-          id: "main",
-          name: "Fixture Booth",
-          slug: "akiba-shelf",
+          id: options.multiShop ? `id-${slug}` : "main",
+          name: options.multiShop ? `Fixture ${slug}` : "Fixture Booth",
+          slug,
           active: true,
         },
       ]);
+    }
     if (url.pathname.includes("/rest/v1/rpc/create_order"))
       return options.checkoutFails
         ? json(route, { message: "Stock changed" }, 409)
@@ -189,12 +207,38 @@ export async function mockSupabase(
       return json(route, []);
     if (url.pathname.includes("/functions/v1/notify-new-order"))
       return json(route, { sent: 0 });
-    if (url.pathname.includes("/rest/v1/products"))
-      return json(route, products);
-    if (url.pathname.includes("/rest/v1/booth_settings"))
-      return json(route, booth);
-    if (url.pathname.includes("/rest/v1/payment_settings"))
-      return json(route, payment);
+    if (url.pathname.includes("/rest/v1/products")) {
+      const id = url.searchParams.get("shop_id")?.replace(/^eq\./, "");
+      return json(
+        route,
+        options.multiShop
+          ? products.map((product) => ({
+              ...product,
+              id: `${id}-${product.id}`,
+              name: `${id} ${product.name}`,
+              shop_id: id,
+            }))
+          : products,
+      );
+    }
+    if (url.pathname.includes("/rest/v1/booth_settings")) {
+      const id = url.searchParams.get("shop_id")?.replace(/^eq\./, "");
+      return json(
+        route,
+        options.multiShop
+          ? { ...booth, id, shop_id: id, booth_name: `Booth ${id}` }
+          : booth,
+      );
+    }
+    if (url.pathname.includes("/rest/v1/payment_settings")) {
+      const id = url.searchParams.get("shop_id")?.replace(/^eq\./, "");
+      return json(
+        route,
+        options.multiShop
+          ? { ...payment, id, shop_id: id, bank_account_name: `PAY ${id}` }
+          : payment,
+      );
+    }
     if (url.pathname.includes("/rest/v1/orders"))
       return json(route, [], 200, { "content-range": "0-0/0" });
     if (url.pathname.includes("/rest/v1/staff_members")) return json(route, []);

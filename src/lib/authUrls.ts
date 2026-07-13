@@ -5,7 +5,10 @@ export function getAppUrl(path: string): string {
   return `${window.location.origin}${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-export function restoreRedirect(location: Location = window.location): boolean {
+export function restoreRedirect(
+  location: Location = window.location,
+  configuredBase = import.meta.env.BASE_URL,
+): boolean {
   const url = new URL(location.href);
   const target = url.searchParams.get("redirect");
   if (!target) return false;
@@ -16,6 +19,15 @@ export function restoreRedirect(location: Location = window.location): boolean {
   }
   const restored = new URL(target, location.origin);
   if (restored.origin !== location.origin) return false;
-  history.replaceState(null, "", `${import.meta.env.BASE_URL.replace(/\/$/, "")}${restored.pathname}${restored.search}${restored.hash}`);
+  const base = configuredBase.replace(/\/$/, "");
+  const pathname =
+    base && restored.pathname.startsWith(`${base}/`)
+      ? restored.pathname
+      : `${base}${restored.pathname}`;
+  history.replaceState(
+    null,
+    "",
+    `${pathname || "/"}${restored.search}${restored.hash}`,
+  );
   return true;
 }

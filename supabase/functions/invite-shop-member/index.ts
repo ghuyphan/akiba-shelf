@@ -14,46 +14,53 @@ const cors = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
-const roles = new Set(["admin", "staff"]);
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const roles = new Set(["admin", "staff"]);
+const success = () =>
+  Response.json({ outcome: "processed" }, { headers: cors });
+const failure = (error: string, status: number) =>
+  Response.json({ error }, { status, headers: cors });
 
-type InviteOutcome =
-  | "membership_granted"
-  | "invitation_sent"
-  | "already_member"
-  | "already_owner";
-const respond = (outcome: InviteOutcome) =>
-  Response.json({ outcome }, { headers: cors });
+async function parseBody(
+  request: Request,
+): Promise<Record<string, unknown> | null> {
+  try {
+    const value = await request.json();
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
 
-Deno.serve(async (request) => {
+export async function handleInviteRequest(request: Request): Promise<Response> {
   if (request.method === "OPTIONS")
     return new Response("ok", { headers: cors });
-  try {
-    if (request.method !== "POST")
-      return Response.json(
-        { error: "Method not allowed." },
-        { status: 405, headers: cors },
-      );
-    const authorization = request.headers.get("Authorization");
-    if (!authorization)
-      return Response.json(
-        { error: "Authentication required." },
-        { status: 401, headers: cors },
-      );
-    if (!siteOrigin)
-      return Response.json(
-        { error: "Invitation email is not configured." },
-        { status: 503, headers: cors },
-      );
-    if (
-      request.headers.get("Origin") &&
-      request.headers.get("Origin") !== siteOrigin
-    )
-      return Response.json(
-        { error: "Origin not allowed." },
-        { status: 403, headers: cors },
-      );
+  if (request.method !== "POST") return failure("Method not allowed.", 405);
+  const authorization = request.headers.get("Authorization");
+  if (!authorization) return failure("Authentication required.", 401);
+  if (!siteOrigin) return failure("Invitation email is not configured.", 503);
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== siteOrigin)
+    return failure("Origin not allowed.", 403);
 
+  const body = await parseBody(request);
+  if (!body) return failure("Invalid request body.", 400);
+  const action = typeof body.action === "string" ? body.action : "";
+  const shopId = typeof body.shopId === "string" ? body.shopId : "";
+  if (!uuidPattern.test(shopId))
+    return failure("Invalid shop identifier.", 400);
+  if (action !== "invite" && action !== "revoke")
+    return failure("Unsupported invitation action.", 400);
+  const invitationId =
+    typeof body.invitationId === "string" ? body.invitationId : "";
+  if (action === "revoke" && !uuidPattern.test(invitationId))
+    return failure("Invalid invitation identifier.", 400);
+
+  try {
     const url = Deno.env.get("SUPABASE_URL")!;
     const caller = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authorization } },
@@ -67,63 +74,63 @@ Deno.serve(async (request) => {
       data: { user },
       error: userError,
     } = await caller.auth.getUser();
-    if (userError || !user)
-      return Response.json(
-        { error: "Authentication required." },
-        { status: 401, headers: cors },
-      );
+    if (userError || !user) return failure("Authentication required.", 401);
 
-    const body = await request.json();
-    const shopId = typeof body.shopId === "string" ? body.shopId : "";
-    const { data: owner } = await admin
-      .from("shop_members")
-      .select("user_id")
-      .eq("shop_id", shopId)
-      .eq("user_id", user.id)
-      .eq("role", "owner")
-      .eq("active", true)
-      .maybeSingle();
-    if (!owner)
-      return Response.json(
-        { error: "Active shop owner access required." },
-        { status: 403, headers: cors },
-      );
+    const [{ data: shop }, { data: owner }] = await Promise.all([
+      admin
+        .from("shops")
+        .select("id")
+        .eq("id", shopId)
+        .eq("active", true)
+        .maybeSingle(),
+      admin
+        .from("shop_members")
+        .select("user_id")
+        .eq("shop_id", shopId)
+        .eq("user_id", user.id)
+        .eq("role", "owner")
+        .eq("active", true)
+        .maybeSingle(),
+    ]);
+    if (!shop || !owner)
+      return failure("Active shop owner access required.", 403);
 
-    if (body.action === "revoke") {
-      const { error } = await admin
+    if (action === "revoke") {
+      const { data: invitation, error: lookupError } = await admin
+        .from("shop_invitations")
+        .select("id,status")
+        .eq("id", invitationId)
+        .eq("shop_id", shopId)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
+      if (!invitation) return failure("Invitation not found.", 404);
+      if (invitation.status !== "pending")
+        return failure("Invitation is no longer pending.", 409);
+      const { data: revoked, error: revokeError } = await admin
         .from("shop_invitations")
         .update({ status: "revoked" })
-        .eq("id", body.invitationId)
+        .eq("id", invitationId)
         .eq("shop_id", shopId)
-        .eq("status", "pending");
-      if (error) throw error;
-      return Response.json({ ok: true }, { headers: cors });
+        .eq("status", "pending")
+        .select("id")
+        .maybeSingle();
+      if (revokeError) throw revokeError;
+      if (!revoked) return failure("Invitation is no longer pending.", 409);
+      return success();
     }
-    if (body.action !== "invite")
-      return Response.json(
-        { error: "Unsupported invitation action." },
-        { status: 400, headers: cors },
-      );
 
     const email =
       typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-    const role = typeof body.role === "string" ? body.role : "staff";
+    const role = typeof body.role === "string" ? body.role : "";
     if (!emailPattern.test(email) || email.length > 320 || !roles.has(role))
-      return Response.json(
-        { error: "Invalid invitation details." },
-        { status: 400, headers: cors },
-      );
-
+      return failure("Invalid invitation details.", 400);
     const { count } = await admin
       .from("shop_invitations")
       .select("id", { count: "exact", head: true })
       .eq("invited_by", user.id)
       .gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
     if ((count ?? 0) >= 20)
-      return Response.json(
-        { error: "Too many invitations. Try again later." },
-        { status: 429, headers: cors },
-      );
+      return failure("Too many invitations. Try again later.", 429);
 
     const { data: resolved, error: resolveError } = await admin.rpc(
       "resolve_invitation_user",
@@ -132,74 +139,86 @@ Deno.serve(async (request) => {
     if (resolveError) throw resolveError;
     const account = Array.isArray(resolved) ? resolved[0] : resolved;
     if (account?.user_id && account.email_confirmed) {
-      const { data: member, error: memberError } = await admin
-        .from("shop_members")
-        .select("role,active")
-        .eq("shop_id", shopId)
-        .eq("user_id", account.user_id)
-        .maybeSingle();
-      if (memberError) throw memberError;
-      if (member?.role === "owner") return respond("already_owner");
-      if (member?.active) return respond("already_member");
-      const { error } = await admin
-        .from("shop_members")
-        .upsert(
-          { shop_id: shopId, user_id: account.user_id, role, active: true },
-          { onConflict: "shop_id,user_id" },
-        );
-      if (error) throw error;
-      return respond("membership_granted");
+      const { error: processError } = await admin.rpc(
+        "process_existing_shop_member",
+        {
+          p_shop_id: shopId,
+          p_user_id: account.user_id,
+          p_requested_role: role,
+          p_actor_id: user.id,
+        },
+      );
+      if (processError) throw processError;
+      return success();
     }
 
-    await admin
+    // Reuse a valid pending invitation when one exists. This preserves a usable
+    // invitation if a replacement email attempt fails.
+    const { data: existing, error: existingError } = await admin
       .from("shop_invitations")
-      .update({ status: "revoked" })
+      .select("id,expires_at")
       .eq("shop_id", shopId)
       .ilike("email", email)
-      .eq("status", "pending");
-    const expiresAt = new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1000,
-    ).toISOString();
-    const { data: invitation, error: insertError } = await admin
-      .from("shop_invitations")
-      .insert({
-        shop_id: shopId,
-        email,
-        role,
-        invited_by: user.id,
-        expires_at: expiresAt,
-      })
-      .select("id")
-      .single();
-    if (insertError) throw insertError;
+      .eq("status", "pending")
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    if (existingError) throw existingError;
+    let invitationIdForEmail = existing?.id as string | undefined;
+    let createdNew = false;
+    if (!invitationIdForEmail) {
+      const expiresAt = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      const { data: invitation, error: insertError } = await admin
+        .from("shop_invitations")
+        .insert({
+          shop_id: shopId,
+          email,
+          role,
+          invited_by: user.id,
+          expires_at: expiresAt,
+        })
+        .select("id")
+        .single();
+      if (insertError) throw insertError;
+      invitationIdForEmail = invitation.id;
+      createdNew = true;
+    }
 
     const redirectTo = `${siteUrl.replace(/\/$/, "")}/auth/callback`;
     const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(
       email,
-      { redirectTo, data: { shop_invitation_id: invitation.id } },
+      { redirectTo, data: { shop_invitation_id: invitationIdForEmail } },
     );
     if (inviteError) {
-      await admin
-        .from("shop_invitations")
-        .update({ status: "revoked" })
-        .eq("id", invitation.id)
-        .eq("status", "pending");
+      if (createdNew) {
+        const { data: compensated, error: compensationError } = await admin
+          .from("shop_invitations")
+          .update({ status: "revoked" })
+          .eq("id", invitationIdForEmail)
+          .eq("status", "pending")
+          .select("id")
+          .maybeSingle();
+        if (compensationError || !compensated)
+          console.warn("Invitation delivery compensation failed", {
+            shopId,
+            invitationId: invitationIdForEmail,
+          });
+      }
       console.error("Auth invitation delivery failed", {
         shopId,
-        invitationId: invitation.id,
-        message: inviteError.message,
+        invitationId: invitationIdForEmail,
       });
-      throw new Error("Invitation delivery failed");
+      return failure("The invitation could not be completed.", 502);
     }
-    return respond("invitation_sent");
+    return success();
   } catch (error) {
     console.error(
       "invite-shop-member failed",
-      error instanceof Error ? error.message : error,
+      error instanceof Error ? error.message : "Unknown failure",
     );
-    return Response.json(
-      { error: "The invitation could not be completed." },
-      { status: 400, headers: cors },
-    );
+    return failure("The invitation could not be completed.", 400);
   }
-});
+}
+
+if (import.meta.main) Deno.serve(handleInviteRequest);

@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { getShopMemberships } from "../lib/api";
 import {
   routeAfterAuthentication,
+  storePasswordFlow,
   storePendingInvitation,
 } from "../lib/authRouting";
 
@@ -20,11 +21,21 @@ export function AuthCallbackPage() {
     started.current = true;
     void (async () => {
       if (!supabase) throw new Error("Authentication is not configured.");
+      const callbackParams = new URLSearchParams(window.location.search);
       const hash = new URLSearchParams(window.location.hash.slice(1));
       const callbackError =
-        params.get("error_description") || hash.get("error_description");
+        callbackParams.get("error_description") ||
+        hash.get("error_description");
       if (callbackError) throw new Error(callbackError);
-      const code = params.get("code");
+      const code = callbackParams.get("code");
+      const recovery =
+        callbackParams.get("next") === "set-password" ||
+        hash.get("type") === "recovery";
+      window.history.replaceState(
+        null,
+        "",
+        `${import.meta.env.BASE_URL}auth/callback`,
+      );
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) throw error;
@@ -39,10 +50,8 @@ export function AuthCallbackPage() {
           "This link is invalid or expired. Request a new secure link.",
         );
 
-      if (
-        params.get("next") === "set-password" ||
-        hash.get("type") === "recovery"
-      ) {
+      if (recovery) {
+        storePasswordFlow("recovery");
         navigate("/auth/set-password", { replace: true });
         return;
       }

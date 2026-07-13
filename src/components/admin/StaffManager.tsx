@@ -36,17 +36,16 @@ const inviteRoles = [
     description: "Manage catalog, settings, and orders",
   },
 ];
-const memberRoles = [
-  ...inviteRoles,
-  { value: "owner", label: "Owner", description: "Full shop and staff access" },
-];
-
 export function StaffManager({ shopId }: { shopId: string }) {
   const [members, setMembers] = useState<StaffAccess[]>([]);
   const [invitations, setInvitations] = useState<ShopInvitation[]>([]);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<StaffRole>("staff");
-  const [busy, setBusy] = useState(false);
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [removeBusy, setRemoveBusy] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [ownershipBusy, setOwnershipBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<StaffAccess | null>(null);
   const [ownerChange, setOwnerChange] = useState<{
@@ -76,28 +75,16 @@ export function StaffManager({ shopId }: { shopId: string }) {
       toast.error("Enter a valid email address.", "Could not send invitation");
       return;
     }
-    setBusy(true);
+    setInviteBusy(true);
     try {
-      const outcome = await inviteShopMember(
-        shopId,
-        email.trim().toLowerCase(),
-        role,
-      );
+      await inviteShopMember(shopId, email.trim().toLowerCase(), role);
       setEmail("");
       await reload();
-      toast.success(
-        outcome === "invitation_sent"
-          ? "Invitation email sent."
-          : outcome === "membership_granted"
-            ? "Existing account granted access."
-            : outcome === "already_owner"
-              ? "This person is already an owner."
-              : "This person already has shop access.",
-      );
+      toast.success("Access request processed.");
     } catch (caught) {
       toast.error(getErrorMessage(caught), "Could not send invitation");
     } finally {
-      setBusy(false);
+      setInviteBusy(false);
     }
   }
   async function update(
@@ -110,7 +97,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
       setOwnerChange({ member, changes });
       return;
     }
-    setBusy(true);
+    setUpdatingId(member.user_id);
     try {
       await saveStaffMember(shopId, {
         user_id: member.user_id,
@@ -122,12 +109,12 @@ export function StaffManager({ shopId }: { shopId: string }) {
     } catch (caught) {
       toast.error(getErrorMessage(caught), "Could not update staff");
     } finally {
-      setBusy(false);
+      setUpdatingId(null);
     }
   }
   async function remove() {
     if (!removing?.user_id) return;
-    setBusy(true);
+    setRemoveBusy(true);
     try {
       await deleteStaffMember(shopId, removing.user_id);
       setRemoving(null);
@@ -136,11 +123,11 @@ export function StaffManager({ shopId }: { shopId: string }) {
     } catch (caught) {
       toast.error(getErrorMessage(caught), "Could not remove access");
     } finally {
-      setBusy(false);
+      setRemoveBusy(false);
     }
   }
   async function revoke(invitation: ShopInvitation) {
-    setBusy(true);
+    setRevokingId(invitation.id);
     try {
       await updateShopInvitation(shopId, invitation.id, "revoke");
       await reload();
@@ -148,7 +135,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
     } catch (caught) {
       toast.error(getErrorMessage(caught), "Could not revoke invitation");
     } finally {
-      setBusy(false);
+      setRevokingId(null);
     }
   }
   return (
@@ -190,7 +177,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
           <Button
             type="submit"
             icon={<UserPlus size={16} />}
-            loading={busy}
+            loading={inviteBusy}
             className="staff-invite-button"
           >
             Send invitation
@@ -243,20 +230,41 @@ export function StaffManager({ shopId }: { shopId: string }) {
                     </span>
                   </div>
                   <div className="admin-staff-controls">
-                    <SelectMenu
-                      label={`Role for ${member.email}`}
-                      value={member.role}
-                      options={memberRoles}
-                      disabled={busy}
-                      onChange={(value) =>
-                        void update(member, { role: value as StaffRole })
+                    {member.role === "owner" ? (
+                      <span className="role-pill role-owner">Owner</span>
+                    ) : (
+                      <SelectMenu
+                        label={`Role for ${member.email}`}
+                        value={member.role}
+                        options={inviteRoles}
+                        disabled={updatingId === member.user_id}
+                        onChange={(value) =>
+                          void update(member, { role: value as StaffRole })
+                        }
+                      />
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={updatingId === member.user_id}
+                      onClick={() =>
+                        setOwnerChange({
+                          member,
+                          changes: {
+                            role: member.role === "owner" ? "admin" : "owner",
+                          },
+                        })
                       }
-                    />
+                    >
+                      {member.role === "owner"
+                        ? "Demote owner"
+                        : "Promote to owner"}
+                    </Button>
                     <label className="staff-access-toggle">
                       <input
                         type="checkbox"
                         checked={member.active}
-                        disabled={busy}
+                        disabled={updatingId === member.user_id}
                         onChange={(event) =>
                           void update(member, { active: event.target.checked })
                         }
@@ -268,7 +276,9 @@ export function StaffManager({ shopId }: { shopId: string }) {
                       type="button"
                       variant="danger"
                       icon={<Trash2 size={15} />}
-                      disabled={busy}
+                      disabled={
+                        removeBusy && removing?.user_id === member.user_id
+                      }
                       onClick={() => setRemoving(member)}
                       aria-label={`Remove ${member.email}`}
                     >
@@ -306,7 +316,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
                   type="button"
                   variant="danger"
                   icon={<Ban size={15} />}
-                  disabled={busy}
+                  loading={revokingId === invitation.id}
                   onClick={() => void revoke(invitation)}
                 >
                   Revoke
@@ -331,12 +341,17 @@ export function StaffManager({ shopId }: { shopId: string }) {
               Cancel
             </Button>
             <Button
-              loading={busy}
+              loading={ownershipBusy}
               onClick={() => {
                 if (!ownerChange) return;
                 const pending = ownerChange;
-                setOwnerChange(null);
-                void update(pending.member, pending.changes, true);
+                setOwnershipBusy(true);
+                void update(pending.member, pending.changes, true).finally(
+                  () => {
+                    setOwnershipBusy(false);
+                    setOwnerChange(null);
+                  },
+                );
               }}
             >
               Confirm change
@@ -360,7 +375,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
             </Button>
             <Button
               variant="danger"
-              loading={busy}
+              loading={removeBusy}
               onClick={() => void remove()}
             >
               Remove access

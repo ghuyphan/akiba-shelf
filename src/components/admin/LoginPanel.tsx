@@ -28,7 +28,12 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    await run(() => onLogin(email, password)).catch(() => undefined);
+    await run(() => onLogin(email, password))
+      .catch(() => undefined)
+      .finally(() => {
+        setPassword("");
+        setShowPassword(false);
+      });
   }
 
   return (

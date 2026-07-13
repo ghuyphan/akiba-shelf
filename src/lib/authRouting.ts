@@ -1,17 +1,42 @@
 import type { ShopMembership } from "../types/catalog";
 
 const INVITATION_KEY = "matsuri-pending-shop-invitation";
+const PASSWORD_FLOW_KEY = "matsuri-password-flow";
+const FLOW_TTL = 30 * 60 * 1000;
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export type PasswordFlow = "invitation" | "recovery";
+export type AccountDestination =
+  | "signin"
+  | "complete_invitation"
+  | "dashboard"
+  | "create_shop";
+
+export function getAccountDestination(options: {
+  authenticated: boolean;
+  memberships?: ShopMembership[];
+  pendingInvitation?: boolean;
+}): AccountDestination {
+  if (!options.authenticated) return "signin";
+  if (options.pendingInvitation) return "complete_invitation";
+  return (options.memberships?.length ?? 0) > 0 ? "dashboard" : "create_shop";
+}
 
 export function routeAfterAuthentication(memberships: ShopMembership[]) {
-  return memberships.length > 0 ? "/dashboard" : "/dashboard/shops/new";
+  return getAccountDestination({ authenticated: true, memberships }) ===
+    "dashboard"
+    ? "/dashboard"
+    : "/dashboard/shops/new";
 }
 
 export function storePendingInvitation(invitationId: string) {
-  if (!/^[0-9a-f-]{36}$/i.test(invitationId)) return false;
+  if (!uuidPattern.test(invitationId)) return false;
   sessionStorage.setItem(
     INVITATION_KEY,
     JSON.stringify({ invitationId, createdAt: Date.now() }),
   );
+  storePasswordFlow("invitation");
   return true;
 }
 
@@ -23,7 +48,7 @@ export function getPendingInvitation(): string | null {
     if (
       !value?.invitationId ||
       !value.createdAt ||
-      Date.now() - value.createdAt > 30 * 60 * 1000
+      Date.now() - value.createdAt > FLOW_TTL
     ) {
       clearPendingInvitation();
       return null;
@@ -37,4 +62,36 @@ export function getPendingInvitation(): string | null {
 
 export function clearPendingInvitation() {
   sessionStorage.removeItem(INVITATION_KEY);
+}
+
+export function storePasswordFlow(flow: PasswordFlow) {
+  sessionStorage.setItem(
+    PASSWORD_FLOW_KEY,
+    JSON.stringify({ flow, createdAt: Date.now() }),
+  );
+}
+
+export function getPasswordFlow(): PasswordFlow | null {
+  try {
+    const value = JSON.parse(
+      sessionStorage.getItem(PASSWORD_FLOW_KEY) ?? "null",
+    ) as { flow?: PasswordFlow; createdAt?: number } | null;
+    if (
+      !value?.createdAt ||
+      !value.flow ||
+      !["invitation", "recovery"].includes(value.flow) ||
+      Date.now() - value.createdAt > FLOW_TTL
+    ) {
+      clearPasswordFlow();
+      return null;
+    }
+    return value.flow;
+  } catch {
+    clearPasswordFlow();
+    return null;
+  }
+}
+
+export function clearPasswordFlow() {
+  sessionStorage.removeItem(PASSWORD_FLOW_KEY);
 }
