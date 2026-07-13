@@ -49,9 +49,10 @@ function PlatformRouteBranding() {
     if (pathname === "/admin" || pathname.startsWith("/s/")) return;
     resetPageTheme();
     let title: string = PLATFORM_BRAND.name;
-    if (pathname === "/auth")
-      title = `${new URLSearchParams(search).get("mode") === "signup" ? "Create account" : "Sign in"} · ${PLATFORM_BRAND.name}`;
-    else if (pathname === "/dashboard")
+    if (pathname === "/auth") {
+      const mode = new URLSearchParams(search).get("mode");
+      title = `${mode === "signup" ? "Create account" : mode === "forgot" ? "Reset password" : "Sign in"} · ${PLATFORM_BRAND.name}`;
+    } else if (pathname === "/dashboard")
       title = `Your shops · ${PLATFORM_BRAND.name}`;
     else if (pathname === "/dashboard/shops/new")
       title = `Create a shop · ${PLATFORM_BRAND.name}`;

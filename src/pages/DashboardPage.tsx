@@ -30,6 +30,7 @@ export function DashboardPage() {
     useAdminSession();
   const navigate = useNavigate();
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
+  const [signOutBusy, setSignOutBusy] = useState(false);
   const toast = useToast();
 
   // Edit shop states
@@ -53,9 +54,16 @@ export function DashboardPage() {
   }
 
   async function handleSignOut() {
-    await signOutAdmin();
-    setIsSignOutOpen(false);
-    await refreshAdminSession();
+    setSignOutBusy(true);
+    try {
+      await signOutAdmin();
+      setIsSignOutOpen(false);
+      await refreshAdminSession();
+    } catch {
+      toast.error("Check your connection and try again.", "Could not sign out");
+    } finally {
+      setSignOutBusy(false);
+    }
   }
 
   function handleSelectShop(shopId: string) {
@@ -152,6 +160,7 @@ export function DashboardPage() {
             )}
             <button
               type="button"
+              disabled={signOutBusy}
               onClick={() => setIsSignOutOpen(true)}
               className="admin-header-button admin-signout-button"
             >
@@ -254,7 +263,9 @@ export function DashboardPage() {
       <Modal
         title="Sign out of your account?"
         isOpen={isSignOutOpen}
-        onClose={() => setIsSignOutOpen(false)}
+        onClose={() => {
+          if (!signOutBusy) setIsSignOutOpen(false);
+        }}
         className="signout-modal"
       >
         <div className="signout-confirmation">
@@ -266,10 +277,20 @@ export function DashboardPage() {
             <p>You’ll sign out of the platform dashboard and all shops.</p>
           </div>
           <div className="signout-confirmation-actions">
-            <Button variant="secondary" onClick={() => setIsSignOutOpen(false)}>
+            <Button
+              variant="secondary"
+              disabled={signOutBusy}
+              onClick={() => setIsSignOutOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={() => void handleSignOut()}>Sign out</Button>
+            <Button
+              loading={signOutBusy}
+              loadingText="Signing out…"
+              onClick={() => void handleSignOut()}
+            >
+              Sign out
+            </Button>
           </div>
         </div>
       </Modal>

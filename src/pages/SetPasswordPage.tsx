@@ -1,6 +1,6 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Lock, RotateCw } from "lucide-react";
+import { RotateCw } from "lucide-react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { useToast } from "../components/ui/ToastProvider";
 import { PageLoading } from "../components/ui/PageLoading";
@@ -15,6 +15,12 @@ import {
 } from "../lib/authRouting";
 import { getShopMemberships } from "../lib/api";
 import { getAuthErrorNotice } from "../lib/authErrors";
+import {
+  getNewPasswordError,
+  NEW_PASSWORD_HINT,
+  NEW_PASSWORD_MIN_LENGTH,
+} from "../lib/authValidation";
+import { PasswordField } from "../components/ui/PasswordField";
 
 type RouteState = "checking" | "ready" | "invalid";
 const uuidPattern =
@@ -27,6 +33,7 @@ export function SetPasswordPage() {
   const [busy, setBusy] = useState(false);
   const [passwordCompleted, setPasswordCompleted] = useState(false);
   const [acceptanceFailed, setAcceptanceFailed] = useState(false);
+  const [completionFailed, setCompletionFailed] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
   const flow = getPasswordFlow();
@@ -86,13 +93,34 @@ export function SetPasswordPage() {
     navigate("/admin", { replace: true });
   }, [invitationId, navigate, toast]);
 
+  async function finishRecovery() {
+    setBusy(true);
+    setCompletionFailed(false);
+    try {
+      const memberships = await getShopMemberships();
+      clearPasswordFlow();
+      navigate(routeAfterAuthentication(memberships), { replace: true });
+    } catch {
+      setCompletionFailed(true);
+      toast.error(
+        "Your password was saved, but we could not open your account. Retry safely without changing it again.",
+        "Could not finish recovery",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!supabase || routeState !== "ready") return;
-    if (password.length < 8 || password !== confirm) {
+    const passwordError = getNewPasswordError(password, confirm);
+    if (passwordError) {
       toast.error(
-        "Use at least 8 characters and make sure both passwords match.",
-        "Could not set password",
+        passwordError,
+        passwordError === NEW_PASSWORD_HINT
+          ? "Choose a stronger password"
+          : "Check your password",
       );
       return;
     }
@@ -111,10 +139,7 @@ export function SetPasswordPage() {
       await acceptInvitation();
       return;
     }
-    clearPasswordFlow();
-    const memberships = await getShopMemberships();
-    setBusy(false);
-    navigate(routeAfterAuthentication(memberships), { replace: true });
+    await finishRecovery();
   }
 
   if (routeState === "checking")
@@ -173,6 +198,35 @@ export function SetPasswordPage() {
         </section>
       </main>
     );
+  if (passwordCompleted && completionFailed)
+    return (
+      <main className="admin-login">
+        <section className="admin-access-card admin-login-card">
+          <div className="admin-login-panel">
+            <div className="admin-login-heading">
+              <h1>Password updated</h1>
+              <p>
+                Your new password is saved. Retry opening your account without
+                changing it again.
+              </p>
+            </div>
+            <Button
+              loading={busy}
+              loadingText="Opening account…"
+              icon={<RotateCw size={17} />}
+              onClick={() => void finishRecovery()}
+            >
+              Open my account
+            </Button>
+            <div className="auth-mode-links">
+              <Link className="button button-ghost" to="/auth?mode=signin">
+                Return to sign in
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
   return (
     <main className="admin-login">
       <section className="admin-access-card admin-login-card">
@@ -182,27 +236,25 @@ export function SetPasswordPage() {
             <p>Choose a secure password to finish account setup.</p>
           </div>
           <form onSubmit={submit} className="admin-login-form">
-            {[
-              [password, setPassword, "New password"],
-              [confirm, setConfirm, "Confirm password"],
-            ].map(([value, setValue, label]) => (
-              <label className="admin-login-field" key={label as string}>
-                <span>{label as string}</span>
-                <div className="admin-login-input">
-                  <Lock size={19} />
-                  <input
-                    type="password"
-                    minLength={8}
-                    required
-                    autoComplete="new-password"
-                    value={value as string}
-                    onChange={(e) =>
-                      (setValue as (v: string) => void)(e.target.value)
-                    }
-                  />
-                </div>
-              </label>
-            ))}
+            <PasswordField
+              label="New password"
+              value={password}
+              minLength={NEW_PASSWORD_MIN_LENGTH}
+              autoComplete="new-password"
+              describedBy="set-password-hint"
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <p className="auth-password-hint" id="set-password-hint">
+              {NEW_PASSWORD_HINT}
+            </p>
+            <PasswordField
+              label="Confirm password"
+              value={confirm}
+              minLength={NEW_PASSWORD_MIN_LENGTH}
+              autoComplete="new-password"
+              describedBy="set-password-hint"
+              onChange={(event) => setConfirm(event.target.value)}
+            />
             <button className="admin-login-submit" disabled={busy}>
               {busy ? "Saving…" : "Save password"}
             </button>

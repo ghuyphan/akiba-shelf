@@ -4,52 +4,108 @@ import { getShopMemberships } from "../lib/api";
 import type { ShopMembership } from "../types/catalog";
 
 const STORAGE_KEY = "akiba-active-shop";
+const ACCESS_ERROR_MESSAGE =
+  "We could not verify your account access. Check your connection and try again.";
 export type AdminSessionState =
   | { status: "checking" }
   | { status: "unauthenticated" }
   | { status: "unauthorized"; userId: string; email?: string }
-  | { status: "authorized"; access: ShopMembership; memberships: ShopMembership[]; userId: string; email?: string }
-  | { status: "inactive"; memberships: ShopMembership[]; userId: string; email?: string }
+  | {
+      status: "authorized";
+      access: ShopMembership;
+      memberships: ShopMembership[];
+      userId: string;
+      email?: string;
+    }
+  | {
+      status: "inactive";
+      memberships: ShopMembership[];
+      userId: string;
+      email?: string;
+    }
   | { status: "error"; message: string };
 
 export function useAdminSession() {
-  const [state, setState] = useState<AdminSessionState>(isSupabaseConfigured ? { status: "checking" } : { status: "unauthenticated" });
+  const [state, setState] = useState<AdminSessionState>(
+    isSupabaseConfigured
+      ? { status: "checking" }
+      : { status: "unauthenticated" },
+  );
   const resolvedUserId = useRef<string | null>(null);
   const resolvingUserId = useRef<string | null>(null);
   const requestId = useRef(0);
 
   const resolve = useCallback(async (showChecking = true) => {
-    if (!supabase) { setState({ status: "unauthenticated" }); return; }
+    if (!supabase) {
+      setState({ status: "unauthenticated" });
+      return;
+    }
     const currentRequest = ++requestId.current;
     if (showChecking) setState({ status: "checking" });
     const { data, error } = await supabase.auth.getSession();
     if (currentRequest !== requestId.current) return;
-    if (error) { resolvingUserId.current = null; setState({ status: "error", message: error.message }); return; }
+    if (error) {
+      resolvingUserId.current = null;
+      setState({ status: "error", message: ACCESS_ERROR_MESSAGE });
+      return;
+    }
     const user = data.session?.user;
-    if (!user) { resolvedUserId.current = null; resolvingUserId.current = null; setState({ status: "unauthenticated" }); return; }
+    if (!user) {
+      resolvedUserId.current = null;
+      resolvingUserId.current = null;
+      setState({ status: "unauthenticated" });
+      return;
+    }
     resolvingUserId.current = user.id;
     try {
       const memberships = await getShopMemberships();
       if (currentRequest !== requestId.current) return;
       resolvedUserId.current = user.id;
       resolvingUserId.current = null;
-      if (!memberships.length) { setState({ status: "unauthorized", userId: user.id, email: user.email }); return; }
-      const activeMemberships = memberships.filter((item) => item.active && item.shop_active);
-      if (!activeMemberships.length) { setState({ status: "inactive", memberships, userId: user.id, email: user.email }); return; }
+      if (!memberships.length) {
+        setState({
+          status: "unauthorized",
+          userId: user.id,
+          email: user.email,
+        });
+        return;
+      }
+      const activeMemberships = memberships.filter(
+        (item) => item.active && item.shop_active,
+      );
+      if (!activeMemberships.length) {
+        setState({
+          status: "inactive",
+          memberships,
+          userId: user.id,
+          email: user.email,
+        });
+        return;
+      }
       const stored = localStorage.getItem(STORAGE_KEY);
-      const access = activeMemberships.find((item) => item.shop_id === stored) ?? activeMemberships[0];
+      const access =
+        activeMemberships.find((item) => item.shop_id === stored) ??
+        activeMemberships[0];
       localStorage.setItem(STORAGE_KEY, access.shop_id);
-      setState({ status: "authorized", access, memberships, userId: user.id, email: user.email });
-    } catch (caught) {
+      setState({
+        status: "authorized",
+        access,
+        memberships,
+        userId: user.id,
+        email: user.email,
+      });
+    } catch {
       resolvingUserId.current = null;
-      setState({ status: "error", message: caught instanceof Error ? caught.message : "Could not verify shop access." });
+      setState({ status: "error", message: ACCESS_ERROR_MESSAGE });
     }
   }, []);
 
   useEffect(() => {
     void resolve();
     if (!supabase) return;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "TOKEN_REFRESHED") return;
       if (event === "SIGNED_OUT") {
         requestId.current += 1;
@@ -59,9 +115,16 @@ export function useAdminSession() {
         return;
       }
       const nextUserId = session?.user.id ?? null;
-      if (!nextUserId || nextUserId === resolvedUserId.current || nextUserId === resolvingUserId.current) return;
+      if (
+        !nextUserId ||
+        nextUserId === resolvedUserId.current ||
+        nextUserId === resolvingUserId.current
+      )
+        return;
       // Leave an already-authorized workspace mounted while Supabase confirms the same session.
-      window.setTimeout(() => { void resolve(false); }, 0);
+      window.setTimeout(() => {
+        void resolve(false);
+      }, 0);
     });
     return () => subscription.unsubscribe();
   }, [resolve]);
@@ -69,7 +132,9 @@ export function useAdminSession() {
   const selectShop = useCallback((shopId: string) => {
     setState((current) => {
       if (current.status !== "authorized") return current;
-      const access = current.memberships.find((item) => item.shop_id === shopId);
+      const access = current.memberships.find(
+        (item) => item.shop_id === shopId,
+      );
       if (!access || !access.active || !access.shop_active) return current;
       localStorage.setItem(STORAGE_KEY, access.shop_id);
       return { ...current, access };

@@ -39,6 +39,16 @@ function renderSignupPage() {
   );
 }
 
+function renderForgotPage() {
+  return render(
+    <ToastProvider>
+      <MemoryRouter initialEntries={["/auth?mode=forgot"]}>
+        <AuthPage />
+      </MemoryRouter>
+    </ToastProvider>,
+  );
+}
+
 describe("AuthPage credential fields", () => {
   afterEach(cleanup);
 
@@ -82,7 +92,10 @@ describe("AuthPage credential fields", () => {
   it("keeps the email while clearing password state between auth modes", async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.type(screen.getByLabelText("Email address"), "artist@example.com");
+    await user.type(
+      screen.getByLabelText("Email address"),
+      "artist@example.com",
+    );
     await user.type(screen.getByLabelText("Password"), "password123");
 
     await user.click(screen.getByRole("button", { name: "Forgot password?" }));
@@ -98,25 +111,36 @@ describe("AuthPage credential fields", () => {
     const user = userEvent.setup();
     renderSignupPage();
 
-    await user.type(screen.getByLabelText("Email address"), "artist@example.com");
+    await user.type(
+      screen.getByLabelText("Email address"),
+      "artist@example.com",
+    );
     await user.type(screen.getByLabelText("Password"), "weakpassword");
     await user.type(screen.getByLabelText("Confirm password"), "weakpassword");
     await user.click(screen.getByRole("button", { name: "Create account" }));
 
     expect(auth.signUp).not.toHaveBeenCalled();
-    expect(await screen.findByText("Choose a stronger password")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Choose a stronger password"),
+    ).toBeInTheDocument();
 
     await user.clear(screen.getByLabelText("Password"));
     await user.clear(screen.getByLabelText("Confirm password"));
     await user.type(screen.getByLabelText("Password"), "StrongPassword1");
-    await user.type(screen.getByLabelText("Confirm password"), "StrongPassword2");
+    await user.type(
+      screen.getByLabelText("Confirm password"),
+      "StrongPassword2",
+    );
     await user.click(screen.getByRole("button", { name: "Create account" }));
 
     expect(auth.signUp).not.toHaveBeenCalled();
     expect(await screen.findByText("Check your password")).toBeInTheDocument();
 
     await user.clear(screen.getByLabelText("Confirm password"));
-    await user.type(screen.getByLabelText("Confirm password"), "StrongPassword1");
+    await user.type(
+      screen.getByLabelText("Confirm password"),
+      "StrongPassword1",
+    );
     await user.click(screen.getByRole("button", { name: "Create account" }));
 
     await waitFor(() =>
@@ -124,6 +148,36 @@ describe("AuthPage credential fields", () => {
         email: "artist@example.com",
         password: "StrongPassword1",
         options: { emailRedirectTo: expect.stringContaining("/auth/callback") },
+      }),
+    );
+    expect(await screen.findByText("Check your email")).toBeInTheDocument();
+    expect(screen.getByText(/artist@example.com/)).toBeInTheDocument();
+  });
+
+  it("shows a durable privacy-safe recovery confirmation and resend cooldown", async () => {
+    auth.resetPasswordForEmail.mockResolvedValue({ error: null });
+    const user = userEvent.setup();
+    renderForgotPage();
+
+    await user.type(
+      screen.getByLabelText("Email address"),
+      "artist@example.com",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Send recovery link" }),
+    );
+
+    expect(await screen.findByText("Check your email")).toBeInTheDocument();
+    expect(
+      screen.getByText(/If artist@example.com can be recovered/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Send again in 30s" }),
+    ).toBeDisabled();
+    expect(auth.resetPasswordForEmail).toHaveBeenCalledWith(
+      "artist@example.com",
+      expect.objectContaining({
+        redirectTo: expect.stringContaining("/auth/callback?next=set-password"),
       }),
     );
   });

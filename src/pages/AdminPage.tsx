@@ -126,12 +126,14 @@ export function AdminPage() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [workspaceLoadFailed, setWorkspaceLoadFailed] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
   const [viewTab, setViewTab] = useState<
     "orders" | "products" | "design" | "settings" | "team"
   >("orders");
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
+  const [signOutBusy, setSignOutBusy] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [booth, setBooth] = useState<BoothSettings>(() => {
@@ -192,6 +194,7 @@ export function AdminPage() {
     setSelectedProduct(undefined);
     setBooth(shopId ? getStoredBoothTheme(`id:${shopId}`) : defaultBooth);
     setPayment(defaultPayment);
+    setWorkspaceLoadFailed(false);
     setIsInitialLoading(true);
   }, [shopId]);
   async function reloadCatalogAdmin() {
@@ -280,8 +283,10 @@ export function AdminPage() {
             theme_background: summary.theme_background,
           });
         }
+        if (active) setWorkspaceLoadFailed(false);
       } catch (error) {
         if (!isSessionNoise(error)) {
+          if (active) setWorkspaceLoadFailed(true);
           toast.error("Could not load workspace data.", "Connection error");
         }
       } finally {
@@ -486,9 +491,16 @@ export function AdminPage() {
   }
 
   async function handleSignOut() {
-    await signOutAdmin();
-    setIsSignOutOpen(false);
-    await refreshAdminSession();
+    setSignOutBusy(true);
+    try {
+      await signOutAdmin();
+      setIsSignOutOpen(false);
+      await refreshAdminSession();
+    } catch {
+      toast.error("Check your connection and try again.", "Could not sign out");
+    } finally {
+      setSignOutBusy(false);
+    }
   }
 
   if (
@@ -668,6 +680,7 @@ export function AdminPage() {
             )}
             <button
               type="button"
+              disabled={signOutBusy}
               onClick={() => setIsSignOutOpen(true)}
               className="admin-header-button admin-signout-button"
               aria-label="Sign out"
@@ -753,158 +766,180 @@ export function AdminPage() {
             )}
           </div>
         </section>
-        {viewTab === "orders" && (
-          <OrderQueue
-            orders={orders}
-            filter={orderFilter}
-            counts={orderCounts}
-            page={orderPage}
-            pageSize={orderPageSize}
-            total={orderTotal}
-            loading={ordersLoading}
-            onFilterChange={(filter) => {
-              setOrderFilter(filter);
-              setOrderPage(1);
-            }}
-            onPageChange={setOrderPage}
-            onOrderUpdated={scheduleOrdersReload}
+        {workspaceLoadFailed ? (
+          <EmptyState
+            tone="error"
+            title="Workspace unavailable"
+            message="We could not load this shop's workspace. Check your connection and retry."
+            action={
+              <Button
+                onClick={() => {
+                  setWorkspaceLoadFailed(false);
+                  setIsInitialLoading(true);
+                }}
+              >
+                Retry loading
+              </Button>
+            }
           />
-        )}
-
-        {canManageCatalog && viewTab === "products" && (
+        ) : (
           <>
-            <div
-              className="category-row admin-mobile-tabs-row"
-              ref={mobileTabsRef}
-              style={{ marginBottom: "16px" }}
-            >
-              <button
-                type="button"
-                ref={registerMobileTab("list")}
-                className={`chip ${activeTab === "list" ? "chip-active" : ""}`}
-                onClick={() => setActiveTab("list")}
-              >
-                Products List ({products.length})
-              </button>
-              <button
-                type="button"
-                ref={registerMobileTab("form")}
-                className={`chip ${activeTab === "form" ? "chip-active" : ""}`}
-                onClick={() => setActiveTab("form")}
-              >
-                Edit Product
-              </button>
-            </div>
-            <div className="admin-grid">
-              <div
-                className={`admin-grid-col-list ${activeTab === "list" ? "show" : "hide"}`}
-              >
-                <ProductList
-                  products={products}
-                  selectedId={selectedProduct?.id}
-                  onSelect={(product) => {
-                    setSelectedProduct(product);
-                    setActiveTab("form");
+            {viewTab === "orders" && (
+              <OrderQueue
+                orders={orders}
+                filter={orderFilter}
+                counts={orderCounts}
+                page={orderPage}
+                pageSize={orderPageSize}
+                total={orderTotal}
+                loading={ordersLoading}
+                onFilterChange={(filter) => {
+                  setOrderFilter(filter);
+                  setOrderPage(1);
+                }}
+                onPageChange={setOrderPage}
+                onOrderUpdated={scheduleOrdersReload}
+              />
+            )}
+
+            {canManageCatalog && viewTab === "products" && (
+              <>
+                <div
+                  className="category-row admin-mobile-tabs-row"
+                  ref={mobileTabsRef}
+                  style={{ marginBottom: "16px" }}
+                >
+                  <button
+                    type="button"
+                    ref={registerMobileTab("list")}
+                    className={`chip ${activeTab === "list" ? "chip-active" : ""}`}
+                    onClick={() => setActiveTab("list")}
+                  >
+                    Products List ({products.length})
+                  </button>
+                  <button
+                    type="button"
+                    ref={registerMobileTab("form")}
+                    className={`chip ${activeTab === "form" ? "chip-active" : ""}`}
+                    onClick={() => setActiveTab("form")}
+                  >
+                    Edit Product
+                  </button>
+                </div>
+                <div className="admin-grid">
+                  <div
+                    className={`admin-grid-col-list ${activeTab === "list" ? "show" : "hide"}`}
+                  >
+                    <ProductList
+                      products={products}
+                      selectedId={selectedProduct?.id}
+                      onSelect={(product) => {
+                        setSelectedProduct(product);
+                        setActiveTab("form");
+                      }}
+                      onCreate={() => {
+                        setSelectedProduct(createBlankProduct(nextSort));
+                        setActiveTab("form");
+                      }}
+                      loading={catalogLoading}
+                    />
+                  </div>
+                  {selectedProduct ? (
+                    <div
+                      className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}
+                    >
+                      <ProductForm
+                        shopId={shopId}
+                        product={selectedProduct}
+                        onSave={handleSaveProduct}
+                        onDelete={handleDeleteProduct}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}
+                    >
+                      <EmptyState
+                        variant="compact"
+                        icon={<Package size={26} />}
+                        title="No product selected"
+                        message="Choose a product from the list to edit it, or start a fresh listing."
+                        action={
+                          <Button
+                            icon={<Package size={16} />}
+                            onClick={() => {
+                              setSelectedProduct(createBlankProduct(nextSort));
+                              setActiveTab("form");
+                            }}
+                          >
+                            Create product
+                          </Button>
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {canManageCatalog && viewTab === "design" && (
+              <StorefrontDesigner
+                shopId={shopId}
+                settings={booth}
+                products={products}
+                payment={payment}
+                onSave={(settings) =>
+                  runAdminAction(async () => {
+                    const saved = await saveBoothSettings(shopId, settings);
+                    setBooth(saved);
+                  }, "Storefront design published.")
+                }
+                onSavePayment={(settings) =>
+                  runAdminAction(async () => {
+                    const saved = await savePaymentSettings(shopId, settings);
+                    setPayment(saved);
+                  }, "Checkout settings saved.")
+                }
+              />
+            )}
+            {canManageCatalog && viewTab === "settings" && (
+              <section className="admin-mobile-settings-page">
+                <SettingsForm
+                  shopId={shopId}
+                  settings={booth}
+                  onSave={async (settings) => {
+                    const saved = await saveBoothSettings(shopId, settings);
+                    setBooth(saved);
+                    toast.success("Booth settings saved.");
                   }}
-                  onCreate={() => {
-                    setSelectedProduct(createBlankProduct(nextSort));
-                    setActiveTab("form");
-                  }}
-                  loading={catalogLoading}
                 />
-              </div>
-              {selectedProduct ? (
-                <div
-                  className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}
-                >
-                  <ProductForm
-                    shopId={shopId}
-                    product={selectedProduct}
-                    onSave={handleSaveProduct}
-                    onDelete={handleDeleteProduct}
-                  />
-                </div>
-              ) : (
-                <div
-                  className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}
-                >
-                  <EmptyState
-                    variant="compact"
-                    icon={<Package size={26} />}
-                    title="No product selected"
-                    message="Choose a product from the list to edit it, or start a fresh listing."
-                    action={
-                      <Button
-                        icon={<Package size={16} />}
-                        onClick={() => {
-                          setSelectedProduct(createBlankProduct(nextSort));
-                          setActiveTab("form");
-                        }}
-                      >
-                        Create product
-                      </Button>
-                    }
-                  />
-                </div>
+                <QrManager
+                  shopId={shopId}
+                  settings={payment}
+                  onSave={async (settings) => {
+                    const saved = await savePaymentSettings(shopId, settings);
+                    setPayment(saved);
+                    toast.success("Checkout settings saved.");
+                  }}
+                />
+              </section>
+            )}
+            {isAuthed &&
+              adminSession.access.role === "owner" &&
+              viewTab === "team" && (
+                <section className="admin-team-page">
+                  <StaffManager shopId={shopId} />
+                </section>
               )}
-            </div>
           </>
         )}
-
-        {canManageCatalog && viewTab === "design" && (
-          <StorefrontDesigner
-            shopId={shopId}
-            settings={booth}
-            products={products}
-            payment={payment}
-            onSave={(settings) =>
-              runAdminAction(async () => {
-                const saved = await saveBoothSettings(shopId, settings);
-                setBooth(saved);
-              }, "Storefront design published.")
-            }
-            onSavePayment={(settings) =>
-              runAdminAction(async () => {
-                const saved = await savePaymentSettings(shopId, settings);
-                setPayment(saved);
-              }, "Checkout settings saved.")
-            }
-          />
-        )}
-        {canManageCatalog && viewTab === "settings" && (
-          <section className="admin-mobile-settings-page">
-            <SettingsForm
-              shopId={shopId}
-              settings={booth}
-              onSave={async (settings) => {
-                const saved = await saveBoothSettings(shopId, settings);
-                setBooth(saved);
-                toast.success("Booth settings saved.");
-              }}
-            />
-            <QrManager
-              shopId={shopId}
-              settings={payment}
-              onSave={async (settings) => {
-                const saved = await savePaymentSettings(shopId, settings);
-                setPayment(saved);
-                toast.success("Checkout settings saved.");
-              }}
-            />
-          </section>
-        )}
-        {isAuthed &&
-          adminSession.access.role === "owner" &&
-          viewTab === "team" && (
-            <section className="admin-team-page">
-              <StaffManager shopId={shopId} />
-            </section>
-          )}
       </div>
       <Modal
         title="Sign out of admin?"
         isOpen={isSignOutOpen}
-        onClose={() => setIsSignOutOpen(false)}
+        onClose={() => {
+          if (!signOutBusy) setIsSignOutOpen(false);
+        }}
         className="signout-modal"
       >
         <div className="signout-confirmation">
@@ -919,10 +954,20 @@ export function AdminPage() {
             </p>
           </div>
           <div className="signout-confirmation-actions">
-            <Button variant="secondary" onClick={() => setIsSignOutOpen(false)}>
+            <Button
+              variant="secondary"
+              disabled={signOutBusy}
+              onClick={() => setIsSignOutOpen(false)}
+            >
               Stay signed in
             </Button>
-            <Button onClick={() => void handleSignOut()}>Sign out</Button>
+            <Button
+              loading={signOutBusy}
+              loadingText="Signing out…"
+              onClick={() => void handleSignOut()}
+            >
+              Sign out
+            </Button>
           </div>
         </div>
       </Modal>
