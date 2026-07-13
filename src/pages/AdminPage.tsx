@@ -532,7 +532,7 @@ export function AdminPage() {
             <Link
               to="/dashboard"
               aria-label="Go to dashboard"
-              className="admin-header-icon-button"
+              className="admin-header-icon-button admin-dashboard-button"
             >
               <LayoutDashboard size={19} />
             </Link>
@@ -570,16 +570,6 @@ export function AdminPage() {
                 <LayoutTemplate size={15} /> Storefront
               </button>
             )}
-            {isAuthed && adminSession.access.role === "owner" && (
-              <button
-                type="button"
-                ref={registerDesktopTab("team")}
-                className={`admin-nav-tab ${viewTab === "team" ? "active" : ""}`}
-                onClick={() => setViewTab("team")}
-              >
-                <Users size={15} /> Team
-              </button>
-            )}
             <button
               type="button"
               ref={registerDesktopTab("orders")}
@@ -601,6 +591,16 @@ export function AdminPage() {
               >
                 <Package size={15} />
                 <span>Products ({products.length})</span>
+              </button>
+            )}
+            {isAuthed && adminSession.access.role === "owner" && (
+              <button
+                type="button"
+                ref={registerDesktopTab("team")}
+                className={`admin-nav-tab ${viewTab === "team" ? "active" : ""}`}
+                onClick={() => setViewTab("team")}
+              >
+                <Users size={15} /> Team
               </button>
             )}
             {canManageCatalog && (

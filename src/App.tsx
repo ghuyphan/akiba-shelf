@@ -77,6 +77,7 @@ function RouteLoading() {
         title="Checking your access"
         message="Loading your workspace…"
         icon={<ShieldCheck size={28} />}
+        showProgress={false}
       />
     );
   }

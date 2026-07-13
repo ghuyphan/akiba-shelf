@@ -689,6 +689,7 @@
   .admin-header-button span {
     display: none;
   }
+  .admin-dashboard-button { display: none; }
   .admin-header-button {
     width: 40px;
     height: 40px;
