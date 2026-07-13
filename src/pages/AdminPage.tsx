@@ -162,6 +162,7 @@ export function AdminPage() {
     useTabIndicator<string, HTMLDivElement>(viewTab, [
       isAuthed,
       canManageCatalog,
+      isInitialLoading,
       products.length,
       orderCounts.pending,
     ]);

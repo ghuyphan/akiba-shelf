@@ -42,11 +42,13 @@ test("highlights the default Orders navigation tab", async ({ page }) => {
   await expect(ordersTab).toHaveClass(/active/);
   await expect
     .poll(() =>
-      page.locator(".admin-nav-tabs").evaluate((element) =>
-        Number.parseFloat(
-          getComputedStyle(element).getPropertyValue("--active-width"),
+      page
+        .locator(".admin-nav-tabs")
+        .evaluate((element) =>
+          Number.parseFloat(
+            getComputedStyle(element).getPropertyValue("--active-width"),
+          ),
         ),
-      ),
     )
     .toBeGreaterThan(0);
 });
