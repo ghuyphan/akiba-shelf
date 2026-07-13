@@ -1,9 +1,10 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Lock, Mail, ShoppingBag, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { Alert } from "../ui/Alert";
+import { useToast } from "../ui/ToastProvider";
 
 import type { BoothSettings } from "../../types/catalog";
 import { getThemeStyle } from "../../lib/theme";
@@ -19,6 +20,8 @@ export function LoginPanel({ onLogin, booth }: LoginPanelProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { busy, error, run, setError } = useAsyncAction();
+  const toast = useToast();
+  useEffect(() => { if (error) { toast.error(error, "Sign in failed"); setError(""); } }, [error, setError, toast]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -89,11 +92,6 @@ export function LoginPanel({ onLogin, booth }: LoginPanelProps) {
             </div>
           </label>
 
-          {error && (
-            <Alert variant="error" title="Sign in failed" onClose={() => setError("")}>
-              {error}
-            </Alert>
-          )}
           {!isSupabaseConfigured && (
             <Alert variant="error" title="Supabase is not configured">
               Add the Supabase URL and public key before signing in.

@@ -31,7 +31,7 @@ import type { BoothSettings, PaymentSettings, Product, StorefrontSection } from 
 import { getThemeStyle } from "../../lib/theme";
 import { CatalogLocaleProvider } from "../../lib/catalogI18n";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
-import { Alert } from "../ui/Alert";
+import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
 import { Field, SelectInput, TextArea, TextInput } from "../ui/Field";
 import { CatalogHeader } from "../catalog/CatalogHeader";
@@ -101,6 +101,8 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   const [previewSort, setPreviewSort] = useState("recommended");
   const [previewView, setPreviewView] = useState<"grid" | "list">("grid");
   const { busy, error, run, setError } = useAsyncAction();
+  const toast = useToast();
+  useEffect(() => { if (error) { toast.error(error, "Could not publish"); setError(""); } }, [error, setError, toast]);
   const order = normalizedOrder(draft.layout_order);
 
   useEffect(() => { draftRef.current = settings; paymentDraftRef.current = payment; setDraft(settings); setPaymentDraft(payment); setHistory([]); setFuture([]); setError(""); }, [settings, payment, setError]);
@@ -518,7 +520,6 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
             <Button icon={<Save size={15} />} loading={busy} loadingText="Publishing…" disabled={!hasChanges || busy} onClick={() => void save()}>Publish</Button>
           </div>
         </div>
-        {error && <div className="builder-toolbar-error"><Alert variant="error" title="Could not publish" onClose={() => setError("")}>{error}</Alert></div>}
         <div
           ref={previewStageRef}
           className={`designer-preview-stage device-${device}`}

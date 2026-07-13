@@ -5,7 +5,7 @@ import { useAdminSession } from "../hooks/useAdminSession";
 import { createShop, signInAdmin } from "../lib/api";
 import { useAsyncAction } from "../hooks/useAsyncAction";
 import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
-import { Alert } from "../components/ui/Alert";
+import { useToast } from "../components/ui/ToastProvider";
 import { Field, TextInput } from "../components/ui/Field";
 import { getErrorMessage } from "../lib/errors";
 import "../styles/admin.css";
@@ -13,12 +13,12 @@ import "../styles/admin.css";
 export function NewShopPage() {
   const { state: adminSession, refresh: refreshAdminSession } = useAdminSession();
   const navigate = useNavigate();
-  const { busy, error, run, setError } = useAsyncAction();
+  const { busy, run, setError } = useAsyncAction();
+  const toast = useToast();
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [isSlugEditedManually, setIsSlugEditedManually] = useState(false);
-  const [localValidationError, setLocalValidationError] = useState("");
 
   const hasShops = adminSession.status === "authorized" && adminSession.memberships.length > 0;
 
@@ -49,21 +49,21 @@ export function NewShopPage() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setLocalValidationError("");
     setError("");
 
     const trimmedName = name.trim();
     const trimmedSlug = slug.trim();
 
     if (!trimmedName) {
-      setLocalValidationError("Shop name is required.");
+      toast.error("Shop name is required.", "Could not create shop");
       return;
     }
 
     const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
     if (trimmedSlug.length < 2 || trimmedSlug.length > 63 || !slugRegex.test(trimmedSlug)) {
-      setLocalValidationError(
+      toast.error(
         "Slug must be between 2 and 63 characters, contain only lowercase letters, numbers, and single dashes, and cannot start or end with a dash."
+        , "Could not create shop"
       );
       return;
     }
@@ -76,7 +76,8 @@ export function NewShopPage() {
       localStorage.setItem("akiba-active-shop", newShop.id);
       navigate("/admin");
     }).catch((caught) => {
-      setError(getErrorMessage(caught, "Could not create shop."));
+      toast.error(getErrorMessage(caught, "Could not create shop."), "Creation failed");
+      setError("");
     });
   }
 
@@ -150,17 +151,6 @@ export function NewShopPage() {
               </div>
             </Field>
 
-            {localValidationError && (
-              <Alert variant="error" title="Validation error" onClose={() => setLocalValidationError("")}>
-                {localValidationError}
-              </Alert>
-            )}
-
-            {error && (
-              <Alert variant="error" title="Creation failed" onClose={() => setError("")}>
-                {error}
-              </Alert>
-            )}
 
             <button
               type="submit"

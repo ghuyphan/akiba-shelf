@@ -3,7 +3,7 @@ import { Clock3, Edit3, Facebook, Instagram, Link2, MapPin, Store, Type, X } fro
 import { TiktokIcon } from "../ui/TiktokIcon";
 import type { BoothSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
-import { Alert } from "../ui/Alert";
+import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
 import { Field, TextInput } from "../ui/Field";
 import { AdminCard } from "./AdminCard";
@@ -15,6 +15,8 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
   const [draft, setDraft] = useState(settings);
   const [isEditing, setIsEditing] = useState(false);
   const { busy, error, run, setError } = useAsyncAction();
+  const toast = useToast();
+  useEffect(() => { if (error) { toast.error(error, "Could not save booth settings"); setError(""); } }, [error, setError, toast]);
   useEffect(() => { setDraft(settings); setIsEditing(false); setError(""); }, [settings, setError]);
   function resetDraft() { setDraft(settings); setIsEditing(false); setError(""); }
   async function handleSubmit(event: FormEvent) { event.preventDefault(); let saved = false; await run(async () => { await onSave(draft); saved = true; }).catch(() => undefined); if (saved) setIsEditing(false); }
@@ -41,7 +43,6 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
           <div className="admin-social-preview"><span>{draft.social_qr_logo_url ? <img src={draft.social_qr_logo_url} alt="Social QR logo" /> : <><Instagram size={18} /><Facebook size={18} /><TiktokIcon size={18} /></>}</span><div><strong>Shared QR logo</strong><small>Used in the center of every social QR code.</small></div>{isEditing && <ImageUpload shopId={shopId} bucket="payment-qr" label="Upload QR logo" onUploaded={(url, path) => setDraft({ ...draft, social_qr_logo_url: url, social_qr_logo_path: path })} />}</div>
         </section>
 
-        {error && <Alert variant="error" title="Could not save booth settings" onClose={() => setError("")}>{error}</Alert>}
         {isEditing && <div className="admin-sticky-actions"><Button type="submit" loading={busy} loadingText="Saving…">Save booth settings</Button><Button type="button" variant="secondary" icon={<X size={17} />} disabled={busy} onClick={resetDraft}>Cancel</Button></div>}
       </form>
     </AdminCard>

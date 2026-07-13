@@ -6,7 +6,7 @@ import { signInAdmin, signOutAdmin, updateShop } from "../lib/api";
 import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
 import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
-import { Alert } from "../components/ui/Alert";
+import { useToast } from "../components/ui/ToastProvider";
 import { Field, TextInput } from "../components/ui/Field";
 import { useAsyncAction } from "../hooks/useAsyncAction";
 import type { ShopMembership } from "../types/catalog";
@@ -16,12 +16,13 @@ export function DashboardPage() {
   const { state: adminSession, refresh: refreshAdminSession } = useAdminSession();
   const navigate = useNavigate();
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
+  const toast = useToast();
 
   // Edit shop states
   const [editingShop, setEditingShop] = useState<ShopMembership | null>(null);
   const [editName, setEditName] = useState("");
   const [editSlug, setEditSlug] = useState("");
-  const { busy: editBusy, error: editError, run: runEdit, setError: setEditError } = useAsyncAction();
+  const { busy: editBusy, run: runEdit, setError: setEditError } = useAsyncAction();
 
   useEffect(() => {
     if (adminSession.status === "unauthorized") {
@@ -60,15 +61,15 @@ export function DashboardPage() {
     const trimmedSlug = editSlug.toLowerCase().trim();
 
     if (!trimmedName) {
-      setEditError("Shop name is required.");
+      toast.error("Shop name is required.", "Could not save shop details");
       return;
     }
     if (trimmedSlug.length < 2 || trimmedSlug.length > 63) {
-      setEditError("Slug must be between 2 and 63 characters.");
+      toast.error("Slug must be between 2 and 63 characters.", "Could not save shop details");
       return;
     }
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(trimmedSlug)) {
-      setEditError("Slug must contain only lowercase alphanumeric characters and single dashes.");
+      toast.error("Slug must contain only lowercase alphanumeric characters and single dashes.", "Could not save shop details");
       return;
     }
 
@@ -79,9 +80,9 @@ export function DashboardPage() {
     }).catch((err) => {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("duplicate key") || msg.includes("shops_slug_key")) {
-        setEditError("This shop URL slug is already taken. Please try another one.");
+        toast.error("This shop URL slug is already taken. Please try another one.", "Could not save shop details");
       } else {
-        setEditError(msg);
+        toast.error(msg, "Could not save shop details");
       }
     });
 
@@ -295,13 +296,6 @@ export function DashboardPage() {
             </Field>
           </section>
 
-          {editError && (
-            <div style={{ marginTop: "12px" }}>
-              <Alert variant="error" title="Could not save shop details" onClose={() => setEditError("")}>
-                {editError}
-              </Alert>
-            </div>
-          )}
 
           <div className="admin-sticky-actions" style={{ position: "relative", marginTop: "24px", padding: 0 }}>
             <Button type="submit" loading={editBusy} loadingText="Saving…">

@@ -5,7 +5,7 @@ import { formatNumber, formatVnd, normalizeSlug } from "../../lib/format";
 import { LIMITED_STOCK_THRESHOLD, productBadges } from "../../lib/constants";
 import { validateProduct } from "../../lib/validation";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
-import { Alert } from "../ui/Alert";
+import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
 import { Field, SelectInput, TextArea, TextInput } from "../ui/Field";
 import { AdminCard } from "./AdminCard";
@@ -25,6 +25,8 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
   const { busy: isSaving, error: saveError, run: runSave, setError: setSaveError } = useAsyncAction();
   const { busy: isDeleting, error: deleteError, run: runDelete, setError: setDeleteError } = useAsyncAction();
   const busy = isSaving || isDeleting;
+  const toast = useToast();
+  useEffect(() => { const message = saveError || deleteError; if (message) { toast.error(message, "Could not update item"); setSaveError(""); setDeleteError(""); } }, [saveError, deleteError, setDeleteError, setSaveError, toast]);
   const isNewProduct = !product.name && !product.item_code;
   const hasLegacyBadge = Boolean(draft.badge) && !productBadges.includes(draft.badge ?? "");
   const images = draft.images.filter(Boolean);
@@ -113,7 +115,6 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
           {getFieldError("images") && <div className="field-error-msg admin-gallery-error">{getFieldError("images")}</div>}
         </section>
 
-        {(saveError || deleteError) && <Alert variant="error" title="Could not update item" onClose={() => { setSaveError(""); setDeleteError(""); }}>{saveError || deleteError}</Alert>}
         {isEditing && <div className="admin-sticky-actions"><Button type="submit" loading={isSaving} loadingText="Saving…" disabled={busy}>{isNewProduct ? "Create product" : "Save changes"}</Button><Button type="button" variant="secondary" icon={isNewProduct ? <RotateCcw size={17} /> : <X size={17} />} disabled={busy} onClick={resetDraft}>{isNewProduct ? "Clear" : "Cancel"}</Button></div>}
       </form>
     </AdminCard>

@@ -2,7 +2,7 @@ import { ImageUp, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { uploadImage, uploadProductImages } from "../../lib/api";
 import { compressImage, createProductImageVariants } from "../../lib/image";
-import { Alert } from "../ui/Alert";
+import { useToast } from "../ui/ToastProvider";
 
 type ImageUploadProps = {
   shopId: string;
@@ -14,12 +14,11 @@ type ImageUploadProps = {
 
 export function ImageUpload({ shopId, bucket, label, onUploaded, onProductUploaded }: ImageUploadProps) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const toast = useToast();
 
   async function handleChange(file?: File) {
     if (!file) return;
     setBusy(true);
-    setError("");
 
     try {
       if (bucket === "product-images" && onProductUploaded) {
@@ -32,7 +31,7 @@ export function ImageUpload({ shopId, bucket, label, onUploaded, onProductUpload
         onUploaded(uploaded.url, uploaded.path);
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not upload image.");
+      toast.error(caught instanceof Error ? caught.message : "Could not upload image.", "Upload failed");
     } finally {
       setBusy(false);
     }
@@ -40,11 +39,6 @@ export function ImageUpload({ shopId, bucket, label, onUploaded, onProductUpload
 
   return (
     <>
-      {error && (
-        <Alert variant="error" title="Upload failed" onClose={() => setError("")}>
-          {error}
-        </Alert>
-      )}
       <label className={`upload-button ${busy ? "upload-button-loading" : ""}`}>
         <input
           type="file"
