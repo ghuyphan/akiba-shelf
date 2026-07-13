@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(43);
+select plan(46);
 
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values
 ('10000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner@test.local','',now(),now(),now()),
@@ -94,6 +94,10 @@ select is_empty($$update public.payment_settings set bank_account_name='attack' 
 
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000002';
 select lives_ok($$update public.payment_settings set bank_account_name='Admin' where id='auth-a'$$,'admin edits own payment settings');
+select lives_ok($$update public.booth_settings set booth_name='Updated Shop A',logo_path='11000000-0000-4000-8000-000000000001/logo.webp',social_qr_logo_path='11000000-0000-4000-8000-000000000001/social.webp' where id='auth-a'$$,'admin edits booth settings with private storage paths');
+select lives_ok($$insert into public.products(id,shop_id,name,item_code,quantity_available,category,images,image_paths)
+values('auth-a-new','11000000-0000-4000-8000-000000000001','New A','AUTH-NEW',1,'Test',array['https://example.com/new.webp'],array['11000000-0000-4000-8000-000000000001/new.webp'])$$,'admin creates a product with private image paths');
+select lives_ok($$update public.products set name='Updated A',image_paths=array['11000000-0000-4000-8000-000000000001/updated.webp'] where id='auth-a-new'$$,'admin updates a product with private image paths');
 select is_empty($$update public.payment_settings set bank_account_name='attack' where id='auth-b' returning id$$,'admin cannot edit another shop');
 select is_empty($$select * from public.get_shop_members('11000000-0000-4000-8000-000000000001')$$,'admin cannot enumerate members');
 

@@ -317,9 +317,18 @@ export async function saveProduct(
   const previous = (await getAdminProducts(shopId)).find(
     (item) => item.id === product.id,
   );
-  const { data, error } = await client
-    .from("products")
-    .upsert({ ...product, shop_id: shopId })
+  const payload = { ...product, shop_id: shopId };
+  // Do not collapse these into an upsert. ON CONFLICT reads every proposed
+  // update column, while hardened grants intentionally deny browser SELECT
+  // access to private storage metadata such as image_paths.
+  const write = previous
+    ? client
+        .from("products")
+        .update(payload)
+        .eq("id", product.id)
+        .eq("shop_id", shopId)
+    : client.from("products").insert(payload);
+  const { data, error } = await write
     .select(PUBLIC_PRODUCT_COLUMNS)
     .single();
   if (error) throw error;
@@ -373,16 +382,24 @@ export async function saveBoothSettings(
   settings: BoothSettings,
 ) {
   const client = requireSupabase();
-  const { data: previousData } = await client
+  const { data: previousData, error: previousError } = await client
     .rpc("get_admin_booth_settings", { p_shop_id: shopId })
     .maybeSingle();
+  if (previousError) throw previousError;
   const previous = previousData as {
     logo_path?: string;
     social_qr_logo_path?: string;
   } | null;
-  const { data, error } = await client
-    .from("booth_settings")
-    .upsert({ id: settings.id ?? shopId, ...settings, shop_id: shopId })
+  const payload = { ...settings, id: settings.id ?? shopId, shop_id: shopId };
+  // Booth storage paths are private. An upsert would require SELECT access to
+  // every proposed update column, conflicting with the hardened column grants.
+  const write = previous
+    ? client
+        .from("booth_settings")
+        .update(payload)
+        .eq("shop_id", shopId)
+    : client.from("booth_settings").insert(payload);
+  const { data, error } = await write
     .select(PUBLIC_BOOTH_COLUMNS)
     .single();
   if (error) throw error;
@@ -410,10 +427,20 @@ export async function savePaymentSettings(
   settings: PaymentSettings,
 ) {
   const client = requireSupabase();
-
-  const { data, error } = await client
+  const { data: existing, error: existingError } = await client
     .from("payment_settings")
-    .upsert({ id: settings.id ?? shopId, ...settings, shop_id: shopId })
+    .select("id")
+    .eq("shop_id", shopId)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  const payload = { ...settings, id: settings.id ?? shopId, shop_id: shopId };
+  const write = existing
+    ? client
+        .from("payment_settings")
+        .update(payload)
+        .eq("shop_id", shopId)
+    : client.from("payment_settings").insert(payload);
+  const { data, error } = await write
     .select(ADMIN_PAYMENT_COLUMNS)
     .single();
   if (error) throw error;
