@@ -15,6 +15,7 @@ import type { BoothSettings, PaymentSettings, Product } from "../types/catalog";
 export function useCatalogData(
   shopId: string | undefined,
   onProductsLoaded: (products: Product[]) => void,
+  paymentEnabled = true,
 ) {
   const cached = useMemo(() => loadCatalogSnapshot(shopId), [shopId]);
   const [products, setProducts] = useState<Product[]>(
@@ -45,7 +46,7 @@ export function useCatalogData(
     setPayment(defaultPayment);
     setLoadError("");
     setIsLoading(true);
-  }, [shopId]);
+  }, [paymentEnabled, shopId]);
 
   const reportError = useCallback((error: unknown) => {
     if (!isSessionNoise(error))
@@ -90,6 +91,7 @@ export function useCatalogData(
   }, [shopId]);
 
   const loadPayment = useCallback(() => {
+    if (!paymentEnabled) return Promise.resolve(defaultPayment);
     if (paymentRequestRef.current) return paymentRequestRef.current;
     if (!shopId) return Promise.reject(new Error("Shop is not loaded."));
     const identity = requestIdentityRef.current;
@@ -104,13 +106,15 @@ export function useCatalogData(
       });
     paymentRequestRef.current = request;
     return request;
-  }, [shopId]);
+  }, [paymentEnabled, shopId]);
 
   const reloadAll = useCallback(async () => {
     if (!shopId) return;
     setIsLoading(true);
     const identity = requestIdentityRef.current;
-    const paymentRequest = loadPayment().catch(() => undefined);
+    const paymentRequest = paymentEnabled
+      ? loadPayment().catch(() => undefined)
+      : Promise.resolve(undefined);
     try {
       const data = await getCatalogCoreData(shopId);
       if (identity !== requestIdentityRef.current) return;
@@ -127,7 +131,7 @@ export function useCatalogData(
     } finally {
       if (identity === requestIdentityRef.current) setIsLoading(false);
     }
-  }, [loadPayment, onProductsLoaded, reportError, shopId]);
+  }, [loadPayment, onProductsLoaded, paymentEnabled, reportError, shopId]);
 
   useEffect(() => {
     void reloadAll();

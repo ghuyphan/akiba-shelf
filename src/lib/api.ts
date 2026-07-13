@@ -172,7 +172,7 @@ export async function getPublicShop(slug: string): Promise<Shop | null> {
   const client = requireSupabase();
   const { data, error } = await client
     .from("shops")
-    .select("id,name,slug,active")
+    .select("id,name,slug,active,accepting_orders,catalog_source_shop_id")
     .eq("slug", slug.toLowerCase())
     .eq("active", true)
     .maybeSingle();

@@ -3,7 +3,7 @@ import "../styles/catalog.css";
 import { applyPageTheme, getThemeStyle, resetPageTheme } from "../lib/theme";
 import { getShopBranding, useDocumentBranding } from "../lib/branding";
 import type { Order, Product, StorefrontSection } from "../types/catalog";
-import { CatalogLocaleProvider } from "../lib/catalogI18n";
+import { CatalogLocaleProvider, translations } from "../lib/catalogI18n";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
 import { CategoryFilters } from "../components/catalog/CategoryFilters";
@@ -51,15 +51,25 @@ export function CatalogPage() {
   const [shopLoadError, setShopLoadError] = useState("");
   const [lightweightMode] = useState(prefersLightweightCatalog);
   const { cart, setCart, reconcileCart } = usePersistentCart(shopSlug);
+  const catalogShopId = shop?.catalog_source_shop_id ?? shop?.id;
+  const orderingEnabled = shop?.accepting_orders !== false;
   const {
     products,
-    booth,
+    booth: catalogBooth,
     payment,
     loadError,
     isLoading,
     reloadAll: loadCatalog,
     ensurePayment,
-  } = useCatalogData(shop?.id, reconcileCart);
+  } = useCatalogData(catalogShopId, reconcileCart, orderingEnabled);
+  const booth = useMemo(
+    () =>
+      shop?.catalog_source_shop_id
+        ? { ...catalogBooth, booth_name: shop.name, booth_code: "DEMO" }
+        : catalogBooth,
+    [catalogBooth, shop?.catalog_source_shop_id, shop?.name],
+  );
+  const catalogCopy = translations[booth.catalog_locale ?? "en"];
   const { flyingItems, animateAdd } = useAddToCartFeedback(lightweightMode);
   const [online, setOnline] = useState(navigator.onLine);
   const [activeCategory, setActiveCategory] = useState("All");
@@ -80,7 +90,7 @@ export function CatalogPage() {
   const verifiedBranding =
     shop &&
     shop.slug === shopSlug &&
-    booth.shop_id === shop.id &&
+    catalogBooth.shop_id === catalogShopId &&
     !isLoading &&
     !loadError
       ? getShopBranding(
@@ -352,6 +362,13 @@ export function CatalogPage() {
         onQuantityChange={handleUpdateCartQuantity}
         onRemove={handleRemoveFromCart}
         onOpenPayment={() => {
+          if (!orderingEnabled) {
+            toast.info(
+              catalogCopy.demoCheckoutMessage,
+              catalogCopy.demoCheckoutTitle,
+            );
+            return;
+          }
           if (!online) {
             toast.info(
               "Your cart is saved locally, but stock must be verified online before payment.",
@@ -377,6 +394,7 @@ export function CatalogPage() {
             );
         }}
         onClearCart={handleClearCart}
+        checkoutLabel={orderingEnabled ? undefined : catalogCopy.demoCheckout}
         isExpanded={isCartExpanded}
         onToggleExpand={() => setIsCartExpanded(!isCartExpanded)}
       />
@@ -480,8 +498,8 @@ export function CatalogPage() {
               <RotateCw size={17} />
               <span>Try again</span>
             </button>
-            {shopSlug !== "arigatosan" && (
-              <Link className="button button-secondary" to="/s/arigatosan">
+            {shopSlug !== "demo-booth" && (
+              <Link className="button button-secondary" to="/s/demo-booth">
                 <Store size={17} />
                 <span>Visit demo shop</span>
               </Link>
@@ -520,6 +538,11 @@ export function CatalogPage() {
         onClick={() => setSelectedProductId(null)}
       >
         <CatalogHeader booth={booth} onOpenInfo={() => setIsInfoOpen(true)} />
+        {!orderingEnabled && (
+          <Alert variant="info" title={catalogCopy.demoStorefrontTitle}>
+            {catalogCopy.demoStorefrontHint}
+          </Alert>
+        )}
         {!online && (
           <Alert variant="info" title="You are offline.">
             Your cart is saved on this device. Reconnect to verify stock and
@@ -546,21 +569,23 @@ export function CatalogPage() {
             {contentStorefrontColumns.map((column) => column.node)}
           </div>
         </div>
-        {activeOrder?.status === "pending" && (
+        {orderingEnabled && activeOrder?.status === "pending" && (
           <PendingOrderBar
             order={activeOrder}
             onOpen={() => setIsQrOpen(true)}
           />
         )}
-        <PaymentQrModal
-          shopSlug={shop.slug}
-          isOpen={isQrOpen}
-          payment={payment}
-          cart={cart}
-          onClose={() => setIsQrOpen(false)}
-          onSuccess={() => void loadCatalog()}
-          onOrderChange={handleOrderChange}
-        />
+        {orderingEnabled && (
+          <PaymentQrModal
+            shopSlug={shop.slug}
+            isOpen={isQrOpen}
+            payment={payment}
+            cart={cart}
+            onClose={() => setIsQrOpen(false)}
+            onSuccess={() => void loadCatalog()}
+            onOrderChange={handleOrderChange}
+          />
+        )}
         <ProductDetailModal
           product={detailProduct}
           onClose={() => {

@@ -13,6 +13,7 @@ type SelectedItemPanelProps = {
   onRemove: (productId: string) => void;
   onOpenPayment: () => void;
   onClearCart: () => void;
+  checkoutLabel?: string;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
 };
@@ -23,6 +24,7 @@ export function SelectedItemPanel({
   onRemove,
   onOpenPayment,
   onClearCart,
+  checkoutLabel,
   isExpanded = false,
   onToggleExpand,
 }: SelectedItemPanelProps) {
@@ -143,7 +145,7 @@ export function SelectedItemPanel({
             <strong>{formatVnd(totalAmount)}</strong>
           </div>
           <Button variant="primary" className="button-checkout" icon={<Banknote size={18} />} onClick={onOpenPayment}>
-            <span className="checkout-btn-label">{copy.payNow}</span>
+            <span className="checkout-btn-label">{checkoutLabel ?? copy.payNow}</span>
             <span className="checkout-btn-price">{formatVnd(totalAmount)}</span>
           </Button>
         </div>
