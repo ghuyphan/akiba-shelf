@@ -56,6 +56,8 @@
 .builder-toggle input { width: 19px; height: 19px; flex: 0 0 auto; accent-color: var(--coral); }
 .admin-nav-mobile-settings,.admin-mobile-settings-page { display: none; }
 .admin-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.admin-header-inline-secondary { display: flex; align-items: center; gap: 6px; }
+.admin-overflow-menu { display: none; }
 
 .admin-header-button {
   display: inline-flex;
@@ -2413,4 +2415,75 @@
     white-space:nowrap;
   }
   .admin-header .admin-nav-tabs::after { content:""; flex:0 0 3px; }
+
+  /* Mobile overflow menu for secondary header actions */
+  .admin-header-inline-secondary { display: none; }
+  .admin-overflow-menu { display: block; position: relative; }
+  .admin-overflow-toggle {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+  .admin-overflow-popover {
+    position: absolute;
+    z-index: 120;
+    top: calc(100% + 7px);
+    right: 0;
+    width: 220px;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 20px 48px rgb(15 23 42 / 16%);
+    display: grid;
+    gap: 2px;
+  }
+  .admin-overflow-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 10px;
+    color: var(--ink);
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+  }
+  button.admin-overflow-item:hover { background: var(--surface-soft); }
+  .admin-overflow-item > svg { flex: 0 0 auto; color: var(--muted); }
+  .admin-overflow-item > span { flex: 1; min-width: 0; }
+  .admin-overflow-lang-pills {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+  }
+  .admin-overflow-lang-pills button {
+    min-width: 38px;
+    height: 30px;
+    border: 1px solid var(--soft-line);
+    border-radius: 8px;
+    color: var(--muted);
+    background: var(--surface-soft);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 900;
+    transition: all 160ms ease;
+  }
+  .admin-overflow-lang-pills button:hover {
+    border-color: var(--line);
+    background: #fff;
+  }
+  .admin-overflow-lang-pills button.active {
+    color: var(--coral);
+    border-color: color-mix(in srgb, var(--coral) 25%, var(--line));
+    background: color-mix(in srgb, var(--coral) 8%, #fff);
+  }
 }

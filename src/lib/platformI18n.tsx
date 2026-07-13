@@ -45,6 +45,7 @@ const vi: Record<string, string> = {
   "English": "Tiếng Anh",
   "Vietnamese": "Tiếng Việt",
   "Language": "Ngôn ngữ",
+  "More actions": "Thêm thao tác",
   "Made for artists, not spreadsheets": "Dành cho artist, không phải bảng tính",
   "Your art. Your booth.": "Tác phẩm của bạn. Gian hàng của bạn.",
   "Your little corner of the con.": "Góc nhỏ của bạn tại hội chợ.",

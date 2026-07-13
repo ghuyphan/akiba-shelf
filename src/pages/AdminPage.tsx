@@ -6,6 +6,8 @@ import {
   Bell,
   BellOff,
   ClipboardList,
+  EllipsisVertical,
+  Languages,
   LayoutTemplate,
   LogOut,
   Package,
@@ -76,7 +78,7 @@ import { useTabIndicator } from "../hooks/useTabIndicator";
 import { useAdminSession } from "../hooks/useAdminSession";
 import { SelectMenu } from "../components/ui/SelectMenu";
 import { StaffManager } from "../components/admin/StaffManager";
-import { usePlatformI18n } from "../lib/platformI18n";
+import { usePlatformI18n, type PlatformLocale } from "../lib/platformI18n";
 import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";
 
 function createBlankProduct(nextSort: number): Product {
@@ -139,6 +141,8 @@ export function AdminPage() {
   const [signOutBusy, setSignOutBusy] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const overflowRef = useRef<HTMLDivElement>(null);
   const [booth, setBooth] = useState<BoothSettings>(() => {
     const activeShopId = localStorage.getItem("akiba-active-shop")?.trim();
     return activeShopId
@@ -147,7 +151,7 @@ export function AdminPage() {
   });
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
   const toast = useToast();
-  const { t } = usePlatformI18n();
+  const { t, locale, setLocale } = usePlatformI18n();
   const verifiedBranding =
     isAuthed && booth.shop_id === shopId && !isInitialLoading && !catalogLoading
       ? getAdminBranding(
@@ -425,6 +429,16 @@ export function AdminPage() {
         .catch(() => setPushEnabled(false));
   }, [isAuthed, shopId]);
 
+  useEffect(() => {
+    if (!overflowOpen) return;
+    const close = (e: MouseEvent) => {
+      if (!overflowRef.current?.contains(e.target as Node))
+        setOverflowOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [overflowOpen]);
+
   async function togglePushNotifications() {
     setPushBusy(true);
     try {
@@ -670,24 +684,91 @@ export function AdminPage() {
                 }
               }}
             />
-            <PlatformLanguageToggle />
-            {canUsePush() && (
+            {/* Desktop inline: language + notification — hidden on mobile via CSS */}
+            <div className="admin-header-inline-secondary">
+              <PlatformLanguageToggle />
+              {canUsePush() && (
+                <button
+                  type="button"
+                  disabled={pushBusy}
+                  onClick={() => void togglePushNotifications()}
+                  className={`admin-header-button admin-notification-button ${pushEnabled ? "active" : ""}`}
+                  title={t(pushEnabled ? "Disable alerts" : "Enable alerts")}
+                  aria-label={
+                    pushEnabled
+                      ? t("Disable order notifications")
+                      : t("Enable order notifications")
+                  }
+                >
+                  {pushEnabled ? <Bell size={15} /> : <BellOff size={15} />}
+                  <span>{t(pushEnabled ? "Alerts on" : "Enable alerts")}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Mobile overflow menu — hidden on desktop via CSS */}
+            <div className="admin-overflow-menu" ref={overflowRef}>
               <button
                 type="button"
-                disabled={pushBusy}
-                onClick={() => void togglePushNotifications()}
-                className={`admin-header-button admin-notification-button ${pushEnabled ? "active" : ""}`}
-                title={t(pushEnabled ? "Disable alerts" : "Enable alerts")}
-                aria-label={
-                  pushEnabled
-                    ? t("Disable order notifications")
-                    : t("Enable order notifications")
-                }
+                className="admin-header-button admin-overflow-toggle"
+                onClick={() => setOverflowOpen((o) => !o)}
+                aria-label={t("More actions")}
+                title={t("More actions")}
               >
-                {pushEnabled ? <Bell size={15} /> : <BellOff size={15} />}
-                <span>{t(pushEnabled ? "Alerts on" : "Enable alerts")}</span>
+                <EllipsisVertical size={15} />
               </button>
-            )}
+              {overflowOpen && (
+                <div className="admin-overflow-popover">
+                  <div className="admin-overflow-item">
+                    <Languages size={15} />
+                    <span>{t("Language")}</span>
+                    <div className="admin-overflow-lang-pills">
+                      <button
+                        type="button"
+                        className={locale === "en" ? "active" : ""}
+                        onClick={() => {
+                          setLocale("en" as PlatformLocale);
+                          setOverflowOpen(false);
+                        }}
+                      >
+                        EN
+                      </button>
+                      <button
+                        type="button"
+                        className={locale === "vi" ? "active" : ""}
+                        onClick={() => {
+                          setLocale("vi" as PlatformLocale);
+                          setOverflowOpen(false);
+                        }}
+                      >
+                        VI
+                      </button>
+                    </div>
+                  </div>
+                  {canUsePush() && (
+                    <button
+                      type="button"
+                      className="admin-overflow-item"
+                      disabled={pushBusy}
+                      onClick={() => {
+                        void togglePushNotifications();
+                        setOverflowOpen(false);
+                      }}
+                    >
+                      {pushEnabled ? (
+                        <Bell size={15} />
+                      ) : (
+                        <BellOff size={15} />
+                      )}
+                      <span>
+                        {t(pushEnabled ? "Alerts on" : "Enable alerts")}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
             <button
               type="button"
               disabled={signOutBusy}
