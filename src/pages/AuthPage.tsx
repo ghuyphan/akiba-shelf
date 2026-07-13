@@ -22,6 +22,7 @@ export function AuthPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
@@ -92,6 +93,7 @@ export function AuthPage() {
         setPassword("");
         setConfirmPassword("");
         setShowPassword(false);
+        setShowConfirmPassword(false);
       }
       setBusy(false);
     }
@@ -100,6 +102,7 @@ export function AuthPage() {
     setPassword("");
     setConfirmPassword("");
     setShowPassword(false);
+    setShowConfirmPassword(false);
     setParams({ mode: next });
   };
   return (
@@ -190,7 +193,7 @@ export function AuthPage() {
                   <div className="admin-login-input">
                     <Lock size={19} />
                     <input
-                      type={showPassword ? "text" : "password"}
+                      type={showConfirmPassword ? "text" : "password"}
                       required
                       minLength={10}
                       autoComplete="new-password"
@@ -198,6 +201,24 @@ export function AuthPage() {
                       aria-describedby="signup-password-hint"
                       onChange={(e) => setConfirmPassword(e.target.value)}
                     />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() =>
+                        setShowConfirmPassword((visible) => !visible)
+                      }
+                      aria-label={
+                        showConfirmPassword
+                          ? "Hide confirm password"
+                          : "Show confirm password"
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </button>
                   </div>
                 </label>
               </>

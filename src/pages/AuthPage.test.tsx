@@ -127,4 +127,22 @@ describe("AuthPage credential fields", () => {
       }),
     );
   });
+
+  it("shows and hides the confirmation password independently", async () => {
+    const user = userEvent.setup();
+    renderSignupPage();
+    const password = screen.getByLabelText("Password");
+    const confirmation = screen.getByLabelText("Confirm password");
+
+    await user.click(
+      screen.getByRole("button", { name: "Show confirm password" }),
+    );
+    expect(confirmation).toHaveAttribute("type", "text");
+    expect(password).toHaveAttribute("type", "password");
+
+    await user.click(
+      screen.getByRole("button", { name: "Hide confirm password" }),
+    );
+    expect(confirmation).toHaveAttribute("type", "password");
+  });
 });
