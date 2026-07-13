@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Ban, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Inbox, LoaderCircle, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
 import type { Order } from "../../types/catalog";
 import type { OrderFilter, OrderStatusCounts } from "../../lib/api";
-import { formatVnd } from "../../lib/format";
+import { formatRelativeTime, formatVnd } from "../../lib/format";
 import { confirmOrderPayment, cancelOrder } from "../../lib/api";
 import { SwipeConfirmButton } from "../catalog/PaymentQrModal";
 import { useToast } from "../ui/ToastProvider";
@@ -102,7 +102,7 @@ type OrderCardProps = { order: Order; isConfirming: boolean; isCancelling: boole
 function OrderCard({ order, isConfirming, isCancelling, onConfirm, onCancel }: OrderCardProps) {
   const [elapsedTime, setElapsedTime] = useState("");
   useEffect(() => {
-    function updateTime() { const seconds = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 1000); const minutes = Math.floor(seconds / 60); setElapsedTime(seconds < 60 ? "Just now" : minutes < 60 ? `${minutes}m ago` : `${Math.floor(minutes / 60)}h ago`); }
+    function updateTime() { setElapsedTime(formatRelativeTime(order.created_at)); }
     updateTime(); const interval = window.setInterval(updateTime, 15000); return () => window.clearInterval(interval);
   }, [order.created_at]);
 
