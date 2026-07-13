@@ -428,6 +428,16 @@
   color: #fff;
   background: var(--coral);
 }
+.admin-login-logo .platform-mark,
+.admin-header-mark .platform-mark {
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, #b4232c 16%, var(--line));
+  border-radius: inherit;
+  background: var(--surface-soft);
+  object-fit: contain;
+}
 .admin-login-brand strong {
   color: var(--ink);
   font-size: 15px;

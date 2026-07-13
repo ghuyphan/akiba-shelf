@@ -19,6 +19,9 @@ describe("PageLoading", () => {
       "src",
       expect.stringContaining("brand/matsuri-mark.svg"),
     );
+    expect(loading.querySelector(".page-loading-brand img")).toHaveClass(
+      "platform-mark",
+    );
     expect(loading.querySelector(".page-loading-track i")).toBeInTheDocument();
     expect(screen.getByText("Opening the shop…")).toBeInTheDocument();
   });
