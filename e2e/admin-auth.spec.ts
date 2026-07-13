@@ -118,8 +118,8 @@ test("designer phone rules apply inside the preview iframe", async ({
   );
   await expect(preview.locator("body")).toHaveClass(/device-phone/);
   await expect(preview.locator(".designer-live-storefront")).toBeVisible();
-  await preview.getByRole("button", { name: "Drag Booth information" }).click();
-  await expect(page.locator(".builder-section-heading strong")).toHaveText(
-    "Booth information",
-  );
+  await expect(preview.locator(".storefront-module-booth")).toBeHidden();
+  await expect(
+    preview.getByRole("button", { name: /Booth info/ }),
+  ).toBeVisible();
 });

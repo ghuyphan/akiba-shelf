@@ -16,22 +16,46 @@ select throws_ok($$select * from public.create_order('orders-test',null,'[{"prod
 select throws_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-b","quantity":2}]',gen_random_uuid(),repeat('d',32))$$,'One or more items are sold out or no longer have enough stock','insufficient stock fails');
 select throws_ok($$select * from public.create_order('missing-shop',null,'[{"product_id":"order-a","quantity":1}]',gen_random_uuid(),repeat('e',32))$$,'Shop not found or inactive','unknown shop fails');
 select lives_ok($$select * from public.create_order('orders-test','Customer','[{"product_id":"order-a","quantity":1},{"product_id":"order-a","quantity":2}]','30000000-0000-4000-8000-000000000001',repeat('f',32))$$,'valid order succeeds');
+
+set local role postgres;
+create temporary table test_order_ids(label text primary key,id uuid not null);
+grant select on test_order_ids to anon,authenticated;
+insert into test_order_ids values('first',(select id from public.orders where client_request_id='30000000-0000-4000-8000-000000000001'));
 select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000001'),30000,'database prices determine total');
 select is((select quantity from public.order_items limit 1),3,'duplicate cart rows aggregate');
 select is((select quantity_available from public.products where id='order-a'),7,'creation reserves once');
+
+set local role anon;
 select lives_ok($$select * from public.create_order('orders-test','Customer','[{"product_id":"order-a","quantity":3}]','30000000-0000-4000-8000-000000000001',repeat('f',32))$$,'retry is idempotent');
+
+set local role postgres;
 select is((select count(*) from public.orders),1::bigint,'retry creates one order');
 
 set local role authenticated;set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000001';
-select is((public.confirm_order_payment((select id from public.orders limit 1))->>'outcome'),'confirmed','staff confirms own order');
+select is((public.confirm_order_payment((select id from test_order_ids where label='first'))->>'outcome'),'confirmed','staff confirms own order');
+
+set local role postgres;
 select is((select quantity_available from public.products where id='order-a'),7,'confirmation does not deduct twice');
-select is((public.cancel_order((select id from public.orders limit 1))->>'outcome'),'already_confirmed','confirmed order is terminal');
+
+set local role authenticated;set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000001';
+select is((public.cancel_order((select id from test_order_ids where label='first'))->>'outcome'),'already_confirmed','confirmed order is terminal');
 
 set local role anon;
 select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-a","quantity":2}]','30000000-0000-4000-8000-000000000002',repeat('h',32))$$,'second order succeeds');
-select is((public.cancel_customer_order((select id from public.orders where client_request_id='30000000-0000-4000-8000-000000000002'),repeat('x',32))->>'outcome'),'not_found','wrong token reveals nothing');
-select is((public.cancel_customer_order((select id from public.orders where client_request_id='30000000-0000-4000-8000-000000000002'),repeat('h',32))->>'outcome'),'cancelled','correct token cancels');
+
+set local role postgres;
+insert into test_order_ids values('second',(select id from public.orders where client_request_id='30000000-0000-4000-8000-000000000002'));
+
+set local role anon;
+select is((public.cancel_customer_order((select id from test_order_ids where label='second'),repeat('x',32))->>'outcome'),'not_found','wrong token reveals nothing');
+select is((public.cancel_customer_order((select id from test_order_ids where label='second'),repeat('h',32))->>'outcome'),'cancelled','correct token cancels');
+
+set local role postgres;
 select is((select quantity_available from public.products where id='order-a'),7,'cancellation restores once');
-select is((public.cancel_customer_order((select id from public.orders where client_request_id='30000000-0000-4000-8000-000000000002'),repeat('h',32))->>'outcome'),'already_cancelled','cancellation is idempotent');
+
+set local role anon;
+select is((public.cancel_customer_order((select id from test_order_ids where label='second'),repeat('h',32))->>'outcome'),'already_cancelled','cancellation is idempotent');
+
+set local role postgres;
 select is((select quantity_available from public.products where id='order-a'),7,'terminal retry does not restore twice');
 select * from finish();rollback;
