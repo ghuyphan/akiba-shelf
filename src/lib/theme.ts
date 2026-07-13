@@ -40,7 +40,7 @@ export function getStoredBoothTheme(scope?: string): BoothSettings {
 }
 
 export function getThemeStyle(booth: BoothSettings): ThemeStyle {
-  const primary = color(booth.theme_primary, defaultBooth.theme_primary ?? "#5c8657");
+  const primary = color(booth.theme_primary, defaultBooth.theme_primary ?? "#b4232c");
   const secondary = color(booth.theme_secondary, defaultBooth.theme_secondary ?? "#20304a");
   const accent = color(booth.theme_accent, defaultBooth.theme_accent ?? "#f6c85f");
   const background = color(booth.theme_background, defaultBooth.theme_background ?? "#f5f0e8");

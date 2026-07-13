@@ -6,7 +6,7 @@ afterEach(() => { cleanup(); resetDocumentBranding(); });
 
 describe("branding", () => {
   it("returns Matsuri platform defaults", () => {
-    expect(getPlatformBranding()).toEqual({ title: "Matsuri", faviconUrl: PLATFORM_FAVICON, themeColor: "#f5f0e8" });
+    expect(getPlatformBranding()).toEqual({ title: "Matsuri", faviconUrl: PLATFORM_FAVICON, themeColor: "#b4232c" });
   });
 
   it("accepts safe URLs and rejects unsafe values", () => {

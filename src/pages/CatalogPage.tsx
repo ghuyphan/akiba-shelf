@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/catalog.css";
-import { applyPageTheme, getStoredBoothTheme, getThemeStyle, resetPageTheme } from "../lib/theme";
-import {
-  getShopBranding,
-  safePublicUrl,
-  useDocumentBranding,
-} from "../lib/branding";
+import { applyPageTheme, getThemeStyle, resetPageTheme } from "../lib/theme";
+import { getShopBranding, useDocumentBranding } from "../lib/branding";
 import type { Order, Product, StorefrontSection } from "../types/catalog";
 import { CatalogLocaleProvider } from "../lib/catalogI18n";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
@@ -33,7 +29,7 @@ import { PageLoading } from "../components/ui/PageLoading";
 import { Link, useParams } from "react-router-dom";
 import { getPublicShop } from "../lib/api";
 import type { Shop } from "../types/catalog";
-import { LogIn, RotateCw, Store, StoreIcon } from "lucide-react";
+import { LogIn, RotateCw, Store } from "lucide-react";
 
 type NetworkConnection = { effectiveType?: string; saveData?: boolean };
 
@@ -82,7 +78,11 @@ export function CatalogPage() {
   const [activeOrder, setActiveOrder] = useState<Order | null>(initialOrder);
   const activeOrderRef = useRef<Order | null>(initialOrder);
   const verifiedBranding =
-    shop && shop.slug === shopSlug && booth.shop_id === shop.id && !isLoading && !loadError
+    shop &&
+    shop.slug === shopSlug &&
+    booth.shop_id === shop.id &&
+    !isLoading &&
+    !loadError
       ? getShopBranding(
           shop.name,
           booth.booth_name,
@@ -444,19 +444,14 @@ export function CatalogPage() {
     },
   ].sort((first, second) => first.position - second.position);
 
-  if (shop === undefined)
-    {
-      const cachedBooth = getStoredBoothTheme(`slug:${shopSlug}`);
-      const cachedLogo = safePublicUrl(cachedBooth.logo_url);
-      return (
+  if (shop === undefined) {
+    return (
       <PageLoading
         title="Opening the shop…"
         message="Getting the shelves ready for you."
-        icon={cachedLogo ? <img src={cachedLogo} alt="" /> : <StoreIcon size={28} />}
-        style={getThemeStyle(cachedBooth)}
       />
-      );
-    }
+    );
+  }
   if (shop === null)
     return (
       <main className="shop-state-shell">
@@ -509,14 +504,10 @@ export function CatalogPage() {
     );
 
   if (isLoading) {
-    const cachedBooth = getStoredBoothTheme(`slug:${shopSlug}`);
-    const cachedLogo = safePublicUrl(cachedBooth.logo_url);
     return (
       <PageLoading
         title="Opening the shop…"
         message="Getting the shelves ready for you."
-        icon={cachedLogo ? <img src={cachedLogo} alt="" /> : <StoreIcon size={28} />}
-        style={getThemeStyle(cachedBooth)}
       />
     );
   }

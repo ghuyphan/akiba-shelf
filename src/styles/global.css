@@ -12,8 +12,8 @@
   --surface: #ffffff;
   --surface-soft: #faf7f1;
   --surface-tint: #f1ece4;
-  --coral: #5c8657;
-  --coral-strong: #476b43;
+  --coral: #b4232c;
+  --coral-strong: #8f1821;
   --blue: #f6c85f;
   --navy: #20304a;
   --teal: #ef806d;
@@ -118,16 +118,14 @@ img {
   @keyframes empty-state-arrive { from { opacity: 0; transform: translateY(4px); } }
 }
 
-.page-loading { position: fixed; inset: 0; z-index: 9998; display: grid; place-items: center; align-content: center; gap: 16px; width: 100%; min-height: 100dvh; padding: 24px; color: var(--muted); background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--coral) 9%, transparent), transparent 34%), var(--page-bg); text-align: center; }
-.page-loading-brand { display: grid; place-items: center; width: 64px; height: 64px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--coral) 18%, var(--line)); border-radius: 22px; color: var(--coral); background: var(--surface); box-shadow: var(--soft-shadow); animation: loading-float 1.8s ease-in-out infinite; }
+.page-loading { --loading-accent: #b4232c; --loading-ink: #20304a; --loading-muted: #667080; --loading-line: #ded9cf; --loading-bg: #f5f0e8; position: fixed; inset: 0; z-index: 9998; display: grid; place-items: center; align-content: center; gap: 16px; width: 100%; min-height: 100dvh; padding: 24px; color: var(--loading-muted); background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--loading-accent) 9%, transparent), transparent 34%), var(--loading-bg); text-align: center; }
+.page-loading-brand { display: grid; place-items: center; width: 64px; height: 64px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--loading-accent) 18%, var(--loading-line)); border-radius: 22px; color: var(--loading-accent); background: #fff; box-shadow: var(--soft-shadow); animation: loading-float 1.8s ease-in-out infinite; }
 .page-loading-brand img { width: 100%; height: 100%; padding: 11px; object-fit: contain; }
 .page-loading-copy { display: grid; gap: 6px; }
-.page-loading-copy strong { color: var(--ink); font-size: 19px; }
+.page-loading-copy strong { color: var(--loading-ink); font-size: 19px; }
 .page-loading-copy span { font-size: 13px; }
-.page-loading-track { overflow: hidden; width: min(220px, 60vw); height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--coral) 12%, var(--line)); }
-.page-loading-track i { display: block; width: 42%; height: 100%; border-radius: inherit; background: var(--coral); animation: loading-track 1.25s ease-in-out infinite; }
-.page-loading-track-pending { visibility: hidden; }
-.page-loading-track-pending i { animation: none; }
+.page-loading-track { overflow: hidden; width: min(220px, 60vw); height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--loading-accent) 12%, var(--loading-line)); }
+.page-loading-track i { display: block; width: 42%; height: 100%; border-radius: inherit; background: var(--loading-accent); animation: loading-track 1.25s ease-in-out infinite; }
 @keyframes loading-float { 50% { transform: translateY(-4px); } }
 @keyframes loading-track { from { transform: translateX(-110%); } to { transform: translateX(350%); } }
 @media (prefers-reduced-motion: reduce) { .page-loading-brand, .page-loading-track i, .state-spinner { animation-duration: 2.4s; } }

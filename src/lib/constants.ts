@@ -11,7 +11,7 @@ export const defaultBooth: BoothSettings = {
   facebook_url: "",
   tiktok_url: "",
   social_qr_logo_url: "",
-  theme_primary: "#5c8657",
+  theme_primary: "#b4232c",
   theme_secondary: "#20304a",
   theme_accent: "#f6c85f",
   theme_background: "#f5f0e8",

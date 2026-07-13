@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { ArrowRight, Mail, LoaderCircle, ShieldCheck } from "lucide-react";
+import { ArrowRight, Mail, LoaderCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
@@ -113,7 +113,6 @@ export function AdminAccessCheck() {
     <PageLoading
       title="Checking your access"
       message="Loading your workspace…"
-      icon={<ShieldCheck size={28} />}
     />
   );
 }

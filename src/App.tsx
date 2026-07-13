@@ -12,7 +12,6 @@ import { ToastProvider } from "./components/ui/ToastProvider";
 import { PageLoading } from "./components/ui/PageLoading";
 import { PLATFORM_BRAND, resetDocumentBranding } from "./lib/branding";
 import { resetPageTheme } from "./lib/theme";
-import { ShieldCheck } from "lucide-react";
 
 const HomePage = lazy(() =>
   import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
@@ -76,17 +75,6 @@ function RouteAwareToastProvider({ children }: { children: ReactNode }) {
 }
 
 function RouteLoading() {
-  const { pathname } = useLocation();
-  if (pathname === "/admin") {
-    return (
-      <PageLoading
-        title="Checking your access"
-        message="Loading your workspace…"
-        icon={<ShieldCheck size={28} />}
-        showProgress={false}
-      />
-    );
-  }
   return <PageLoading />;
 }
 
