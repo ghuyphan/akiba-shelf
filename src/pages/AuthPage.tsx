@@ -9,6 +9,7 @@ import "../styles/admin.css";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { PlatformMark } from "../components/ui/PlatformMark";
 import { routeAfterAuthentication } from "../lib/authRouting";
+import { getAuthErrorNotice } from "../lib/authErrors";
 
 type Mode = "signin" | "signup" | "forgot";
 export function AuthPage() {
@@ -83,11 +84,11 @@ export function AuthPage() {
       }
       const memberships = await getShopMemberships();
       navigate(routeAfterAuthentication(memberships), { replace: true });
-    } catch {
-      toast.error(
-        "We could not complete that request. Check your details and try again.",
-        "Request failed",
-      );
+    } catch (error) {
+      const action =
+        mode === "forgot" ? "recovery" : mode === "signup" ? "signup" : "signin";
+      const notice = getAuthErrorNotice(error, action);
+      toast.error(notice.message, notice.title);
     } finally {
       if (mode !== "forgot") {
         setPassword("");

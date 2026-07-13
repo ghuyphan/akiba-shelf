@@ -8,6 +8,7 @@ import {
   storePasswordFlow,
   storePendingInvitation,
 } from "../lib/authRouting";
+import { getAuthErrorNotice } from "../lib/authErrors";
 
 export function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -66,12 +67,9 @@ export function AuthCallbackPage() {
       const memberships = await getShopMemberships();
       navigate(routeAfterAuthentication(memberships), { replace: true });
     })().catch((error) => {
+      const notice = getAuthErrorNotice(error, "callback");
       setFailed(true);
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "This secure link could not be completed.",
-      );
+      setMessage(notice.message);
     });
   }, [navigate, params]);
 

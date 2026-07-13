@@ -10,6 +10,7 @@ import type { BoothSettings } from "../../types/catalog";
 import { PageLoading } from "../ui/PageLoading";
 import { PlatformMark } from "../ui/PlatformMark";
 import { PLATFORM_BRAND } from "../../lib/branding";
+import { getAuthErrorNotice } from "../../lib/authErrors";
 
 type LoginPanelProps = {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -22,7 +23,12 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
   const [showPassword, setShowPassword] = useState(false);
   const { busy, error, run, setError } = useAsyncAction();
   const toast = useToast();
-  useEffect(() => { if (error) { toast.error(error, "Sign in failed"); setError(""); } }, [error, setError, toast]);
+  useEffect(() => {
+    if (!error) return;
+    const notice = getAuthErrorNotice(null, "signin");
+    toast.error(notice.message, notice.title);
+    setError("");
+  }, [error, setError, toast]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();

@@ -14,6 +14,7 @@ import {
   routeAfterAuthentication,
 } from "../lib/authRouting";
 import { getShopMemberships } from "../lib/api";
+import { getAuthErrorNotice } from "../lib/authErrors";
 
 type RouteState = "checking" | "ready" | "invalid";
 const uuidPattern =
@@ -99,10 +100,8 @@ export function SetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
       setBusy(false);
-      toast.error(
-        "This password link is invalid or expired. Request a new one.",
-        "Could not set password",
-      );
+      const notice = getAuthErrorNotice(error, "password");
+      toast.error(notice.message, notice.title);
       return;
     }
     setPasswordCompleted(true);
