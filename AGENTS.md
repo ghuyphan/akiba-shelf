@@ -11,6 +11,8 @@ There are two connected experiences:
 
 Supabase is the source of truth. Catalog and order screens subscribe to Realtime changes. Do not replace server-authoritative stock or price checks with client-only logic.
 
+Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dashboard`, and `/dashboard/shops/new`; storefront/admin remain `/s/:shopSlug` and `/admin`. Production requires SMTP/email confirmation, callback allow-list entries under the deployed base, and `PUBLIC_SITE_URL`. Preserve safe GitHub Pages deep-link restoration, deploy both Edge Functions explicitly, recommend CAPTCHA/Auth rate limits, and never direct end users to Supabase Dashboard.
+
 ## Non-negotiable database rules
 
 - Use migrations in `supabase/migrations`; never silently change the production schema only through dashboard clicks.

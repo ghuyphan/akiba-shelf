@@ -420,11 +420,8 @@ export async function cancelCustomerOrder(orderId: string, recoveryToken: string
   return orderMutationSchema.parse(data) as unknown as OrderMutationResult;
 }
 
-export async function updateShop(shopId: string, name: string, slug: string): Promise<void> {
+export async function updateShop(shopId: string, name: string): Promise<void> {
   const client = requireSupabase();
-  const { error } = await client
-    .from("shops")
-    .update({ name: name.trim(), slug: slug.toLowerCase().trim() })
-    .eq("id", shopId);
+  const { error } = await client.rpc("update_shop_details", { p_shop_id: shopId, p_name: name.trim() });
   if (error) throw error;
 }

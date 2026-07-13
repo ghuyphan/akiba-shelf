@@ -34,9 +34,10 @@ export function useAdminSession() {
       resolvedUserId.current = user.id;
       resolvingUserId.current = null;
       if (!memberships.length) { setState({ status: "unauthorized", userId: user.id, email: user.email }); return; }
+      const activeMemberships = memberships.filter((item) => item.active && item.shop_active);
+      if (!activeMemberships.length) { setState({ status: "inactive", userId: user.id, email: user.email }); return; }
       const stored = localStorage.getItem(STORAGE_KEY);
-      const access = memberships.find((item) => item.shop_id === stored) ?? memberships[0];
-      if (!access.active) { setState({ status: "inactive", userId: user.id, email: user.email }); return; }
+      const access = activeMemberships.find((item) => item.shop_id === stored) ?? activeMemberships[0];
       localStorage.setItem(STORAGE_KEY, access.shop_id);
       setState({ status: "authorized", access, memberships, userId: user.id, email: user.email });
     } catch (caught) {
@@ -69,7 +70,7 @@ export function useAdminSession() {
     setState((current) => {
       if (current.status !== "authorized") return current;
       const access = current.memberships.find((item) => item.shop_id === shopId);
-      if (!access) return current;
+      if (!access || !access.active || !access.shop_active) return current;
       localStorage.setItem(STORAGE_KEY, access.shop_id);
       return { ...current, access };
     });

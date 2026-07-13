@@ -74,7 +74,7 @@ export function DashboardPage() {
 
     let saved = false;
     await runEdit(async () => {
-      await updateShop(editingShop.shop_id, trimmedName, trimmedSlug);
+      await updateShop(editingShop.shop_id, trimmedName);
       saved = true;
     }).catch((err) => {
       const msg = err instanceof Error ? err.message : String(err);

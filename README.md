@@ -63,9 +63,13 @@ git diff --check
 
 ## Routes
 
-- `/` — compatibility redirect to `/s/akiba-shelf`
+- `/` — platform homepage
+- `/auth`, `/auth/callback`, `/auth/set-password` — account, confirmation, invitation, and recovery lifecycle
+- `/dashboard`, `/dashboard/shops/new` — shop selection and creation
 - `/s/:shopSlug` — shop-specific customer storefront
 - `/admin` — authenticated admin workspace
+
+Production Auth must use the deployed app URL as its Site URL and allow `<app-base>/auth/callback` and `<app-base>/auth/set-password`. GitHub Pages uses `/akiba-shelf/`; its 404 redirect preserves safe relative routes, queries, and Auth fragments. Configure SMTP and email confirmation, set `PUBLIC_SITE_URL` to the exact public app base, and deploy both `invite-shop-member` and `notify-new-order`. CAPTCHA and conservative Auth rate limits are recommended. End users never need Supabase Dashboard access.
 
 ## Project structure
 

@@ -5,7 +5,9 @@ import "./styles/legacy.css";
 import { App } from "./App";
 import { applyStoredPageTheme } from "./lib/theme";
 import { registerPwa } from "./lib/pwa";
+import { restoreRedirect } from "./lib/authUrls";
 
+restoreRedirect();
 applyStoredPageTheme();
 registerPwa();
 

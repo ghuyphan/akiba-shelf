@@ -4,7 +4,7 @@ export type StorefrontSection = "featured" | "controls" | "products" | "booth" |
 export type ShopRole = "owner" | "admin" | "staff";
 
 export type Shop = { id: string; name: string; slug: string; active: boolean };
-export type ShopMembership = { shop_id: string; shop_name: string; shop_slug: string; role: ShopRole; active: boolean };
+export type ShopMembership = { shop_id: string; shop_name: string; shop_slug: string; role: ShopRole; active: boolean; shop_active: boolean };
 
 export type Product = {
   shop_id?: string;

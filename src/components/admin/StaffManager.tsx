@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ShieldCheck, Trash2, UserPlus, LoaderCircle, Users, RotateCw, Ban } from "lucide-react";
+import { ShieldCheck, Trash2, UserPlus, LoaderCircle, Users, Ban } from "lucide-react";
 import { deleteStaffMember, getShopInvitations, getStaffMembers, inviteShopMember, saveStaffMember, updateShopInvitation, type ShopInvitation, type StaffAccess, type StaffRole } from "../../lib/api";
 import { getErrorMessage } from "../../lib/errors";
 import { Alert } from "../ui/Alert";
@@ -39,7 +39,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
     if(!member.user_id||!window.confirm("Remove this shop membership?"))return;setBusy(true);setError("");
     try{await deleteStaffMember(shopId,member.user_id);await reload();}catch(caught){setError(getErrorMessage(caught));}finally{setBusy(false);}
   }
-  async function invitationAction(invitation: ShopInvitation, action:"resend"|"revoke") {
+  async function invitationAction(invitation: ShopInvitation, action:"revoke") {
     setBusy(true);setError("");try{await updateShopInvitation(shopId,invitation.id,action);await reload();}catch(caught){setError(getErrorMessage(caught));}finally{setBusy(false);}
   }
 
@@ -47,12 +47,12 @@ export function StaffManager({ shopId }: { shopId: string }) {
     {error&&<Alert variant="error" title="Could not update staff" onClose={()=>setError("")}>{error}</Alert>}
     <form onSubmit={submit}><section className="admin-form-section">
       <div className="admin-form-section-heading"><span><UserPlus size={15}/></span><div><h3>Invite a staff member</h3><p>Existing users join immediately; new users receive a secure sign-in invitation.</p></div></div>
-      <div className="form-grid"><Field label="Email"><TextInput type="email" value={email} placeholder="staff@example.com" onChange={(event)=>setEmail(event.target.value)}/></Field><Field label="Role"><SelectInput value={role} onChange={(event)=>setRole(event.target.value as StaffRole)}><option value="staff">Staff</option><option value="admin">Admin</option><option value="owner">Owner</option></SelectInput></Field></div>
+      <div className="form-grid"><Field label="Email"><TextInput type="email" value={email} placeholder="staff@example.com" onChange={(event)=>setEmail(event.target.value)}/></Field><Field label="Role"><SelectInput value={role} onChange={(event)=>setRole(event.target.value as StaffRole)}><option value="staff">Staff</option><option value="admin">Admin</option></SelectInput></Field></div>
       <Button type="submit" icon={<UserPlus size={16}/>} loading={busy}>Send invitation</Button>
     </section></form>
     <section className="admin-form-section" style={{marginTop:30}}><div className="admin-form-section-heading"><span><Users size={15}/></span><div><h3>Members</h3><p>Roles apply only to the active shop.</p></div></div>
       <div className="admin-staff-list">{!members.length?<EmptyState variant="compact" tone={loading?"loading":"neutral"} icon={loading?<LoaderCircle className="state-spinner" size={24}/>:<Users size={24}/>} title={loading?"Loading staff…":"No members yet"} message="Invite a staff member above."/>:members.map(member=><div key={member.user_id} className="admin-staff-row"><div className="admin-staff-identity"><strong>{member.email??"Shop member"}</strong><small>{member.role}</small></div><div className="admin-staff-controls"><SelectInput aria-label="Member role" value={member.role} disabled={busy} onChange={(event)=>void update(member,{role:event.target.value as StaffRole})}><option value="staff">Staff</option><option value="admin">Admin</option><option value="owner">Owner</option></SelectInput><label className="admin-toggle-label"><input type="checkbox" checked={member.active} disabled={busy} onChange={(event)=>void update(member,{active:event.target.checked})}/><span>Active</span></label><Button type="button" variant="danger" icon={<Trash2 size={15}/>} disabled={busy} onClick={()=>void remove(member)}>Remove</Button></div></div>)}</div>
     </section>
-    {invitations.length>0&&<section className="admin-form-section" style={{marginTop:30}}><div className="admin-form-section-heading"><span><UserPlus size={15}/></span><div><h3>Invitations</h3><p>Pending and recent email invitations.</p></div></div><div className="admin-staff-list">{invitations.map(invitation=><div key={invitation.id} className="admin-staff-row"><div className="admin-staff-identity"><strong>{invitation.email}</strong><small>{invitation.role} · {invitation.status} · expires {new Date(invitation.expires_at).toLocaleDateString()}</small></div>{invitation.status==="pending"&&<div className="admin-staff-controls"><Button type="button" variant="secondary" icon={<RotateCw size={15}/>} disabled={busy} onClick={()=>void invitationAction(invitation,"resend")}>Resend</Button><Button type="button" variant="danger" icon={<Ban size={15}/>} disabled={busy} onClick={()=>void invitationAction(invitation,"revoke")}>Revoke</Button></div>}</div>)}</div></section>}
+    {invitations.length>0&&<section className="admin-form-section" style={{marginTop:30}}><div className="admin-form-section-heading"><span><UserPlus size={15}/></span><div><h3>Invitations</h3><p>Pending and recent email invitations. Resend is unavailable; revoke and create a new invitation instead.</p></div></div><div className="admin-staff-list">{invitations.map(invitation=><div key={invitation.id} className="admin-staff-row"><div className="admin-staff-identity"><strong>{invitation.email}</strong><small>{invitation.role} · {invitation.status} · expires {new Date(invitation.expires_at).toLocaleDateString()}</small></div>{invitation.status==="pending"&&<div className="admin-staff-controls"><Button type="button" variant="danger" icon={<Ban size={15}/>} disabled={busy} onClick={()=>void invitationAction(invitation,"revoke")}>Revoke</Button></div>}</div>)}</div></section>}
   </AdminCard>;
 }

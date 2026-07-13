@@ -2018,3 +2018,4 @@
     display: none;
   }
 }
+.auth-mode-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.auth-mode-links button{min-height:44px;border:0;background:transparent;color:var(--coral);font:inherit;font-weight:700;cursor:pointer;padding:8px}.auth-mode-links button:focus-visible{outline:3px solid color-mix(in srgb,var(--coral) 35%,transparent);outline-offset:2px}

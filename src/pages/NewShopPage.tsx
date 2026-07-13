@@ -4,7 +4,7 @@ import { ArrowLeft, Plus, ShoppingBag } from "lucide-react";
 import { useAdminSession } from "../hooks/useAdminSession";
 import { createShop, signInAdmin } from "../lib/api";
 import { useAsyncAction } from "../hooks/useAsyncAction";
-import { AdminAccessCheck, LoginPanel } from "../components/admin/LoginPanel";
+import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
 import { Alert } from "../components/ui/Alert";
 import { Field, TextInput } from "../components/ui/Field";
 import { getErrorMessage } from "../lib/errors";
@@ -86,6 +86,9 @@ export function NewShopPage() {
 
   if (adminSession.status === "unauthenticated") {
     return <LoginPanel onLogin={handleLogin} />;
+  }
+  if (adminSession.status === "error" || adminSession.status === "inactive") {
+    return <AdminAccessDenied kind={adminSession.status} message={adminSession.status === "error" ? adminSession.message : undefined} onRetry={refreshAdminSession} onSignOut={async()=>{ await import("../lib/api").then(m=>m.signOutAdmin()); await refreshAdminSession(); }} />;
   }
 
   return (

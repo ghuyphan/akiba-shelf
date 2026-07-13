@@ -18,7 +18,7 @@ export function HomePage() {
           </div>
           <div />
           <div className="admin-header-actions">
-            <Link to="/dashboard" className="button button-ghost platform-home-signin-btn">
+            <Link to="/auth?mode=signin" className="button button-ghost platform-home-signin-btn">
               <LogIn size={16} />
               <span>Sign in</span>
             </Link>
@@ -39,7 +39,7 @@ export function HomePage() {
           </p>
 
           <div className="platform-home-actions">
-            <Link to="/dashboard" className="button button-primary platform-home-cta">
+            <Link to="/auth?mode=signup" className="button button-primary platform-home-cta">
               <span>Get started</span>
               <ArrowRight size={17} />
             </Link>
