@@ -1762,7 +1762,7 @@ a {
   position: fixed;
   top: max(14px, env(safe-area-inset-top));
   right: max(14px, env(safe-area-inset-right));
-  z-index: 1000;
+  z-index: 10000;
   display: grid;
   gap: 7px;
   width: min(350px, calc(100vw - 28px));

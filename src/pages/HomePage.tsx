@@ -44,7 +44,7 @@ export function HomePage() {
               <span>Get started</span>
               <ArrowRight size={17} />
             </Link>
-            <Link to="/s/akiba-shelf" className="button button-secondary platform-home-demo">
+            <Link to="/s/arigatosan" className="button button-secondary platform-home-demo">
               <Store size={17} />
               <span>View demo shop</span>
             </Link>

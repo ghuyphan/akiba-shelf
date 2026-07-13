@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -69,6 +69,11 @@ function KeyedCatalogPage() {
   return <CatalogPage key={shopSlug} />;
 }
 
+function RouteAwareToastProvider({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  return <ToastProvider enabled={pathname !== "/"}>{children}</ToastProvider>;
+}
+
 function RouteLoading() {
   const { pathname } = useLocation();
   if (pathname === "/admin") {
@@ -86,8 +91,8 @@ function RouteLoading() {
 
 export function App() {
   return (
-    <ToastProvider>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <RouteAwareToastProvider>
         <PlatformRouteBranding />
         <Suspense fallback={<RouteLoading />}>
           <Routes>
@@ -102,7 +107,7 @@ export function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
-      </BrowserRouter>
-    </ToastProvider>
+      </RouteAwareToastProvider>
+    </BrowserRouter>
   );
 }

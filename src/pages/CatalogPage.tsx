@@ -485,8 +485,8 @@ export function CatalogPage() {
               <RotateCw size={17} />
               <span>Try again</span>
             </button>
-            {shopSlug !== "akiba-shelf" && (
-              <Link className="button button-secondary" to="/s/akiba-shelf">
+            {shopSlug !== "arigatosan" && (
+              <Link className="button button-secondary" to="/s/arigatosan">
                 <Store size={17} />
                 <span>Visit demo shop</span>
               </Link>
