@@ -43,7 +43,6 @@ import { BoothInfoPanel } from "../catalog/BoothInfoPanel";
 import { SelectedItemPanel } from "../catalog/SelectedItemPanel";
 import { ImageUpload } from "./ImageUpload";
 import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../lib/banks";
-import { StaffManager } from "./StaffManager";
 
 type StorefrontDesignerProps = {
   shopId: string;
@@ -61,7 +60,7 @@ type PreviewZoom = "fit" | number;
 type DropEdge = "before" | "after";
 type DropTarget = { section: StorefrontSection; edge: DropEdge };
 type DesignerSnapshot = { booth: BoothSettings; payment: PaymentSettings };
-type SelectedSection = StorefrontSection | "staff";
+type SelectedSection = StorefrontSection;
 
 const allowedSections: StorefrontSection[] = ["featured", "booth", "controls", "products", "cart"];
 const sectionMeta: Record<StorefrontSection, { title: string; description: string; size: string }> = {
@@ -76,7 +75,7 @@ function normalizedOrder(order?: StorefrontSection[]) {
   return order?.length === allowedSections.length && allowedSections.every((item) => order.includes(item)) ? order : allowedSections;
 }
 
-export function StorefrontDesigner({ shopId, settings, products, payment, onSave, onSavePayment, isOwner = false }: StorefrontDesignerProps) {
+export function StorefrontDesigner({ shopId, settings, products, payment, onSave, onSavePayment }: StorefrontDesignerProps) {
   const [draft, setDraft] = useState(settings);
   const [paymentDraft, setPaymentDraft] = useState(payment);
   const draftRef = useRef(settings);
@@ -101,7 +100,6 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewSort, setPreviewSort] = useState("recommended");
   const [previewView, setPreviewView] = useState<"grid" | "list">("grid");
-  const [boothSubTab, setBoothSubTab] = useState<"info" | "staff">("info");
   const { busy, error, run, setError } = useAsyncAction();
   const order = normalizedOrder(draft.layout_order);
 
@@ -382,9 +380,9 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   function renderModule(section: StorefrontSection) {
     return <div
       key={section}
-      className={`storefront-module storefront-module-${section} designer-live-module ${section === "featured" || section === "booth" ? "drop-axis-horizontal" : "drop-axis-vertical"} ${selected === section && (section !== "booth" || boothSubTab === "info") ? "is-selected" : ""} ${dragged === section ? "is-dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `is-drag-over drop-${dropTarget.edge}` : ""}`}
+      className={`storefront-module storefront-module-${section} designer-live-module ${section === "featured" || section === "booth" ? "drop-axis-horizontal" : "drop-axis-vertical"} ${selected === section ? "is-selected" : ""} ${dragged === section ? "is-dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `is-drag-over drop-${dropTarget.edge}` : ""}`}
       style={{ viewTransitionName: `designer-${section}` } as React.CSSProperties}
-      onClick={(event) => { event.stopPropagation(); selectModule(section); if (section === "booth") { setBoothSubTab("info"); } }}
+      onClick={(event) => { event.stopPropagation(); selectModule(section); }}
       onDragOver={(event) => markDropTarget(event, section, section === "featured" || section === "booth" ? "horizontal" : "vertical")}
       onDrop={(event) => dropOn(event, section)}
     >
@@ -438,13 +436,13 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
             {tab === "layout" && <>
               <div className="builder-section-heading"><div><strong>Page sections</strong><small>Drag to reorder the public page.</small></div></div>
               <div className="designer-block-list">
-                {order.map((section, index) => <article key={section} data-designer-section={section} style={{ viewTransitionName: `designer-list-${section}` } as React.CSSProperties} onClick={() => { selectModule(section); if (section === "booth") { setBoothSubTab("info"); } }} onDragOver={(event) => markDropTarget(event, section, "vertical")} onDrop={(event) => dropOn(event, section)} className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""}`}><button type="button" className="designer-list-grip" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} onClick={(event) => event.stopPropagation()} aria-label={`Drag ${sectionMeta[section].title}`}><GripVertical size={17} /></button><span><strong>{index + 1}. {sectionMeta[section].title}</strong><small>{sectionMeta[section].description}</small></span><em>{sectionMeta[section].size}</em><div><button type="button" disabled={index === 0} onClick={(event) => { event.stopPropagation(); nudge(section, -1); }} aria-label={`Move ${sectionMeta[section].title} up`}><ArrowUp size={14} /></button><button type="button" disabled={index === order.length - 1} onClick={(event) => { event.stopPropagation(); nudge(section, 1); }} aria-label={`Move ${sectionMeta[section].title} down`}><ArrowDown size={14} /></button></div></article>)}
+                {order.map((section, index) => <article key={section} data-designer-section={section} style={{ viewTransitionName: `designer-list-${section}` } as React.CSSProperties} onClick={() => selectModule(section)} onDragOver={(event) => markDropTarget(event, section, "vertical")} onDrop={(event) => dropOn(event, section)} className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""}`}><button type="button" className="designer-list-grip" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} onClick={(event) => event.stopPropagation()} aria-label={`Drag ${sectionMeta[section].title}`}><GripVertical size={17} /></button><span><strong>{index + 1}. {sectionMeta[section].title}</strong><small>{sectionMeta[section].description}</small></span><em>{sectionMeta[section].size}</em><div><button type="button" disabled={index === 0} onClick={(event) => { event.stopPropagation(); nudge(section, -1); }} aria-label={`Move ${sectionMeta[section].title} up`}><ArrowUp size={14} /></button><button type="button" disabled={index === order.length - 1} onClick={(event) => { event.stopPropagation(); nudge(section, 1); }} aria-label={`Move ${sectionMeta[section].title} down`}><ArrowDown size={14} /></button></div></article>)}
               </div>
               <p className="builder-help">Wide and side modules keep safe column widths. Dragging changes their order within those responsive lanes.</p>
             </>}
 
             {tab === "content" && <div className="builder-fields">
-              <div className="builder-section-heading"><div><strong>{selected === "staff" ? "Staff access" : sectionMeta[selected].title}</strong><small>{selected === "staff" ? "Only owners grant user access." : "Only settings for the selected section are shown."}</small></div></div>
+              <div className="builder-section-heading"><div><strong>{sectionMeta[selected].title}</strong><small>Only settings for the selected section are shown.</small></div></div>
               {selected === "featured" && <div className="builder-fields">
                 <p className="builder-empty-inspector">The Featured banner displays details directly from active featured products. Mark products as Featured in the Products workspace.</p>
                 <label className="builder-toggle"><span><strong>Auto-rotate products</strong><small>Advance to the next featured item every 4.5 seconds. Pauses after customer interaction and respects reduced motion.</small></span><input type="checkbox" checked={draft.featured_autoplay ?? true} onChange={(event) => update("featured_autoplay", event.target.checked)} /></label>
@@ -470,7 +468,6 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
                   <Field label="Social QR center logo"><TextInput value={draft.social_qr_logo_url ?? ""} onChange={(event) => update("social_qr_logo_url", event.target.value)} /></Field>
                 </div>
               </>}
-              {selected === "staff" && isOwner && <StaffManager shopId={shopId} />}
               {selected === "cart" && <div className="builder-fields builder-payment-fields">
                 <div className="builder-field-group">
                   <h3><Building2 size={15} /> Payment account</h3>
@@ -509,7 +506,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
 
       <div className="builder-canvas admin-surface">
         <div className="builder-toolbar">
-          <div><strong>{selected === "staff" ? "Staff access" : sectionMeta[selected].title}</strong><small>{hasChanges ? "Unpublished changes" : "Published storefront"}</small></div>
+          <div><strong>{sectionMeta[selected].title}</strong><small>{hasChanges ? "Unpublished changes" : "Published storefront"}</small></div>
           <div className="builder-toolbar-controls">
             <div className="builder-device-switcher" aria-label="Preview size"><button type="button" className={device === "desktop" ? "active" : ""} onClick={() => changeDevice("desktop")}><Monitor size={16} />Desktop</button><button type="button" className={device === "phone" ? "active" : ""} onClick={() => changeDevice("phone")}><Smartphone size={16} />Phone</button></div>
             <div className="builder-zoom-controls" aria-label="Preview zoom"><button type="button" onClick={() => adjustZoom(-10)} disabled={displayedZoom <= 20} aria-label="Zoom out"><Minus size={14} /></button><button type="button" className={previewZoom === "fit" ? "active" : ""} onClick={fitPreview} aria-label="Fit preview"><Maximize2 size={13} /><span>{displayedZoom}%</span></button><button type="button" onClick={() => adjustZoom(10)} disabled={displayedZoom >= 150} aria-label="Zoom in"><Plus size={14} /></button></div>
@@ -539,11 +536,8 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
                 <div className="designer-live-storefront app-shell" style={{ ...getThemeStyle(draft), transform: "none" }}>
                   <CatalogHeader
                     booth={draft}
-                    onOpenInfo={() => { setSelected("booth"); setBoothSubTab("info"); setTab("content"); }}
-                    onOpenStaff={() => { setSelected("staff"); setTab("content"); }}
-                    showStaffAccess={isOwner}
+                    onOpenInfo={() => { setSelected("booth"); setTab("content"); }}
                     isDesigner={true}
-                    isSelected={selected === "staff"}
                   />
                   <div className="catalog-layout storefront-layout-grid">
                     <div className="storefront-hero-grid">{heroPreviewSections.map(renderModule)}</div>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin.css";
 import { Link, useNavigate, Navigate } from "react-router-dom";
-import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Store, ChevronDown, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, ClipboardList, LayoutTemplate, LogOut, Package, Settings2, ShoppingBag, Store, LayoutDashboard, Users } from "lucide-react";
 import {
   deleteProduct,
   getAdminCatalogData,
@@ -35,6 +35,7 @@ import { useToast } from "../components/ui/ToastProvider";
 import { canUsePush, disableOrderNotifications, enableOrderNotifications, getPushEnabled } from "../lib/pwa";
 import { useTabIndicator } from "../hooks/useTabIndicator";
 import { useAdminSession } from "../hooks/useAdminSession";
+import { SelectMenu } from "../components/ui/SelectMenu";
 import { StaffManager } from "../components/admin/StaffManager";
 
 
@@ -78,7 +79,7 @@ export function AdminPage() {
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
-  const [viewTab, setViewTab] = useState<"orders" | "products" | "design" | "settings">("orders");
+  const [viewTab, setViewTab] = useState<"orders" | "products" | "design" | "settings" | "team">("orders");
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -299,6 +300,9 @@ export function AdminPage() {
   useEffect(() => {
     if (isAuthed && !canManageCatalog && viewTab !== "orders") setViewTab("orders");
   }, [isAuthed, canManageCatalog, viewTab]);
+  useEffect(() => {
+    if (isAuthed && viewTab === "team" && adminSession.access.role !== "owner") setViewTab("orders");
+  }, [isAuthed, adminSession, viewTab]);
 
   useEffect(() => {
     const matchWorkspaceToScreen = () => {
@@ -384,6 +388,14 @@ export function AdminPage() {
           >
             <LayoutTemplate size={15} /> Storefront
           </button>}
+          {isAuthed && adminSession.access.role === "owner" && <button
+            type="button"
+            ref={registerDesktopTab("team")}
+            className={`admin-nav-tab ${viewTab === "team" ? "active" : ""}`}
+            onClick={() => setViewTab("team")}
+          >
+            <Users size={15} /> Team
+          </button>}
           <button
             type="button"
             ref={registerDesktopTab("orders")}
@@ -418,11 +430,11 @@ export function AdminPage() {
           </div>
 
           <div className="admin-header-actions">
-            <label className="admin-shop-switcher">
-              <span className="admin-shop-switcher-icon"><Store size={15} /></span>
-              <span className="admin-shop-switcher-copy"><small><i />Active shop</small>
-              <select aria-label="Active shop" value={shopId} onChange={(event) => {
-                const val = event.target.value;
+            <SelectMenu className="admin-shop-switcher-menu" label="Active shop" value={shopId} options={[
+              ...adminSession.memberships.map(membership=>({value:membership.shop_id,label:membership.shop_name,description:`${membership.active&&membership.shop_active?"Active":"Unavailable"} · ${membership.role}`,icon:<Store size={15}/>,disabled:!membership.active||!membership.shop_active})),
+              {value:"__dashboard",label:"All shops",description:"Open platform dashboard"},
+              {value:"__new",label:"Create another shop",description:"Set up a new storefront"}
+            ]} onChange={(val) => {
                 if (val === "__new") {
                   navigate("/dashboard/shops/new");
                 } else if (val === "__dashboard") {
@@ -430,17 +442,7 @@ export function AdminPage() {
                 } else {
                   selectShop(val);
                 }
-              }}>
-                <optgroup label="My Shops">
-                  {adminSession.memberships.map((membership) => <option key={membership.shop_id} value={membership.shop_id}>{membership.shop_name} · {membership.role}</option>)}
-                </optgroup>
-                <optgroup label="Actions">
-                  <option value="__dashboard">Go to Dashboard</option>
-                  <option value="__new">Create another shop</option>
-                </optgroup>
-              </select></span>
-              <span className="admin-shop-switcher-chevron"><ChevronDown size={14} /></span>
-            </label>
+              }} />
             {canUsePush() && <button type="button" disabled={pushBusy} onClick={() => void togglePushNotifications()} className={`admin-header-button admin-notification-button ${pushEnabled ? "active" : ""}`} aria-label={pushEnabled ? "Disable order notifications" : "Enable order notifications"}>{pushEnabled ? <Bell size={15} /> : <BellOff size={15} />}<span>{pushEnabled ? "Alerts on" : "Enable alerts"}</span></button>}
             <button type="button" onClick={() => setIsSignOutOpen(true)} className="admin-header-button admin-signout-button"><LogOut size={15} /><span>Sign out</span></button>
           </div>
@@ -450,9 +452,9 @@ export function AdminPage() {
       <div className="admin-container">
         <section className="admin-view-hero">
           <div>
-            <span>{viewTab === "orders" ? "Live operations" : viewTab === "products" ? "Catalog management" : viewTab === "settings" ? "Mobile configuration" : "Visual storefront"}</span>
-            <h1>{viewTab === "orders" ? "Orders" : viewTab === "products" ? "Products" : viewTab === "settings" ? "Settings" : "Storefront designer"}</h1>
-            <p>{viewTab === "orders" ? "Confirm payments and fulfil orders." : viewTab === "products" ? "Manage products, prices, and stock." : viewTab === "settings" ? "Update booth and payment details." : "Build your storefront and checkout."}</p>
+            <span>{viewTab === "orders" ? "Live operations" : viewTab === "products" ? "Catalog management" : viewTab === "settings" ? "Mobile configuration" : viewTab === "team" ? "Access management" : "Visual storefront"}</span>
+            <h1>{viewTab === "orders" ? "Orders" : viewTab === "products" ? "Products" : viewTab === "settings" ? "Settings" : viewTab === "team" ? "Team" : "Storefront designer"}</h1>
+            <p>{viewTab === "orders" ? "Confirm payments and fulfil orders." : viewTab === "products" ? "Manage products, prices, and stock." : viewTab === "settings" ? "Update booth and payment details." : viewTab === "team" ? "Invite teammates and control access to this shop." : "Build your storefront and checkout."}</p>
           </div>
           <div className="admin-view-chips">
             {viewTab === "orders" && <><span><b>{orderCounts.pending}</b> pending</span><span><b>{orderTotal}</b> matching orders</span></>}
@@ -528,7 +530,8 @@ export function AdminPage() {
           onSavePayment={(settings) => runAdminAction(async () => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); }, "Checkout settings saved.")}
           isOwner={adminSession.access.role === "owner"}
         />}
-        {canManageCatalog && viewTab === "settings" && <section className="admin-mobile-settings-page"><SettingsForm shopId={shopId} settings={booth} onSave={async (settings) => { const saved = await saveBoothSettings(shopId, settings); setBooth(saved); toast.success("Booth settings saved."); }} /><QrManager shopId={shopId} settings={payment} onSave={async (settings) => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); toast.success("Checkout settings saved."); }} />{adminSession.access.role === "owner" && <StaffManager shopId={shopId} />}</section>}
+        {canManageCatalog && viewTab === "settings" && <section className="admin-mobile-settings-page"><SettingsForm shopId={shopId} settings={booth} onSave={async (settings) => { const saved = await saveBoothSettings(shopId, settings); setBooth(saved); toast.success("Booth settings saved."); }} /><QrManager shopId={shopId} settings={payment} onSave={async (settings) => { const saved = await savePaymentSettings(shopId, settings); setPayment(saved); toast.success("Checkout settings saved."); }} /></section>}
+        {isAuthed && adminSession.access.role === "owner" && viewTab === "team" && <section className="admin-team-page"><StaffManager shopId={shopId} /></section>}
       </div>
       <Modal title="Sign out of admin?" isOpen={isSignOutOpen} onClose={() => setIsSignOutOpen(false)} className="signout-modal">
         <div className="signout-confirmation">
