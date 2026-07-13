@@ -2,12 +2,9 @@ import { Link } from "react-router-dom";
 import { ArrowRight, LogIn, Store, Sparkles } from "lucide-react";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { PlatformMark } from "../components/ui/PlatformMark";
-import { LocaleSwitcher } from "../components/ui/LocaleSwitcher";
-import { useI18n } from "../lib/i18n";
 import "../styles/admin.css";
 
 export function HomePage() {
-  const { copy } = useI18n();
   return (
     <div className="admin-shell platform-home-shell">
       <header className="admin-header">
@@ -18,15 +15,14 @@ export function HomePage() {
             </span>
             <div>
               <strong>{PLATFORM_BRAND.name}</strong>
-              <small>{copy.brand.descriptor}</small>
+              <small>{PLATFORM_BRAND.descriptor}</small>
             </div>
           </div>
           <div />
           <div className="admin-header-actions">
-            <LocaleSwitcher />
             <Link to="/auth?mode=signin" className="button button-ghost platform-home-signin-btn">
               <LogIn size={16} />
-              <span>{copy.common.signIn}</span>
+              <span>Sign in</span>
             </Link>
           </div>
         </div>
@@ -36,40 +32,49 @@ export function HomePage() {
         <div className="platform-home-hero-content">
           <span className="platform-home-badge">
             <Sparkles size={12} className="badge-icon" />
-            <span>{copy.home.badge}</span>
+            <span>Now with Multi-Shop Support</span>
           </span>
-          <h1>{copy.home.title}</h1>
+          <h1>Create your dream merch booth</h1>
           <p>
-            {copy.brand.description} {copy.brand.tagline}
+            {PLATFORM_BRAND.description} {PLATFORM_BRAND.tagline}
           </p>
 
           <div className="platform-home-actions">
             <Link to="/auth" className="button button-primary platform-home-cta">
-              <span>{copy.home.getStarted}</span>
+              <span>Get started</span>
               <ArrowRight size={17} />
             </Link>
             <Link to="/s/arigatosan" className="button button-secondary platform-home-demo">
               <Store size={17} />
-              <span>{copy.home.demo}</span>
+              <span>View demo shop</span>
             </Link>
           </div>
         </div>
 
         <section className="platform-home-features">
           <div className="platform-feature-card">
-            <h3>{copy.home.storefrontTitle}</h3><p>{copy.home.storefrontBody}</p>
+            <h3>Touch-friendly storefront</h3>
+            <p>
+              Let customers browse your products, inspect details, and build a stock-safe cart in a gorgeous mobile-first storefront.
+            </p>
           </div>
           <div className="platform-feature-card">
-            <h3>{copy.home.ordersTitle}</h3><p>{copy.home.ordersBody}</p>
+            <h3>Live orders queue</h3>
+            <p>
+              Approve payments, manage stock levels, and coordinate staff fulfillment in real time as new orders arrive.
+            </p>
           </div>
           <div className="platform-feature-card">
-            <h3>{copy.home.designerTitle}</h3><p>{copy.home.designerBody}</p>
+            <h3>Storefront designer</h3>
+            <p>
+              Customize sections, themes, locales, and corner radiuses in a live-updating interactive workspace.
+            </p>
           </div>
         </section>
       </main>
 
       <footer className="platform-home-footer">
-        <p>&copy; {new Date().getFullYear()} {PLATFORM_BRAND.name}. {copy.home.rights}</p>
+        <p>&copy; {new Date().getFullYear()} {PLATFORM_BRAND.name}. All rights reserved.</p>
       </footer>
     </div>
   );

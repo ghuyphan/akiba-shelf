@@ -44,7 +44,6 @@ import {
 } from "../lib/branding";
 import { supabase } from "../lib/supabase";
 import { safeUuid } from "../lib/id";
-import { LocaleSwitcher } from "../components/ui/LocaleSwitcher";
 import type {
   BoothSettings,
   PaymentSettings,
@@ -632,7 +631,6 @@ export function AdminPage() {
           </div>
 
           <div className="admin-header-actions">
-            <LocaleSwitcher />
             <SelectMenu
               className="admin-shop-switcher-menu"
               label="Active shop"

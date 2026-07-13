@@ -1,6 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Eye, EyeOff, Lock } from "lucide-react";
-import { useI18n } from "../../lib/i18n";
 
 type PasswordFieldProps = {
   label: string;
@@ -23,7 +22,6 @@ export function PasswordField({
   placeholder,
   describedBy,
 }: PasswordFieldProps) {
-  const { copy } = useI18n();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -50,7 +48,7 @@ export function PasswordField({
           type="button"
           className="password-toggle-btn"
           onClick={() => setVisible((current) => !current)}
-          aria-label={visible ? copy.auth.hidePassword(label) : copy.auth.showPassword(label)}
+          aria-label={`${visible ? "Hide" : "Show"} ${label.toLowerCase()}`}
           disabled={disabled}
         >
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
