@@ -13,6 +13,7 @@ import { PageLoading } from "./components/ui/PageLoading";
 import { PLATFORM_BRAND, resetDocumentBranding } from "./lib/branding";
 import { resetPageTheme } from "./lib/theme";
 import { ShieldCheck } from "lucide-react";
+import { I18nProvider, useI18n } from "./lib/i18n";
 
 const HomePage = lazy(() =>
   import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
@@ -45,23 +46,24 @@ const SetPasswordPage = lazy(() =>
 
 function PlatformRouteBranding() {
   const { pathname, search } = useLocation();
+  const { copy, locale } = useI18n();
   useEffect(() => {
     if (pathname === "/admin" || pathname.startsWith("/s/")) return;
     resetPageTheme();
     let title: string = PLATFORM_BRAND.name;
     if (pathname === "/auth") {
       const mode = new URLSearchParams(search).get("mode");
-      title = `${mode === "signup" ? "Create account" : mode === "forgot" ? "Reset password" : "Sign in"} · ${PLATFORM_BRAND.name}`;
+      title = `${mode === "signup" ? copy.auth.createAccount : mode === "forgot" ? copy.auth.forgotPassword : copy.common.signIn} · ${PLATFORM_BRAND.name}`;
     } else if (pathname === "/dashboard")
-      title = `Your shops · ${PLATFORM_BRAND.name}`;
+      title = `${copy.navigation.yourShops} · ${PLATFORM_BRAND.name}`;
     else if (pathname === "/dashboard/shops/new")
-      title = `Create a shop · ${PLATFORM_BRAND.name}`;
+      title = `${copy.shopCreation.title} · ${PLATFORM_BRAND.name}`;
     else if (pathname === "/auth/set-password")
       title = `Set password · ${PLATFORM_BRAND.name}`;
     else if (pathname === "/auth/callback")
       title = `Finishing sign in · ${PLATFORM_BRAND.name}`;
     resetDocumentBranding(title);
-  }, [pathname, search]);
+  }, [copy, locale, pathname, search]);
   return null;
 }
 
@@ -77,11 +79,12 @@ function RouteAwareToastProvider({ children }: { children: ReactNode }) {
 
 function RouteLoading() {
   const { pathname } = useLocation();
+  const { copy } = useI18n();
   if (pathname === "/admin") {
     return (
       <PageLoading
-        title="Checking your access"
-        message="Loading your workspace…"
+        title={copy.auth.checkingAccess}
+        message={copy.auth.loadingWorkspace}
         icon={<ShieldCheck size={28} />}
         showProgress={false}
       />
@@ -93,7 +96,8 @@ function RouteLoading() {
 export function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <RouteAwareToastProvider>
+      <I18nProvider>
+       <RouteAwareToastProvider>
         <PlatformRouteBranding />
         <Suspense fallback={<RouteLoading />}>
           <Routes>
@@ -108,7 +112,8 @@ export function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
-      </RouteAwareToastProvider>
+       </RouteAwareToastProvider>
+      </I18nProvider>
     </BrowserRouter>
   );
 }

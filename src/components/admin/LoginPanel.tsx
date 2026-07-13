@@ -11,6 +11,7 @@ import { PageLoading } from "../ui/PageLoading";
 import { getAuthErrorNotice } from "../../lib/authErrors";
 import { PasswordField } from "../ui/PasswordField";
 import { AuthSecurityNote, AuthShell } from "../ui/AuthShell";
+import { useI18n } from "../../lib/i18n";
 
 type LoginPanelProps = {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -18,6 +19,7 @@ type LoginPanelProps = {
 };
 
 export function LoginPanel({ onLogin }: LoginPanelProps) {
+  const { copy } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { busy, run } = useAsyncAction();
@@ -38,13 +40,12 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
   return (
     <AuthShell>
       <div className="admin-login-heading">
-        <h1>Staff sign in</h1>
-        <p>Use your admin account to continue.</p>
+        <h1>{copy.auth.staffSignIn}</h1><p>{copy.auth.adminContinue}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="admin-login-form">
         <label className="admin-login-field">
-          <span>Email address</span>
+          <span>{copy.auth.email}</span>
           <div className="admin-login-input">
             <Mail size={19} className="input-icon" />
             <input
@@ -60,17 +61,17 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
         </label>
 
         <PasswordField
-          label="Password"
+          label={copy.auth.password}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           autoComplete="current-password"
           disabled={!isSupabaseConfigured}
-          placeholder="Enter your password"
+          placeholder={copy.auth.enterPassword}
         />
 
         {!isSupabaseConfigured && (
-          <Alert variant="error" title="Supabase is not configured">
-            Add the Supabase URL and public key before signing in.
+          <Alert variant="error" title={copy.errors.supabaseTitle}>
+            {copy.errors.supabaseMessage}
           </Alert>
         )}
 
@@ -87,26 +88,27 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
               aria-hidden="true"
             />
           )}
-          <span>{busy ? "Signing in…" : "Open admin"}</span>
+          <span>{busy ? copy.common.loading : copy.auth.openAdmin}</span>
           {!busy && <ArrowRight size={18} aria-hidden="true" />}
         </button>
       </form>
       <div className="auth-mode-links admin-login-help-links">
-        <Link to="/auth?mode=forgot">Forgot password?</Link>
-        <Link to="/auth?mode=signup">Create account</Link>
+        <Link to="/auth?mode=forgot">{copy.auth.forgotPassword}</Link>
+        <Link to="/auth?mode=signup">{copy.auth.createAccount}</Link>
       </div>
       <AuthSecurityNote>
-        Only authorised staff can access this workspace.
+        {copy.auth.authorisedOnly}
       </AuthSecurityNote>
     </AuthShell>
   );
 }
 
 export function AdminAccessCheck() {
+  const { copy } = useI18n();
   return (
     <PageLoading
-      title="Checking your access"
-      message="Loading your workspace…"
+      title={copy.auth.checkingAccess}
+      message={copy.auth.loadingWorkspace}
       icon={<ShieldCheck size={28} />}
     />
   );

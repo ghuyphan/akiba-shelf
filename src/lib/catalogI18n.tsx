@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import type { CatalogLocale } from "../types/catalog";
+import { resolvePlatformLocale } from "./locale";
 
 export const translations = {
   en: {
@@ -43,11 +44,14 @@ export const translations = {
 export type CatalogCopy = (typeof translations)["en"] | (typeof translations)["vi"];
 const CatalogLocaleContext = createContext<CatalogCopy>(translations.en);
 
-export function CatalogLocaleProvider({ locale, children }: { locale: CatalogLocale; children: ReactNode }) {
+export function CatalogLocaleProvider({ locale, children, targetDocument = typeof document === "undefined" ? undefined : document, restorePlatformLocale = true }: { locale: CatalogLocale; children: ReactNode; targetDocument?: Document; restorePlatformLocale?: boolean }) {
   useEffect(() => {
-    document.documentElement.lang = locale;
-    return () => { document.documentElement.lang = "en"; };
-  }, [locale]);
+    if (!targetDocument) return;
+    targetDocument.documentElement.lang = locale;
+    return () => {
+      if (restorePlatformLocale) targetDocument.documentElement.lang = resolvePlatformLocale();
+    };
+  }, [locale, restorePlatformLocale, targetDocument]);
   return <CatalogLocaleContext.Provider value={translations[locale]}>{children}</CatalogLocaleContext.Provider>;
 }
 

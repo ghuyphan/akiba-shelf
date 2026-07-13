@@ -24,8 +24,11 @@ import { Field, TextInput } from "../components/ui/Field";
 import { useAsyncAction } from "../hooks/useAsyncAction";
 import type { ShopMembership } from "../types/catalog";
 import "../styles/admin.css";
+import { LocaleSwitcher } from "../components/ui/LocaleSwitcher";
+import { useI18n } from "../lib/i18n";
 
 export function DashboardPage() {
+  const { copy } = useI18n();
   const { state: adminSession, refresh: refreshAdminSession } =
     useAdminSession();
   const navigate = useNavigate();
@@ -150,11 +153,12 @@ export function DashboardPage() {
             </span>
             <div>
               <strong>{PLATFORM_BRAND.name}</strong>
-              <small>{PLATFORM_BRAND.descriptor}</small>
+              <small>{copy.brand.descriptor}</small>
             </div>
           </div>
 
           <div className="admin-header-actions">
+            <LocaleSwitcher />
             {adminSession.email && (
               <span className="dashboard-user-email">{adminSession.email}</span>
             )}
@@ -165,7 +169,7 @@ export function DashboardPage() {
               className="admin-header-button admin-signout-button"
             >
               <LogOut size={15} />
-              <span>Sign out</span>
+              <span>{copy.common.signOut}</span>
             </button>
           </div>
         </div>
@@ -174,10 +178,10 @@ export function DashboardPage() {
       <main className="admin-container">
         <section className="admin-view-hero">
           <div>
-            <span>Your Account</span>
-            <h1>Your shops</h1>
+            <span>{copy.dashboard.eyebrow}</span>
+            <h1>{copy.dashboard.title}</h1>
             <p>
-              Select a shop workspace to manage orders, products, and designs,
+              {copy.dashboard.description}
               or preview its public storefront.
             </p>
           </div>

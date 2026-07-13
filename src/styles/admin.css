@@ -2094,3 +2094,13 @@
   }
   .admin-header .admin-nav-tabs::after { content:""; flex:0 0 3px; }
 }
+.admin-login-topbar-actions { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.locale-switcher { min-width: 0; }
+.locale-switcher .select-menu-trigger { min-height: 40px; border-radius: 999px; }
+.locale-switcher .select-menu-icon { display: inline-flex; }
+.locale-switcher .select-menu-popover { min-width: 180px; right: 0; left: auto; }
+@media (max-width: 760px) {
+  .locale-switcher .select-menu-copy strong { display: none; }
+  .locale-switcher .select-menu-copy small { display: inline; }
+  .admin-login-topbar-actions { gap: .25rem; }
+}

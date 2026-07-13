@@ -3,6 +3,8 @@ import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PLATFORM_BRAND } from "../../lib/branding";
 import { PlatformMark } from "./PlatformMark";
+import { LocaleSwitcher } from "./LocaleSwitcher";
+import { useI18n } from "../../lib/i18n";
 
 type AuthShellProps = {
   children: ReactNode;
@@ -13,8 +15,9 @@ type AuthShellProps = {
 export function AuthShell({
   children,
   backTo = "/",
-  backLabel = "Back to home",
+  backLabel,
 }: AuthShellProps) {
+  const { copy } = useI18n();
   return (
     <main className="admin-login">
       <section className="admin-access-card admin-login-card">
@@ -26,13 +29,13 @@ export function AuthShell({
               </span>
               <span>
                 <strong>{PLATFORM_BRAND.name}</strong>
-                <small>{PLATFORM_BRAND.descriptor}</small>
+                <small>{copy.brand.descriptor}</small>
               </span>
             </div>
-            <Link to={backTo} className="admin-login-back">
+            <div className="admin-login-topbar-actions"><LocaleSwitcher variant="auth" /><Link to={backTo} className="admin-login-back">
               <ArrowLeft size={16} />
-              <span>{backLabel}</span>
-            </Link>
+              <span>{backLabel ?? copy.common.backHome}</span>
+            </Link></div>
           </header>
           {children}
         </div>

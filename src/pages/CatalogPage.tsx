@@ -7,7 +7,7 @@ import {
   useDocumentBranding,
 } from "../lib/branding";
 import type { Order, Product, StorefrontSection } from "../types/catalog";
-import { CatalogLocaleProvider } from "../lib/catalogI18n";
+import { CatalogLocaleProvider, useCatalogCopy } from "../lib/catalogI18n";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
 import { CategoryFilters } from "../components/catalog/CategoryFilters";
@@ -36,6 +36,34 @@ import type { Shop } from "../types/catalog";
 import { LogIn, RotateCw, Store, StoreIcon } from "lucide-react";
 
 type NetworkConnection = { effectiveType?: string; saveData?: boolean };
+
+function StorefrontLoading({ shopSlug }: { shopSlug: string }) {
+  const cachedBooth = getStoredBoothTheme(`slug:${shopSlug}`);
+  const locale = cachedBooth.catalog_locale === "vi" ? "vi" : "en";
+  const cachedLogo = safePublicUrl(cachedBooth.logo_url);
+
+  return (
+    <CatalogLocaleProvider locale={locale}>
+      <StorefrontLoadingContent
+        icon={cachedLogo ? <img src={cachedLogo} alt="" /> : <StoreIcon size={28} />}
+        style={getThemeStyle(cachedBooth)}
+      />
+    </CatalogLocaleProvider>
+  );
+}
+
+function StorefrontLoadingContent({ icon, style }: { icon: React.ReactNode; style: React.CSSProperties }) {
+  const copy = useCatalogCopy();
+  return (
+    <PageLoading
+      title={copy.loadingCatalog}
+      message={copy.loadingCatalogHint}
+      ariaLabel={copy.loadingCatalog}
+      icon={icon}
+      style={style}
+    />
+  );
+}
 
 function prefersLightweightCatalog() {
   const connection = (
@@ -444,19 +472,7 @@ export function CatalogPage() {
     },
   ].sort((first, second) => first.position - second.position);
 
-  if (shop === undefined)
-    {
-      const cachedBooth = getStoredBoothTheme(`slug:${shopSlug}`);
-      const cachedLogo = safePublicUrl(cachedBooth.logo_url);
-      return (
-      <PageLoading
-        title="Opening the shop…"
-        message="Getting the shelves ready for you."
-        icon={cachedLogo ? <img src={cachedLogo} alt="" /> : <StoreIcon size={28} />}
-        style={getThemeStyle(cachedBooth)}
-      />
-      );
-    }
+  if (shop === undefined) return <StorefrontLoading shopSlug={shopSlug} />;
   if (shop === null)
     return (
       <main className="shop-state-shell">
@@ -509,16 +525,7 @@ export function CatalogPage() {
     );
 
   if (isLoading) {
-    const cachedBooth = getStoredBoothTheme(`slug:${shopSlug}`);
-    const cachedLogo = safePublicUrl(cachedBooth.logo_url);
-    return (
-      <PageLoading
-        title="Opening the shop…"
-        message="Getting the shelves ready for you."
-        icon={cachedLogo ? <img src={cachedLogo} alt="" /> : <StoreIcon size={28} />}
-        style={getThemeStyle(cachedBooth)}
-      />
-    );
+    return <StorefrontLoading shopSlug={shopSlug} />;
   }
 
   return (

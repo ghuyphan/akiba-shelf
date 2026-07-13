@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus } from "lucide-react";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { PlatformMark } from "../components/ui/PlatformMark";
+import { LocaleSwitcher } from "../components/ui/LocaleSwitcher";
 import { useAdminSession } from "../hooks/useAdminSession";
 import { createShop, signInAdmin } from "../lib/api";
 import { useAsyncAction } from "../hooks/useAsyncAction";
@@ -108,13 +109,13 @@ export function NewShopPage() {
                 <small>{PLATFORM_BRAND.descriptor}</small>
               </span>
             </div>
-            <Link
+            <div className="admin-login-topbar-actions"><LocaleSwitcher variant="auth" /><Link
               to={hasShops ? "/dashboard" : "/"}
               className="admin-login-back"
               aria-label={hasShops ? "Back to shops dashboard" : "Back to homepage"}
             >
               <ArrowLeft size={17} />
-            </Link>
+            </Link></div>
           </header>
 
           <div className="admin-login-heading">
