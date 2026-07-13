@@ -15,6 +15,10 @@ import {
 } from "../lib/authValidation";
 import { PasswordField } from "../components/ui/PasswordField";
 import { AuthSecurityNote, AuthShell } from "../components/ui/AuthShell";
+import {
+  AuthDivider,
+  GoogleAuthButton,
+} from "../components/ui/GoogleAuthButton";
 
 type Mode = "signin" | "signup" | "forgot";
 type EmailCompletion = { mode: "signup" | "forgot"; email: string };
@@ -225,69 +229,79 @@ export function AuthPage() {
           </button>
         </div>
       ) : (
-        <form onSubmit={submit} className="admin-login-form">
-          <label className="admin-login-field">
-            <span>Email address</span>
-            <div className="admin-login-input">
-              <Mail size={19} className="input-icon" aria-hidden="true" />
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-          </label>
+        <>
           {mode !== "forgot" && (
-            <PasswordField
-              label="Password"
-              value={password}
-              minLength={mode === "signup" ? NEW_PASSWORD_MIN_LENGTH : 8}
-              autoComplete={
-                mode === "signup" ? "new-password" : "current-password"
-              }
-              placeholder={
-                mode === "signup"
-                  ? "Choose a strong password"
-                  : "Enter your password"
-              }
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          )}
-          {mode === "signup" && (
-            <>
-              <p className="auth-password-hint" id="signup-password-hint">
-                {NEW_PASSWORD_HINT}
-              </p>
-              <PasswordField
-                label="Confirm password"
-                value={confirmPassword}
-                minLength={NEW_PASSWORD_MIN_LENGTH}
-                autoComplete="new-password"
-                describedBy="signup-password-hint"
-                placeholder="Repeat your password"
-                onChange={(event) => setConfirmPassword(event.target.value)}
+            <div className="auth-oauth-actions">
+              <GoogleAuthButton
+                label={mode === "signup" ? "Sign up with Google" : undefined}
               />
-            </>
+              <AuthDivider />
+            </div>
           )}
-          <button
-            className="admin-login-submit"
-            disabled={busy}
-            aria-busy={busy}
-          >
-            {busy && (
-              <LoaderCircle
-                className="button-spinner"
-                size={18}
-                aria-hidden="true"
+          <form onSubmit={submit} className="admin-login-form">
+            <label className="admin-login-field">
+              <span>Email address</span>
+              <div className="admin-login-input">
+                <Mail size={19} className="input-icon" aria-hidden="true" />
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            </label>
+            {mode !== "forgot" && (
+              <PasswordField
+                label="Password"
+                value={password}
+                minLength={mode === "signup" ? NEW_PASSWORD_MIN_LENGTH : 8}
+                autoComplete={
+                  mode === "signup" ? "new-password" : "current-password"
+                }
+                placeholder={
+                  mode === "signup"
+                    ? "Choose a strong password"
+                    : "Enter your password"
+                }
+                onChange={(event) => setPassword(event.target.value)}
               />
             )}
-            <span>{busy ? copy.busy : copy.submit}</span>
-            {!busy && <ArrowRight size={18} aria-hidden="true" />}
-          </button>
-        </form>
+            {mode === "signup" && (
+              <>
+                <p className="auth-password-hint" id="signup-password-hint">
+                  {NEW_PASSWORD_HINT}
+                </p>
+                <PasswordField
+                  label="Confirm password"
+                  value={confirmPassword}
+                  minLength={NEW_PASSWORD_MIN_LENGTH}
+                  autoComplete="new-password"
+                  describedBy="signup-password-hint"
+                  placeholder="Repeat your password"
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                />
+              </>
+            )}
+            <button
+              className="admin-login-submit"
+              disabled={busy}
+              aria-busy={busy}
+            >
+              {busy && (
+                <LoaderCircle
+                  className="button-spinner"
+                  size={18}
+                  aria-hidden="true"
+                />
+              )}
+              <span>{busy ? copy.busy : copy.submit}</span>
+              {!busy && <ArrowRight size={18} aria-hidden="true" />}
+            </button>
+          </form>
+        </>
       )}
       {!completion && (
         <div className="auth-mode-links admin-login-help-links">

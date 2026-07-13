@@ -9,12 +9,15 @@ const auth = vi.hoisted(() => ({
   signUp: vi.fn(),
   resetPasswordForEmail: vi.fn(),
 }));
+const signInWithGoogle = vi.hoisted(() => vi.fn());
 
 vi.mock("../lib/supabase", () => ({
   supabase: { auth },
+  isSupabaseConfigured: true,
 }));
 vi.mock("../lib/api", () => ({
   getShopMemberships: vi.fn().mockResolvedValue([]),
+  signInWithGoogle,
 }));
 
 import { AuthPage } from "./AuthPage";
@@ -56,6 +59,7 @@ describe("AuthPage credential fields", () => {
     auth.signInWithPassword.mockReset();
     auth.signUp.mockReset();
     auth.resetPasswordForEmail.mockReset();
+    signInWithGoogle.mockReset();
   });
 
   it("shows and hides the password with an accessible control", async () => {
@@ -76,6 +80,18 @@ describe("AuthPage credential fields", () => {
     expect(password).toHaveAttribute("type", "text");
     await user.click(screen.getByRole("button", { name: "Hide password" }));
     expect(password).toHaveAttribute("type", "password");
+  });
+
+  it("starts Google sign in with the app callback", async () => {
+    signInWithGoogle.mockResolvedValue({});
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      screen.getByRole("button", { name: "Continue with Google" }),
+    );
+
+    expect(signInWithGoogle).toHaveBeenCalledOnce();
   });
 
   it("keeps the email but clears and hides the password after a failed sign in", async () => {

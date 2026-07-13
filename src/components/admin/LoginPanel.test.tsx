@@ -4,7 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "../ui/ToastProvider";
 
+const signInWithGoogle = vi.hoisted(() => vi.fn());
+
 vi.mock("../../lib/supabase", () => ({ isSupabaseConfigured: true }));
+vi.mock("../../lib/api", () => ({ signInWithGoogle }));
 
 import { LoginPanel } from "./LoginPanel";
 
@@ -26,6 +29,23 @@ describe("admin login panel", () => {
     expect(
       screen.getByRole("link", { name: "Create account" }),
     ).toHaveAttribute("href", "/auth?mode=signup");
+  });
+
+  it("offers Google sign in", async () => {
+    signInWithGoogle.mockResolvedValue({});
+    const user = userEvent.setup();
+    render(
+      <ToastProvider>
+        <MemoryRouter>
+          <LoginPanel onLogin={vi.fn()} />
+        </MemoryRouter>
+      </ToastProvider>,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Continue with Google" }),
+    );
+    expect(signInWithGoogle).toHaveBeenCalledOnce();
   });
 
   it("preserves useful sanitized authentication errors", async () => {

@@ -11,6 +11,7 @@ import { PageLoading } from "../ui/PageLoading";
 import { getAuthErrorNotice } from "../../lib/authErrors";
 import { PasswordField } from "../ui/PasswordField";
 import { AuthSecurityNote, AuthShell } from "../ui/AuthShell";
+import { AuthDivider, GoogleAuthButton } from "../ui/GoogleAuthButton";
 
 type LoginPanelProps = {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -40,6 +41,11 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
       <div className="admin-login-heading">
         <h1>Staff sign in</h1>
         <p>Use your admin account to continue.</p>
+      </div>
+
+      <div className="auth-oauth-actions">
+        <GoogleAuthButton />
+        <AuthDivider />
       </div>
 
       <form onSubmit={handleSubmit} className="admin-login-form">

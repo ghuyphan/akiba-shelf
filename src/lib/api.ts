@@ -8,6 +8,7 @@ import {
   PUBLIC_PRODUCT_COLUMNS,
 } from "./catalogQueries";
 import { safePublicUrl } from "./branding";
+import { getAppUrl } from "./authUrls";
 import { LIMITED_STOCK_THRESHOLD } from "./constants";
 import {
   boothSettingsSchema,
@@ -510,6 +511,18 @@ export async function signInAdmin(email: string, password: string) {
   const { data, error } = await client.auth.signInWithPassword({
     email,
     password,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function signInWithGoogle() {
+  const client = requireSupabase();
+  const { data, error } = await client.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: getAppUrl("/auth/callback"),
+    },
   });
   if (error) throw error;
   return data;
