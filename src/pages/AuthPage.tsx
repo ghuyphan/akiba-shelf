@@ -89,9 +89,9 @@ export function AuthPage() {
             <Link
               to="/"
               className="admin-login-back"
-              aria-label="Back to homepage"
             >
-              <ArrowLeft size={17} />
+              <ArrowLeft size={16} />
+              <span>Back to home</span>
             </Link>
           </header>
           <div className="admin-login-heading">
@@ -153,6 +153,11 @@ export function AuthPage() {
             </button>
           </form>
           <div className="auth-mode-links">
+            {mode === "signin" && (
+              <button type="button" onClick={() => choose("forgot")}>
+                Forgot password?
+              </button>
+            )}
             {mode !== "signin" && (
               <button type="button" onClick={() => choose("signin")}>
                 Sign in
@@ -161,11 +166,6 @@ export function AuthPage() {
             {mode !== "signup" && (
               <button type="button" onClick={() => choose("signup")}>
                 Create account
-              </button>
-            )}
-            {mode === "signin" && (
-              <button type="button" onClick={() => choose("forgot")}>
-                Forgot password?
               </button>
             )}
           </div>

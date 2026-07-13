@@ -40,7 +40,7 @@ export function HomePage() {
           </p>
 
           <div className="platform-home-actions">
-            <Link to="/auth?mode=signup" className="button button-primary platform-home-cta">
+            <Link to="/auth" className="button button-primary platform-home-cta">
               <span>Get started</span>
               <ArrowRight size={17} />
             </Link>
