@@ -36,11 +36,8 @@ export function AuthCallbackPage() {
         hash.get("type") === "recovery";
 
       const cleanCallbackUrl = () => {
-        window.history.replaceState(
-          null,
-          "",
-          `${import.meta.env.BASE_URL}auth/callback`,
-        );
+        const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+        window.history.replaceState(null, "", `${base}/auth/callback`);
       };
 
       if (callbackError) {
