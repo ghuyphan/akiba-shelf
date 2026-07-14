@@ -46,6 +46,7 @@ import { ImageUpload } from "./ImageUpload";
 import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../lib/banks";
 import { DEFAULT_STOREFRONT_PALETTE, STOREFRONT_PALETTES } from "../../lib/constants";
 import { usePlatformI18n } from "../../lib/platformI18n";
+import { SocialLinkFields } from "./SocialLinkFields";
 
 type StorefrontDesignerProps = {
   shopId: string;
@@ -505,9 +506,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
                 </div>
                 <div className="builder-field-group">
                   <h3><Link2 size={15} /> {t("Social links")}</h3>
-                  <Field label={t("Instagram URL")}><TextInput type="url" value={draft.instagram_url ?? ""} onChange={(event) => update("instagram_url", event.target.value)} /></Field>
-                  <Field label={t("Facebook URL")}><TextInput type="url" value={draft.facebook_url ?? ""} onChange={(event) => update("facebook_url", event.target.value)} /></Field>
-                  <Field label={t("TikTok URL")}><TextInput type="url" value={draft.tiktok_url ?? ""} onChange={(event) => update("tiktok_url", event.target.value)} /></Field>
+                  <SocialLinkFields settings={draft} onChange={(settings) => commitSnapshot({ booth: settings, payment: paymentDraftRef.current })} />
                   <Field label={t("Social QR center logo")}><TextInput value={draft.social_qr_logo_url ?? ""} onChange={(event) => update("social_qr_logo_url", event.target.value)} /></Field>
                 </div>
               </>}

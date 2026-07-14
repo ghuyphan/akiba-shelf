@@ -29,6 +29,7 @@ import "../styles/admin.css";
 import { usePlatformI18n } from "../lib/platformI18n";
 import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";
 import { MAX_OWNED_SHOPS, SHOP_NAME_MAX_LENGTH } from "../lib/constants";
+import { PwaInstallBanner } from "../components/admin/PwaInstallBanner";
 
 export function DashboardPage() {
   const { state: adminSession, refresh: refreshAdminSession } =
@@ -186,6 +187,7 @@ export function DashboardPage() {
       />
 
       <main className="admin-container">
+        <PwaInstallBanner />
         <section className="admin-view-hero">
           <div>
             <span>{t("Your Account")}</span>

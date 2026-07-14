@@ -1,12 +1,17 @@
 {
   "name": "Matsuri",
   "short_name": "Matsuri",
-  "description": "A storefront and live order platform for independent artist booths.",
+  "id": "./admin",
+  "description": "The Matsuri staff workspace for shops, catalog management, and live orders.",
   "start_url": "./admin",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f5f0e8",
   "theme_color": "#d95c64",
+  "shortcuts": [
+    { "name": "Admin workspace", "short_name": "Admin", "url": "./admin" },
+    { "name": "Your shops", "short_name": "Shops", "url": "./dashboard" }
+  ],
   "icons": [
     { "src": "./brand/matsuri-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "./brand/matsuri-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

@@ -51,8 +51,17 @@ export type BoothSettings = {
   logo_url?: string;
   logo_path?: string;
   instagram_url?: string;
+  instagram_visible?: boolean;
   facebook_url?: string;
+  facebook_visible?: boolean;
   tiktok_url?: string;
+  tiktok_visible?: boolean;
+  x_url?: string;
+  x_visible?: boolean;
+  threads_url?: string;
+  threads_visible?: boolean;
+  youtube_url?: string;
+  youtube_visible?: boolean;
   social_qr_logo_url?: string;
   social_qr_logo_path?: string;
   theme_primary?: string;

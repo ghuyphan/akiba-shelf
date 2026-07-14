@@ -14,6 +14,7 @@ import { PageLoading } from "./components/ui/PageLoading";
 import { PLATFORM_BRAND, resetDocumentBranding } from "./lib/branding";
 import { resetPageTheme } from "./lib/theme";
 import { PlatformI18nProvider, usePlatformI18n } from "./lib/platformI18n";
+import { configurePwaForPath } from "./lib/pwa";
 
 const HomePage = lazy(() =>
   import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
@@ -79,6 +80,14 @@ function RouteAwareToastProvider({ children }: { children: ReactNode }) {
   return <ToastProvider enabled={pathname !== "/"}>{children}</ToastProvider>;
 }
 
+function RouteAwarePwa() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    configurePwaForPath(pathname);
+  }, [pathname]);
+  return null;
+}
+
 function RouteLoading() {
   return <PageLoading />;
 }
@@ -95,6 +104,7 @@ function PlatformLayout() {
 export function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <RouteAwarePwa />
       <RouteAwareToastProvider>
         <Suspense fallback={<RouteLoading />}>
           <Routes>

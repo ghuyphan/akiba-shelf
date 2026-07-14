@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Clock3, Edit3, Facebook, Instagram, Link2, MapPin, Store, Type, X } from "lucide-react";
-import { TiktokIcon } from "../ui/TiktokIcon";
+import { Clock3, Edit3, Link2, MapPin, Store, Type, X } from "lucide-react";
 import type { BoothSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { useToast } from "../ui/ToastProvider";
@@ -9,6 +8,8 @@ import { Field, TextInput } from "../ui/Field";
 import { AdminCard } from "./AdminCard";
 import { ImageUpload } from "./ImageUpload";
 import { usePlatformI18n } from "../../lib/platformI18n";
+import { SocialLinkFields } from "./SocialLinkFields";
+import { SocialBrandIcon } from "../ui/SocialBrandIcon";
 
 type SettingsFormProps = { shopId: string; settings: BoothSettings; onSave: (settings: BoothSettings) => Promise<void> };
 
@@ -41,8 +42,9 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
 
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span><Link2 size={15} /></span><div><h3>{t("Social links")}</h3><p>{t("Links shown in booth information.")}</p></div></div>
-          <div className="form-grid"><Field label={t("Instagram URL")}><TextInput type="url" value={draft.instagram_url ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, instagram_url: event.target.value })} /></Field><Field label={t("Facebook URL")}><TextInput type="url" value={draft.facebook_url ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, facebook_url: event.target.value })} /></Field><Field label={t("TikTok URL")}><TextInput type="url" value={draft.tiktok_url ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, tiktok_url: event.target.value })} /></Field><Field label={t("QR center logo")}><TextInput value={draft.social_qr_logo_url ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, social_qr_logo_url: event.target.value })} /></Field></div>
-          <div className="admin-social-preview"><span>{draft.social_qr_logo_url ? <img src={draft.social_qr_logo_url} alt={t("Social QR logo")} /> : <><Instagram size={18} /><Facebook size={18} /><TiktokIcon size={18} /></>}</span><div><strong>{t("Shared QR logo")}</strong><small>{t("Used in the center of every social QR code.")}</small></div>{isEditing && <ImageUpload shopId={shopId} bucket="payment-qr" label={t("Upload QR logo")} onUploaded={(url, path) => setDraft({ ...draft, social_qr_logo_url: url, social_qr_logo_path: path })} />}</div>
+          <SocialLinkFields settings={draft} disabled={!isEditing} onChange={setDraft} />
+          <Field label={t("QR center logo")}><TextInput value={draft.social_qr_logo_url ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, social_qr_logo_url: event.target.value })} /></Field>
+          <div className="admin-social-preview"><span>{draft.social_qr_logo_url ? <img src={draft.social_qr_logo_url} alt={t("Social QR logo")} /> : <><SocialBrandIcon platform="Instagram" size={17} /><SocialBrandIcon platform="Threads" size={17} /><SocialBrandIcon platform="YouTube" size={17} /></>}</span><div><strong>{t("Shared QR logo")}</strong><small>{t("Used in the center of every social QR code.")}</small></div>{isEditing && <ImageUpload shopId={shopId} bucket="payment-qr" label={t("Upload QR logo")} onUploaded={(url, path) => setDraft({ ...draft, social_qr_logo_url: url, social_qr_logo_path: path })} />}</div>
         </section>
 
         {isEditing && <div className="admin-sticky-actions"><Button type="submit" loading={busy} loadingText={t("Saving…")}>{t("Save booth settings")}</Button><Button type="button" variant="secondary" icon={<X size={17} />} disabled={busy} onClick={resetDraft}>{t("Cancel")}</Button></div>}

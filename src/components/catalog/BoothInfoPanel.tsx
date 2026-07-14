@@ -1,9 +1,9 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Clock, Facebook, Instagram, MapPin, ShoppingBag } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Clock, MapPin, ShoppingBag } from "lucide-react";
 import type { BoothSettings } from "../../types/catalog";
-import { SOCIAL_BRAND_COLORS } from "../../lib/social";
+import { configuredSocialPlatforms } from "../../lib/social";
 import { SocialQrCard } from "./SocialQrCard";
-import { TiktokIcon } from "../ui/TiktokIcon";
+import { SocialBrandIcon } from "../ui/SocialBrandIcon";
 import { safePublicUrl } from "../../lib/branding";
 import { useCatalogCopy } from "../../lib/catalogI18n";
 import { getOpeningStatus } from "../../lib/openingHours";
@@ -26,14 +26,9 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
     const interval = window.setInterval(() => setCurrentTime(new Date()), 30_000);
     return () => window.clearInterval(interval);
   }, []);
-  const socialLinks = [
-    { label: "Instagram", url: booth.instagram_url, icon: <Instagram size={18} /> },
-    { label: "Facebook", url: booth.facebook_url, icon: <Facebook size={18} /> },
-    { label: "TikTok", url: booth.tiktok_url, icon: <TiktokIcon size={18} /> },
-  ].flatMap((item): { label: string; url: string; icon: ReactNode; brandColor: string; brandGradient: string }[] => {
+  const socialLinks = configuredSocialPlatforms(booth).flatMap((item) => {
     const url = safePublicUrl(item.url);
-    const brand = SOCIAL_BRAND_COLORS[item.label];
-    return url && brand ? [{ ...item, url, brandColor: brand.color, brandGradient: brand.gradient }] : [];
+    return url ? [{ ...item, url }] : [];
   });
 
   return (
@@ -78,9 +73,9 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
                 label={item.label}
                 url={item.url}
                 logoUrl={safePublicUrl(booth.social_qr_logo_url)}
-                icon={item.icon}
-                brandColor={item.brandColor}
-                brandGradient={item.brandGradient}
+                icon={<SocialBrandIcon platform={item.label} size={18} />}
+                brandColor={item.color}
+                brandGradient={item.gradient}
                 showLabel={false}
               />
             ))}

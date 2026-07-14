@@ -78,6 +78,7 @@ export function CatalogPage() {
     hasMore,
     loadError,
     isLoading,
+    isInitialLoading,
     isLoadingMore,
     loadMore,
     reloadAll: loadCatalog,
@@ -114,7 +115,7 @@ export function CatalogPage() {
     shop &&
     shop.slug === shopSlug &&
     catalogBooth.shop_id === catalogShopId &&
-    !isLoading &&
+    !isInitialLoading &&
     !loadError
       ? getShopBranding(
           shop.name,
@@ -507,7 +508,7 @@ export function CatalogPage() {
       </main>
     );
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <PageLoading
         title="Opening the shop…"

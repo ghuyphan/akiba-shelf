@@ -79,6 +79,7 @@ import { useAdminSession } from "../hooks/useAdminSession";
 import { SelectMenu } from "../components/ui/SelectMenu";
 import { StaffManager } from "../components/admin/StaffManager";
 import { usePlatformI18n, type PlatformLocale } from "../lib/platformI18n";
+import { PwaInstallBanner } from "../components/admin/PwaInstallBanner";
 
 function createBlankProduct(nextSort: number): Product {
   return {
@@ -764,6 +765,7 @@ export function AdminPage() {
       />
 
       <div className="admin-container">
+        <PwaInstallBanner />
         <section className="admin-view-hero">
           <div>
             <span>

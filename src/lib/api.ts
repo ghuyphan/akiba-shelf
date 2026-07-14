@@ -222,6 +222,7 @@ type PublicProductQuery = {
   category?: string;
   search?: string;
   sort?: PublicProductSort;
+  signal?: AbortSignal;
 };
 
 function safeCatalogSearch(value: string) {
@@ -240,6 +241,7 @@ export async function getPublicProducts(
     category,
     search = "",
     sort = "recommended",
+    signal,
   }: PublicProductQuery = {},
 ): Promise<PublicProductPage> {
   const client = requireSupabase();
@@ -275,9 +277,12 @@ export async function getPublicProducts(
 
   const safeOffset = Math.max(0, offset);
   const safePageSize = Math.max(1, Math.min(pageSize, 100));
-  const { data, error } = await query
+  const rangedQuery = query
     .order("id", { ascending: true })
     .range(safeOffset, safeOffset + safePageSize);
+  const { data, error } = await (signal
+    ? rangedQuery.abortSignal(signal)
+    : rangedQuery);
   if (error) throw error;
   const rows = ((data ?? []) as unknown[]).map((row) =>
     normalizeProduct(productRowSchema.parse(row)),

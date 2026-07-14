@@ -19,16 +19,18 @@ export default defineConfig(() => ({
     includeAssets: ["favicon.svg"],
     manifest: false,
     workbox: {
+      globIgnores: [
+        "404.html",
+        "**/CatalogPage-*.js",
+        "**/HomePage-*.js",
+        "**/AuthPage-*.js",
+        "**/AuthCallbackPage-*.js",
+        "**/SetPasswordPage-*.js",
+      ],
       importScripts: ["push-handlers.js"],
       navigateFallback: "index.html",
+      navigateFallbackAllowlist: [/^\/(?:admin|dashboard)(?:\/|$)/],
       cleanupOutdatedCaches: true,
-      runtimeCaching: [
-        {
-          urlPattern: ({ url }) => url.pathname.includes("/storage/v1/object/public/product-images/"),
-          handler: "CacheFirst",
-          options: { cacheName: "akiba-product-images-v1", expiration: { maxEntries: 160, maxAgeSeconds: 31536000 }, cacheableResponse: { statuses: [0, 200] } },
-        },
-      ],
     },
   })],
 }));

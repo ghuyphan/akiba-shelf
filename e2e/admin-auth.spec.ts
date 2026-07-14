@@ -1,6 +1,51 @@
 import { expect, test } from "@playwright/test";
 import { mockSupabase } from "./fixtures";
 
+test("advertises the staff PWA only on dashboard and admin routes", async ({
+  page,
+}) => {
+  await mockSupabase(page);
+
+  await page.goto("./admin");
+  await expect(page.locator("link[rel='manifest']")).toHaveAttribute(
+    "href",
+    "/manifest.webmanifest",
+  );
+
+  await page.goto("./dashboard");
+  await expect(page.locator("link[rel='manifest']")).toHaveCount(1);
+
+  await page.goto("./s/akiba-shelf");
+  await expect(page.locator("link[rel='manifest']")).toHaveCount(0);
+});
+
+test("offers an eligible staff browser a compact install banner", async ({
+  page,
+}) => {
+  await mockSupabase(page, { staffRole: "owner" });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+
+  await page.evaluate(() => {
+    const event = new Event("beforeinstallprompt", { cancelable: true });
+    Object.assign(event, {
+      prompt: async () => undefined,
+      userChoice: Promise.resolve({ outcome: "accepted", platform: "web" }),
+    });
+    window.dispatchEvent(event);
+  });
+
+  const installBanner = page.getByLabel("Install Matsuri staff app");
+  await expect(installBanner).toBeVisible();
+  await expect(installBanner).toContainText("Keep Matsuri close");
+  await installBanner
+    .getByRole("button", { name: "Install", exact: true })
+    .click();
+  await expect(installBanner).toHaveCount(0);
+});
+
 test("routes an authenticated non-staff user to the dashboard", async ({
   page,
 }) => {

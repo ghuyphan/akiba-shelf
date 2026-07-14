@@ -2,16 +2,14 @@ import { createPortal } from "react-dom";
 import {
   Check,
   Clock,
-  Facebook,
-  Instagram,
   MapPin,
   ShoppingBag,
   Sparkles,
 } from "lucide-react";
 import { Modal } from "../ui/Modal";
-import { TiktokIcon } from "../ui/TiktokIcon";
+import { SocialBrandIcon } from "../ui/SocialBrandIcon";
 import { SocialQrCard } from "./SocialQrCard";
-import { SOCIAL_BRAND_COLORS } from "../../lib/social";
+import { configuredSocialPlatforms } from "../../lib/social";
 import { formatVnd } from "../../lib/format";
 import { useCatalogCopy } from "../../lib/catalogI18n";
 import type {
@@ -34,19 +32,7 @@ export function BoothDetailsModal({
   onClose: () => void;
 }) {
   const copy = useCatalogCopy();
-  const socialLinks = [
-    {
-      label: "Instagram",
-      url: booth.instagram_url,
-      icon: <Instagram size={18} />,
-    },
-    {
-      label: "Facebook",
-      url: booth.facebook_url,
-      icon: <Facebook size={18} />,
-    },
-    { label: "TikTok", url: booth.tiktok_url, icon: <TiktokIcon size={18} /> },
-  ]
+  const socialLinks = configuredSocialPlatforms(booth)
     .map((item) => ({ ...item, url: safePublicUrl(item.url) }))
     .filter((item) => item.url);
 
@@ -111,16 +97,15 @@ export function BoothDetailsModal({
             </div>
             <div className="booth-modal-social-grid">
               {socialLinks.map((item) => {
-                const brand = SOCIAL_BRAND_COLORS[item.label];
                 return (
                   <SocialQrCard
                     key={item.label}
                     label={item.label}
                     url={item.url!}
               logoUrl={safePublicUrl(booth.social_qr_logo_url)}
-                    icon={item.icon}
-                    brandColor={brand?.color}
-                    brandGradient={brand?.gradient}
+                    icon={<SocialBrandIcon platform={item.label} size={18} />}
+                    brandColor={item.color}
+                    brandGradient={item.gradient}
                   />
                 );
               })}

@@ -5,13 +5,11 @@ import "./styles/legacy.css";
 import { App } from "./App";
 import { resetDocumentBranding } from "./lib/branding";
 import { hydrateInitialPageTheme } from "./lib/theme";
-import { registerPwa } from "./lib/pwa";
 import { restoreRedirect } from "./lib/authUrls";
 
 restoreRedirect();
 hydrateInitialPageTheme();
 resetDocumentBranding();
-registerPwa();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

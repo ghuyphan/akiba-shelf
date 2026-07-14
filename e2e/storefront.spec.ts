@@ -6,6 +6,12 @@ test.beforeEach(async ({ page }) => {
   await page.goto("./s/akiba-shelf");
 });
 
+test("does not advertise the staff PWA from a customer storefront", async ({
+  page,
+}) => {
+  await expect(page.locator("link[rel='manifest']")).toHaveCount(0);
+});
+
 test("uses a familiar featured icon and centers the collection badge", async ({
   page,
 }) => {
@@ -77,6 +83,20 @@ test("renders social QR codes with gradient dots in the simple card layout", asy
   await expect(
     qrDialog.getByRole("link", { name: /Open Profile Link/i }),
   ).toHaveAttribute("href", "https://instagram.com/fixture.artist");
+
+  const xCard = boothDialog.locator(".social-qr-x");
+  const youtubeCard = boothDialog.locator(".social-qr-youtube");
+  await expect(xCard).toBeVisible();
+  await expect(xCard.locator(".social-qr-header")).toHaveCSS(
+    "color",
+    "rgb(15, 20, 25)",
+  );
+  await expect(youtubeCard).toBeVisible();
+  await expect(youtubeCard.locator(".social-qr-header")).toHaveCSS(
+    "color",
+    "rgb(255, 0, 51)",
+  );
+  await expect(boothDialog.locator(".social-qr-threads")).toHaveCount(0);
 });
 
 test("uses the booth locale and derives its open status from local time", async ({
@@ -130,6 +150,34 @@ test("browses, filters, searches, opens details, and enforces quantity limits", 
   await page.getByRole("button", { name: /Add Moon Stand to cart/i }).click();
   await page.getByRole("button", { name: /Add Moon Stand to cart/i }).click();
   await expect(page.getByText(/Only 2 units are available/i)).toBeVisible();
+});
+
+test("keeps the storefront mounted while a category refreshes", async ({
+  page,
+}) => {
+  await page.route("**/mock-supabase/rest/v1/products**", async (route) => {
+    const url = new URL(route.request().url());
+    if (
+      url.searchParams.get("category") === "eq.Print" &&
+      url.searchParams.get("select") !== "category"
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 700));
+    }
+    await route.fallback();
+  });
+
+  const printCategory = page.getByRole("button", {
+    name: "Print",
+    exact: true,
+  });
+  await expect(printCategory).toBeVisible();
+  await printCategory.click();
+  await expect(page.getByText("Stocking the shelf")).toBeVisible();
+  await expect(page.locator(".app-shell")).toBeVisible();
+  await expect(page.locator(".page-loading")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "View details for Sun Print" }),
+  ).toBeVisible();
 });
 
 test("loads the catalog in batches without hiding later search results", async ({

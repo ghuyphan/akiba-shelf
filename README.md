@@ -42,9 +42,9 @@ other credential in a `VITE_*` variable. Matsuri generates VietQR images from
 the public image endpoint and does not require a browser-side VietQR API key.
 Never commit `.env.local` or service-role credentials.
 
-## PWA and Android order notifications
+## Staff PWA and Android order notifications
 
-The storefront/admin app includes a service worker and installable manifest. Installed-app branding always uses Matsuri; browser title, theme color, and favicon use a verified shop identity only on shop-owned routes.
+Only `/admin` and `/dashboard` advertise and register the Matsuri staff PWA. Customer storefront routes remain ordinary web pages and are excluded from the service worker's offline navigation fallback and storefront-specific runtime caching. The installed app launches into `/admin`; storefront previews open in a regular browser tab. Because these staff routes are sibling root paths, the worker registration retains root scope for push delivery, while a strict navigation allow-list keeps the offline app shell limited to staff routes.
 
 To enable background order notifications:
 
