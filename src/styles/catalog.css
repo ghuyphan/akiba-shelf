@@ -338,7 +338,7 @@
 
 .storefront-content-main .catalog-toolbar {
   display: grid;
-  grid-template-columns: minmax(150px, 176px) 122px 72px;
+  grid-template-columns: minmax(150px, 176px) minmax(136px, auto) 76px;
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -425,7 +425,7 @@
   }
 
   .storefront-content-main .catalog-toolbar {
-    grid-template-columns: 176px 122px 72px;
+    grid-template-columns: 176px minmax(136px, auto) 76px;
     width: auto;
   }
 }
