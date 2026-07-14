@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PageLoading } from "../components/ui/PageLoading";
 import { supabase } from "../lib/supabase";
 import { getShopMemberships } from "../lib/api";
@@ -15,8 +15,9 @@ import { usePlatformI18n } from "../lib/platformI18n";
 export function AuthCallbackPage() {
   const { t } = usePlatformI18n();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const [message, setMessage] = useState(() => t("Confirming your secure link…"));
+  const [message, setMessage] = useState(() =>
+    t("Confirming your secure link…"),
+  );
   const [failed, setFailed] = useState(false);
   const started = useRef(false);
 
@@ -30,24 +31,32 @@ export function AuthCallbackPage() {
       const callbackError =
         callbackParams.get("error_description") ||
         hash.get("error_description");
-      if (callbackError) throw new Error(callbackError);
-      const code = callbackParams.get("code");
       const recovery =
         callbackParams.get("next") === "set-password" ||
         hash.get("type") === "recovery";
-      window.history.replaceState(
-        null,
-        "",
-        `${import.meta.env.BASE_URL}auth/callback`,
-      );
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) throw error;
+
+      const cleanCallbackUrl = () => {
+        window.history.replaceState(
+          null,
+          "",
+          `${import.meta.env.BASE_URL}auth/callback`,
+        );
+      };
+
+      if (callbackError) {
+        cleanCallbackUrl();
+        throw new Error(callbackError);
       }
+
       const {
         data: { session },
         error,
       } = await supabase.auth.getSession();
+
+      // Do not move this above getSession().
+      // Supabase initialization must read the original callback URL first.
+      cleanCallbackUrl();
+
       if (error) throw error;
       if (!session)
         throw new Error(
@@ -74,7 +83,7 @@ export function AuthCallbackPage() {
       setFailed(true);
       setMessage(t(notice.message));
     });
-  }, [navigate, params, t]);
+  }, [navigate, t]);
 
   if (!failed)
     return <PageLoading title={t("Finishing sign in")} message={message} />;
