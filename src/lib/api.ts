@@ -1,4 +1,5 @@
 import { defaultBooth, defaultPayment } from "./constants";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./supabase";
 import { safeUuid } from "./id";
 import {
@@ -578,6 +579,22 @@ export async function deleteStaffMember(shopId: string, userId: string) {
   if (error) throw error;
 }
 
+async function handleFunctionsError(error: unknown): Promise<never> {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const body = await error.context.json();
+      if (body && typeof body === "object" && typeof body.error === "string") {
+        throw new Error(body.error);
+      }
+    } catch (caught) {
+      if (caught instanceof Error && caught.message !== "Could not reach the invitation service.") {
+        throw caught;
+      }
+    }
+  }
+  throw new Error("Could not reach the invitation service.");
+}
+
 export type InvitationOutcome = "processed";
 export async function inviteShopMember(
   shopId: string,
@@ -588,7 +605,9 @@ export async function inviteShopMember(
   const { data, error } = await client.functions.invoke("invite-shop-member", {
     body: { action: "invite", shopId, email, role },
   });
-  if (error) throw error;
+  if (error) {
+    await handleFunctionsError(error);
+  }
   if ((data as { outcome?: string })?.outcome !== "processed")
     throw new Error("Invitation response was invalid.");
   return "processed";
@@ -616,7 +635,9 @@ export async function updateShopInvitation(
   const { error } = await client.functions.invoke("invite-shop-member", {
     body: { action, shopId, invitationId },
   });
-  if (error) throw error;
+  if (error) {
+    await handleFunctionsError(error);
+  }
 }
 
 export async function createShop(name: string, slug: string): Promise<Shop> {

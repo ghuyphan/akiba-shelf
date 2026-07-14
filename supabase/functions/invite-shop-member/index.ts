@@ -1,4 +1,8 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient as defaultCreateClient } from "npm:@supabase/supabase-js@2";
+
+export const clientFactory = {
+  createClient: defaultCreateClient,
+};
 
 const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "";
 const siteOrigin = (() => {
@@ -10,9 +14,10 @@ const siteOrigin = (() => {
 })();
 const cors = {
   "Access-Control-Allow-Origin": siteOrigin,
-  Vary: "Origin",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Vary": "Origin",
 };
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -62,10 +67,10 @@ export async function handleInviteRequest(request: Request): Promise<Response> {
 
   try {
     const url = Deno.env.get("SUPABASE_URL")!;
-    const caller = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    const caller = clientFactory.createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authorization } },
     });
-    const admin = createClient(
+    const admin = clientFactory.createClient(
       url,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { autoRefreshToken: false, persistSession: false } },
