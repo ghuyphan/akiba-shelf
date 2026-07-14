@@ -370,3 +370,31 @@ test("mobile team members use one unified list surface", async ({ page }) => {
     memberRows.first().getByRole("button", { name: /Remove/ }),
   ).toHaveCSS("width", "74px");
 });
+
+test("renders callback error page with proper centered card and constrained logo styling", async ({
+  page,
+}) => {
+  await mockSupabase(page);
+  await page.goto("./auth/callback?error_description=Access%20denied");
+
+  // Verify elements exist
+  const card = page.locator(".admin-access-card");
+  const logo = page.locator(".admin-login-logo .platform-mark");
+
+  await expect(page.getByText("Could not finish sign in")).toBeVisible();
+  await expect(card).toBeVisible();
+  await expect(logo).toBeVisible();
+
+  // Verify computed styles/bounding boxes for layout sanity
+  const cardBox = await card.boundingBox();
+  const logoBox = await logo.boundingBox();
+
+  expect(cardBox?.width).toBeLessThanOrEqual(480);
+  expect(logoBox?.width).toBeLessThan(50);
+
+  // Verify the card has background-color and is not transparent
+  const cardBg = await card.evaluate(
+    (el) => window.getComputedStyle(el).backgroundColor,
+  );
+  expect(cardBg).toMatch(/rgba?\(255,\s*255,\s*255/);
+});

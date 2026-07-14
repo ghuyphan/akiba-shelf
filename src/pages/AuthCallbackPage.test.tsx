@@ -192,7 +192,14 @@ describe("AuthCallbackPage regression tests", () => {
         "This secure link is invalid or expired. Request a new one.",
       ),
     ).toBeInTheDocument();
+    expect(screen.getByText("Back to sign in")).toBeInTheDocument();
     expect(api.getShopMemberships).not.toHaveBeenCalled();
+
+    // Verify expected auth shell structure is rendered
+    expect(document.querySelector(".admin-login")).toBeInTheDocument();
+    expect(document.querySelector(".admin-access-card")).toBeInTheDocument();
+    expect(document.querySelector(".admin-login-panel")).toBeInTheDocument();
+    expect(document.querySelector(".admin-login-logo")).toBeInTheDocument();
   });
 
   it("handles session retrieval error cleanly", async () => {

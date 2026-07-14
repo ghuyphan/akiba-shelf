@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import "../styles/admin.css";
 import { PageLoading } from "../components/ui/PageLoading";
 import { supabase } from "../lib/supabase";
 import { getShopMemberships } from "../lib/api";

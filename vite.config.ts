@@ -29,7 +29,7 @@ export default defineConfig(() => ({
       ],
       importScripts: ["push-handlers.js"],
       navigateFallback: "index.html",
-      navigateFallbackAllowlist: [/^\/(?:admin|dashboard)(?:\/|$)/],
+      navigateFallbackAllowlist: [/^\/(?:admin|dashboard|auth)(?:\/|$)/],
       cleanupOutdatedCaches: true,
     },
   })],
