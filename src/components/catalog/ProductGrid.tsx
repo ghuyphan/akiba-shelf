@@ -1,4 +1,4 @@
-import { AlertTriangle, LoaderCircle, PackageSearch, RotateCcw, Tags } from "lucide-react";
+import { AlertTriangle, ChevronDown, LoaderCircle, PackageSearch, RotateCcw, Tags } from "lucide-react";
 import type { Product } from "../../types/catalog";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
@@ -18,10 +18,14 @@ type ProductGridProps = {
   error?: string;
   onRetry?: () => void;
   searchActive?: boolean;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 };
 
-export function ProductGrid({ products, totalProducts, activeCategory, selectedProduct, viewMode, onSelect, onViewDetails, onResetFilters, loading = false, error, onRetry, searchActive = false }: ProductGridProps) {
+export function ProductGrid({ products, totalProducts, activeCategory, selectedProduct, viewMode, onSelect, onViewDetails, onResetFilters, loading = false, error, onRetry, searchActive = false, hasMore = false, loadingMore = false, onLoadMore }: ProductGridProps) {
   const copy = useCatalogCopy();
+  const resultsKey = `${viewMode}:${products.map((product) => product.id).join("|")}`;
   if (loading && totalProducts === 0) return <EmptyState tone="loading" icon={<LoaderCircle className="state-spinner" size={28} />} title={copy.loadingCatalog} message={copy.loadingCatalogHint} />;
   if (error && totalProducts === 0) return <EmptyState tone="error" icon={<AlertTriangle size={28} />} title={copy.catalogUnavailable} message={copy.catalogUnavailableHint} action={onRetry ? <Button type="button" icon={<RotateCcw size={18} />} onClick={onRetry}>{copy.tryAgain}</Button> : undefined} />;
   if (products.length === 0) {
@@ -45,18 +49,34 @@ export function ProductGrid({ products, totalProducts, activeCategory, selectedP
   }
 
   return (
-    <div className={`product-grid ${viewMode === "list" ? "product-grid-list" : ""}`}>
-      {products.map((product, index) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          selected={product.id === selectedProduct?.id}
-          viewMode={viewMode}
-          onSelect={onSelect}
-          onViewDetails={onViewDetails}
-          style={{ animationDelay: `${Math.min(index * 45, 600)}ms` }}
-        />
-      ))}
+    <div className="product-results" aria-busy={loading || loadingMore}>
+      <div key={resultsKey} className={`product-grid ${viewMode === "list" ? "product-grid-list" : ""}`}>
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            selected={product.id === selectedProduct?.id}
+            viewMode={viewMode}
+            onSelect={onSelect}
+            onViewDetails={onViewDetails}
+          />
+        ))}
+      </div>
+      {(hasMore || loadingMore) && onLoadMore ? (
+        <div className="catalog-load-more">
+          <span>{copy.itemsShown(products.length)}</span>
+          <Button
+            type="button"
+            variant="secondary"
+            icon={<ChevronDown size={18} />}
+            loading={loadingMore}
+            loadingText={copy.loadingMore}
+            onClick={onLoadMore}
+          >
+            {copy.loadMore}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

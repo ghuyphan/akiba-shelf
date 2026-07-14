@@ -634,10 +634,6 @@
     width: 100% !important;
   }
 
-  .view-toggle {
-    flex-shrink: 0;
-  }
-
   .checkout-guide {
     grid-template-columns: 1fr;
   }
@@ -1184,29 +1180,9 @@
   min-height: 34px !important;
 }
 
-.view-toggle::before {
-  inset: 3px auto 3px 3px !important;
-  width: 30px !important;
-  border-radius: 6px !important;
-}
-
-.view-toggle:has(button:nth-child(2).active)::before {
-  transform: translateX(36px) !important;
-}
-
-.view-toggle button {
-  width: 36px !important;
-  height: 28px !important;
-}
-
 .product-badge-featured {
   background: var(--mustard) !important;
   color: #fff !important;
-}
-
-.view-toggle button.active {
-  color: var(--coral);
-  background: transparent;
 }
 
 .product-grid {

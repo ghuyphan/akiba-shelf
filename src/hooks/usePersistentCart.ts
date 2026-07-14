@@ -8,10 +8,13 @@ export function usePersistentCart(shopKey?: string) {
   useEffect(() => { setCart(loadCart(shopKey)); }, [shopKey]);
   useEffect(() => { saveCart(cart, shopKey); }, [cart, shopKey]);
 
-  const reconcileCart = useCallback((products: Product[]) => {
+  const reconcileCart = useCallback((products: Product[], authoritativeIds?: string[]) => {
+    const productsById = new Map(products.map((product) => [product.id, product]));
+    const checkedIds = new Set(authoritativeIds ?? productsById.keys());
     setCart((current) => current
       .map((item) => {
-        const product = products.find((candidate) => candidate.id === item.product.id);
+        if (!checkedIds.has(item.product.id)) return item;
+        const product = productsById.get(item.product.id);
         if (!product || product.quantity_available <= 0) return null;
         return { product, quantity: Math.min(item.quantity, product.quantity_available) };
       })

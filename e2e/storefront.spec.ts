@@ -132,6 +132,57 @@ test("browses, filters, searches, opens details, and enforces quantity limits", 
   await expect(page.getByText(/Only 2 units are available/i)).toBeVisible();
 });
 
+test("loads the catalog in batches without hiding later search results", async ({
+  page,
+}) => {
+  await page.unrouteAll({ behavior: "wait" });
+  await mockSupabase(page, { manyProducts: true });
+  await page.reload();
+
+  await expect(page.locator(".product-card")).toHaveCount(24);
+  await expect(page.getByText("24 items shown")).toBeVisible();
+  await page.getByRole("button", { name: "Load more" }).click();
+  await expect(page.locator(".product-card")).toHaveCount(30);
+  await expect(page.getByRole("button", { name: "Load more" })).toHaveCount(0);
+
+  await page.getByPlaceholder("Search items...").fill("Product 30");
+  await expect(
+    page.getByRole("button", { name: "View details for Product 30" }),
+  ).toBeVisible();
+  await expect(page.locator(".product-card")).toHaveCount(1);
+});
+
+test("keeps the view toggle aligned and animates results as one grid", async ({
+  page,
+}) => {
+  const viewToggle = page.locator(".view-toggle");
+  const gridButton = page.getByRole("button", { name: "Grid view" });
+  const listButton = page.getByRole("button", { name: "List view" });
+  const productGrid = page.locator(".product-grid");
+
+  await expect(viewToggle).toHaveCSS("display", "grid");
+  await expect(viewToggle).toHaveCSS("width", "76px");
+  await expect(gridButton).toHaveCSS("transform", "none");
+  await expect(gridButton).not.toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
+  await expect(productGrid).toHaveCSS("animation-name", "product-grid-refresh");
+  await expect(productGrid).toHaveCSS("animation-duration", "0.18s");
+  await expect(page.locator(".product-card").first()).toHaveCSS(
+    "animation-name",
+    "none",
+  );
+
+  await listButton.click();
+  await expect(listButton).toHaveClass(/active/);
+  await expect(productGrid).toHaveClass(/product-grid-list/);
+  await expect(listButton).not.toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
+});
+
 test("shows desktop category arrows when categories overflow", async ({
   page,
 }) => {

@@ -1,13 +1,14 @@
 import { ArrowDownUp, Check, ChevronDown, Grid2X2, List, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCatalogCopy } from "../../lib/catalogI18n";
+import type { PublicProductSort } from "../../lib/api";
 
 type CatalogToolbarProps = {
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  sort: string;
+  sort: PublicProductSort;
   viewMode: "grid" | "list";
-  onSortChange: (sort: string) => void;
+  onSortChange: (sort: PublicProductSort) => void;
   onViewModeChange: (mode: "grid" | "list") => void;
 };
 
@@ -20,7 +21,7 @@ export function CatalogToolbar({
   onViewModeChange,
 }: CatalogToolbarProps) {
   const copy = useCatalogCopy();
-  const sortOptions = [
+  const sortOptions: { value: PublicProductSort; label: string }[] = [
     { value: "recommended", label: copy.recommended },
     { value: "price-asc", label: copy.priceLow },
     { value: "price-desc", label: copy.priceHigh },

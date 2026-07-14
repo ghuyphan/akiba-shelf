@@ -10,10 +10,9 @@ type ProductCardProps = {
   viewMode: "grid" | "list";
   onSelect: (product: Product, event?: React.MouseEvent) => void;
   onViewDetails: (product: Product) => void;
-  style?: React.CSSProperties;
 };
 
-export function ProductCard({ product, selected, viewMode, onSelect, onViewDetails, style }: ProductCardProps) {
+export function ProductCard({ product, selected, viewMode, onSelect, onViewDetails }: ProductCardProps) {
   const copy = useCatalogCopy();
   const images = product.images.filter(Boolean);
   const primaryImage = product.image_variants?.[0]?.thumbnail || images[0];
@@ -22,7 +21,6 @@ export function ProductCard({ product, selected, viewMode, onSelect, onViewDetai
   return (
     <div
       className={`product-card ${selected ? "product-card-selected" : ""} ${viewMode === "list" ? "product-card-list" : ""} ${isSoldOut ? "product-card-soldout" : ""}`}
-      style={style}
       role="button"
       tabIndex={0}
       aria-label={copy.viewDetails(product.name)}

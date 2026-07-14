@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(51);
+select plan(52);
 
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values
 ('10000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner@test.local','',now(),now(),now()),
@@ -35,6 +35,7 @@ select throws_ok($$select logo_path from public.booth_settings$$,'42501',null,'a
 select throws_ok($$select social_qr_logo_path from public.booth_settings$$,'42501',null,'anonymous cannot select social QR storage paths');
 select lives_ok($$select id,name,images,image_variants from public.products$$,'anonymous can select public product fields');
 select lives_ok($$select id,booth_name,logo_url,theme_primary from public.booth_settings$$,'anonymous can select public booth fields');
+select lives_ok($$select id,bank_code,bank_account_no,payment_instructions from public.payment_settings$$,'anonymous can select public payment fields');
 select is_empty($$select id from public.products where id='auth-b-active'$$,'anonymous cannot read products from inactive shops');
 
 set local role authenticated;

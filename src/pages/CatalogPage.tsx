@@ -27,7 +27,7 @@ import {
 import { layoutOrderSchema } from "../lib/schemas";
 import { PageLoading } from "../components/ui/PageLoading";
 import { Link, useParams } from "react-router-dom";
-import { getPublicShop } from "../lib/api";
+import { getPublicShop, type PublicProductSort } from "../lib/api";
 import type { Shop } from "../types/catalog";
 import { LogIn, RotateCw, Store } from "lucide-react";
 
@@ -50,18 +50,45 @@ export function CatalogPage() {
   const [shop, setShop] = useState<Shop | null>();
   const [shopLoadError, setShopLoadError] = useState("");
   const [lightweightMode] = useState(prefersLightweightCatalog);
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sort, setSort] = useState<PublicProductSort>("recommended");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { cart, setCart, reconcileCart } = usePersistentCart(shopSlug);
   const catalogShopId = shop?.catalog_source_shop_id ?? shop?.id;
   const orderingEnabled = shop?.accepting_orders !== false;
+  const cartProductIdsKey = JSON.stringify(
+    cart.map((item) => item.product.id),
+  );
+  const cartProductIds = useMemo(
+    () => JSON.parse(cartProductIdsKey) as string[],
+    [cartProductIdsKey],
+  );
+  const catalogQuery = useMemo(
+    () => ({ category: activeCategory, search: debouncedSearch, sort }),
+    [activeCategory, debouncedSearch, sort],
+  );
   const {
     products,
+    featuredProducts,
+    categories: catalogCategories,
     booth: catalogBooth,
     payment,
+    hasMore,
     loadError,
     isLoading,
+    isLoadingMore,
+    loadMore,
     reloadAll: loadCatalog,
     ensurePayment,
-  } = useCatalogData(catalogShopId, reconcileCart, orderingEnabled);
+  } = useCatalogData(
+    catalogShopId,
+    catalogQuery,
+    cartProductIds,
+    reconcileCart,
+    orderingEnabled,
+  );
   const booth = useMemo(
     () =>
       shop?.catalog_source_shop_id
@@ -72,10 +99,6 @@ export function CatalogPage() {
   const catalogCopy = translations[booth.catalog_locale ?? "en"];
   const { flyingItems, animateAdd } = useAddToCartFeedback(lightweightMode);
   const [online, setOnline] = useState(navigator.onLine);
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sort, setSort] = useState("recommended");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
@@ -177,6 +200,14 @@ export function CatalogPage() {
     if (cart.length === 0) setIsCartExpanded(false);
   }, [cart.length]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setDebouncedSearch(searchQuery.trim()),
+      250,
+    );
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
   const handleAddToCart = (product: Product, event?: React.MouseEvent) => {
     if (
       !product.active ||
@@ -254,47 +285,9 @@ export function CatalogPage() {
   }, [setCart]);
 
   const categories = useMemo(
-    () => [
-      "All",
-      ...Array.from(
-        new Set(products.map((product) => product.category)),
-      ).filter(Boolean),
-    ],
-    [products],
+    () => ["All", ...catalogCategories],
+    [catalogCategories],
   );
-
-  const visibleProducts = useMemo(() => {
-    let filtered =
-      activeCategory === "All"
-        ? products
-        : products.filter((product) => product.category === activeCategory);
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(
-        (product) =>
-          product.name.toLowerCase().includes(q) ||
-          product.item_code.toLowerCase().includes(q) ||
-          (product.collection &&
-            product.collection.toLowerCase().includes(q)) ||
-          (product.description &&
-            product.description.toLowerCase().includes(q)),
-      );
-    }
-
-    return [...filtered].sort((first, second) => {
-      if (sort === "price-asc") return first.price_vnd - second.price_vnd;
-      if (sort === "price-desc") return second.price_vnd - first.price_vnd;
-      if (sort === "quantity")
-        return second.quantity_available - first.quantity_available;
-      if (sort === "name") return first.name.localeCompare(second.name);
-
-      // Default / Recommended: sort featured first, then by sort_order
-      if (first.featured && !second.featured) return -1;
-      if (!first.featured && second.featured) return 1;
-      return first.sort_order - second.sort_order;
-    });
-  }, [activeCategory, products, sort, searchQuery]);
 
   const storefrontOrder = useMemo<StorefrontSection[]>(() => {
     const fallback: StorefrontSection[] = [
@@ -311,7 +304,7 @@ export function CatalogPage() {
   const storefrontBlocks: Record<StorefrontSection, React.ReactNode> = {
     featured: (
       <StackedFeatured
-        products={products}
+        products={featuredProducts}
         onSelect={handleAddToCart}
         autoRotate={!lightweightMode && (booth.featured_autoplay ?? true)}
       />
@@ -338,8 +331,8 @@ export function CatalogPage() {
     ),
     products: (
       <ProductGrid
-        products={visibleProducts}
-        totalProducts={products.length}
+        products={products}
+        totalProducts={products.length + (hasMore ? 1 : 0)}
         activeCategory={activeCategory}
         selectedProduct={products.find((p) => p.id === selectedProductId)}
         viewMode={viewMode}
@@ -353,6 +346,9 @@ export function CatalogPage() {
         error={loadError}
         onRetry={() => void loadCatalog()}
         searchActive={Boolean(searchQuery.trim())}
+        hasMore={hasMore}
+        loadingMore={isLoadingMore}
+        onLoadMore={() => void loadMore()}
       />
     ),
     booth: <BoothInfoPanel booth={booth} />,

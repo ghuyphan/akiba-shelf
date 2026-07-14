@@ -107,6 +107,7 @@ export async function mockSupabase(
     checkoutFails?: boolean;
     multiShop?: boolean;
     manyCategories?: boolean;
+    manyProducts?: boolean;
     manyShops?: boolean;
     ownedShopCount?: number;
     teamMembers?: boolean;
@@ -114,8 +115,17 @@ export async function mockSupabase(
     catalogLocale?: "en" | "vi";
   } = {},
 ) {
-  const catalogProducts = options.manyCategories
-    ? [
+  const catalogProducts = options.manyProducts
+    ? Array.from({ length: 30 }, (_, index) => ({
+        ...products[index % products.length],
+        id: `product-${index + 1}`,
+        name: `Product ${String(index + 1).padStart(2, "0")}`,
+        item_code: `PRODUCT-${index + 1}`,
+        featured: index < 2,
+        sort_order: index + 1,
+      }))
+    : options.manyCategories
+      ? [
         ...products,
         ...["Badge", "Sticker pack", "Apparel", "Charm", "Stationery"].map(
           (category, index) => ({
@@ -127,8 +137,8 @@ export async function mockSupabase(
             sort_order: index + 3,
           }),
         ),
-      ]
-    : products;
+        ]
+      : products;
 
   await page.route("**/mock-supabase/**", async (route) => {
     const request = route.request();
@@ -278,16 +288,75 @@ export async function mockSupabase(
       return json(route, { sent: 0 });
     if (url.pathname.includes("/rest/v1/products")) {
       const id = url.searchParams.get("shop_id")?.replace(/^eq\./, "");
+      let matchingProducts = options.multiShop
+        ? catalogProducts.map((product) => ({
+            ...product,
+            id: `${id}-${product.id}`,
+            name: `${id} ${product.name}`,
+            shop_id: id,
+          }))
+        : [...catalogProducts];
+      const category = url.searchParams
+        .get("category")
+        ?.replace(/^eq\./, "");
+      if (category)
+        matchingProducts = matchingProducts.filter(
+          (product) => product.category === category,
+        );
+      if (url.searchParams.get("featured") === "eq.true")
+        matchingProducts = matchingProducts.filter(
+          (product) => product.featured,
+        );
+      const searchFilter = url.searchParams.get("or") ?? "";
+      const searchTerm = searchFilter.match(/ilike\.\*([^*]+)\*/)?.[1];
+      if (searchTerm) {
+        const normalized = searchTerm.toLowerCase();
+        matchingProducts = matchingProducts.filter((product) =>
+          [
+            product.name,
+            product.item_code,
+            product.collection,
+            product.description,
+          ].some((value) => value.toLowerCase().includes(normalized)),
+        );
+      }
+      const requestedIds = url.searchParams.get("id")?.match(/^in\.\((.*)\)$/)?.[1];
+      if (requestedIds) {
+        const ids = new Set(requestedIds.split(","));
+        matchingProducts = matchingProducts.filter((product) =>
+          ids.has(product.id),
+        );
+      }
+      const order = url.searchParams.get("order") ?? "";
+      matchingProducts.sort((first, second) => {
+        if (order.startsWith("price_vnd.asc"))
+          return first.price_vnd - second.price_vnd;
+        if (order.startsWith("price_vnd.desc"))
+          return second.price_vnd - first.price_vnd;
+        if (order.startsWith("quantity_available.desc"))
+          return second.quantity_available - first.quantity_available;
+        if (order.startsWith("name.asc"))
+          return first.name.localeCompare(second.name);
+        if (order.startsWith("featured.desc") && first.featured !== second.featured)
+          return first.featured ? -1 : 1;
+        return first.sort_order - second.sort_order;
+      });
+      const total = matchingProducts.length;
+      const range = request.headers()["range"]?.split("-").map(Number);
+      const offset = Number(url.searchParams.get("offset") ?? range?.[0] ?? 0);
+      const limit = Number(
+        url.searchParams.get("limit") ??
+          (range?.length === 2 ? range[1] - range[0] + 1 : total),
+      );
+      matchingProducts = matchingProducts.slice(offset, offset + limit);
+      const responseBody = url.searchParams.get("select") === "category"
+        ? matchingProducts.map((product) => ({ category: product.category }))
+        : matchingProducts;
       return json(
         route,
-        options.multiShop
-          ? catalogProducts.map((product) => ({
-              ...product,
-              id: `${id}-${product.id}`,
-              name: `${id} ${product.name}`,
-              shop_id: id,
-            }))
-          : catalogProducts,
+        responseBody,
+        200,
+        { "content-range": `0-${Math.max(0, matchingProducts.length - 1)}/${total}` },
       );
     }
     if (url.pathname.includes("/rest/v1/booth_settings")) {

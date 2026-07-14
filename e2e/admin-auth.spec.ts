@@ -1,12 +1,20 @@
 import { expect, test } from "@playwright/test";
 import { mockSupabase } from "./fixtures";
 
-test("rejects an authenticated non-staff user", async ({ page }) => {
+test("routes an authenticated non-staff user to the dashboard", async ({
+  page,
+}) => {
   await mockSupabase(page, { staffRole: null });
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("outsider@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
   await page.getByRole("button", { name: "Open admin" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome to Matsuri" }),
+  ).toBeVisible();
+  await page
+    .getByRole("link", { name: /Create your own shop \(optional\)/ })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Create your shop" }),
   ).toBeVisible();

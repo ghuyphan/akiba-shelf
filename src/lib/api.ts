@@ -188,21 +188,164 @@ export async function getDefaultShop(): Promise<Shop | null> {
 export async function getCatalogCoreData(
   shopId: string,
 ): Promise<Pick<CatalogData, "products" | "booth">> {
-  const [products, booth] = await Promise.all([
-    getPublicProducts(shopId),
-    getPublicBoothSettings(shopId),
-  ]);
-  return { products, booth };
+  const boothRequest = getPublicBoothSettings(shopId);
+  const products: Product[] = [];
+  let hasMore = true;
+
+  while (hasMore) {
+    const page = await getPublicProducts(shopId, {
+      offset: products.length,
+      pageSize: 100,
+    });
+    products.push(...page.products);
+    hasMore = page.hasMore;
+  }
+
+  return { products, booth: await boothRequest };
 }
 
-export async function getPublicProducts(shopId: string): Promise<Product[]> {
+export type PublicProductSort =
+  | "recommended"
+  | "price-asc"
+  | "price-desc"
+  | "quantity"
+  | "name";
+
+export type PublicProductPage = {
+  products: Product[];
+  hasMore: boolean;
+};
+
+type PublicProductQuery = {
+  offset?: number;
+  pageSize?: number;
+  category?: string;
+  search?: string;
+  sort?: PublicProductSort;
+};
+
+function safeCatalogSearch(value: string) {
+  return value
+    .trim()
+    .replace(/[\\"(),.%_*]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export async function getPublicProducts(
+  shopId: string,
+  {
+    offset = 0,
+    pageSize = 24,
+    category,
+    search = "",
+    sort = "recommended",
+  }: PublicProductQuery = {},
+): Promise<PublicProductPage> {
+  const client = requireSupabase();
+  let query = client
+    .from("products")
+    .select(PUBLIC_PRODUCT_COLUMNS)
+    .eq("shop_id", shopId)
+    .eq("active", true);
+
+  if (category && category !== "All") query = query.eq("category", category);
+
+  const searchTerm = safeCatalogSearch(search);
+  if (searchTerm) {
+    const pattern = `*${searchTerm}*`;
+    query = query.or(
+      `name.ilike.${pattern},item_code.ilike.${pattern},collection.ilike.${pattern},description.ilike.${pattern}`,
+    );
+  }
+
+  if (sort === "price-asc") {
+    query = query.order("price_vnd", { ascending: true });
+  } else if (sort === "price-desc") {
+    query = query.order("price_vnd", { ascending: false });
+  } else if (sort === "quantity") {
+    query = query.order("quantity_available", { ascending: false });
+  } else if (sort === "name") {
+    query = query.order("name", { ascending: true });
+  } else {
+    query = query
+      .order("featured", { ascending: false })
+      .order("sort_order", { ascending: true });
+  }
+
+  const safeOffset = Math.max(0, offset);
+  const safePageSize = Math.max(1, Math.min(pageSize, 100));
+  const { data, error } = await query
+    .order("id", { ascending: true })
+    .range(safeOffset, safeOffset + safePageSize);
+  if (error) throw error;
+  const rows = ((data ?? []) as unknown[]).map((row) =>
+    normalizeProduct(productRowSchema.parse(row)),
+  );
+  return {
+    products: rows.slice(0, safePageSize),
+    hasMore: rows.length > safePageSize,
+  };
+}
+
+export async function getPublicFeaturedProducts(
+  shopId: string,
+  limit = 8,
+): Promise<Product[]> {
   const client = requireSupabase();
   const { data, error } = await client
     .from("products")
     .select(PUBLIC_PRODUCT_COLUMNS)
     .eq("shop_id", shopId)
     .eq("active", true)
-    .order("sort_order", { ascending: true });
+    .eq("featured", true)
+    .order("sort_order", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return ((data ?? []) as unknown[]).map((row) =>
+    normalizeProduct(productRowSchema.parse(row)),
+  );
+}
+
+export async function getPublicProductCategories(
+  shopId: string,
+): Promise<string[]> {
+  const client = requireSupabase();
+  const categories = new Set<string>();
+  const batchSize = 1000;
+
+  for (let offset = 0; ; offset += batchSize) {
+    const { data, error } = await client
+      .from("products")
+      .select("category")
+      .eq("shop_id", shopId)
+      .eq("active", true)
+      .order("category", { ascending: true })
+      .range(offset, offset + batchSize - 1);
+    if (error) throw error;
+    const rows = (data ?? []) as { category: string | null }[];
+    rows.forEach((row) => {
+      if (row.category?.trim()) categories.add(row.category.trim());
+    });
+    if (rows.length < batchSize) break;
+  }
+
+  return [...categories];
+}
+
+export async function getPublicProductsByIds(
+  shopId: string,
+  productIds: string[],
+): Promise<Product[]> {
+  if (productIds.length === 0) return [];
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("products")
+    .select(PUBLIC_PRODUCT_COLUMNS)
+    .eq("shop_id", shopId)
+    .eq("active", true)
+    .in("id", productIds);
   if (error) throw error;
   return ((data ?? []) as unknown[]).map((row) =>
     normalizeProduct(productRowSchema.parse(row)),

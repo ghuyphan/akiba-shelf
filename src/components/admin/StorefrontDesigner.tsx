@@ -30,6 +30,7 @@ import {
 import type { BoothSettings, PaymentSettings, Product, StorefrontCardStyle, StorefrontControlsStyle, StorefrontFeaturedStyle, StorefrontProductStyle, StorefrontSection } from "../../types/catalog";
 import { getStorefrontSectionStyleClass, getThemeStyle } from "../../lib/theme";
 import { CatalogLocaleProvider } from "../../lib/catalogI18n";
+import type { PublicProductSort } from "../../lib/api";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
@@ -118,7 +119,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   const pinchStartRef = useRef<{ distance: number; zoom: number } | null>(null);
   const canvasPanRef = useRef<{ pointerId: number; x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null);
   const [previewSearch, setPreviewSearch] = useState("");
-  const [previewSort, setPreviewSort] = useState("recommended");
+  const [previewSort, setPreviewSort] = useState<PublicProductSort>("recommended");
   const [previewView, setPreviewView] = useState<"grid" | "list">("grid");
   const { busy, error, run, setError } = useAsyncAction();
   const toast = useToast();
