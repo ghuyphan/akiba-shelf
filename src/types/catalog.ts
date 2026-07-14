@@ -1,5 +1,9 @@
 export type StockStatus = "in_stock" | "limited" | "sold_out";
 export type CatalogLocale = "en" | "vi";
+export type StorefrontCardStyle = "soft" | "outlined" | "elevated" | "playful";
+export type StorefrontFeaturedStyle = "deck" | "editorial" | "minimal" | "poster";
+export type StorefrontControlsStyle = "panel" | "floating" | "compact" | "playful";
+export type StorefrontProductStyle = "classic" | "minimal" | "framed" | "playful";
 export type StorefrontSection = "featured" | "controls" | "products" | "booth" | "cart";
 export type ShopRole = "owner" | "admin" | "staff";
 
@@ -57,6 +61,10 @@ export type BoothSettings = {
   theme_background?: string;
   layout_order?: StorefrontSection[];
   corner_radius?: number;
+  card_style?: StorefrontCardStyle;
+  featured_style?: StorefrontFeaturedStyle;
+  controls_style?: StorefrontControlsStyle;
+  product_style?: StorefrontProductStyle;
   catalog_locale?: CatalogLocale;
   featured_autoplay?: boolean;
 };

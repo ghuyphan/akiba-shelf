@@ -1,16 +1,31 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Clock, Facebook, Instagram, MapPin, ShoppingBag } from "lucide-react";
 import type { BoothSettings } from "../../types/catalog";
 import { SOCIAL_BRAND_COLORS } from "../../lib/social";
 import { SocialQrCard } from "./SocialQrCard";
 import { TiktokIcon } from "../ui/TiktokIcon";
 import { safePublicUrl } from "../../lib/branding";
+import { useCatalogCopy } from "../../lib/catalogI18n";
+import { getOpeningStatus } from "../../lib/openingHours";
 
 type BoothInfoPanelProps = {
   booth: BoothSettings;
 };
 
 export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
+  const copy = useCatalogCopy();
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+  const openingStatus = getOpeningStatus(booth.open_hours, currentTime);
+  const openingLabel = openingStatus
+    ? openingStatus.isOpen
+      ? copy.openNowUntil(openingStatus.closesAt)
+      : copy.closedOpensAt(openingStatus.opensAt)
+    : copy.hoursNotSet;
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setCurrentTime(new Date()), 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
   const socialLinks = [
     { label: "Instagram", url: booth.instagram_url, icon: <Instagram size={18} /> },
     { label: "Facebook", url: booth.facebook_url, icon: <Facebook size={18} /> },
@@ -23,7 +38,10 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
 
   return (
     <aside className="booth-card booth-card-redesign">
-      <div className="booth-card-topline"><span>Booth guide</span><small><i /> Open today</small></div>
+      <div className="booth-card-topline">
+        <span>{copy.boothGuide}</span>
+        <small className={openingStatus?.isOpen ? "is-open" : "is-closed"}>{openingLabel}</small>
+      </div>
       <div className="booth-hero booth-card-identity">
         <div className="booth-hero-logo">
           {safePublicUrl(booth.logo_url) ? (
@@ -34,7 +52,7 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
         </div>
         <div className="booth-hero-info">
           <strong className="booth-hero-name">{booth.booth_name}</strong>
-          <span className="booth-hero-code">{booth.subtitle || "Official shop"}</span>
+          <span className="booth-hero-code">{booth.subtitle || copy.officialShop}</span>
         </div>
       </div>
       <div className="booth-detail-chips">
@@ -53,7 +71,7 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
       </div>
       {socialLinks.length > 0 && (
         <div className="booth-card-socials">
-          <div className="social-qr-grid" aria-label="Social QR codes">
+          <div className="social-qr-grid" aria-label={copy.socialQrCodes}>
             {socialLinks.map((item) => (
               <SocialQrCard
                 key={item.label}

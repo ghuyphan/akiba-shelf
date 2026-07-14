@@ -8,10 +8,17 @@ import { createShop, signInAdmin } from "../lib/api";
 import { useAsyncAction } from "../hooks/useAsyncAction";
 import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
 import { useToast } from "../components/ui/ToastProvider";
+import { Alert } from "../components/ui/Alert";
 import { Field, TextInput } from "../components/ui/Field";
 import { getErrorMessage } from "../lib/errors";
 import "../styles/admin.css";
 import { usePlatformI18n } from "../lib/platformI18n";
+import {
+  MAX_OWNED_SHOPS,
+  SHOP_NAME_MAX_LENGTH,
+  SHOP_SLUG_MAX_LENGTH,
+  SHOP_SLUG_MIN_LENGTH,
+} from "../lib/constants";
 
 export function NewShopPage() {
   const { state: adminSession, refresh: refreshAdminSession } = useAdminSession();
@@ -24,7 +31,10 @@ export function NewShopPage() {
   const [slug, setSlug] = useState("");
   const [isSlugEditedManually, setIsSlugEditedManually] = useState(false);
 
-  const hasShops = adminSession.status === "authorized" && adminSession.memberships.length > 0;
+  const ownedShopCount = adminSession.status === "authorized"
+    ? adminSession.memberships.filter((shop) => shop.role === "owner").length
+    : 0;
+  const creationLimitReached = ownedShopCount >= MAX_OWNED_SHOPS;
 
   async function handleLogin(email: string, password: string) {
     await signInAdmin(email, password);
@@ -58,13 +68,32 @@ export function NewShopPage() {
     const trimmedName = name.trim();
     const trimmedSlug = slug.trim();
 
+    if (creationLimitReached) {
+      toast.error(
+        t("You can create up to {{limit}} shops. Joined shops do not count toward this limit.", { limit: MAX_OWNED_SHOPS }),
+        t("Shop creation limit reached"),
+      );
+      return;
+    }
+
     if (!trimmedName) {
       toast.error(t("Shop name is required."), t("Could not create shop"));
       return;
     }
+    if (trimmedName.length > SHOP_NAME_MAX_LENGTH) {
+      toast.error(
+        t("Shop name must be between 1 and 100 characters."),
+        t("Could not create shop"),
+      );
+      return;
+    }
 
     const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-    if (trimmedSlug.length < 2 || trimmedSlug.length > 63 || !slugRegex.test(trimmedSlug)) {
+    if (
+      trimmedSlug.length < SHOP_SLUG_MIN_LENGTH ||
+      trimmedSlug.length > SHOP_SLUG_MAX_LENGTH ||
+      !slugRegex.test(trimmedSlug)
+    ) {
       toast.error(
         t("Slug must be between 2 and 63 characters, contain only lowercase letters, numbers, and single dashes, and cannot start or end with a dash."),
         t("Could not create shop"),
@@ -112,9 +141,9 @@ export function NewShopPage() {
             </div>
             <div className="admin-login-topbar-actions">
               <Link
-                to={hasShops ? "/dashboard" : "/"}
+                to="/dashboard"
                 className="admin-login-back"
-                aria-label={t(hasShops ? "Back to shops dashboard" : "Back to homepage")}
+                aria-label={t("Back to shops dashboard")}
               >
                 <ArrowLeft size={17} />
               </Link>
@@ -124,14 +153,18 @@ export function NewShopPage() {
           <div className="admin-login-heading">
             <h1>{t("Create your shop")}</h1>
             <p>{t("Set up your shop name and storefront URL slug to get started.")}</p>
+            <small>{t("{{owned}} of {{limit}} created shops used", { owned: ownedShopCount, limit: MAX_OWNED_SHOPS })}</small>
           </div>
 
-          <form onSubmit={handleSubmit} className="admin-login-form">
+          {creationLimitReached ? <Alert title={t("Shop creation limit reached")}>
+            {t("You can create up to {{limit}} shops. Joined shops do not count toward this limit.", { limit: MAX_OWNED_SHOPS })}
+          </Alert> : <form onSubmit={handleSubmit} className="admin-login-form">
             <Field label={t("Shop name")} hint={t("A friendly name for your merch booth.")}>
               <TextInput
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
                 placeholder={t("My Artist Booth")}
+                maxLength={SHOP_NAME_MAX_LENGTH}
                 required
                 disabled={busy}
               />
@@ -146,6 +179,8 @@ export function NewShopPage() {
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
                   placeholder="my-artist-booth"
+                  minLength={SHOP_SLUG_MIN_LENGTH}
+                  maxLength={SHOP_SLUG_MAX_LENGTH}
                   required
                   disabled={busy}
                 />
@@ -166,7 +201,7 @@ export function NewShopPage() {
               <span>{busy ? t("Creating shop…") : t("Create shop")}</span>
               <Plus size={18} />
             </button>
-          </form>
+          </form>}
         </div>
       </section>
     </main>

@@ -10,6 +10,14 @@ test("rejects an authenticated non-staff user", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Create your shop" }),
   ).toBeVisible();
+  await expect(page.getByLabel("Shop name")).toHaveAttribute(
+    "maxlength",
+    "100",
+  );
+  await expect(page.getByLabel("Storefront URL slug")).toHaveAttribute(
+    "maxlength",
+    "63",
+  );
 });
 
 test("allows authorized staff into orders without restricted settings", async ({
@@ -103,6 +111,32 @@ test("dashboard keeps inactive memberships visible but disabled", async ({
   );
 });
 
+test("shop creation feedback reflects the server-side ownership limit", async ({
+  page,
+}) => {
+  await mockSupabase(page, { staffRole: "owner", ownedShopCount: 5 });
+  await page.goto("./dashboard");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+
+  await expect(page.getByText("5 of 5 created shops used")).toBeVisible();
+  await expect(page.getByText(/You have joined 0 shops/)).toBeVisible();
+  await expect(
+    page.locator(".dashboard-create-card[aria-disabled='true']"),
+  ).toContainText("Shop creation limit reached");
+
+  await page.goto("./dashboard/shops/new");
+  await expect(
+    page.getByText(
+      "You can create up to 5 shops. Joined shops do not count toward this limit.",
+    ),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create shop" })).toHaveCount(
+    0,
+  );
+});
+
 test("dashboard presents the storefront slug as immutable", async ({
   page,
 }) => {
@@ -118,6 +152,44 @@ test("dashboard presents the storefront slug as immutable", async ({
     dialog.getByText("Shop URLs cannot currently be changed after creation."),
   ).toBeVisible();
   await expect(page.getByPlaceholder("shop-url-slug")).toHaveCount(0);
+  await expect(dialog.getByLabel("Shop name")).toHaveAttribute(
+    "maxlength",
+    "100",
+  );
+});
+
+test("shop switcher keeps a compact scrollable list and fixed actions", async ({
+  page,
+}) => {
+  await mockSupabase(page, { staffRole: "owner", manyShops: true });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+
+  await page
+    .getByRole("button", { name: "Active shop: Fixture Booth" })
+    .click();
+  const selectedShopMeta = page.locator(
+    ".admin-shop-switcher-menu > .select-menu-trigger .select-menu-copy small",
+  );
+  await expect(selectedShopMeta).toHaveCSS("white-space", "nowrap");
+  await expect(selectedShopMeta).toHaveCSS("text-overflow", "ellipsis");
+  const shopList = page.locator(
+    ".admin-shop-switcher-menu .select-menu-options",
+  );
+  await expect(shopList).toBeVisible();
+  await expect
+    .poll(() =>
+      shopList.evaluate(
+        (element) => element.scrollHeight > element.clientHeight,
+      ),
+    )
+    .toBe(true);
+  await expect(page.getByRole("option", { name: /All shops/ })).toBeVisible();
+  await expect(
+    page.getByRole("option", { name: /Create another shop/ }),
+  ).toBeVisible();
 });
 
 test("designer phone rules apply inside the preview iframe", async ({
@@ -133,6 +205,39 @@ test("designer phone rules apply inside the preview iframe", async ({
   await page.getByPlaceholder("Enter your password").fill("password123");
   await page.getByRole("button", { name: "Open admin" }).click();
   await page.getByRole("button", { name: /Storefront/ }).click();
+  const desktopPreview = page.frameLocator(
+    'iframe[title="desktop storefront preview"]',
+  );
+  await expect(desktopPreview.locator(".product-grid")).toBeVisible();
+  await expect
+    .poll(() =>
+      desktopPreview
+        .locator(".product-grid")
+        .evaluate(
+          (element) =>
+            getComputedStyle(element).gridTemplateColumns.split(" ").length,
+        ),
+    )
+    .toBe(3);
+
+  await page.locator('[data-designer-section="featured"]').click();
+  await page.getByRole("button", { name: /Pop poster/ }).click();
+  await expect(
+    desktopPreview.locator(".storefront-module-featured"),
+  ).toHaveClass(/style-featured-poster/);
+
+  await desktopPreview.locator(".storefront-module-controls").click();
+  await page.getByRole("button", { name: /Compact/ }).click();
+  await expect(
+    desktopPreview.locator(".storefront-module-controls"),
+  ).toHaveClass(/style-controls-compact/);
+
+  await desktopPreview.locator(".storefront-module-products").click();
+  await page.getByRole("button", { name: /Framed/ }).click();
+  await expect(
+    desktopPreview.locator(".storefront-module-products"),
+  ).toHaveClass(/style-product-framed/);
+
   await page.getByRole("button", { name: "Phone" }).click();
   const preview = page.frameLocator('iframe[title="phone storefront preview"]');
   await expect(preview.locator("body")).toHaveClass(
@@ -144,4 +249,31 @@ test("designer phone rules apply inside the preview iframe", async ({
   await expect(
     preview.getByRole("button", { name: /Booth info/ }),
   ).toBeVisible();
+  await preview.getByRole("button", { name: /Booth info/ }).click();
+  await expect(preview.locator(".designer-header-trigger-wrapper")).toHaveClass(
+    /is-selected/,
+  );
+  await expect(
+    preview.locator(".storefront-module-cart > .designer-module-handle"),
+  ).toHaveCSS("position", "fixed");
+});
+
+test("mobile team members use one unified list surface", async ({ page }) => {
+  test.skip(page.viewportSize()!.width > 760, "Mobile-only team layout.");
+  await mockSupabase(page, { staffRole: "owner", teamMembers: true });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Team", exact: true }).click();
+
+  const membersPanel = page.locator(".staff-members-panel");
+  const memberRows = membersPanel.locator(".admin-staff-row");
+  await expect(memberRows).toHaveCount(3);
+  await expect(membersPanel).toHaveCSS("border-top-width", "1px");
+  await expect(memberRows.first()).toHaveCSS("border-radius", "0px");
+  await expect(memberRows.nth(1)).toHaveCSS("border-top-width", "1px");
+  await expect(
+    memberRows.first().getByRole("button", { name: /Remove/ }),
+  ).toHaveCSS("width", "74px");
 });

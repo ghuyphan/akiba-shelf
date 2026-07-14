@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -7,6 +7,7 @@ import {
   LogOut,
   ArrowLeft,
   Edit3,
+  MailCheck,
 } from "lucide-react";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { PlatformMark } from "../components/ui/PlatformMark";
@@ -27,6 +28,7 @@ import type { ShopMembership } from "../types/catalog";
 import "../styles/admin.css";
 import { usePlatformI18n } from "../lib/platformI18n";
 import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";
+import { MAX_OWNED_SHOPS, SHOP_NAME_MAX_LENGTH } from "../lib/constants";
 
 export function DashboardPage() {
   const { state: adminSession, refresh: refreshAdminSession } =
@@ -45,12 +47,6 @@ export function DashboardPage() {
     run: runEdit,
     setError: setEditError,
   } = useAsyncAction();
-
-  useEffect(() => {
-    if (adminSession.status === "unauthorized") {
-      navigate("/dashboard/shops/new", { replace: true });
-    }
-  }, [adminSession.status, navigate]);
 
   async function handleLogin(email: string, password: string) {
     await signInAdmin(email, password);
@@ -89,6 +85,13 @@ export function DashboardPage() {
 
     if (!trimmedName) {
       toast.error(t("Shop name is required."), t("Could not save shop details"));
+      return;
+    }
+    if (trimmedName.length > SHOP_NAME_MAX_LENGTH) {
+      toast.error(
+        t("Shop name must be between 1 and 100 characters."),
+        t("Could not save shop details"),
+      );
       return;
     }
 
@@ -130,12 +133,17 @@ export function DashboardPage() {
 
   if (
     adminSession.status !== "authorized" &&
-    adminSession.status !== "inactive"
+    adminSession.status !== "inactive" &&
+    adminSession.status !== "unauthorized"
   ) {
     return null;
   }
 
-  const { memberships } = adminSession;
+  const memberships =
+    adminSession.status === "unauthorized" ? [] : adminSession.memberships;
+  const ownedShopCount = memberships.filter((shop) => shop.role === "owner").length;
+  const joinedShopCount = memberships.length - ownedShopCount;
+  const canCreateShop = ownedShopCount < MAX_OWNED_SHOPS;
 
   return (
     <div className="admin-shell">
@@ -181,14 +189,29 @@ export function DashboardPage() {
         <section className="admin-view-hero">
           <div>
             <span>{t("Your Account")}</span>
-            <h1>{t("Your shops")}</h1>
+            <h1>{t(memberships.length ? "Your shops" : "Welcome to Matsuri")}</h1>
             <p>
-              {t("Select a shop workspace to manage orders, products, and designs, or preview its public storefront.")}
+              {t(memberships.length
+                ? "Select a shop workspace to manage orders, products, and designs, or preview its public storefront."
+                : "You can join a shop as a teammate or create your own storefront whenever you are ready.")}
             </p>
+            {memberships.length > 0 && <div className="dashboard-shop-capacity" role="status">
+              <strong>{t("{{owned}} of {{limit}} created shops used", { owned: ownedShopCount, limit: MAX_OWNED_SHOPS })}</strong>
+              <span>{t("You have joined {{joined}} shops. Joined shops do not count toward this limit.", { joined: joinedShopCount })}</span>
+            </div>}
           </div>
         </section>
 
         <div className="dashboard-grid">
+          {!memberships.length && (
+            <section className="dashboard-empty-welcome">
+              <span><MailCheck size={22} /></span>
+              <div>
+                <h2>{t("Joining someone else’s shop?")}</h2>
+                <p>{t("Open the invitation link from your email. After you accept it, the shop will appear here automatically.")}</p>
+              </div>
+            </section>
+          )}
           {memberships.map((shop) => {
             const available = shop.active && shop.shop_active;
             return (
@@ -250,17 +273,25 @@ export function DashboardPage() {
             );
           })}
 
-          <Link to="/dashboard/shops/new" className="dashboard-create-card">
+          {canCreateShop ? <Link to="/dashboard/shops/new" className="dashboard-create-card">
             <div className="create-card-content">
               <span className="create-card-plus">
                 <Plus size={24} />
               </span>
-              <h3>{t("Create another shop")}</h3>
+              <h3>{t(memberships.length ? "Create another shop" : "Create your own shop (optional)")}</h3>
               <p>
-                {t("Add a new storefront and manage its inventory, custom design, and orders.")}
+                {t(memberships.length
+                  ? "Add a new storefront and manage its inventory, custom design, and orders."
+                  : "Start a storefront only if you plan to sell your own merch. You can also wait for an invitation.")}
               </p>
             </div>
-          </Link>
+          </Link> : <div className="dashboard-create-card is-disabled" aria-disabled="true">
+            <div className="create-card-content">
+              <span className="create-card-plus"><Plus size={24} /></span>
+              <h3>{t("Shop creation limit reached")}</h3>
+              <p>{t("You can create up to {{limit}} shops. Joined shops do not count toward this limit.", { limit: MAX_OWNED_SHOPS })}</p>
+            </div>
+          </div>}
         </div>
       </main>
 
@@ -322,6 +353,7 @@ export function DashboardPage() {
                 value={editName}
                 onChange={(event) => setEditName(event.target.value)}
                 placeholder={t("My shop name")}
+                maxLength={SHOP_NAME_MAX_LENGTH}
                 disabled={editBusy}
                 required
               />

@@ -46,4 +46,27 @@ describe("SelectMenu", () => {
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
+
+  it("keeps fixed actions outside the scrolling option list", async () => {
+    const user = userEvent.setup();
+    render(
+      <SelectMenu
+        label="Shop"
+        value="shop-a"
+        onChange={() => undefined}
+        options={[
+          { value: "shop-a", label: "Shop A" },
+          { value: "shop-b", label: "Shop B" },
+          { value: "all", label: "All shops", fixed: true },
+        ]}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Shop: Shop A" }));
+    expect(
+      screen.getByText("Shop B").closest(".select-menu-options"),
+    ).not.toBeNull();
+    expect(
+      screen.getByText("All shops").closest(".select-menu-fixed-options"),
+    ).not.toBeNull();
+  });
 });

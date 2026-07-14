@@ -39,6 +39,7 @@ function mockSupabaseClient(responses: {
   existingInvitation?: any;
   insertedInvitation?: any;
   inviteUserError?: any;
+  teamLimitError?: any;
 }) {
   const createChain = (resolveValue: any) => {
     const chain = {
@@ -108,6 +109,17 @@ function mockSupabaseClient(responses: {
     rpc: (name: string, _args?: any) => {
       if (name === "resolve_invitation_user") {
         return Promise.resolve({ data: responses.rpcResolve ?? null, error: null });
+      }
+      if (name === "reserve_shop_invitation") {
+        return Promise.resolve({
+          data: responses.teamLimitError
+            ? null
+            : [{
+              invitation_id: responses.insertedInvitation?.id ?? "new-invitation-uuid",
+              created_new: !responses.existingInvitation,
+            }],
+          error: responses.teamLimitError ?? null,
+        });
       }
       return Promise.resolve({ data: null, error: null });
     },
@@ -279,4 +291,26 @@ Deno.test("Active owner reaches invitation logic and succeeds", async () => {
   );
   assertEquals(response.status, 200);
   assertEquals(await response.json(), { outcome: "processed" });
+});
+
+Deno.test("rejects invitations when the shop team limit is reached", async () => {
+  callerMock = mockSupabaseClient({ user: { id: "owner-id" } });
+  adminMock = mockSupabaseClient({
+    shop: { id: "11000000-0000-4000-8000-000000000001" },
+    owner: { user_id: "owner-id" },
+    invitationsCount: 0,
+    rpcResolve: null,
+    teamLimitError: { message: "Shop team limit reached" },
+  });
+
+  const response = await handleInviteRequest(
+    request(JSON.stringify({
+      action: "invite",
+      shopId: "11000000-0000-4000-8000-000000000001",
+      email: "test@example.com",
+      role: "staff",
+    })),
+  );
+  assertEquals(response.status, 409);
+  assertEquals(await response.json(), { error: "Shop team limit reached." });
 });

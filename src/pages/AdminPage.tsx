@@ -30,7 +30,7 @@ import {
   signOutAdmin,
 } from "../lib/api";
 import type { OrderFilter, OrderStatusCounts } from "../lib/api";
-import { defaultBooth, defaultPayment } from "../lib/constants";
+import { defaultBooth, defaultPayment, MAX_OWNED_SHOPS } from "../lib/constants";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import {
@@ -533,7 +533,7 @@ export function AdminPage() {
   if (adminSession.status === "unauthenticated")
     return <LoginPanel onLogin={handleLogin} booth={booth} />;
   if (adminSession.status === "unauthorized") {
-    return <Navigate to="/dashboard/shops/new" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   if (adminSession.status === "inactive") {
     return <AdminAccessDenied kind="inactive" onSignOut={handleSignOut} />;
@@ -548,6 +548,10 @@ export function AdminPage() {
       />
     );
   }
+
+  const canCreateShop = adminSession.memberships.filter(
+    (membership) => membership.role === "owner",
+  ).length < MAX_OWNED_SHOPS;
 
   return (
     <main className="admin-shell" style={getThemeStyle(booth)}>
@@ -666,11 +670,14 @@ export function AdminPage() {
                   value: "__dashboard",
                   label: t("All shops"),
                   description: t("Open platform dashboard"),
+                  fixed: true,
                 },
                 {
                   value: "__new",
                   label: t("Create another shop"),
-                  description: t("Set up a new storefront"),
+                  description: t(canCreateShop ? "Set up a new storefront" : "Shop creation limit reached"),
+                  fixed: true,
+                  disabled: !canCreateShop,
                 },
               ]}
               onChange={(val) => {
@@ -683,7 +690,6 @@ export function AdminPage() {
                 }
               }}
             />
-            {/* Overflow menu: language + notification */}
             <div className="admin-overflow-menu" ref={overflowRef}>
               <button
                 type="button"
@@ -732,11 +738,7 @@ export function AdminPage() {
                         setOverflowOpen(false);
                       }}
                     >
-                      {pushEnabled ? (
-                        <Bell size={15} />
-                      ) : (
-                        <BellOff size={15} />
-                      )}
+                      {pushEnabled ? <Bell size={15} /> : <BellOff size={15} />}
                       <span>
                         {t(pushEnabled ? "Alerts on" : "Enable alerts")}
                       </span>

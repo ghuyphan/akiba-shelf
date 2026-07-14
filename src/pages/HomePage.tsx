@@ -53,7 +53,8 @@ export function HomePage() {
               <span aria-hidden="true">✦</span> {t("Made for artists, not spreadsheets")}
             </span>
             <h1>
-              {t("Your art. Your booth.")} <span>{t("Your little corner of the con.")}</span>
+              {t("Your art. Your booth.")} <span className="platform-landing-title-accent">{t("Your little corner of the con.")}</span>
+              <i className="platform-landing-title-underline" aria-hidden="true" />
             </h1>
             <p>
               {t("Matsuri turns your merch table into a friendly digital storefront, with live orders and accurate stock while you focus on meeting fans.")}

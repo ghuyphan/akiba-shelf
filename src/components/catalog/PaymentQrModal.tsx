@@ -130,7 +130,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, onClose, onSuc
   useEffect(() => {
     if (!order || order.status !== "pending") return;
     void reconcileOrder();
-    const poll = window.setInterval(() => void reconcileOrder(), connectionState === "online" ? 5000 : 2500);
+    const poll = window.setInterval(() => void reconcileOrder(), connectionState === "online" ? 5000 : 15000);
     const handleOnline = () => void reconcileOrder();
     const handleOffline = () => setConnectionState("reconnecting");
     const handleFocus = () => void reconcileOrder();

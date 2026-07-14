@@ -7,6 +7,7 @@ export type SelectMenuOption = {
   description?: string;
   icon?: ReactNode;
   disabled?: boolean;
+  fixed?: boolean;
 };
 type Props = {
   value: string;
@@ -35,6 +36,12 @@ export function SelectMenu({
     options.find((option) => option.value === value) ?? options[0];
   const enabledIndexes = options.flatMap((option, index) =>
     option.disabled ? [] : [index],
+  );
+  const scrollingOptions = options.flatMap((option, index) =>
+    option.fixed ? [] : [{ option, index }],
+  );
+  const fixedOptions = options.flatMap((option, index) =>
+    option.fixed ? [{ option, index }] : [],
   );
 
   function focusOption(index: number) {
@@ -70,6 +77,64 @@ export function SelectMenu({
       enabledIndexes[
         (position + delta + enabledIndexes.length) % enabledIndexes.length
       ],
+    );
+  }
+
+  function handleOptionKeyDown(
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    option: SelectMenuOption,
+  ) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      move(1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      move(-1);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      focusOption(enabledIndexes[0]);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      focusOption(enabledIndexes.at(-1)!);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      closeMenu(true);
+    } else if (event.key === "Tab") {
+      closeMenu();
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onChange(option.value);
+      closeMenu(true);
+    }
+  }
+
+  function renderOption(option: SelectMenuOption, index: number) {
+    return (
+      <button
+        key={option.value}
+        ref={(node) => {
+          optionRefs.current[index] = node;
+        }}
+        type="button"
+        role="option"
+        tabIndex={index === activeIndex ? 0 : -1}
+        aria-selected={option.value === value}
+        disabled={option.disabled}
+        className={option.value === value ? "active" : ""}
+        onFocus={() => setActiveIndex(index)}
+        onClick={() => {
+          onChange(option.value);
+          closeMenu(true);
+        }}
+        onKeyDown={(event) => handleOptionKeyDown(event, option)}
+      >
+        {option.icon && <span className="select-menu-icon">{option.icon}</span>}
+        <span className="select-menu-copy">
+          <strong>{option.label}</strong>
+          {option.description && <small>{option.description}</small>}
+        </span>
+        {option.value === value && <Check size={15} />}
+      </button>
     );
   }
 
@@ -124,65 +189,25 @@ export function SelectMenu({
         <ChevronDown size={15} />
       </button>
       {open && (
-        <ul
+        <div
           id={listboxId}
           className="select-menu-popover"
           role="listbox"
           aria-label={label}
         >
-          {options.map((option, index) => (
-            <li key={option.value} role="presentation">
-              <button
-                ref={(node) => {
-                  optionRefs.current[index] = node;
-                }}
-                type="button"
-                role="option"
-                tabIndex={index === activeIndex ? 0 : -1}
-                aria-selected={option.value === value}
-                disabled={option.disabled}
-                className={option.value === value ? "active" : ""}
-                onFocus={() => setActiveIndex(index)}
-                onClick={() => {
-                  onChange(option.value);
-                  closeMenu(true);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "ArrowDown") {
-                    event.preventDefault();
-                    move(1);
-                  } else if (event.key === "ArrowUp") {
-                    event.preventDefault();
-                    move(-1);
-                  } else if (event.key === "Home") {
-                    event.preventDefault();
-                    focusOption(enabledIndexes[0]);
-                  } else if (event.key === "End") {
-                    event.preventDefault();
-                    focusOption(enabledIndexes.at(-1)!);
-                  } else if (event.key === "Escape") {
-                    event.preventDefault();
-                    closeMenu(true);
-                  } else if (event.key === "Tab") closeMenu();
-                  else if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onChange(option.value);
-                    closeMenu(true);
-                  }
-                }}
-              >
-                {option.icon && (
-                  <span className="select-menu-icon">{option.icon}</span>
-                )}
-                <span className="select-menu-copy">
-                  <strong>{option.label}</strong>
-                  {option.description && <small>{option.description}</small>}
-                </span>
-                {option.value === value && <Check size={15} />}
-              </button>
-            </li>
-          ))}
-        </ul>
+          <div className="select-menu-options" role="presentation">
+            {scrollingOptions.map(({ option, index }) =>
+              renderOption(option, index),
+            )}
+          </div>
+          {fixedOptions.length > 0 && (
+            <div className="select-menu-fixed-options" role="presentation">
+              {fixedOptions.map(({ option, index }) =>
+                renderOption(option, index),
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

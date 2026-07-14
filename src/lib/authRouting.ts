@@ -10,8 +10,7 @@ export type PasswordFlow = "invitation" | "recovery";
 export type AccountDestination =
   | "signin"
   | "complete_invitation"
-  | "dashboard"
-  | "create_shop";
+  | "dashboard";
 
 export function getAccountDestination(options: {
   authenticated: boolean;
@@ -20,14 +19,12 @@ export function getAccountDestination(options: {
 }): AccountDestination {
   if (!options.authenticated) return "signin";
   if (options.pendingInvitation) return "complete_invitation";
-  return (options.memberships?.length ?? 0) > 0 ? "dashboard" : "create_shop";
+  return "dashboard";
 }
 
 export function routeAfterAuthentication(memberships: ShopMembership[]) {
-  return getAccountDestination({ authenticated: true, memberships }) ===
-    "dashboard"
-    ? "/dashboard"
-    : "/dashboard/shops/new";
+  void memberships;
+  return "/dashboard";
 }
 
 export function storePendingInvitation(invitationId: string) {

@@ -33,6 +33,7 @@ export function BoothDetailsModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const copy = useCatalogCopy();
   const socialLinks = [
     {
       label: "Instagram",
@@ -51,7 +52,7 @@ export function BoothDetailsModal({
 
   return (
     <Modal
-      title="Booth details"
+      title={copy.boothDetails}
       isOpen={open}
       onClose={onClose}
       className="booth-info-modal-container booth-modal-redesign"
@@ -71,25 +72,25 @@ export function BoothDetailsModal({
             )}
           </div>
           <div className="booth-modal-identity">
-            <span className="booth-modal-eyebrow">You’re shopping at</span>
-            <h3>{booth.booth_name || "Booth Details"}</h3>
-            <p>{booth.subtitle || "Independent merch booth"}</p>
+            <span className="booth-modal-eyebrow">{copy.shoppingAt}</span>
+            <h3>{booth.booth_name || copy.boothDetails}</h3>
+            <p>{booth.subtitle || copy.independentMerchBooth}</p>
           </div>
-          <span className="booth-code-pill">Booth {booth.booth_code}</span>
+          <span className="booth-code-pill">{copy.boothCode(booth.booth_code)}</span>
         </div>
         <div className="booth-modal-facts">
           <div>
             <MapPin size={18} />
             <span>
-              <small>Location</small>
-              <strong>{booth.location || "Not specified"}</strong>
+              <small>{copy.location}</small>
+              <strong>{booth.location || copy.notSpecified}</strong>
             </span>
           </div>
           <div>
             <Clock size={18} />
             <span>
-              <small>Open hours</small>
-              <strong>{booth.open_hours || "Not specified"}</strong>
+              <small>{copy.openHours}</small>
+              <strong>{booth.open_hours || copy.notSpecified}</strong>
             </span>
           </div>
         </div>
@@ -97,7 +98,7 @@ export function BoothDetailsModal({
           <div className="booth-modal-note">
             <Sparkles size={18} />
             <div>
-              <strong>Before you pay</strong>
+              <strong>{copy.beforePay}</strong>
               <span>{payment.payment_instructions}</span>
             </div>
           </div>
@@ -105,8 +106,8 @@ export function BoothDetailsModal({
         {socialLinks.length > 0 && (
           <div className="booth-modal-social-section">
             <div className="booth-modal-section-heading">
-              <span>Find us online</span>
-              <strong>Follow the booth</strong>
+              <span>{copy.findOnline}</span>
+              <strong>{copy.followBooth}</strong>
             </div>
             <div className="booth-modal-social-grid">
               {socialLinks.map((item) => {

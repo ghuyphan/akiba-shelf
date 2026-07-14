@@ -1,4 +1,4 @@
-import { createClient as defaultCreateClient } from "npm:@supabase/supabase-js@2";
+import { createClient as defaultCreateClient } from "npm:@supabase/supabase-js@2.110.2";
 
 export const clientFactory = {
   createClient: defaultCreateClient,
@@ -157,38 +157,24 @@ export async function handleInviteRequest(request: Request): Promise<Response> {
       return success();
     }
 
-    // Reuse a valid pending invitation when one exists. This preserves a usable
-    // invitation if a replacement email attempt fails.
-    const { data: existing, error: existingError } = await admin
-      .from("shop_invitations")
-      .select("id,expires_at")
-      .eq("shop_id", shopId)
-      .ilike("email", email)
-      .eq("status", "pending")
-      .gt("expires_at", new Date().toISOString())
-      .maybeSingle();
-    if (existingError) throw existingError;
-    let invitationIdForEmail = existing?.id as string | undefined;
-    let createdNew = false;
-    if (!invitationIdForEmail) {
-      const expiresAt = new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000,
-      ).toISOString();
-      const { data: invitation, error: insertError } = await admin
-        .from("shop_invitations")
-        .insert({
-          shop_id: shopId,
-          email,
-          role,
-          invited_by: user.id,
-          expires_at: expiresAt,
-        })
-        .select("id")
-        .single();
-      if (insertError) throw insertError;
-      invitationIdForEmail = invitation.id;
-      createdNew = true;
-    }
+    const expiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const { data: reservation, error: reservationError } = await admin.rpc(
+      "reserve_shop_invitation",
+      {
+        p_shop_id: shopId,
+        p_email: email,
+        p_role: role,
+        p_actor_id: user.id,
+        p_expires_at: expiresAt,
+      },
+    );
+    if (reservationError) throw reservationError;
+    const reserved = Array.isArray(reservation) ? reservation[0] : reservation;
+    const invitationIdForEmail = reserved?.invitation_id as string | undefined;
+    const createdNew = reserved?.created_new === true;
+    if (!invitationIdForEmail) throw new Error("Invitation reservation failed");
 
     const redirectTo = `${siteUrl.replace(/\/$/, "")}/auth/callback`;
     const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(
@@ -218,10 +204,19 @@ export async function handleInviteRequest(request: Request): Promise<Response> {
     }
     return success();
   } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : error && typeof error === "object" && "message" in error &&
+            typeof error.message === "string"
+          ? error.message
+          : "Unknown failure";
     console.error(
       "invite-shop-member failed",
-      error instanceof Error ? error.message : "Unknown failure",
+      errorMessage,
     );
+    if (errorMessage.includes("Shop team limit reached"))
+      return failure("Shop team limit reached.", 409);
     return failure("The invitation could not be completed.", 400);
   }
 }

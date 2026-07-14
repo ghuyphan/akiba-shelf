@@ -3,7 +3,7 @@ export const PUBLIC_PRODUCT_COLUMNS =
 export const ADMIN_PRODUCT_COLUMNS = `${PUBLIC_PRODUCT_COLUMNS},image_paths`;
 
 export const PUBLIC_BOOTH_COLUMNS =
-  "id,shop_id,booth_name,subtitle,booth_code,location,open_hours,logo_url,instagram_url,facebook_url,tiktok_url,social_qr_logo_url,theme_primary,theme_secondary,theme_accent,theme_background,layout_order,corner_radius,catalog_locale,featured_autoplay";
+  "id,shop_id,booth_name,subtitle,booth_code,location,open_hours,logo_url,instagram_url,facebook_url,tiktok_url,social_qr_logo_url,theme_primary,theme_secondary,theme_accent,theme_background,layout_order,corner_radius,card_style,featured_style,controls_style,product_style,catalog_locale,featured_autoplay";
 export const ADMIN_BOOTH_COLUMNS = `${PUBLIC_BOOTH_COLUMNS},logo_path,social_qr_logo_path`;
 
 export const PUBLIC_PAYMENT_COLUMNS =

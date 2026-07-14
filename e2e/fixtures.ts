@@ -64,6 +64,10 @@ const booth = {
   theme_background: "#fff8f2",
   layout_order: ["featured", "booth", "controls", "cart", "products"],
   corner_radius: 16,
+  card_style: "soft",
+  featured_style: "deck",
+  controls_style: "panel",
+  product_style: "classic",
   catalog_locale: "en",
   featured_autoplay: false,
 };
@@ -102,8 +106,30 @@ export async function mockSupabase(
     staffActive?: boolean;
     checkoutFails?: boolean;
     multiShop?: boolean;
+    manyCategories?: boolean;
+    manyShops?: boolean;
+    ownedShopCount?: number;
+    teamMembers?: boolean;
+    socialLinks?: boolean;
+    catalogLocale?: "en" | "vi";
   } = {},
 ) {
+  const catalogProducts = options.manyCategories
+    ? [
+        ...products,
+        ...["Badge", "Sticker pack", "Apparel", "Charm", "Stationery"].map(
+          (category, index) => ({
+            ...products[1],
+            id: `category-${index}`,
+            name: `${category} fixture`,
+            item_code: `CATEGORY-${index}`,
+            category,
+            sort_order: index + 3,
+          }),
+        ),
+      ]
+    : products;
+
   await page.route("**/mock-supabase/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -156,6 +182,23 @@ export async function mockSupabase(
                 active: options.staffActive ?? true,
                 shop_active: true,
               },
+              ...(options.manyShops || options.ownedShopCount
+                ? Array.from(
+                    {
+                      length: options.ownedShopCount
+                        ? Math.max(0, options.ownedShopCount - 1)
+                        : 10,
+                    },
+                    (_, index) => ({
+                      shop_id: `shop-${index}`,
+                      shop_name: `Fixture Shop ${index + 1}`,
+                      shop_slug: `fixture-shop-${index + 1}`,
+                      role: options.staffRole!,
+                      active: true,
+                      shop_active: true,
+                    }),
+                  )
+                : []),
             ]
           : [],
       );
@@ -169,9 +212,35 @@ export async function mockSupabase(
         theme_background: booth.theme_background,
       });
     if (url.pathname.includes("/rest/v1/rpc/get_admin_products"))
-      return json(route, products);
+      return json(route, catalogProducts);
     if (url.pathname.includes("/rest/v1/rpc/get_admin_booth_settings"))
       return json(route, booth);
+    if (url.pathname.includes("/rest/v1/rpc/get_shop_members"))
+      return json(
+        route,
+        options.teamMembers
+          ? [
+              {
+                user_id: "10000000-0000-4000-8000-000000000001",
+                email: "owner@test.local",
+                role: "owner",
+                active: true,
+              },
+              {
+                user_id: "10000000-0000-4000-8000-000000000002",
+                email: "admin@test.local",
+                role: "admin",
+                active: true,
+              },
+              {
+                user_id: "10000000-0000-4000-8000-000000000003",
+                email: "staff@test.local",
+                role: "staff",
+                active: true,
+              },
+            ]
+          : [],
+      );
     if (url.pathname.includes("/rest/v1/shops")) {
       const requestedSlug =
         url.searchParams.get("slug")?.replace(/^eq\./, "") ?? "akiba-shelf";
@@ -212,22 +281,33 @@ export async function mockSupabase(
       return json(
         route,
         options.multiShop
-          ? products.map((product) => ({
+          ? catalogProducts.map((product) => ({
               ...product,
               id: `${id}-${product.id}`,
               name: `${id} ${product.name}`,
               shop_id: id,
             }))
-          : products,
+          : catalogProducts,
       );
     }
     if (url.pathname.includes("/rest/v1/booth_settings")) {
       const id = url.searchParams.get("shop_id")?.replace(/^eq\./, "");
+      const catalogBooth = options.socialLinks
+        ? {
+            ...booth,
+            instagram_url: "https://instagram.com/fixture.artist",
+            facebook_url: "https://facebook.com/fixture.booth",
+            tiktok_url: "https://tiktok.com/@fixture.artist",
+          }
+        : booth;
+      const localizedBooth = options.catalogLocale
+        ? { ...catalogBooth, catalog_locale: options.catalogLocale }
+        : catalogBooth;
       return json(
         route,
         options.multiShop
-          ? { ...booth, id, shop_id: id, booth_name: `Booth ${id}` }
-          : booth,
+          ? { ...localizedBooth, id, shop_id: id, booth_name: `Booth ${id}` }
+          : localizedBooth,
       );
     }
     if (url.pathname.includes("/rest/v1/payment_settings")) {

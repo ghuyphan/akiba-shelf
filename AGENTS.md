@@ -20,6 +20,11 @@ Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dash
 - Never restore anonymous direct inserts into `orders` or `order_items`.
 - Pending order creation reserves inventory. Confirmation finalizes the reservation without deducting again; cancellation and expiry restore inventory exactly once. Keep all terminal actions idempotent and security-definer functions tightly granted.
 - Keep RLS and explicit grants least-privileged.
+- Treat every `VITE_*` variable as public. Service-role, OAuth, VietQR, SMTP,
+  and VAPID private credentials belong only in provider/Edge Function secrets.
+- Before pushing linked migrations, compare local and remote migration history.
+  Never use `--include-all` to paper over drift; reconcile applied versions and
+  validate the resulting schema first.
 - When changing Supabase code or SQL, follow `.agents/skills/supabase/SKILL.md` and the Postgres best-practices skill.
 
 ## UI and design language
@@ -40,6 +45,9 @@ Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dash
 - Every grid child that may contain text needs `min-width: 0`.
 - Never introduce a fixed height just to align cards if content can wrap or localize.
 - Mobile controls require at least a comfortable touch target and centered icons.
+- The shared interactive-element reset owns `-webkit-tap-highlight-color`.
+  Do not reintroduce native blue tap flashes, and do not remove visible keyboard
+  focus as part of touch styling.
 - The mobile storefront hides the desktop booth-info sidebar card; booth information is available from the header modal.
 - Sheets must animate both entrance and exit, remove their backdrop after closing, and restore body interaction.
 - Test both product grid and list views after editing product-card CSS.
@@ -50,6 +58,9 @@ Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dash
 - `src/styles/catalog.css`: catalog page, product cards, featured banner, booth/cart/payment UI.
 - `src/styles/admin.css`: admin header, login, product editor, orders, settings, designer.
 - `src/styles/legacy.css`: compatibility layer. Avoid adding new rules here. When touching an old rule, prefer moving the final behavior into the screen-specific stylesheet.
+- Follow `docs/legacy-css-migration.md`: move one ownership slice at a time,
+  prove desktop/phone and grid/list behavior, then delete only the superseded
+  legacy selectors. Do not perform a bulk selector move without visual coverage.
 - Do not solve a screen-specific problem with a broad global selector.
 - Prefer existing CSS variables over new hard-coded theme colors.
 
@@ -75,6 +86,10 @@ The designer persists these `booth_settings` fields:
 - `layout_order`: permutation of `featured`, `booth`, `controls`, `cart`, `products`; wide and side modules retain fixed safe spans
 - `corner_radius`: integer from 0 through 32
 - `catalog_locale`: `en` or `vi`
+- `card_style`: `soft`, `outlined`, `elevated`, or `playful`
+- `featured_style`: `deck`, `editorial`, `minimal`, or `poster`
+- `controls_style`: `panel`, `floating`, `compact`, or `playful`
+- `product_style`: `classic`, `minimal`, `framed`, or `playful`
 - existing theme color fields
 
 Any new configurable storefront property needs:
@@ -91,9 +106,13 @@ Any new configurable storefront property needs:
 Before handing off:
 
 ```bash
-npm run build
+npm run check
 git diff --check
 ```
+
+When Edge Functions change, also run `npm run test:functions`. When dependencies
+change, run `npm audit --omit=dev`. Preserve `:focus-visible` behavior when
+verifying touch/highlight changes.
 
 For database changes, also validate migrations against a local or linked Supabase project when available. If the checkout is not linked or the local database is unavailable, report that clearly instead of claiming deployment.
 

@@ -22,7 +22,7 @@ describe("auth routing", () => {
     expect(routeAfterAuthentication([{ active: false } as never])).toBe(
       "/dashboard",
     );
-    expect(routeAfterAuthentication([])).toBe("/dashboard/shops/new");
+    expect(routeAfterAuthentication([])).toBe("/dashboard");
   });
 
   it("keeps invitation and recovery password flows short-lived and distinct", () => {

@@ -28,6 +28,7 @@ import { SelectMenu } from "../ui/SelectMenu";
 import { AdminCard } from "./AdminCard";
 import { EmptyState } from "../ui/EmptyState";
 import { usePlatformI18n } from "../../lib/platformI18n";
+import { MAX_SHOP_TEAM_SIZE } from "../../lib/constants";
 
 const inviteRoles = [
   { value: "staff", label: "Staff", description: "Process and fulfil orders" },
@@ -65,6 +66,14 @@ export function StaffManager({ shopId }: { shopId: string }) {
   const { locale, t } = usePlatformI18n();
   const localizedInviteRoles = inviteRoles.map((option) => ({ ...option, label: t(option.label), description: t(option.description) }));
   const localizedMemberRoles = memberRoles.map((option) => ({ ...option, label: t(option.label), description: t(option.description) }));
+  const activeMemberCount = members.filter((member) => member.active).length;
+  const pendingInvitationCount = invitations.filter(
+    (invitation) =>
+      invitation.status === "pending" &&
+      new Date(invitation.expires_at).getTime() > Date.now(),
+  ).length;
+  const teamPlacesUsed = activeMemberCount + pendingInvitationCount;
+  const teamLimitReached = teamPlacesUsed >= MAX_SHOP_TEAM_SIZE;
   const reload = useCallback(async () => {
     const [nextMembers, nextInvitations] = await Promise.all([
       getStaffMembers(shopId),
@@ -87,12 +96,19 @@ export function StaffManager({ shopId }: { shopId: string }) {
       toast.error(t("Enter a valid email address."), t("Could not send invitation"));
       return;
     }
+    if (teamLimitReached) {
+      toast.error(
+        t("Revoke a pending invitation or remove a member before inviting someone new."),
+        t("Team limit reached"),
+      );
+      return;
+    }
     setInviteBusy(true);
     try {
       await inviteShopMember(shopId, email.trim().toLowerCase(), role);
       setEmail("");
       await reload();
-      toast.success(t("Access request processed."));
+      toast.success(t("Invite processed. The team list is up to date."));
     } catch (caught) {
       toast.error(t(getErrorMessage(caught)), t("Could not send invitation"));
     } finally {
@@ -152,11 +168,16 @@ export function StaffManager({ shopId }: { shopId: string }) {
   }
   return (
     <AdminCard
-      title={t("Shop staff")}
-      description={t("Invite teammates and control access to this shop.")}
+      title={t("Team access")}
+      description={t("Invite people, choose their role, and review access in one place.")}
       icon={<ShieldCheck size={18} />}
       className="admin-team-card"
     >
+      <section className="staff-overview" aria-label={t("Team overview")}>
+        <div><strong>{activeMemberCount}</strong><span>{t("Active members")}</span></div>
+        <div><strong>{pendingInvitationCount}</strong><span>{t("Pending invites")}</span></div>
+        <div className={teamLimitReached ? "is-full" : ""}><strong>{teamPlacesUsed}/{MAX_SHOP_TEAM_SIZE}</strong><span>{t("Team places used")}</span></div>
+      </section>
       <div className="staff-manager-layout">
         <form onSubmit={submit} className="staff-invite-panel">
           <div className="staff-section-heading">
@@ -165,7 +186,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
             </span>
             <div>
               <h3>{t("Invite a teammate")}</h3>
-              <p>{t("They’ll receive secure access for this shop only.")}</p>
+              <p>{t("Choose what they can do. You can change or remove access later.")}</p>
             </div>
           </div>
           <div className="staff-invite-fields">
@@ -178,23 +199,32 @@ export function StaffManager({ shopId }: { shopId: string }) {
                 onChange={(event) => setEmail(event.target.value)}
               />
             </Field>
-            <Field label={t("Role")}>
-              <SelectMenu
-                label={t("Invitation role")}
-                value={role}
-                options={localizedInviteRoles}
-                onChange={(value) => setRole(value as StaffRole)}
-              />
-            </Field>
+            <div className="staff-role-field">
+              <span>{t("Role")}</span>
+              <div className="staff-role-options" role="radiogroup" aria-label={t("Invitation role")}>
+                {localizedInviteRoles.map((option) => (
+                  <button key={option.value} type="button" role="radio" aria-checked={role === option.value} className={role === option.value ? "active" : ""} onClick={() => setRole(option.value as StaffRole)}>
+                    <span>{option.value === "admin" ? <ShieldCheck size={16} /> : <Users size={16} />}</span>
+                    <span><strong>{option.label}</strong><small>{option.description}</small></span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           <Button
             type="submit"
             icon={<UserPlus size={16} />}
             loading={inviteBusy}
+            disabled={teamLimitReached}
             className="staff-invite-button"
           >
             {t("Send invitation")}
           </Button>
+          {teamLimitReached && (
+            <p className="staff-limit-note">
+              {t("Revoke a pending invitation or remove a member before inviting someone new.")}
+            </p>
+          )}
         </form>
         <section className="staff-members-panel">
           <div className="staff-section-heading">
@@ -290,7 +320,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
             </span>
             <div>
               <h3>{t("Invitations")}</h3>
-              <p>{t("Pending and recent email invitations")}</p>
+              <p>{t("Track who still needs to accept their email invitation.")}</p>
             </div>
           </div>
           {invitations.map((invitation) => (
@@ -298,10 +328,11 @@ export function StaffManager({ shopId }: { shopId: string }) {
               <div>
                 <strong>{invitation.email}</strong>
                 <small>
-                  {t(invitation.role)} · {t(invitation.status)} · {t("expires")}{" "}
+                  {t(invitation.role)} · {t("expires")}{" "}
                   {new Date(invitation.expires_at).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US")}
                 </small>
               </div>
+              <span className={`staff-invitation-status status-${invitation.status}`}>{t(invitation.status)}</span>
               {invitation.status === "pending" && (
                 <Button
                   type="button"

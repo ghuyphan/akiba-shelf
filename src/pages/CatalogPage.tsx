@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/catalog.css";
-import { applyPageTheme, getThemeStyle, resetPageTheme } from "../lib/theme";
+import { applyPageTheme, getStorefrontSectionStyleClass, getThemeStyle, resetPageTheme } from "../lib/theme";
 import { getShopBranding, useDocumentBranding } from "../lib/branding";
 import type { Order, Product, StorefrontSection } from "../types/catalog";
 import { CatalogLocaleProvider, translations } from "../lib/catalogI18n";
@@ -431,7 +431,7 @@ export function CatalogPage() {
         <section key="main" className="storefront-content-main">
           {mainStorefrontSections.map((section) => (
             <div
-              className={`storefront-module storefront-module-${section}`}
+              className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
               key={section}
             >
               {storefrontBlocks[section]}
@@ -451,7 +451,7 @@ export function CatalogPage() {
         >
           {sideStorefrontSections.map((section) => (
             <div
-              className={`storefront-module storefront-module-${section}`}
+              className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
               key={section}
             >
               {storefrontBlocks[section]}
@@ -482,13 +482,12 @@ export function CatalogPage() {
             </span>
           </div>
           <span className="shop-state-eyebrow">Storefront unavailable</span>
-          <h1>We couldn’t open this shop.</h1>
+          <h1>This shop is taking a short break.</h1>
           <p>
             {shopLoadError
-              ? "The storefront could not connect right now."
-              : "This shop link may be incorrect, or the shop is temporarily closed."}
+              ? "We couldn’t reach it just now. Please try again in a moment."
+              : "This storefront may be closed, or the link may no longer be available."}
           </p>
-          <code className="shop-state-slug">/s/{shopSlug}</code>
           <div className="shop-state-actions">
             <button
               type="button"
@@ -508,16 +507,7 @@ export function CatalogPage() {
               <LogIn size={15} /> Staff sign in
             </Link>
           </div>
-          {shopLoadError && (
-            <details className="shop-state-details">
-              <summary>Technical details</summary>
-              <p>{shopLoadError}</p>
-            </details>
-          )}
         </section>
-        <p className="shop-state-footnote">
-          If you manage this shop, confirm that it is active and published.
-        </p>
       </main>
     );
 
@@ -548,7 +538,7 @@ export function CatalogPage() {
           <div className="storefront-hero-grid">
             {heroStorefrontSections.map((section) => (
               <div
-                className={`storefront-module storefront-module-${section}`}
+                className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
                 key={section}
                 onClick={
                   section === "booth"

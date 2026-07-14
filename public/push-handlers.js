@@ -5,7 +5,9 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-    const target = new URL(event.notification.data?.url || "./admin", self.registration.scope).href;
+    const scope = new URL(self.registration.scope);
+    const requested = new URL(event.notification.data?.url || "./admin", scope);
+    const target = (requested.origin === scope.origin ? requested : new URL("./admin", scope)).href;
     const existing = clients.find((client) => client.url.startsWith(target));
     return existing ? existing.focus() : self.clients.openWindow(target);
   }));

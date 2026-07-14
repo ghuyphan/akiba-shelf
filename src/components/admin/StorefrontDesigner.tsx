@@ -27,8 +27,8 @@ import {
   Type,
   Undo2,
 } from "lucide-react";
-import type { BoothSettings, PaymentSettings, Product, StorefrontSection } from "../../types/catalog";
-import { getThemeStyle } from "../../lib/theme";
+import type { BoothSettings, PaymentSettings, Product, StorefrontCardStyle, StorefrontControlsStyle, StorefrontFeaturedStyle, StorefrontProductStyle, StorefrontSection } from "../../types/catalog";
+import { getStorefrontSectionStyleClass, getThemeStyle } from "../../lib/theme";
 import { CatalogLocaleProvider } from "../../lib/catalogI18n";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { useToast } from "../ui/ToastProvider";
@@ -43,7 +43,7 @@ import { BoothInfoPanel } from "../catalog/BoothInfoPanel";
 import { SelectedItemPanel } from "../catalog/SelectedItemPanel";
 import { ImageUpload } from "./ImageUpload";
 import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../lib/banks";
-import { DEFAULT_STOREFRONT_PALETTE } from "../../lib/constants";
+import { DEFAULT_STOREFRONT_PALETTE, STOREFRONT_PALETTES } from "../../lib/constants";
 import { usePlatformI18n } from "../../lib/platformI18n";
 
 type StorefrontDesignerProps = {
@@ -71,6 +71,25 @@ const sectionMeta: Record<StorefrontSection, { title: string; description: strin
   cart: { title: "Shopping cart", description: "Cart, bank details, transfer note, and QR", size: "Side" },
   products: { title: "Product collection", description: "The complete item grid or list", size: "Wide" },
 };
+
+const featuredStyleOptions = [
+  ["deck", "Swipe deck", "Layered cards and soft orbit"],
+  ["editorial", "Editorial", "Clean magazine layout"],
+  ["minimal", "Minimal", "Quiet and product-first"],
+  ["poster", "Pop poster", "Bold color and energy"],
+] as const;
+const controlsStyleOptions = [
+  ["panel", "Panel", "Everything in one surface"],
+  ["floating", "Floating", "Light and open"],
+  ["compact", "Compact", "More catalog, less chrome"],
+  ["playful", "Playful", "Tinted with an offset shadow"],
+] as const;
+const productStyleOptions = [
+  ["classic", "Classic", "Balanced shop cards"],
+  ["minimal", "Minimal", "Flat and spacious"],
+  ["framed", "Framed", "Inset product photography"],
+  ["playful", "Playful", "Colorful collectible cards"],
+] as const;
 
 function normalizedOrder(order?: StorefrontSection[]) {
   return order?.length === allowedSections.length && allowedSections.every((item) => order.includes(item)) ? order : allowedSections;
@@ -193,6 +212,19 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
 
   function updatePayment<K extends keyof PaymentSettings>(key: K, value: PaymentSettings[K]) {
     commitSnapshot({ booth: draftRef.current, payment: { ...paymentDraftRef.current, [key]: value } });
+  }
+
+  function applyPalette(palette: (typeof STOREFRONT_PALETTES)[number]) {
+    commitSnapshot({
+      booth: {
+        ...draftRef.current,
+        theme_primary: palette.primary,
+        theme_secondary: palette.secondary,
+        theme_accent: palette.accent,
+        theme_background: palette.background,
+      },
+      payment: paymentDraftRef.current,
+    });
   }
 
   function undo() {
@@ -384,7 +416,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   function renderModule(section: StorefrontSection) {
     return <div
       key={section}
-      className={`storefront-module storefront-module-${section} designer-live-module ${section === "featured" || section === "booth" ? "drop-axis-horizontal" : "drop-axis-vertical"} ${selected === section ? "is-selected" : ""} ${dragged === section ? "is-dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `is-drag-over drop-${dropTarget.edge}` : ""}`}
+      className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, draft)} designer-live-module ${section === "featured" || section === "booth" ? "drop-axis-horizontal" : "drop-axis-vertical"} ${selected === section ? "is-selected" : ""} ${dragged === section ? "is-dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `is-drag-over drop-${dropTarget.edge}` : ""}`}
       style={{ viewTransitionName: `designer-${section}` } as React.CSSProperties}
       onClick={(event) => { event.stopPropagation(); selectModule(section); }}
       onDragOver={(event) => markDropTarget(event, section, section === "featured" || section === "booth" ? "horizontal" : "vertical")}
@@ -449,6 +481,12 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
               <div className="builder-section-heading"><div><strong>{t(sectionMeta[selected].title)}</strong><small>{t("Only settings for the selected section are shown.")}</small></div></div>
               {selected === "featured" && <div className="builder-fields">
                 <p className="builder-empty-inspector">{t("The Featured banner displays details directly from active featured products. Mark products as Featured in the Products workspace.")}</p>
+                <div className="builder-field-group">
+                  <h3><Palette size={15} /> {t("Banner style")}</h3>
+                  <div className="designer-card-style-grid designer-section-style-grid">
+                    {featuredStyleOptions.map(([value, label, description]) => <button key={value} type="button" className={(draft.featured_style ?? "deck") === value ? "active" : ""} onClick={() => update("featured_style", value as StorefrontFeaturedStyle)} aria-pressed={(draft.featured_style ?? "deck") === value}><i className={`section-style-sample sample-featured-${value}`} /><span><strong>{t(label)}</strong><small>{t(description)}</small></span></button>)}
+                  </div>
+                </div>
                 <label className="builder-toggle"><span><strong>{t("Auto-rotate products")}</strong><small>{t("Advance to the next featured item every 4.5 seconds. Pauses after customer interaction and respects reduced motion.")}</small></span><input type="checkbox" checked={draft.featured_autoplay ?? true} onChange={(event) => update("featured_autoplay", event.target.checked)} /></label>
               </div>}
               {selected === "booth" && <>
@@ -492,12 +530,44 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
                   <ImageUpload shopId={shopId} bucket="payment-qr" label={t("Upload backup QR")} onUploaded={(url) => updatePayment("bank_qr_url", url)} />
                 </div>
               </div>}
-              {selected === "controls" && <p className="builder-empty-inspector">{t("Browse controls use the categories and product data from your catalog. Language is available under Style.")}</p>}
-              {selected === "products" && <p className="builder-empty-inspector">{t("Product content is managed from the Products workspace. This section follows the customer’s grid or list choice.")}</p>}
+              {selected === "controls" && <div className="builder-fields">
+                <p className="builder-empty-inspector">{t("Browse controls use the categories and product data from your catalog. Language is available under Style.")}</p>
+                <div className="builder-field-group">
+                  <h3><Palette size={15} /> {t("Control style")}</h3>
+                  <div className="designer-card-style-grid designer-section-style-grid">
+                    {controlsStyleOptions.map(([value, label, description]) => <button key={value} type="button" className={(draft.controls_style ?? "panel") === value ? "active" : ""} onClick={() => update("controls_style", value as StorefrontControlsStyle)} aria-pressed={(draft.controls_style ?? "panel") === value}><i className={`section-style-sample sample-controls-${value}`} /><span><strong>{t(label)}</strong><small>{t(description)}</small></span></button>)}
+                  </div>
+                </div>
+              </div>}
+              {selected === "products" && <div className="builder-fields">
+                <p className="builder-empty-inspector">{t("Product content is managed from the Products workspace. This section follows the customer’s grid or list choice.")}</p>
+                <div className="builder-field-group">
+                  <h3><Palette size={15} /> {t("Product card style")}</h3>
+                  <div className="designer-card-style-grid designer-section-style-grid">
+                    {productStyleOptions.map(([value, label, description]) => <button key={value} type="button" className={(draft.product_style ?? "classic") === value ? "active" : ""} onClick={() => update("product_style", value as StorefrontProductStyle)} aria-pressed={(draft.product_style ?? "classic") === value}><i className={`section-style-sample sample-product-${value}`} /><span><strong>{t(label)}</strong><small>{t(description)}</small></span></button>)}
+                  </div>
+                </div>
+              </div>}
             </div>}
 
             {tab === "style" && <>
               <div className="builder-section-heading"><div><strong>{t("Look & feel")}</strong><small>{t("Changes update the canvas instantly.")}</small></div></div>
+              <div className="designer-style-section">
+                <div className="designer-style-section-heading"><strong>{t("Palette presets")}</strong><small>{t("Start with a mood, then fine-tune any color below.")}</small></div>
+                <div className="designer-palette-grid">
+                  {STOREFRONT_PALETTES.map((palette) => {
+                    const active = draft.theme_primary === palette.primary && draft.theme_secondary === palette.secondary && draft.theme_accent === palette.accent && draft.theme_background === palette.background;
+                    return <button key={palette.id} type="button" className={active ? "active" : ""} onClick={() => applyPalette(palette)} aria-pressed={active}><span className="designer-palette-swatches">{[palette.primary, palette.secondary, palette.accent, palette.background].map((colorValue) => <i key={colorValue} style={{ background: colorValue }} />)}</span><span><strong>{t(palette.name)}</strong><small>{t(palette.mood)}</small></span></button>;
+                  })}
+                </div>
+              </div>
+              <div className="designer-style-section">
+                <div className="designer-style-section-heading"><strong>{t("Card personality")}</strong><small>{t("Choose how product, booth, cart, and control cards feel.")}</small></div>
+                <div className="designer-card-style-grid">
+                  {([['soft','Soft','Gentle surfaces'],['outlined','Outlined','Clean and crisp'],['elevated','Elevated','Polished depth'],['playful','Playful','Colorful offset shadow']] as const).map(([value,label,description]) => <button key={value} type="button" className={(draft.card_style ?? "soft") === value ? "active" : ""} onClick={() => update("card_style", value as StorefrontCardStyle)} aria-pressed={(draft.card_style ?? "soft") === value}><i className={`card-style-sample card-style-${value}`} /><span><strong>{t(label)}</strong><small>{t(description)}</small></span></button>)}
+                </div>
+              </div>
+              <div className="designer-style-section-heading designer-custom-colors-heading"><strong>{t("Custom colors")}</strong><small>{t("Make this palette completely yours.")}</small></div>
               <div className="designer-color-grid">{([['theme_primary','Primary',DEFAULT_STOREFRONT_PALETTE.primary],['theme_secondary','Dark',DEFAULT_STOREFRONT_PALETTE.secondary],['theme_accent','Accent',DEFAULT_STOREFRONT_PALETTE.accent],['theme_background','Page',DEFAULT_STOREFRONT_PALETTE.background]] as const).map(([key,label,fallback]) => <label key={key}><span>{t(label)}</span><div><input type="color" value={draft[key] ?? fallback} onChange={(event) => update(key, event.target.value)} /><code>{draft[key] ?? fallback}</code></div></label>)}</div>
               <div className="designer-setting-group"><div><Palette size={16} /><span><strong>{t("Corner radius")}</strong><small>{t("{{radius}}px across storefront cards", { radius: draft.corner_radius ?? 16 })}</small></span></div><input type="range" min="0" max="32" step="1" value={draft.corner_radius ?? 16} onChange={(event) => update("corner_radius", Number(event.target.value))} /></div>
               <div className="designer-locale"><Languages size={17} /><span><strong>{t("Storefront language")}</strong><small>{t("Customer-facing interface copy.")}</small></span><div><button type="button" className={(draft.catalog_locale ?? "en") === "en" ? "active" : ""} onClick={() => update("catalog_locale", "en")}>EN</button><button type="button" className={draft.catalog_locale === "vi" ? "active" : ""} onClick={() => update("catalog_locale", "vi")}>VI</button></div></div>
@@ -541,6 +611,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
                     booth={draft}
                     onOpenInfo={() => { setSelected("booth"); setTab("content"); }}
                     isDesigner={true}
+                    isSelected={device === "phone" && selected === "booth"}
                   />
                   <div className="catalog-layout storefront-layout-grid">
                     <div className="storefront-hero-grid">{heroPreviewSections.map(renderModule)}</div>

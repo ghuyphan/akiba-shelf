@@ -58,8 +58,6 @@ export function CategoryFilters({ categories, activeCategory, onChange }: Catego
       startScrollLeft: row.scrollLeft,
       moved: false,
     };
-    row.setPointerCapture(event.pointerId);
-    setIsDragging(true);
   };
 
   const drag = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -67,7 +65,12 @@ export function CategoryFilters({ categories, activeCategory, onChange }: Catego
     const state = dragRef.current;
     if (!row || state.pointerId !== event.pointerId) return;
     const distance = event.clientX - state.startX;
-    if (Math.abs(distance) > 4) state.moved = true;
+    if (!state.moved && Math.abs(distance) > 4) {
+      state.moved = true;
+      row.setPointerCapture(event.pointerId);
+      setIsDragging(true);
+    }
+    if (!state.moved) return;
     row.scrollLeft = state.startScrollLeft - distance;
   };
 

@@ -20,6 +20,8 @@ export const translations = {
     retryOrder: "Retry safely", reconnectingOrder: "Reconnecting — your order is safe", hidePayment: "Hide payment details", pendingOrder: "Pending order", viewPayment: "View payment", pendingOrderHint: "Your order stays active if you close this window.", orderCancelled: "Order cancelled", cancelledPaymentNote: "Staff cancelled this order. Please do not send payment for it.",
     reservedFor: (time: string) => `Reserved for ${time}`, reservedWhilePaying: "Your items are reserved while you complete payment.", cancelOrder: "Cancel order", cancelling: "Cancelling…", qrUnavailable: "Payment QR is unavailable. Please ask booth staff for help.",
     demoCheckout: "Preview checkout", demoCheckoutTitle: "Demo checkout only", demoCheckoutMessage: "This sample cart will not create an order or reserve stock.",
+    socialQrTitle: (platform: string) => `${platform} Link`, openSocialProfile: "Open Profile Link", socialQrAlt: (platform: string) => `${platform} QR code`, socialQrCodes: "Social QR codes",
+    boothGuide: "Booth guide", openNowUntil: (time: string) => `Open now · until ${time}`, closedOpensAt: (time: string) => `Closed · opens ${time}`, hoursNotSet: "Hours not set", boothDetails: "Booth details", shoppingAt: "You’re shopping at", boothCode: (code: string) => `Booth ${code}`, location: "Location", openHours: "Open hours", notSpecified: "Not specified", independentMerchBooth: "Independent merch booth", beforePay: "Before you pay", findOnline: "Find us online", followBooth: "Follow the booth",
   },
   vi: {
     all: "Tất cả", officialShop: "Gian hàng chính thức", boothInfo: "Thông tin gian hàng", boothInfoHint: "Giờ mở cửa, vị trí & mạng xã hội",
@@ -39,6 +41,8 @@ export const translations = {
     retryOrder: "Thử lại an toàn", reconnectingOrder: "Đang kết nối lại — đơn hàng vẫn an toàn", hidePayment: "Ẩn thông tin thanh toán", pendingOrder: "Đơn đang chờ", viewPayment: "Xem thanh toán", pendingOrderHint: "Đơn hàng vẫn hoạt động khi bạn đóng cửa sổ này.", orderCancelled: "Đơn đã bị hủy", cancelledPaymentNote: "Staff đã hủy đơn này. Vui lòng không chuyển khoản cho đơn.",
     reservedFor: (time: string) => `Giữ hàng trong ${time}`, reservedWhilePaying: "Sản phẩm được giữ trong lúc bạn hoàn tất thanh toán.", cancelOrder: "Hủy đơn hàng", cancelling: "Đang hủy…", qrUnavailable: "Không thể tải mã thanh toán. Vui lòng nhờ staff tại gian hàng hỗ trợ.",
     demoCheckout: "Xem thử thanh toán", demoCheckoutTitle: "Chỉ là thanh toán demo", demoCheckoutMessage: "Giỏ hàng mẫu này sẽ không tạo đơn hoặc giữ hàng.",
+    socialQrTitle: (platform: string) => `Liên kết ${platform}`, openSocialProfile: "Mở liên kết trang cá nhân", socialQrAlt: (platform: string) => `Mã QR ${platform}`, socialQrCodes: "Mã QR mạng xã hội",
+    boothGuide: "Thông tin gian hàng", openNowUntil: (time: string) => `Đang mở · đến ${time}`, closedOpensAt: (time: string) => `Đã đóng · mở lúc ${time}`, hoursNotSet: "Chưa đặt giờ mở cửa", boothDetails: "Chi tiết gian hàng", shoppingAt: "Bạn đang mua tại", boothCode: (code: string) => `Gian ${code}`, location: "Vị trí", openHours: "Giờ mở cửa", notSpecified: "Chưa thiết lập", independentMerchBooth: "Gian hàng merch độc lập", beforePay: "Trước khi thanh toán", findOnline: "Tìm chúng tôi online", followBooth: "Theo dõi gian hàng",
   },
 } as const;
 

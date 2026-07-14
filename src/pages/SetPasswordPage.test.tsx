@@ -41,6 +41,7 @@ function renderPage() {
           <Routes>
             <Route path="/auth/set-password" element={<SetPasswordPage />} />
             <Route path="/admin" element={<p>Admin reached</p>} />
+            <Route path="/dashboard" element={<p>Dashboard reached</p>} />
             <Route
               path="/dashboard/shops/new"
               element={<p>New shop reached</p>}
@@ -134,7 +135,7 @@ describe("set-password invitation completion", () => {
     expect(await screen.findByText("Password updated")).toBeInTheDocument();
     expect(auth.updateUser).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole("button", { name: "Open my account" }));
-    expect(await screen.findByText("New shop reached")).toBeInTheDocument();
+    expect(await screen.findByText("Dashboard reached")).toBeInTheDocument();
     expect(auth.updateUser).toHaveBeenCalledTimes(1);
     expect(api.getShopMemberships).toHaveBeenCalledTimes(2);
   });

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(46);
+select plan(51);
 
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values
 ('10000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner@test.local','',now(),now(),now()),
@@ -46,6 +46,7 @@ select throws_ok($$select social_qr_logo_path from public.booth_settings$$,'4250
 select lives_ok($$select id,name,images from public.products$$,'authenticated non-member can select public product fields');
 select lives_ok($$select id,booth_name,logo_url from public.booth_settings$$,'authenticated non-member can select public booth fields');
 select ok(not has_function_privilege('authenticated','public.resolve_invitation_user(text)','execute'),'authenticated cannot execute internal Auth lookup');
+select ok(not has_function_privilege('authenticated','public.reserve_shop_invitation(uuid,text,text,uuid,timestamptz)','execute'),'authenticated cannot reserve invitations outside the trusted service');
 select throws_ok($$update public.shops set name='attack' where id='11000000-0000-4000-8000-000000000001'$$,'42501',null,'direct authenticated shop update is denied');
 
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000001';
@@ -56,6 +57,28 @@ set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000002';
 select throws_ok($$select * from public.update_shop_details('11000000-0000-4000-8000-000000000001','Attack')$$,'42501','Active shop owner access required','admin cannot update shop details');
 
 reset role;
+insert into public.shops(id,name,slug,created_by) values
+('11000000-0000-4000-8000-000000000003','Capacity Shop','capacity-shop','10000000-0000-4000-8000-000000000001');
+insert into public.shop_members(shop_id,user_id,role) values
+('11000000-0000-4000-8000-000000000003','10000000-0000-4000-8000-000000000001','owner');
+do $$
+begin
+  for invitation_number in 1..9 loop
+    perform * from public.reserve_shop_invitation(
+      '11000000-0000-4000-8000-000000000003',
+      'capacity-' || invitation_number || '@test.local',
+      'staff',
+      '10000000-0000-4000-8000-000000000001',
+      now() + interval '1 day'
+    );
+  end loop;
+end
+$$;
+select is((select count(*)::integer from public.shop_invitations where shop_id='11000000-0000-4000-8000-000000000003' and status='pending'),9,'one owner plus nine invitations fills ten team places');
+select is((select created_new from public.reserve_shop_invitation('11000000-0000-4000-8000-000000000003','capacity-1@test.local','staff','10000000-0000-4000-8000-000000000001',now()+interval '1 day')),false,'resending an existing invitation does not consume another place');
+select is((select count(*)::integer from public.shop_invitations where shop_id='11000000-0000-4000-8000-000000000003' and status='pending'),9,'resending keeps the occupied-place count stable');
+select throws_ok($$select * from public.reserve_shop_invitation('11000000-0000-4000-8000-000000000003','capacity-10@test.local','staff','10000000-0000-4000-8000-000000000001',now()+interval '1 day')$$,null,'Shop team limit reached','a tenth invitation is rejected when the owner already occupies one place');
+
 select is(public.process_existing_shop_member('11000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002','staff','10000000-0000-4000-8000-000000000001'),'existing_member','active member is not silently reassigned');
 select is((select role from public.shop_members where shop_id='11000000-0000-4000-8000-000000000001' and user_id='10000000-0000-4000-8000-000000000002'),'admin','active member keeps existing role');
 update public.shop_members set active=false where shop_id='11000000-0000-4000-8000-000000000001' and user_id='10000000-0000-4000-8000-000000000003';

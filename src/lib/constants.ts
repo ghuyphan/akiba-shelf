@@ -7,6 +7,14 @@ export const DEFAULT_STOREFRONT_PALETTE = {
   background: "#fffaf2",
 } as const;
 
+export const STOREFRONT_PALETTES = [
+  { id: "matsuri-bloom", name: "Matsuri Bloom", mood: "Warm & cheerful", ...DEFAULT_STOREFRONT_PALETTE },
+  { id: "matcha-picnic", name: "Matcha Picnic", mood: "Cute & cozy", primary: "#5c8657", secondary: "#20304a", accent: "#e6b85c", background: "#fbf7ea" },
+  { id: "sakura-soda", name: "Sakura Soda", mood: "Sweet & bubbly", primary: "#e56f92", secondary: "#34263d", accent: "#76c8d6", background: "#fff4f7" },
+  { id: "night-market", name: "Night Market", mood: "Cool & electric", primary: "#7b61d1", secondary: "#171a2b", accent: "#ffb84d", background: "#f2efff" },
+  { id: "ocean-pop", name: "Ocean Pop", mood: "Fresh & playful", primary: "#347f9c", secondary: "#172b3a", accent: "#f2b85b", background: "#eef8f8" },
+] as const;
+
 export const defaultBooth: BoothSettings = {
   booth_name: "",
   subtitle: "",
@@ -24,6 +32,10 @@ export const defaultBooth: BoothSettings = {
   theme_background: DEFAULT_STOREFRONT_PALETTE.background,
   layout_order: ["featured", "booth", "controls", "products", "cart"],
   corner_radius: 16,
+  card_style: "soft",
+  featured_style: "deck",
+  controls_style: "panel",
+  product_style: "classic",
   catalog_locale: "en",
   featured_autoplay: true,
 };
@@ -43,3 +55,8 @@ export const defaultPayment: PaymentSettings = {
 
 export const productBadges = ["New", "Best Seller", "Limited", "Restock", "Event Exclusive", "Preorder", "Last Call"];
 export const LIMITED_STOCK_THRESHOLD = 5;
+export const SHOP_NAME_MAX_LENGTH = 100;
+export const SHOP_SLUG_MIN_LENGTH = 2;
+export const SHOP_SLUG_MAX_LENGTH = 63;
+export const MAX_OWNED_SHOPS = 5;
+export const MAX_SHOP_TEAM_SIZE = 10;

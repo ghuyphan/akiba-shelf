@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, PackageCheck, ShoppingCart, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, PackageCheck, ShoppingCart, Star } from "lucide-react";
 import type { Product } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
 import { useCatalogCopy } from "../../lib/catalogI18n";
@@ -39,7 +39,7 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
     if (products.length === 0) {
       return (
         <section className="booth-card booth-card-redesign featured-banner-empty" onClick={(e) => e.stopPropagation()}>
-          <EmptyState variant="compact" icon={<Sparkles size={24} />} title={copy.noFeatured} message={copy.noFeaturedHint} />
+          <EmptyState variant="compact" icon={<Star size={24} />} title={copy.noFeatured} message={copy.noFeaturedHint} />
         </section>
       );
     }
@@ -80,7 +80,7 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
       <div className="featured-banner-inner">
         <div className="featured-banner-copy">
           <div className="featured-banner-topline">
-            <span className="featured-banner-kicker"><Sparkles size={14} /> {copy.featuredDrop}</span>
+            <span className="featured-banner-kicker"><Star size={14} strokeWidth={2.5} /> {copy.featuredDrop}</span>
             {featured.length > 1 && <span className="featured-banner-count">{String(active + 1).padStart(2, "0")} / {String(featured.length).padStart(2, "0")}</span>}
           </div>
           <span className="featured-banner-collection">{activeProduct.collection || activeProduct.category || copy.limitedCollection}</span>

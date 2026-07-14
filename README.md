@@ -10,7 +10,7 @@ Matsuri is a touch-friendly storefront and live order platform for independent a
 - VietQR payment flow with live order confirmation.
 - Realtime catalog and order updates through Supabase.
 - Role-authorized staff workspace for orders, products, booth/payment settings, and storefront design.
-- Storefront designer with drag-and-drop ordering of the real featured, booth, controls, cart, and product modules; fixed safe grid spans; theme colors; corner radius; and English/Vietnamese UI.
+- Storefront designer with drag-and-drop ordering of the real featured, booth, controls, cart, and product modules; fixed safe grid spans; editable palette presets; card personality; corner radius; and English/Vietnamese UI.
 - Shared queued toast system through `useToast()`.
 
 ## Stack
@@ -36,6 +36,10 @@ VITE_SUPABASE_ANON_KEY=your-publishable-or-anon-key
 VITE_VAPID_PUBLIC_KEY=your-public-vapid-key
 ```
 
+Every `VITE_*` value is compiled into public browser JavaScript. Never put a
+service-role key, OAuth client secret, VietQR API secret, VAPID private key, or
+other credential in a `VITE_*` variable. Matsuri generates VietQR images from
+the public image endpoint and does not require a browser-side VietQR API key.
 Never commit `.env.local` or service-role credentials.
 
 ## PWA and Android order notifications
@@ -90,6 +94,7 @@ Google redirects to the Supabase `/auth/v1/callback`; Supabase then redirects to
 For a fully local Supabase stack, set `[auth.external.google]` to `enabled = true` in `supabase/config.toml`, reference the client ID and secret through ignored root `.env` variables, and restart with `supabase stop` followed by `supabase start`.
 
 For the production custom domain deployment, configure Supabase Auth URL Configuration with:
+
 - **Site URL**: `https://matsuri.pro`
 - **Redirect URLs**:
   - `https://matsuri.pro/auth/callback`
@@ -136,7 +141,19 @@ npx supabase link --project-ref YOUR_PROJECT_REF
 npx supabase db push
 ```
 
-Create a Supabase Auth user and sign into `/admin`. A user with no memberships can create the first shop and becomes its owner atomically. Existing `staff_members` are migrated into the deterministic `akiba-shelf` shop.
+Before pushing, compare local and remote migration history:
+
+```bash
+npx supabase migration list --linked
+```
+
+If production contains schema changes whose migration versions are absent from
+the remote history, reconcile that history deliberately before another push.
+Do not use `db push --include-all` as a shortcut: replaying historical migrations
+against an already-mutated database can fail partway through or overwrite newer
+function and policy definitions.
+
+Create a Supabase Auth user and sign in. Accounts with no memberships land on an empty dashboard where creating a shop is optional. A user who creates a first shop becomes its owner atomically, while invitees can join and work in an existing shop without creating one. Existing `staff_members` are migrated into the deterministic `akiba-shelf` shop.
 
 Staff invitations require deploying the owner-only Edge Function and setting its public redirect origin:
 
@@ -161,8 +178,31 @@ Do not add an automatic auth-user trigger. Owners may manage staff; admins manag
 
 - Frontend: build with the three documented `VITE_*` values, then deploy `dist/`.
 - Database: review and apply `supabase/migrations` in order with `supabase db push`; pull requests never deploy schema.
-- Edge Function: deploy `notify-new-order` separately after migrations.
+- Edge Functions: set `PUBLIC_SITE_URL`, then deploy `invite-shop-member` and
+  `notify-new-order` separately after migrations. Both restrict browser CORS to
+  that configured origin.
 - Secrets: set VAPID private material only with `supabase secrets set`; never expose it through Vite variables.
+
+## Repository health
+
+Use the full local gate before deployment:
+
+```bash
+npm run check
+npm audit --omit=dev --audit-level=moderate
+npm run test:functions
+git diff --check
+```
+
+Database changes additionally require a local Supabase run (`npm run test:db`
+and the integration suite) or an explicitly documented reason they could not be
+run. For a linked project, run both security and performance advisors with
+`npx supabase db advisors --linked --type security` and `--type performance`.
+
+The 2026-07-14 review and its remaining operational checks are recorded in
+[`docs/repository-review.md`](docs/repository-review.md). The staged stylesheet
+cleanup plan is in
+[`docs/legacy-css-migration.md`](docs/legacy-css-migration.md).
 
 ## UI architecture
 
@@ -180,5 +220,7 @@ Transient notifications use `useToast()` from `ToastProvider`. Use `toast.succes
 - Large tap targets and compact information hierarchy on mobile.
 - Motion should explain state changes. Keep copy static; animate cards, sheets, and state transitions subtly.
 - Mobile must not depend on hover, fixed desktop heights, or horizontally clipped two-column layouts.
+- Native mobile tap highlights are disabled for interactive controls, while
+  keyboard `:focus-visible` feedback must remain intact.
 
 See `AGENTS.md` for implementation conventions and the handoff guide for future coding sessions.

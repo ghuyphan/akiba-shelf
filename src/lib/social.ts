@@ -22,3 +22,9 @@ export const SOCIAL_BRAND_COLORS: Record<string, { color: string; gradient: stri
     gradient: "linear-gradient(135deg, #25f4ee, #fe2c55, #010101)",
   },
 };
+
+export const SOCIAL_QR_COLORS: Record<string, [string, string, string]> = {
+  Instagram: ["#f06a4f", "#dc2f86", "#a915b7"],
+  Facebook: ["#168ee8", "#1877f2", "#1258b5"],
+  TikTok: ["#087f82", "#e52a50", "#111827"],
+};

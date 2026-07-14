@@ -44,7 +44,7 @@ export function ToastProvider({ children, enabled = true }: { children: ReactNod
       setToasts((current) => current.filter((toast) => toast.id !== id));
       setExitingIds((prev) => prev.filter((x) => x !== id));
       timersRef.current.delete(id);
-    }, 280);
+    }, 180);
     timersRef.current.set(id, exitTimer);
   }, []);
 

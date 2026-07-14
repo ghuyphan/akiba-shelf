@@ -1,10 +1,20 @@
 import type { CSSProperties } from "react";
 import { DEFAULT_STOREFRONT_PALETTE, defaultBooth } from "./constants";
-import type { BoothSettings } from "../types/catalog";
+import type { BoothSettings, StorefrontSection } from "../types/catalog";
 import { PLATFORM_THEME_COLOR } from "./branding";
 import { boothSettingsSchema } from "./schemas";
 
 type ThemeStyle = CSSProperties & Record<`--${string}`, string>;
+
+export function getStorefrontSectionStyleClass(
+  section: StorefrontSection,
+  booth: BoothSettings,
+) {
+  if (section === "featured") return `style-featured-${booth.featured_style ?? "deck"}`;
+  if (section === "controls") return `style-controls-${booth.controls_style ?? "panel"}`;
+  if (section === "products") return `style-product-${booth.product_style ?? "classic"}`;
+  return "";
+}
 
 const themeStorageKey = "merch-booth-theme";
 
@@ -45,6 +55,29 @@ export function getThemeStyle(booth: BoothSettings): ThemeStyle {
   const accent = color(booth.theme_accent, DEFAULT_STOREFRONT_PALETTE.accent);
   const background = color(booth.theme_background, DEFAULT_STOREFRONT_PALETTE.background);
   const cornerRadius = Math.min(32, Math.max(0, booth.corner_radius ?? defaultBooth.corner_radius ?? 16));
+  const cardStyle = booth.card_style ?? defaultBooth.card_style ?? "soft";
+  const cardTokens = {
+    soft: {
+      background: "color-mix(in srgb, #fff 92%, var(--page-bg))",
+      border: "color-mix(in srgb, var(--line) 72%, transparent)",
+      shadow: "0 10px 28px rgb(15 23 42 / 6%)",
+    },
+    outlined: {
+      background: "#fff",
+      border: "var(--line)",
+      shadow: "none",
+    },
+    elevated: {
+      background: "#fff",
+      border: "transparent",
+      shadow: "0 20px 46px rgb(15 23 42 / 12%)",
+    },
+    playful: {
+      background: "#fff",
+      border: "color-mix(in srgb, var(--coral) 42%, var(--line))",
+      shadow: "5px 6px 0 color-mix(in srgb, var(--blue) 42%, transparent)",
+    },
+  }[cardStyle];
 
   return {
     "--coral": primary,
@@ -55,6 +88,9 @@ export function getThemeStyle(booth: BoothSettings): ThemeStyle {
     "--teal": accent,
     "--page-bg": background,
     "--store-radius": `${cornerRadius}px`,
+    "--store-card-background": cardTokens.background,
+    "--store-card-border": cardTokens.border,
+    "--store-card-shadow": cardTokens.shadow,
   };
 }
 
@@ -93,6 +129,6 @@ export function hydrateInitialPageTheme() {
 
 export function resetPageTheme() {
   const root = document.documentElement;
-  ["--coral", "--coral-strong", "--navy", "--teal-dark", "--blue", "--teal", "--page-bg", "--store-radius"].forEach((key) => root.style.removeProperty(key));
+  ["--coral", "--coral-strong", "--navy", "--teal-dark", "--blue", "--teal", "--page-bg", "--store-radius", "--store-card-background", "--store-card-border", "--store-card-shadow"].forEach((key) => root.style.removeProperty(key));
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", PLATFORM_THEME_COLOR);
 }
