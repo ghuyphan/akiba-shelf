@@ -1,6 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1";
 
-Deno.env.set("PUBLIC_SITE_URL", "https://matsuri.test/akiba-shelf");
+Deno.env.set("PUBLIC_SITE_URL", "https://matsuri.pro");
 Deno.env.set("SUPABASE_URL", "https://project.test");
 Deno.env.set("SUPABASE_ANON_KEY", "test-anon-key");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
@@ -190,12 +190,12 @@ Deno.test("OPTIONS preflight returns correct status and CORS headers without aut
     new Request("https://project.test/functions/v1/invite-shop-member", {
       method: "OPTIONS",
       headers: {
-        Origin: "https://matsuri.test",
+        Origin: "https://matsuri.pro",
       },
     }),
   );
   assertEquals(response.status === 200 || response.status === 204, true);
-  assertEquals(response.headers.get("Access-Control-Allow-Origin"), "https://matsuri.test");
+  assertEquals(response.headers.get("Access-Control-Allow-Origin"), "https://matsuri.pro");
   assertEquals(response.headers.get("Access-Control-Allow-Headers"), "authorization, x-client-info, apikey, content-type");
   assertEquals(response.headers.get("Access-Control-Allow-Methods"), "POST, OPTIONS");
   assertEquals(response.headers.get("Vary"), "Origin");

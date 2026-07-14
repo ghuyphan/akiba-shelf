@@ -6,12 +6,14 @@
     <title>Matsuri</title>
     <script>
       (() => {
-        const base = "/akiba-shelf";
-        const path = window.location.pathname.startsWith(base)
-          ? window.location.pathname.slice(base.length)
-          : window.location.pathname;
+        const path = window.location.pathname;
         const redirect = `${path || "/"}${window.location.search}${window.location.hash}`;
-        window.location.replace(`${base}/?redirect=${encodeURIComponent(redirect)}`);
+        const unsafeTarget = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
+        if (!unsafeTarget.test(redirect) && redirect.startsWith("/")) {
+          window.location.replace(`/?redirect=${encodeURIComponent(redirect)}`);
+        } else {
+          window.location.replace("/");
+        }
       })();
     </script>
   </head>

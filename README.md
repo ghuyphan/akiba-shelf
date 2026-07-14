@@ -69,23 +69,39 @@ git diff --check
 - `/s/:shopSlug` — shop-specific customer storefront
 - `/admin` — authenticated admin workspace
 
-Production Auth must use the deployed app URL as its Site URL and allow `<app-base>/auth/callback` and `<app-base>/auth/set-password`. GitHub Pages uses `/akiba-shelf/`; its 404 redirect preserves safe relative routes, queries, and Auth fragments. Configure SMTP and email confirmation, set `PUBLIC_SITE_URL` to the exact public app base, and deploy both `invite-shop-member` and `notify-new-order`. CAPTCHA and conservative Auth rate limits are recommended. End users never need Supabase Dashboard access.
+Production Auth must use the deployed app URL as its Site URL (`https://matsuri.pro`) and allow `/auth/callback` and `/auth/set-password`. Its 404 redirect preserves safe relative routes, queries, and Auth fragments. Configure SMTP and email confirmation, set `PUBLIC_SITE_URL` to `https://matsuri.pro`, and deploy both `invite-shop-member` and `notify-new-order`. CAPTCHA and conservative Auth rate limits are recommended. End users never need Supabase Dashboard access.
 
 ### Google sign-in
 
 The account and staff login screens use Supabase's Google OAuth provider. Configure it once for each Supabase project:
 
 1. In Google Auth Platform, configure the consent screen with the `openid`, `userinfo.email`, and `userinfo.profile` scopes.
-2. Create a **Web application** OAuth client. Add the app origins (for this repository, `https://ghuyphan.github.io` and `http://127.0.0.1:5173`) under **Authorized JavaScript origins**.
-3. Under **Authorized redirect URIs**, add the Supabase Auth callback shown on the project's Google provider page: `https://<project-ref>.supabase.co/auth/v1/callback`. For local Supabase, also add `http://127.0.0.1:54321/auth/v1/callback`.
+2. Create a **Web application** OAuth client. Add the app origins under **Authorized JavaScript origins**:
+   - `https://matsuri.pro` (Production)
+   - `http://127.0.0.1:5173` (Local Development)
+   - `https://ghuyphan.github.io` (Temporary Migration)
+3. Under **Authorized redirect URIs**, add the Supabase Auth callback shown on the project's Google provider page: `https://kicvenppgjvzqpyagdih.supabase.co/auth/v1/callback`. For local Supabase, also add `http://127.0.0.1:54321/auth/v1/callback`. (Do NOT add the application callback `https://matsuri.pro/auth/callback` here; Google redirects to Supabase's API endpoint, not directly to the application).
 4. In Supabase Auth Providers, enable Google and save the client ID and client secret.
-5. In Supabase Auth URL Configuration, keep the application callbacks in the redirect allow-list: `https://ghuyphan.github.io/akiba-shelf/auth/callback` and `http://127.0.0.1:5173/auth/callback`.
+5. In Supabase Auth URL Configuration, keep the application callbacks in the redirect allow-list:
+   - `https://matsuri.pro/auth/callback`
+   - `http://127.0.0.1:5173/auth/callback`
+   - `https://ghuyphan.github.io/akiba-shelf/auth/callback` (Temporary Migration)
 
 Google redirects to the Supabase `/auth/v1/callback`; Supabase then redirects to this app's `/auth/callback`. They are separate URLs and both must be configured. Never put the Google client secret in a `VITE_*` variable or commit it to this repository.
 
 For a fully local Supabase stack, set `[auth.external.google]` to `enabled = true` in `supabase/config.toml`, reference the client ID and secret through ignored root `.env` variables, and restart with `supabase stop` followed by `supabase start`.
 
-For the repository's default GitHub Pages deployment, configure Supabase Auth URL Configuration with Site URL `https://ghuyphan.github.io/akiba-shelf/` and add `https://ghuyphan.github.io/akiba-shelf/auth/callback` plus `https://ghuyphan.github.io/akiba-shelf/auth/set-password` to Redirect URLs. Keep the localhost equivalents as additional development redirects only. If the production callback is missing from the allow-list, Supabase falls back to the Site URL, which is why an unchanged localhost Site URL sends confirmation emails back to localhost.
+For the production custom domain deployment, configure Supabase Auth URL Configuration with:
+- **Site URL**: `https://matsuri.pro`
+- **Redirect URLs**:
+  - `https://matsuri.pro/auth/callback`
+  - `https://matsuri.pro/auth/set-password`
+  - `http://127.0.0.1:5173/auth/callback` (Local development)
+  - `http://127.0.0.1:5173/auth/set-password` (Local development)
+  - `https://ghuyphan.github.io/akiba-shelf/auth/callback` (Temporary Migration - remove after domain verification)
+  - `https://ghuyphan.github.io/akiba-shelf/auth/set-password` (Temporary Migration - remove after domain verification)
+
+If the production callback is missing from the allow-list, Supabase falls back to the Site URL, which is why an unchanged localhost Site URL sends confirmation emails back to localhost.
 
 ## Project structure
 
@@ -129,7 +145,7 @@ Create a Supabase Auth user and sign into `/admin`. A user with no memberships c
 Staff invitations require deploying the owner-only Edge Function and setting its public redirect origin:
 
 ```bash
-npx supabase secrets set PUBLIC_SITE_URL=https://your-store.example
+npx supabase secrets set PUBLIC_SITE_URL=https://matsuri.pro
 npx supabase functions deploy invite-shop-member
 ```
 
