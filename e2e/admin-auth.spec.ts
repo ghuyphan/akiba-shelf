@@ -282,9 +282,11 @@ test("designer phone rules apply inside the preview iframe", async ({
   await expect
     .poll(() =>
       logoControl.evaluate((element) => ({
-        columns: getComputedStyle(element).gridTemplateColumns.split(" ").length,
-        inputWidth: element.querySelector("input.input")!.getBoundingClientRect()
-          .width,
+        columns:
+          getComputedStyle(element).gridTemplateColumns.split(" ").length,
+        inputWidth: element
+          .querySelector("input.input")!
+          .getBoundingClientRect().width,
         uploadWidth: element
           .querySelector(".upload-button")!
           .getBoundingClientRect().width,
@@ -294,7 +296,9 @@ test("designer phone rules apply inside the preview iframe", async ({
   await expect
     .poll(() =>
       logoControl.evaluate((element) => {
-        const input = element.querySelector("input.input")!.getBoundingClientRect();
+        const input = element
+          .querySelector("input.input")!
+          .getBoundingClientRect();
         const upload = element
           .querySelector(".upload-button")!
           .getBoundingClientRect();
