@@ -79,13 +79,11 @@ The account and staff login screens use Supabase's Google OAuth provider. Config
 2. Create a **Web application** OAuth client. Add the app origins under **Authorized JavaScript origins**:
    - `https://matsuri.pro` (Production)
    - `http://127.0.0.1:5173` (Local Development)
-   - `https://ghuyphan.github.io` (Temporary Migration)
 3. Under **Authorized redirect URIs**, add the Supabase Auth callback shown on the project's Google provider page: `https://kicvenppgjvzqpyagdih.supabase.co/auth/v1/callback`. For local Supabase, also add `http://127.0.0.1:54321/auth/v1/callback`. (Do NOT add the application callback `https://matsuri.pro/auth/callback` here; Google redirects to Supabase's API endpoint, not directly to the application).
 4. In Supabase Auth Providers, enable Google and save the client ID and client secret.
 5. In Supabase Auth URL Configuration, keep the application callbacks in the redirect allow-list:
    - `https://matsuri.pro/auth/callback`
    - `http://127.0.0.1:5173/auth/callback`
-   - `https://ghuyphan.github.io/akiba-shelf/auth/callback` (Temporary Migration)
 
 Google redirects to the Supabase `/auth/v1/callback`; Supabase then redirects to this app's `/auth/callback`. They are separate URLs and both must be configured. Never put the Google client secret in a `VITE_*` variable or commit it to this repository.
 
@@ -98,8 +96,6 @@ For the production custom domain deployment, configure Supabase Auth URL Configu
   - `https://matsuri.pro/auth/set-password`
   - `http://127.0.0.1:5173/auth/callback` (Local development)
   - `http://127.0.0.1:5173/auth/set-password` (Local development)
-  - `https://ghuyphan.github.io/akiba-shelf/auth/callback` (Temporary Migration - remove after domain verification)
-  - `https://ghuyphan.github.io/akiba-shelf/auth/set-password` (Temporary Migration - remove after domain verification)
 
 If the production callback is missing from the allow-list, Supabase falls back to the Site URL, which is why an unchanged localhost Site URL sends confirmation emails back to localhost.
 
