@@ -79,7 +79,6 @@ import { useAdminSession } from "../hooks/useAdminSession";
 import { SelectMenu } from "../components/ui/SelectMenu";
 import { StaffManager } from "../components/admin/StaffManager";
 import { usePlatformI18n, type PlatformLocale } from "../lib/platformI18n";
-import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";
 
 function createBlankProduct(nextSort: number): Product {
   return {
@@ -684,29 +683,7 @@ export function AdminPage() {
                 }
               }}
             />
-            {/* Desktop inline: language + notification — hidden on mobile via CSS */}
-            <div className="admin-header-inline-secondary">
-              <PlatformLanguageToggle />
-              {canUsePush() && (
-                <button
-                  type="button"
-                  disabled={pushBusy}
-                  onClick={() => void togglePushNotifications()}
-                  className={`admin-header-button admin-notification-button ${pushEnabled ? "active" : ""}`}
-                  title={t(pushEnabled ? "Disable alerts" : "Enable alerts")}
-                  aria-label={
-                    pushEnabled
-                      ? t("Disable order notifications")
-                      : t("Enable order notifications")
-                  }
-                >
-                  {pushEnabled ? <Bell size={15} /> : <BellOff size={15} />}
-                  <span>{t(pushEnabled ? "Alerts on" : "Enable alerts")}</span>
-                </button>
-              )}
-            </div>
-
-            {/* Mobile overflow menu — hidden on desktop via CSS */}
+            {/* Overflow menu: language + notification */}
             <div className="admin-overflow-menu" ref={overflowRef}>
               <button
                 type="button"
