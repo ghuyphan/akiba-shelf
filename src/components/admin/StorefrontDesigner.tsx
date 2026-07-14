@@ -195,6 +195,11 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   const previewCartProduct = previewProducts.find((product) => product.quantity_available > 0);
   const banks = getVietQrBanks();
   const selectedBank = getPaymentBank(paymentDraft.bank_code, paymentDraft.bank_acq_id);
+  const paymentAccountReady = Boolean(
+    selectedBank &&
+      paymentDraft.bank_account_no?.trim() &&
+      paymentDraft.bank_account_name?.trim(),
+  );
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(settings) || JSON.stringify(paymentDraft) !== JSON.stringify(payment);
 
   function commitSnapshot(next: DesignerSnapshot) {
@@ -494,15 +499,31 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
               {selected === "booth" && <>
                 <div className="builder-field-group">
                   <h3><Store size={15} /> {t("Booth identity")}</h3>
-                  <Field label={t("Booth name")}><TextInput value={draft.booth_name} onChange={(event) => update("booth_name", event.target.value)} /></Field>
-                  <Field label={t("Header subtitle")}><TextInput value={draft.subtitle} onChange={(event) => update("subtitle", event.target.value)} /></Field>
-                  <div className="builder-field-row">
-                    <Field label={t("Booth code")}><TextInput value={draft.booth_code} onChange={(event) => update("booth_code", event.target.value)} /></Field>
-                    <Field label={t("Open hours")}><TextInput value={draft.open_hours} onChange={(event) => update("open_hours", event.target.value)} /></Field>
+                  <div className="designer-identity-card">
+                    <div className="designer-identity-preview">
+                      <span className="designer-identity-logo">
+                        {draft.logo_url ? <img src={draft.logo_url} alt="" /> : <Store size={20} />}
+                      </span>
+                      <span className="designer-identity-copy">
+                        <strong>{draft.booth_name || t("Booth name")}</strong>
+                        <small>{draft.subtitle || t("Customer-facing booth subtitle")}</small>
+                      </span>
+                      <em>{t("Public")}</em>
+                    </div>
+                    <div className="designer-card-fields">
+                      <Field label={t("Booth name")}><TextInput value={draft.booth_name} onChange={(event) => update("booth_name", event.target.value)} /></Field>
+                      <Field label={t("Header subtitle")}><TextInput value={draft.subtitle} onChange={(event) => update("subtitle", event.target.value)} /></Field>
+                      <div className="builder-field-row">
+                        <Field label={t("Booth code")}><TextInput value={draft.booth_code} onChange={(event) => update("booth_code", event.target.value)} /></Field>
+                        <Field label={t("Open hours")}><TextInput value={draft.open_hours} onChange={(event) => update("open_hours", event.target.value)} /></Field>
+                      </div>
+                      <Field label={t("Location")}><TextInput value={draft.location} onChange={(event) => update("location", event.target.value)} /></Field>
+                      <div className="designer-asset-field">
+                        <Field label={t("Logo URL")}><TextInput value={draft.logo_url ?? ""} placeholder="https://…" onChange={(event) => update("logo_url", event.target.value)} /></Field>
+                        <ImageUpload shopId={shopId} bucket="payment-qr" label={t("Upload booth logo")} onUploaded={(url) => update("logo_url", url)} />
+                      </div>
+                    </div>
                   </div>
-                  <Field label={t("Location")}><TextInput value={draft.location} onChange={(event) => update("location", event.target.value)} /></Field>
-                  <Field label={t("Logo URL")}><TextInput value={draft.logo_url ?? ""} placeholder="https://…" onChange={(event) => update("logo_url", event.target.value)} /></Field>
-                  <ImageUpload shopId={shopId} bucket="payment-qr" label={t("Upload booth logo")} onUploaded={(url) => update("logo_url", url)} />
                 </div>
                 <div className="builder-field-group">
                   <h3><Link2 size={15} /> {t("Social links")}</h3>
@@ -513,11 +534,25 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
               {selected === "cart" && <div className="builder-fields builder-payment-fields">
                 <div className="builder-field-group">
                   <h3><Building2 size={15} /> {t("Payment account")}</h3>
-                  <div className="builder-bank-summary"><img src={getBankLogoUrl(selectedBank)} alt="" onError={(event) => { event.currentTarget.src = getBankLogoUrl(); }} /><span><strong>{selectedBank?.name ?? t("Choose a bank")}</strong><small>{paymentDraft.bank_account_no || t("No account configured")}</small></span></div>
-                  <Field label={t("Payment label")}><TextInput value={paymentDraft.bank_label} onChange={(event) => updatePayment("bank_label", event.target.value)} /></Field>
-                  <Field label={t("Bank")}><SelectInput value={selectedBank?.code ?? ""} onChange={(event) => { const bank = banks.find((item) => item.code === event.target.value); commitSnapshot({ booth: draftRef.current, payment: { ...paymentDraftRef.current, bank_code: bank?.code ?? "", bank_acq_id: bank?.bin ?? "" } }); }}><option value="">{t("Select bank")}</option>{banks.map((bank) => <option key={bank.code} value={bank.code}>{bank.name}</option>)}</SelectInput></Field>
-                  <Field label={t("Account number")}><TextInput value={paymentDraft.bank_account_no ?? ""} onChange={(event) => updatePayment("bank_account_no", event.target.value)} /></Field>
-                  <Field label={t("Account name")}><TextInput value={paymentDraft.bank_account_name ?? ""} onChange={(event) => updatePayment("bank_account_name", event.target.value)} /></Field>
+                  <div className={`designer-payment-card ${paymentAccountReady ? "is-ready" : "needs-setup"}`}>
+                    <div className="designer-payment-preview">
+                      <img src={getBankLogoUrl(selectedBank)} alt={selectedBank?.name ?? ""} onError={(event) => { event.currentTarget.src = getBankLogoUrl(); }} />
+                      <span>
+                        <strong>{selectedBank?.name ?? t("Choose a bank")}</strong>
+                        <small>{paymentDraft.bank_account_name || t("Account holder not set")}</small>
+                        <code>{paymentDraft.bank_account_no || t("No account configured")}</code>
+                      </span>
+                      <em>{t(paymentAccountReady ? "Customer ready" : "Needs setup")}</em>
+                    </div>
+                    <div className="designer-card-fields">
+                      <Field label={t("Payment label")}><TextInput value={paymentDraft.bank_label} onChange={(event) => updatePayment("bank_label", event.target.value)} /></Field>
+                      <Field label={t("Bank")}><SelectInput value={selectedBank?.code ?? ""} onChange={(event) => { const bank = banks.find((item) => item.code === event.target.value); commitSnapshot({ booth: draftRef.current, payment: { ...paymentDraftRef.current, bank_code: bank?.code ?? "", bank_acq_id: bank?.bin ?? "" } }); }}><option value="">{t("Select bank")}</option>{banks.map((bank) => <option key={bank.code} value={bank.code}>{bank.name}</option>)}</SelectInput></Field>
+                      <div className="builder-field-row">
+                        <Field label={t("Account number")}><TextInput value={paymentDraft.bank_account_no ?? ""} onChange={(event) => updatePayment("bank_account_no", event.target.value)} /></Field>
+                        <Field label={t("Account name")}><TextInput value={paymentDraft.bank_account_name ?? ""} onChange={(event) => updatePayment("bank_account_name", event.target.value)} /></Field>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="builder-field-group">
                   <h3><MessageSquareText size={15} /> {t("Transfer message")}</h3>

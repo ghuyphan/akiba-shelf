@@ -273,7 +273,43 @@ test("designer phone rules apply inside the preview iframe", async ({
     )
     .toBe(3);
 
-  await page.locator('[data-designer-section="featured"]').click();
+  await desktopPreview.locator(".storefront-module-booth").click();
+  await expect(page.locator(".designer-identity-card")).toBeVisible();
+  await expect(page.locator(".designer-identity-preview")).toContainText(
+    "Fixture Booth",
+  );
+  const logoControl = page.locator(".designer-asset-field");
+  await expect
+    .poll(() =>
+      logoControl.evaluate((element) => ({
+        columns: getComputedStyle(element).gridTemplateColumns.split(" ").length,
+        inputWidth: element.querySelector("input.input")!.getBoundingClientRect()
+          .width,
+        uploadWidth: element
+          .querySelector(".upload-button")!
+          .getBoundingClientRect().width,
+      })),
+    )
+    .toMatchObject({ columns: 1, inputWidth: expect.any(Number) });
+  await expect
+    .poll(() =>
+      logoControl.evaluate((element) => {
+        const input = element.querySelector("input.input")!.getBoundingClientRect();
+        const upload = element
+          .querySelector(".upload-button")!
+          .getBoundingClientRect();
+        return Math.min(input.width, upload.width);
+      }),
+    )
+    .toBeGreaterThan(240);
+
+  await desktopPreview.locator(".storefront-module-cart").click();
+  await expect(page.locator(".designer-payment-card")).toBeVisible();
+  await expect(page.locator(".designer-payment-preview")).toContainText(
+    "Customer ready",
+  );
+
+  await desktopPreview.locator(".storefront-module-featured").click();
   await page.getByRole("button", { name: /Pop poster/ }).click();
   await expect(
     desktopPreview.locator(".storefront-module-featured"),
