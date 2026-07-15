@@ -30,6 +30,17 @@
 	let v5star;
 	let showToast = false;
 
+	let v3starSplash;
+	let v3starSplash2;
+	let v4starSplash;
+	let v4starSplash2;
+	let v5starSplash;
+	let v5starSplash2;
+
+	let preload3 = 'none';
+	let preload4 = 'none';
+	let preload5 = 'none';
+
 	const dispatch = createEventDispatcher();
 	$: balance = $isAcquaintUsed ? $acquaint : $intertwined;
 	$: isBeginner = $bannerList[$bannerActive]?.type === 'beginner';
@@ -124,6 +135,7 @@
 	};
 
 	onMount(() => {
+		// Set ended event listeners
 		[v3star, v4starSingle, v4star, v5starSingle, v5star].forEach((video) => {
 			video.addEventListener('ended', () => {
 				video.style.display = 'none';
@@ -131,6 +143,74 @@
 				dispatch('endAnimation');
 			});
 		});
+
+		// Helper to fetch entire file at network level to cache it cleanly in SW (status 200)
+		// before range requests slice it.
+		const preloadVideoFile = (url) => {
+			if (!url) return Promise.resolve();
+			return fetch(url).catch((err) => console.warn('Preload failed for', url, err));
+		};
+
+		// Progressive preloading queue to avoid bottlenecking low-speed networks
+		const preloadSequentially = async () => {
+			// Step 1: Preload Tier 1 (3-star animations, ~94% probability)
+			preload3 = 'auto';
+			const tier1 = [
+				preloadVideoFile($assets['3star-single.mp4']),
+				preloadVideoFile($assets['3star-splashout.webm']),
+				preloadVideoFile($assets['3star-splashout2.webm'])
+			];
+			// Wait for Tier 1 to be fully downloaded/cached, or max 3s fallback
+			await Promise.race([
+				Promise.all(tier1),
+				new Promise((resolve) => setTimeout(resolve, 3000))
+			]);
+
+			if (v3star) v3star.load();
+			if (v3starSplash) v3starSplash.load();
+			if (v3starSplash2) v3starSplash2.load();
+
+			// Step 2: Preload Tier 2 (4-star animations)
+			preload4 = 'auto';
+			const tier2 = [
+				preloadVideoFile($assets['4star-single.mp4']),
+				preloadVideoFile($assets['4star.mp4']),
+				preloadVideoFile($assets['4star-splashout.webm']),
+				preloadVideoFile($assets['4star-splashout2.webm'])
+			];
+			// Wait for Tier 2 to be cached, or max 4s fallback
+			await Promise.race([
+				Promise.all(tier2),
+				new Promise((resolve) => setTimeout(resolve, 4000))
+			]);
+
+			if (v4starSingle) v4starSingle.load();
+			if (v4star) v4star.load();
+			if (v4starSplash) v4starSplash.load();
+			if (v4starSplash2) v4starSplash2.load();
+
+			// Step 3: Preload Tier 3 (5-star animations)
+			preload5 = 'auto';
+			const tier3 = [
+				preloadVideoFile($assets['5star-single.mp4']),
+				preloadVideoFile($assets['5star.mp4']),
+				preloadVideoFile($assets['5star-splashout.webm']),
+				preloadVideoFile($assets['5star-splashout2.webm'])
+			];
+			// Wait for Tier 3 to be cached, or max 4s fallback
+			await Promise.race([
+				Promise.all(tier3),
+				new Promise((resolve) => setTimeout(resolve, 4000))
+			]);
+
+			if (v5starSingle) v5starSingle.load();
+			if (v5star) v5star.load();
+			if (v5starSplash) v5starSplash.load();
+			if (v5starSplash2) v5starSplash2.load();
+		};
+
+		// Delay the start of background downloading by 200ms to allow smooth first paint
+		setTimeout(preloadSequentially, 200);
 	});
 
 	$: if (showMeteor) {
@@ -180,27 +260,35 @@
 
 <div class="wish-output" class:show={showMeteor} style="height: {$viewportHeight}px">
 	<div class="video">
-		<video bind:this={v3star} preload="none" muted={$muted} src={$assets['3star-single.mp4']} type="video/mp4" />
+		<video bind:this={v3star} preload={preload3} muted={$muted} src={$assets['3star-single.mp4']} type="video/mp4" />
 		<video
 			bind:this={v4starSingle}
-			preload="none"
+			preload={preload4}
 			muted={$muted}
 			src={$assets['4star-single.mp4']}
 			type="video/mp4"
 		/>
-		<video bind:this={v4star} preload="none" muted={$muted} src={$assets['4star.mp4']} type="video/mp4" />
+		<video bind:this={v4star} preload={preload4} muted={$muted} src={$assets['4star.mp4']} type="video/mp4" />
 		<video
 			bind:this={v5starSingle}
-			preload="none"
+			preload={preload5}
 			muted={$muted}
 			src={$assets['5star-single.mp4']}
 			type="video/mp4"
 		/>
-		<video bind:this={v5star} preload="none" muted={$muted} src={$assets['5star.mp4']} type="video/mp4" />
+		<video bind:this={v5star} preload={preload5} muted={$muted} src={$assets['5star.mp4']} type="video/mp4" />
 
 		<button class="skip" on:click={skip}>{$t('wish.result.skip')} <i class="gi-caret-up" /></button>
 	</div>
 </div>
+
+<!-- Hidden dummy elements to trigger progressive background loading/caching of WebM splash animations -->
+<video bind:this={v3starSplash} preload={preload3} muted src={$assets['3star-splashout.webm']} type="video/webm" style="display: none;" />
+<video bind:this={v3starSplash2} preload={preload3} muted src={$assets['3star-splashout2.webm']} type="video/webm" style="display: none;" />
+<video bind:this={v4starSplash} preload={preload4} muted src={$assets['4star-splashout.webm']} type="video/webm" style="display: none;" />
+<video bind:this={v4starSplash2} preload={preload4} muted src={$assets['4star-splashout2.webm']} type="video/webm" style="display: none;" />
+<video bind:this={v5starSplash} preload={preload5} muted src={$assets['5star-splashout.webm']} type="video/webm" style="display: none;" />
+<video bind:this={v5starSplash2} preload={preload5} muted src={$assets['5star-splashout2.webm']} type="video/webm" style="display: none;" />
 
 <style>
 	.exchange :global(.red) {
