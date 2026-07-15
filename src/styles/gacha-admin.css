@@ -307,6 +307,7 @@
   border-radius: var(--admin-inner-radius, 13px);
   background: var(--admin-inner-bg, #f8fafc);
   min-width: 0;
+  text-align: center;
 }
 
 .gacha-pool-summary > div.rarity-4 {
@@ -350,7 +351,7 @@
 }
 
 .gacha-pool-summary.compact > div {
-  padding: 10px 4px;
+  padding: 10px 8px;
   border-radius: 11px;
 }
 
@@ -575,6 +576,21 @@
   opacity: 0.65;
 }
 
+.gacha-product-row.is-inactive:not(.is-included) {
+  opacity: 0.6;
+  background: #fafaf9;
+}
+
+.gacha-product-row.is-inactive:not(.is-included) .gacha-product-include {
+  cursor: not-allowed;
+}
+
+.gacha-product-controls.is-disabled {
+  opacity: 0.65;
+  pointer-events: none;
+  background: #fafafa;
+}
+
 @media (max-width: 1100px) {
   .gacha-editor-grid {
     grid-template-columns: 1fr;
@@ -638,7 +654,7 @@
   }
 
   .gacha-pool-summary.compact > div {
-    padding: 8px 3px;
+    padding: 8px 6px;
     border-radius: 9px;
   }
 

@@ -107,20 +107,23 @@ function DropdownField({
   value,
   options,
   onChange,
+  disabled,
 }: {
   label: string;
   value: string;
   options: SelectMenuOption[];
   onChange: (value: string) => void;
+  disabled?: boolean;
 }) {
   return (
-    <div className="field">
+    <div className={`field ${disabled ? "is-disabled" : ""}`}>
       <span className="field-label">{label}</span>
       <SelectMenu
         label={label}
         value={value}
         options={options}
         onChange={onChange}
+        disabled={disabled}
       />
     </div>
   );
@@ -705,12 +708,13 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                   return (
                     <article
                       key={product.id}
-                      className={`gacha-product-row ${entry ? "is-included" : ""}`}
+                      className={`gacha-product-row ${entry ? "is-included" : ""} ${!product.active ? "is-inactive" : ""}`}
                     >
                       <button
                         type="button"
                         className="gacha-product-include"
                         aria-pressed={Boolean(entry)}
+                        disabled={!product.active && !entry}
                         onClick={() => toggleProduct(product.id)}
                       >
                         <span className="gacha-product-image">
@@ -725,21 +729,26 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                             <Sparkles size={20} />
                           )}
                         </span>
-                        <span>
+                        <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                           <strong>{product.name}</strong>
-                          <small>
-                            {product.item_code || product.category}
-                            {!product.active ? ` · ${t("Hidden product")}` : ""}
-                          </small>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                            <small>{product.item_code || product.category}</small>
+                            {!product.active && (
+                              <span className="admin-badge-hidden">
+                                {t("Hidden")}
+                              </span>
+                            )}
+                          </span>
                         </span>
                         <b>{t(entry ? "Included" : "Add")}</b>
                       </button>
                       {entry && (
-                        <div className="gacha-product-controls">
+                        <div className={`gacha-product-controls ${!product.active ? "is-disabled" : ""}`}>
                           <DropdownField
                             label={t("Role")}
                             value={entry.kind}
                             options={kindOptions}
+                            disabled={!product.active}
                             onChange={(value) =>
                               updateEntry(product.id, {
                                 kind: value as GachaItemKind,
@@ -750,6 +759,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                             label={t("Rarity")}
                             value={String(entry.rarity)}
                             options={rarityOptions}
+                            disabled={!product.active}
                             onChange={(value) =>
                               updateEntry(product.id, {
                                 rarity: Number(value) as GachaRarity,
@@ -761,6 +771,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                               label={t("Element icon")}
                               value={entry.element}
                               options={elementOptions}
+                              disabled={!product.active}
                               onChange={(value) =>
                                 updateEntry(product.id, {
                                   element: value as GachaElement,
@@ -772,6 +783,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                               label={t("Weapon class")}
                               value={entry.weapon_type}
                               options={weaponOptions}
+                              disabled={!product.active}
                               onChange={(value) =>
                                 updateEntry(product.id, {
                                   weapon_type: value as GachaWeaponType,
@@ -785,6 +797,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                               min={1}
                               max={1000}
                               value={entry.weight}
+                              disabled={!product.active}
                               onChange={(event) =>
                                 updateEntry(product.id, {
                                   weight: Number(event.target.value),
@@ -793,14 +806,15 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                             />
                           </Field>
                           <label
-                            className={`gacha-mini-check ${!entry.featured && featuredCount >= selectedBanner.display_limit ? "is-disabled" : ""}`}
+                            className={`gacha-mini-check ${(!entry.featured && featuredCount >= selectedBanner.display_limit) || !product.active ? "is-disabled" : ""}`}
                           >
                             <input
                               type="checkbox"
                               checked={entry.featured}
                               disabled={
-                                !entry.featured &&
-                                featuredCount >= selectedBanner.display_limit
+                                (!entry.featured &&
+                                  featuredCount >= selectedBanner.display_limit) ||
+                                !product.active
                               }
                               onChange={(event) =>
                                 updateFeatured(product.id, event.target.checked)
@@ -808,10 +822,11 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                             />
                             <Star size={15} /> {t("Featured")}
                           </label>
-                          <label className="gacha-mini-check">
+                          <label className={`gacha-mini-check ${!product.active ? "is-disabled" : ""}`}>
                             <input
                               type="checkbox"
                               checked={entry.active}
+                              disabled={!product.active}
                               onChange={(event) =>
                                 updateEntry(product.id, {
                                   active: event.target.checked,

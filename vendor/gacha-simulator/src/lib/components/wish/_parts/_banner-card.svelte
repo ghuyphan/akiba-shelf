@@ -133,7 +133,8 @@
 	.card,
 	.frame {
 		width: 100%;
-		height: fit-content;
+		max-width: 100%;
+		max-height: 100%;
 		aspect-ratio: 27/14;
 	}
 

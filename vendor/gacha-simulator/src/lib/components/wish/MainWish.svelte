@@ -243,17 +243,16 @@
 	.top {
 		min-height: 70px;
 	}
-	.banner,
-	.item {
-		height: 100%;
-	}
-	.item {
-		position: relative;
-	}
 	.banner {
+		height: 100%;
 		display: flex;
 		justify-content: center;
 		flex-direction: column;
+	}
+	.item {
+		position: relative;
+		flex: 1;
+		min-height: 0;
 	}
 
 	.button {

@@ -766,6 +766,7 @@ const vi: Record<string, string> = {
   "Base rarity rates are 90% / 9% / 1%. Weight changes which item appears within the same rarity.": "Tỷ lệ cơ bản là 90% / 9% / 1%. Trọng số quyết định vật phẩm xuất hiện trong cùng độ hiếm.",
   "Search merch…": "Tìm merch…",
   "Hidden product": "Sản phẩm bị ẩn",
+  "This product is hidden and won't show up in the storefront wish pool.": "Sản phẩm này đang bị ẩn và sẽ không xuất hiện trong pool ước của cửa hàng.",
   "Included": "Đã thêm",
   "Add to pool": "Thêm vào pool",
   "Character": "Nhân vật",

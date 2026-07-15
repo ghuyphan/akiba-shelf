@@ -86,7 +86,7 @@
 		position: absolute;
 		max-width: 900px;
 		width: 80%;
-		max-height: 75vh;
+		max-height: 100%;
 		aspect-ratio: 27/14;
 		opacity: 0;
 		pointer-events: none;
