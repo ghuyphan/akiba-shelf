@@ -3,7 +3,6 @@ import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
-import { RangeRequestsPlugin } from 'workbox-range-requests';
 
 const cacheVersion = 'v1';
 
@@ -21,12 +20,7 @@ let precache = self.__WB_MANIFEST;
 precache = [];
 precacheAndRoute(precache, { ignoreURLParametersMatching: [/.*/] });
 
-registerRoute(
-	'/',
-	new NetworkFirst({
-		cacheName: `Static-${cacheVersion}`
-	})
-);
+registerRoute('/', new NetworkFirst({ cacheName: `Static-${cacheVersion}` }));
 
 registerRoute(
 	new RegExp('.(?:/?pwa=true|/?pwasc)'),
@@ -44,22 +38,9 @@ registerRoute(
 	})
 );
 
-// Cache videos and audio files with range request support
 registerRoute(
 	({ url }) =>
-		url.href.includes('videos') || url.href.includes('sfx'),
-	new CacheFirst({
-		cacheName: `Static-Media-${cacheVersion}`,
-		plugins: [
-			new RangeRequestsPlugin()
-		]
-	})
-);
-
-// Cache other static image assets
-registerRoute(
-	({ url }) =>
-		url.href.includes('images'),
+		url.href.includes('videos') || url.href.includes('images') || url.href.includes('sfx'),
 	new CacheFirst({
 		cacheName: `Static-${cacheVersion}`
 	})
