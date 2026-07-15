@@ -9,7 +9,6 @@
   "scripts": {
     "dev": "npm run build:gacha:dev && vite --host 0.0.0.0",
     "build:gacha:dev": "GACHA_OUTPUT_DIR=../../.gacha-dist npm run build --workspace matsuri-wish-simulator",
-
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint --max-warnings 0 src e2e vite.config.ts vitest.config.ts playwright.config.ts",
     "lint:fix": "npm run lint -- --fix",
