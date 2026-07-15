@@ -441,11 +441,11 @@
 	}
 	.pic img.wishpic {
 		position: absolute;
-		top: 42%;
+		top: 38%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		width: 84%;
-		height: 62%;
+		width: 78%;
+		height: 38%;
 		border: 1px solid rgba(255, 255, 255, 0.7);
 		border-radius: calc(2.5 / 100 * var(--card-height));
 		background: rgba(255, 255, 255, 0.2);
@@ -454,9 +454,9 @@
 	}
 
 	.weapon .pic img.wishpic {
-		top: 42%;
+		top: 38%;
 		width: 78%;
-		height: 58%;
+		height: 38%;
 		filter: drop-shadow(0.12rem 0.16rem 0.08rem rgba(0, 0, 0, 0.55));
 	}
 	.pic > .wishpic.catalyst-item {

@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 const gachaDevRoot = resolve(process.cwd(), ".gacha-dist");
+const hsrDevRoot = resolve(process.cwd(), ".hsr-gacha-dist");
 // Keep the isolated simulator available at its production path during local development.
 const contentTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -31,21 +32,22 @@ function serveGachaInDevelopment(): Plugin {
       server.middlewares.use((request, response, next) => {
         if (!request.url) return next();
         const pathname = new URL(request.url, "http://localhost").pathname;
-        if (
-          pathname !== "/gacha-simulator" &&
-          !pathname.startsWith("/gacha-simulator/")
-        ) {
+        const isGenshin = pathname === "/gacha-simulator" || pathname.startsWith("/gacha-simulator/");
+        const isHsr = pathname === "/hsr-simulator" || pathname.startsWith("/hsr-simulator/");
+
+        if (!isGenshin && !isHsr) {
           return next();
         }
 
-        let relativePath = decodeURIComponent(
-          pathname.slice("/gacha-simulator".length),
-        );
+        const prefix = isGenshin ? "/gacha-simulator" : "/hsr-simulator";
+        const devRoot = isGenshin ? gachaDevRoot : hsrDevRoot;
+
+        let relativePath = decodeURIComponent(pathname.slice(prefix.length));
         if (!relativePath || relativePath.endsWith("/")) {
           relativePath += "index.html";
         }
-        const filePath = resolve(gachaDevRoot, `.${relativePath}`);
-        if (!filePath.startsWith(`${gachaDevRoot}${sep}`)) return next();
+        const filePath = resolve(devRoot, `.${relativePath}`);
+        if (!filePath.startsWith(`${devRoot}${sep}`)) return next();
 
         try {
           if (!statSync(filePath).isFile()) return next();

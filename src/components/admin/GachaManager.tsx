@@ -10,6 +10,7 @@ import {
   Plus,
   Redo2,
   RotateCcw,
+  Save,
   Search,
   Sparkles,
   Star,
@@ -69,6 +70,7 @@ const elementPaths: Record<string, string> = {
 };
 
 const elementColors: Record<string, string> = {
+  // Genshin
   anemo: "#33af8f",
   geo: "#de9d3c",
   electro: "#af89ef",
@@ -76,6 +78,14 @@ const elementColors: Record<string, string> = {
   hydro: "#3da9fc",
   pyro: "#e35b5b",
   cryo: "#62c4c7",
+  // HSR
+  physical: "#9aa2af",
+  fire: "#f2615a",
+  ice: "#4bc2f1",
+  lightning: "#d772f1",
+  wind: "#51eb99",
+  quantum: "#7c55f1",
+  imaginary: "#f1ca4b",
 };
 
 function GenshinElementIcon({
@@ -87,7 +97,21 @@ function GenshinElementIcon({
   size?: number;
   className?: string;
 }) {
-  const path = elementPaths[element];
+  const map: Record<string, string> = {
+    anemo: "anemo", geo: "geo", electro: "electro", dendro: "dendro", hydro: "hydro", pyro: "pyro", cryo: "cryo",
+    physical: "physical",
+    fire: "pyro",
+    ice: "cryo",
+    lightning: "electro",
+    wind: "anemo",
+    quantum: "electro",
+    imaginary: "geo",
+  };
+
+  const resolved = map[element] ?? "anemo";
+  const path = resolved === "physical"
+    ? "M256 64 L416 128 V256 C416 368 348 432 256 464 C164 432 96 368 96 256 V128 Z"
+    : elementPaths[resolved];
   const color = elementColors[element];
   if (!path) return null;
 
@@ -100,40 +124,27 @@ function GenshinElementIcon({
       style={{ display: "inline-block", verticalAlign: "middle", color }}
       fill="currentColor"
     >
-      <g transform="translate(0, 480) scale(1, -1)">
+      <g transform={resolved === "physical" ? "translate(0, 0) scale(1, 1)" : "translate(0, 480) scale(1, -1)"}>
         <path d={path} />
       </g>
     </svg>
   );
 }
 
-const elementOptions: SelectMenuOption[] = [
-  "anemo",
-  "geo",
-  "electro",
-  "dendro",
-  "hydro",
-  "pyro",
-  "cryo",
-].map((value) => ({
-  value,
-  label: value[0].toUpperCase() + value.slice(1),
-  icon: <GenshinElementIcon element={value} size={15} />,
-}));
-
 function newEntry(
   shopId: string,
   bannerId: string,
   productId: string,
   kind: GachaItemKind,
+  gameType: "genshin" | "hsr",
 ): GachaPoolEntry {
   return {
     shop_id: shopId,
     banner_id: bannerId,
     product_id: productId,
     kind,
-    element: "anemo",
-    weapon_type: "sword",
+    element: gameType === "hsr" ? "physical" : "anemo",
+    weapon_type: gameType === "hsr" ? "destruction" : "sword",
     rarity: 3,
     weight: 100,
     featured: false,
@@ -408,6 +419,8 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   }, []);
   const toast = useToast();
   const { t } = usePlatformI18n();
+  const gameType = settings?.game_type ?? "genshin";
+
   const kindOptions = useMemo<SelectMenuOption[]>(
     () => [
       {
@@ -415,18 +428,36 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
         label: t("Character"),
         icon: <UserRound size={15} />,
       },
-      { value: "weapon", label: t("Weapon"), icon: <Sword size={15} /> },
+      {
+        value: gameType === "hsr" ? "lightcone" : "weapon",
+        label: gameType === "hsr" ? t("Light Cone") : t("Weapon"),
+        icon: <Sword size={15} />,
+      },
     ],
-    [t],
+    [gameType, t],
   );
-  const weaponOptions = useMemo<SelectMenuOption[]>(
-    () =>
-      ["sword", "claymore", "polearm", "bow", "catalyst"].map((value) => ({
-        value,
-        label: t(value[0].toUpperCase() + value.slice(1)),
-      })),
-    [t],
-  );
+
+  const weaponOptions = useMemo<SelectMenuOption[]>(() => {
+    const list = gameType === "hsr"
+      ? ["destruction", "hunt", "erudition", "harmony", "nihility", "preservation", "abundance"]
+      : ["sword", "claymore", "polearm", "bow", "catalyst"];
+    return list.map((value) => ({
+      value,
+      label: t(value[0].toUpperCase() + value.slice(1)),
+    }));
+  }, [gameType, t]);
+
+  const elementOptions = useMemo<SelectMenuOption[]>(() => {
+    const list = gameType === "hsr"
+      ? ["physical", "fire", "ice", "lightning", "wind", "quantum", "imaginary"]
+      : ["anemo", "geo", "electro", "dendro", "hydro", "pyro", "cryo"];
+    return list.map((value) => ({
+      value,
+      label: t(value[0].toUpperCase() + value.slice(1)),
+      icon: <GenshinElementIcon element={value} size={15} />,
+    }));
+  }, [gameType, t]);
+
   const displayLimitOptions = useMemo<SelectMenuOption[]>(
     () =>
       [1, 2, 3, 4, 5].map((value) => ({
@@ -581,7 +612,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
           )
         : [
             ...current,
-            newEntry(shopId, selectedBanner.id, productId, selectedBanner.kind),
+            newEntry(shopId, selectedBanner.id, productId, selectedBanner.kind, gameType),
           ];
     });
   }
@@ -772,7 +803,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               <Eye size={16} /> <span>{t("Open preview")}</span>
             </button>
             <Button
-              icon={<Sparkles size={16} />}
+              icon={<Save size={16} />}
               loading={saving}
               loadingText={t("Publishing…")}
               disabled={!hasChanges || saving}
@@ -801,6 +832,34 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               <b>{t(settings.enabled ? "Open" : "Closed")}</b>
             </label>
           </div>
+          <DropdownField
+            label={t("Game Theme")}
+            value={settings.game_type}
+            options={[
+              { value: "genshin", label: "Genshin Impact" },
+              { value: "hsr", label: "Honkai: Star Rail" },
+            ]}
+            onChange={(value) =>
+              updateState((curr) => {
+                const gameType = value as "genshin" | "hsr";
+                return {
+                  ...curr,
+                  settings: { ...curr.settings, game_type: gameType },
+                  banners: curr.banners.map((banner) => ({
+                    ...banner,
+                    theme: gameType === "hsr" ? "physical" : "anemo",
+                    kind: gameType === "hsr" && banner.kind === "weapon" ? "lightcone" : (gameType === "genshin" && banner.kind === "lightcone" ? "weapon" : banner.kind),
+                  })),
+                  entries: curr.entries.map((entry) => ({
+                    ...entry,
+                    element: gameType === "hsr" ? "physical" : "anemo",
+                    weapon_type: gameType === "hsr" ? "destruction" : "sword",
+                    kind: gameType === "hsr" && entry.kind === "weapon" ? "lightcone" : (gameType === "genshin" && entry.kind === "lightcone" ? "weapon" : entry.kind),
+                  })),
+                };
+              }, true)
+            }
+          />
           <Field label={t("4-star pity")}>
             <TextInput
               type="number"
@@ -866,7 +925,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                   onClick={() => setSelectedBannerId(banner.id)}
                 >
                   <span className={`gacha-banner-kind ${banner.kind}`}>
-                    {banner.kind === "weapon" ? (
+                    {banner.kind !== "character" ? (
                       <Sword size={16} />
                     ) : (
                       <UserRound size={16} />
@@ -926,7 +985,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
           <AdminCard
             className="gacha-banner-editor"
             icon={
-              selectedBanner.kind === "weapon" ? (
+              selectedBanner.kind !== "character" ? (
                 <Sword size={18} />
               ) : (
                 <UserRound size={18} />
@@ -1106,7 +1165,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                           />
                           {entry.kind === "character" ? (
                             <DropdownField
-                              label={t("Element icon")}
+                              label={gameType === "hsr" ? t("Element") : t("Element icon")}
                               value={entry.element}
                               options={elementOptions}
                               disabled={!product.active}
@@ -1118,7 +1177,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                             />
                           ) : (
                             <DropdownField
-                              label={t("Weapon class")}
+                              label={gameType === "hsr" ? t("Path") : t("Weapon class")}
                               value={entry.weapon_type}
                               options={weaponOptions}
                               disabled={!product.active}
@@ -1175,7 +1234,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                                 })
                               }
                             />
-                            {entry.kind === "weapon" ? (
+                            {entry.kind !== "character" ? (
                               <Sword size={15} />
                             ) : (
                               <UserRound size={15} />

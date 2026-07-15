@@ -794,6 +794,23 @@ const vi: Record<string, string> = {
   "Moon Stand × 2": "Standee Ánh Trăng × 2",
   "Sticker Pack × 1": "Bộ sticker × 1",
   "Print Set × 1": "Bộ tranh in × 1",
+  "Game Theme": "Chủ đề game",
+  "Light Cone": "Nón Ánh Sáng",
+  "Path": "Vận Mệnh",
+  "Destruction": "Hủy Diệt",
+  "Hunt": "Săn Bắn",
+  "Erudition": "Tri Thức",
+  "Harmony": "Hòa Hợp",
+  "Nihility": "Hư Vô",
+  "Preservation": "Bảo Hộ",
+  "Abundance": "Trù Phú",
+  "Physical": "Vật Lý",
+  "Fire": "Hỏa",
+  "Ice": "Băng",
+  "Lightning": "Lôi",
+  "Wind": "Phong",
+  "Quantum": "Lượng Tử",
+  "Imaginary": "Số Ảo",
 };
 
 type Variables = Record<string, string | number>;

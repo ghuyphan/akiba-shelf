@@ -208,7 +208,7 @@
 
 .gacha-global-rules {
   display: grid;
-  grid-template-columns: minmax(180px, 0.7fr) repeat(2, minmax(130px, 0.35fr));
+  grid-template-columns: auto minmax(160px, 1fr) repeat(2, minmax(110px, 0.5fr));
   align-items: end;
   gap: 14px;
 }
@@ -613,7 +613,7 @@
   }
 
   .gacha-global-rules {
-    grid-template-columns: minmax(180px, 0.7fr) repeat(2, minmax(110px, 0.35fr));
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
 
@@ -640,14 +640,22 @@
 
   .gacha-header-actions {
     display: flex;
-    flex-direction: row !important;
+    flex-wrap: wrap;
     gap: 10px;
     width: 100%;
   }
 
-  .gacha-header-actions > * {
-    flex: 1;
-    justify-content: center;
+  .gacha-header-actions > .button {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    border-radius: var(--admin-inner-radius, 13px);
+  }
+
+  .gacha-header-actions > .button > span {
+    display: none;
   }
 
   .gacha-banner-list,

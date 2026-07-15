@@ -164,11 +164,15 @@ export function GachaPage() {
     );
   }
 
+  const simulatorPath = state?.catalog.settings?.game_type === "hsr"
+    ? "hsr-simulator"
+    : "gacha-simulator";
+
   return (
     <main className="gacha-host">
       <iframe
         title="wish simulator"
-        src={`${import.meta.env.BASE_URL}gacha-simulator/?${queryParams.toString()}`}
+        src={`${import.meta.env.BASE_URL}${simulatorPath}/?${queryParams.toString()}`}
         allow="fullscreen"
       />
     </main>

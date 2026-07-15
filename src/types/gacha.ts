@@ -1,6 +1,6 @@
 import type { Product } from "./catalog";
 
-export type GachaItemKind = "character" | "weapon";
+export type GachaItemKind = "character" | "weapon" | "lightcone";
 export type GachaRarity = 3 | 4 | 5;
 export type GachaElement =
   | "anemo"
@@ -9,17 +9,32 @@ export type GachaElement =
   | "dendro"
   | "hydro"
   | "pyro"
-  | "cryo";
+  | "cryo"
+  | "physical"
+  | "fire"
+  | "ice"
+  | "lightning"
+  | "wind"
+  | "quantum"
+  | "imaginary";
 export type GachaWeaponType =
   | "sword"
   | "claymore"
   | "polearm"
   | "bow"
-  | "catalyst";
+  | "catalyst"
+  | "destruction"
+  | "hunt"
+  | "erudition"
+  | "harmony"
+  | "nihility"
+  | "preservation"
+  | "abundance";
 
 export type GachaSettings = {
   shop_id: string;
   enabled: boolean;
+  game_type: "genshin" | "hsr";
   title: string;
   description: string;
   rare_pity: number;
@@ -67,6 +82,7 @@ export type GachaCatalog = {
 export const defaultGachaSettings = (shopId: string): GachaSettings => ({
   shop_id: shopId,
   enabled: false,
+  game_type: "genshin",
   title: "Wish upon the shelf",
   description:
     "Meet a surprise character or discover a featured weapon from this shop.",

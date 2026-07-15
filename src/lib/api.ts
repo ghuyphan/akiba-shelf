@@ -372,7 +372,7 @@ export async function getPublicProductsByIds(
 }
 
 const GACHA_SETTINGS_COLUMNS =
-  "shop_id,enabled,title,description,rare_pity,legendary_pity,updated_at";
+  "shop_id,enabled,game_type,title,description,rare_pity,legendary_pity,updated_at";
 const GACHA_BANNER_COLUMNS =
   "id,shop_id,name,description,kind,theme,display_limit,sort_order,active,updated_at";
 const GACHA_POOL_COLUMNS =
@@ -386,6 +386,7 @@ function normalizeGachaSettings(
   return {
     shop_id: text(value.shop_id, shopId),
     enabled: booleanValue(value.enabled),
+    game_type: (value.game_type === "hsr" ? "hsr" : "genshin") as "genshin" | "hsr",
     title: text(value.title, defaults.title),
     description: text(value.description, defaults.description),
     rare_pity: Math.min(30, Math.max(2, numberValue(value.rare_pity, 10))),
@@ -407,10 +408,11 @@ function normalizeGachaBanner(
     shop_id: text(value.shop_id, shopId),
     name: text(value.name, defaults.name),
     description: text(value.description, defaults.description),
-    kind: value.kind === "weapon" ? "weapon" : "character",
-    theme: (["anemo", "geo", "electro", "dendro", "hydro", "pyro", "cryo"].includes(
-      text(value.theme),
-    )
+    kind: (value.kind === "weapon" || value.kind === "lightcone" ? value.kind : "character") as GachaItemKind,
+    theme: ([
+      "anemo", "geo", "electro", "dendro", "hydro", "pyro", "cryo",
+      "physical", "fire", "ice", "lightning", "wind", "quantum", "imaginary"
+    ].includes(text(value.theme))
       ? text(value.theme)
       : defaults.theme) as GachaElement,
     display_limit: Math.min(
@@ -435,15 +437,17 @@ function normalizeGachaPoolEntry(
     shop_id: text(value.shop_id, shopId),
     banner_id: text(value.banner_id),
     product_id: text(value.product_id),
-    kind: value.kind === "weapon" ? "weapon" : "character",
-    element: (["anemo", "geo", "electro", "dendro", "hydro", "pyro", "cryo"].includes(
-      text(value.element),
-    )
+    kind: (value.kind === "weapon" || value.kind === "lightcone" ? value.kind : "character") as GachaItemKind,
+    element: ([
+      "anemo", "geo", "electro", "dendro", "hydro", "pyro", "cryo",
+      "physical", "fire", "ice", "lightning", "wind", "quantum", "imaginary"
+    ].includes(text(value.element))
       ? text(value.element)
       : "anemo") as GachaElement,
-    weapon_type: (["sword", "claymore", "polearm", "bow", "catalyst"].includes(
-      text(value.weapon_type),
-    )
+    weapon_type: ([
+      "sword", "claymore", "polearm", "bow", "catalyst",
+      "destruction", "hunt", "erudition", "harmony", "nihility", "preservation", "abundance"
+    ].includes(text(value.weapon_type))
       ? text(value.weapon_type)
       : "sword") as GachaWeaponType,
     rarity: (rarity === 4 || rarity === 5 ? rarity : 3) as GachaRarity,
@@ -567,8 +571,9 @@ export async function saveGachaConfiguration(
   const settingsPayload = {
     shop_id: shopId,
     enabled: settings.enabled,
+    game_type: settings.game_type,
     title: settings.title.trim(),
-      description: settings.description.trim(),
+    description: settings.description.trim(),
     rare_pity: settings.rare_pity,
     legendary_pity: settings.legendary_pity,
   };
