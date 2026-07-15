@@ -25,6 +25,12 @@ Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dash
 - Before pushing linked migrations, compare local and remote migration history.
   Never use `--include-all` to paper over drift; reconcile applied versions and
   validate the resulting schema first.
+- When the user asks to migrate or deploy database changes and this checkout is
+  linked, use the linked project directly: review `migration list`, run a
+  `db push --dry-run`, apply the pending migration with `db push`, then verify
+  the remote schema and run the linked security/performance advisors. A local
+  Supabase database is optional supplemental coverage, not a prerequisite or a
+  blocker for a linked migration.
 - When changing Supabase code or SQL, follow `.agents/skills/supabase/SKILL.md` and the Postgres best-practices skill.
 
 ## UI and design language
@@ -114,7 +120,12 @@ When Edge Functions change, also run `npm run test:functions`. When dependencies
 change, run `npm audit --omit=dev`. Preserve `:focus-visible` behavior when
 verifying touch/highlight changes.
 
-For database changes, also validate migrations against a local or linked Supabase project when available. If the checkout is not linked or the local database is unavailable, report that clearly instead of claiming deployment.
+For database changes, validate migrations against the linked Supabase project
+when this checkout is linked. When the user requested deployment, push and
+verify the migration remotely without requiring a local Docker database. Use
+local database tests as supplemental coverage when available. If the checkout
+is not linked and no local database is available, report that clearly instead
+of claiming deployment.
 
 Visually check at minimum:
 

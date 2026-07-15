@@ -1,4 +1,5 @@
 import type { Product } from "../types/catalog";
+import { getProductPrice } from "./pricing";
 
 export function getStockLabel(product: Product) {
   if (product.quantity_available === 0) return "Sold out";
@@ -16,6 +17,6 @@ export function getItemQrPayload(product: Product) {
     type: "merch-item",
     code: product.item_code,
     name: product.name,
-    price_vnd: product.price_vnd,
+    price_vnd: getProductPrice(product),
   });
 }

@@ -31,6 +31,18 @@ import type {
   Shop,
   ShopMembership,
 } from "../types/catalog";
+import type {
+  GachaBanner,
+  GachaCatalog,
+  GachaElement,
+  GachaItemKind,
+  GachaPoolEntry,
+  GachaPoolItem,
+  GachaRarity,
+  GachaSettings,
+  GachaWeaponType,
+} from "../types/gacha";
+import { defaultGachaBanner, defaultGachaSettings } from "../types/gacha";
 
 export type StaffRole = "owner" | "admin" | "staff";
 export type StaffAccess = {
@@ -98,6 +110,8 @@ export function normalizeProduct(product: Partial<Product>): Product {
     collection: text(product.collection),
     description: text(product.description),
     price_vnd: numberValue(product.price_vnd),
+    sale_price_vnd: product.sale_price_vnd == null ? null : numberValue(product.sale_price_vnd),
+    effective_price_vnd: product.effective_price_vnd == null ? undefined : numberValue(product.effective_price_vnd),
     item_code: text(product.item_code),
     quantity_available: numberValue(product.quantity_available, Number.NaN),
     category: text(product.category),
@@ -262,9 +276,9 @@ export async function getPublicProducts(
   }
 
   if (sort === "price-asc") {
-    query = query.order("price_vnd", { ascending: true });
+    query = query.order("effective_price_vnd", { ascending: true });
   } else if (sort === "price-desc") {
-    query = query.order("price_vnd", { ascending: false });
+    query = query.order("effective_price_vnd", { ascending: false });
   } else if (sort === "quantity") {
     query = query.order("quantity_available", { ascending: false });
   } else if (sort === "name") {
@@ -355,6 +369,275 @@ export async function getPublicProductsByIds(
   return ((data ?? []) as unknown[]).map((row) =>
     normalizeProduct(productRowSchema.parse(row)),
   );
+}
+
+const GACHA_SETTINGS_COLUMNS =
+  "shop_id,enabled,title,description,rare_pity,legendary_pity,updated_at";
+const GACHA_BANNER_COLUMNS =
+  "id,shop_id,name,description,kind,theme,display_limit,sort_order,active,updated_at";
+const GACHA_POOL_COLUMNS =
+  "shop_id,banner_id,product_id,kind,element,weapon_type,rarity,weight,featured,active,updated_at";
+
+function normalizeGachaSettings(
+  value: Record<string, unknown>,
+  shopId: string,
+): GachaSettings {
+  const defaults = defaultGachaSettings(shopId);
+  return {
+    shop_id: text(value.shop_id, shopId),
+    enabled: booleanValue(value.enabled),
+    title: text(value.title, defaults.title),
+    description: text(value.description, defaults.description),
+    rare_pity: Math.min(30, Math.max(2, numberValue(value.rare_pity, 10))),
+    legendary_pity: Math.min(
+      100,
+      Math.max(10, numberValue(value.legendary_pity, 50)),
+    ),
+    updated_at: text(value.updated_at) || undefined,
+  };
+}
+
+function normalizeGachaBanner(
+  value: Record<string, unknown>,
+  shopId: string,
+): GachaBanner {
+  const defaults = defaultGachaBanner(shopId, text(value.id));
+  return {
+    id: text(value.id, defaults.id),
+    shop_id: text(value.shop_id, shopId),
+    name: text(value.name, defaults.name),
+    description: text(value.description, defaults.description),
+    kind: value.kind === "weapon" ? "weapon" : "character",
+    theme: (["anemo", "geo", "electro", "dendro", "hydro", "pyro", "cryo"].includes(
+      text(value.theme),
+    )
+      ? text(value.theme)
+      : defaults.theme) as GachaElement,
+    display_limit: Math.min(
+      5,
+      Math.max(1, numberValue(value.display_limit, defaults.display_limit)),
+    ),
+    sort_order: Math.min(
+      1000,
+      Math.max(0, numberValue(value.sort_order, defaults.sort_order)),
+    ),
+    active: booleanValue(value.active, true),
+    updated_at: text(value.updated_at) || undefined,
+  };
+}
+
+function normalizeGachaPoolEntry(
+  value: Record<string, unknown>,
+  shopId: string,
+): GachaPoolEntry {
+  const rarity = numberValue(value.rarity, 3);
+  return {
+    shop_id: text(value.shop_id, shopId),
+    banner_id: text(value.banner_id),
+    product_id: text(value.product_id),
+    kind: value.kind === "weapon" ? "weapon" : "character",
+    element: (["anemo", "geo", "electro", "dendro", "hydro", "pyro", "cryo"].includes(
+      text(value.element),
+    )
+      ? text(value.element)
+      : "anemo") as GachaElement,
+    weapon_type: (["sword", "claymore", "polearm", "bow", "catalyst"].includes(
+      text(value.weapon_type),
+    )
+      ? text(value.weapon_type)
+      : "sword") as GachaWeaponType,
+    rarity: (rarity === 4 || rarity === 5 ? rarity : 3) as GachaRarity,
+    weight: Math.min(1000, Math.max(1, numberValue(value.weight, 100))),
+    featured: booleanValue(value.featured),
+    active: booleanValue(value.active, true),
+    updated_at: text(value.updated_at) || undefined,
+  };
+}
+
+export async function getGachaCatalog(
+  shopId: string,
+): Promise<GachaCatalog> {
+  const client = requireSupabase();
+  const [settingsResult, bannersResult, poolResult] = await Promise.all([
+    client
+      .from("gacha_settings")
+      .select(GACHA_SETTINGS_COLUMNS)
+      .eq("shop_id", shopId)
+      .maybeSingle(),
+    client
+      .from("gacha_banners")
+      .select(GACHA_BANNER_COLUMNS)
+      .eq("shop_id", shopId)
+      .eq("active", true)
+      .order("sort_order", { ascending: true })
+      .order("id", { ascending: true }),
+    client
+      .from("gacha_pool_entries")
+      .select(GACHA_POOL_COLUMNS)
+      .eq("shop_id", shopId)
+      .eq("active", true)
+      .order("rarity", { ascending: false })
+      .order("product_id", { ascending: true }),
+  ]);
+  if (settingsResult.error) throw settingsResult.error;
+  if (bannersResult.error) throw bannersResult.error;
+  if (poolResult.error) throw poolResult.error;
+  const entries = ((poolResult.data ?? []) as Record<string, unknown>[]).map(
+    (row) => normalizeGachaPoolEntry(row, shopId),
+  );
+  const products = await getPublicProductsByIds(
+    shopId,
+    entries.map((entry) => entry.product_id),
+  );
+  const productsById = new Map(products.map((product) => [product.id, product]));
+  return {
+    settings: settingsResult.data
+      ? normalizeGachaSettings(
+          settingsResult.data as Record<string, unknown>,
+          shopId,
+        )
+      : null,
+    banners: ((bannersResult.data ?? []) as Record<string, unknown>[]).map(
+      (row) => normalizeGachaBanner(row, shopId),
+    ),
+    entries: entries.flatMap((entry): GachaPoolItem[] => {
+      const product = productsById.get(entry.product_id);
+      return product ? [{ ...entry, product }] : [];
+    }),
+  };
+}
+
+export async function getPublicGachaEnabled(shopId: string): Promise<boolean> {
+  const { data, error } = await requireSupabase()
+    .from("gacha_settings")
+    .select("enabled")
+    .eq("shop_id", shopId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.enabled === true;
+}
+
+export async function getAdminGachaConfiguration(shopId: string) {
+  const client = requireSupabase();
+  const [settingsResult, bannersResult, poolResult] = await Promise.all([
+    client
+      .from("gacha_settings")
+      .select(GACHA_SETTINGS_COLUMNS)
+      .eq("shop_id", shopId)
+      .maybeSingle(),
+    client
+      .from("gacha_banners")
+      .select(GACHA_BANNER_COLUMNS)
+      .eq("shop_id", shopId)
+      .order("sort_order", { ascending: true })
+      .order("id", { ascending: true }),
+    client
+      .from("gacha_pool_entries")
+      .select(GACHA_POOL_COLUMNS)
+      .eq("shop_id", shopId)
+      .order("rarity", { ascending: false })
+      .order("product_id", { ascending: true }),
+  ]);
+  if (settingsResult.error) throw settingsResult.error;
+  if (bannersResult.error) throw bannersResult.error;
+  if (poolResult.error) throw poolResult.error;
+  return {
+    settings: settingsResult.data
+      ? normalizeGachaSettings(
+          settingsResult.data as Record<string, unknown>,
+          shopId,
+        )
+      : defaultGachaSettings(shopId),
+    banners: ((bannersResult.data ?? []) as Record<string, unknown>[]).map(
+      (row) => normalizeGachaBanner(row, shopId),
+    ),
+    entries: ((poolResult.data ?? []) as Record<string, unknown>[]).map((row) =>
+      normalizeGachaPoolEntry(row, shopId),
+    ),
+  };
+}
+
+export async function saveGachaConfiguration(
+  shopId: string,
+  settings: GachaSettings,
+  banners: GachaBanner[],
+  entries: GachaPoolEntry[],
+) {
+  const client = requireSupabase();
+  const settingsPayload = {
+    shop_id: shopId,
+    enabled: settings.enabled,
+    title: settings.title.trim(),
+      description: settings.description.trim(),
+    rare_pity: settings.rare_pity,
+    legendary_pity: settings.legendary_pity,
+  };
+  const { error: settingsError } = await client
+    .from("gacha_settings")
+    .upsert(settingsPayload, { onConflict: "shop_id" });
+  if (settingsError) throw settingsError;
+
+  if (banners.length) {
+    const bannerPayload = banners.map((banner, index) => ({
+      id: banner.id,
+      shop_id: shopId,
+      name: banner.name.trim(),
+      description: banner.description.trim(),
+      kind: banner.kind,
+      theme: banner.theme,
+      display_limit: banner.display_limit,
+      sort_order: index,
+      active: banner.active,
+    }));
+    const { error } = await client
+      .from("gacha_banners")
+      .upsert(bannerPayload, { onConflict: "id" });
+    if (error) throw error;
+  }
+
+  const { data: previousBanners, error: previousBannersError } = await client
+    .from("gacha_banners")
+    .select("id")
+    .eq("shop_id", shopId);
+  if (previousBannersError) throw previousBannersError;
+  const nextBannerIds = new Set(banners.map((banner) => banner.id));
+  const removedBannerIds = ((previousBanners ?? []) as { id: string }[])
+    .map((banner) => banner.id)
+    .filter((id) => !nextBannerIds.has(id));
+  if (removedBannerIds.length) {
+    const { error } = await client
+      .from("gacha_banners")
+      .delete()
+      .eq("shop_id", shopId)
+      .in("id", removedBannerIds);
+    if (error) throw error;
+  }
+
+  const { error: clearError } = await client
+    .from("gacha_pool_entries")
+    .delete()
+    .eq("shop_id", shopId);
+  if (clearError) throw clearError;
+
+  if (entries.length) {
+    const payload = entries.map((entry) => ({
+      shop_id: shopId,
+      banner_id: entry.banner_id,
+      product_id: entry.product_id,
+      kind: entry.kind as GachaItemKind,
+      element: entry.element as GachaElement,
+      weapon_type: entry.weapon_type as GachaWeaponType,
+      rarity: entry.rarity,
+      weight: entry.weight,
+      featured: entry.featured,
+      active: entry.active,
+    }));
+    const { error } = await client
+      .from("gacha_pool_entries")
+      .upsert(payload, { onConflict: "banner_id,product_id" });
+    if (error) throw error;
+  }
+  return getAdminGachaConfiguration(shopId);
 }
 
 export async function getPublicBoothSettings(
@@ -467,7 +750,9 @@ export async function saveProduct(
   const previous = (await getAdminProducts(shopId)).find(
     (item) => item.id === product.id,
   );
-  const payload = { ...product, shop_id: shopId };
+  const editableProduct = { ...product };
+  delete editableProduct.effective_price_vnd;
+  const payload = { ...editableProduct, shop_id: shopId };
   // Do not collapse these into an upsert. ON CONFLICT reads every proposed
   // update column, while hardened grants intentionally deny browser SELECT
   // access to private storage metadata such as image_paths.

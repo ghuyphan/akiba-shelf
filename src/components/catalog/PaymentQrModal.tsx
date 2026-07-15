@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { Ban, Check, CheckCircle2, CloudOff, Copy, Loader2, ReceiptText, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import type { CartItem, PaymentSettings, Order } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
+import { getProductPrice } from "../../lib/pricing";
 import { useCatalogCopy } from "../../lib/catalogI18n";
 import { canGenerateVietQr } from "../../lib/vietqr";
 import { Modal } from "../ui/Modal";
@@ -56,7 +57,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, onClose, onSuc
   }, [recovery?.order]);
 
   const totalAmount = useMemo(
-    () => checkoutCart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0),
+    () => checkoutCart.reduce((sum, item) => sum + getProductPrice(item.product) * item.quantity, 0),
     [checkoutCart],
   );
   const { qrSrc, isGenerating, qrUnavailable } = usePaymentQrSource(isOpen, order, payment, checkoutCart);
@@ -209,7 +210,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, onClose, onSuc
         <form onSubmit={handlePlaceOrder} className="order-confirm-layout">
           <div className="order-confirm-main">
             <div className="order-confirm-intro"><span><ReceiptText size={20} /></span><div><h3>{copy.lastCheck}</h3><p>{copy.reviewCart}</p></div></div>
-            <div className="order-confirm-items">{checkoutCart.map((item) => { const image = item.product.images.find(Boolean); return <div key={item.product.id}>{image ? <img src={image} alt="" /> : <span className="order-confirm-placeholder" />}<div><strong>{item.product.name}</strong><small>{item.quantity} × {formatVnd(item.product.price_vnd)}</small></div><b>{formatVnd(item.product.price_vnd * item.quantity)}</b></div>; })}</div>
+            <div className="order-confirm-items">{checkoutCart.map((item) => { const image = item.product.images.find(Boolean); const unitPrice = getProductPrice(item.product); return <div key={item.product.id}>{image ? <img src={image} alt="" /> : <span className="order-confirm-placeholder" />}<div><strong>{item.product.name}</strong><small>{item.quantity} × {formatVnd(unitPrice)}</small></div><b>{formatVnd(unitPrice * item.quantity)}</b></div>; })}</div>
             <div className="order-confirm-total"><span>{copy.total}</span><strong>{formatVnd(totalAmount)}</strong></div>
           </div>
           <div className="order-confirm-side">
@@ -247,7 +248,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, onClose, onSuc
         <div className="payment-receipt payment-receipt-redesign">
           <div className="payment-order-identity"><div><span>{copy.orderCode}</span><strong>{order.order_code}</strong></div>{order.customer_name && <div><span>{copy.pickupName}</span><strong>{order.customer_name}</strong></div>}</div>
           <div className="payment-transfer-card"><span>{copy.transferTo}</span><div><small>{copy.accountName}</small><strong>{payment.bank_account_name || "N/A"}</strong></div><div><small>{copy.accountNumber}</small><button type="button" onClick={() => void navigator.clipboard.writeText(payment.bank_account_no || "")}><strong>{payment.bank_account_no || "N/A"}</strong><Copy size={14} /></button></div><div><small>{copy.bank}</small><strong>{bankName}</strong></div><div className="payment-transfer-note"><small>{copy.transferNote}</small><strong>{order.order_code}</strong></div></div>
-          <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => <div key={item.product.id}><span>{item.quantity} × {item.product.name}</span><strong>{formatVnd(item.product.price_vnd * item.quantity)}</strong></div>)}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
+          <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => <div key={item.product.id}><span>{item.quantity} × {item.product.name}</span>{totalAmount === order.total_amount && <strong>{formatVnd(getProductPrice(item.product) * item.quantity)}</strong>}</div>)}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
           {payment.payment_instructions.trim() && <div className="receipt-instructions"><Sparkles size={16} /><span>{payment.payment_instructions}</span></div>}
           <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button><button type="button" className="button button-secondary" onClick={() => void handleCancel()} disabled={isCancelling || connectionState !== "online"}>{isCancelling ? copy.cancelling : copy.cancelOrder}</button>
         </div>

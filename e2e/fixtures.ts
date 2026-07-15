@@ -7,6 +7,8 @@ export const products = [
     collection: "Night",
     description: "A bright acrylic stand",
     price_vnd: 120000,
+    sale_price_vnd: null,
+    effective_price_vnd: 120000,
     item_code: "MOON-1",
     quantity_available: 2,
     category: "Acrylic",
@@ -27,6 +29,8 @@ export const products = [
     collection: "Day",
     description: "A warm art print",
     price_vnd: 80000,
+    sale_price_vnd: null,
+    effective_price_vnd: 80000,
     item_code: "SUN-1",
     quantity_available: 8,
     category: "Print",
@@ -338,10 +342,10 @@ export async function mockSupabase(
       }
       const order = url.searchParams.get("order") ?? "";
       matchingProducts.sort((first, second) => {
-        if (order.startsWith("price_vnd.asc"))
-          return first.price_vnd - second.price_vnd;
-        if (order.startsWith("price_vnd.desc"))
-          return second.price_vnd - first.price_vnd;
+        if (order.startsWith("effective_price_vnd.asc"))
+          return (first.sale_price_vnd ?? first.price_vnd) - (second.sale_price_vnd ?? second.price_vnd);
+        if (order.startsWith("effective_price_vnd.desc"))
+          return (second.sale_price_vnd ?? second.price_vnd) - (first.sale_price_vnd ?? first.price_vnd);
         if (order.startsWith("quantity_available.desc"))
           return second.quantity_available - first.quantity_available;
         if (order.startsWith("name.asc"))

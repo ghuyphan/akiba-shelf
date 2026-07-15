@@ -15,6 +15,7 @@ import {
   ShoppingBag,
   Store,
   LayoutDashboard,
+  Gamepad2,
   Users,
 } from "lucide-react";
 import {
@@ -80,6 +81,7 @@ import { SelectMenu } from "../components/ui/SelectMenu";
 import { StaffManager } from "../components/admin/StaffManager";
 import { usePlatformI18n, type PlatformLocale } from "../lib/platformI18n";
 import { PwaInstallBanner } from "../components/admin/PwaInstallBanner";
+import { GachaManager } from "../components/admin/GachaManager";
 
 function createBlankProduct(nextSort: number): Product {
   return {
@@ -88,6 +90,7 @@ function createBlankProduct(nextSort: number): Product {
     collection: "",
     description: "",
     price_vnd: 0,
+    sale_price_vnd: null,
     item_code: "",
     quantity_available: 0,
     category: "Acrylic",
@@ -134,7 +137,7 @@ export function AdminPage() {
   const [workspaceLoadFailed, setWorkspaceLoadFailed] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
   const [viewTab, setViewTab] = useState<
-    "orders" | "products" | "design" | "settings" | "team"
+    "orders" | "products" | "gacha" | "design" | "settings" | "team"
   >("orders");
   const [activeTab, setActiveTab] = useState<"list" | "form">("list");
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
@@ -631,6 +634,17 @@ export function AdminPage() {
                 <span>{t("Products ({{count}})", { count: products.length })}</span>
               </button>
             )}
+            {canManageCatalog && (
+              <button
+                type="button"
+                ref={registerDesktopTab("gacha")}
+                className={`admin-nav-tab ${viewTab === "gacha" ? "active" : ""}`}
+                onClick={() => setViewTab("gacha")}
+              >
+                <Gamepad2 size={15} />
+                <span>{t("Gacha")}</span>
+              </button>
+            )}
             {isAuthed && adminSession.access.role === "owner" && (
               <button
                 type="button"
@@ -773,6 +787,8 @@ export function AdminPage() {
                 ? "Live operations"
                 : viewTab === "products"
                   ? "Catalog management"
+                  : viewTab === "gacha"
+                    ? "Minigame studio"
                   : viewTab === "settings"
                     ? "Mobile configuration"
                     : viewTab === "team"
@@ -784,6 +800,8 @@ export function AdminPage() {
                 ? "Orders"
                 : viewTab === "products"
                   ? "Products"
+                  : viewTab === "gacha"
+                    ? "Gacha"
                   : viewTab === "settings"
                     ? "Settings"
                     : viewTab === "team"
@@ -795,6 +813,8 @@ export function AdminPage() {
                 ? "Confirm payments and fulfil orders."
                 : viewTab === "products"
                   ? "Manage products, prices, and stock."
+                  : viewTab === "gacha"
+                    ? "Turn your merch into characters and weapons for a free minigame."
                   : viewTab === "settings"
                     ? "Update booth and payment details."
                     : viewTab === "team"
@@ -952,6 +972,14 @@ export function AdminPage() {
                   )}
                 </div>
               </>
+            )}
+
+            {canManageCatalog && viewTab === "gacha" && (
+              <GachaManager
+                shopId={shopId}
+                shopSlug={adminSession.access.shop_slug}
+                products={products}
+              />
             )}
 
             {canManageCatalog && viewTab === "design" && (

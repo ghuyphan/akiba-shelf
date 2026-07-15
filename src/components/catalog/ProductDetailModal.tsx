@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { PackageCheck, ShoppingCart, Tag } from "lucide-react";
 import type { Product } from "../../types/catalog";
-import { formatVnd } from "../../lib/format";
 import { Modal } from "../ui/Modal";
 import { useCatalogCopy } from "../../lib/catalogI18n";
+import { ProductPrice } from "./ProductPrice";
 
 type ProductDetailModalProps = {
   product: Product | null;
@@ -59,7 +59,7 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
           <span className="product-detail-code">{copy.item} {displayedProduct.item_code}</span>
           <p>{displayedProduct.description || copy.noDescription}</p>
           <div className="product-detail-purchase">
-            <div><small>{copy.price}</small><strong>{formatVnd(displayedProduct.price_vnd)}</strong></div>
+            <div><small>{copy.price}</small><ProductPrice product={displayedProduct} /></div>
             <span className={isSoldOut ? "soldout" : displayedProduct.quantity_available <= 5 ? "limited" : "available"}><PackageCheck size={15} />{isSoldOut ? copy.soldOut : copy.available(displayedProduct.quantity_available)}</span>
           </div>
           <button type="button" className="product-detail-add" disabled={isSoldOut} onClick={(event) => { onAddToCart(displayedProduct, event); onClose(); }}><ShoppingCart size={18} />{isSoldOut ? copy.currentlyUnavailable : copy.addToCart}</button>

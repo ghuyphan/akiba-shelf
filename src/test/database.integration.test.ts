@@ -167,6 +167,36 @@ describe.skipIf(!run)("database concurrency", () => {
       .single();
     expect(["confirmed", "cancelled"]).toContain(order?.status);
   });
+
+  it("charges and snapshots the database sale price", async () => {
+    const { error: priceError } = await admin
+      .from("products")
+      .update({
+        price_vnd: 40_000,
+        sale_price_vnd: 32_000,
+        quantity_available: 2,
+      })
+      .eq("id", productId);
+    if (priceError) throw priceError;
+
+    const { data, error } = await customer.rpc("create_order", {
+      p_shop_slug: shopSlug,
+      p_customer_name: `test-${suffix}-sale`,
+      p_items: [{ product_id: productId, quantity: 1 }],
+      p_client_request_id: crypto.randomUUID(),
+      p_recovery_token: `${crypto.randomUUID()}${crypto.randomUUID()}`,
+    });
+    if (error) throw error;
+
+    expect(data[0].total_amount).toBe(32_000);
+    const { data: item, error: itemError } = await admin
+      .from("order_items")
+      .select("unit_price")
+      .eq("order_id", data[0].id)
+      .single();
+    if (itemError) throw itemError;
+    expect(item.unit_price).toBe(32_000);
+  });
 });
 
 describe.skipIf(!run)("create_shop authorization and concurrency", () => {

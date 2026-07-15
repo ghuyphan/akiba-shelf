@@ -9,6 +9,14 @@ export function validateProduct(product: Product) {
   if (!Number.isFinite(product.price_vnd) || product.price_vnd < 0) {
     errors.push("Price must be a positive number.");
   }
+  if (
+    product.sale_price_vnd != null &&
+    (!Number.isInteger(product.sale_price_vnd) ||
+      product.sale_price_vnd < 0 ||
+      product.sale_price_vnd >= product.price_vnd)
+  ) {
+    errors.push("Sale price must be lower than the regular price.");
+  }
   if (!Number.isInteger(product.quantity_available) || product.quantity_available < 0) {
     errors.push("Quantity must be a whole number.");
   }

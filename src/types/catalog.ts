@@ -24,6 +24,8 @@ export type Product = {
   collection: string;
   description: string;
   price_vnd: number;
+  sale_price_vnd?: number | null;
+  effective_price_vnd?: number;
   item_code: string;
   quantity_available: number;
   category: string;

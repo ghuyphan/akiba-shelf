@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, PackageCheck, ShoppingCart, Star } from "lucide-react";
 import type { Product } from "../../types/catalog";
-import { formatVnd } from "../../lib/format";
 import { useCatalogCopy } from "../../lib/catalogI18n";
 import { EmptyState } from "../ui/EmptyState";
+import { ProductPrice } from "./ProductPrice";
 
 type StackedFeaturedProps = {
   products: Product[];
@@ -87,7 +87,7 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
           <h2>{activeProduct.name}</h2>
           <p>{activeProduct.description || copy.specialRelease}</p>
           <div className="featured-banner-meta">
-            <strong>{formatVnd(activeProduct.price_vnd)}</strong>
+            <ProductPrice product={activeProduct} />
             <span><PackageCheck size={15} /> {activeProduct.quantity_available > 10 ? copy.inStock : copy.onlyLeft(activeProduct.quantity_available)}</span>
           </div>
           <div className="featured-banner-actions">
@@ -123,7 +123,7 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
                   tabIndex={isActive ? 0 : -1}
                 >
                   <span className="featured-deck-image">{image ? <img src={image} alt={isActive ? product.name : ""} draggable="false" loading={isActive ? "eager" : "lazy"} fetchPriority={isActive ? "high" : "low"} decoding="async" /> : <span className="image-placeholder" />}{product.badge && <i style={{ backgroundColor: product.badge_color || undefined }}>{product.badge}</i>}</span>
-                  <span className="featured-deck-footer"><strong>{product.name}</strong><small>{formatVnd(product.price_vnd)}</small></span>
+                  <span className="featured-deck-footer"><strong>{product.name}</strong><ProductPrice product={product} /></span>
                 </button>
               );
             })}

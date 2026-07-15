@@ -1,7 +1,9 @@
-import { ChevronRight, Info, ShoppingBag } from "lucide-react";
+import { ChevronRight, Gamepad2, Info, ShoppingBag } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
 import type { BoothSettings } from "../../types/catalog";
 import { useCatalogCopy } from "../../lib/catalogI18n";
 import { safePublicUrl } from "../../lib/branding";
+import "../../styles/gacha-entry.css";
 
 type CatalogHeaderProps = {
   booth: BoothSettings;
@@ -11,6 +13,7 @@ type CatalogHeaderProps = {
   isSelected?: boolean;
   onOpenStaff?: () => void;
   showStaffAccess?: boolean;
+  showGacha?: boolean;
 };
 
 export function CatalogHeader({
@@ -21,8 +24,10 @@ export function CatalogHeader({
   isSelected = false,
   onOpenStaff,
   showStaffAccess = false,
+  showGacha = false,
 }: CatalogHeaderProps) {
   const copy = useCatalogCopy();
+  const { shopSlug = "" } = useParams();
   return (
     <header
       className={`catalog-header ${className}`.trim()}
@@ -51,6 +56,17 @@ export function CatalogHeader({
         </div>
       </div>
       <div className="header-actions">
+        {!isDesigner && showGacha && (
+          <Link
+            className="gacha-entry-trigger"
+            to={`/s/${shopSlug}/play`}
+            onClick={(event) => event.stopPropagation()}
+            aria-label={`${copy.playGacha}. ${copy.playGachaHint}`}
+            title={copy.playGacha}
+          >
+            <Gamepad2 size={22} aria-hidden="true" />
+          </Link>
+        )}
         {isDesigner ? (
           <div
             className={`designer-header-trigger-wrapper ${isSelected ? "is-selected" : ""}`}

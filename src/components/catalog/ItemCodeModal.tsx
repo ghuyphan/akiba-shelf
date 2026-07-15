@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { BadgeInfo } from "lucide-react";
 import type { Product } from "../../types/catalog";
-import { formatVnd } from "../../lib/format";
 import { getItemQrPayload, getStockLabel } from "../../lib/product";
 import { Modal } from "../ui/Modal";
+import { ProductPrice } from "./ProductPrice";
 
 type ItemCodeModalProps = {
   isOpen: boolean;
@@ -48,7 +48,7 @@ export function ItemCodeModal({ isOpen, product, onClose }: ItemCodeModalProps) 
           {primaryImage ? <img src={primaryImage} alt="" /> : <div className="code-modal-image-placeholder" />}
           <span>
             <strong>{product.name}</strong>
-            <small>{formatVnd(product.price_vnd)}</small>
+            <ProductPrice product={product} />
             <small>{getStockLabel(product)}</small>
           </span>
         </div>

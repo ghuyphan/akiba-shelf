@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Product } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
+import { getProductPrice, isProductOnSale } from "../../lib/pricing";
 import { AdminCard } from "./AdminCard";
 import { Boxes, ImageIcon, LoaderCircle, PackageSearch, Plus, RotateCcw, Search } from "lucide-react";
 import { EmptyState } from "../ui/EmptyState";
@@ -58,7 +59,7 @@ export function ProductList({ products, selectedId, onSelect, onCreate, loading 
               <span className="admin-product-thumb">{primaryImage ? <img src={primaryImage} alt="" /> : <ImageIcon size={24} className="admin-product-thumb-placeholder" />}</span>
               <span className="admin-product-copy">
                 <span className="admin-product-title-row"><strong>{product.name || t("Untitled item")}</strong>{product.featured && <span className="admin-status-pill featured">{t("Featured")}</span>}{!product.active && <span className="admin-status-pill hidden">{t("Hidden")}</span>}</span>
-                <small>{product.item_code || t("No code")} · {formatVnd(product.price_vnd)}</small>
+                <small>{product.item_code || t("No code")} · {formatVnd(getProductPrice(product))}{isProductOnSale(product) ? ` · ${t("Sale")}` : ""}</small>
                 <span className={`admin-stock-pill ${stockTone}`}><i />{product.quantity_available <= 0 ? t("Sold out") : t("{{count}} in stock", { count: product.quantity_available })}</span>
               </span>
             </button>

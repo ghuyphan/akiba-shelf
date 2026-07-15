@@ -2,7 +2,16 @@ import { ZodError } from "zod";
 
 export function getErrorMessage(error: unknown, fallback = "Something went wrong.") {
   if (error instanceof ZodError) return fallback;
-  return error instanceof Error ? error.message : fallback;
+  if (error instanceof Error) return error.message;
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return fallback;
 }
 
 export function isSessionNoise(error: unknown) {

@@ -3,8 +3,12 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "workspaces": [
+    "vendor/gacha-simulator"
+  ],
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "npm run build:gacha:dev && vite --host 0.0.0.0",
+    "build:gacha:dev": "GACHA_OUTPUT_DIR=../../.gacha-dist npm run build --workspace matsuri-wish-simulator",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint --max-warnings 0 src e2e vite.config.ts vitest.config.ts playwright.config.ts",
     "lint:fix": "npm run lint -- --fix",
@@ -18,7 +22,7 @@
     "test:functions": "deno test --node-modules-dir=auto --no-lock --allow-env supabase/functions/invite-shop-member/index.test.ts supabase/functions/notify-new-order/index.test.ts",
     "test:db:integration": "vitest run src/test/database.integration.test.ts",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && npm run build --workspace matsuri-wish-simulator",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

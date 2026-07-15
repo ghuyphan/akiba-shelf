@@ -31,6 +31,9 @@ const AdminPage = lazy(() =>
 const CatalogPage = lazy(() =>
   import("./pages/CatalogPage").then((m) => ({ default: m.CatalogPage })),
 );
+const GachaPage = lazy(() =>
+  import("./pages/GachaPage").then((m) => ({ default: m.GachaPage })),
+);
 const AuthPage = lazy(() =>
   import("./pages/AuthPage").then((m) => ({ default: m.AuthPage })),
 );
@@ -108,6 +111,14 @@ export function App() {
       <RouteAwareToastProvider>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
+            <Route
+              path="/s/:shopSlug/play"
+              element={
+                <Suspense fallback={<div style={{ background: "#ffffff", minHeight: "100vh" }} />}>
+                  <GachaPage />
+                </Suspense>
+              }
+            />
             <Route path="/s/:shopSlug" element={<KeyedCatalogPage />} />
             <Route element={<PlatformLayout />}>
               <Route path="/" element={<HomePage />} />

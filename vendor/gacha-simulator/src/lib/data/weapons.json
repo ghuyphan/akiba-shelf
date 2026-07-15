@@ -1,0 +1,620 @@
+{
+	"data": [
+		{
+			"name": "jadefall-splendor",
+			"rarity": 5,
+			"limited": true,
+			"weaponType": "catalyst",
+			"buttonOffset": {
+				"w": 65,
+				"t": 35,
+				"l": 65
+			}
+		},
+		{
+			"name": "beacon-of-the-reed-sea",
+			"rarity": 5,
+			"limited": true,
+			"weaponType": "claymore",
+			"buttonOffset": {
+				"t": 10,
+				"w": 70,
+				"l": 30
+			}
+		},
+		{
+			"name": "light-of-foliar-incision",
+			"rarity": 5,
+			"limited": true,
+			"weaponType": "sword",
+			"buttonOffset": {
+				"t": -15,
+				"w": 90,
+				"l": 30
+			}
+		},
+		{
+			"name": "tulaytullah_s-remembrance",
+			"rarity": 5,
+			"limited": true,
+			"weaponType": "catalyst",
+			"buttonOffset": {
+				"w": 70,
+				"t": 30,
+				"l": 35
+			}
+		},
+		{
+			"name": "a-thousand-floating-dreams",
+			"rarity": 5,
+			"weaponType": "catalyst",
+			"limited": true,
+			"buttonOffset": {
+				"w": 70,
+				"t": 30,
+				"l": 65
+			}
+		},
+		{
+			"name": "key-of-khaj-nisut",
+			"rarity": 5,
+			"weaponType": "sword",
+			"limited": true,
+			"buttonOffset": {
+				"t": -10,
+				"w": 90,
+				"l": 30
+			}
+		},
+		{
+			"name": "xiphos-moonlight",
+			"rarity": 4,
+			"weaponType": "sword",
+			"limited": true
+		},
+		{
+			"name": "wandering-evenstar",
+			"rarity": 4,
+			"weaponType": "catalyst",
+			"limited": true
+		},
+		{
+			"name": "staff-of-the-scarlet-sands",
+			"rarity": 5,
+			"weaponType": "polearm",
+			"limited": true,
+			"buttonOffset": { "w": 80, "t": 15, "l": 60 }
+		},
+		{
+			"name": "makhaira-aquamarine",
+			"rarity": 4,
+			"weaponType": "claymore",
+			"limited": true
+		},
+		{
+			"name": "hunter_s-path",
+			"rarity": 5,
+			"weaponType": "bow",
+			"limited": true,
+			"buttonOffset": {
+				"w": 70,
+				"l": 35,
+				"t": 0
+			}
+		},
+		{
+			"name": "aqua-simulacra",
+			"rarity": 5,
+			"weaponType": "bow",
+			"limited": true,
+			"buttonOffset": {
+				"t": 5,
+				"w": 80,
+				"l": 35
+			}
+		},
+		{
+			"name": "redhorn-stonethresher",
+			"rarity": 5,
+			"weaponType": "claymore",
+			"limited": true,
+			"buttonOffset": {
+				"t": 10,
+				"w": 80,
+				"l": 60
+			}
+		},
+		{
+			"name": "haran-geppaku-futsu",
+			"rarity": 5,
+			"weaponType": "sword",
+			"limited": true,
+			"buttonOffset": {
+				"t": -35,
+				"w": 120,
+				"l": 55
+			}
+		},
+		{
+			"name": "kagura_s-verity",
+			"rarity": 5,
+			"weaponType": "catalyst",
+			"limited": true,
+			"buttonOffset": {
+				"w": 70,
+				"t": 25,
+				"l": 37
+			}
+		},
+		{
+			"name": "calamity-queller",
+			"rarity": 5,
+			"weaponType": "polearm",
+			"limited": true,
+			"buttonOffset": {
+				"w": 80,
+				"t": 10,
+				"l": 60
+			}
+		},
+		{
+			"name": "mouun_s-moon",
+			"rarity": 4,
+			"weaponType": "bow",
+			"limited": true
+		},
+		{
+			"name": "wavebreaker_s-fin",
+			"rarity": 4,
+			"weaponType": "polearm",
+			"limited": true
+		},
+		{
+			"name": "polar-star",
+			"rarity": 5,
+			"weaponType": "bow",
+			"limited": true,
+			"buttonOffset": {
+				"w": 70,
+				"t": 2,
+				"l": 35
+			}
+		},
+		{
+			"name": "akuoumaru",
+			"rarity": 4,
+			"weaponType": "claymore",
+			"limited": true
+		},
+		{
+			"name": "everlasting-moonglow",
+			"rarity": 5,
+			"weaponType": "catalyst",
+			"limited": true,
+			"buttonOffset": {
+				"w": 70,
+				"t": 40,
+				"l": 60
+			}
+		},
+		{
+			"name": "engulfing-lightning",
+			"rarity": 5,
+			"weaponType": "polearm",
+			"limited": true,
+			"buttonOffset": {
+				"w": 80,
+				"t": 20,
+				"l": 30
+			}
+		},
+		{
+			"name": "thundering-pulse",
+			"rarity": 5,
+			"limited": true,
+			"weaponType": "bow",
+			"buttonOffset": {
+				"w": 70,
+				"t": 10,
+				"l": 35
+			}
+		},
+		{
+			"name": "mistsplitter-reforged",
+			"rarity": 5,
+			"weaponType": "sword",
+			"limited": true,
+			"buttonOffset": {
+				"w": 100,
+				"t": -20,
+				"l": 30
+			}
+		},
+		{
+			"name": "freedom-sworn",
+			"rarity": 5,
+			"weaponType": "sword",
+			"limited": true,
+			"buttonOffset": {
+				"w": 100,
+				"t": -20,
+				"l": 30
+			}
+		},
+		{
+			"name": "mitternachts-waltz",
+			"rarity": 4,
+			"weaponType": "bow",
+			"limited": true
+		},
+		{
+			"name": "song-of-broken-pines",
+			"rarity": 5,
+			"weaponType": "claymore",
+			"limited": true,
+			"buttonOffset": {
+				"w": 80,
+				"t": 10,
+				"l": 35
+			}
+		},
+		{
+			"name": "alley-hunter",
+			"rarity": 4,
+			"weaponType": "bow",
+			"limited": true
+		},
+		{
+			"name": "elegy-for-the-end",
+			"rarity": 5,
+			"weaponType": "bow",
+			"limited": true,
+			"buttonOffset": {
+				"w": 70,
+				"t": 10,
+				"l": 35
+			}
+		},
+		{
+			"name": "the-alley-flash",
+			"rarity": 4,
+			"weaponType": "sword",
+			"limited": true
+		},
+		{
+			"name": "wine-and-song",
+			"rarity": 4,
+			"weaponType": "catalyst",
+			"limited": true
+		},
+		{
+			"name": "staff-of-homa",
+			"rarity": 5,
+			"weaponType": "polearm",
+			"limited": true,
+			"buttonOffset": {
+				"w": 90,
+				"t": 15,
+				"l": 60
+			}
+		},
+		{
+			"name": "lithic-blade",
+			"rarity": 4,
+			"weaponType": "claymore",
+			"limited": true
+		},
+		{
+			"name": "lithic-spear",
+			"rarity": 4,
+			"weaponType": "polearm",
+			"limited": true
+		},
+		{
+			"name": "primordial-jade-cutter",
+			"rarity": 5,
+			"weaponType": "sword",
+			"limited": true,
+			"buttonOffset": {
+				"w": 100,
+				"t": -14,
+				"l": 60
+			}
+		},
+		{
+			"name": "primordial-jade-winged-spear",
+			"rarity": 5,
+			"weaponType": "polearm",
+			"buttonOffset": {
+				"w": 80,
+				"t": 10,
+				"l": 30
+			}
+		},
+		{
+			"name": "summit-shaper",
+			"rarity": 5,
+			"weaponType": "sword",
+			"limited": true,
+			"buttonOffset": {
+				"w": 90,
+				"t": -10,
+				"l": 30
+			}
+		},
+		{
+			"name": "vortex-vanquisher",
+			"rarity": 5,
+			"weaponType": "polearm",
+			"limited": true,
+			"buttonOffset": {
+				"w": 90,
+				"t": 20,
+				"l": 30
+			}
+		},
+		{
+			"name": "the-unforged",
+			"rarity": 5,
+			"weaponType": "claymore",
+			"limited": true,
+			"buttonOffset": {
+				"w": 60,
+				"t": 20,
+				"l": 60
+			}
+		},
+		{
+			"name": "memory-of-dust",
+			"rarity": 5,
+			"weaponType": "catalyst",
+			"limited": true,
+			"buttonOffset": {
+				"w": 65,
+				"t": 30,
+				"l": 65
+			}
+		},
+		{
+			"name": "eye-of-perception",
+			"rarity": 4,
+			"weaponType": "catalyst"
+		},
+		{
+			"name": "rainslasher",
+			"rarity": 4,
+			"weaponType": "claymore"
+		},
+		{
+			"name": "rust",
+			"rarity": 4,
+			"weaponType": "bow"
+		},
+		{
+			"name": "lost-prayer-to-the-sacred-winds",
+			"rarity": 5,
+			"weaponType": "catalyst",
+			"buttonOffset": {
+				"w": 55,
+				"t": 40,
+				"l": 40
+			}
+		},
+		{
+			"name": "wolf_s-gravestone",
+			"rarity": 5,
+			"weaponType": "claymore",
+			"buttonOffset": {
+				"w": 80,
+				"t": 15,
+				"l": 65
+			}
+		},
+		{
+			"name": "amos-bow",
+			"rarity": 5,
+			"weaponType": "bow",
+			"buttonOffset": {
+				"w": 70,
+				"t": 0,
+				"l": 35
+			}
+		},
+		{
+			"name": "aquila-favonia",
+			"rarity": 5,
+			"weaponType": "sword",
+			"buttonOffset": {
+				"w": 80,
+				"t": -10,
+				"l": 65
+			}
+		},
+		{
+			"name": "skyward-pride",
+			"rarity": 5,
+			"weaponType": "claymore",
+			"buttonOffset": { "w": 80, "t": 10, "l": 65 }
+		},
+		{
+			"name": "skyward-atlas",
+			"rarity": 5,
+			"weaponType": "catalyst",
+			"buttonOffset": {
+				"w": 65,
+				"t": 40,
+				"l": 70
+			}
+		},
+		{
+			"name": "skyward-harp",
+			"rarity": 5,
+			"weaponType": "bow",
+			"buttonOffset": {
+				"w": 70,
+				"t": 10,
+				"l": 35
+			}
+		},
+		{
+			"name": "skyward-spine",
+			"rarity": 5,
+			"weaponType": "polearm",
+			"buttonOffset": {
+				"w": 80,
+				"t": 10,
+				"l": 60
+			}
+		},
+		{
+			"name": "skyward-blade",
+			"rarity": 5,
+			"weaponType": "sword",
+			"buttonOffset": {
+				"w": 90,
+				"t": -10,
+				"l": 60
+			}
+		},
+		{
+			"name": "the-flute",
+			"rarity": 4,
+			"weaponType": "sword"
+		},
+		{
+			"name": "the-widsith",
+			"rarity": 4,
+			"weaponType": "catalyst"
+		},
+		{
+			"name": "dragon_s-bane",
+			"rarity": 4,
+			"weaponType": "polearm"
+		},
+		{
+			"name": "lion_s-roar",
+			"rarity": 4,
+			"weaponType": "sword"
+		},
+		{
+			"name": "sacrificial-bow",
+			"rarity": 4,
+			"weaponType": "bow"
+		},
+		{
+			"name": "sacrificial-fragments",
+			"rarity": 4,
+			"weaponType": "catalyst"
+		},
+		{
+			"name": "sacrificial-greatsword",
+			"rarity": 4,
+			"weaponType": "claymore"
+		},
+		{
+			"name": "sacrificial-sword",
+			"rarity": 4,
+			"weaponType": "sword"
+		},
+		{
+			"name": "favonius-greatsword",
+			"rarity": 4,
+			"weaponType": "claymore"
+		},
+		{
+			"name": "favonius-sword",
+			"rarity": 4,
+			"weaponType": "sword"
+		},
+		{
+			"name": "favonius-warbow",
+			"rarity": 4,
+			"weaponType": "bow"
+		},
+		{
+			"name": "favonius-codex",
+			"rarity": 4,
+			"weaponType": "catalyst"
+		},
+		{
+			"name": "favonius-lance",
+			"rarity": 4,
+			"weaponType": "polearm"
+		},
+		{
+			"name": "the-bell",
+			"rarity": 4,
+			"weaponType": "claymore"
+		},
+		{
+			"name": "the-stringless",
+			"rarity": 4,
+			"weaponType": "bow"
+		},
+		{
+			"name": "black-tassel",
+			"rarity": 3,
+			"weaponType": "polearm"
+		},
+		{
+			"name": "bloodtained-greatsword",
+			"rarity": 3,
+			"weaponType": "claymore"
+		},
+		{
+			"name": "cool-steel",
+			"rarity": 3,
+			"weaponType": "sword"
+		},
+		{
+			"name": "debate-club",
+			"rarity": 3,
+			"weaponType": "claymore"
+		},
+		{
+			"name": "emerald-orb",
+			"rarity": 3,
+			"weaponType": "catalyst"
+		},
+		{
+			"name": "ferrous-shadow",
+			"rarity": 3,
+			"weaponType": "claymore"
+		},
+		{
+			"name": "harbinger-of-dawn",
+			"rarity": 3,
+			"weaponType": "sword"
+		},
+		{
+			"name": "magic-guide",
+			"rarity": 3,
+			"weaponType": "catalyst"
+		},
+		{
+			"name": "raven-bow",
+			"rarity": 3,
+			"weaponType": "bow"
+		},
+		{
+			"name": "sharpshooter_s-oath",
+			"rarity": 3,
+			"weaponType": "bow"
+		},
+		{
+			"name": "skyrider-sword",
+			"rarity": 3,
+			"weaponType": "sword"
+		},
+		{
+			"name": "slingshot",
+			"rarity": 3,
+			"weaponType": "bow"
+		},
+		{
+			"name": "thrilling-tales-of-dragon-slayers",
+			"rarity": 3,
+			"weaponType": "catalyst"
+		}
+	]
+}

@@ -27,7 +27,7 @@ import {
 import { layoutOrderSchema } from "../lib/schemas";
 import { PageLoading } from "../components/ui/PageLoading";
 import { Link, useParams } from "react-router-dom";
-import { getPublicShop, type PublicProductSort } from "../lib/api";
+import { getPublicGachaEnabled, getPublicShop, type PublicProductSort } from "../lib/api";
 import type { Shop } from "../types/catalog";
 import { LogIn, RotateCw, Store } from "lucide-react";
 
@@ -49,6 +49,7 @@ export function CatalogPage() {
   const toast = useToast();
   const [shop, setShop] = useState<Shop | null>();
   const [shopLoadError, setShopLoadError] = useState("");
+  const [showGacha, setShowGacha] = useState(false);
   const [lightweightMode] = useState(prefersLightweightCatalog);
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -150,6 +151,16 @@ export function CatalogPage() {
   useEffect(() => {
     void loadShop();
   }, [loadShop]);
+
+  useEffect(() => {
+    let active = true;
+    setShowGacha(false);
+    if (!catalogShopId) return () => { active = false; };
+    void getPublicGachaEnabled(catalogShopId)
+      .then((enabled) => { if (active) setShowGacha(enabled); })
+      .catch(() => { if (active) setShowGacha(false); });
+    return () => { active = false; };
+  }, [catalogShopId]);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -524,7 +535,7 @@ export function CatalogPage() {
         style={getThemeStyle(booth)}
         onClick={() => setSelectedProductId(null)}
       >
-        <CatalogHeader booth={booth} onOpenInfo={() => setIsInfoOpen(true)} />
+        <CatalogHeader booth={booth} showGacha={showGacha} onOpenInfo={() => setIsInfoOpen(true)} />
         {!online && (
           <Alert variant="info" title="You are offline.">
             Your cart is saved on this device. Reconnect to verify stock and

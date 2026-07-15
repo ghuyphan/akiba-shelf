@@ -1,8 +1,8 @@
 import { ShoppingCart } from "lucide-react";
 import type { Product } from "../../types/catalog";
-import { formatVnd } from "../../lib/format";
 import { getStockTone } from "../../lib/product";
 import { useCatalogCopy } from "../../lib/catalogI18n";
+import { ProductPrice } from "./ProductPrice";
 
 type ProductCardProps = {
   product: Product;
@@ -56,7 +56,7 @@ export function ProductCard({ product, selected, viewMode, onSelect, onViewDetai
         </div>
         <div className="product-meta-row">
           <div>
-            <strong>{formatVnd(product.price_vnd)}</strong>
+            <ProductPrice product={product} />
             <span className={`stock-line ${getStockTone(product)}`}>{isSoldOut ? copy.soldOut : copy.available(product.quantity_available > 50 ? 50 : product.quantity_available).replace("50 available", product.quantity_available > 50 ? "50+ available" : "50 available").replace("Còn 50 sản phẩm", product.quantity_available > 50 ? "Còn 50+ sản phẩm" : "Còn 50 sản phẩm")}</span>
           </div>
           <div className="product-card-actions"><span className="item-code">{product.item_code}</span><button type="button" className="product-add-button" disabled={isSoldOut} onClick={(event) => { event.stopPropagation(); onSelect(product, event); }} aria-label={isSoldOut ? copy.productSoldOut(product.name) : copy.addProduct(product.name)} title={isSoldOut ? copy.soldOut : copy.addToCart}><ShoppingCart size={16} /><span>{isSoldOut ? copy.unavailable : copy.addToCart}</span></button></div>

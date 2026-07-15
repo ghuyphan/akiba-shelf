@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(23);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values('20000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','staff-orders@test.local','',now(),now(),now());
 insert into public.shops(id,name,slug,created_by) values('21000000-0000-4000-8000-000000000001','Orders','orders-test','20000000-0000-4000-8000-000000000001');
 insert into public.shop_members(shop_id,user_id,role) values('21000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','staff');
@@ -58,4 +58,12 @@ select is((public.cancel_customer_order((select id from test_order_ids where lab
 
 set local role postgres;
 select is((select quantity_available from public.products where id='order-a'),7,'terminal retry does not restore twice');
+update public.products set sale_price_vnd=8000 where id='order-a';
+
+set local role anon;
+select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000003',repeat('s',32))$$,'sale-priced order succeeds');
+
+set local role postgres;
+select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000003'),8000,'database sale price determines total');
+select is((select oi.unit_price from public.order_items oi join public.orders o on o.id=oi.order_id where o.client_request_id='30000000-0000-4000-8000-000000000003'),8000,'order item snapshots sale price');
 select * from finish();rollback;

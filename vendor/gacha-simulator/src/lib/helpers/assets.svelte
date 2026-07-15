@@ -1,0 +1,173 @@
+<script context="module">
+	import { outfits } from '$lib/data/outfits.json';
+	import { getMerchItems } from '$lib/helpers/merch';
+
+	const images = [
+		{
+			dir: 'background',
+			paths: [
+				'constellation.webp',
+				'detailbg.webp',
+				'element-anemo-bg.webp',
+				'element-cryo-bg.webp',
+				'element-dendro-bg.webp',
+				'element-electro-bg.webp',
+				'element-geo-bg.webp',
+				'element-hydro-bg.webp',
+				'element-pyro-bg.webp',
+				'outfit-background.webp',
+				'splash-background.webp',
+				'wish-background.webp'
+			]
+		},
+		{
+			dir: 'utility',
+			paths: [
+				'3star-bg.webp',
+				'4star-bg.webp',
+				'5star-bg.webp',
+				'acquaint-fate.webp',
+				'book.webp',
+				'book-select-bg.webp',
+				'bow-white.svg',
+				'brand.png',
+				'button.webp',
+				'fatepointbook-half.webp',
+				'fatepointbook.webp',
+				'genesis-60.webp',
+				'genesis-300.webp',
+				'genesis-980.webp',
+				'genesis-1980.webp',
+				'genesis-3280.webp',
+				'genesis-6480.webp',
+				'genesis-bg.webp',
+				'genesis.webp',
+				'history-select-bg.webp',
+				'imbroke.webp',
+				'menu-active.png',
+				'modal-bg-icon.png',
+				'paypal.png',
+				'primogem.webp',
+				'shop-nav-bg.webp',
+				'welkin-card.webp',
+				'welkin-moon-girl.webp',
+				'welkin.webp'
+			]
+		}
+	];
+
+	const previewImages = [
+		{
+			dir: 'background',
+			paths: ['splash-background.webp']
+		},
+		{
+			dir: 'utility',
+			paths: [
+				'bg-bow.webp',
+				'bg-catalyst.webp',
+				'bg-claymore.webp',
+				'bg-polearm.webp',
+				'bg-sword.webp',
+				'bg-bonus.webp',
+				'bow-white.svg',
+				'catalyst-white.svg',
+				'claymore-white.svg',
+				'genshin-logo-cn.webp',
+				'genshin-logo.webp',
+				'icon-anemo.svg',
+				'icon-cryo.svg',
+				'icon-dendro.svg',
+				'icon-electro.svg',
+				'icon-geo.svg',
+				'icon-hydro.svg',
+				'icon-pyro.svg',
+				'intertwined-fate.webp',
+				'masterless-stardust.webp',
+				'masterless-starglitter.webp',
+				'polearm-white.svg',
+				'resultcard-bg.svg',
+				'stella-fortuna-4star.webp',
+				'stella-fortuna-5star.webp',
+				'sword-white.svg'
+			]
+		}
+	];
+
+	const videos = [
+		'3star-single.mp4',
+		'3star-splashout.webm',
+		'3star-splashout2.webm',
+		'4star-single.mp4',
+		'4star-splashout.webm',
+		'4star-splashout2.webm',
+		'4star.mp4',
+		'5star-single.mp4',
+		'5star-splashout.webm',
+		'5star-splashout2.webm',
+		'5star.mp4'
+	];
+
+	const bgList = () => {
+		const paths = [];
+		for (let i = 0; i < 25; i++) {
+			paths.push(`bg${i + 1}.webp`);
+		}
+		return { dir: 'background', paths };
+	};
+
+	const outfitShopList = () => {
+		const paths = outfits
+			.filter(({ version }) => !!version)
+			.map(({ name }) => `thumbnail/${name}.webp`);
+		return { dir: 'characters/outfit', paths };
+	};
+
+	export const getItemlist = async () => {
+		const pathList = {};
+		getMerchItems().forEach(({ name, imageUrl }) => {
+			pathList[name] = imageUrl;
+			pathList[`face/${name}`] = imageUrl;
+			pathList[`splash-art/${name}`] = imageUrl;
+		});
+		return pathList;
+	};
+
+	export const listingAssets = (param) => {
+		const arr = [];
+		const allImg = [bgList(), outfitShopList(), ...previewImages, ...images];
+		const img = param === 'preview' ? previewImages : allImg;
+
+		img.forEach(({ dir, paths }) => {
+			paths.forEach((path) => {
+				const pathdir = `/images/${dir}/${path}`;
+				const item = { path: pathdir, asset: path };
+				arr.push(item);
+			});
+		});
+		if (param === 'preview') return arr;
+
+		videos.forEach((v) => {
+			const pathdir = `/videos/${v}`;
+			const item = { path: pathdir, asset: v };
+			arr.push(item);
+		});
+
+		return arr;
+	};
+
+	export const blobAssets = async (path) => {
+		try {
+			const data = await fetch(path);
+			const responseType = data.headers.get('Content-Type');
+			if (responseType === 'text/html') throw new Error('Failed to load Assets');
+			const blob = await data.blob();
+			const DOMURL = window.URL || window.webkitURL;
+			const url = DOMURL.createObjectURL(blob);
+			return url;
+		} catch (e) {
+			console.error(e);
+			return 'error';
+		}
+	};
+</script>

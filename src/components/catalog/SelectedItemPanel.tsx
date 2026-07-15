@@ -1,6 +1,7 @@
 import { Banknote, ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
 import type { CartItem } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
+import { getProductPrice } from "../../lib/pricing";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { useCatalogCopy } from "../../lib/catalogI18n";
@@ -38,7 +39,7 @@ export function SelectedItemPanel({
     );
   }
 
-  const totalAmount = cart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0);
+  const totalAmount = cart.reduce((sum, item) => sum + getProductPrice(item.product) * item.quantity, 0);
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -105,7 +106,7 @@ export function SelectedItemPanel({
                 <div className="cart-item-details">
                   <h4>{item.product.name}</h4>
                   <span className="cart-item-code">{item.product.item_code}</span>
-                  <strong className="cart-item-price">{formatVnd(item.product.price_vnd)}</strong>
+                  <strong className="cart-item-price">{formatVnd(getProductPrice(item.product))}</strong>
                 </div>
                 <div className="cart-item-actions">
                   <div className="cart-quantity-stepper">

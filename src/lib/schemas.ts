@@ -10,7 +10,7 @@ export const imageVariantSchema = z.object({ thumbnail: z.string().url(), detail
 
 export const productRowSchema = z.object({
   id: z.string().min(1), name: z.string(), collection: z.string(), description: z.string(),
-  price_vnd: z.coerce.number().int().nonnegative(), item_code: z.string(), quantity_available: z.coerce.number().int().nonnegative(),
+  price_vnd: z.coerce.number().int().nonnegative(), sale_price_vnd: z.coerce.number().int().nonnegative().nullable().optional(), effective_price_vnd: z.coerce.number().int().nonnegative().optional(), item_code: z.string(), quantity_available: z.coerce.number().int().nonnegative(),
   category: z.string(), badge: z.string().nullish().transform((value) => value ?? undefined), badge_color: z.string().nullish().transform((value) => value ?? undefined),
   stock_status: z.enum(["in_stock", "limited", "sold_out"]), stock_note: z.string(),
   images: z.array(z.string()), image_variants: z.array(imageVariantSchema).optional(), image_paths: z.array(z.string()).optional(),

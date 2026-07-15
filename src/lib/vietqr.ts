@@ -1,4 +1,5 @@
 import type { CartItem, PaymentSettings, Product } from "../types/catalog";
+import { getProductPrice } from "./pricing";
 
 type GeneratedVietQr = {
   src: string;
@@ -19,7 +20,7 @@ function fillTemplate(
   return template
     .replace(/\{code\}/g, product?.item_code ?? "")
     .replace(/\{item\}/g, product?.name ?? "")
-    .replace(/\{amount\}/g, product ? String(product.price_vnd) : "")
+    .replace(/\{amount\}/g, product ? String(getProductPrice(product)) : "")
     .trim();
 }
 
@@ -53,7 +54,7 @@ export async function generateVietQr(
 ): Promise<GeneratedVietQr | null> {
   if (!canGenerateVietQr(settings)) return null;
 
-  const amount = product?.price_vnd ?? 0;
+  const amount = product ? getProductPrice(product) : 0;
   const addInfo = fillTemplate(settings.bank_add_info_template, product);
   const imageUrl = buildImageFallbackUrl(settings, amount, addInfo);
   return imageUrl ? { src: imageUrl, source: "image" } : null;
@@ -69,7 +70,7 @@ export async function generateVietQrForCart(
 
   const amount =
     amountOverride ??
-    cart.reduce((sum, item) => sum + item.product.price_vnd * item.quantity, 0);
+    cart.reduce((sum, item) => sum + getProductPrice(item.product) * item.quantity, 0);
 
   // Construct combined info
   const codesStr = cart

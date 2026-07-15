@@ -8,7 +8,7 @@ export const translations = {
     priceLow: "Price ↑", priceHigh: "Price ↓", mostStock: "Most stock", name: "Name", gridView: "Grid view", listView: "List view", previousCategories: "Previous categories", nextCategories: "More categories",
     featuredDrop: "Featured drop", limitedCollection: "Limited collection", specialRelease: "A special booth release available while stock lasts.", noFeatured: "No featured drop yet", noFeaturedHint: "The booth’s hand-picked releases will appear here.",
     inStock: "In stock", onlyLeft: (count: number) => `Only ${count} left`, addToCart: "Add to cart", swipeToBrowse: "Swipe to browse",
-    featured: "Featured", soldOut: "Sold out", available: (count: number) => `${count} available`, unavailable: "Unavailable",
+    featured: "Featured", sale: "Sale", soldOut: "Sold out", available: (count: number) => `${count} available`, unavailable: "Unavailable",
     viewDetails: (name: string) => `View details for ${name}`, addProduct: (name: string) => `Add ${name} to cart`, productSoldOut: (name: string) => `${name} is sold out`,
     cart: "Cart", emptyCart: "Your cart is empty", emptyCartHint: "Tap merch cards to add items to the cart.", viewCart: "View cart", clearAll: "Clear all",
     totalPrice: "Total price", payNow: "Pay now", itemDetails: "Item details", featuredItem: "Featured item", item: "Item", price: "Price",
@@ -21,6 +21,7 @@ export const translations = {
     reservedFor: (time: string) => `Reserved for ${time}`, reservedWhilePaying: "Your items are reserved while you complete payment.", cancelOrder: "Cancel order", cancelling: "Cancelling…", qrUnavailable: "Payment QR is unavailable. Please ask booth staff for help.",
     demoCheckout: "Preview checkout", demoCheckoutTitle: "Demo checkout only", demoCheckoutMessage: "This sample cart will not create an order or reserve stock.",
     socialQrTitle: (platform: string) => `${platform} Link`, openSocialProfile: "Open Profile Link", socialQrAlt: (platform: string) => `${platform} QR code`, socialQrCodes: "Social QR codes",
+    playGacha: "Play shelf wishes", playGachaHint: "A free merch minigame", backToStore: "Back to store", wishUnavailable: "The wish shelf is resting", wishUnavailableHint: "This shop has not opened its free minigame yet.", wishPoolEmptyHint: "The shop is preparing characters and weapons. Check back soon.",
     boothGuide: "Booth guide", openNowUntil: (time: string) => `Open now · until ${time}`, closedOpensAt: (time: string) => `Closed · opens ${time}`, hoursNotSet: "Hours not set", boothDetails: "Booth details", shoppingAt: "You’re shopping at", boothCode: (code: string) => `Booth ${code}`, location: "Location", openHours: "Open hours", notSpecified: "Not specified", independentMerchBooth: "Independent merch booth", beforePay: "Before you pay", findOnline: "Find us online", followBooth: "Follow the booth",
   },
   vi: {
@@ -29,7 +30,7 @@ export const translations = {
     priceLow: "Giá tăng dần", priceHigh: "Giá giảm dần", mostStock: "Còn nhiều nhất", name: "Tên", gridView: "Dạng lưới", listView: "Dạng danh sách", previousCategories: "Danh mục trước", nextCategories: "Xem thêm danh mục",
     featuredDrop: "Sản phẩm nổi bật", limitedCollection: "Bộ sưu tập giới hạn", specialRelease: "Phiên bản đặc biệt tại gian hàng, chỉ bán khi còn hàng.", noFeatured: "Chưa có sản phẩm nổi bật", noFeaturedHint: "Các sản phẩm được gian hàng tuyển chọn sẽ xuất hiện tại đây.",
     inStock: "Còn hàng", onlyLeft: (count: number) => `Chỉ còn ${count}`, addToCart: "Thêm vào giỏ", swipeToBrowse: "Vuốt để xem",
-    featured: "Nổi bật", soldOut: "Hết hàng", available: (count: number) => `Còn ${count} sản phẩm`, unavailable: "Không khả dụng",
+    featured: "Nổi bật", sale: "Giảm giá", soldOut: "Hết hàng", available: (count: number) => `Còn ${count} sản phẩm`, unavailable: "Không khả dụng",
     viewDetails: (name: string) => `Xem chi tiết ${name}`, addProduct: (name: string) => `Thêm ${name} vào giỏ`, productSoldOut: (name: string) => `${name} đã hết hàng`,
     cart: "Giỏ hàng", emptyCart: "Giỏ hàng đang trống", emptyCartHint: "Chạm vào sản phẩm để thêm vào giỏ.", viewCart: "Xem giỏ hàng", clearAll: "Xóa tất cả",
     totalPrice: "Tổng tiền", payNow: "Thanh toán", itemDetails: "Chi tiết sản phẩm", featuredItem: "Sản phẩm nổi bật", item: "Mã", price: "Giá",
@@ -42,6 +43,7 @@ export const translations = {
     reservedFor: (time: string) => `Giữ hàng trong ${time}`, reservedWhilePaying: "Sản phẩm được giữ trong lúc bạn hoàn tất thanh toán.", cancelOrder: "Hủy đơn hàng", cancelling: "Đang hủy…", qrUnavailable: "Không thể tải mã thanh toán. Vui lòng nhờ staff tại gian hàng hỗ trợ.",
     demoCheckout: "Xem thử thanh toán", demoCheckoutTitle: "Chỉ là thanh toán demo", demoCheckoutMessage: "Giỏ hàng mẫu này sẽ không tạo đơn hoặc giữ hàng.",
     socialQrTitle: (platform: string) => `Liên kết ${platform}`, openSocialProfile: "Mở liên kết trang cá nhân", socialQrAlt: (platform: string) => `Mã QR ${platform}`, socialQrCodes: "Mã QR mạng xã hội",
+    playGacha: "Chơi gacha kệ hàng", playGachaHint: "Minigame merch miễn phí", backToStore: "Về cửa hàng", wishUnavailable: "Kệ điều ước đang nghỉ", wishUnavailableHint: "Gian hàng này chưa mở minigame miễn phí.", wishPoolEmptyHint: "Gian hàng đang chuẩn bị nhân vật và vũ khí. Hãy quay lại sau.",
     boothGuide: "Thông tin gian hàng", openNowUntil: (time: string) => `Đang mở · đến ${time}`, closedOpensAt: (time: string) => `Đã đóng · mở lúc ${time}`, hoursNotSet: "Chưa đặt giờ mở cửa", boothDetails: "Chi tiết gian hàng", shoppingAt: "Bạn đang mua tại", boothCode: (code: string) => `Gian ${code}`, location: "Vị trí", openHours: "Giờ mở cửa", notSpecified: "Chưa thiết lập", independentMerchBooth: "Gian hàng merch độc lập", beforePay: "Trước khi thanh toán", findOnline: "Tìm chúng tôi online", followBooth: "Theo dõi gian hàng",
   },
 } as const;

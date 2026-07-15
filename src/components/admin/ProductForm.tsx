@@ -7,10 +7,13 @@ import { validateProduct } from "../../lib/validation";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
-import { Field, SelectInput, TextArea, TextInput } from "../ui/Field";
+import { Field, TextArea, TextInput } from "../ui/Field";
+import { SelectMenu } from "../ui/SelectMenu";
 import { AdminCard } from "./AdminCard";
 import { ImageUpload } from "./ImageUpload";
 import { usePlatformI18n } from "../../lib/platformI18n";
+import { QuantityInput } from "./QuantityInput";
+import { getProductDiscountPercent, getProductPrice, isProductOnSale } from "../../lib/pricing";
 
 function formatDisplayPrice(value: number | string): string {
   const digits = String(value ?? "").replace(/\D/g, "");
@@ -35,8 +38,15 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
 
   useEffect(() => { setDraft(product); setIsEditing(!product.name); setErrors([]); setSaveError(""); setDeleteError(""); }, [product, setDeleteError, setSaveError]);
   function setField<Key extends keyof Product>(key: Key, value: Product[Key]) { setDraft((current) => ({ ...current, [key]: value })); }
-  function getFieldError(name: string) { return errors.find((error) => error.toLowerCase().includes(name === "item_code" ? "code" : name === "price_vnd" ? "price" : name === "quantity_available" ? "quantity" : name)); }
+  function getFieldError(name: string) {
+    const key = name === "item_code" ? "code" : name === "sale_price_vnd" ? "sale price" : name === "price_vnd" ? "price must" : name === "quantity_available" ? "quantity" : name;
+    return errors.find((error) => error.toLowerCase().includes(key));
+  }
   function resetDraft() { setDraft(product); setErrors([]); setSaveError(""); setDeleteError(""); setIsEditing(isNewProduct); }
+  function setQuantity(quantity: number) {
+    const status: StockStatus = quantity === 0 ? "sold_out" : quantity <= LIMITED_STOCK_THRESHOLD ? "limited" : "in_stock";
+    setDraft((current) => ({ ...current, quantity_available: quantity, stock_status: status, stock_note: quantity === 0 ? "Sold out" : quantity <= LIMITED_STOCK_THRESHOLD ? "Limited stock" : "In stock" }));
+  }
   function removeImage(index: number) {
     setDraft((current) => {
       const variants = current.image_variants ?? [];
@@ -83,8 +93,8 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
 
   return (
     <AdminCard title={isNewProduct ? t("Create product") : draft.name || t("Product details")} description={isNewProduct ? t("Add the essentials first. You can refine the listing later.") : `${draft.item_code} · ${draft.category}`} icon={isNewProduct ? <PackagePlus size={18} /> : <Tags size={18} />} action={!isNewProduct && !isEditing ? <div className="admin-card-actions"><Button type="button" variant="secondary" icon={<Edit3 size={17} />} disabled={busy} onClick={() => setIsEditing(true)}>{t("Edit")}</Button><Button type="button" variant="danger" icon={<Trash2 size={17} />} loading={isDeleting} loadingText={t("Deleting…")} disabled={busy} onClick={handleDelete}>{t("Delete")}</Button></div> : undefined}>
-      <form className="admin-form admin-product-form" onSubmit={handleSubmit}>
-        {!isEditing && <div className="admin-readout"><span><Tags size={16} /><small>{t("Price")}</small><strong>{formatVnd(draft.price_vnd)}</strong></span><span><Boxes size={16} /><small>{t("Stock")}</small><strong>{formatNumber(draft.quantity_available)}</strong></span><span><Eye size={16} /><small>{t("Visibility")}</small><strong>{t(draft.active ? "Live" : "Hidden")}</strong></span></div>}
+      <form className={`admin-form admin-product-form ${isEditing ? "is-editing" : "is-readonly"}`} onSubmit={handleSubmit}>
+        {!isEditing && <div className="admin-readout"><span><Tags size={16} /><small>{t("Price")}</small><strong>{formatVnd(getProductPrice(draft))}</strong>{isProductOnSale(draft) && <del>{formatVnd(draft.price_vnd)}</del>}</span><span><Boxes size={16} /><small>{t("Stock")}</small><strong>{formatNumber(draft.quantity_available)}</strong></span><span><Eye size={16} /><small>{t("Visibility")}</small><strong>{t(draft.active ? "Live" : "Hidden")}</strong></span></div>}
 
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span>01</span><div><h3>{t("Listing details")}</h3><p>{t("The information customers use to identify this item.")}</p></div></div>
@@ -100,11 +110,12 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span>02</span><div><h3>{t("Price & availability")}</h3><p>{t("Stock status updates automatically from the quantity.")}</p></div></div>
           <div className="form-grid">
-            <Field label={t("Price · Required")} error={getFieldError("price_vnd") ? t(getFieldError("price_vnd")!) : undefined}><div className="admin-input-affix"><TextInput type="text" inputMode="numeric" placeholder="0" value={formatDisplayPrice(draft.price_vnd)} disabled={!isEditing} aria-invalid={Boolean(getFieldError("price_vnd"))} onChange={(event) => { const raw = event.target.value.replace(/\D/g, ""); setField("price_vnd", raw ? Number(raw) : 0); }} /><span>VND</span></div></Field>
-            <Field label={t("Quantity")} error={getFieldError("quantity_available") ? t(getFieldError("quantity_available")!) : undefined}><TextInput type="number" min="0" step="1" value={draft.quantity_available} disabled={!isEditing} onChange={(event) => { const qty = Math.max(0, Math.floor(Number(event.target.value) || 0)); const status: StockStatus = qty === 0 ? "sold_out" : qty <= LIMITED_STOCK_THRESHOLD ? "limited" : "in_stock"; setDraft((current) => ({ ...current, quantity_available: qty, stock_status: status, stock_note: qty === 0 ? "Sold out" : qty <= LIMITED_STOCK_THRESHOLD ? "Limited stock" : "In stock" })); }} /></Field>
-            <Field label={t("Customer badge")} hint={t("Optional label shown on product artwork.")}><SelectInput value={draft.badge ?? ""} disabled={!isEditing} onChange={(event) => setField("badge", event.target.value)}><option value="">{t("No badge")}</option>{hasLegacyBadge && <option value={draft.badge}>{draft.badge}</option>}{productBadges.map((badge) => <option key={badge} value={badge}>{t(badge)}</option>)}</SelectInput>{draft.badge && <div className="admin-badge-customizer"><span className="admin-color-well" title={t("Choose badge color")}><input type="color" aria-label={t("Badge color")} value={draft.badge_color || "#5f8d55"} disabled={!isEditing} onChange={(event) => setField("badge_color", event.target.value)} /><span style={{ background: draft.badge_color || "#5f8d55" }} /></span><span className="admin-badge-preview" style={{ background: draft.badge_color || "#5f8d55" }}><Sparkles size={12} />{t(draft.badge)}</span></div>}</Field>
+            <Field label={t("Regular price · Required")} error={getFieldError("price_vnd") ? t(getFieldError("price_vnd")!) : undefined}><div className="admin-input-affix"><TextInput type="text" inputMode="numeric" placeholder="0" value={formatDisplayPrice(draft.price_vnd)} disabled={!isEditing} aria-invalid={Boolean(getFieldError("price_vnd"))} onChange={(event) => { const raw = event.target.value.replace(/\D/g, ""); setField("price_vnd", raw ? Number(raw) : 0); }} /><span>VND</span></div></Field>
+            {draft.sale_price_vnd != null && <Field label={t("Sale price · Required")} hint={draft.price_vnd > 0 && draft.sale_price_vnd < draft.price_vnd ? t("Customers save {{percent}}%.", { percent: getProductDiscountPercent(draft) }) : t("Must be lower than the regular price.")} error={getFieldError("sale_price_vnd") ? t(getFieldError("sale_price_vnd")!) : undefined}><div className="admin-input-affix"><TextInput type="text" inputMode="numeric" placeholder="0" value={formatDisplayPrice(draft.sale_price_vnd)} disabled={!isEditing} aria-invalid={Boolean(getFieldError("sale_price_vnd"))} onChange={(event) => { const raw = event.target.value.replace(/\D/g, ""); setField("sale_price_vnd", raw ? Number(raw) : 0); }} /><span>VND</span></div></Field>}
+            <Field label={t("Quantity")} error={getFieldError("quantity_available") ? t(getFieldError("quantity_available")!) : undefined}><QuantityInput value={draft.quantity_available} disabled={!isEditing} invalid={Boolean(getFieldError("quantity_available"))} onChange={setQuantity} /></Field>
+            <Field label={t("Customer badge")} hint={t("Optional label shown on product artwork.")}><SelectMenu label={t("Customer badge")} value={draft.badge ?? ""} disabled={!isEditing} onChange={(value) => setField("badge", value)} options={[{ value: "", label: t("No badge") }, ...(hasLegacyBadge ? [{ value: draft.badge ?? "", label: draft.badge ?? "" }] : []), ...productBadges.map((badge) => ({ value: badge, label: t(badge), icon: <Sparkles size={14} /> }))]} />{draft.badge && <div className="admin-badge-customizer"><span className="admin-color-well" title={t("Choose badge color")}><input type="color" aria-label={t("Badge color")} value={draft.badge_color || "#5f8d55"} disabled={!isEditing} onChange={(event) => setField("badge_color", event.target.value)} /><span style={{ background: draft.badge_color || "#5f8d55" }} /></span><span className="admin-badge-preview" style={{ background: draft.badge_color || "#5f8d55" }}><Sparkles size={12} />{t(draft.badge)}</span></div>}</Field>
           </div>
-          <div className="admin-switch-row"><label><span><strong>{t("Feature this item")}</strong><small>{t("Give it extra prominence on the storefront.")}</small></span><input type="checkbox" checked={draft.featured} disabled={!isEditing} onChange={(event) => setField("featured", event.target.checked)} /></label><label><span><strong>{t("Visible in catalog")}</strong><small>{t("Customers can find and purchase this item.")}</small></span><input type="checkbox" checked={draft.active} disabled={!isEditing} onChange={(event) => setField("active", event.target.checked)} /></label></div>
+          <div className="admin-switch-row"><label><span><strong>{t("Put this item on sale")}</strong><small>{t("Show a lower price while keeping the regular price visible.")}</small></span><input type="checkbox" checked={draft.sale_price_vnd != null} disabled={!isEditing} onChange={(event) => setField("sale_price_vnd", event.target.checked ? Math.max(0, draft.price_vnd - 10_000) : null)} /></label><label><span><strong>{t("Feature this item")}</strong><small>{t("Give it extra prominence on the storefront.")}</small></span><input type="checkbox" checked={draft.featured} disabled={!isEditing} onChange={(event) => setField("featured", event.target.checked)} /></label><label><span><strong>{t("Visible in catalog")}</strong><small>{t("Customers can find and purchase this item.")}</small></span><input type="checkbox" checked={draft.active} disabled={!isEditing} onChange={(event) => setField("active", event.target.checked)} /></label></div>
         </section>
 
         <section className="admin-form-section">
