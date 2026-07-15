@@ -197,7 +197,7 @@
 		transition: all 0.2s;
 	}
 	img.merch-picture {
-		top: 26%;
+		bottom: 5%;
 		width: 76%;
 		height: 66%;
 		border-radius: 0.35rem;

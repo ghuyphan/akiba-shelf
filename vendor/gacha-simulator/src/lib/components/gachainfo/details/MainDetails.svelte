@@ -1,5 +1,6 @@
 <script>
-	import { t } from 'svelte-i18n';
+	import { t, locale } from 'svelte-i18n';
+	import { parseLocalizedText } from '$lib/helpers/localize';
 	import { bannerActive, bannerList, bannerPhase, patchVersion } from '$lib/store/stores';
 	import { beginner } from '$lib/data/banners/beginner.json';
 	import { get4StarChars, getAllChars, getAllWeapons } from '$lib/helpers/wish/wishBase';
@@ -40,8 +41,8 @@
 			{ rarity: 4, items: fourStar }
 		];
 		featured = fiveStar.length ? fiveStar : fourStar;
-		bannerTitle = selected.character?.title || selected.character?.name || 'Merch Event Wish';
-		merchDescription = selected.character?.description || '';
+		bannerTitle = parseLocalizedText(selected.character?.title || selected.character?.name, $locale) || 'Merch Event Wish';
+		merchDescription = parseLocalizedText(selected.character?.description, $locale) || '';
 		drop5star = byRarity(5).map((item) => ({ ...item, rateup: item.featured }));
 		drop4star = byRarity(4).map((item) => ({ ...item, rateup: item.featured }));
 		drop3star = byRarity(3);

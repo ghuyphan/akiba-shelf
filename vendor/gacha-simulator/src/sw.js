@@ -3,6 +3,7 @@ import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { CacheFirst, NetworkFirst } from 'workbox-strategies';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
+import { RangeRequestsPlugin } from 'workbox-range-requests';
 
 const cacheVersion = 'v1';
 
@@ -39,8 +40,17 @@ registerRoute(
 );
 
 registerRoute(
-	({ url }) =>
-		url.href.includes('videos') || url.href.includes('images') || url.href.includes('sfx'),
+	({ url }) => url.href.includes('videos') || url.href.includes('sfx'),
+	new CacheFirst({
+		cacheName: `Static-${cacheVersion}`,
+		plugins: [
+			new RangeRequestsPlugin()
+		]
+	})
+);
+
+registerRoute(
+	({ url }) => url.href.includes('images'),
 	new CacheFirst({
 		cacheName: `Static-${cacheVersion}`
 	})

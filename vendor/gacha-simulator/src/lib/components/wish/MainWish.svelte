@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import { t } from 'svelte-i18n';
+	import { t, locale } from 'svelte-i18n';
 	import {
 		acquaint,
 		intertwined,
@@ -21,6 +21,7 @@
 	import Wish, { roll } from '$lib/helpers/wish/wish';
 	import { playSfx } from '$lib/helpers/audio/audio.svelte';
 	import { getMerchConfig } from '$lib/helpers/merch';
+	import { parseLocalizedText } from '$lib/helpers/localize';
 
 	// Components
 	import WishResult from './WishResult.svelte';
@@ -38,7 +39,7 @@
 	let rollCount = 0;
 	let wishResult = [];
 	let WishFunction;
-	const simulatorTitle = getMerchConfig().settings?.title || APP_TITLE;
+	$: simulatorTitle = parseLocalizedText(getMerchConfig().settings?.title, $locale) || APP_TITLE;
 
 	$: nowBanner = $bannerList[$bannerActive];
 	$: bannerToRoll = nowBanner.type;

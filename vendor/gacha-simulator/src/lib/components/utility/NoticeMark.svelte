@@ -19,7 +19,7 @@
 
 {#if active}
 	<div class="notice" {style}>
-		<span>i</span>
+		<span>!</span>
 	</div>
 {/if}
 
@@ -39,12 +39,13 @@
 		border-radius: 100%;
 		aspect-ratio: 1/1;
 		font-size: xx-small;
+		font-weight: bold;
 		padding: 0.3rem;
 		line-height: 0;
 	}
 
 	:global(.mobile) span {
-		font-size: 0.4rem;
+		font-size: 0.45rem;
 		padding: 0.25rem;
 	}
 </style>

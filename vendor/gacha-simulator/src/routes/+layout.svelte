@@ -33,6 +33,7 @@
 	$: lc = $locale?.toLowerCase() || '';
 	$: isYuanshen = lc.includes('cn') || lc.includes('ja');
 	$: font = isYuanshen || lc.includes('th') ? lc.split('-')[0] : 'global';
+	$: fontFile = font === 'ja' ? 'jp' : font;
 
 	$: viewportWidth.set(innerWidth);
 	$: viewportHeight.set(innerHeight);
@@ -88,28 +89,7 @@
 
 	<link
 		rel="preload"
-		href="/fonts/optimized_global_web.woff2"
-		as="font"
-		type="font/woff2"
-		crossorigin
-	/>
-	<link
-		rel="preload"
-		href="/fonts/optimized_th_web.woff2"
-		as="font"
-		type="font/woff2"
-		crossorigin
-	/>
-	<link
-		rel="preload"
-		href="/fonts/optimized_jp_web.woff2"
-		as="font"
-		type="font/woff2"
-		crossorigin
-	/>
-	<link
-		rel="preload"
-		href="/fonts/optimized_zh_web.woff2"
+		href="/fonts/optimized_{fontFile}_web.woff2"
 		as="font"
 		type="font/woff2"
 		crossorigin

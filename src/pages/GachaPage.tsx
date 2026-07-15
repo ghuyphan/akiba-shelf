@@ -112,6 +112,9 @@ export function GachaPage() {
 
   const queryParams = new URLSearchParams();
   queryParams.set("shop", shopSlug);
+  if (state?.booth?.catalog_locale) {
+    queryParams.set("locale", state.booth.catalog_locale);
+  }
   if (lightweightMode) {
     queryParams.set("lightweight", "1");
   }

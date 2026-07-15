@@ -16,8 +16,13 @@ const supportedLocales = [
 const itemLocales = ['en-US', 'it-IT', 'ja-JP', 'pt-BR', 'ru-RU', 'vi-VN', 'zh-CN'];
 
 const checkLocale = () => {
+	let queryLocale = null;
+	if (typeof window !== 'undefined') {
+		const urlParams = new URLSearchParams(window.location.search);
+		queryLocale = urlParams.get('locale');
+	}
 	const savedLocale = browser ? localStorage.getItem('locale') : null;
-	const browserLocale = savedLocale || getLocaleFromNavigator();
+	const browserLocale = queryLocale || savedLocale || getLocaleFromNavigator();
 	const usedLocale = supportedLocales.find((langID) => langID.includes(browserLocale));
 	return usedLocale || 'en-US';
 };

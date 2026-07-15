@@ -1,6 +1,7 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { t } from 'svelte-i18n';
+	import { t, locale } from 'svelte-i18n';
+	import { parseLocalizedText } from '$lib/helpers/localize';
 
 	export let data = {};
 
@@ -9,9 +10,9 @@
 		: data.featuredItem
 			? [data.featuredItem]
 			: [];
-	$: featuredNames = featuredItems.map(({ name }) => name).filter(Boolean).join(' · ');
-	$: title = data.title || 'Matsuri Shelf Wishes';
-	$: description = data.description || $t('wish.banner.wishDescription');
+	$: featuredNames = featuredItems.map(({ name }) => parseLocalizedText(name, $locale)).filter(Boolean).join(' · ');
+	$: title = parseLocalizedText(data.title, $locale) || 'Matsuri Shelf Wishes';
+	$: description = parseLocalizedText(data.description, $locale) || $t('wish.banner.wishDescription');
 	$: isWeapon = data.kind === 'weapon';
 	$: theme = data.theme || 'anemo';
 	$: featuredLabel = isWeapon

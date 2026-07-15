@@ -1,6 +1,6 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { t } from 'svelte-i18n';
+	import { t, locale } from 'svelte-i18n';
 	import { browser } from '$app/environment';
 
 	import BannerButton from '$lib/components/wish/_parts/BannerButton.svelte';
@@ -10,6 +10,7 @@
 	import { playSfx } from '$lib/helpers/audio/audio.svelte';
 	import browserState from '$lib/helpers/browserState';
 	import { getMerchConfig } from '$lib/helpers/merch';
+	import { parseLocalizedText } from '$lib/helpers/localize';
 	import {
 		acquaint,
 		bannerActive,
@@ -30,8 +31,8 @@
 
 	$: headerHeightstyle = $mobileMode ? `height: ${$viewportHeight}px` : '';
 	$: simulatorTitle =
-		$bannerList[$bannerActive]?.character?.title ||
-		getMerchConfig().settings?.title ||
+		parseLocalizedText($bannerList[$bannerActive]?.character?.title, $locale) ||
+		parseLocalizedText(getMerchConfig().settings?.title, $locale) ||
 		'Matsuri Wish Simulator';
 
 	const inTransition = (node, args) => {

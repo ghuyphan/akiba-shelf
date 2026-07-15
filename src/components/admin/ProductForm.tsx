@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useState } from "react";
-import { Boxes, Edit3, Eye, ImageIcon, PackagePlus, RotateCcw, Sparkles, Tags, Trash2, X } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Boxes, Edit3, Eye, ImageIcon, PackagePlus, Redo2, RotateCcw, Sparkles, Tags, Trash2, Undo2, X } from "lucide-react";
 import type { Product, StockStatus } from "../../types/catalog";
 import { formatNumber, formatVnd, normalizeSlug } from "../../lib/format";
 import { LIMITED_STOCK_THRESHOLD, productBadges } from "../../lib/constants";
@@ -26,6 +26,13 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
   const [draft, setDraft] = useState(product);
   const [isEditing, setIsEditing] = useState(!product.name);
   const [errors, setErrors] = useState<string[]>([]);
+  const [history, setHistory] = useState<Product[]>([]);
+  const [future, setFuture] = useState<Product[]>([]);
+
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(draft) !== JSON.stringify(product);
+  }, [draft, product]);
+
   const { busy: isSaving, error: saveError, run: runSave, setError: setSaveError } = useAsyncAction();
   const { busy: isDeleting, error: deleteError, run: runDelete, setError: setDeleteError } = useAsyncAction();
   const busy = isSaving || isDeleting;
@@ -36,29 +43,133 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
   const hasLegacyBadge = Boolean(draft.badge) && !productBadges.includes(draft.badge ?? "");
   const images = draft.images.filter(Boolean);
 
-  useEffect(() => { setDraft(product); setIsEditing(!product.name); setErrors([]); setSaveError(""); setDeleteError(""); }, [product, setDeleteError, setSaveError]);
-  function setField<Key extends keyof Product>(key: Key, value: Product[Key]) { setDraft((current) => ({ ...current, [key]: value })); }
+  useEffect(() => {
+    setDraft(product);
+    setIsEditing(!product.name);
+    setErrors([]);
+    setSaveError("");
+    setDeleteError("");
+    setHistory([]);
+    setFuture([]);
+  }, [product, setDeleteError, setSaveError]);
+
+  const hasChangedInFocusSession = useRef(false);
+
+  const startTextEditSession = () => {
+    hasChangedInFocusSession.current = false;
+  };
+
+  const updateDraft = (newDraft: Product, pushHistory = true) => {
+    if (pushHistory) {
+      setHistory((prev) => [...prev, draft].slice(-50));
+      setFuture([]);
+    }
+    setDraft(newDraft);
+  };
+
+  function setField<Key extends keyof Product>(key: Key, value: Product[Key]) {
+    const textFields: (keyof Product)[] = ["name", "item_code", "collection", "category", "description", "price_vnd", "sale_price_vnd"];
+    const isText = textFields.includes(key);
+
+    if (isText) {
+      if (!hasChangedInFocusSession.current) {
+        setHistory((prev) => [...prev, draft].slice(-50));
+        setFuture([]);
+        hasChangedInFocusSession.current = true;
+      }
+      setDraft((current) => ({ ...current, [key]: value }));
+    } else {
+      updateDraft({ ...draft, [key]: value }, true);
+    }
+  }
+
   function getFieldError(name: string) {
     const key = name === "item_code" ? "code" : name === "sale_price_vnd" ? "sale price" : name === "price_vnd" ? "price must" : name === "quantity_available" ? "quantity" : name;
     return errors.find((error) => error.toLowerCase().includes(key));
   }
-  function resetDraft() { setDraft(product); setErrors([]); setSaveError(""); setDeleteError(""); setIsEditing(isNewProduct); }
+
+  function resetDraft() {
+    setDraft(product);
+    setErrors([]);
+    setSaveError("");
+    setDeleteError("");
+    setIsEditing(isNewProduct);
+    setHistory([]);
+    setFuture([]);
+  }
+
   function setQuantity(quantity: number) {
     const status: StockStatus = quantity === 0 ? "sold_out" : quantity <= LIMITED_STOCK_THRESHOLD ? "limited" : "in_stock";
-    setDraft((current) => ({ ...current, quantity_available: quantity, stock_status: status, stock_note: quantity === 0 ? "Sold out" : quantity <= LIMITED_STOCK_THRESHOLD ? "Limited stock" : "In stock" }));
+    updateDraft({
+      ...draft,
+      quantity_available: quantity,
+      stock_status: status,
+      stock_note: quantity === 0 ? "Sold out" : quantity <= LIMITED_STOCK_THRESHOLD ? "Limited stock" : "In stock"
+    }, true);
   }
+
   function removeImage(index: number) {
-    setDraft((current) => {
-      const variants = current.image_variants ?? [];
-      const paths = current.image_paths ?? [];
-      return {
-        ...current,
-        images: current.images.filter((_, imageIndex) => imageIndex !== index),
-        image_variants: variants.length === current.images.filter(Boolean).length ? variants.filter((_, imageIndex) => imageIndex !== index) : variants,
-        image_paths: variants.length === current.images.filter(Boolean).length ? paths.filter((_, pathIndex) => Math.floor(pathIndex / 2) !== index) : paths,
-      };
-    });
+    const variants = draft.image_variants ?? [];
+    const paths = draft.image_paths ?? [];
+    const nextDraft = {
+      ...draft,
+      images: draft.images.filter((_, imageIndex) => imageIndex !== index),
+      image_variants: variants.length === draft.images.filter(Boolean).length ? variants.filter((_, imageIndex) => imageIndex !== index) : variants,
+      image_paths: variants.length === draft.images.filter(Boolean).length ? paths.filter((_, pathIndex) => Math.floor(pathIndex / 2) !== index) : paths,
+    };
+    updateDraft(nextDraft, true);
   }
+
+  const stateRef = useRef({ history, future, draft });
+  useEffect(() => {
+    stateRef.current = { history, future, draft };
+  }, [history, future, draft]);
+
+  const undo = () => {
+    const { history: h, draft: d } = stateRef.current;
+    const previous = h[h.length - 1];
+    if (!previous) return;
+    setHistory((items) => items.slice(0, -1));
+    setFuture((items) => [d, ...items]);
+    setDraft(previous);
+  };
+
+  const redo = () => {
+    const { future: f, draft: d } = stateRef.current;
+    const next = f[0];
+    if (!next) return;
+    setFuture((items) => items.slice(1));
+    setHistory((items) => [...items, d]);
+    setDraft(next);
+  };
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const modifier = isMac ? event.metaKey : event.ctrlKey;
+
+      if (modifier && !event.altKey) {
+        if (event.key.toLowerCase() === "z") {
+          event.preventDefault();
+          if (event.shiftKey) {
+            redo();
+          } else {
+            undo();
+          }
+        } else if (event.key.toLowerCase() === "y") {
+          event.preventDefault();
+          redo();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isEditing]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -99,19 +210,19 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span>01</span><div><h3>{t("Listing details")}</h3><p>{t("The information customers use to identify this item.")}</p></div></div>
           <div className="form-grid">
-            <Field label={t("Product name · Required")} error={getFieldError("name") ? t(getFieldError("name")!) : undefined}><TextInput autoFocus={isNewProduct} placeholder={t("e.g. Moonlight acrylic stand")} value={draft.name} disabled={!isEditing} aria-invalid={Boolean(getFieldError("name"))} onChange={(event) => setField("name", event.target.value)} /></Field>
-            <Field label={t("Item code · Required")} hint={t("A short unique code used by staff.")}><TextInput placeholder="e.g. AST-001" value={draft.item_code} disabled={!isEditing} aria-invalid={Boolean(getFieldError("item_code"))} onChange={(event) => setField("item_code", event.target.value.toUpperCase())} />{getFieldError("item_code") && <span className="field-error-msg">{t(getFieldError("item_code")!)}</span>}</Field>
-            <Field label={t("Collection")} hint={t("Optional grouping, such as Spring 2026.")}><TextInput placeholder={t("e.g. Starry Days")} value={draft.collection} disabled={!isEditing} onChange={(event) => setField("collection", event.target.value)} /></Field>
-            <Field label={t("Category · Required")} error={getFieldError("category") ? t(getFieldError("category")!) : undefined}><TextInput placeholder={t("e.g. Acrylic, Print, Apparel")} value={draft.category} disabled={!isEditing} aria-invalid={Boolean(getFieldError("category"))} onChange={(event) => setField("category", event.target.value)} /></Field>
+            <Field label={t("Product name · Required")} error={getFieldError("name") ? t(getFieldError("name")!) : undefined}><TextInput autoFocus={isNewProduct} placeholder={t("e.g. Moonlight acrylic stand")} value={draft.name} disabled={!isEditing} aria-invalid={Boolean(getFieldError("name"))} onFocus={startTextEditSession} onChange={(event) => setField("name", event.target.value)} /></Field>
+            <Field label={t("Item code · Required")} hint={t("A short unique code used by staff.")}><TextInput placeholder="e.g. AST-001" value={draft.item_code} disabled={!isEditing} aria-invalid={Boolean(getFieldError("item_code"))} onFocus={startTextEditSession} onChange={(event) => setField("item_code", event.target.value.toUpperCase())} />{getFieldError("item_code") && <span className="field-error-msg">{t(getFieldError("item_code")!)}</span>}</Field>
+            <Field label={t("Collection")} hint={t("Optional grouping, such as Spring 2026.")}><TextInput placeholder={t("e.g. Starry Days")} value={draft.collection} disabled={!isEditing} onFocus={startTextEditSession} onChange={(event) => setField("collection", event.target.value)} /></Field>
+            <Field label={t("Category · Required")} error={getFieldError("category") ? t(getFieldError("category")!) : undefined}><TextInput placeholder={t("e.g. Acrylic, Print, Apparel")} value={draft.category} disabled={!isEditing} aria-invalid={Boolean(getFieldError("category"))} onFocus={startTextEditSession} onChange={(event) => setField("category", event.target.value)} /></Field>
           </div>
-          <Field label={t("Description")} hint={isEditing ? t("{{count}}/500 characters", { count: draft.description.length }) : undefined}><TextArea maxLength={500} placeholder={t("What should customers know about this item?")} value={draft.description} disabled={!isEditing} onChange={(event) => setField("description", event.target.value)} /></Field>
+          <Field label={t("Description")} hint={isEditing ? t("{{count}}/500 characters", { count: draft.description.length }) : undefined}><TextArea maxLength={500} placeholder={t("What should customers know about this item?")} value={draft.description} disabled={!isEditing} onFocus={startTextEditSession} onChange={(event) => setField("description", event.target.value)} /></Field>
         </section>
 
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span>02</span><div><h3>{t("Price & availability")}</h3><p>{t("Stock status updates automatically from the quantity.")}</p></div></div>
           <div className="form-grid">
-            <Field label={t("Regular price · Required")} error={getFieldError("price_vnd") ? t(getFieldError("price_vnd")!) : undefined}><div className="admin-input-affix"><TextInput type="text" inputMode="numeric" placeholder="0" value={formatDisplayPrice(draft.price_vnd)} disabled={!isEditing} aria-invalid={Boolean(getFieldError("price_vnd"))} onChange={(event) => { const raw = event.target.value.replace(/\D/g, ""); setField("price_vnd", raw ? Number(raw) : 0); }} /><span>VND</span></div></Field>
-            {draft.sale_price_vnd != null && <Field label={t("Sale price · Required")} hint={draft.price_vnd > 0 && draft.sale_price_vnd < draft.price_vnd ? t("Customers save {{percent}}%.", { percent: getProductDiscountPercent(draft) }) : t("Must be lower than the regular price.")} error={getFieldError("sale_price_vnd") ? t(getFieldError("sale_price_vnd")!) : undefined}><div className="admin-input-affix"><TextInput type="text" inputMode="numeric" placeholder="0" value={formatDisplayPrice(draft.sale_price_vnd)} disabled={!isEditing} aria-invalid={Boolean(getFieldError("sale_price_vnd"))} onChange={(event) => { const raw = event.target.value.replace(/\D/g, ""); setField("sale_price_vnd", raw ? Number(raw) : 0); }} /><span>VND</span></div></Field>}
+            <Field label={t("Regular price · Required")} error={getFieldError("price_vnd") ? t(getFieldError("price_vnd")!) : undefined}><div className="admin-input-affix"><TextInput type="text" inputMode="numeric" placeholder="0" value={formatDisplayPrice(draft.price_vnd)} disabled={!isEditing} aria-invalid={Boolean(getFieldError("price_vnd"))} onFocus={startTextEditSession} onChange={(event) => { const raw = event.target.value.replace(/\D/g, ""); setField("price_vnd", raw ? Number(raw) : 0); }} /><span>VND</span></div></Field>
+            {draft.sale_price_vnd != null && <Field label={t("Sale price · Required")} hint={draft.price_vnd > 0 && draft.sale_price_vnd < draft.price_vnd ? t("Customers save {{percent}}%.", { percent: getProductDiscountPercent(draft) }) : t("Must be lower than the regular price.")} error={getFieldError("sale_price_vnd") ? t(getFieldError("sale_price_vnd")!) : undefined}><div className="admin-input-affix"><TextInput type="text" inputMode="numeric" placeholder="0" value={formatDisplayPrice(draft.sale_price_vnd)} disabled={!isEditing} aria-invalid={Boolean(getFieldError("sale_price_vnd"))} onFocus={startTextEditSession} onChange={(event) => { const raw = event.target.value.replace(/\D/g, ""); setField("sale_price_vnd", raw ? Number(raw) : 0); }} /><span>VND</span></div></Field>}
             <Field label={t("Quantity")} error={getFieldError("quantity_available") ? t(getFieldError("quantity_available")!) : undefined}><QuantityInput value={draft.quantity_available} disabled={!isEditing} invalid={Boolean(getFieldError("quantity_available"))} onChange={setQuantity} /></Field>
             <Field label={t("Customer badge")} hint={t("Optional label shown on product artwork.")}><SelectMenu label={t("Customer badge")} value={draft.badge ?? ""} disabled={!isEditing} onChange={(value) => setField("badge", value)} options={[{ value: "", label: t("No badge") }, ...(hasLegacyBadge ? [{ value: draft.badge ?? "", label: draft.badge ?? "" }] : []), ...productBadges.map((badge) => ({ value: badge, label: t(badge), icon: <Sparkles size={14} /> }))]} />{draft.badge && <div className="admin-badge-customizer"><span className="admin-color-well" title={t("Choose badge color")}><input type="color" aria-label={t("Badge color")} value={draft.badge_color || "#5f8d55"} disabled={!isEditing} onChange={(event) => setField("badge_color", event.target.value)} /><span style={{ background: draft.badge_color || "#5f8d55" }} /></span><span className="admin-badge-preview" style={{ background: draft.badge_color || "#5f8d55" }}><Sparkles size={12} />{t(draft.badge)}</span></div>}</Field>
           </div>
@@ -123,12 +234,69 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
           <div className="admin-image-gallery">
             {images.map((image, index) => <div className="admin-image-tile" key={`${image}-${index}`}><img src={image} alt={`${draft.name || t("Product")} ${index + 1}`} />{index === 0 && <span>{t("Cover")}</span>}{isEditing && <button type="button" onClick={() => removeImage(index)} aria-label={t("Remove image {{number}}", { number: index + 1 })}><X size={15} /></button>}</div>)}
             {images.length === 0 && <div className="admin-image-empty"><ImageIcon size={25} /><span>{t("No product images yet")}</span></div>}
-            {isEditing && images.length < 4 && <div className="admin-image-upload-tile"><ImageUpload shopId={shopId} bucket="product-images" label={images.length ? t("Add another image") : t("Upload product image")} onUploaded={(url) => setField("images", [...images, url])} onProductUploaded={(variant) => setDraft((current) => ({ ...current, images: [...current.images.filter(Boolean), variant.detail], image_variants: [...(current.image_variants ?? []), { thumbnail: variant.thumbnail, detail: variant.detail }], image_paths: [...(current.image_paths ?? []), ...variant.paths] }))} /></div>}
+            {isEditing && images.length < 4 && (
+              <div className="admin-image-upload-tile">
+                <ImageUpload
+                  shopId={shopId}
+                  bucket="product-images"
+                  label={images.length ? t("Add another image") : t("Upload product image")}
+                  onUploaded={(url) => setField("images", [...images, url])}
+                  onProductUploaded={(variant) => {
+                    const nextDraft = {
+                      ...draft,
+                      images: [...draft.images.filter(Boolean), variant.detail],
+                      image_variants: [...(draft.image_variants ?? []), { thumbnail: variant.thumbnail, detail: variant.detail }],
+                      image_paths: [...(draft.image_paths ?? []), ...variant.paths]
+                    };
+                    updateDraft(nextDraft, true);
+                  }}
+                />
+              </div>
+            )}
           </div>
           {getFieldError("images") && <div className="field-error-msg admin-gallery-error">{t(getFieldError("images")!)}</div>}
         </section>
 
-        {isEditing && <div className="admin-sticky-actions"><Button type="submit" loading={isSaving} loadingText={t("Saving…")} disabled={busy}>{isNewProduct ? t("Create product") : t("Save changes")}</Button><Button type="button" variant="secondary" icon={isNewProduct ? <RotateCcw size={17} /> : <X size={17} />} disabled={busy} onClick={resetDraft}>{isNewProduct ? t("Clear") : t("Cancel")}</Button></div>}
+        {isEditing && (
+          <div className="admin-sticky-actions">
+            {hasChanges && <span className="admin-unsaved-badge">{t("Unsaved changes")}</span>}
+            <button
+              type="button"
+              className="icon-button"
+              disabled={history.length === 0 || busy}
+              onClick={undo}
+              title={t("Undo")}
+            >
+              <Undo2 size={16} />
+            </button>
+            <button
+              type="button"
+              className="icon-button"
+              disabled={future.length === 0 || busy}
+              onClick={redo}
+              title={t("Redo")}
+            >
+              <Redo2 size={16} />
+            </button>
+            <Button
+              type="submit"
+              loading={isSaving}
+              loadingText={t("Saving…")}
+              disabled={busy || (!isNewProduct && !hasChanges)}
+            >
+              {isNewProduct ? t("Create product") : t("Save changes")}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              icon={isNewProduct ? <RotateCcw size={17} /> : <X size={17} />}
+              disabled={busy}
+              onClick={resetDraft}
+            >
+              {isNewProduct ? t("Clear") : t("Cancel")}
+            </Button>
+          </div>
+        )}
       </form>
     </AdminCard>
   );

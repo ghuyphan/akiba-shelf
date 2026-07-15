@@ -6,13 +6,13 @@
 </script>
 
 {#if type === 'in'}
-	<video autoplay>
+	<video autoplay muted playsinline>
 		<source src={$assets[`${rarity}star-splashout.webm`]} type="video/webm">
 	</video>
 {/if}
 
 {#if type === 'out'}
-	<video autoplay>
+	<video autoplay muted playsinline>
 		<source src={$assets[`${rarity}star-splashout2.webm`]} type="video/webm">
 	</video>
 {/if}

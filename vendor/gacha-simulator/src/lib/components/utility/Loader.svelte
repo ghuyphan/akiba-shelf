@@ -4,6 +4,7 @@
 	import { showBeginner, mobileMode, isMobile, assets } from '$lib/store/stores';
 	import { beginnerRoll } from '$lib/store/localstore';
 	import { listingAssets, getItemlist } from '$lib/helpers/assets.svelte';
+	import { checkLightweight } from '$lib/helpers/lightweight';
 
 	export let isBannerLoaded = false;
 	export let directLoad = false;
@@ -18,19 +19,73 @@
 		isLoaded = true;
 	};
 
+	const preloadBatch = async (items, concurrencyLimit, onProgress) => {
+		if (items.length === 0) {
+			onProgress(1);
+			return;
+		}
+		let index = 0;
+		let completed = 0;
+		const total = items.length;
+
+		const worker = async () => {
+			while (index < total) {
+				const currentIdx = index++;
+				if (currentIdx >= total) break;
+				const item = items[currentIdx];
+				try {
+					if (item.path.endsWith('.mp4') || item.path.endsWith('.webm')) {
+						const response = await fetch(item.path);
+						if (!response.ok) throw new Error(`HTTP ${response.status}`);
+					} else {
+						await new Promise((resolve, reject) => {
+							const img = new Image();
+							img.onload = () => resolve();
+							img.onerror = () => reject(new Error('Image failed to load'));
+							img.src = item.path;
+						});
+					}
+				} catch (e) {
+					console.warn(`Failed to preload asset: ${item.path}`, e);
+				}
+				completed++;
+				onProgress(completed / total);
+			}
+		};
+
+		const workers = Array.from(
+			{ length: Math.min(concurrencyLimit, total) },
+			() => worker()
+		);
+		await Promise.all(workers);
+	};
+
+	const isCriticalAsset = (path, lightweight) => {
+		if (lightweight && (path.endsWith('.mp4') || path.endsWith('.webm'))) {
+			return false;
+		}
+		const criticalNames = [
+			'wish-background.webp',
+			'splash-background.webp',
+			'3star-bg.webp',
+			'4star-bg.webp',
+			'5star-bg.webp',
+			'button.webp',
+			'primogem.webp',
+			'bg.webm',
+			'3star-single.mp4',
+			'4star.mp4'
+		];
+		return criticalNames.some(name => path.endsWith(name));
+	};
+
 	const assetInit = async (param) => {
 		const ispreview = param === 'preview';
 		const raw = ispreview ? listingAssets('preview') : listingAssets();
 		
-		let progressInterval;
-		if (!ispreview) {
-			progressInterval = setInterval(() => {
-				if (current < 90) {
-					const increment = (90 - current) * 0.05;
-					current = Math.min(90, current + Math.max(0.5, increment));
-				}
-			}, 50);
+		const lightweight = checkLightweight();
 
+		if (!ispreview) {
 			await new Promise((resolve) => {
 				const check = () => {
 					const shop = new URLSearchParams(window.location.search).get('shop') || '';
@@ -43,21 +98,7 @@
 				};
 				check();
 			});
-
-			clearInterval(progressInterval);
 		}
-
-		// Smoothly animate the remainder to 100% to avoid sudden jumps
-		await new Promise((resolve) => {
-			const finishInterval = setInterval(() => {
-				if (current < 100) {
-					current = Math.min(100, current + 5);
-				} else {
-					clearInterval(finishInterval);
-					resolve();
-				}
-			}, 16);
-		});
 
 		const itemList = await getItemlist();
 		assets.update((pv) => {
@@ -65,8 +106,24 @@
 			raw.forEach(({ path, asset }) => (pv[asset] = path));
 			return { ...pv, ...itemList };
 		});
+
+		const criticalItems = raw.filter(item => isCriticalAsset(item.path, lightweight));
+		const deferredItems = raw.filter(item => !isCriticalAsset(item.path, lightweight));
+
+		await preloadBatch(criticalItems, 4, (progress) => {
+			current = progress * 100;
+		});
+
 		current = 100;
 		handleLoaded();
+
+		if (deferredItems.length > 0) {
+			setTimeout(() => {
+				preloadBatch(deferredItems, 2, () => {}).catch(err => {
+					console.error("Background preloading error:", err);
+				});
+			}, 1000);
+		}
 	};
 
 	onMount(() => {

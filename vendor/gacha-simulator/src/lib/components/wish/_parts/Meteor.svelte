@@ -180,23 +180,46 @@
 
 <div class="wish-output" class:show={showMeteor} style="height: {$viewportHeight}px">
 	<div class="video">
-		<video bind:this={v3star} preload="none" muted={$muted} src={$assets['3star-single.mp4']} type="video/mp4" />
+		<video
+			bind:this={v3star}
+			preload="auto"
+			playsinline
+			muted={$muted}
+			src={$assets['3star-single.mp4']}
+			type="video/mp4"
+		/>
 		<video
 			bind:this={v4starSingle}
-			preload="none"
+			preload="metadata"
+			playsinline
 			muted={$muted}
 			src={$assets['4star-single.mp4']}
 			type="video/mp4"
 		/>
-		<video bind:this={v4star} preload="none" muted={$muted} src={$assets['4star.mp4']} type="video/mp4" />
+		<video
+			bind:this={v4star}
+			preload="auto"
+			playsinline
+			muted={$muted}
+			src={$assets['4star.mp4']}
+			type="video/mp4"
+		/>
 		<video
 			bind:this={v5starSingle}
-			preload="none"
+			preload="metadata"
+			playsinline
 			muted={$muted}
 			src={$assets['5star-single.mp4']}
 			type="video/mp4"
 		/>
-		<video bind:this={v5star} preload="none" muted={$muted} src={$assets['5star.mp4']} type="video/mp4" />
+		<video
+			bind:this={v5star}
+			preload="metadata"
+			playsinline
+			muted={$muted}
+			src={$assets['5star.mp4']}
+			type="video/mp4"
+		/>
 
 		<button class="skip" on:click={skip}>{$t('wish.result.skip')} <i class="gi-caret-up" /></button>
 	</div>

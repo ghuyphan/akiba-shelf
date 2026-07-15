@@ -53,6 +53,7 @@
 
 	let isMount = false;
 	let isAnimatedBG = false;
+	let bgVideo;
 	$: audioActive = $backsound && $pageActive === 'index' && !$muted;
 	$: if (audioActive) playSfx('wishBacksound');
 	else if (isMount) playSfx('wishBacksound', { paused: true });
@@ -155,6 +156,14 @@
 	};
 	setContext('bgToggle', bgToggle);
 
+	$: if (bgVideo) {
+		if ($pageActive === 'index' && !hideBG && isAnimatedBG) {
+			bgVideo.play().catch(() => {});
+		} else {
+			bgVideo.pause();
+		}
+	}
+
 	onMount(async () => {
 		await importHelper();
 		animateBG();
@@ -199,10 +208,12 @@
 
 {#if isAnimatedBG}
 	<video
+		bind:this={bgVideo}
 		transition:fade|local={{ duration: 2000 }}
 		muted
 		loop
 		autoplay
+		playsinline
 		poster={$assets['wish-background.webp']}
 		class:hide={$pageActive !== 'index' || hideBG}
 	>
