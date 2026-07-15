@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, type ReactNode, type ComponentType } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -16,33 +16,59 @@ import { resetPageTheme } from "./lib/theme";
 import { PlatformI18nProvider, usePlatformI18n } from "./lib/platformI18n";
 import { configurePwaForPath } from "./lib/pwa";
 
-const HomePage = lazy(() =>
+/**
+ * Wraps `React.lazy` so that a failed dynamic import (typically caused by stale
+ * chunk hashes after a new deployment) triggers a single hard reload instead of
+ * crashing to a blank page.
+ */
+function lazyWithRetry<T extends ComponentType<Record<string, never>>>(
+  factory: () => Promise<{ default: T }>,
+) {
+  return lazy(() =>
+    factory().catch((error: unknown) => {
+      const key = "chunk-reload";
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, "1");
+        window.location.reload();
+        // Return a never-resolving promise so React keeps showing the
+        // Suspense fallback while the browser navigates away.
+        return new Promise<{ default: T }>(() => {});
+      }
+      // Already reloaded once — clear the flag and let the error propagate
+      // so the user sees a real error rather than an infinite reload loop.
+      sessionStorage.removeItem(key);
+      throw error;
+    }),
+  );
+}
+
+const HomePage = lazyWithRetry(() =>
   import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
 );
-const DashboardPage = lazy(() =>
+const DashboardPage = lazyWithRetry(() =>
   import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })),
 );
-const NewShopPage = lazy(() =>
+const NewShopPage = lazyWithRetry(() =>
   import("./pages/NewShopPage").then((m) => ({ default: m.NewShopPage })),
 );
-const AdminPage = lazy(() =>
+const AdminPage = lazyWithRetry(() =>
   import("./pages/AdminPage").then((m) => ({ default: m.AdminPage })),
 );
-const CatalogPage = lazy(() =>
+const CatalogPage = lazyWithRetry(() =>
   import("./pages/CatalogPage").then((m) => ({ default: m.CatalogPage })),
 );
-const GachaPage = lazy(() =>
+const GachaPage = lazyWithRetry(() =>
   import("./pages/GachaPage").then((m) => ({ default: m.GachaPage })),
 );
-const AuthPage = lazy(() =>
+const AuthPage = lazyWithRetry(() =>
   import("./pages/AuthPage").then((m) => ({ default: m.AuthPage })),
 );
-const AuthCallbackPage = lazy(() =>
+const AuthCallbackPage = lazyWithRetry(() =>
   import("./pages/AuthCallbackPage").then((m) => ({
     default: m.AuthCallbackPage,
   })),
 );
-const SetPasswordPage = lazy(() =>
+const SetPasswordPage = lazyWithRetry(() =>
   import("./pages/SetPasswordPage").then((m) => ({
     default: m.SetPasswordPage,
   })),
