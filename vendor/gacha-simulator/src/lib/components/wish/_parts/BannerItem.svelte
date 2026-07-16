@@ -12,7 +12,7 @@
 	$: landscape = $viewportWidth / 2.1 > $viewportHeight;
 	$: tabletBannerStyle = landscape ? 'width: 90vh' : '';
 	$: mobileBannerStyle = $mobileMode
-		? `max-width: ${(150 / 100) * $viewportHeight}px;`
+		? `max-width: ${(134 / 100) * $viewportHeight}px;`
 		: tabletBannerStyle;
 	$: style =
 		$viewportHeight > 800 ||
@@ -80,6 +80,9 @@
 	:global(.mobile) .banner-container {
 		align-items: flex-end;
 		padding: 0;
+	}
+	:global(.mobile) .banner-item {
+		bottom: 5px;
 	}
 
 	.banner-item {

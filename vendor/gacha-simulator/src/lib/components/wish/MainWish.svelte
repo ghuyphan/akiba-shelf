@@ -273,7 +273,7 @@
 		margin-left: -20px;
 	}
 	:global(.mobile) .button {
-		height: 50px;
+		height: 60px;
 		margin-bottom: 0.2rem;
 	}
 </style>
