@@ -11,10 +11,10 @@
   height: 48px;
   flex: 0 0 48px;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--coral) 24%, var(--line));
+    border: 1px solid var(--line);
   border-radius: 14px;
   color: var(--coral);
-  background: color-mix(in srgb, var(--coral) 8%, white);
+  /* background: color-mix(in srgb, var(--coral) 8%, white); */
   box-shadow: 0 8px 22px rgb(15 23 42 / 6%);
   text-decoration: none;
   transition:
