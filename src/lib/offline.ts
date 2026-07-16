@@ -16,13 +16,18 @@ function isProduct(value: unknown): value is Product {
 }
 
 export function isCartItem(value: unknown): value is CartItem {
-  return isRecord(value)
-    && isProduct(value.product)
-    && typeof value.quantity === "number"
-    && Number.isInteger(value.quantity)
-    && value.quantity >= 0
-    && (value.reward_quantity === undefined || (Number.isInteger(value.reward_quantity) && value.reward_quantity >= 0))
-    && value.quantity + (value.reward_quantity ?? 0) > 0;
+  if (!isRecord(value) || !isProduct(value.product)) return false;
+
+  const quantity = value.quantity;
+  const rewardQuantity = value.reward_quantity;
+  return typeof quantity === "number"
+    && Number.isInteger(quantity)
+    && quantity >= 0
+    && (rewardQuantity === undefined
+      || (typeof rewardQuantity === "number"
+        && Number.isInteger(rewardQuantity)
+        && rewardQuantity >= 0))
+    && quantity + (typeof rewardQuantity === "number" ? rewardQuantity : 0) > 0;
 }
 
 export function loadCatalogSnapshot(shopId?: string): Pick<CatalogData, "products" | "booth"> | null {

@@ -72,6 +72,10 @@ insert into public.products(id,shop_id,name,item_code,price_vnd,quantity_availab
 update public.products set promotion_eligible=true,quantity_available=10,sale_price_vnd=null where id in ('order-a','order-b');
 insert into public.promotions(shop_id,enabled,buy_quantity,free_quantity,repeatable)
 values('21000000-0000-4000-8000-000000000001',true,2,1,true);
+insert into public.promotion_products(shop_id,product_id,role) values
+('21000000-0000-4000-8000-000000000001','order-a','both'),
+('21000000-0000-4000-8000-000000000001','order-b','both'),
+('21000000-0000-4000-8000-000000000001','order-c','both');
 
 set local role anon;
 select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-a","quantity":1,"reward_quantity":1},{"product_id":"order-b","quantity":1},{"product_id":"order-c","quantity":1}]','30000000-0000-4000-8000-000000000004',repeat('p',32))$$,'dynamic mixed-product promotion succeeds');

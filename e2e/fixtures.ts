@@ -299,6 +299,21 @@ export async function mockSupabase(
       return json(route, []);
     if (url.pathname.includes("/functions/v1/notify-new-order"))
       return json(route, { sent: 0 });
+    if (url.pathname.includes("/rest/v1/promotion_products"))
+      return json(
+        route,
+        catalogProducts.map((product) => ({
+          product_id: product.id,
+          role: "both",
+        })),
+      );
+    if (url.pathname.includes("/rest/v1/promotions"))
+      return json(route, {
+        enabled: true,
+        buy_quantity: 3,
+        free_quantity: 1,
+        repeatable: true,
+      });
     if (url.pathname.includes("/rest/v1/products")) {
       const id = url.searchParams.get("shop_id")?.replace(/^eq\./, "");
       let matchingProducts = options.multiShop

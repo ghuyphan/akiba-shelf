@@ -36,10 +36,16 @@ export const initializeBanner = async (version, phase) => {
 		const list = (config.banners || []).filter((banner) => banner.active).map((banner) => {
 			const poolItems = getMerchItems(banner.id);
 			const featuredItems = poolItems.filter((item) => item.featured);
-			const displayItems = [...(featuredItems.length ? featuredItems : poolItems)]
+			const displayItems = [...featuredItems]
 				.sort((a, b) => b.rarity - a.rarity)
-				.slice(0, banner.display_limit || 3);
-			const featuredItem = displayItems[0] || poolItems[0];
+				.slice(0, banner.display_limit || 4);
+			const featuredItem =
+				displayItems.find((item) => item.rarity === 5) ||
+				displayItems[0] ||
+				[...poolItems].sort((a, b) => b.rarity - a.rarity)[0];
+			const rateupItems = displayItems
+				.filter((item) => item !== featuredItem && item.rarity === 4)
+				.slice(0, 3);
 			return {
 				isMerch: true,
 				bannerName: parseEnglishText(banner.name),
@@ -48,9 +54,9 @@ export const initializeBanner = async (version, phase) => {
 				type: (banner.kind === 'weapon' || banner.kind === 'lightcone') ? 'lightcone-event' : 'character-event',
 				path: featuredItem?.path || 'destruction',
 				combat_type: banner.theme || featuredItem?.combat_type || 'physical',
-				rateup: displayItems.map((item) => item.name),
+				rateup: rateupItems.map((item) => item.name),
 				bannerID: banner.id,
-				merchItems: displayItems,
+				merchItems: featuredItem ? [featuredItem, ...rateupItems] : rateupItems,
 				description: parseEnglishText(banner.description || config.settings.description)
 			};
 		});

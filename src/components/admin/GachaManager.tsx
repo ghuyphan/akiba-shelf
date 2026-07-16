@@ -37,6 +37,8 @@ import { getErrorMessage } from "../../lib/errors";
 import {
   capGachaFeaturedEntries,
   getGachaFeaturedItemLimit,
+  HSR_SECONDARY_FEATURED_LIMIT,
+  matchesGachaBannerKind,
   normalizeGachaBanners,
   normalizeGachaDisplayLimit,
 } from "../../lib/gachaLimits";
@@ -234,7 +236,10 @@ function createGameState(
     ...defaultGachaBanner(shopId),
     name: gameType === "hsr" ? "Merch Event Warp" : "Merch Event Wish",
     theme: gameType === "hsr" ? ("physical" as const) : ("anemo" as const),
-    display_limit: normalizeGachaDisplayLimit(3, gameType),
+    display_limit: normalizeGachaDisplayLimit(
+      gameType === "hsr" ? 4 : 3,
+      gameType,
+    ),
   };
   const settings = configuration?.settings ?? {
     ...defaultGachaSettings(shopId),
@@ -607,7 +612,14 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
         (_, index) => index + 1,
       ).map((value) => ({
         value: String(value),
-        label: `${value} ${t("featured items")}`,
+        label:
+          gameType === "hsr"
+            ? value === 1
+              ? t("1 primary item")
+              : t("1 primary + {{count}} secondary", { count: value - 1 })
+            : t(value === 1 ? "1 featured item" : "{{count}} featured items", {
+                count: value,
+              }),
       })),
     [gameType, t],
   );
@@ -741,7 +753,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       name: source ? `${source.name} copy` : `Banner ${banners.length + 1}`,
       theme: source?.theme ?? (gameType === "hsr" ? "physical" : "anemo"),
       display_limit: normalizeGachaDisplayLimit(
-        source?.display_limit ?? 3,
+        source?.display_limit ?? (gameType === "hsr" ? 4 : 3),
         gameType,
       ),
       sort_order: banners.length,
@@ -829,6 +841,44 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   function updateFeatured(productId: string, featured: boolean) {
     const entry = entriesByProduct.get(productId);
     if (!entry || !selectedBanner) return;
+    if (featured && gameType === "hsr") {
+      if (!matchesGachaBannerKind(entry, selectedBanner)) {
+        toast.info(
+          t("Featured items must match the HSR banner type."),
+          t("Choose a matching role"),
+        );
+        return;
+      }
+      if (entry.rarity === 3) {
+        toast.info(
+          t("Only 5-star primary and 4-star secondary items can be featured."),
+          t("Choose a featured rarity"),
+        );
+        return;
+      }
+      const sameRarityCount = activeEntries.filter(
+        (candidate) =>
+          candidate.featured && candidate.rarity === entry.rarity,
+      ).length;
+      const rarityLimit =
+        entry.rarity === 5
+          ? 1
+          : Math.min(
+              HSR_SECONDARY_FEATURED_LIMIT,
+              Math.max(0, selectedBanner.display_limit - 1),
+            );
+      if (sameRarityCount >= rarityLimit) {
+        toast.info(
+          t(
+            entry.rarity === 5
+              ? "HSR banners support one primary 5-star item."
+              : "This HSR banner has filled its 4-star rate-up slots.",
+          ),
+          t("Featured slots are full"),
+        );
+        return;
+      }
+    }
     if (featured && featuredCount >= selectedBanner.display_limit) {
       toast.info(
         t("This banner can show up to {{count}} featured items.", {
@@ -913,6 +963,27 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       );
       return;
     }
+    if (
+      settings.enabled &&
+      settings.game_type === "hsr" &&
+      activeBanners.some(
+        (banner) =>
+          entries.filter(
+            (entry) =>
+              entry.banner_id === banner.id &&
+              entry.active &&
+              entry.featured &&
+              entry.rarity === 5 &&
+              matchesGachaBannerKind(entry, banner),
+          ).length !== 1,
+      )
+    ) {
+      toast.error(
+        t("Every active HSR banner needs one featured 5-star item."),
+        t("Check warp settings"),
+      );
+      return;
+    }
     setSaving(true);
     try {
       const normalizedBanners = normalizeGachaBanners(banners, gameType);
@@ -970,6 +1041,12 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
 
   const activeEntries = selectedEntries.filter((entry) => entry.active);
   const featuredCount = activeEntries.filter((entry) => entry.featured).length;
+  const primaryFeaturedCount = activeEntries.filter(
+    (entry) => entry.featured && entry.rarity === 5,
+  ).length;
+  const secondaryFeaturedCount = activeEntries.filter(
+    (entry) => entry.featured && entry.rarity === 4,
+  ).length;
   const bannerIndex = banners.findIndex(
     (banner) => banner.id === selectedBanner.id,
   );
@@ -1471,15 +1548,20 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               />
             </Field>
             <DropdownField
-              label={t("Featured items shown")}
+              label={t(
+                gameType === "hsr"
+                  ? "Featured banner slots"
+                  : "Featured items shown",
+              )}
               value={String(selectedBanner.display_limit)}
               options={displayLimitOptions}
               onChange={(value) => updateDisplayLimit(Number(value))}
-              disabled={gameType === "hsr"}
             />
             {gameType === "hsr" && (
               <p className="field-hint">
-                {t("HSR banners support one primary featured item.")}
+                {t(
+                  "HSR banners show one 5-star primary and up to three 4-star rate-ups.",
+                )}
               </p>
             )}
             <DropdownField
@@ -1551,6 +1633,27 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               visibleProducts.map((product) => {
                 const entry = entriesByProduct.get(product.id);
                 const image = productImage(product);
+                const hsrFeaturedRoleFull = Boolean(
+                  entry &&
+                    gameType === "hsr" &&
+                    !entry.featured &&
+                    (!matchesGachaBannerKind(entry, selectedBanner) ||
+                      entry.rarity === 3 ||
+                      (entry.rarity === 5 && primaryFeaturedCount >= 1) ||
+                      (entry.rarity === 4 &&
+                        secondaryFeaturedCount >=
+                          Math.min(
+                            HSR_SECONDARY_FEATURED_LIMIT,
+                            Math.max(0, selectedBanner.display_limit - 1),
+                          ))),
+                );
+                const featuredSelectionDisabled = Boolean(
+                  entry &&
+                    (!product.active ||
+                      (!entry.featured &&
+                        (featuredCount >= selectedBanner.display_limit ||
+                          hsrFeaturedRoleFull))),
+                );
                 const identity = (
                   <span className="gacha-product-identity gacha-product-identity-compact">
                     <span className="gacha-product-image">
@@ -1639,7 +1742,15 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                       </span>
                       <span className="gacha-product-summary-tags">
                         {entry.featured && (
-                          <span className="featured">{t("Featured")}</span>
+                          <span className="featured">
+                            {t(
+                              gameType === "hsr"
+                                ? entry.rarity === 5
+                                  ? "Primary"
+                                  : "Rate-up"
+                                : "Featured",
+                            )}
+                          </span>
                         )}
                         <span className={entry.active ? "active" : "inactive"}>
                           {t(entry.active ? "Active" : "Inactive")}
@@ -1660,6 +1771,10 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                         onChange={(value) =>
                           updateEntry(product.id, {
                             kind: value as GachaItemKind,
+                            featured:
+                              gameType === "hsr" && entry.featured
+                                ? false
+                                : entry.featured,
                           })
                         }
                       />
@@ -1671,6 +1786,10 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                         onChange={(value) =>
                           updateEntry(product.id, {
                             rarity: Number(value) as GachaRarity,
+                            featured:
+                              gameType === "hsr" && entry.featured
+                                ? false
+                                : entry.featured,
                           })
                         }
                       />
@@ -1721,21 +1840,26 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                         />
                       </Field>
                       <label
-                        className={`gacha-mini-check ${(!entry.featured && featuredCount >= selectedBanner.display_limit) || !product.active ? "is-disabled" : ""}`}
+                        className={`gacha-mini-check ${featuredSelectionDisabled ? "is-disabled" : ""}`}
                       >
                         <input
                           type="checkbox"
                           checked={entry.featured}
-                          disabled={
-                            (!entry.featured &&
-                              featuredCount >= selectedBanner.display_limit) ||
-                            !product.active
-                          }
+                          disabled={featuredSelectionDisabled}
                           onChange={(event) =>
                             updateFeatured(product.id, event.target.checked)
                           }
                         />
-                        <Star size={15} /> {t("Featured")}
+                        <Star size={15} />
+                        {t(
+                          gameType === "hsr"
+                            ? entry.rarity === 5
+                              ? "Primary featured"
+                              : entry.rarity === 4
+                                ? "Secondary rate-up"
+                                : "Featured"
+                            : "Featured",
+                        )}
                       </label>
                       <label
                         className={`gacha-mini-check ${!product.active ? "is-disabled" : ""}`}

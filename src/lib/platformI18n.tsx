@@ -948,8 +948,28 @@ const vi: Record<string, string> = {
   "Banner type": "Loại banner",
   "Banner copy": "Nội dung banner",
   "Featured items shown": "Số vật phẩm nổi bật",
-  "HSR banners support one primary featured item.":
-    "Banner HSR hỗ trợ một vật phẩm nổi bật chính.",
+  "Featured banner slots": "Vị trí nổi bật trên banner",
+  "1 primary item": "1 vật phẩm chính",
+  "1 primary + {{count}} secondary": "1 chính + {{count}} phụ",
+  "1 featured item": "1 vật phẩm nổi bật",
+  "{{count}} featured items": "{{count}} vật phẩm nổi bật",
+  "HSR banners show one 5-star primary and up to three 4-star rate-ups.":
+    "Banner HSR hiển thị một vật phẩm 5 sao chính và tối đa ba vật phẩm 4 sao tăng tỉ lệ.",
+  "HSR banners support one primary 5-star item.":
+    "Banner HSR hỗ trợ một vật phẩm 5 sao chính.",
+  "This HSR banner has filled its 4-star rate-up slots.":
+    "Banner HSR này đã đủ vị trí tăng tỉ lệ 4 sao.",
+  "Only 5-star primary and 4-star secondary items can be featured.":
+    "Chỉ vật phẩm 5 sao chính và vật phẩm 4 sao phụ mới có thể được đặt làm nổi bật.",
+  "Choose a featured rarity": "Chọn độ hiếm nổi bật",
+  "Featured items must match the HSR banner type.":
+    "Vật phẩm nổi bật phải khớp với loại banner HSR.",
+  "Choose a matching role": "Chọn vai trò phù hợp",
+  "Every active HSR banner needs one featured 5-star item.":
+    "Mỗi banner HSR đang bật cần một vật phẩm 5 sao nổi bật.",
+  "Rate-up": "Tăng tỉ lệ",
+  "Primary featured": "Nổi bật chính",
+  "Secondary rate-up": "Tăng tỉ lệ phụ",
   "Banner theme": "Chủ đề banner",
   "Banner element": "Nguyên tố banner",
   "Banner active": "Bật banner",
