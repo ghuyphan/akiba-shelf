@@ -163,8 +163,6 @@
 		showOption={optionToShow === 'animatedbg'}
 	/>
 
-	<OptionMenu name="switchBanner" text={$t('menu.switchBanner')} />
-
 	<OptionMenu name="reset" text={$t('menu.factoryReset')} />
 
 	<h2>Disclaimer :</h2>
