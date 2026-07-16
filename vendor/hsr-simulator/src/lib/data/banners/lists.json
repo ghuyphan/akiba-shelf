@@ -1,0 +1,638 @@
+{
+	"banners": [
+		{
+			"id": 1,
+			"name": "departure",
+			"type": "starter"
+		},
+		{
+			"id": 2,
+			"name": "stellar",
+			"type": "regular"
+		},
+		{
+			"id": 3,
+			"name": "brilliant-fixation",
+			"featured": "in-the-night",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 4,
+			"name": "butterfly-on-swordtip",
+			"featured": "seele",
+			"type": "character-event"
+		},
+		{
+			"id": 5,
+			"name": "swirl-of-heavenly-spear",
+			"featured": "jing-yuan",
+			"type": "character-event"
+		},
+		{
+			"id": 6,
+			"name": "contract-zero",
+			"featured": "silver-wolf",
+			"type": "character-event"
+		},
+		{
+			"id": 7,
+			"name": "laic-pursuit",
+			"featured": "luocha",
+			"type": "character-event"
+		},
+		{
+			"id": 8,
+			"name": "nessun-dorma",
+			"featured": "kafka",
+			"type": "character-event"
+		},
+		{
+			"id": 9,
+			"name": "a-lost-soul",
+			"featured": "blade",
+			"type": "character-event"
+		},
+		{
+			"id": 10,
+			"name": "epochal-spectrum",
+			"featured": "imbibitor-lunae",
+			"type": "character-event"
+		},
+		{
+			"id": 11,
+			"name": "foreseen-foreknown-foretold",
+			"featured": "fu-xuan",
+			"type": "character-event"
+		},
+		{
+			"id": 12,
+			"name": "gentle-eclipse-of-the-moon",
+			"featured": "jingliu",
+			"type": "character-event"
+		},
+		{
+			"id": 13,
+			"name": "sunset-clause",
+			"featured": "topaz",
+			"type": "character-event"
+		},
+		{
+			"id": 14,
+			"name": "brilliant-fixation",
+			"featured": "i-shall-be-my-own-sword",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 15,
+			"name": "brilliant-fixation",
+			"featured": "worrisome-blissful",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 16,
+			"name": "brilliant-fixation",
+			"featured": "before-dawn",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 17,
+			"name": "brilliant-fixation",
+			"featured": "incessant-rain",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 18,
+			"name": "brilliant-fixation",
+			"featured": "echoes-of-the-coffin",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 19,
+			"name": "brilliant-fixation",
+			"featured": "the-unreachable-side",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 20,
+			"name": "brilliant-fixation",
+			"featured": "patience-is-all-you-need",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 21,
+			"name": "brilliant-fixation",
+			"featured": "brighter-than-the-sun",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 22,
+			"name": "brilliant-fixation",
+			"featured": "she-already-shut-her-eyes",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 23,
+			"name": "bloom-in-gloom",
+			"featured": "huohuo",
+			"type": "character-event"
+		},
+		{
+			"id": 24,
+			"name": "brilliant-fixation",
+			"featured": "night-of-fright",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 25,
+			"name": "thorns-of-scented-crown",
+			"featured": "argenti",
+			"type": "character-event"
+		},
+		{
+			"id": 26,
+			"name": "brilliant-fixation",
+			"featured": "an-instance-before-a-gaze",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 27,
+			"name": "floral-triptych",
+			"featured": "ruan-mei",
+			"type": "character-event"
+		},
+		{
+			"id": 28,
+			"name": "brilliant-fixation",
+			"featured": "past-self-in-mirror",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 29,
+			"name": "panta-rhei",
+			"featured": "dr-ratio",
+			"type": "character-event"
+		},
+		{
+			"id": 30,
+			"name": "brilliant-fixation",
+			"featured": "baptism-of-pure-thought",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 31,
+			"name": "ripples-in-reflection",
+			"featured": "black-swan",
+			"type": "character-event"
+		},
+		{
+			"id": 32,
+			"name": "brilliant-fixation",
+			"featured": "reforged-remembrance",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 33,
+			"name": "sparkling-splendor",
+			"featured": "sparkle",
+			"type": "character-event"
+		},
+		{
+			"id": 34,
+			"name": "brilliant-fixation",
+			"featured": "earthly-escapade",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 35,
+			"name": "words-of-yore",
+			"featured": "acheron",
+			"type": "character-event"
+		},
+		{
+			"id": 36,
+			"name": "brilliant-fixation",
+			"featured": "along-the-passing-shore",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 37,
+			"name": "gilded-imprisonment",
+			"featured": "aventurine",
+			"type": "character-event"
+		},
+		{
+			"id": 38,
+			"name": "brilliant-fixation",
+			"featured": "inherently-unjust-destiny",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 39,
+			"name": "just-intonation",
+			"featured": "robin",
+			"type": "character-event"
+		},
+		{
+			"id": 40,
+			"name": "brilliant-fixation",
+			"featured": "flowing-nightglow",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 41,
+			"name": "dusty-trails-lone-star",
+			"featured": "boothill",
+			"type": "character-event"
+		},
+		{
+			"id": 42,
+			"name": "brilliant-fixation",
+			"featured": "sailing-towards-a-second-life",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 43,
+			"name": "firefull-flyshine",
+			"featured": "firefly",
+			"type": "character-event"
+		},
+		{
+			"id": 44,
+			"name": "brilliant-fixation",
+			"featured": "whereabouts-should-dreams-rest",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 45,
+			"name": "lien-on-life-lease-on-fate",
+			"featured": "jade",
+			"type": "character-event"
+		},
+		{
+			"id": 46,
+			"name": "brilliant-fixation",
+			"featured": "yet-hope-is-priceless",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 47,
+			"name": "earth-hurled-ether-curled",
+			"featured": "yunli",
+			"type": "character-event"
+		},
+		{
+			"id": 48,
+			"name": "brilliant-fixation",
+			"featured": "dance-at-sunset",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 49,
+			"name": "cauldron-contrivance",
+			"featured": "jiaoqiu",
+			"type": "character-event"
+		},
+		{
+			"id": 50,
+			"name": "brilliant-fixation",
+			"featured": "those-many-springs",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 51,
+			"name": "stormriders-bold",
+			"featured": "feixiao",
+			"type": "character-event"
+		},
+		{
+			"id": 52,
+			"name": "brilliant-fixation",
+			"featured": "i-venture-forth-to-hunt",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 53,
+			"name": "let-scent-sink-in",
+			"featured": "lingsha",
+			"type": "character-event"
+		},
+		{
+			"id": 54,
+			"name": "brilliant-fixation",
+			"featured": "scent-alone-stays-true",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 55,
+			"name": "eyes-of-a-ninja",
+			"featured": "rappa",
+			"type": "character-event"
+		},
+		{
+			"id": 56,
+			"name": "brilliant-fixation",
+			"featured": "ninjutsu-inscription",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 57,
+			"name": "eyes-to-the-stars",
+			"featured": "sunday",
+			"type": "character-event"
+		},
+		{
+			"id": 58,
+			"name": "brilliant-fixation",
+			"featured": "a-grounded-ascent",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 59,
+			"name": "the-long-voyage-home",
+			"featured": "fugue",
+			"type": "character-event"
+		},
+		{
+			"id": 60,
+			"name": "brilliant-fixation",
+			"featured": "long-road-leads-home",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 61,
+			"name": "tailored-fate",
+			"featured": "aglaea",
+			"type": "character-event"
+		},
+		{
+			"id": 62,
+			"name": "brilliant-fixation",
+			"featured": "time-woven-into-gold",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 63,
+			"name": "message-from-beyond",
+			"featured": "the-herta",
+			"type": "character-event"
+		},
+		{
+			"id": 64,
+			"name": "brilliant-fixation",
+			"featured": "into-the-unreachable-veil",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 65,
+			"name": "hati-singa-yang-membara",
+			"featured": "mydei",
+			"type": "character-event"
+		},
+		{
+			"id": 66,
+			"name": "brilliant-fixation",
+			"featured": "flame-of-blood-blaze-my-path",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 67,
+			"name": "back-to-fons-et-origo",
+			"featured": "tribbie",
+			"type": "character-event"
+		},
+		{
+			"id": 68,
+			"name": "brilliant-fixation",
+			"featured": "if-time-were-a-flower",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 69,
+			"name": "blossom-to-the-beyond",
+			"featured": "castorice",
+			"type": "character-event"
+		},
+		{
+			"id": 70,
+			"name": "brilliant-fixation",
+			"featured": "make-farewells-more-beautiful",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 71,
+			"name": "the-universe-in-a-seed",
+			"featured": "anaxa",
+			"type": "character-event"
+		},
+		{
+			"id": 72,
+			"name": "brilliant-fixation",
+			"featured": "life-should-be-cast-to-flames",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 73,
+			"name": "a-rainbow-onto-twilight",
+			"featured": "hyacine",
+			"type": "character-event"
+		},
+		{
+			"id": 74,
+			"name": "brilliant-fixation",
+			"featured": "long-may-rainbows-adorn-the-sky",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 75,
+			"name": "slick-and-speedy-steals-the-sky",
+			"featured": "cipher",
+			"type": "character-event"
+		},
+		{
+			"id": 76,
+			"name": "brilliant-fixation",
+			"featured": "lies-dance-on-the-breeze",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 77,
+			"name": "excalibur-excelsior",
+			"featured": "saber",
+			"type": "character-event"
+		},
+		{
+			"id": 78,
+			"name": "birth-of-a-king",
+			"featured": "a-thankless-coronation",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 79,
+			"name": "i-am-the-bone-of-my-sword",
+			"featured": "archer",
+			"type": "character-event"
+		},
+		{
+			"id": 80,
+			"name": "red-radiance-of-fuyuki",
+			"featured": "the-hell-where-ideals-burn",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 81,
+			"name": "to-evermore-burn-as-the-sun",
+			"featured": "phainon",
+			"type": "character-event"
+		},
+		{
+			"id": 82,
+			"name": "brilliant-fixation",
+			"featured": "thus-burns-the-dawn",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 83,
+			"name": "winedark-swansong",
+			"featured": "hysilens",
+			"type": "character-event"
+		},
+		{
+			"id": 84,
+			"name": "brilliant-fixation",
+			"featured": "why-does-the-ocean-sing",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 85,
+			"name": "the-iron-tamer-of-tides",
+			"featured": "cerydra",
+			"type": "character-event"
+		},
+		{
+			"id": 86,
+			"name": "brilliant-fixation",
+			"featured": "epoch-etched-in-golden-blood",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 87,
+			"name": "the-remembrance-of-none",
+			"featured": "evernight",
+			"type": "character-event"
+		},
+		{
+			"id": 88,
+			"name": "brilliant-fixation",
+			"featured": "to-evernights-stars",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 89,
+			"name": "slay-until-evil-ends",
+			"featured": "dan-heng-permansor-terrae",
+			"type": "character-event"
+		},
+		{
+			"id": 90,
+			"name": "brilliant-fixation",
+			"featured": "though-worlds-apart",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 91,
+			"name": "ripples-rejoined",
+			"featured": "cyrene",
+			"type": "character-event"
+		},
+		{
+			"id": 92,
+			"name": "brilliant-fixation",
+			"featured": "this-love-forever",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 93,
+			"name": "dance-in-flame",
+			"featured": "the-dahlia",
+			"type": "character-event"
+		},
+		{
+			"id": 94,
+			"name": "brilliant-fixation",
+			"featured": "never-forget-her-flame",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 95,
+			"name": "project-party-time",
+			"featured": "sparxie",
+			"type": "character-event"
+		},
+		{
+			"id": 96,
+			"name": "brilliant-fixation",
+			"featured": "dazzled-by-a-flowery-world",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 97,
+			"name": "gleam-of-thousand-plumes",
+			"featured": "yao-guang",
+			"type": "character-event"
+		},
+		{
+			"id": 98,
+			"name": "brilliant-fixation",
+			"featured": "when-she-decided-to-see",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 99,
+			"name": "a-hunt-through-night",
+			"featured": "ashveil",
+			"type": "character-event"
+		},
+		{
+			"id": 100,
+			"name": "brilliant-fixation",
+			"featured": "the-finale-of-a-lie",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 101,
+			"name": "godmode-player",
+			"featured": "silver-wolf-lv999",
+			"type": "character-event"
+		},
+		{
+			"id": 102,
+			"name": "brilliant-fixation",
+			"featured": "welcome-to-the-cosmic-city",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 103,
+			"name": "the-demoiselle-in-charge",
+			"featured": "evanescia",
+			"type": "character-event"
+		},
+		{
+			"id": 104,
+			"name": "brilliant-fixation",
+			"featured": "until-the-flowers-bloom-again",
+			"type": "lightcone-event"
+		},
+		{
+			"id": 105,
+			"name": "now-i-am-become-blade",
+			"featured": "mortenax-blade",
+			"type": "character-event"
+		},
+		{
+			"id": 106,
+			"name": "brilliant-fixation",
+			"featured": "reforged-in-hellfire",
+			"type": "lightcone-event"
+		}
+	]
+}

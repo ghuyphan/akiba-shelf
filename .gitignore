@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .gacha-dist/
+.hsr-gacha-dist/
 .agents/
 .env
 .env.*
@@ -12,5 +13,3 @@ supabase/.temp/
 coverage/
 playwright-report/
 test-results/
-vendor/hsr-simulator/
-.hsr-gacha-dist/

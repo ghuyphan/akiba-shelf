@@ -1,0 +1,874 @@
+{
+	"data": [
+		{
+			"itemID": 23059,
+			"name": "reforged-in-hellfire",
+			"rarity": 5,
+			"path": "nihility",
+			"limited": true,
+			"bannerOffset": { "b": -133, "l": 33 }
+		},
+		{
+			"itemID": 23057,
+			"name": "until-the-flowers-bloom-again",
+			"rarity": 5,
+			"path": "elation",
+			"limited": true,
+			"bannerOffset": { "b": -90, "l": 33 }
+		},
+		{
+			"itemID": 23058,
+			"name": "welcome-to-the-cosmic-city",
+			"rarity": 5,
+			"path": "elation",
+			"limited": true,
+			"bannerOffset": { "b": -110, "l": 40 }
+		},
+		{
+			"itemID": 23056,
+			"name": "the-finale-of-a-lie",
+			"rarity": 5,
+			"path": "hunt",
+			"limited": true,
+			"bannerOffset": { "b": -110, "l": 40 }
+		},
+		{
+			"itemID": 23053,
+			"name": "dazzled-by-a-flowery-world",
+			"rarity": 5,
+			"path": "elation",
+			"limited": true,
+			"bannerOffset": { "b": -110, "l": 40 }
+		},
+		{
+			"itemID": 23054,
+			"name": "when-she-decided-to-see",
+			"rarity": 5,
+			"path": "elation",
+			"limited": true,
+			"bannerOffset": { "b": -95, "l": 38 }
+		},
+		{
+			"itemID": 20024,
+			"name": "lingering-tear",
+			"rarity": 3,
+			"path": "elation"
+		},
+		{
+			"itemID": 20023,
+			"name": "sneering",
+			"rarity": 3,
+			"path": "elation"
+		},
+		{
+			"itemID": 23050,
+			"name": "never-forget-her-flame",
+			"rarity": 5,
+			"path": "nihility",
+			"limited": true,
+			"bannerOffset": { "b": -160, "l": 3, "w": 120 }
+		},
+		{
+			"itemID": 23052,
+			"name": "this-love-forever",
+			"rarity": 5,
+			"path": "remembrance",
+			"limited": true,
+			"bannerOffset": { "b": -115, "l": 25 }
+		},
+		{
+			"itemID": 23051,
+			"name": "though-worlds-apart",
+			"rarity": 5,
+			"path": "preservation",
+			"limited": true,
+			"bannerOffset": { "b": -115, "l": 35 }
+		},
+		{
+			"itemID": 23049,
+			"animationID": "ITPYWyeEEkA",
+			"name": "to-evernights-stars",
+			"rarity": 5,
+			"path": "remembrance",
+			"limited": true,
+			"bannerOffset": { "b": -115, "l": 35 }
+		},
+		{
+			"itemID": 23048,
+			"animationID": "_IytvhveZnI",
+			"name": "epoch-etched-in-golden-blood",
+			"rarity": 5,
+			"path": "harmony",
+			"limited": true,
+			"bannerOffset": { "b": -115, "l": 35 }
+		},
+		{
+			"itemID": 23047,
+			"animationID": "utYFH8ulYjI",
+			"name": "why-does-the-ocean-sing",
+			"rarity": 5,
+			"path": "nihility",
+			"limited": true,
+			"bannerOffset": { "b": -115, "l": 35 }
+		},
+		{
+			"itemID": 21054,
+			"name": "the-storys-next-page",
+			"rarity": 4,
+			"path": "remembrance",
+			"limited": true,
+			"release": "3.4-1"
+		},
+		{
+			"itemID": 23046,
+			"animationID": "jovWSHPVlUM",
+			"name": "the-hell-where-ideals-burn",
+			"rarity": 5,
+			"path": "hunt",
+			"limited": true,
+			"bannerOffset": { "b": -115, "l": 35 }
+		},
+		{
+			"itemID": 23045,
+			"animationID": "ALiFRmKnXzY",
+			"name": "a-thankless-coronation",
+			"rarity": 5,
+			"path": "destruction",
+			"limited": true,
+			"bannerOffset": { "b": -115, "l": 53 }
+		},
+		{
+			"itemID": 23044,
+			"animationID": "zo8jNDlIl6c",
+			"name": "thus-burns-the-dawn",
+			"rarity": 5,
+			"path": "destruction",
+			"limited": true,
+			"bannerOffset": { "b": -105, "l": 52 }
+		},
+		{
+			"itemID": 23043,
+			"animationID": "bBL2ve6GJ7Q",
+			"name": "lies-dance-on-the-breeze",
+			"rarity": 5,
+			"path": "nihility",
+			"limited": true,
+			"bannerOffset": { "b": -40, "l": 27 }
+		},
+		{
+			"itemID": 23042,
+			"animationID": "TrWp1Avo5yY",
+			"name": "long-may-rainbows-adorn-the-sky",
+			"rarity": 5,
+			"path": "remembrance",
+			"limited": true,
+			"bannerOffset": { "b": -110, "l": 20 }
+		},
+		{
+			"itemID": 23041,
+			"animationID": "wF3q2zOt4yc",
+			"name": "life-should-be-cast-to-flames",
+			"rarity": 5,
+			"path": "erudition",
+			"limited": true,
+			"bannerOffset": { "b": -120, "l": 37 }
+		},
+		{
+			"animationID": "klOOBYEBLQ8",
+			"itemID": 23040,
+			"name": "make-farewells-more-beautiful",
+			"rarity": 5,
+			"path": "remembrance",
+			"limited": true,
+			"bannerOffset": { "b": -110, "l": 40 }
+		},
+		{
+			"animationID": "K_l1Oc_1zaA",
+			"itemID": 23039,
+			"name": "flame-of-blood-blaze-my-path",
+			"rarity": 5,
+			"path": "destruction",
+			"limited": true,
+			"bannerOffset": { "b": -132, "l": 43 }
+		},
+		{
+			"itemID": 23038,
+			"animationID": "Rf6F7-pYKNQ",
+			"name": "if-time-were-a-flower",
+			"rarity": 5,
+			"path": "harmony",
+			"limited": true,
+			"bannerOffset": { "b": -110, "l": 35 }
+		},
+		{
+			"itemID": 21051,
+			"animationID": "R8ZZj1oJQ-Y",
+			"name": "geniuses-greetings",
+			"rarity": 4,
+			"path": "remembrance",
+			"limited": true
+		},
+		{
+			"itemID": 23036,
+			"animationID": "m9WVjeFNrSI",
+			"name": "time-woven-into-gold",
+			"rarity": 5,
+			"path": "remembrance",
+			"limited": true,
+			"bannerOffset": { "b": -170, "l": 25, "w": 130 }
+		},
+		{
+			"itemID": 23037,
+			"animationID": "ra8826zieEk",
+			"name": "into-the-unreachable-veil",
+			"rarity": 5,
+			"path": "erudition",
+			"limited": true,
+			"bannerOffset": { "b": -150, "l": 33, "w": 115 }
+		},
+		{
+			"itemID": 20022,
+			"name": "reminiscence",
+			"rarity": 3,
+			"path": "remembrance"
+		},
+		{
+			"itemID": 20021,
+			"name": "shadowburn",
+			"rarity": 3,
+			"path": "remembrance"
+		},
+		{
+			"itemID": 23035,
+			"animationID": "mnU1cdlaemk",
+			"name": "long-road-leads-home",
+			"rarity": 5,
+			"path": "nihility",
+			"limited": true,
+			"bannerOffset": { "b": -195, "l": 2, "w": 145 }
+		},
+		{
+			"itemID": 23034,
+			"animationID": "dHlIxOaoZrI",
+			"name": "a-grounded-ascent",
+			"rarity": 5,
+			"path": "harmony",
+			"limited": true,
+			"bannerOffset": { "b": -100, "l": 25, "w": 90 }
+		},
+		{
+			"itemID": 21048,
+			"name": "dreams-montage",
+			"rarity": 4,
+			"path": "abundance",
+			"limited": true
+		},
+		{
+			"itemID": 23033,
+			"animationID": "sNdRYS68Jw0",
+			"name": "ninjutsu-inscription",
+			"rarity": 5,
+			"path": "erudition",
+			"limited": true,
+			"bannerOffset": { "b": -132, "l": 43 }
+		},
+		{
+			"itemID": 21047,
+			"animationID": "BSHsAtXYusw",
+			"name": "shadowed-by-night",
+			"rarity": 4,
+			"path": "hunt",
+			"limited": true
+		},
+		{
+			"itemID": 23032,
+			"animationID": "iwaXn3FoGE8",
+			"name": "scent-alone-stays-true",
+			"rarity": 5,
+			"path": "abundance",
+			"limited": true,
+			"bannerOffset": { "b": -40, "l": 50 }
+		},
+		{
+			"itemID": 23031,
+			"animationID": "6-Iq_aD6pTc",
+			"name": "i-venture-forth-to-hunt",
+			"rarity": 5,
+			"path": "hunt",
+			"limited": true,
+			"bannerOffset": { "t": -30, "l": 35, "w": 150 }
+		},
+		{
+			"itemID": 21046,
+			"animationID": "1yD19scR4FQ",
+			"name": "poised-to-bloom",
+			"rarity": 4,
+			"path": "harmony",
+			"limited": true
+		},
+		{
+			"itemID": 23029,
+			"animationID": "6vnEaW1AkXE",
+			"name": "those-many-springs",
+			"rarity": 5,
+			"path": "nihility",
+			"limited": true,
+			"bannerOffset": { "t": -5, "l": 40 }
+		},
+		{
+			"itemID": 23030,
+			"animationID": "HClcD4rj_Mw",
+			"name": "dance-at-sunset",
+			"rarity": 5,
+			"path": "destruction",
+			"limited": true,
+			"bannerOffset": { "t": -40, "l": 3, "w": 135 }
+		},
+		{
+			"itemID": 21045,
+			"animationID": "2YY3vb7tIho",
+			"name": "after-the-charmony-fall",
+			"rarity": 4,
+			"path": "erudition",
+			"limited": true
+		},
+		{
+			"itemID": 23028,
+			"animationID": "ngTMWlZ6bU8",
+			"name": "yet-hope-is-priceless",
+			"rarity": 5,
+			"path": "erudition",
+			"limited": true,
+			"bannerOffset": { "t": -5, "l": 40 }
+		},
+		{
+			"itemID": 23025,
+			"animationID": "0gDodxkbzCM",
+			"name": "whereabouts-should-dreams-rest",
+			"rarity": 5,
+			"path": "destruction",
+			"limited": true,
+			"bannerOffset": { "t": -5, "l": 29 }
+		},
+		{
+			"itemID": 23027,
+			"animationID": "Bg_SF18T_zQ",
+			"name": "sailing-towards-a-second-life",
+			"rarity": 5,
+			"path": "hunt",
+			"limited": true,
+			"bannerOffset": { "t": -5, "l": 50 }
+		},
+		{
+			"itemID": 21044,
+			"animationID": "A93C0IfRWgI",
+			"name": "boundless-choreo",
+			"rarity": 4,
+			"path": "nihility",
+			"limited": true
+		},
+		{
+			"itemID": 23026,
+			"animationID": "QUqVsbYVwnk",
+			"name": "flowing-nightglow",
+			"rarity": 5,
+			"path": "harmony",
+			"limited": true,
+			"bannerOffset": { "t": -90, "l": 25, "w": 80 }
+		},
+		{
+			"itemID": 21043,
+			"animationID": "AQEevegC7xE",
+			"name": "concert-for-two",
+			"rarity": 4,
+			"path": "preservation",
+			"limited": true
+		},
+		{
+			"itemID": 23023,
+			"animationID": "ErS6nbtR2XA",
+			"name": "inherently-unjust-destiny",
+			"rarity": 5,
+			"path": "preservation",
+			"limited": true,
+			"bannerOffset": { "t": -35, "l": 35, "w": 115 }
+		},
+		{
+			"itemID": 23024,
+			"animationID": "yvExiR7oXl8",
+			"name": "along-the-passing-shore",
+			"rarity": 5,
+			"path": "nihility",
+			"limited": true,
+			"bannerOffset": { "t": -5, "l": 0, "w": 110 }
+		},
+		{
+			"itemID": 21042,
+			"animationID": "-5HaYtTLyw0",
+			"name": "indelible-promise",
+			"rarity": 4,
+			"limited": true,
+			"path": "destruction"
+		},
+		{
+			"itemID": 23021,
+			"animationID": "sbnQ0P9mv9Q",
+			"name": "earthly-escapade",
+			"rarity": 5,
+			"path": "harmony",
+			"limited": true,
+			"bannerOffset": { "t": -8, "l": 50, "w": 90 }
+		},
+		{
+			"itemID": 23022,
+			"name": "reforged-remembrance",
+			"animationID": "XKCRw_SmjK0",
+			"rarity": 5,
+			"path": "nihility",
+			"limited": true,
+			"bannerOffset": { "t": -29, "l": 37, "w": 102, "xOrigin": 110, "yOrigin": 20 }
+		},
+		{
+			"itemID": 23020,
+			"animationID": "MADKMncaz6I",
+			"name": "baptism-of-pure-thought",
+			"rarity": 5,
+			"path": "hunt",
+			"limited": true,
+			"bannerOffset": { "t": -15, "l": 45, "w": 75 }
+		},
+		{
+			"itemID": 23019,
+			"animationID": "jEvorWEMdwk",
+			"name": "past-self-in-mirror",
+			"rarity": 5,
+			"path": "harmony",
+			"limited": true,
+			"bannerOffset": { "b": -88, "r": -21, "w": 90 }
+		},
+		{
+			"itemID": 23018,
+			"animationID": "nG3WNMIxI3c",
+			"name": "an-instance-before-a-gaze",
+			"rarity": 5,
+			"path": "erudition",
+			"limited": true,
+			"bannerOffset": { "b": -100, "r": -21, "w": 90, "xOrigin": 60 }
+		},
+		{
+			"itemID": 23017,
+			"animationID": "C9nDs-bY38U",
+			"name": "night-of-fright",
+			"rarity": 5,
+			"path": "abundance",
+			"limited": true,
+			"bannerOffset": { "b": -85, "r": -30, "w": 85, "xOrigin": 60 }
+		},
+		{
+			"itemID": 23016,
+			"animationID": "aBq2GbzXSfY",
+			"name": "worrisome-blissful",
+			"rarity": 5,
+			"path": "hunt",
+			"limited": true,
+			"bannerOffset": { "b": -75, "r": -50, "w": 110 }
+		},
+		{
+			"itemID": 23014,
+			"animationID": "0T-6s02A5zA",
+			"name": "i-shall-be-my-own-sword",
+			"rarity": 5,
+			"path": "destruction",
+			"limited": true,
+			"bannerOffset": { "b": -170, "r": -45, "w": 120 }
+		},
+		{
+			"itemID": 23011,
+			"animationID": "YW1i9z5Gjt4",
+			"name": "she-already-shut-her-eyes",
+			"rarity": 5,
+			"path": "preservation",
+			"limited": true,
+			"bannerOffset": { "b": -110, "r": -11, "w": 100, "yOrigin": 75 }
+		},
+		{
+			"itemID": 23015,
+			"animationID": "wa9V9v34GDU",
+			"name": "brighter-than-the-sun",
+			"rarity": 5,
+			"path": "destruction",
+			"limited": true,
+			"bannerOffset": { "b": -80, "r": -33, "w": 80 }
+		},
+		{
+			"itemID": 23006,
+			"animationID": "UnVluNU9sRY",
+			"name": "patience-is-all-you-need",
+			"rarity": 5,
+			"path": "nihility",
+			"limited": true,
+			"bannerOffset": { "b": -5, "r": -3.5, "w": 85, "yOrigin": 10 }
+		},
+		{
+			"itemID": 23009,
+			"animationID": "TBozlbAOXVM",
+			"name": "the-unreachable-side",
+			"rarity": 5,
+			"path": "destruction",
+			"limited": true,
+			"bannerOffset": { "b": -135, "r": -10, "xOrigin": 50, "yOrigin": 100 }
+		},
+		{
+			"itemID": 23008,
+			"animationID": "nmKR12DS4ak",
+			"name": "echoes-of-the-coffin",
+			"rarity": 5,
+			"path": "abundance",
+			"limited": true,
+			"bannerOffset": { "b": -127, "r": -53 }
+		},
+		{
+			"itemID": 23007,
+			"animationID": "q-Np9DUs2ac",
+			"name": "incessant-rain",
+			"rarity": 5,
+			"path": "nihility",
+			"limited": true,
+			"bannerOffset": { "b": -110, "r": -22, "xOrigin": 50, "yOrigin": 0 }
+		},
+		{
+			"itemID": 23010,
+			"animationID": "RjTQyEpt4Fo",
+			"name": "before-dawn",
+			"rarity": 5,
+			"path": "erudition",
+			"limited": true,
+			"bannerOffset": { "b": -120, "r": -60, "w": 105, "xOrigin": 60 }
+		},
+		{
+			"itemID": 23001,
+			"animationID": "NasJ6nahDY8",
+			"name": "in-the-night",
+			"rarity": 5,
+			"path": "hunt",
+			"limited": true
+		},
+		{
+			"itemID": 23013,
+			"animationID": "yEphdnCVYH0",
+			"name": "time-waits-for-no-one",
+			"rarity": 5,
+			"path": "abundance"
+		},
+		{
+			"itemID": 23012,
+			"animationID": "9NvGwKZQahI",
+			"name": "sleep-like-the-dead",
+			"rarity": 5,
+			"path": "hunt"
+		},
+		{
+			"itemID": 23005,
+			"animationID": "q52nd-93Z4E",
+			"name": "moment-of-victory",
+			"rarity": 5,
+			"path": "preservation"
+		},
+		{
+			"itemID": 23004,
+			"animationID": "W1HK01G6hAA",
+			"name": "in-the-name-of-the-world",
+			"rarity": 5,
+			"path": "nihility"
+		},
+		{
+			"itemID": 23003,
+			"animationID": "-6d8Rr8aqlc",
+			"name": "but-the-battle-isnt-over",
+			"rarity": 5,
+			"path": "harmony"
+		},
+		{
+			"itemID": 23002,
+			"animationID": "kmowycK9_i0",
+			"name": "something-irreplaceable",
+			"rarity": 5,
+			"path": "destruction"
+		},
+		{
+			"itemID": 23000,
+			"animationID": "253h_EYkl2Y",
+			"name": "night-on-the-milky-way",
+			"rarity": 5,
+			"path": "erudition"
+		},
+		{
+			"itemID": 21020,
+			"name": "geniuses-repose",
+			"rarity": 4,
+			"path": "erudition"
+		},
+		{
+			"itemID": 21019,
+			"name": "under-the-blue-sky",
+			"rarity": 4,
+			"path": "destruction"
+		},
+		{
+			"itemID": 21018,
+			"name": "dance-dance-dance",
+			"rarity": 4,
+			"path": "harmony"
+		},
+		{
+			"itemID": 21017,
+			"animationID": "ilzzuEMrvBY",
+			"name": "subscribe-for-more",
+			"rarity": 4,
+			"path": "hunt"
+		},
+		{
+			"itemID": 21016,
+			"name": "trend-of-the-universal-market",
+			"rarity": 4,
+			"path": "preservation"
+		},
+		{
+			"itemID": 21015,
+			"animationID": "z6Wx9r9-Yyk",
+			"name": "resolution-shines-as-pearls-of-sweat",
+			"rarity": 4,
+			"path": "nihility"
+		},
+		{
+			"itemID": 21014,
+			"animationID": "6RvUYLoLwdU",
+			"name": "perfect-timing",
+			"rarity": 4,
+			"path": "abundance"
+		},
+		{
+			"itemID": 21013,
+			"animationID": "dv1iKGqDukU",
+			"name": "make-the-world-clamor",
+			"rarity": 4,
+			"path": "erudition"
+		},
+		{
+			"itemID": 21012,
+			"animationID": "NLf_vLmI0js",
+			"name": "a-secret-vow",
+			"rarity": 4,
+			"path": "destruction"
+		},
+		{
+			"itemID": 21011,
+			"animationID": "a7zZpEJfnao",
+			"name": "planetary-rendezvous",
+			"rarity": 4,
+			"path": "harmony"
+		},
+		{
+			"itemID": 21010,
+			"name": "swordplay",
+			"rarity": 4,
+			"path": "hunt"
+		},
+		{
+			"itemID": 21009,
+			"animationID": "wT1sgjJ3e7E",
+			"name": "landaus-choice",
+			"rarity": 4,
+			"path": "preservation"
+		},
+		{
+			"itemID": 21008,
+			"animationID": "CI7LC4qjWWk",
+			"name": "eyes-of-the-prey",
+			"rarity": 4,
+			"path": "nihility"
+		},
+		{
+			"itemID": 21007,
+			"animationID": "q1-h-zbho3k",
+			"name": "shared-feeling",
+			"rarity": 4,
+			"path": "abundance"
+		},
+		{
+			"itemID": 21006,
+			"animationID": "jEugKDGVG90",
+			"name": "the-birth-of-the-self",
+			"rarity": 4,
+			"path": "erudition"
+		},
+		{
+			"itemID": 21005,
+			"animationID": "v6gl5nrnkXk",
+			"name": "the-moles-welcome-you",
+			"rarity": 4,
+			"path": "destruction"
+		},
+		{
+			"itemID": 21004,
+			"animationID": "Ooh0cVjgmtQ",
+			"name": "memories-of-the-past",
+			"rarity": 4,
+			"path": "harmony"
+		},
+		{
+			"itemID": 21003,
+			"animationID": "BTyv-qofLw8",
+			"name": "only-silence-remains",
+			"rarity": 4,
+			"path": "hunt"
+		},
+		{
+			"itemID": 21002,
+			"animationID": "pO2JeQdmEIc",
+			"name": "day-one-of-my-new-life",
+			"rarity": 4,
+			"path": "preservation"
+		},
+		{
+			"itemID": 21001,
+			"animationID": "2zviBc-u1Ko",
+			"name": "good-night-and-sleep-well",
+			"rarity": 4,
+			"path": "nihility"
+		},
+		{
+			"itemID": 21000,
+			"animationID": "FWa_eq11oDM",
+			"name": "post-op-conversation",
+			"rarity": 4,
+			"path": "abundance"
+		},
+		{
+			"itemID": 20020,
+			"name": "sagacity",
+			"rarity": 3,
+			"path": "erudition"
+		},
+		{
+			"itemID": 20019,
+			"name": "mediation",
+			"rarity": 3,
+			"path": "harmony"
+		},
+		{
+			"itemID": 20018,
+			"name": "hidden-shadow",
+			"rarity": 3,
+			"path": "nihility"
+		},
+		{
+			"itemID": 20017,
+			"name": "pioneering",
+			"rarity": 3,
+			"path": "preservation"
+		},
+		{
+			"itemID": 20016,
+			"name": "mutual-demise",
+			"rarity": 3,
+			"path": "destruction"
+		},
+		{
+			"itemID": 20015,
+			"name": "multiplication",
+			"rarity": 3,
+			"path": "abundance"
+		},
+		{
+			"itemID": 20014,
+			"name": "adversarial",
+			"rarity": 3,
+			"path": "hunt"
+		},
+		{
+			"itemID": 20013,
+			"name": "passkey",
+			"rarity": 3,
+			"path": "erudition"
+		},
+		{
+			"itemID": 20012,
+			"name": "meshing-cogs",
+			"rarity": 3,
+			"path": "harmony"
+		},
+		{
+			"itemID": 20011,
+			"name": "loop",
+			"rarity": 3,
+			"path": "nihility"
+		},
+		{
+			"itemID": 20010,
+			"name": "defense",
+			"rarity": 3,
+			"path": "preservation"
+		},
+		{
+			"itemID": 20009,
+			"name": "shattered-home",
+			"rarity": 3,
+			"path": "destruction"
+		},
+		{
+			"itemID": 20008,
+			"name": "fine-fruit",
+			"rarity": 3,
+			"path": "abundance"
+		},
+		{
+			"itemID": 20007,
+			"name": "darting-arrow",
+			"rarity": 3,
+			"path": "hunt"
+		},
+		{
+			"itemID": 20006,
+			"name": "data-bank",
+			"rarity": 3,
+			"path": "erudition"
+		},
+		{
+			"itemID": 20005,
+			"name": "chorus",
+			"rarity": 3,
+			"path": "harmony"
+		},
+		{
+			"itemID": 20004,
+			"name": "void",
+			"rarity": 3,
+			"path": "nihility"
+		},
+		{
+			"itemID": 20003,
+			"name": "amber",
+			"rarity": 3,
+			"path": "preservation"
+		},
+		{
+			"itemID": 20002,
+			"name": "collapsing-sky",
+			"rarity": 3,
+			"path": "destruction"
+		},
+		{
+			"itemID": 20001,
+			"name": "cornucopia",
+			"rarity": 3,
+			"path": "abundance"
+		},
+		{
+			"itemID": 20000,
+			"name": "arrows",
+			"rarity": 3,
+			"path": "hunt"
+		}
+	]
+}
