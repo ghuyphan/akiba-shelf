@@ -134,7 +134,7 @@
 		<ResultList {list} {standalone} />
 	{:else}
 		<div class="container">
-			{#each list as { name, path, rarity, combat_type, splashartOffset, eidolon, undyingType, undyingQty, isNew, animationID }, i (list[i])}
+			{#each list as { name, path, rarity, combat_type, type: itemType, splashartOffset, eidolon, undyingType, undyingQty, isNew, animationID }, i (list[i])}
 				{#if activeIndex === i}
 					{#if intro5star && !$liteMode}
 						<SsrScreen {path} />
@@ -145,7 +145,7 @@
 								<SplashLight {rarity} />
 							{/if}
 
-							{#if !combat_type}
+							{#if itemType === 'lightcone' || (!itemType && !combat_type)}
 								<div
 									class="item-art lightcone"
 									in:scale|global={{ start: 2, duration: 500, opacity: 1 }}
@@ -187,6 +187,7 @@
 							<SplashartInfo
 								animate={!$liteMode}
 								combatType={combat_type}
+								type={itemType}
 								{name}
 								{path}
 								{rarity}

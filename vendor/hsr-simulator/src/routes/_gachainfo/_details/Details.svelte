@@ -82,7 +82,7 @@
 	<h1>{nameOfbanner}</h1>
 
 	{#if type.match('event')}
-		{@const { combat_type, rateup, path, name } = type.match('char') ? drop5char[0] : drop5lc[0]}
+		{@const { combat_type, rateup, path, name, type: itemType } = type.match('char') ? drop5char[0] : drop5lc[0]}
 		<h2>{$t('details.dropRateBoost')}</h2>
 		<div class="rateInfo">
 			<div class="rarity">
@@ -99,7 +99,7 @@
 
 		<div class="item-group">
 			<div class="col">
-				<ItemCard {name} {path} {combat_type} {rateup} rarity={5} />
+				<ItemCard {name} {path} {combat_type} {rateup} rarity={5} type={itemType} />
 			</div>
 		</div>
 
@@ -117,10 +117,10 @@
 		</div>
 
 		<div class="item-group">
-			{#each type === 'character-event' ? drop4char : drop4lc as { name, path, combat_type }, i (name)}
+			{#each type === 'character-event' ? drop4char : drop4lc as { name, path, combat_type, type: itemType }, i (name)}
 				{#if i < 3}
 					<div class="col">
-						<ItemCard rarity="4" {name} {path} {combat_type} />
+						<ItemCard rarity="4" {name} {path} {combat_type} type={itemType} />
 					</div>
 				{/if}
 			{/each}

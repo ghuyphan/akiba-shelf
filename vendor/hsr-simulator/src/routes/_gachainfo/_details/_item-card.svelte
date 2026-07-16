@@ -9,6 +9,9 @@
 	export let combat_type = null;
 	export let path;
 	export let rateup = true;
+	export let type = null;
+
+	$: isLightCone = type === 'lightcone' || (!type && !combat_type);
 </script>
 
 <div class="card star{rarity}" class:rateup>
@@ -16,7 +19,7 @@
 		<div class="path">
 			<Path {path} />
 		</div>
-		{#if combat_type}
+		{#if !isLightCone}
 			<picture class="item-pic">
 				<img src={$assets[`closeup/${name}`]} alt={$t(name)} crossorigin="anonymous" />
 			</picture>
@@ -26,9 +29,11 @@
 			</div>
 		{/if}
 
-		<div class="icon">
-			<i class="hsr-{combat_type} {combat_type} icon-gradient"></i>
-		</div>
+		{#if !isLightCone && combat_type}
+			<div class="icon">
+				<i class="hsr-{combat_type} {combat_type} icon-gradient"></i>
+			</div>
+		{/if}
 		<span class="caption"> {$t(name)} </span>
 	</div>
 </div>

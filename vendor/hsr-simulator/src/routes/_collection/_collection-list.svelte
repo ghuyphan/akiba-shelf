@@ -117,7 +117,7 @@
 				{#if $liteMode || $isMobile}
 					{#each dataToShow as { rarity, name, path, combat_type, isOwned, qty } (name)}
 						<div class="item">
-							<CollectionItem {rarity} {name} {path} {isOwned} combatType={combat_type} {qty} />
+							<CollectionItem {rarity} {name} {path} {isOwned} combatType={combat_type} {qty} type={itemtype} />
 						</div>
 					{/each}
 				{:else}
@@ -127,7 +127,7 @@
 							in:fade={{ duration: 350, delay: i * 25 }}
 							animate:flip={{ duration: (i) => 25 * Math.sqrt(i) }}
 						>
-							<CollectionItem {rarity} {name} {path} {isOwned} combatType={combat_type} {qty} />
+							<CollectionItem {rarity} {name} {path} {isOwned} combatType={combat_type} {qty} type={itemtype} />
 						</div>
 					{/each}
 				{/if}

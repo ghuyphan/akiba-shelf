@@ -10,7 +10,7 @@ const config = {
 	preprocess: vitePreprocess(),
 	kit: {
 		appDir: 'internal',
-		paths: { base },
+		paths: { base, relative: false },
 		version: {
 			name: 'matsuri'
 		},

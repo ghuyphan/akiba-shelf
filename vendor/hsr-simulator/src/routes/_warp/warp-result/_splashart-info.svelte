@@ -10,6 +10,9 @@
 	export let rarity;
 	export let isNew = false;
 	export let animate = false;
+	export let type = '';
+
+	$: isLightCone = type === 'lightcone' || (!type && !combatType);
 
 	const customFly = (node, args) => {
 		if (!args?.animate) return;
@@ -20,8 +23,8 @@
 <div class="info">
 	<div class="info-wrapper" in:customFly={{ animate, x: 70, delay: 600, duration: 400 }}>
 		<div class="row">
-			<div class="left" class:lightcone={!combatType}>
-				{#if !combatType}
+			<div class="left" class:lightcone={isLightCone}>
+				{#if isLightCone}
 					<span class="lightcone-path">
 						<Path {path} />
 					</span>
@@ -31,7 +34,7 @@
 			</div>
 			<div class="right">
 				<div class="item-type">
-					{#if !combatType}
+					{#if isLightCone}
 						<span>{$t('lightcone')} </span> <small>Lightcone</small>
 					{:else}
 						<span>{$t('character')} </span> <small>Character</small>
@@ -53,7 +56,7 @@
 					</div>
 				{/if}
 
-				{#if combatType}
+				{#if !isLightCone}
 					<div class="path">
 						<i class="hsr-{path}"></i>
 						<span>{$t(`path.the-${path}`)}</span>

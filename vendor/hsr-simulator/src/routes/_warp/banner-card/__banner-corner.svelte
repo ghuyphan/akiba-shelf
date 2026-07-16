@@ -50,8 +50,8 @@
 
 	.corner-barcode {
 		position: absolute;
-		bottom: 86%;
-		left: 91.4%;
+		top: 11.5%;
+		left: 92.4%;
 		z-index: 2;
 		width: 13%;
 		transform: rotate(90deg);

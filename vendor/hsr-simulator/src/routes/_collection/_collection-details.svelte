@@ -88,7 +88,7 @@
 				{/if}
 
 				<div class="wrapper" class:notowned={qty < 1}>
-					{#if !combat_type}
+					{#if type === 'lightcone'}
 						<div class="item-art lightcone">
 							<div class="item-content">
 								<div class="lightcone-item">
@@ -113,7 +113,7 @@
 						</div>
 					{/if}
 
-					<SplashartInfo combatType={combat_type} {path} {rarity} {name} />
+					<SplashartInfo combatType={combat_type} {path} {rarity} {name} {type} />
 				</div>
 
 				{#if qty > 0}

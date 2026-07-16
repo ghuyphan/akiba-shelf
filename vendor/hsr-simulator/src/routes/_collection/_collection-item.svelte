@@ -11,9 +11,12 @@
 	export let combatType = '';
 	export let isOwned = false;
 	export let qty = 0;
+	export let type = '';
+
+	$: isLightCone = type === 'lightcone' || (!type && !combatType);
 
 	const getQty = (qty) => {
-		if (combatType) {
+		if (!isLightCone) {
 			return `E${qty > 7 ? `6 + ${qty - 7}` : qty - 1}`;
 		}
 		return `S${qty > 5 ? `5 + ${qty - 5}` : qty}`;
@@ -24,14 +27,14 @@
 		const detailData = {
 			qty,
 			name,
-			type: combatType ? 'character' : 'lightcone'
+			type: isLightCone ? 'lightcone' : 'character'
 		};
 		openDetails(detailData);
 	};
 </script>
 
 <div class="item-container star{rarity}" role="dialog" tabindex="0" on:mousedown={handleClik}>
-	{#if !combatType}
+	{#if isLightCone}
 		<div class="lightcone">
 			<LightCones item={name} size="small" />
 		</div>
@@ -41,7 +44,7 @@
 
 	<div class="frame" class:notowned={!isOwned}>
 		<div class="icon-info">
-			{#if combatType}
+			{#if !isLightCone && combatType}
 				<span> <i class="hsr-{combatType} {combatType} icon-gradient"></i> </span>
 			{/if}
 			<span><i class="hsr-{path}"></i> </span>

@@ -9,7 +9,7 @@ const outputDir = process.env.GACHA_OUTPUT_DIR || '../../dist/gacha-simulator';
 const config = {
 	kit: {
 		appDir: 'internal',
-		paths: { base },
+		paths: { base, relative: false },
 		adapter: adapter({
 			pages: outputDir,
 			assets: outputDir,
