@@ -12,6 +12,25 @@ let playID;
 let inPlay;
 const loadedTracks = {};
 const musicMediaSession = {};
+const trackUsage = {};
+const MAX_CACHED_TRACKS = 4;
+
+const touchTrack = (ID) => {
+	trackUsage[ID] = Date.now();
+};
+
+const trimTrackCache = (activeID) => {
+	Object.keys(loadedTracks)
+		.filter((ID) => ID !== activeID)
+		.sort((a, b) => (trackUsage[a] || 0) - (trackUsage[b] || 0))
+		.slice(0, Math.max(0, Object.keys(loadedTracks).length - MAX_CACHED_TRACKS))
+		.forEach((ID) => {
+			loadedTracks[ID]?.unload();
+			delete loadedTracks[ID];
+			delete musicMediaSession[ID];
+			delete trackUsage[ID];
+		});
+};
 
 const rand = (array) => {
 	const index = Math.floor(Math.random() * array.length);
@@ -38,9 +57,10 @@ export const isPlaying = (sourceID) => {
 };
 
 const trackError = (ID) => {
-	try { loadedTracks[ID]?.stop(); } catch {}
+	try { loadedTracks[ID]?.unload(); } catch {}
 	delete loadedTracks[ID];
-	nextTrack();
+	delete musicMediaSession[ID];
+	delete trackUsage[ID];
 };
 
 // Player
@@ -52,6 +72,7 @@ export const playTrack = async (ID) => {
 	// Play from cache if tracks is loaded already
 	if (ID in loadedTracks) {
 		const sound = loadedTracks[ID];
+		touchTrack(ID);
 		if (sound.playing()) return { status: 'ok' };
 		playID = sound.play();
 		return { status: 'ok' };
@@ -75,6 +96,8 @@ export const playTrack = async (ID) => {
 			onplay: () => afterPlay(ID),
 			onplayerror: () => trackError(ID)
 		});
+		touchTrack(ID);
+		trimTrackCache(ID);
 
 		playID = loadedTracks[ID].play();
 		return { status: 'ok' };
@@ -85,15 +108,17 @@ export const playTrack = async (ID) => {
 };
 
 const afterPlay = (ID) => {
+	const sound = loadedTracks[ID];
+	if (!sound) return;
 	// Stop immediately if user change track before loaded
-	if (inPlay !== ID) return loadedTracks[ID].stop();
+	if (inPlay !== ID) return sound.stop();
 
 	cookie.set('trackID', ID);
 	mediaSessionHandler(musicMediaSession[ID]);
 	seekTrack(ID);
 
 	// Get Duration
-	const duration = loadedTracks[ID].duration();
+	const duration = sound.duration();
 	if (!duration) return;
 
 	musics.update((val) => {
@@ -110,10 +135,12 @@ const afterPlay = (ID) => {
 };
 
 const seekTrack = (sourceID) => {
-	const pos = loadedTracks[sourceID].seek() || 0;
+	const sound = loadedTracks[sourceID];
+	if (!sound) return;
+	const pos = sound.seek() || 0;
 	currentTime.set(pos);
 	// If the sound is still playing, continue stepping.
-	if (loadedTracks[sourceID].playing()) {
+	if (sound.playing()) {
 		requestAnimationFrame(() => seekTrack(sourceID));
 	}
 };
@@ -124,7 +151,8 @@ const fadeTrack = () => {
 	const sound = loadedTracks[ID];
 
 	// play sound if fade in
-	if (!sound || !sound.playing()) return (playID = sound.play());
+	if (!sound) return;
+	if (!sound.playing()) return (playID = sound.play());
 
 	// stop Sound if its playing
 	if (!stopAfterFade) return sound.pause(playID);
@@ -135,7 +163,7 @@ const fadeTrack = () => {
 
 export const nextTrack = () => {
 	const id = cookie.get('trackID');
-	loadedTracks[id].stop();
+	loadedTracks[id]?.stop();
 
 	const isLoop = cookie.get('loopTrack');
 	if (isLoop) return playTrack(id);
@@ -188,6 +216,7 @@ export const setTrackVolume = (val) => {
 
 const randomTrack = () => {
 	const { selected } = rand(tracks);
+	if (!selected) return { status: 'error' };
 	playTrack(selected.sourceID);
 	activeBacksound.set(selected || {});
 };

@@ -1,4 +1,4 @@
-import { defaultBooth, defaultPayment } from "./constants";
+import { defaultBooth, defaultPayment, defaultPromotion } from "./constants";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./supabase";
 import { safeUuid } from "./id";
@@ -16,12 +16,14 @@ import {
   orderMutationSchema,
   orderSchema,
   paymentSettingsSchema,
+  promotionSettingsSchema,
   productRowSchema,
 } from "./schemas";
 import type {
   BoothSettings,
   CatalogData,
   PaymentSettings,
+  PromotionSettings,
   Product,
   StockStatus,
   Order,
@@ -35,6 +37,9 @@ import type {
   GachaBanner,
   GachaCatalog,
   GachaElement,
+  GachaGameConfiguration,
+  GachaGameConfigurations,
+  GachaGameType,
   GachaItemKind,
   GachaPoolEntry,
   GachaPoolItem,
@@ -43,6 +48,11 @@ import type {
   GachaWeaponType,
 } from "../types/gacha";
 import { defaultGachaBanner, defaultGachaSettings } from "../types/gacha";
+import {
+  capGachaFeaturedEntries,
+  normalizeGachaBanners,
+  normalizeGachaDisplayLimit,
+} from "./gachaLimits";
 
 export type StaffRole = "owner" | "admin" | "staff";
 export type StaffAccess = {
@@ -112,6 +122,7 @@ export function normalizeProduct(product: Partial<Product>): Product {
     price_vnd: numberValue(product.price_vnd),
     sale_price_vnd: product.sale_price_vnd == null ? null : numberValue(product.sale_price_vnd),
     effective_price_vnd: product.effective_price_vnd == null ? undefined : numberValue(product.effective_price_vnd),
+    promotion_eligible: booleanValue(product.promotion_eligible),
     item_code: text(product.item_code),
     quantity_available: numberValue(product.quantity_available, Number.NaN),
     category: text(product.category),
@@ -152,6 +163,21 @@ export function normalizeProduct(product: Partial<Product>): Product {
           ? "limited"
           : "in_stock",
   };
+}
+
+export function normalizePromotion(
+  promotion: Partial<PromotionSettings>,
+): PromotionSettings {
+  return promotionSettingsSchema.parse({
+    ...defaultPromotion,
+    ...promotion,
+    enabled: booleanValue(promotion.enabled),
+    repeatable: booleanValue(promotion.repeatable, true),
+    buy_quantity: numberValue(promotion.buy_quantity, 3),
+    free_quantity: numberValue(promotion.free_quantity, 1),
+    qualifying_product_ids: textArray(promotion.qualifying_product_ids),
+    reward_product_ids: textArray(promotion.reward_product_ids),
+  });
 }
 
 function normalizePayment(payment: unknown): PaymentSettings {
@@ -372,7 +398,7 @@ export async function getPublicProductsByIds(
 }
 
 const GACHA_SETTINGS_COLUMNS =
-  "shop_id,enabled,game_type,title,description,rare_pity,legendary_pity,updated_at";
+  "shop_id,enabled,game_type,title,description,rare_pity,legendary_pity,lightcone_legendary_pity,updated_at";
 const GACHA_BANNER_COLUMNS =
   "id,shop_id,name,description,kind,theme,display_limit,sort_order,active,updated_at";
 const GACHA_POOL_COLUMNS =
@@ -394,6 +420,10 @@ function normalizeGachaSettings(
       100,
       Math.max(10, numberValue(value.legendary_pity, 50)),
     ),
+    lightcone_legendary_pity: Math.min(
+      100,
+      Math.max(10, numberValue(value.lightcone_legendary_pity, 80)),
+    ),
     updated_at: text(value.updated_at) || undefined,
   };
 }
@@ -401,6 +431,7 @@ function normalizeGachaSettings(
 function normalizeGachaBanner(
   value: Record<string, unknown>,
   shopId: string,
+  gameType: GachaGameType = "genshin",
 ): GachaBanner {
   const defaults = defaultGachaBanner(shopId, text(value.id));
   return {
@@ -415,9 +446,9 @@ function normalizeGachaBanner(
     ].includes(text(value.theme))
       ? text(value.theme)
       : defaults.theme) as GachaElement,
-    display_limit: Math.min(
-      5,
-      Math.max(1, numberValue(value.display_limit, defaults.display_limit)),
+    display_limit: normalizeGachaDisplayLimit(
+      numberValue(value.display_limit, defaults.display_limit),
+      gameType,
     ),
     sort_order: Math.min(
       1000,
@@ -458,16 +489,87 @@ function normalizeGachaPoolEntry(
   };
 }
 
+function normalizeStoredGameConfiguration(
+  value: unknown,
+  shopId: string,
+  gameType: GachaGameType,
+): GachaGameConfiguration | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const rawSettings =
+    record.settings && typeof record.settings === "object"
+      ? (record.settings as Record<string, unknown>)
+      : {};
+  const settings = normalizeGachaSettings(
+    { ...rawSettings, game_type: gameType },
+    shopId,
+  );
+  const banners = Array.isArray(record.banners)
+    ? record.banners.map((banner) =>
+        normalizeGachaBanner(banner as Record<string, unknown>, shopId, gameType),
+      )
+    : [];
+  const entries = Array.isArray(record.entries)
+    ? record.entries.map((entry) =>
+        normalizeGachaPoolEntry(entry as Record<string, unknown>, shopId),
+      )
+    : [];
+  return {
+    settings,
+    banners,
+    entries: capGachaFeaturedEntries(entries, banners, gameType),
+  };
+}
+
+function normalizeGameConfigurations(
+  value: unknown,
+  shopId: string,
+): GachaGameConfigurations {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const record = value as Record<string, unknown>;
+  return (["genshin", "hsr"] as GachaGameType[]).reduce<GachaGameConfigurations>(
+    (configs, gameType) => {
+      const normalized = normalizeStoredGameConfiguration(
+        record[gameType],
+        shopId,
+        gameType,
+      );
+      if (normalized) configs[gameType] = normalized;
+      return configs;
+    },
+    {},
+  );
+}
+
+async function getCompatiblePublicGachaSettings(shopId: string) {
+  const client = requireSupabase();
+  const current = await client
+    .from("gacha_settings")
+    .select(GACHA_SETTINGS_COLUMNS)
+    .eq("shop_id", shopId)
+    .maybeSingle();
+  if (
+    !current.error ||
+    (!current.error.message.includes("lightcone_legendary_pity") &&
+      current.error.code !== "42703")
+  ) {
+    return current;
+  }
+  return client
+    .from("gacha_settings")
+    .select(
+      "shop_id,enabled,game_type,title,description,rare_pity,legendary_pity,updated_at",
+    )
+    .eq("shop_id", shopId)
+    .maybeSingle();
+}
+
 export async function getGachaCatalog(
   shopId: string,
 ): Promise<GachaCatalog> {
   const client = requireSupabase();
   const [settingsResult, bannersResult, poolResult] = await Promise.all([
-    client
-      .from("gacha_settings")
-      .select(GACHA_SETTINGS_COLUMNS)
-      .eq("shop_id", shopId)
-      .maybeSingle(),
+    getCompatiblePublicGachaSettings(shopId),
     client
       .from("gacha_banners")
       .select(GACHA_BANNER_COLUMNS)
@@ -494,16 +596,19 @@ export async function getGachaCatalog(
     entries.map((entry) => entry.product_id),
   );
   const productsById = new Map(products.map((product) => [product.id, product]));
-  return {
-    settings: settingsResult.data
+  const settings = settingsResult.data
       ? normalizeGachaSettings(
           settingsResult.data as Record<string, unknown>,
           shopId,
         )
-      : null,
-    banners: ((bannersResult.data ?? []) as Record<string, unknown>[]).map(
-      (row) => normalizeGachaBanner(row, shopId),
-    ),
+      : null;
+  const gameType = settings?.game_type ?? "genshin";
+  const banners = ((bannersResult.data ?? []) as Record<string, unknown>[]).map(
+    (row) => normalizeGachaBanner(row, shopId, gameType),
+  );
+  return {
+    settings,
+    banners,
     entries: entries.flatMap((entry): GachaPoolItem[] => {
       const product = productsById.get(entry.product_id);
       return product ? [{ ...entry, product }] : [];
@@ -523,7 +628,7 @@ export async function getPublicGachaEnabled(shopId: string): Promise<boolean> {
 
 export async function getAdminGachaConfiguration(shopId: string) {
   const client = requireSupabase();
-  const [settingsResult, bannersResult, poolResult] = await Promise.all([
+  const [settingsResult, bannersResult, poolResult, configsResult] = await Promise.all([
     client
       .from("gacha_settings")
       .select(GACHA_SETTINGS_COLUMNS)
@@ -541,24 +646,44 @@ export async function getAdminGachaConfiguration(shopId: string) {
       .eq("shop_id", shopId)
       .order("rarity", { ascending: false })
       .order("product_id", { ascending: true }),
+    client
+      .from("gacha_game_configs")
+      .select("game_type,config")
+      .eq("shop_id", shopId),
   ]);
   if (settingsResult.error) throw settingsResult.error;
   if (bannersResult.error) throw bannersResult.error;
   if (poolResult.error) throw poolResult.error;
-  return {
-    settings: settingsResult.data
-      ? normalizeGachaSettings(
-          settingsResult.data as Record<string, unknown>,
-          shopId,
-        )
-      : defaultGachaSettings(shopId),
-    banners: ((bannersResult.data ?? []) as Record<string, unknown>[]).map(
-      (row) => normalizeGachaBanner(row, shopId),
-    ),
-    entries: ((poolResult.data ?? []) as Record<string, unknown>[]).map((row) =>
-      normalizeGachaPoolEntry(row, shopId),
-    ),
+  if (configsResult.error) throw configsResult.error;
+  const settings = settingsResult.data
+    ? normalizeGachaSettings(
+        settingsResult.data as Record<string, unknown>,
+        shopId,
+      )
+    : defaultGachaSettings(shopId);
+  const banners = ((bannersResult.data ?? []) as Record<string, unknown>[]).map(
+    (row) => normalizeGachaBanner(row, shopId, settings.game_type),
+  );
+  const entries = ((poolResult.data ?? []) as Record<string, unknown>[]).map(
+    (row) => normalizeGachaPoolEntry(row, shopId),
+  );
+  const storedConfigs = Object.fromEntries(
+    ((configsResult.data ?? []) as { game_type: string; config: unknown }[])
+      .filter((row) => row.game_type === "genshin" || row.game_type === "hsr")
+      .map((row) => [row.game_type, row.config]),
+  );
+  const configurations = normalizeGameConfigurations(storedConfigs, shopId);
+  const cappedEntries = capGachaFeaturedEntries(
+    entries,
+    banners,
+    settings.game_type,
+  );
+  configurations[settings.game_type] = {
+    settings,
+    banners,
+    entries: cappedEntries,
   };
+  return { settings, banners, entries: cappedEntries, configurations };
 }
 
 export async function saveGachaConfiguration(
@@ -566,6 +691,7 @@ export async function saveGachaConfiguration(
   settings: GachaSettings,
   banners: GachaBanner[],
   entries: GachaPoolEntry[],
+  configurations: GachaGameConfigurations = {},
 ) {
   const client = requireSupabase();
   const settingsPayload = {
@@ -576,14 +702,45 @@ export async function saveGachaConfiguration(
     description: settings.description.trim(),
     rare_pity: settings.rare_pity,
     legendary_pity: settings.legendary_pity,
+    lightcone_legendary_pity: settings.lightcone_legendary_pity,
   };
   const { error: settingsError } = await client
     .from("gacha_settings")
     .upsert(settingsPayload, { onConflict: "shop_id" });
   if (settingsError) throw settingsError;
 
+  const configPayload = (Object.entries(configurations) as [
+    GachaGameType,
+    GachaGameConfiguration | undefined,
+  ][]).flatMap(([gameType, config]) => {
+    if (!config) return [];
+    const normalizedBanners = normalizeGachaBanners(config.banners, gameType);
+    return [{
+      shop_id: shopId,
+      game_type: gameType,
+      config: {
+        ...config,
+        banners: normalizedBanners,
+        entries: capGachaFeaturedEntries(
+          config.entries,
+          normalizedBanners,
+          gameType,
+        ),
+      },
+    }];
+  });
+  if (configPayload.length) {
+    const { error } = await client
+      .from("gacha_game_configs")
+      .upsert(configPayload, { onConflict: "shop_id,game_type" });
+    if (error) throw error;
+  }
+
   if (banners.length) {
-    const bannerPayload = banners.map((banner, index) => ({
+    const bannerPayload = normalizeGachaBanners(
+      banners,
+      settings.game_type,
+    ).map((banner, index) => ({
       id: banner.id,
       shop_id: shopId,
       name: banner.name.trim(),
@@ -625,7 +782,15 @@ export async function saveGachaConfiguration(
   if (clearError) throw clearError;
 
   if (entries.length) {
-    const payload = entries.map((entry) => ({
+    const normalizedBanners = normalizeGachaBanners(
+      banners,
+      settings.game_type,
+    );
+    const payload = capGachaFeaturedEntries(
+      entries,
+      normalizedBanners,
+      settings.game_type,
+    ).map((entry) => ({
       shop_id: shopId,
       banner_id: entry.banner_id,
       product_id: entry.product_id,
@@ -671,12 +836,31 @@ export async function getPublicPaymentSettings(
   return normalizePayment(data ?? defaultPayment);
 }
 
+export async function getPublicPromotionSettings(
+  shopId: string,
+): Promise<PromotionSettings> {
+  const client = requireSupabase();
+  const [promotion, mappings] = await Promise.all([
+    client.from("promotions").select("shop_id,enabled,buy_quantity,free_quantity,repeatable").eq("shop_id", shopId).maybeSingle(),
+    client.from("promotion_products").select("product_id,role").eq("shop_id", shopId),
+  ]);
+  if (promotion.error) throw promotion.error;
+  if (mappings.error) throw mappings.error;
+  const rows = (mappings.data ?? []) as { product_id: string; role: "qualifying" | "reward" | "both" }[];
+  return normalizePromotion({
+    ...(promotion.data ?? { ...defaultPromotion, shop_id: shopId }),
+    qualifying_product_ids: rows.filter((row) => row.role === "qualifying" || row.role === "both").map((row) => row.product_id),
+    reward_product_ids: rows.filter((row) => row.role === "reward" || row.role === "both").map((row) => row.product_id),
+  });
+}
+
 export async function getCatalogData(shopId: string): Promise<CatalogData> {
-  const [catalog, payment] = await Promise.all([
+  const [catalog, payment, promotion] = await Promise.all([
     getCatalogCoreData(shopId),
     getPublicPaymentSettings(shopId),
+    getPublicPromotionSettings(shopId),
   ]);
-  return { ...catalog, payment };
+  return { ...catalog, payment, promotion };
 }
 
 export async function getAdminProducts(shopId: string): Promise<Product[]> {
@@ -695,7 +879,7 @@ export async function getAdminCatalogData(
 ): Promise<CatalogData> {
   const client = requireSupabase();
 
-  const [products, booth, payment] = await Promise.all([
+  const [products, booth, payment, promotion, promotionProducts] = await Promise.all([
     client.rpc("get_admin_products", { p_shop_id: shopId }),
     client.rpc("get_admin_booth_settings", { p_shop_id: shopId }).maybeSingle(),
     client
@@ -703,11 +887,23 @@ export async function getAdminCatalogData(
       .select(ADMIN_PAYMENT_COLUMNS)
       .eq("shop_id", shopId)
       .maybeSingle(),
+    client
+      .from("promotions")
+      .select("shop_id,enabled,buy_quantity,free_quantity,repeatable")
+      .eq("shop_id", shopId)
+      .maybeSingle(),
+    client
+      .from("promotion_products")
+      .select("product_id,role")
+      .eq("shop_id", shopId),
   ]);
 
   if (products.error) throw products.error;
   if (booth.error) throw booth.error;
   if (payment.error) throw payment.error;
+  if (promotion.error) throw promotion.error;
+  if (promotionProducts.error) throw promotionProducts.error;
+  const promotionRows = (promotionProducts.data ?? []) as { product_id: string; role: "qualifying" | "reward" | "both" }[];
 
   return {
     products: ((products.data ?? []) as unknown[]).map((row) =>
@@ -715,6 +911,13 @@ export async function getAdminCatalogData(
     ),
     booth: normalizeBooth(booth.data ?? { ...defaultBooth, shop_id: shopId }),
     payment: normalizePayment(payment.data ?? defaultPayment),
+    promotion: normalizePromotion(
+      {
+        ...(promotion.data ?? { ...defaultPromotion, shop_id: shopId }),
+        qualifying_product_ids: promotionRows.filter((row) => row.role === "qualifying" || row.role === "both").map((row) => row.product_id),
+        reward_product_ids: promotionRows.filter((row) => row.role === "reward" || row.role === "both").map((row) => row.product_id),
+      },
+    ),
   };
 }
 
@@ -885,6 +1088,25 @@ export async function savePaymentSettings(
     .single();
   if (error) throw error;
   return normalizePayment(data);
+}
+
+export async function savePromotionSettings(
+  shopId: string,
+  promotion: PromotionSettings,
+): Promise<PromotionSettings> {
+  const client = requireSupabase();
+  const normalized = normalizePromotion({ ...promotion, shop_id: shopId });
+  const { error } = await client.rpc("save_promotion_settings", {
+    p_shop_id: shopId,
+    p_enabled: normalized.enabled,
+    p_buy_quantity: normalized.buy_quantity,
+    p_free_quantity: normalized.free_quantity,
+    p_repeatable: normalized.repeatable,
+    p_qualifying_product_ids: normalized.qualifying_product_ids,
+    p_reward_product_ids: normalized.reward_product_ids,
+  });
+  if (error) throw error;
+  return getPublicPromotionSettings(shopId);
 }
 
 export async function uploadImage(
@@ -1101,7 +1323,8 @@ export async function createOrder(
     p_customer_name: customerName?.trim() || null,
     p_items: cart.map((item) => ({
       product_id: item.product.id,
-      quantity: item.quantity,
+      quantity: item.quantity + (item.reward_quantity ?? 0),
+      reward_quantity: item.reward_quantity ?? 0,
     })),
     p_client_request_id: clientRequestId,
     p_recovery_token: recoveryToken,
@@ -1152,7 +1375,7 @@ export async function getOrders(
   let query = client
     .from("orders")
     .select(
-      `id,shop_id,order_code,customer_name,total_amount,status,created_at,updated_at,expires_at,confirmed_at,cancelled_at,expired_at,order_items(id,order_id,product_id,quantity,unit_price,product:products(${PUBLIC_PRODUCT_COLUMNS}))`,
+      `id,shop_id,order_code,customer_name,total_amount,discount_amount,status,created_at,updated_at,expires_at,confirmed_at,cancelled_at,expired_at,order_items(id,order_id,product_id,quantity,unit_price,free_quantity,discount_amount,product:products(${PUBLIC_PRODUCT_COLUMNS}))`,
       { count: "exact" },
     )
     .eq("shop_id", shopId);

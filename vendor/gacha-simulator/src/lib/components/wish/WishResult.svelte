@@ -1,5 +1,5 @@
 <script>
-	import { afterUpdate, createEventDispatcher, onMount } from 'svelte';
+	import { afterUpdate, createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { t, locale } from 'svelte-i18n';
 	import {
@@ -127,8 +127,13 @@
 	afterUpdate(() => {
 		wishResultContainer?.querySelectorAll('.anim').forEach((el) => {
 			if ($animeoff) return el.classList.remove('anim');
-			el.addEventListener('animationend', () => el.classList.remove('anim'));
+			el.addEventListener('animationend', () => el.classList.remove('anim'), { once: true });
 		});
+	});
+
+	onDestroy(() => {
+		clearTimeout(timer);
+		wishResultContainer?.removeEventListener('click', showItem);
 	});
 </script>
 

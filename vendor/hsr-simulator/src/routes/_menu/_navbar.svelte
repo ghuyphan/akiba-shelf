@@ -2,7 +2,6 @@
 	import NavLink from '$lib/components/NavLink.svelte';
 	import NavLinkItem from '$lib/components/NavLinkItem.svelte';
 	import { playSfx } from '$lib/helpers/sounds/audiofx';
-	import { isPWA } from '$lib/stores/app-store';
 	import { getContext } from 'svelte';
 
 	export let horizontal = false;
@@ -28,14 +27,6 @@
 			active={activeMenu === 'updatelog'}
 			on:click={() => select('updatelog')}
 		/>
-
-		{#if !$isPWA}
-			<NavLinkItem
-				icon="honor"
-				active={activeMenu === 'prouser'}
-				on:click={() => select('prouser')}
-			/>
-		{/if}
 	</NavLink>
 </div>
 

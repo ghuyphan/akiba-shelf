@@ -1,5 +1,5 @@
 <script>
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { t } from 'svelte-i18n';
 	import {
 		primogem,
@@ -29,6 +29,14 @@
 	let v5starSingle;
 	let v5star;
 	let showToast = false;
+	let playbackTimeout;
+	const videos = () => [v3star, v4starSingle, v4star, v5starSingle, v5star].filter(Boolean);
+	const handleEnded = (event) => {
+		const video = event.currentTarget;
+		video.style.display = 'none';
+		video.load();
+		dispatch('endAnimation');
+	};
 
 	const dispatch = createEventDispatcher();
 	$: balance = $isAcquaintUsed ? $acquaint : $intertwined;
@@ -97,7 +105,8 @@
 		videoContent.style.display = 'unset';
 		let resolved = false;
 
-		const timeoutId = setTimeout(() => {
+		clearTimeout(playbackTimeout);
+		playbackTimeout = setTimeout(() => {
 			if (!resolved) {
 				resolved = true;
 				videoContent.style.display = 'none';
@@ -109,12 +118,12 @@
 		videoContent.play()
 			.then(() => {
 				resolved = true;
-				clearTimeout(timeoutId);
+				clearTimeout(playbackTimeout);
 			})
 			.catch((err) => {
 				if (!resolved) {
 					resolved = true;
-					clearTimeout(timeoutId);
+					clearTimeout(playbackTimeout);
 					videoContent.style.display = 'none';
 					showToast = true;
 					console.error("Failed to play video:", err);
@@ -124,12 +133,16 @@
 	};
 
 	onMount(() => {
-		[v3star, v4starSingle, v4star, v5starSingle, v5star].forEach((video) => {
-			video.addEventListener('ended', () => {
-				video.style.display = 'none';
-				video.load();
-				dispatch('endAnimation');
-			});
+		videos().forEach((video) => video.addEventListener('ended', handleEnded));
+	});
+
+	onDestroy(() => {
+		clearTimeout(playbackTimeout);
+		videos().forEach((video) => {
+			video.removeEventListener('ended', handleEnded);
+			video.pause();
+			video.removeAttribute('src');
+			video.load();
 		});
 	});
 
@@ -182,7 +195,7 @@
 	<div class="video">
 		<video
 			bind:this={v3star}
-			preload="auto"
+			preload="metadata"
 			playsinline
 			muted={$muted}
 			src={$assets['3star-single.mp4']}
@@ -198,7 +211,7 @@
 		/>
 		<video
 			bind:this={v4star}
-			preload="auto"
+			preload="metadata"
 			playsinline
 			muted={$muted}
 			src={$assets['4star.mp4']}

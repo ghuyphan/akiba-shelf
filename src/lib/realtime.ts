@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-const CATALOG_TABLES = ["products", "booth_settings", "payment_settings"] as const;
+const CATALOG_TABLES = ["products", "booth_settings", "payment_settings", "promotions", "promotion_products"] as const;
 
 type CatalogTable = (typeof CATALOG_TABLES)[number];
 

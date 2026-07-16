@@ -2,6 +2,7 @@
 	import { t } from 'svelte-i18n';
 	import { activePhase, activeVersion, activeWarp, warpList } from '$lib/stores/app-store';
 	import { identifyBanner } from '$lib/helpers/banner-loader';
+	import regularConfig from '$lib/data/banners/regular.json';
 	import {
 		get3StarItem,
 		get4StarItem,
@@ -14,9 +15,13 @@
 	import ItemCard from './_item-card.svelte';
 	import Table from './_table.svelte';
 
-	let { type, bannerName, bannerID, rateup = [] } = $activeWarp;
+	let { type, bannerName, bannerID, rateup = [], merchItems = [], isMerch = false } = $activeWarp;
 	const { featured } = identifyBanner(bannerID);
-	$: nameOfbanner = $t(`banner.${bannerName}`, { default: bannerName });
+	const standardCharacters = (regularConfig?.regular || regularConfig)?.[0]?.characters || [];
+	const getItemDetails = (name, itemType) =>
+		merchItems.find((item) => item.name === name) ||
+		(itemType === 'lightcone' ? getLCDetails(name) : getCharDetails(name));
+	$: nameOfbanner = isMerch ? bannerName : $t(`banner.${bannerName}`, { default: bannerName });
 
 	// Drop 3 Star
 	const drop3star = get3StarItem();
@@ -34,7 +39,7 @@
 	const rateupItem = (itemType) => {
 		if (!type.match(itemType)) return [];
 		return rateup
-			.map((name) => (type.match('lightcone') ? getLCDetails(name) : getCharDetails(name)))
+			.map((name) => getItemDetails(name, itemType))
 			.map((val) => ({ ...val, rateup: true }));
 	};
 
@@ -43,10 +48,11 @@
 
 	// Drop 5star
 
-	const { characters: stdList = [] } = $warpList.find(({ type: t }) => {
+	const standardWarp = $warpList.find(({ type: t }) => {
 		const usedList = type === 'starter' ? 'starter' : 'regular';
 		return t === usedList;
 	});
+	const stdList = standardWarp?.characters || standardCharacters;
 
 	const list5star = (itemType) => {
 		return get5StarItem({
@@ -58,8 +64,14 @@
 			rateupItem: [featured]
 		});
 	};
-	const drop5char = [{ ...getCharDetails(featured), rateup: true }, ...list5star('character')];
-	const drop5lc = [{ ...getLCDetails(featured), rateup: true }, ...list5star('lightcone')];
+	const drop5char = [
+		{ ...getItemDetails(featured, 'character'), rateup: true },
+		...list5star('character')
+	];
+	const drop5lc = [
+		{ ...getItemDetails(featured, 'lightcone'), rateup: true },
+		...list5star('lightcone')
+	];
 </script>
 
 <svelte:head>

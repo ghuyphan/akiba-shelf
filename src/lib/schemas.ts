@@ -10,7 +10,7 @@ export const imageVariantSchema = z.object({ thumbnail: z.string().url(), detail
 
 export const productRowSchema = z.object({
   id: z.string().min(1), name: z.string(), collection: z.string(), description: z.string(),
-  price_vnd: z.coerce.number().int().nonnegative(), sale_price_vnd: z.coerce.number().int().nonnegative().nullable().optional(), effective_price_vnd: z.coerce.number().int().nonnegative().optional(), item_code: z.string(), quantity_available: z.coerce.number().int().nonnegative(),
+  price_vnd: z.coerce.number().int().nonnegative(), sale_price_vnd: z.coerce.number().int().nonnegative().nullable().optional(), effective_price_vnd: z.coerce.number().int().nonnegative().optional(), promotion_eligible: z.boolean().optional(), item_code: z.string(), quantity_available: z.coerce.number().int().nonnegative(),
   category: z.string(), badge: z.string().nullish().transform((value) => value ?? undefined), badge_color: z.string().nullish().transform((value) => value ?? undefined),
   stock_status: z.enum(["in_stock", "limited", "sold_out"]), stock_note: z.string(),
   images: z.array(z.string()), image_variants: z.array(imageVariantSchema).optional(), image_paths: z.array(z.string()).optional(),
@@ -32,8 +32,16 @@ export const paymentSettingsSchema = z.object({
   bank_acq_id: z.string().nullish().transform((value) => value ?? undefined), bank_account_no: z.string().nullish().transform((value) => value ?? undefined), bank_account_name: z.string().nullish().transform((value) => value ?? undefined), bank_add_info_template: z.string().nullish().transform((value) => value ?? undefined), payment_instructions: z.string(),
 }).passthrough();
 
+export const promotionSettingsSchema = z.object({
+  shop_id: z.string().uuid().optional(), enabled: z.boolean(),
+  buy_quantity: z.coerce.number().int().min(1).max(99),
+  free_quantity: z.coerce.number().int().min(1).max(99), repeatable: z.boolean(),
+  qualifying_product_ids: z.array(z.string()).optional().default([]),
+  reward_product_ids: z.array(z.string()).optional().default([]),
+}).passthrough();
+
 export const orderSchema = z.object({
-  id: z.string().uuid(), order_code: z.string().min(1), customer_name: z.string().nullable().optional(), total_amount: z.coerce.number().int().nonnegative(),
+  id: z.string().uuid(), order_code: z.string().min(1), customer_name: z.string().nullable().optional(), total_amount: z.coerce.number().int().nonnegative(), discount_amount: z.coerce.number().int().nonnegative().optional(),
   status: z.enum(["pending", "confirmed", "cancelled", "expired"]), created_at: z.string(), updated_at: z.string().optional(), expires_at: z.string().nullable().optional(),
   confirmed_at: z.string().nullable().optional(), cancelled_at: z.string().nullable().optional(), expired_at: z.string().nullable().optional(),
 }).passthrough();

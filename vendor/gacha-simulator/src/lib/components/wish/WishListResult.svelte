@@ -1,5 +1,5 @@
 <script>
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { t } from 'svelte-i18n';
 	import OverlayScrollbars from 'overlayscrollbars';
 	import positionToStyle from '$lib/helpers/cssPosition';
@@ -47,15 +47,16 @@
 
 	let container;
 	let encoded;
+	let scrollbars;
 
 	onMount(async () => {
 		const itemBox = container.querySelectorAll('.item-box, .shadow');
 		itemBox.forEach((el) => {
 			if ($animeoff) return el.classList.remove('animate');
-			el.addEventListener('animationend', () => el.classList.remove('animate'));
+			el.addEventListener('animationend', () => el.classList.remove('animate'), { once: true });
 		});
 
-		OverlayScrollbars(container, {
+		scrollbars = OverlayScrollbars(container, {
 			sizeAutoCapable: false,
 			className: 'os-theme-light',
 			scrollbars: { visibility: 'hidden' }
@@ -70,6 +71,7 @@
 			.join('|');
 		encoded = btoa(data);
 	});
+	onDestroy(() => scrollbars?.destroy());
 
 	const dispatch = createEventDispatcher();
 	const closeHandle = () => {

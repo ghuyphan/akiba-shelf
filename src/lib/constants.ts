@@ -1,4 +1,4 @@
-import type { BoothSettings, PaymentSettings } from "../types/catalog";
+import type { BoothSettings, PaymentSettings, PromotionSettings } from "../types/catalog";
 
 export const DEFAULT_STOREFRONT_PALETTE = {
   primary: "#d95c64",
@@ -60,6 +60,15 @@ export const defaultPayment: PaymentSettings = {
   bank_account_name: "",
   bank_add_info_template: "",
   payment_instructions: "",
+};
+
+export const defaultPromotion: PromotionSettings = {
+  enabled: false,
+  buy_quantity: 3,
+  free_quantity: 1,
+  repeatable: true,
+  qualifying_product_ids: [],
+  reward_product_ids: [],
 };
 
 export const productBadges = ["New", "Best Seller", "Limited", "Restock", "Event Exclusive", "Preorder", "Last Call"];

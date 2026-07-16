@@ -7,18 +7,24 @@ import {
 	rollCounter
 } from '$lib/helpers/dataAPI/api-localstorage';
 import { rates, prob, getRate } from './probabilities';
+import { getMerchConfig } from '$lib/helpers/merch';
 
 const { addHistory } = HistoryManager;
 
 export const roll = async (banner, WarpInstance, indexOfBanner) => {
 	const pity5 = localPity.get(`pity5${banner}`) + 1;
 	const pity4 = localPity.get(`pity4${banner}`) + 1;
-	const maxPity = getRate(banner, 'max5');
+	const settings = getMerchConfig().settings || {};
+	const configuredLegendaryPity = banner.includes('lightcone')
+		? settings.lightcone_legendary_pity
+		: settings.legendary_pity;
+	const maxPity = Number(configuredLegendaryPity) || getRate(banner, 'max5');
+	const maxPity4 = Number(settings.rare_pity) || getRate(banner, 'max4');
 
 	const rate5star = () => {
 		return rates({
 			baseRate: getRate(banner, 'baseRate5'),
-			rateIncreasedAt: getRate(banner, 'hard5'),
+			rateIncreasedAt: Math.min(getRate(banner, 'hard5'), maxPity - 1),
 			currentPity: pity5,
 			maxPity
 		});
@@ -28,8 +34,8 @@ export const roll = async (banner, WarpInstance, indexOfBanner) => {
 		return rates({
 			baseRate: getRate(banner, 'baseRate4'),
 			currentPity: pity4,
-			rateIncreasedAt: getRate(banner, 'hard4'),
-			maxPity: getRate(banner, 'max4')
+			rateIncreasedAt: Math.min(getRate(banner, 'hard4'), maxPity4 - 1),
+			maxPity: maxPity4
 		});
 	};
 
@@ -94,6 +100,13 @@ export const roll = async (banner, WarpInstance, indexOfBanner) => {
 
 	// Get Item
 	const randomItem = WarpInstance.getItem(rarity, banner, indexOfBanner);
+
+	if (!randomItem?.itemID) {
+		throw new Error(
+			`HSR roll returned an invalid item for banner "${indexOfBanner}" and rarity ${rarity}.`
+		);
+	}
+
 	const { manual, warp } = owneditem.put({ itemID: randomItem.itemID });
 	const numberOfOwnedItem = manual + warp - 1;
 	const isNew = numberOfOwnedItem < 1;

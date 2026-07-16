@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(23);
+select plan(32);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values('20000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','staff-orders@test.local','',now(),now(),now());
 insert into public.shops(id,name,slug,created_by) values('21000000-0000-4000-8000-000000000001','Orders','orders-test','20000000-0000-4000-8000-000000000001');
 insert into public.shop_members(shop_id,user_id,role) values('21000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','staff');
@@ -66,4 +66,31 @@ select lives_ok($$select * from public.create_order('orders-test',null,'[{"produ
 set local role postgres;
 select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000003'),8000,'database sale price determines total');
 select is((select oi.unit_price from public.order_items oi join public.orders o on o.id=oi.order_id where o.client_request_id='30000000-0000-4000-8000-000000000003'),8000,'order item snapshots sale price');
+
+insert into public.products(id,shop_id,name,item_code,price_vnd,quantity_available,category,active,promotion_eligible) values
+('order-c','21000000-0000-4000-8000-000000000001','C','ORDER-C',15000,10,'Test',true,true);
+update public.products set promotion_eligible=true,quantity_available=10,sale_price_vnd=null where id in ('order-a','order-b');
+insert into public.promotions(shop_id,enabled,buy_quantity,free_quantity,repeatable)
+values('21000000-0000-4000-8000-000000000001',true,2,1,true);
+
+set local role anon;
+select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-a","quantity":1,"reward_quantity":1},{"product_id":"order-b","quantity":1},{"product_id":"order-c","quantity":1}]','30000000-0000-4000-8000-000000000004',repeat('p',32))$$,'dynamic mixed-product promotion succeeds');
+
+set local role postgres;
+select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000004'),35000,'cheapest eligible item is free');
+select is((select discount_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000004'),10000,'order snapshots the promotion discount');
+select is((select oi.discount_amount from public.order_items oi join public.orders o on o.id=oi.order_id where o.client_request_id='30000000-0000-4000-8000-000000000004' and oi.product_id='order-a'),10000,'line snapshots the allocated free item');
+
+update public.promotions set buy_quantity=1,free_quantity=1,repeatable=true where shop_id='21000000-0000-4000-8000-000000000001';
+set local role anon;
+select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-c","quantity":4,"reward_quantity":2}]','30000000-0000-4000-8000-000000000005',repeat('q',32))$$,'repeating dynamic promotion succeeds');
+set local role postgres;
+select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000005'),30000,'repeating offer applies to every complete group');
+
+update public.promotions set repeatable=false where shop_id='21000000-0000-4000-8000-000000000001';
+set local role anon;
+select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-c","quantity":4,"reward_quantity":1}]','30000000-0000-4000-8000-000000000006',repeat('r',32))$$,'non-repeating dynamic promotion succeeds');
+set local role postgres;
+select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000006'),45000,'non-repeating offer applies only once');
+select is((select quantity_available from public.products where id='order-c'),1,'free items are still reserved from stock');
 select * from finish();rollback;

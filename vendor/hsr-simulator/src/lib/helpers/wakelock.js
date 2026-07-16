@@ -7,18 +7,28 @@ const wakelockHandle = async ({ release = false } = {}) => {
 			return;
 		}
 
-		await screenLock.release();
+		await screenLock?.release();
 		screenLock = null;
 	} catch (e) {
 		// console.log('error');
 	}
 };
 
+const requestWakeLock = () => wakelockHandle();
+const releaseWakeLock = () => wakelockHandle({ release: true });
+
+export const disposeWakeLock = () => {
+	window.removeEventListener('focus', requestWakeLock);
+	window.removeEventListener('blur', releaseWakeLock);
+	return releaseWakeLock();
+};
+
 export const wakeLock = () => {
 	const isWakeLockSupport = 'wakeLock' in navigator;
 	if (!isWakeLockSupport) return;
 
-	wakelockHandle();
-	window.addEventListener('focus', () => wakelockHandle());
-	window.addEventListener('blur', () => wakelockHandle({ release: true }));
+	disposeWakeLock();
+	requestWakeLock();
+	window.addEventListener('focus', requestWakeLock);
+	window.addEventListener('blur', releaseWakeLock);
 };

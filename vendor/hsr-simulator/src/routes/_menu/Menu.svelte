@@ -10,7 +10,6 @@
 	import Navbar from './_navbar.svelte';
 	import UpdateLog from './UpdateLog.svelte';
 	import Settings from './Settings.svelte';
-	import ProUser from './ProUser.svelte';
 
 	const closeMenu = getContext('toggleMenu');
 	let activeMenu = 'settings';
@@ -49,10 +48,6 @@
 
 		{#if activeMenu === 'updatelog'}
 			<UpdateLog />
-		{/if}
-
-		{#if activeMenu === 'prouser'}
-			<ProUser />
 		{/if}
 	</div>
 </section>

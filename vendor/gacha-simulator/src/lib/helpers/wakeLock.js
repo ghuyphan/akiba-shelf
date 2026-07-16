@@ -1,19 +1,33 @@
-export const wakeLock = async () => {
+let screenLock;
+
+const requestScreenLock = async () => {
 	try {
-		const isWakeLockSupport = 'wakeLock' in navigator;
-		if (!isWakeLockSupport) return;
-
-		let screenLock = await navigator.wakeLock.request('screen');
-		window.addEventListener('focus', async () => {
-			screenLock = await navigator.wakeLock.request('screen');
-		});
-
-		window.addEventListener('blur', async () => {
-			await screenLock.release();
-			screenLock = null;
-		});
-	} catch (e) {
-		// console
+		if (!screenLock) screenLock = await navigator.wakeLock.request('screen');
+	} catch {
+		screenLock = null;
 	}
 };
 
+const releaseScreenLock = async () => {
+	try {
+		await screenLock?.release();
+	} catch {
+		// The browser may already have released it while the tab was hidden.
+	} finally {
+		screenLock = null;
+	}
+};
+
+export const disposeWakeLock = () => {
+	window.removeEventListener('focus', requestScreenLock);
+	window.removeEventListener('blur', releaseScreenLock);
+	return releaseScreenLock();
+};
+
+export const wakeLock = async () => {
+	if (!('wakeLock' in navigator)) return;
+	await disposeWakeLock();
+	await requestScreenLock();
+	window.addEventListener('focus', requestScreenLock);
+	window.addEventListener('blur', releaseScreenLock);
+};

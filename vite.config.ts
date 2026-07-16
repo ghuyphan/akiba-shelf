@@ -1,4 +1,4 @@
-import { createReadStream, statSync } from "node:fs";
+import { closeSync, createReadStream, fstatSync, openSync } from "node:fs";
 import { extname, resolve, sep } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
@@ -49,14 +49,32 @@ function serveGachaInDevelopment(): Plugin {
         if (!relativePath || relativePath.endsWith("/")) {
           relativePath += "index.html";
         }
-        const filePath = resolve(devRoot, `.${relativePath}`);
-        if (!filePath.startsWith(`${devRoot}${sep}`)) return next();
-
-        try {
-          if (!statSync(filePath).isFile()) return next();
-        } catch {
-          return next();
+        let filePath = "";
+        let fileSize = 0;
+        let fileDescriptor: number | undefined;
+        for (const candidateRoot of [devRoot, `${devRoot}.previous`]) {
+          const candidate = resolve(candidateRoot, `.${relativePath}`);
+          if (!candidate.startsWith(`${candidateRoot}${sep}`)) continue;
+          let descriptor: number | undefined;
+          try {
+            descriptor = openSync(candidate, "r");
+            const fileStat = fstatSync(descriptor);
+            if (!fileStat.isFile()) {
+              closeSync(descriptor);
+              descriptor = undefined;
+              continue;
+            }
+            filePath = candidate;
+            fileSize = fileStat.size;
+            fileDescriptor = descriptor;
+            descriptor = undefined;
+            break;
+          } catch {
+            // A simulator rebuild may be atomically swapping directories.
+            if (descriptor !== undefined) closeSync(descriptor);
+          }
         }
+        if (!filePath || fileDescriptor === undefined) return next();
 
         response.statusCode = 200;
         response.setHeader(
@@ -65,7 +83,77 @@ function serveGachaInDevelopment(): Plugin {
             "application/octet-stream",
         );
         response.setHeader("Cache-Control", "no-store");
-        createReadStream(filePath).pipe(response);
+        response.setHeader("Accept-Ranges", "bytes");
+
+        let start = 0;
+        let end = Math.max(0, fileSize - 1);
+        const range = request.headers.range;
+        if (range) {
+          const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+          if (!match || (!match[1] && !match[2])) {
+            response.statusCode = 416;
+            response.setHeader("Content-Range", `bytes */${fileSize}`);
+            closeSync(fileDescriptor);
+            response.end();
+            return;
+          }
+
+          if (!match[1]) {
+            const suffixLength = Number(match[2]);
+            if (!Number.isSafeInteger(suffixLength) || suffixLength <= 0) {
+              response.statusCode = 416;
+              response.setHeader("Content-Range", `bytes */${fileSize}`);
+              closeSync(fileDescriptor);
+              response.end();
+              return;
+            }
+            start = Math.max(0, fileSize - suffixLength);
+            end = fileSize - 1;
+          } else {
+            start = Number(match[1]);
+            end = match[2] ? Number(match[2]) : fileSize - 1;
+          }
+
+          if (
+            !Number.isSafeInteger(start) ||
+            !Number.isSafeInteger(end) ||
+            start < 0 ||
+            start >= fileSize ||
+            end < start
+          ) {
+            response.statusCode = 416;
+            response.setHeader("Content-Range", `bytes */${fileSize}`);
+            closeSync(fileDescriptor);
+            response.end();
+            return;
+          }
+
+          end = Math.min(end, fileSize - 1);
+          response.statusCode = 206;
+          response.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
+        }
+
+        response.setHeader("Content-Length", Math.max(0, end - start + 1));
+        if (request.method === "HEAD") {
+          closeSync(fileDescriptor);
+          response.end();
+          return;
+        }
+        if (fileSize === 0) {
+          closeSync(fileDescriptor);
+          response.end();
+          return;
+        }
+
+        const stream = createReadStream(filePath, {
+          fd: fileDescriptor,
+          start,
+          end,
+          autoClose: true,
+        });
+        response.once("close", () => stream.destroy());
+        stream.once("error", (error) => response.destroy(error));
+        stream.pipe(response);
       });
     },
   };

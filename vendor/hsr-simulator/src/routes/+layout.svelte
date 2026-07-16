@@ -1,7 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { onMount, setContext } from 'svelte';
+	import { onDestroy, onMount, setContext } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { writable } from 'svelte/store';
 	import { isLoading, locale } from 'svelte-i18n';
@@ -18,7 +18,7 @@
 	} from '$lib/stores/app-store';
 	import { APP_TITLE, DESCRIPTION, HOST, KEYWORDS } from '$lib/data/site-setup.json';
 	import { IDBUpdater } from '$lib/helpers/migrator/idbUpdater';
-	import { wakeLock } from '$lib/helpers/wakelock';
+	import { disposeWakeLock, wakeLock } from '$lib/helpers/wakelock';
 	import { mobileDetect } from '$lib/helpers/mobile-detect';
 	import { loadTracks } from '$lib/helpers/sounds/media-session';
 	import { mountLocale } from '$lib/helpers/i18n';
@@ -60,6 +60,10 @@
 		const rotate = angle === 90 || angle === 270;
 		isMobileLandscape.set(rotate);
 	};
+	const handleOrientationChange = () => {
+		if ($isMobile) setMobileMode();
+	};
+	const preventContextMenu = (event) => event.preventDefault();
 
 	mountLocale();
 	onMount(async () => {
@@ -72,9 +76,7 @@
 		isMobile.set(mobileDetect() || innerWidth < 601);
 		if ($isMobile) setMobileMode();
 
-		window.addEventListener('orientationchange', () => {
-			if ($isMobile) setMobileMode();
-		});
+		window.addEventListener('orientationchange', handleOrientationChange);
 
 		loadTracks(); // Load Phonograph Tracks
 		wakeLock(); // Prevent screen off while open the app
@@ -85,7 +87,13 @@
 		// 	navigator.serviceWorker.register('/sw.js'); // /dev-sw.js?dev-sw
 		// }
 		// prevent Righ click (hold on android) on production mode
-		if (!dev) document.addEventListener('contextmenu', (e) => e.preventDefault());
+		if (!dev) document.addEventListener('contextmenu', preventContextMenu);
+	});
+
+	onDestroy(() => {
+		window.removeEventListener('orientationchange', handleOrientationChange);
+		document.removeEventListener('contextmenu', preventContextMenu);
+		disposeWakeLock();
 	});
 </script>
 

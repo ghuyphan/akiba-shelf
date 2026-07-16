@@ -1,5 +1,5 @@
 <script>
-	import { getContext, onMount } from 'svelte';
+	import { getContext, onDestroy, onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { t } from 'svelte-i18n';
 	import { toBlob } from 'html-to-image';
@@ -27,6 +27,8 @@
 	let btnTxt = page ? $t('share') : $t('screenshot');
 
 	let blob;
+	let screenshotObjectUrl = '';
+	let toastTimer;
 	const featuredItem = item ? `I got ${item}` : "Wow! I'm so lucky ";
 	const shareText = `${featuredItem} when pulling on Wish Simulator, how lovely!`;
 	let url = '/images/meta-picture.jpg';
@@ -64,7 +66,9 @@
 
 		blob = await toBlob(node, { filter: filterShot });
 		playSfx('camera');
-		url = URL.createObjectURL(blob);
+		if (screenshotObjectUrl) URL.revokeObjectURL(screenshotObjectUrl);
+		screenshotObjectUrl = URL.createObjectURL(blob);
+		url = screenshotObjectUrl;
 		show = true;
 		showOnProgress = false;
 		btnTxt = page ? $t('share') : $t('screenshot');
@@ -81,9 +85,9 @@
 		playSfx();
 		copy(shareLink);
 		showToast = true;
-		const t = setTimeout(() => {
+		clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => {
 			showToast = false;
-			clearTimeout(t);
 		}, 2000);
 		addFunds();
 	};
@@ -121,6 +125,11 @@
 		if (!obtain) return;
 		showObtained('primogem', 16000);
 	};
+
+	onDestroy(() => {
+		clearTimeout(toastTimer);
+		if (screenshotObjectUrl) URL.revokeObjectURL(screenshotObjectUrl);
+	});
 </script>
 
 <svelte:window bind:innerWidth={width} bind:innerHeight={height} />

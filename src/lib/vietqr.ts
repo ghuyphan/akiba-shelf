@@ -76,11 +76,11 @@ export async function generateVietQrForCart(
   const codesStr = cart
     .map(
       (item) =>
-        `${item.product.item_code}${item.quantity > 1 ? `x${item.quantity}` : ""}`,
+        `${item.product.item_code}${item.quantity + (item.reward_quantity ?? 0) > 1 ? `x${item.quantity + (item.reward_quantity ?? 0)}` : ""}`,
     )
     .join(" ");
   const itemsStr = cart
-    .map((item) => `${item.quantity}x ${item.product.name}`)
+    .map((item) => `${item.quantity + (item.reward_quantity ?? 0)}x ${item.product.name}`)
     .join(", ");
 
   const fallback = orderCode ? `${orderCode}` : `Booth order ${codesStr}`;

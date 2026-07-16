@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/catalog.css";
 import { applyPageTheme, getStorefrontSectionStyleClass, getThemeStyle, resetPageTheme } from "../lib/theme";
 import { getShopBranding, useDocumentBranding } from "../lib/branding";
-import type { Order, Product, StorefrontSection } from "../types/catalog";
+import type { CartItem, Order, Product, PromotionSettings, StorefrontSection } from "../types/catalog";
 import { CatalogLocaleProvider, translations } from "../lib/catalogI18n";
+import { PromotionProvider } from "../lib/promotionContext";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
 import { CategoryFilters } from "../components/catalog/CategoryFilters";
@@ -26,10 +27,17 @@ import {
 } from "../components/catalog/CatalogOverlays";
 import { layoutOrderSchema } from "../lib/schemas";
 import { PageLoading } from "../components/ui/PageLoading";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { getPublicGachaEnabled, getPublicShop, type PublicProductSort } from "../lib/api";
+import { prepareGachaLaunch } from "../lib/gachaLaunch";
 import type { Shop } from "../types/catalog";
-import { LogIn, RotateCw, Store } from "lucide-react";
+import { calculateCartPricing } from "../lib/pricing";
+
+const ShopUnavailablePage = lazy(() =>
+  import("./ShopUnavailablePage").then((module) => ({
+    default: module.ShopUnavailablePage,
+  })),
+);
 
 type NetworkConnection = { effectiveType?: string; saveData?: boolean };
 
@@ -42,6 +50,24 @@ function prefersLightweightCatalog() {
       connection?.effectiveType === "slow-2g" ||
       connection?.effectiveType === "2g",
   );
+}
+
+function normalizePromotionRewards(cart: CartItem[], promotion: PromotionSettings) {
+  const qualifyingIds = new Set(promotion.qualifying_product_ids);
+  const rewardIds = new Set(promotion.reward_product_ids);
+  const qualifyingQuantity = cart.reduce((sum, item) => sum + (qualifyingIds.has(item.product.id) ? item.quantity : 0), 0);
+  let rewardsRemaining = promotion.enabled
+    ? promotion.repeatable
+      ? Math.floor(qualifyingQuantity / promotion.buy_quantity) * promotion.free_quantity
+      : qualifyingQuantity >= promotion.buy_quantity ? promotion.free_quantity : 0
+    : 0;
+  return cart.flatMap((item) => {
+    const rewardQuantity = rewardIds.has(item.product.id)
+      ? Math.min(item.reward_quantity ?? 0, rewardsRemaining, Math.max(0, item.product.quantity_available - item.quantity))
+      : 0;
+    rewardsRemaining -= rewardQuantity;
+    return item.quantity + rewardQuantity > 0 ? [{ ...item, reward_quantity: rewardQuantity }] : [];
+  });
 }
 
 export function CatalogPage() {
@@ -76,6 +102,8 @@ export function CatalogPage() {
     categories: catalogCategories,
     booth: catalogBooth,
     payment,
+    promotion,
+    rewardProducts,
     hasMore,
     loadError,
     isLoading,
@@ -162,6 +190,18 @@ export function CatalogPage() {
     return () => { active = false; };
   }, [catalogShopId]);
 
+  const prepareGacha = useCallback(() => {
+    if (!shop || !catalogShopId) return;
+    void import("./GachaPage");
+    void prepareGachaLaunch(
+      shopSlug,
+      { shop, booth: catalogBooth },
+      !lightweightMode,
+    ).catch(() => {
+      // Navigation owns user-facing launch errors; intent prefetch stays silent.
+    });
+  }, [catalogBooth, catalogShopId, lightweightMode, shop, shopSlug]);
+
   useEffect(() => {
     const handleOnline = () => {
       setOnline(true);
@@ -233,7 +273,7 @@ export function CatalogPage() {
       return;
     }
     const currentItem = cart.find((item) => item.product.id === product.id);
-    if (currentItem && currentItem.quantity >= product.quantity_available) {
+    if (currentItem && currentItem.quantity + (currentItem.reward_quantity ?? 0) >= product.quantity_available) {
       toast.info(
         `Only ${product.quantity_available} units are available.`,
         "Cart limit reached",
@@ -254,15 +294,15 @@ export function CatalogPage() {
       );
       if (existingIndex > -1) {
         const nextQty = prevCart[existingIndex].quantity + 1;
-        if (nextQty > product.quantity_available) return prevCart;
+        if (nextQty + (prevCart[existingIndex].reward_quantity ?? 0) > product.quantity_available) return prevCart;
         const nextCart = [...prevCart];
         nextCart[existingIndex] = {
           ...nextCart[existingIndex],
           quantity: nextQty,
         };
-        return nextCart;
+        return normalizePromotionRewards(nextCart, promotion);
       }
-      return [...prevCart, { product, quantity: 1 }];
+      return normalizePromotionRewards([...prevCart, { product, quantity: 1 }], promotion);
     });
 
     if (event) animateAdd(product, event);
@@ -270,20 +310,43 @@ export function CatalogPage() {
 
   const handleUpdateCartQuantity = (productId: string, quantity: number) => {
     setCart((prevCart) =>
-      prevCart.map((item) => {
+      normalizePromotionRewards(prevCart.map((item) => {
         if (item.product.id === productId) {
-          const maxQty = Math.max(1, item.product.quantity_available);
-          const newQty = Math.min(maxQty, Math.max(1, quantity));
+          const maxQty = Math.max(0, item.product.quantity_available - (item.reward_quantity ?? 0));
+          const newQty = Math.min(maxQty, Math.max(0, quantity));
           return { ...item, quantity: newQty };
         }
         return item;
-      }),
+      }), promotion),
     );
   };
 
+  const handleAddReward = useCallback((product: Product) => {
+    setCart((current) => {
+      const pricing = calculateCartPricing(current, promotion);
+      if (pricing.availableRewardQuantity <= 0) return current;
+      const index = current.findIndex((item) => item.product.id === product.id);
+      if (index >= 0) {
+        const item = current[index];
+        if (item.quantity + (item.reward_quantity ?? 0) >= product.quantity_available) return current;
+        const next = [...current];
+        next[index] = { ...item, product, reward_quantity: (item.reward_quantity ?? 0) + 1 };
+        return normalizePromotionRewards(next, promotion);
+      }
+      return normalizePromotionRewards([...current, { product, quantity: 0, reward_quantity: 1 }], promotion);
+    });
+  }, [promotion, setCart]);
+
+  useEffect(() => {
+    if (rewardProducts.length !== 1) return;
+    const pricing = calculateCartPricing(cart, promotion);
+    if (pricing.availableRewardQuantity <= 0) return;
+    handleAddReward(rewardProducts[0]);
+  }, [cart, handleAddReward, promotion, rewardProducts]);
+
   const handleRemoveFromCart = (productId: string) => {
     setCart((prevCart) =>
-      prevCart.filter((item) => item.product.id !== productId),
+      normalizePromotionRewards(prevCart.filter((item) => item.product.id !== productId), promotion),
     );
     if (selectedProductId === productId) {
       setSelectedProductId(null);
@@ -367,6 +430,9 @@ export function CatalogPage() {
     cart: (
       <SelectedItemPanel
         cart={cart}
+        promotion={promotion}
+        rewardProducts={rewardProducts}
+        onAddReward={handleAddReward}
         onQuantityChange={handleUpdateCartQuantity}
         onRemove={handleRemoveFromCart}
         onOpenPayment={() => {
@@ -480,43 +546,11 @@ export function CatalogPage() {
   }
   if (shop === null)
     return (
-      <main className="shop-state-shell">
-        <section className="shop-state-card" role="alert">
-          <div className="shop-state-illustration" aria-hidden="true">
-            <span className="shop-state-orbit shop-state-orbit-one" />
-            <span className="shop-state-orbit shop-state-orbit-two" />
-            <span className="shop-state-icon">
-              <Store size={30} />
-            </span>
-          </div>
-          <span className="shop-state-eyebrow">Storefront unavailable</span>
-          <h1>This shop is taking a short break.</h1>
-          <p>
-            {shopLoadError
-              ? "We couldn’t reach it just now. Please try again in a moment."
-              : "This storefront may be closed, or the link may no longer be available."}
-          </p>
-          <div className="shop-state-actions">
-            <button
-              type="button"
-              className="button button-primary"
-              onClick={() => void loadShop()}
-            >
-              <RotateCw size={17} />
-              <span>Try again</span>
-            </button>
-            {shopSlug !== "demo-booth" && (
-              <Link className="button button-secondary" to="/s/demo-booth">
-                <Store size={17} />
-                <span>Visit demo shop</span>
-              </Link>
-            )}
-            <Link className="shop-state-admin-link" to="/admin">
-              <LogIn size={15} /> Staff sign in
-            </Link>
-          </div>
-        </section>
-      </main>
+      <ShopUnavailablePage
+        hasLoadError={Boolean(shopLoadError)}
+        showDemoLink={shopSlug !== "demo-booth"}
+        onRetry={() => void loadShop()}
+      />
     );
 
   if (isInitialLoading) {
@@ -530,12 +564,18 @@ export function CatalogPage() {
 
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
+      <PromotionProvider promotion={promotion}>
       <main
         className={`app-shell ${lightweightMode ? "catalog-lightweight" : ""}`}
         style={getThemeStyle(booth)}
         onClick={() => setSelectedProductId(null)}
       >
-        <CatalogHeader booth={booth} showGacha={showGacha} onOpenInfo={() => setIsInfoOpen(true)} />
+        <CatalogHeader
+          booth={booth}
+          showGacha={showGacha}
+          onPrepareGacha={prepareGacha}
+          onOpenInfo={() => setIsInfoOpen(true)}
+        />
         {!online && (
           <Alert variant="info" title="You are offline.">
             Your cart is saved on this device. Reconnect to verify stock and
@@ -574,6 +614,7 @@ export function CatalogPage() {
             isOpen={isQrOpen}
             payment={payment}
             cart={cart}
+            promotion={promotion}
             onClose={() => setIsQrOpen(false)}
             onSuccess={() => void loadCatalog()}
             onOrderChange={handleOrderChange}
@@ -595,6 +636,7 @@ export function CatalogPage() {
         />
         <FlyingItemsLayer items={flyingItems} />
       </main>
+      </PromotionProvider>
     </CatalogLocaleProvider>
   );
 }

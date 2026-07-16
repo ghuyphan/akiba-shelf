@@ -1,7 +1,7 @@
 <script>
 	import { getContext, onMount } from 'svelte';
 	import { assets } from '$lib/stores/app-store';
-	import { blobAssets, itemList, listingAssets } from '$lib/helpers/assets';
+	import { expressVideoAssets, itemList, listingAssets } from '$lib/helpers/assets';
 
 	let anyError = false;
 	let current = 0;
@@ -9,28 +9,104 @@
 
 	const handleLoaded = getContext('loaded');
 	const assetList = itemList();
+	const mediaPattern = /\.(?:mp4|webm|ogg)$/i;
+	const criticalNames = new Set([
+		'warp-bg.webp',
+		'menu-side-title-bg.webp',
+		'starrail-logo.webp',
+		'stellar-icon.svg',
+		'stellar-jade.webp',
+		'regular-pass.webp',
+		'special-pass.webp',
+		'combat-fire.webp',
+		'combat-ice.webp',
+		'combat-imaginary.webp',
+		'combat-lightning.webp',
+		'combat-physical.webp',
+		'combat-quantum.webp',
+		'combat-wind.webp'
+	]);
 
-	const assetInit = async () => {
-		const arr = [];
-		let i = 0;
-		const raw = listingAssets();
-		for await (const assetData of raw) {
-			i++;
-			const { path, asset } = assetData;
-			const blob = await blobAssets(path);
-			if (blob === 'error') anyError = true;
-			arr.push({ url: blob, name: asset });
-			current = (i / raw.length) * 100;
-		}
-
-		const loadedAssets = await Promise.all(arr);
-		assets.update((pv) => {
-			pv = {};
-			loadedAssets.forEach(({ url, name }) => (pv[name] = url));
-			return { ...pv, ...assetList };
+	const preloadImage = (path) =>
+		new Promise((resolve, reject) => {
+			if (!path) return reject(new Error('Asset path is empty.'));
+			const image = new Image();
+			image.decoding = 'async';
+			image.onload = resolve;
+			image.onerror = () => reject(new Error(`Could not load ${path}`));
+			image.src = path;
 		});
 
-		if (anyError === false) handleLoaded();
+	const preloadBatch = async (paths, concurrency, onProgress = () => {}) => {
+		let next = 0;
+		let completed = 0;
+		const failures = [];
+		const worker = async () => {
+			while (next < paths.length) {
+				const path = paths[next++];
+				try {
+					await preloadImage(path);
+				} catch (error) {
+					failures.push(path);
+					console.warn('Unable to preload HSR asset.', error);
+				}
+				completed++;
+				onProgress(completed / paths.length);
+			}
+		};
+		await Promise.all(
+			Array.from({ length: Math.min(concurrency, paths.length) }, () => worker())
+		);
+		return failures;
+	};
+
+	const scheduleDeferred = (callback) => {
+		if ('requestIdleCallback' in window) {
+			window.requestIdleCallback(callback, { timeout: 2000 });
+		} else {
+			setTimeout(callback, 750);
+		}
+	};
+
+	const assetInit = async () => {
+		const raw = listingAssets();
+		assets.set({ ...assetList, ...expressVideoAssets() });
+
+		const merchImages = Object.entries(assetList)
+			.filter(([key, path]) => key.startsWith('splash-art/medium/') && /^https?:/i.test(path))
+			.map(([, path]) => path)
+			.slice(0, 3);
+		const staticCriticalPaths = raw
+			.filter(({ asset }) => criticalNames.has(asset))
+			.map(({ path }) => path);
+		const criticalPaths = [
+			...staticCriticalPaths,
+			...merchImages
+		].filter((path, index, paths) => path && paths.indexOf(path) === index);
+		const criticalSet = new Set(criticalPaths);
+		const failures = await preloadBatch(criticalPaths, 4, (progress) => {
+			current = progress * 100;
+		});
+		current = 100;
+		const staticCriticalSet = new Set(staticCriticalPaths);
+		anyError = failures.some((path) => staticCriticalSet.has(path));
+		if (anyError) return;
+		handleLoaded();
+
+		const connection = navigator.connection;
+		const lightweight =
+			new URLSearchParams(window.location.search).get('lightweight') === '1' ||
+			connection?.saveData ||
+			['slow-2g', '2g'].includes(connection?.effectiveType);
+		if (lightweight) return;
+		const deferredPaths = raw
+			.map(({ path }) => path)
+			.filter((path) => path && !mediaPattern.test(path) && !criticalSet.has(path));
+		scheduleDeferred(() => {
+			preloadBatch(deferredPaths, 2).catch((error) => {
+				console.warn('Unable to warm deferred HSR assets.', error);
+			});
+		});
 	};
 
 	onMount(assetInit);

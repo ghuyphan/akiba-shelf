@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { defaultPayment } from "../lib/constants";
+import { defaultPayment, defaultPromotion } from "../lib/constants";
 import {
   getPublicBoothSettings,
   getPublicFeaturedProducts,
   getPublicPaymentSettings,
   getPublicProductCategories,
+  getPublicPromotionSettings,
 } from "../lib/api";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
-import type { BoothSettings, PaymentSettings, Product } from "../types/catalog";
+import type { BoothSettings, PaymentSettings, Product, PromotionSettings } from "../types/catalog";
 
 type BootstrapPhase = "initial-loading" | "ready";
 
@@ -23,6 +24,7 @@ export function useStorefrontBootstrap(
   );
   const [categories, setCategories] = useState<string[]>([]);
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
+  const [promotion, setPromotion] = useState<PromotionSettings>(defaultPromotion);
   const [phase, setPhase] = useState<BootstrapPhase>("initial-loading");
   const [error, setError] = useState("");
   const shopIdentityRef = useRef(0);
@@ -37,6 +39,7 @@ export function useStorefrontBootstrap(
     );
     setCategories([]);
     setPayment(defaultPayment);
+    setPromotion(defaultPromotion);
     setError("");
     setPhase("initial-loading");
   }, [initialBooth, initialProducts, shopId]);
@@ -66,6 +69,13 @@ export function useStorefrontBootstrap(
     const identity = shopIdentityRef.current;
     const nextCategories = await getPublicProductCategories(shopId);
     if (identity === shopIdentityRef.current) setCategories(nextCategories);
+  }, [shopId]);
+
+  const loadPromotion = useCallback(async () => {
+    if (!shopId) return;
+    const identity = shopIdentityRef.current;
+    const nextPromotion = await getPublicPromotionSettings(shopId);
+    if (identity === shopIdentityRef.current) setPromotion(nextPromotion);
   }, [shopId]);
 
   const ensurePayment = useCallback(() => {
@@ -100,9 +110,14 @@ export function useStorefrontBootstrap(
 
   const reload = useCallback(async () => {
     if (!shopId) return;
-    await settleRequests([loadBooth(), loadFeatured(), loadCategories()]);
+    await settleRequests([
+      loadBooth(),
+      loadFeatured(),
+      loadCategories(),
+      loadPromotion(),
+    ]);
     setPhase("ready");
-  }, [loadBooth, loadCategories, loadFeatured, settleRequests, shopId]);
+  }, [loadBooth, loadCategories, loadFeatured, loadPromotion, settleRequests, shopId]);
 
   const refreshProductMetadata = useCallback(async () => {
     await settleRequests([loadFeatured(), loadCategories()]);
@@ -116,6 +131,10 @@ export function useStorefrontBootstrap(
     await settleRequests([ensurePayment()]);
   }, [ensurePayment, settleRequests]);
 
+  const refreshPromotion = useCallback(async () => {
+    await settleRequests([loadPromotion()]);
+  }, [loadPromotion, settleRequests]);
+
   useEffect(() => {
     void reload();
   }, [reload]);
@@ -125,6 +144,7 @@ export function useStorefrontBootstrap(
     featuredProducts,
     categories,
     payment,
+    promotion,
     phase,
     error,
     isInitialLoading: phase === "initial-loading",
@@ -132,6 +152,7 @@ export function useStorefrontBootstrap(
     refreshProductMetadata,
     refreshBooth,
     refreshPayment,
+    refreshPromotion,
     ensurePayment,
   };
 }

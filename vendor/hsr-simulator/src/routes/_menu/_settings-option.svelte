@@ -78,13 +78,6 @@
 		navigate('allbanner');
 	};
 
-	// feedback
-	const chatToggle = getContext('chatToggle');
-	const feedback = () => {
-		playSfx();
-		chatToggle();
-	};
-
 	// Phonograph
 	const openPhonograph = () => {
 		playSfx();
@@ -151,15 +144,8 @@
 			<!-- Switch Banner -->
 		{:else if optionName === 'switchbanner'}
 			<button class="selected-option" on:click={switchBanner}>
-				{$activeVersion === '1000000.0' ? 'Pro' : $activeVersion} - {$activePhase}
+				{$activeVersion === '1000000.0' ? 'Preview' : $activeVersion} - {$activePhase}
 				<i class="hsr-caret-down"></i>
-			</button>
-
-			<!-- Feedback -->
-		{:else if optionName === 'feedback'}
-			<button class="selected-option" on:click={feedback}>
-				{$t('menu.feedback')}
-				<i class="hsr-bug"></i>
 			</button>
 
 			<!-- Number of Warps -->

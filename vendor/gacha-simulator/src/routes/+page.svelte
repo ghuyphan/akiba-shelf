@@ -1,5 +1,5 @@
 <script>
-	import { getContext, onMount, setContext } from 'svelte';
+	import { getContext, onDestroy, onMount, setContext } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { t } from 'svelte-i18n';
 	import { playSfx } from '$lib/helpers/audio/audio.svelte';
@@ -17,7 +17,7 @@
 		assets
 	} from '$lib/store/stores';
 	import { localConfig, localWelkin } from '$lib/store/localstore';
-	import { beginner } from '$lib/data/banners/beginner.json';
+	import beginnerConfig from '$lib/data/banners/beginner.json';
 	import { getMerchConfig, getMerchItems } from '$lib/helpers/merch';
 	import { checkLightweight } from '$lib/helpers/lightweight';
 
@@ -64,7 +64,7 @@
 	setContext('animateBG', animateBG);
 
 	let showToast = false;
-	const beginnerBanner = beginner.featured;
+	const beginnerBanner = (beginnerConfig?.beginner || beginnerConfig)?.featured || {};
 	let eventBanner;
 	let weaponBanner;
 	let standardBanner;
@@ -101,6 +101,9 @@
 			};
 		});
 		bannerList.set(list);
+		bannerActive.update((index) =>
+			Math.min(Math.max(Number.isInteger(index) ? index : 0, 0), Math.max(list.length - 1, 0))
+		);
 		isFatepointSystem.set(false);
 		isAcquaintUsed.set(false);
 		pageActive.set('index');
@@ -163,6 +166,15 @@
 			bgVideo.pause();
 		}
 	}
+	const handleBlur = () => playSfx('wishBacksound', { paused: isMount });
+	const handleFocus = () => {
+		if (audioActive) playSfx('wishBacksound');
+	};
+	const handlePopState = (event) => {
+		if (event.state?.page) return;
+		if ($pageActive === 'index') return;
+		pageActive.set('index');
+	};
 
 	onMount(async () => {
 		await importHelper();
@@ -170,17 +182,9 @@
 		importChunks();
 		isMount = true;
 		setBannerVersionAndPhase();
-		window.addEventListener('blur', () => playSfx('wishBacksound', { paused: isMount }));
-		window.addEventListener('focus', () => {
-			if (audioActive) return playSfx('wishBacksound');
-			else return;
-		});
-
-		window.addEventListener('popstate', (e) => {
-			if (e.state.page) return;
-			if ($pageActive === 'index') return;
-			pageActive.set('index');
-		});
+		window.addEventListener('blur', handleBlur);
+		window.addEventListener('focus', handleFocus);
+		window.addEventListener('popstate', handlePopState);
 
 		// Setup main page
 		bannerActive.set(0);
@@ -189,6 +193,13 @@
 		welkinCheckin = remaining > 0 && remaining - diff >= 0 && diff > 0;
 		if (latestCheckIn) localWelkin.checkin();
 		if (!welkinCheckin) backsound.set(true);
+	});
+
+	onDestroy(() => {
+		window.removeEventListener('blur', handleBlur);
+		window.removeEventListener('focus', handleFocus);
+		window.removeEventListener('popstate', handlePopState);
+		bgVideo?.pause();
 	});
 </script>
 

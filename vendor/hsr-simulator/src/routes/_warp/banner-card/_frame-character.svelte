@@ -8,8 +8,12 @@
 
 	export let item = {};
 
-	let { rateup, bannerName, combat_type, featured } = item;
-	$: bannerTitle = bannerName ? $t(`banner.${bannerName}`) : $t(featured);
+	let { rateup, bannerName, combat_type, featured, isMerch = false } = item;
+	$: bannerTitle = bannerName
+		? isMerch
+			? bannerName
+			: $t(`banner.${bannerName}`, { default: bannerName })
+		: $t(featured);
 
 	const characterOffset = (characterName, offset = 'bannerOffset') => {
 		const item = data.find(({ name }) => name === characterName) || {};
@@ -177,7 +181,7 @@
 
 	.description :global(span),
 	.time {
-		color: #e6993d;
+		color: var(--ribbon-color);
 	}
 
 	h1 {

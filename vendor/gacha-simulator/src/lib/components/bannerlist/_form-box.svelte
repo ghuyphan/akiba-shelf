@@ -1,5 +1,5 @@
 <script>
-	import { getContext, onMount } from 'svelte';
+	import { getContext, onDestroy, onMount } from 'svelte';
 	import { t } from 'svelte-i18n';
 	import { fade } from 'svelte/transition';
 	import { playSfx } from '$lib/helpers/audio/audio.svelte';
@@ -22,11 +22,14 @@
 		if (op === 'dimiss') return;
 		playSfx();
 	};
+	let section;
+	const closeOptions = () => (showOptions = false);
 
 	onMount(() => {
-		const section = document.querySelector('#previous');
-		section.addEventListener('click', () => (showOptions = false));
+		section = document.querySelector('#previous');
+		section?.addEventListener('click', closeOptions);
 	});
+	onDestroy(() => section?.removeEventListener('click', closeOptions));
 </script>
 
 <div class="filter">

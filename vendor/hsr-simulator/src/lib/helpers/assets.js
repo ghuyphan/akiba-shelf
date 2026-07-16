@@ -183,6 +183,14 @@ const images = [
 ];
 
 const videos = ['phonograph1.mp4', 'phonograph2.mp4'];
+const expressVideos = [
+	'regular-3star.mp4',
+	'regular-4star.mp4',
+	'regular-5star.mp4',
+	'event-3star.mp4',
+	'event-4star.mp4',
+	'event-5star.mp4'
+];
 
 const bgList = () => {
 	const paths = [];
@@ -214,20 +222,5 @@ export const listingAssets = () => {
 	return arr;
 };
 
-export const blobAssets = async (path) => {
-	try {
-		if (!path) throw new Error('Path is undefined or empty');
-		const data = await fetch(path);
-		const responseType = data.headers.get('Content-Type');
-		if (responseType === 'text/html') {
-			throw new Error(`URL "${path}" returned HTML page instead of asset binary content`);
-		}
-		const blob = await data.blob();
-		const DOMURL = window.URL || window.webkitURL;
-		const url = DOMURL.createObjectURL(blob);
-		return url;
-	} catch (e) {
-		console.error('Failed to load asset blob for path:', path, e);
-		return 'error';
-	}
-};
+export const expressVideoAssets = () =>
+	Object.fromEntries(expressVideos.map((video) => [video, `${base}/videos/${video}`]));

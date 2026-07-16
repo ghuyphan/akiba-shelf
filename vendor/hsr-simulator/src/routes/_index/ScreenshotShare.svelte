@@ -77,10 +77,12 @@
 
 	let lid;
 	const handleLid = (node) => {
-		node.addEventListener('animationend', () => {
+		const removeLid = () => {
 			// eslint-disable-next-line svelte/no-dom-manipulating
 			lid.remove();
-		});
+		};
+		node.addEventListener('animationend', removeLid, { once: true });
+		return { destroy: () => node.removeEventListener('animationend', removeLid) };
 	};
 
 	const animateFade = (node, args) => {

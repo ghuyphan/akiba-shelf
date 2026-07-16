@@ -25,6 +25,7 @@
 	import StarterFrame from './banner-card/_frame-starter.svelte';
 	import ProbabilityEditor from './probability-editor.svelte';
 	import FrameGroup from './banner-card/_frame-group.svelte';
+	import BannerCorner from './banner-card/__banner-corner.svelte';
 
 	export let banner = 'starter';
 	export let bannerIndex;
@@ -121,6 +122,10 @@
 			<div class="frame">
 				<FrameGroup {item} />
 			</div>
+		{/if}
+
+		{#if !$probEdit}
+			<BannerCorner />
 		{/if}
 
 		<!-- Probability Controller -->

@@ -1,5 +1,7 @@
 import type { Product } from "./catalog";
 
+export type GachaGameType = "genshin" | "hsr";
+
 export type GachaItemKind = "character" | "weapon" | "lightcone";
 export type GachaRarity = 3 | 4 | 5;
 export type GachaElement =
@@ -34,11 +36,12 @@ export type GachaWeaponType =
 export type GachaSettings = {
   shop_id: string;
   enabled: boolean;
-  game_type: "genshin" | "hsr";
+  game_type: GachaGameType;
   title: string;
   description: string;
   rare_pity: number;
   legendary_pity: number;
+  lightcone_legendary_pity: number;
   updated_at?: string;
 };
 
@@ -79,6 +82,16 @@ export type GachaCatalog = {
   entries: GachaPoolItem[];
 };
 
+export type GachaGameConfiguration = {
+  settings: GachaSettings;
+  banners: GachaBanner[];
+  entries: GachaPoolEntry[];
+};
+
+export type GachaGameConfigurations = Partial<
+  Record<GachaGameType, GachaGameConfiguration>
+>;
+
 export const defaultGachaSettings = (shopId: string): GachaSettings => ({
   shop_id: shopId,
   enabled: false,
@@ -88,6 +101,7 @@ export const defaultGachaSettings = (shopId: string): GachaSettings => ({
     "Meet a surprise character or discover a featured weapon from this shop.",
   rare_pity: 10,
   legendary_pity: 50,
+  lightcone_legendary_pity: 80,
 });
 
 export const defaultGachaBanner = (

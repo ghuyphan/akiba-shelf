@@ -79,16 +79,22 @@
 		rollCost = bannerToRoll === 'starter' ? 8 : count;
 		if (!isUnlimited && rollCost > currencyUsed) return (showConverModal = true);
 
-		for (let i = 0; i < count; i++) {
-			const result = await roll(bannerToRoll, WarpInstance, $activeWarp.bannerID);
-			tmp.push(result);
-		}
+		try {
+			if (!WarpInstance) throw new Error('The HSR warp engine is not ready.');
+			for (let i = 0; i < count; i++) {
+				const result = await roll(bannerToRoll, WarpInstance, $activeWarp.bannerID);
+				tmp.push(result);
+			}
 
-		warpResult = tmp;
-		handleGachaAnimation(warpResult);
-		if (isUnlimited) return;
-		updateMilestones();
-		updateBalance(bannerToRoll);
+			warpResult = tmp;
+			handleGachaAnimation(warpResult);
+			if (isUnlimited) return;
+			updateMilestones();
+			updateBalance(bannerToRoll);
+		} catch (error) {
+			console.error('Unable to complete the HSR warp.', error);
+			onWarp.set(false);
+		}
 	};
 
 	const reroll = () => {

@@ -1,6 +1,7 @@
 import { assets } from '$lib/stores/app-store';
 import { AssetManager } from '$lib/helpers/dataAPI/api-indexeddb';
 import { writable } from 'svelte/store';
+import { base } from '$app/paths';
 
 const expressList = [
 	'regular-3star.mp4',
@@ -25,7 +26,10 @@ export const check = async () => {
 	if (allComplete) {
 		const DOMURL = window.URL || window.webkitURL;
 		assets.update((v) => {
-			loadedData.forEach(({ key, blob }) => (v[key] = DOMURL.createObjectURL(blob)));
+			loadedData.forEach(({ key, blob }) => {
+				if (v[key]?.startsWith('blob:')) DOMURL.revokeObjectURL(v[key]);
+				v[key] = DOMURL.createObjectURL(blob);
+			});
 			return v;
 		});
 	}
@@ -39,7 +43,10 @@ export const loadAnimation = async () => {
 	const totalItem = expressList.length;
 	for (let i = 0; i < totalItem; i++) {
 		loadProggress.set({ item: expressList[i], progress: 0, totalItem, itemIndex: i });
-		const response = await fetch(`/videos/${expressList[i]}`);
+		const response = await fetch(`${base}/videos/${expressList[i]}`);
+		if (!response.ok || !response.body) {
+			throw new Error(`Could not load ${expressList[i]} (${response.status}).`);
+		}
 		const data = new Response(streamResponse(response));
 		const blob = await data.blob();
 
@@ -76,7 +83,9 @@ const readStream = (controller, reader, contentLength) => {
 
 		loadProggress.update((v) => {
 			loaded += progressEvent.value.byteLength;
-			v.progress = Math.round((loaded / contentLength) * 100);
+			v.progress = contentLength
+				? Math.round((loaded / Number(contentLength)) * 100)
+				: 0;
 			return v;
 		});
 		controller.enqueue(progressEvent.value);

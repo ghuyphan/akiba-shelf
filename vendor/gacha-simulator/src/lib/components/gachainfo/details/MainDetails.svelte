@@ -2,11 +2,14 @@
 	import { t, locale } from 'svelte-i18n';
 	import { parseLocalizedText } from '$lib/helpers/localize';
 	import { bannerActive, bannerList, bannerPhase, patchVersion } from '$lib/store/stores';
-	import { beginner } from '$lib/data/banners/beginner.json';
+	import beginnerConfig from '$lib/data/banners/beginner.json';
 	import { get4StarChars, getAllChars, getAllWeapons } from '$lib/helpers/wish/wishBase';
 	import Details from './_details.svelte';
 	import { getBannerName } from '$lib/helpers/nameText';
 	import { getMerchItems } from '$lib/helpers/merch';
+
+	const beginner = beginnerConfig?.beginner || beginnerConfig || {};
+	const beginnerCharacters = Array.isArray(beginner.characters) ? beginner.characters : [];
 
 	$: activeBanner = $bannerList[$bannerActive] || {};
 	$: banner = activeBanner.type;
@@ -62,12 +65,21 @@
 
 	const Data = {
 		async get(patch, phase, bannerType) {
-			const { data } = await import(`../../../data/banners/events/${patch}.json`);
-			const { standardVersion, weapons, events } = data.find((d) => d.phase === phase).banners;
-			const { standard } = await import(`../../../data/banners/standard/${standardVersion}.json`);
+			const eventModule = await import(`../../../data/banners/events/${patch}.json`);
+			const eventData = eventModule.data || eventModule.default?.data || [];
+			const phaseData = eventData.find((entry) => entry.phase === Number(phase));
+			if (!phaseData?.banners) throw new Error(`Banner data is unavailable for ${patch}-${phase}.`);
+			const { standardVersion, weapons, events } = phaseData.banners;
+			const standardModule = await import(
+				`../../../data/banners/standard/${standardVersion}.json`
+			);
+			const standard = standardModule.standard || standardModule.default?.standard;
 
 			drop3star = getAllWeapons(3).map(({ name, type }) => ({ name, type }));
-			this._stdDropChar5 = standard.characters.map((name) => ({ name, type: 'character' }));
+			this._stdDropChar5 = (standard?.characters || []).map((name) => ({
+				name,
+				type: 'character'
+			}));
 			drop4star = [...getAllChars(4), ...getAllWeapons(4)].filter(({ limited }) => !limited);
 
 			this._std = ['amber', 'kaeya', 'lisa'];
@@ -85,9 +97,13 @@
 		},
 
 		_showBeginner() {
-			const { name, title, vision } = get4StarChars.find(({ name }) => {
-				return name === beginner.featured.character;
-			});
+			const featuredCharacter = beginner.featured?.character || 'noelle';
+			const { name, title, vision } =
+				get4StarChars.find(({ name }) => name === featuredCharacter) || {
+					name: featuredCharacter,
+					title: '',
+					vision: beginner.featured?.vision || 'geo'
+				};
 			const obj = {
 				rarity: 4,
 				items: [{ name, title, vision }]
@@ -96,8 +112,8 @@
 			items = [obj];
 			bannerTitle = $t('wish.banner.beginner');
 
-			drop5star = this._stdDropChar5.filter(({ name }) => beginner.characters.includes(name));
-			drop4star = drop4star.filter(({ name }) => beginner.characters.includes(name));
+			drop5star = this._stdDropChar5.filter(({ name }) => beginnerCharacters.includes(name));
+			drop4star = drop4star.filter(({ name }) => beginnerCharacters.includes(name));
 		},
 
 		_showStandard() {
@@ -179,10 +195,28 @@
 {:else}
 	{#await Data.get($patchVersion, $bannerPhase, banner)}
 		<div>{$t('waiting')}...</div>
-	{:then data}
+	{:then}
 		<Details
 			data={{ banner, bannerTitle, featured, items }}
 			drops={{ drop3star, drop4star, drop5star }}
 		/>
+	{:catch}
+		<div class="details-error" role="alert">
+			{$t('waiting')}...
+			<button type="button" on:click={() => window.location.reload()}>Reload</button>
+		</div>
 	{/await}
 {/if}
+
+<style>
+	.details-error {
+		display: grid;
+		gap: 1rem;
+		justify-items: center;
+		padding: 2rem;
+	}
+
+	.details-error button {
+		padding: 0.65rem 1.25rem;
+	}
+</style>

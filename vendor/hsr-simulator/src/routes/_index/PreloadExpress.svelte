@@ -13,6 +13,7 @@
 	let progress = 0;
 	let totalItem;
 	let itemIndex;
+	let loadError = '';
 	$: ({ item, progress, itemIndex, totalItem } = $loadProggress);
 	$: percentage = ((itemIndex * 100 + progress) / (totalItem * 100)) * 100;
 	$: warpType = item.includes('regular') ? 'Regular Warp' : 'Special Warp';
@@ -23,7 +24,8 @@
 	onMount(async () => {
 		const lskipConfig = localConfig.get('autoskip') || {};
 		const { express: skipExpress = false } = lskipConfig === true ? { express: true } : lskipConfig;
-		const isReady = skipExpress || (await check());
+		const hasStreamableAnimation = Boolean($assets['event-3star.mp4']);
+		const isReady = skipExpress || hasStreamableAnimation || (await check());
 		readyToPull.set(isReady);
 	});
 
@@ -37,13 +39,23 @@
 	const preloadExpress = async () => {
 		playSfx();
 		onProgress = true;
-		const data = await loadAnimation();
-		assets.update((v) => {
-			data.forEach(({ asset, url }) => (v[asset] = url));
-			return v;
-		});
-		readyToPull.set(true);
-		onProgress = false;
+		loadError = '';
+		try {
+			const data = await loadAnimation();
+			assets.update((v) => {
+				data.forEach(({ asset, url }) => {
+					if (v[asset]?.startsWith('blob:')) URL.revokeObjectURL(v[asset]);
+					v[asset] = url;
+				});
+				return v;
+			});
+			readyToPull.set(true);
+		} catch (error) {
+			console.error('Unable to preload the HSR warp animation.', error);
+			loadError = 'The warp animation could not be downloaded. Try again or skip it.';
+		} finally {
+			onProgress = false;
+		}
 	};
 </script>
 
@@ -63,6 +75,7 @@
 			</div>
 		{:else}
 			<div class="prompt-text">
+				{#if loadError}<strong class="load-error">{loadError}</strong>{/if}
 				{@html $t('warp.expressNotLoaded')}
 				<small>
 					{$t('warp.preloadFilesMsg')}
@@ -96,6 +109,11 @@
 	}
 	.prompt-text {
 		font-size: 120%;
+	}
+	.load-error {
+		display: block;
+		margin-bottom: 0.5rem;
+		color: #ffd2c7;
 	}
 
 	.prompt-text :global(span),

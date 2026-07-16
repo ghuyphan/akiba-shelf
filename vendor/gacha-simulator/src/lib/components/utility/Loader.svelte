@@ -34,17 +34,13 @@
 				if (currentIdx >= total) break;
 				const item = items[currentIdx];
 				try {
-					if (item.path.endsWith('.mp4') || item.path.endsWith('.webm')) {
-						const response = await fetch(item.path);
-						if (!response.ok) throw new Error(`HTTP ${response.status}`);
-					} else {
-						await new Promise((resolve, reject) => {
-							const img = new Image();
-							img.onload = () => resolve();
-							img.onerror = () => reject(new Error('Image failed to load'));
-							img.src = item.path;
-						});
-					}
+					await new Promise((resolve, reject) => {
+						const img = new Image();
+						img.decoding = 'async';
+						img.onload = resolve;
+						img.onerror = () => reject(new Error('Image failed to load'));
+						img.src = item.path;
+					});
 				} catch (e) {
 					console.warn(`Failed to preload asset: ${item.path}`, e);
 				}
@@ -60,10 +56,7 @@
 		await Promise.all(workers);
 	};
 
-	const isCriticalAsset = (path, lightweight) => {
-		if (lightweight && (path.endsWith('.mp4') || path.endsWith('.webm'))) {
-			return false;
-		}
+	const isCriticalAsset = (path) => {
 		const criticalNames = [
 			'wish-background.webp',
 			'splash-background.webp',
@@ -71,10 +64,7 @@
 			'4star-bg.webp',
 			'5star-bg.webp',
 			'button.webp',
-			'primogem.webp',
-			'bg.webm',
-			'3star-single.mp4',
-			'4star.mp4'
+			'primogem.webp'
 		];
 		return criticalNames.some(name => path.endsWith(name));
 	};
@@ -107,8 +97,11 @@
 			return { ...pv, ...itemList };
 		});
 
-		const criticalItems = raw.filter(item => isCriticalAsset(item.path, lightweight));
-		const deferredItems = raw.filter(item => !isCriticalAsset(item.path, lightweight));
+		const isMedia = (path) => /\.(?:mp4|webm|ogg)$/i.test(path);
+		const criticalItems = raw.filter(item => isCriticalAsset(item.path));
+		const deferredItems = raw.filter(
+			item => !isCriticalAsset(item.path) && !isMedia(item.path)
+		);
 
 		await preloadBatch(criticalItems, 4, (progress) => {
 			current = progress * 100;
@@ -117,7 +110,7 @@
 		current = 100;
 		handleLoaded();
 
-		if (deferredItems.length > 0) {
+		if (!lightweight && deferredItems.length > 0) {
 			setTimeout(() => {
 				preloadBatch(deferredItems, 2, () => {}).catch(err => {
 					console.error("Background preloading error:", err);

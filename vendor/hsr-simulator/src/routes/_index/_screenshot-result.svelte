@@ -1,5 +1,5 @@
 <script>
-	import { getContext } from 'svelte';
+	import { getContext, onDestroy } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { t } from 'svelte-i18n';
 	import * as filesaver from 'file-saver';
@@ -30,15 +30,20 @@
 	};
 
 	const DOMURL = window.URL || window.webkitURL;
-	$: screenshotURL = DOMURL.createObjectURL(blob);
+	let screenshotURL = '';
+	let toastTimer;
+	$: {
+		if (screenshotURL) DOMURL.revokeObjectURL(screenshotURL);
+		screenshotURL = blob ? DOMURL.createObjectURL(blob) : '';
+	}
 
 	const copyHandle = async () => {
 		playSfx('click2');
 		copy(shareLink);
 		showToast = true;
-		const t = setTimeout(() => {
+		clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => {
 			showToast = false;
-			clearTimeout(t);
 		}, 2000);
 		addFunds();
 	};
@@ -92,6 +97,11 @@
 			console.error('Abort Sharing', e);
 		}
 	};
+
+	onDestroy(() => {
+		clearTimeout(toastTimer);
+		if (screenshotURL) DOMURL.revokeObjectURL(screenshotURL);
+	});
 </script>
 
 <div class="shot-result" out:fade>

@@ -4,6 +4,7 @@
 	import { t } from 'svelte-i18n';
 	import ColorThief from 'colorthief/dist/color-thief.mjs';
 	import { data } from '$lib/data/characters.json';
+	import { getElementPalette } from '$lib/helpers/element-palette';
 	import { warpList, assets, liteMode, activeWarp } from '$lib/stores/app-store';
 
 	let featured, activeType;
@@ -31,6 +32,11 @@
 	};
 
 	const changeColor = (charName) => {
+		const elementPalette = getElementPalette($activeWarp?.combat_type);
+		if (elementPalette) {
+			setColor(...elementPalette);
+			return;
+		}
 		if (!charName || !colorList) return;
 		if (!activeType.match('character')) return;
 		const [color1, color2, color3 = null] = colorList[charName] || [];

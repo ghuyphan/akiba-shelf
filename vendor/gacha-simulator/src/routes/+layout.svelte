@@ -18,7 +18,7 @@
 	import { importLocalBalance } from '$lib/helpers/importLocalData';
 	import { mobileDetect } from '$lib/helpers/mobileDetect';
 	import { userCurrencies } from '$lib/helpers/currencies';
-	import { wakeLock } from '$lib/helpers/wakeLock';
+	import { disposeWakeLock, wakeLock } from '$lib/helpers/wakeLock';
 	import { IDBUpdater } from '$lib/helpers/IDBUpdater';
 	import '../app.css';
 	import 'overlayscrollbars/css/OverlayScrollbars.css';
@@ -49,6 +49,10 @@
 		if ($isPWA) return mobileMode.set(true);
 		mobileMode.set(window.innerWidth > window.innerHeight);
 	};
+	const handleOrientationChange = () => {
+		if ($isMobile) setMobileMode();
+	};
+	const preventContextMenu = (event) => event.preventDefault();
 
 	setContext('bannerLoaded', () => (isBannerLoaded = true));
 	setContext('loaded', () => (isloaded = true));
@@ -69,16 +73,19 @@
 		isMobile.set(mobileDetect() || innerWidth < 601);
 		if ($isMobile) setMobileMode();
 
-		window.addEventListener('orientationchange', () => {
-			if ($isMobile) setMobileMode();
-		});
+		window.addEventListener('orientationchange', handleOrientationChange);
 		window.addEventListener('resize', setMobileMode);
 
 		// prevent Righ click (hold on android) on production mode
-		if (!dev) document.addEventListener('contextmenu', (e) => e.preventDefault());
+		if (!dev) document.addEventListener('contextmenu', preventContextMenu);
 	});
 
-	onDestroy(() => window.removeEventListener('resize', setMobileMode));
+	onDestroy(() => {
+		window.removeEventListener('orientationchange', handleOrientationChange);
+		window.removeEventListener('resize', setMobileMode);
+		document.removeEventListener('contextmenu', preventContextMenu);
+		disposeWakeLock();
+	});
 </script>
 
 <svelte:window bind:innerHeight bind:innerWidth />

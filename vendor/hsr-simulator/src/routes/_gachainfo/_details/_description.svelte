@@ -8,33 +8,34 @@
 	const isEventWarp = bannerType.match('event');
 	const isCharBanner = bannerType === 'character-event';
 
-	const { drop5char, drop4char, drop5lc, drop4lc } = data;
+	const { drop5char = [], drop4char = [], drop5lc = [], drop4lc = [] } = data;
 
 	const fiveStarDrop = bannerType.match('character') ? drop5char : drop5lc;
 	const itemUP5Star = fiveStarDrop.find(({ rateup }) => rateup) || {};
 	const { name: itemName, path, combat_type } = itemUP5Star;
 
-	const rateupDrop = (isCharBanner ? drop4char : drop4lc).filter(({ rateup }) => rateup) || {};
+	const rateupDrop = (isCharBanner ? drop4char : drop4lc).filter(({ rateup }) => rateup);
 	const [item1, item2, item3] = rateupDrop;
+	const translate = (key) => (key ? $t(key) : '');
 
 	const rateUpList = (key) => {
 		return $t(`details.${key}`, {
 			values: {
-				featuredName: $t(itemName),
-				featuredPath: $t(`path.${path}`),
-				featuredCombatType: $t(combat_type),
-				char1: $t(item1.name),
-				lc1: $t(item1.name),
-				path1: $t(`path.${item1.path}`),
-				combatType1: $t(item1.combat_type),
-				char2: $t(item2.name),
-				lc2: $t(item2.name),
-				path2: $t(`path.${item2.path}`),
-				combatType2: $t(item2.combat_type),
-				char3: $t(item3.name),
-				lc3: $t(item3.name),
-				path3: $t(`path.${item3.path}`),
-				combatType3: $t(item3.combat_type)
+				featuredName: translate(itemName),
+				featuredPath: translate(path && `path.${path}`),
+				featuredCombatType: translate(combat_type),
+				char1: translate(item1?.name),
+				lc1: translate(item1?.name),
+				path1: translate(item1?.path && `path.${item1.path}`),
+				combatType1: translate(item1?.combat_type),
+				char2: translate(item2?.name),
+				lc2: translate(item2?.name),
+				path2: translate(item2?.path && `path.${item2.path}`),
+				combatType2: translate(item2?.combat_type),
+				char3: translate(item3?.name),
+				lc3: translate(item3?.name),
+				path3: translate(item3?.path && `path.${item3.path}`),
+				combatType3: translate(item3?.combat_type)
 			}
 		});
 	};

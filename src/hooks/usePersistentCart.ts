@@ -16,7 +16,10 @@ export function usePersistentCart(shopKey?: string) {
         if (!checkedIds.has(item.product.id)) return item;
         const product = productsById.get(item.product.id);
         if (!product || product.quantity_available <= 0) return null;
-        return { product, quantity: Math.min(item.quantity, product.quantity_available) };
+        const rewardQuantity = Math.min(item.reward_quantity ?? 0, product.quantity_available);
+        const quantity = Math.min(item.quantity, Math.max(0, product.quantity_available - rewardQuantity));
+        if (quantity + rewardQuantity <= 0) return null;
+        return { product, quantity, reward_quantity: rewardQuantity };
       })
       .filter((item): item is CartItem => item !== null));
   }, []);

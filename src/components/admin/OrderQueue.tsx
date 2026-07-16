@@ -128,7 +128,7 @@ function OrderCard({ order, isConfirming, isCancelling, onConfirm, onCancel }: O
       <div className="admin-order-items">
         {order.order_items?.map((item) => { const image = item.product?.images?.find(Boolean); return <div key={item.id} className="admin-order-item">{image ? <img src={image} alt="" /> : <span className="admin-order-item-placeholder"><ShoppingBag size={15} /></span>}<div><strong>{item.product?.name || t("Unknown product")}</strong><small>{item.product?.item_code || t("No code")}</small></div><b>{item.quantity}×</b></div>; })}
       </div>
-      <footer><span>{t("Total")}</span><strong>{formatVnd(order.total_amount)}</strong></footer>
+      <footer>{Boolean(order.discount_amount) && <span className="admin-order-discount">{t("Promotion savings")} · −{formatVnd(order.discount_amount ?? 0)}</span>}<span>{t("Total")}</span><strong>{formatVnd(order.total_amount)}</strong></footer>
       {order.status === "pending" && <div className="admin-order-actions"><SwipeConfirmButton onConfirm={onConfirm} isConfirming={isConfirming} /><button type="button" className="admin-cancel-order" onClick={onCancel} disabled={isConfirming || isCancelling}><Ban size={15} />{isCancelling ? t("Cancelling…") : t("Cancel and release stock")}</button></div>}
     </article>
   );

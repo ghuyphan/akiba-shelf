@@ -1,4 +1,5 @@
 import { Howl } from 'howler';
+import { base } from '$app/paths';
 import { localConfig } from '$lib/helpers/dataAPI/api-localstorage';
 import { cookie } from '$lib/helpers/dataAPI/api-cookie';
 import { browser } from '$app/environment';
@@ -54,14 +55,14 @@ const initSFX = () => {
 	sounds = sfxList.reduce((prev, current) => {
 		const sfx = prev || {};
 		sfx[current] = new Howl({
-			src: [`/audiofx/${current}.ogg`],
+			src: [`${base}/audiofx/${current}.ogg`],
 			loop: current === 'warp-backsound',
-			onplayerror: () => {
-				sfx[current]?.once('unlock', () => {
-					sfx[current]?.play();
-				});
+			onplayerror: (_soundId, error) => {
+				console.warn(`Unable to play HSR sound effect "${current}".`, error);
 			},
-			onloaderror: () => {}
+			onloaderror: (_soundId, error) => {
+				console.warn(`Unable to load HSR sound effect "${current}".`, error);
+			}
 		});
 		return sfx;
 	}, {});

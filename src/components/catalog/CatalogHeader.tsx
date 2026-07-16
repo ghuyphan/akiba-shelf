@@ -14,6 +14,7 @@ type CatalogHeaderProps = {
   onOpenStaff?: () => void;
   showStaffAccess?: boolean;
   showGacha?: boolean;
+  onPrepareGacha?: () => void;
 };
 
 export function CatalogHeader({
@@ -25,6 +26,7 @@ export function CatalogHeader({
   onOpenStaff,
   showStaffAccess = false,
   showGacha = false,
+  onPrepareGacha,
 }: CatalogHeaderProps) {
   const copy = useCatalogCopy();
   const { shopSlug = "" } = useParams();
@@ -61,6 +63,9 @@ export function CatalogHeader({
             className="gacha-entry-trigger"
             to={`/s/${shopSlug}/play`}
             onClick={(event) => event.stopPropagation()}
+            onFocus={onPrepareGacha}
+            onPointerEnter={onPrepareGacha}
+            onPointerDown={onPrepareGacha}
             aria-label={`${copy.playGacha}. ${copy.playGachaHint}`}
             title={copy.playGacha}
           >

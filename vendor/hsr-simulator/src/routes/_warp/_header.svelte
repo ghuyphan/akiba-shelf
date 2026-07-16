@@ -10,11 +10,16 @@
 
 	export let bannerType = '';
 	export let bannerName = '';
+	export let isMerch = false;
 
 	$: event = bannerType.match('event');
 	$: balance = event ? $specialPass : $regularPass;
 	$: unlimitedWarp = $warpAmount === 'unlimited';
-	$: heading = bannerName ? $t(`banner.${bannerName}`, { default: bannerName }) : 'Subject To Change';
+	$: heading = bannerName
+		? isMerch
+			? bannerName
+			: $t(`banner.${bannerName}`, { default: bannerName })
+		: 'Subject To Change';
 
 	const navigate = getContext('navigate');
 	const openAllBanners = () => {

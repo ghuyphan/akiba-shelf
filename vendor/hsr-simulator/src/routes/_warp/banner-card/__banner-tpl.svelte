@@ -22,39 +22,6 @@
 		</div>
 	{/if}
 
-	<svg class="banner-corner" viewBox="0 0 68909.65 94154.68">
-		<g id="Layer_x0020_1">
-			<path
-				d="M68909.65 94154.68l0 -82480.77 0 -11673.91 -11673.85 0 -57235.8 0c0,6420.78 5253.57,11673.91 11673.91,11673.91l35926.8 0c5385.08,92.08 9635.09,2685.92 9635.09,7115.95l0 63690.91c0,6420.78 5253.07,11673.91 11673.85,11673.91z"
-			/>
-		</g>
-	</svg>
-	<div class="corner-barcode">
-		<svg class="barcode-graphic" viewBox="0 0 12 120" fill="currentColor">
-			<circle cx="6" cy="6" r="2.5" stroke="currentColor" stroke-width="1.2" fill="none" />
-			<circle cx="6" cy="15" r="2.5" fill="currentColor" />
-			<rect x="2" y="26" width="8" height="1" />
-			<rect x="2" y="29" width="8" height="4" />
-			<rect x="2" y="35" width="8" height="1" />
-			<rect x="2" y="38" width="8" height="2" />
-			<rect x="2" y="42" width="8" height="1" />
-			<rect x="2" y="45" width="8" height="6" />
-			<rect x="2" y="53" width="8" height="2" />
-			<rect x="2" y="57" width="8" height="3" />
-			<rect x="2" y="62" width="8" height="1" />
-			<rect x="2" y="65" width="8" height="5" />
-			<rect x="2" y="72" width="8" height="2" />
-			<rect x="2" y="76" width="8" height="1" />
-			<rect x="2" y="79" width="8" height="4" />
-			<rect x="2" y="85" width="8" height="2" />
-			<rect x="2" y="89" width="8" height="1" />
-			<rect x="2" y="92" width="8" height="6" />
-			<rect x="2" y="100" width="8" height="2" />
-			<rect x="2" y="104" width="8" height="3" />
-			<rect x="2" y="109" width="8" height="1" />
-			<rect x="2" y="112" width="8" height="4" />
-		</svg>
-	</div>
 </div>
 
 <style>
@@ -119,30 +86,4 @@
 		width: 75%;
 	}
 
-	.corner-barcode {
-		position: absolute;
-		top: 15%;
-		left: 91.4%;
-		z-index: +2;
-		height: 60%;
-		width: 1.2%;
-		opacity: 0.35;
-		color: #fff;
-		pointer-events: none;
-	}
-
-	.barcode-graphic {
-		height: 100%;
-		width: 100%;
-		display: block;
-	}
-
-	.banner-corner {
-		width: 12.5%;
-		right: 0;
-		opacity: 0.65;
-		position: absolute;
-		z-index: +1;
-		pointer-events: none;
-	}
 </style>

@@ -8,9 +8,8 @@ export const rates = ({
 	rateIncreasedAt = 74
 } = {}) => {
 	if (baseRate <= 0 && currentPity < maxPity) return 0;
-	if (currentPity < rateIncreasedAt) return baseRate;
-
 	if (currentPity >= maxPity) return 100;
+	if (currentPity < rateIncreasedAt) return baseRate;
 
 	const rateIncreasedBy = (100 - baseRate) / (maxPity + 1 - rateIncreasedAt);
 	const rateBeforeCurrentPity = (currentPity + 1 - rateIncreasedAt) * rateIncreasedBy;

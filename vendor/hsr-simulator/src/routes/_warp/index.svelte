@@ -15,6 +15,7 @@
 	import { rollCounter } from '$lib/helpers/dataAPI/api-localstorage';
 	import { pauseTrack, resumeTrack } from '$lib/helpers/sounds/phonograph';
 	import { playSfx } from '$lib/helpers/sounds/audiofx.js';
+	import { getElementPalette } from '$lib/helpers/element-palette';
 
 	import AdditionalReward from './additional-reward/AdditionalReward.svelte';
 	import Footer from './_footer.svelte';
@@ -25,8 +26,8 @@
 	import AstralExpress from './warp-result/_astral-express.svelte';
 	import WarpResult from './warp-result/WarpResult.svelte';
 
-	let type, bannerName;
-	$: ({ bannerName, featured, type } = $activeWarp);
+	let type, bannerName, isMerch;
+	$: ({ bannerName, featured, type, isMerch = false } = $activeWarp);
 	$: bannerType = type;
 
 	let color1 = '18,22,28';
@@ -37,6 +38,10 @@
 		color2 = clr2;
 		color3 = clr3 || clr2;
 	});
+	$: elementPalette = getElementPalette($activeWarp?.combat_type);
+	$: if (elementPalette) {
+		[color1, color2, color3] = elementPalette;
+	}
 
 	// Banner Index to adjust Transition
 	setContext('beforeMoving', writable(0));
@@ -123,7 +128,7 @@
 	transition:fade={{ duration: 250 }}
 >
 	<Background />
-	<Header {bannerType} {bannerName} />
+	<Header {bannerType} {bannerName} {isMerch} />
 	<BannerSelection />
 
 	{#each $bannerList as banner, i (i)}

@@ -1,6 +1,6 @@
 <script>
 	import { playSfx } from '$lib/helpers/audio/audio.svelte';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onDestroy } from 'svelte';
 
 	export let rangeVal;
 	export let maxRange;
@@ -43,6 +43,7 @@
 		clearTimeout(timeout);
 		clearInterval(interval);
 	};
+	onDestroy(clearTimers);
 </script>
 
 <div class="input">

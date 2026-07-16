@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { beginner } from '$lib/data/banners/beginner.json';
+import beginnerConfig from '$lib/data/banners/beginner.json';
 import { wishPhase } from '$lib/data/wish-setup.json';
 
 const assets = writable({});
@@ -32,7 +32,8 @@ const mobileMode = writable(false);
 const isPWA = writable(false);
 
 // Wish
-const bannerList = writable([{ type: 'beginner', character: beginner.featured }]);
+const beginnerBanner = (beginnerConfig?.beginner || beginnerConfig)?.featured || {};
+const bannerList = writable([{ type: 'beginner', character: beginnerBanner }]);
 
 const genesis = writable(0);
 const stardust = writable(0);

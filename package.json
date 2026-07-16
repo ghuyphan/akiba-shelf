@@ -8,9 +8,10 @@
     "vendor/hsr-simulator"
   ],
   "scripts": {
-    "dev": "npm run build:gacha:dev && npm run build:hsr:dev && vite --host ::",
-    "build:gacha:dev": "GACHA_OUTPUT_DIR=../../.gacha-dist npm run build --workspace matsuri-wish-simulator",
-    "build:hsr:dev": "GACHA_OUTPUT_DIR=../../.hsr-gacha-dist npm run build --workspace matsuri-hsr-warp-simulator",
+    "dev": "node scripts/build-simulator-dev.mjs genshin --if-missing && node scripts/build-simulator-dev.mjs hsr --if-missing && vite --host ::",
+    "build:gacha:dev": "node scripts/build-simulator-dev.mjs genshin",
+    "build:hsr:dev": "node scripts/build-simulator-dev.mjs hsr",
+    "build:simulators": "node scripts/build-simulators.mjs",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint --max-warnings 0 src e2e vite.config.ts vitest.config.ts playwright.config.ts",
     "lint:fix": "npm run lint -- --fix",
@@ -24,7 +25,7 @@
     "test:functions": "deno test --node-modules-dir=auto --no-lock --allow-env supabase/functions/invite-shop-member/index.test.ts supabase/functions/notify-new-order/index.test.ts",
     "test:db:integration": "vitest run src/test/database.integration.test.ts",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build",
-    "build": "tsc -b && vite build && npm run build --workspace matsuri-wish-simulator && npm run build --workspace matsuri-hsr-warp-simulator",
+    "build": "tsc -b && vite build && npm run build:simulators",
     "preview": "vite preview --host ::"
   },
   "dependencies": {

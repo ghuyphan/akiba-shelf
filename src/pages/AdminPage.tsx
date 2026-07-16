@@ -26,12 +26,13 @@ import {
   getOrders,
   saveBoothSettings,
   savePaymentSettings,
+  savePromotionSettings,
   saveProduct,
   signInAdmin,
   signOutAdmin,
 } from "../lib/api";
 import type { OrderFilter, OrderStatusCounts } from "../lib/api";
-import { defaultBooth, defaultPayment, MAX_OWNED_SHOPS } from "../lib/constants";
+import { defaultBooth, defaultPayment, defaultPromotion, MAX_OWNED_SHOPS } from "../lib/constants";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import {
@@ -50,6 +51,7 @@ import { safeUuid } from "../lib/id";
 import type {
   BoothSettings,
   PaymentSettings,
+  PromotionSettings,
   Product,
   Order,
 } from "../types/catalog";
@@ -82,6 +84,7 @@ import { StaffManager } from "../components/admin/StaffManager";
 import { usePlatformI18n, type PlatformLocale } from "../lib/platformI18n";
 import { PwaInstallBanner } from "../components/admin/PwaInstallBanner";
 import { GachaManager } from "../components/admin/GachaManager";
+import { PromotionSettingsForm } from "../components/admin/PromotionSettingsForm";
 
 function createBlankProduct(nextSort: number): Product {
   return {
@@ -91,6 +94,7 @@ function createBlankProduct(nextSort: number): Product {
     description: "",
     price_vnd: 0,
     sale_price_vnd: null,
+    promotion_eligible: false,
     item_code: "",
     quantity_available: 0,
     category: "Acrylic",
@@ -153,6 +157,7 @@ export function AdminPage() {
       : defaultBooth;
   });
   const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
+  const [promotion, setPromotion] = useState<PromotionSettings>(defaultPromotion);
   const toast = useToast();
   const { t, locale, setLocale } = usePlatformI18n();
   const verifiedBranding =
@@ -208,6 +213,7 @@ export function AdminPage() {
     setSelectedProduct(undefined);
     setBooth(shopId ? getStoredBoothTheme(`id:${shopId}`) : defaultBooth);
     setPayment(defaultPayment);
+    setPromotion(defaultPromotion);
     setWorkspaceLoadFailed(false);
     setIsInitialLoading(true);
   }, [shopId]);
@@ -221,6 +227,7 @@ export function AdminPage() {
         return;
       setBooth(catalog.booth);
       setPayment(catalog.payment);
+      setPromotion(catalog.promotion);
       setProducts(catalog.products);
       setSelectedProduct((current) => {
         if (!current) return undefined;
@@ -896,6 +903,15 @@ export function AdminPage() {
 
             {canManageCatalog && viewTab === "products" && (
               <>
+                <PromotionSettingsForm
+                  promotion={promotion}
+                  products={products}
+                  onSave={async (nextPromotion) => {
+                    const saved = await savePromotionSettings(shopId, nextPromotion);
+                    setPromotion(saved);
+                    toast.success(t("Promotion saved."));
+                  }}
+                />
                 <div
                   className="category-row admin-mobile-tabs-row"
                   ref={mobileTabsRef}

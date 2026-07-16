@@ -7,6 +7,7 @@ Matsuri is a touch-friendly storefront and live order platform for independent a
 - Multi-shop storefronts at `/s/:shopSlug`, with Matsuri platform pages kept separate from individual shop branding.
 - Responsive storefront with featured-product swipe deck, grid/list browsing, product details, and mobile cart sheet.
 - Server-authoritative ordering: totals and stock are validated inside the `create_order` Postgres function.
+- Configurable mix-and-match buy-X-get-Y promotions with cheapest-item discounts enforced during checkout.
 - VietQR payment flow with live order confirmation.
 - Realtime catalog and order updates through Supabase.
 - Role-authorized staff workspace for orders, products, booth/payment settings, and storefront design.
@@ -131,6 +132,7 @@ Core tables:
 - `payment_settings` — VietQR/bank configuration and customer instructions.
 - `orders` — customer order header and status.
 - `order_items` — immutable product quantities and unit prices for each order.
+- `promotions` — per-shop buy/free quantities, activation, and repeat behavior; products opt into the active offer.
 
 The browser cannot directly insert orders or order items. `createOrder()` calls the `create_order` RPC, which locks requested product rows, rejects inactive/sold-out/insufficient stock, calculates the total from database prices, creates the order atomically, and immediately reserves inventory. Confirmation finalizes that reservation without deducting stock again. Customer/staff cancellation and expiry restore reserved stock exactly once. Customer recovery requires both the order ID and its recovery token; only the token hash is stored.
 

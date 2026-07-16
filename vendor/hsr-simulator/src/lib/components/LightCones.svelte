@@ -21,9 +21,22 @@
 			webm: await toBlob(videoURL.webm)
 		};
 		liveconeList.update((v) => {
+			Object.values(v[vID] || {}).forEach((url) => {
+				if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
+			});
 			v[vID] = obj;
+			Object.keys(v)
+				.filter((key) => key !== vID)
+				.slice(0, Math.max(0, Object.keys(v).length - 3))
+				.forEach((key) => {
+					Object.values(v[key] || {}).forEach((url) => {
+						if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
+					});
+					delete v[key];
+				});
 			return v;
 		});
+		return obj;
 	};
 
 	const loadVideo = async (vID) => {
@@ -38,8 +51,8 @@
 		const webm = formats['video/webm'] || null;
 		if (!(mp4 || webm)) return { success: false };
 
-		updateStore({ mp4, webm }, vID);
-		return { mp4, webm, success: true };
+		const cached = await updateStore({ mp4, webm }, vID);
+		return { ...cached, success: true };
 	};
 </script>
 

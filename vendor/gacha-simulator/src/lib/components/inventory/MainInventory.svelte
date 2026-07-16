@@ -1,6 +1,6 @@
 <script>
 	// library
-	import { onMount, setContext } from 'svelte';
+	import { onDestroy, onMount, setContext } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { t } from 'svelte-i18n';
 	import { flip } from 'svelte/animate';
@@ -26,9 +26,10 @@
 	let activeBgIndex = Math.floor(Math.random() * bg.length);
 	let headerHeight = 0;
 
-	setInterval(() => {
+	const backgroundTimer = setInterval(() => {
 		activeBgIndex = activeBgIndex === bg.length - 1 ? 0 : activeBgIndex + 1;
 	}, 6500);
+	onDestroy(() => clearInterval(backgroundTimer));
 
 	const inTransition = (node, args) => {
 		return args.mobile ? fly(node, { x: -20, duration: 400 }) : fade(node, { duration: 400 });

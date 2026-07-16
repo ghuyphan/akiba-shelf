@@ -39,9 +39,6 @@
 		}
 	};
 
-	// toggle Chat
-	const toggleChat = getContext('chatToggle');
-
 	// Toggle Show Menu
 	let showMenu = false;
 	const toggleShowMenu = () => {
@@ -147,10 +144,6 @@
 				<i class="hsr-phonograph"></i>
 			</button>
 		{/if}
-
-		<button title="Feedback" aria-label="Chatbox" on:click={toggleChat}>
-			<i class="hsr-chat"></i>
-		</button>
 
 		<button on:click={handleFullscreen} aria-label="Fullscreen" title="Fullscreen">
 			<i class="hsr-{!fullscreen ? 'fullscreen' : 'shrink'}"></i>

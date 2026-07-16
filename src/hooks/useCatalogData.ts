@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { defaultBooth, defaultPayment } from "../lib/constants";
+import { defaultBooth } from "../lib/constants";
 import { getPublicProductsByIds } from "../lib/api";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import { loadCatalogSnapshot, saveCatalogSnapshot } from "../lib/offline";
@@ -29,6 +29,7 @@ export function useCatalogData(
   const initialProducts = cached?.products ?? EMPTY_PRODUCTS;
   const initialBooth = cached?.booth ?? defaultBooth;
   const [cartError, setCartError] = useState("");
+  const [rewardProducts, setRewardProducts] = useState<Product[]>([]);
 
   const productCatalog = useCatalogProducts(
     shopId,
@@ -48,6 +49,7 @@ export function useCatalogData(
   const refreshProductMetadata = storefront.refreshProductMetadata;
   const refreshBooth = storefront.refreshBooth;
   const refreshPayment = storefront.refreshPayment;
+  const refreshPromotion = storefront.refreshPromotion;
 
   const loadCartProducts = useCallback(async () => {
     if (!shopId || cartProductIds.length === 0) {
@@ -78,6 +80,18 @@ export function useCatalogData(
   }, [loadCartProducts]);
 
   useEffect(() => {
+    if (!shopId || storefront.promotion.reward_product_ids.length === 0) {
+      setRewardProducts([]);
+      return;
+    }
+    let active = true;
+    void getPublicProductsByIds(shopId, storefront.promotion.reward_product_ids)
+      .then((next) => { if (active) setRewardProducts(next); })
+      .catch(() => { if (active) setRewardProducts([]); });
+    return () => { active = false; };
+  }, [shopId, storefront.promotion.reward_product_ids]);
+
+  useEffect(() => {
     if (
       !shopId ||
       productCatalog.isLoading ||
@@ -89,7 +103,6 @@ export function useCatalogData(
       {
         products: productCatalog.products,
         booth: storefront.booth,
-        payment: defaultPayment,
       },
       shopId,
     );
@@ -120,7 +133,9 @@ export function useCatalogData(
                   ])
                 : table === "booth_settings"
                   ? refreshBooth()
-                  : refreshPayment();
+                  : table === "payment_settings"
+                    ? refreshPayment()
+                    : refreshPromotion();
             void request;
           }, 150),
         );
@@ -134,6 +149,7 @@ export function useCatalogData(
     loadCartProducts,
     refreshBooth,
     refreshPayment,
+    refreshPromotion,
     refreshProductMetadata,
     refreshVisibleProducts,
     shopId,
@@ -145,6 +161,8 @@ export function useCatalogData(
     categories: storefront.categories,
     booth: storefront.booth,
     payment: storefront.payment,
+    promotion: storefront.promotion,
+    rewardProducts,
     hasMore: productCatalog.hasMore,
     loadError: productCatalog.error || storefront.error || cartError,
     isLoading: productCatalog.isLoading,

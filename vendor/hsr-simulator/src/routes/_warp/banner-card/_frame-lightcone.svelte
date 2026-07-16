@@ -12,6 +12,11 @@
 
 	const lightcones = item.rateup.map((d) => ({ name: d, rarity: 4 }));
 	const { animationID } = getLCDetails(item.featured) || null;
+	$: bannerTitle = item.bannerName
+		? item.isMerch
+			? item.bannerName
+			: $t(`banner.${item.bannerName}`, { default: item.bannerName })
+		: '';
 </script>
 
 <div class="content">
@@ -31,7 +36,7 @@
 			<div class="info-body" in:fade|global={{ delay: 250, duration: 1000 }}>
 				<div class="short-detail">
 					<h1>
-						<span> {item.bannerName ? $t(`banner.${item.bannerName}`, { default: item.bannerName }) : ''} </span>
+						<span>{bannerTitle}</span>
 					</h1>
 					<div class="time">
 						<i class="hsr-time"></i>
@@ -85,7 +90,7 @@
 		padding: 0.45% 1.5%;
 		border-top-right-radius: 2rem;
 		border-bottom-right-radius: 2rem;
-		background-color: #3d81ce;
+		background-color: var(--ribbon-color);
 		z-index: +2;
 	}
 
@@ -157,7 +162,7 @@
 
 	.description :global(span),
 	.time {
-		color: #e6993d;
+		color: var(--ribbon-color);
 	}
 
 	h1 {
@@ -197,7 +202,7 @@
 		content: '';
 		height: 80%;
 		width: calc(0.006 * var(--bw));
-		background-color: #3d81ce;
+		background-color: var(--ribbon-color);
 		position: absolute;
 		left: calc(0.0275 * var(--bw) * -1);
 		top: 50%;

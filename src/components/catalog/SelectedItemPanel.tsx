@@ -1,7 +1,7 @@
 import { Banknote, ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
-import type { CartItem } from "../../types/catalog";
+import type { CartItem, Product, PromotionSettings } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
-import { getProductPrice } from "../../lib/pricing";
+import { calculateCartPricing } from "../../lib/pricing";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { useCatalogCopy } from "../../lib/catalogI18n";
@@ -10,6 +10,9 @@ import { useOverlayHistory } from "../../hooks/useOverlayHistory";
 
 type SelectedItemPanelProps = {
   cart: CartItem[];
+  promotion?: PromotionSettings;
+  rewardProducts?: Product[];
+  onAddReward?: (product: Product) => void;
   onQuantityChange: (productId: string, quantity: number) => void;
   onRemove: (productId: string) => void;
   onOpenPayment: () => void;
@@ -21,6 +24,9 @@ type SelectedItemPanelProps = {
 
 export function SelectedItemPanel({
   cart,
+  promotion,
+  rewardProducts = [],
+  onAddReward,
   onQuantityChange,
   onRemove,
   onOpenPayment,
@@ -39,8 +45,9 @@ export function SelectedItemPanel({
     );
   }
 
-  const totalAmount = cart.reduce((sum, item) => sum + getProductPrice(item.product) * item.quantity, 0);
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const pricing = calculateCartPricing(cart, promotion);
+  const totalAmount = pricing.total;
+  const totalItems = pricing.lines.reduce((sum, line) => sum + line.quantity, 0);
 
   return (
     <MobileSheetShell
@@ -91,10 +98,11 @@ export function SelectedItemPanel({
 
         <div className="cart-items-container">
           {cart.map((item) => {
+            const pricingLine = pricing.lines.find((line) => line.productId === item.product.id)!;
             const primaryImage = item.product.images.find(Boolean);
             const maxQuantity = Math.max(1, item.product.quantity_available);
-            const canDecrease = item.quantity > 1;
-            const canIncrease = item.quantity < maxQuantity;
+            const canDecrease = item.quantity > 0;
+            const canIncrease = pricingLine.quantity < maxQuantity;
 
             return (
               <div key={item.product.id} className="cart-item-row">
@@ -106,7 +114,8 @@ export function SelectedItemPanel({
                 <div className="cart-item-details">
                   <h4>{item.product.name}</h4>
                   <span className="cart-item-code">{item.product.item_code}</span>
-                  <strong className="cart-item-price">{formatVnd(getProductPrice(item.product))}</strong>
+                  <strong className="cart-item-price">{pricingLine.quantity} × {formatVnd(pricingLine.unitPrice)}</strong>
+                  {pricingLine.freeQuantity > 0 && <span className="cart-item-promotion">{copy.freeItems(pricingLine.freeQuantity)} · −{formatVnd(pricingLine.discountAmount)}</span>}
                 </div>
                 <div className="cart-item-actions">
                   <div className="cart-quantity-stepper">
@@ -141,6 +150,14 @@ export function SelectedItemPanel({
         </div>
 
         <div className="selected-actions cart-total-actions">
+          {pricing.availableRewardQuantity > 0 && rewardProducts.length > 0 && <div className="cart-reward-picker"><strong>{copy.chooseFreeItem}</strong><span>{copy.freeRewardsAvailable(pricing.availableRewardQuantity)}</span><div>{rewardProducts.map((product) => { const inCart = cart.find((item) => item.product.id === product.id); const unavailable = !product.active || product.quantity_available <= (inCart?.quantity ?? 0) + (inCart?.reward_quantity ?? 0); return <button type="button" key={product.id} disabled={unavailable} onClick={() => onAddReward?.(product)}>{product.images.find(Boolean) ? <img src={product.images.find(Boolean)} alt="" /> : <i /> }<span>{product.name}<small>{unavailable ? copy.soldOut : copy.addFreeItem}</small></span></button>; })}</div></div>}
+          {promotion?.enabled && pricing.eligibleQuantity > 0 && (
+            <div className={`cart-promotion-summary ${pricing.discountAmount > 0 ? "is-applied" : ""}`}>
+              <strong>{copy.buyXGetY(promotion.buy_quantity, promotion.free_quantity)}</strong>
+              <span>{pricing.discountAmount > 0 ? copy.promotionApplied(formatVnd(pricing.discountAmount)) : copy.promotionProgress(pricing.unitsUntilNextFreeItem)}</span>
+            </div>
+          )}
+          {pricing.discountAmount > 0 && <div className="cart-discount-row"><span>{copy.discount}</span><strong>−{formatVnd(pricing.discountAmount)}</strong></div>}
           <div className="cart-total-row">
             <span>{copy.totalPrice}</span>
             <strong>{formatVnd(totalAmount)}</strong>

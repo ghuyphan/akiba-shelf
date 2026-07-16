@@ -1,5 +1,5 @@
 <script>
-	import { getContext, createEventDispatcher } from 'svelte';
+	import { getContext, createEventDispatcher, onDestroy } from 'svelte';
 	import { playSfx } from '$lib/helpers/sounds/audiofx';
 
 	export let max;
@@ -48,6 +48,7 @@
 		clearTimeout(timeout);
 		clearInterval(interval);
 	};
+	onDestroy(clearTimers);
 </script>
 
 <div class="range" class:dark>

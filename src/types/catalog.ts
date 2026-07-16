@@ -26,6 +26,7 @@ export type Product = {
   price_vnd: number;
   sale_price_vnd?: number | null;
   effective_price_vnd?: number;
+  promotion_eligible?: boolean;
   item_code: string;
   quantity_available: number;
   category: string;
@@ -95,15 +96,27 @@ export type PaymentSettings = {
   payment_instructions: string;
 };
 
+export type PromotionSettings = {
+  shop_id?: string;
+  enabled: boolean;
+  buy_quantity: number;
+  free_quantity: number;
+  repeatable: boolean;
+  qualifying_product_ids: string[];
+  reward_product_ids: string[];
+};
+
 export type CatalogData = {
   products: Product[];
   booth: BoothSettings;
   payment: PaymentSettings;
+  promotion: PromotionSettings;
 };
 
 export type CartItem = {
   product: Product;
   quantity: number;
+  reward_quantity?: number;
 };
 
 export type OrderStatus = "pending" | "confirmed" | "cancelled" | "expired";
@@ -114,6 +127,8 @@ export type Order = {
   order_code: string;
   customer_name: string | null;
   total_amount: number;
+  discount_amount?: number;
+  free_quantity?: number;
   status: OrderStatus;
   created_at: string;
   updated_at: string;
@@ -133,5 +148,6 @@ export type OrderItem = {
   product_id: string;
   quantity: number;
   unit_price: number;
+  discount_amount?: number;
   product?: Product;
 };

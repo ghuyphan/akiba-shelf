@@ -41,12 +41,13 @@ export const initializeBanner = async (version, phase) => {
 				.slice(0, banner.display_limit || 3);
 			const featuredItem = displayItems[0] || poolItems[0];
 			return {
+				isMerch: true,
 				bannerName: parseEnglishText(banner.name),
 				featured: featuredItem?.name || '',
 				runNumber: 1,
 				type: (banner.kind === 'weapon' || banner.kind === 'lightcone') ? 'lightcone-event' : 'character-event',
 				path: featuredItem?.path || 'destruction',
-				combat_type: featuredItem?.combat_type || 'physical',
+				combat_type: banner.theme || featuredItem?.combat_type || 'physical',
 				rateup: displayItems.map((item) => item.name),
 				bannerID: banner.id,
 				merchItems: displayItems,

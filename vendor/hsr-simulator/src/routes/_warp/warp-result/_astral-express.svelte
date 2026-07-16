@@ -1,5 +1,5 @@
 <script>
-	import { getContext, onMount } from 'svelte';
+	import { getContext, tick } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { assets, viewportHeight } from '$lib/stores/app-store';
 	import { playSfx, stopSfx } from '$lib/helpers/sounds/audiofx';
@@ -9,81 +9,43 @@
 	export let rarity;
 	export let banner;
 
-	let regular3star;
-	let regular4star;
-	let regular5star;
-	let event3star;
-	let event4star;
-	let event5star;
+	let expressVideo;
+	let videoSrc = '';
+	let playbackId = 0;
 	let showSkipButton = false;
 
 	const showSplashArt = getContext('showSplashArt');
 	const onExpressArrived = ({ skip = false } = {}) => {
+		playbackId++;
+		videoSrc = '';
 		showSplashArt({ skip });
 		showSkipButton = false;
 	};
 
 	const skip = () => {
 		stopSfx(`express-${rarity}star`);
+		expressVideo?.pause();
 		onExpressArrived({ skip: true });
-		const doms = [regular3star, regular4star, regular5star, event3star, event4star, event5star];
-		doms.forEach((video) => {
-			video.load();
-			video.style.display = 'none';
-		});
 	};
-
-	onMount(() => {
-		const doms = [regular3star, regular4star, regular5star, event3star, event4star, event5star];
-		doms.forEach((video) => {
-			video.addEventListener('ended', () => {
-				video.style.display = 'none';
-				video.load();
-				onExpressArrived();
-			});
-		});
-	});
 
 	const showVideoHandle = async (rarity, type) => {
-		let videoContent;
-		if (['starter', 'regular'].includes(type)) {
-			switch (rarity) {
-				case 3:
-					videoContent = regular3star;
-					break;
-				case 4:
-					videoContent = regular4star;
-					break;
-				case 5:
-					videoContent = regular5star;
-					break;
-			}
-		} else {
-			switch (rarity) {
-				case 3:
-					videoContent = event3star;
-					break;
-				case 4:
-					videoContent = event4star;
-					break;
-				case 5:
-					videoContent = event5star;
-					break;
-			}
+		const prefix = ['starter', 'regular'].includes(type) ? 'regular' : 'event';
+		const nextSrc = $assets[`${prefix}-${rarity}star.mp4`];
+		if (!nextSrc) return onExpressArrived();
+		const currentPlayback = ++playbackId;
+		videoSrc = nextSrc;
+		await tick();
+		if (currentPlayback !== playbackId || !expressVideo) return;
+		try {
+			await expressVideo.play();
+			playSfx(`express-${rarity}star`);
+		} catch (error) {
+			console.error('Unable to play the Astral Express animation.', error);
+			onExpressArrived();
 		}
-
-		if (!videoContent || videoContent.error || isNaN(videoContent.duration)) {
-			// showToast = true;
-			console.error('Failed to call Astral Express!', videoContent.error);
-			return onExpressArrived();
-		}
-		videoContent.style.display = 'unset';
-		await videoContent.play();
-		playSfx(`express-${rarity}star`);
-		return;
 	};
 
-	$: if (show) showVideoHandle(rarity, banner);
+	$: if (show) void showVideoHandle(rarity, banner);
 </script>
 
 <div
@@ -94,52 +56,19 @@
 	style="height: {$viewportHeight}px"
 	on:mousedown={() => (showSkipButton = true)}
 >
-	<!-- Insert All Video To DOM first -->
+	<!-- Mount only the selected animation so unused warp videos remain untouched. -->
 	<div class="video">
-		<video
-			bind:this={regular3star}
-			muted
-			src={$assets['regular-3star.mp4']}
-			type="video/mp4"
-			crossorigin="anonymous"
-		></video>
-		<video
-			bind:this={regular4star}
-			muted
-			src={$assets['regular-4star.mp4']}
-			type="video/mp4"
-			crossorigin="anonymous"
-		></video>
-		<video
-			bind:this={regular5star}
-			muted
-			src={$assets['regular-5star.mp4']}
-			type="video/mp4"
-			crossorigin="anonymous"
-		></video>
-
-		<!-- Event Warp -->
-		<video
-			bind:this={event3star}
-			muted
-			src={$assets['event-3star.mp4']}
-			type="video/mp4"
-			crossorigin="anonymous"
-		></video>
-		<video
-			bind:this={event4star}
-			muted
-			src={$assets['event-4star.mp4']}
-			type="video/mp4"
-			crossorigin="anonymous"
-		></video>
-		<video
-			bind:this={event5star}
-			muted
-			src={$assets['event-5star.mp4']}
-			type="video/mp4"
-			crossorigin="anonymous"
-		></video>
+		{#if videoSrc}
+			<video
+				bind:this={expressVideo}
+				muted
+				preload="metadata"
+				src={videoSrc}
+				type="video/mp4"
+				crossorigin="anonymous"
+				on:ended={() => onExpressArrived()}
+			></video>
+		{/if}
 
 		{#if showSkipButton}
 			<div class="skip" in:fade={{ duration: 200 }}>
@@ -169,7 +98,7 @@
 	}
 
 	video {
-		display: none;
+		display: block;
 		position: absolute;
 		top: 50%;
 		left: 50%;

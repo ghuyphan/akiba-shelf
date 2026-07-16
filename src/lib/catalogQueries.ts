@@ -1,5 +1,5 @@
 export const PUBLIC_PRODUCT_COLUMNS =
-  "id,shop_id,name,collection,description,price_vnd,sale_price_vnd,effective_price_vnd,item_code,quantity_available,category,badge,badge_color,stock_status,stock_note,images,image_variants,featured,sort_order,active";
+  "id,shop_id,name,collection,description,price_vnd,sale_price_vnd,effective_price_vnd,promotion_eligible,item_code,quantity_available,category,badge,badge_color,stock_status,stock_note,images,image_variants,featured,sort_order,active";
 export const ADMIN_PRODUCT_COLUMNS = `${PUBLIC_PRODUCT_COLUMNS},image_paths`;
 
 export const PUBLIC_BOOTH_COLUMNS =

@@ -20,7 +20,9 @@ export function isCartItem(value: unknown): value is CartItem {
     && isProduct(value.product)
     && typeof value.quantity === "number"
     && Number.isInteger(value.quantity)
-    && value.quantity > 0;
+    && value.quantity >= 0
+    && (value.reward_quantity === undefined || (Number.isInteger(value.reward_quantity) && value.reward_quantity >= 0))
+    && value.quantity + (value.reward_quantity ?? 0) > 0;
 }
 
 export function loadCatalogSnapshot(shopId?: string): Pick<CatalogData, "products" | "booth"> | null {
@@ -39,7 +41,7 @@ export function loadCatalogSnapshot(shopId?: string): Pick<CatalogData, "product
   }
 }
 
-export function saveCatalogSnapshot(data: CatalogData, shopId?: string) {
+export function saveCatalogSnapshot(data: Pick<CatalogData, "products" | "booth">, shopId?: string) {
   try {
     localStorage.setItem(scopedKey(SNAPSHOT_KEY, shopId), JSON.stringify({ version: 1, savedAt: new Date().toISOString(), products: data.products, booth: data.booth }));
   } catch {

@@ -2,7 +2,7 @@
 	import { getContext } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { t } from 'svelte-i18n';
-	import { activeBanner, activePhase, activeVersion, assets, proUser } from '$lib/stores/app-store';
+	import { activeBanner, activePhase, activeVersion, assets } from '$lib/stores/app-store';
 	import { localConfig } from '$lib/helpers/dataAPI/api-localstorage';
 	import { playSfx } from '$lib/helpers/sounds/audiofx';
 	import { lazyLoad } from '$lib/helpers/lazyload';
@@ -16,7 +16,6 @@
 	let character, bannerID;
 	let charData = [];
 
-	$: locked = pro && !$proUser;
 	$: ({ character } = data);
 	$: ({ bannerID } = character);
 	$: getInfo(bannerID);
@@ -38,7 +37,6 @@
 
 	const navigate = getContext('navigate');
 	const selectBanner = () => {
-		if (locked) return;
 		playSfx();
 		if ($activePhase === phase && $activeVersion === version) return navigate('index');
 
@@ -50,8 +48,8 @@
 	};
 </script>
 
-<div class="col" class:locked in:fade={{ duration: 300 }}>
-	<button on:click={selectBanner} disabled={locked} title={featuredChar}>
+<div class="col" in:fade={{ duration: 300 }}>
+	<button on:click={selectBanner} title={featuredChar}>
 		<div class="banner-pic">
 			<div class="wrapper" class:dual={bannerID.length > 1}>
 				{#if bannerID.length > 1}
@@ -81,14 +79,6 @@
 				<span class="phase"> STC </span>
 			{:else}
 				<span class="phase"> {$t('phase')} {phase} </span>
-			{/if}
-
-			{#if locked}
-				<div class="lock">
-					<span>
-						<i class="hsr-lock" style="transform:translateY(15%); display:inline-block"></i> Locked
-					</span>
-				</div>
 			{/if}
 		</div>
 		<span class="caption">
@@ -191,20 +181,6 @@
 		background-size: 400%;
 		background-image: linear-gradient(90deg, #fbf6ee 30%, #ccc, #fbf6ee);
 		animation: infinite alternate 2s skeleton;
-	}
-
-	.banner-pic .lock {
-		position: absolute;
-		z-index: +2;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background-color: rgba(0, 0, 0, 0.6);
-		color: var(--color-second);
-		display: flex;
-		justify-content: center;
-		align-items: center;
 	}
 
 	@keyframes skeleton {
