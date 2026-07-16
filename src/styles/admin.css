@@ -2871,7 +2871,7 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
   overflow: hidden;
   border: 1px solid var(--soft-line);
   border-radius: 13px;
-  background: var(--surface-soft);
+  background: var(--admin-inner-bg);
 }
 .admin-promotion-summary > div { min-width: 0; padding: 11px 14px; }
 .admin-promotion-summary > div + div { border-left: 1px solid var(--soft-line); }
@@ -2888,14 +2888,86 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
 .admin-promotion-status.is-active::before { background: #48a878; }
 .admin-promotion-status.is-inactive { color: #667085; background: #e9edf2; }
 .admin-promotion-status.is-inactive::before { background: #98a2b3; }
-.admin-promotion-editor { display: grid; grid-template-columns: minmax(280px,.9fr) minmax(420px,1.35fr); align-items: start; gap: 12px; min-width: 0; }
-.admin-promotion-quantities { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; min-width: 0; padding: 12px; border: 1px solid var(--soft-line); border-radius: 13px; background: var(--surface-soft); }
-.admin-promotion-quantities .field { min-width: 0; gap: 5px; }
-.admin-promotion-quantities .field-label { font-size: 9px; letter-spacing: .04em; }
-.admin-promotion-quantities .input { min-width: 0; min-height: 40px; border-radius: 10px; background: #fff; font-weight: 750; }
-.admin-promotion-quantities .field-hint { font-size: 9px; line-height: 1.35; }
-.admin-promotion-editor .admin-switch-row { gap: 10px; }
-.admin-promotion-editor .admin-switch-row label { min-height: 78px !important; padding: 10px 12px !important; background: var(--surface-soft) !important; }
+.admin-promotion-editor { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 12px; min-width: 0; }
+.admin-promotion-setup-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1.8fr;
+  gap: 12px;
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+.admin-promotion-fields-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--soft-line);
+  border-radius: 13px;
+  background: var(--admin-inner-bg);
+}
+.admin-promotion-fields-group .field {
+  min-width: 0;
+  gap: 5px;
+}
+.admin-promotion-fields-group .field-label {
+  font-size: 9px;
+  letter-spacing: .04em;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.admin-promotion-fields-group .input {
+  min-width: 0;
+  min-height: 40px;
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 750;
+}
+.admin-promotion-switches-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.compact-switch-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--soft-line);
+  border-radius: 13px;
+  background: var(--admin-inner-bg);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.compact-switch-label:hover {
+  border-color: var(--line);
+}
+.compact-switch-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+.switch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.switch-text strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.2;
+}
+.switch-text small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
 .promotion-rule-preview { display: flex; grid-column: 1 / -1; align-items: center; gap: 10px; min-width: 0; padding: 11px 13px; border: 1px solid color-mix(in srgb,var(--green) 20%,var(--soft-line)); border-radius: 12px; color: var(--ink); background: color-mix(in srgb,var(--green) 6%,#fff); }
 .promotion-rule-preview>span { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 9px; color: var(--green); background: #fff; }
 .promotion-rule-preview strong { font-size: 11px; line-height: 1.45; }
@@ -2915,6 +2987,10 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
 
 @media (max-width: 900px) {
   .admin-promotion-editor { grid-template-columns: 1fr; }
+  .admin-promotion-setup-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -2930,7 +3006,10 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
   .admin-promotion-summary strong { font-size: 12px; }
   .admin-promotion-offer strong { font-size: 14px; }
   .admin-promotion-summary small { font-size: 8px; }
-  .admin-promotion-quantities { grid-template-columns: 1fr 1fr; padding: 10px; }
+  .admin-promotion-switches-group {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
 
 @media (max-width: 420px) {
@@ -2938,26 +3017,208 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
   .admin-promotion-stat:last-child { grid-column: 1 / -1; border-top: 1px solid var(--soft-line); border-left: 0; }
 }
 .admin-order-card footer .admin-order-discount { margin-right: auto; color: var(--green); font-size: 10px; font-weight: 800; }
-.promotion-product-groups { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; min-width: 0; margin-top: 2px; }
-.promotion-product-groups>section { min-width: 0; overflow: hidden; padding: 14px; border: 1px solid var(--soft-line); border-radius: 15px; background: var(--surface-soft); }
-.promotion-product-group-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.promotion-product-group-header>div { display: grid; gap: 3px; min-width: 0; }
-.promotion-product-group-header strong { color: var(--ink); font-size: 13px; }
-.promotion-product-group-header small { color: var(--muted); font-size: 10px; line-height: 1.4; }
-.promotion-product-group-header>span { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; min-height: 25px; padding: 0 8px; border-radius: 999px; color: var(--green); background: color-mix(in srgb,var(--green) 10%,#fff); font-size: 10px; font-weight: 850; }
-.promotion-product-list { display: grid; gap: 7px; max-height: 326px; padding-right: 3px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
-.promotion-product-list label { display: grid; grid-template-columns: 48px minmax(0,1fr) auto; align-items: center; gap: 10px; min-width: 0; min-height: 64px; padding: 7px 10px 7px 7px; border: 1px solid transparent; border-radius: 12px; background: #fff; cursor: pointer; transition: border-color 150ms ease,background-color 150ms ease,box-shadow 150ms ease; }
-.promotion-product-list label:hover { border-color: var(--line); }
-.promotion-product-list label.is-selected { border-color: color-mix(in srgb,var(--green) 35%,var(--line)); background: color-mix(in srgb,var(--green) 5%,#fff); }
-.promotion-product-thumb { display: grid; width: 48px; height: 48px; overflow: hidden; place-items: center; border-radius: 9px; color: var(--green); background: color-mix(in srgb,var(--green) 9%,var(--surface-soft)); font-size: 16px; font-weight: 850; }
-.promotion-product-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.promotion-product-copy { display: grid; gap: 3px; min-width: 0; }
-.promotion-product-copy strong { overflow: hidden; color: var(--ink); font-size: 11px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
-.promotion-product-copy small { overflow: hidden; color: var(--muted); font-size: 9px; font-weight: 750; letter-spacing: .025em; text-overflow: ellipsis; white-space: nowrap; }
-.promotion-product-list input { width: 18px; height: 18px; margin: 0; accent-color: var(--green); }
-@media (max-width:760px) {
-  .promotion-product-groups { grid-template-columns: 1fr; }
-  .promotion-product-list { max-height: 260px; }
+
+.promotion-products-selection {
+  display: flex;
+  flex-direction: column;
+  grid-column: 1 / -1;
+  min-width: 0;
+  border: 1px solid var(--soft-line);
+  border-radius: 15px;
+  background: var(--admin-inner-bg);
+  overflow: hidden;
+  margin-top: 4px;
+}
+.promotion-products-header {
+  display: grid;
+  grid-template-columns: 1fr 140px 140px;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--soft-line) 40%, var(--admin-inner-bg));
+  border-bottom: 1px solid var(--soft-line);
+}
+.col-product-info {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.col-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.counter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 20px;
+  padding-inline: 6px;
+  border-radius: 999px;
+  color: var(--green);
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--green) 20%, var(--soft-line));
+  font-size: 9px;
+  font-weight: 850;
+}
+.promotion-products-list {
+  display: grid;
+  gap: 1px;
+  background: var(--soft-line);
+  max-height: 380px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+.promotion-product-row {
+  display: grid;
+  grid-template-columns: 1fr 140px 140px;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: #fff;
+  transition: background-color 150ms ease;
+}
+.promotion-product-row:hover {
+  background: var(--admin-inner-bg);
+}
+.promotion-product-row.is-selected {
+  background: color-mix(in srgb, var(--green) 3%, #fff);
+}
+.promotion-product-row.is-selected:hover {
+  background: color-mix(in srgb, var(--green) 6%, var(--admin-inner-bg));
+}
+.promotion-product-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.promotion-product-thumb {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 8%, var(--admin-inner-bg));
+  font-size: 14px;
+  font-weight: 850;
+  flex-shrink: 0;
+}
+.promotion-product-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.promotion-product-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.promotion-product-copy strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.promotion-product-copy small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.promotion-product-actions {
+  display: contents;
+}
+.promotion-product-row .checkbox-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 0;
+  width: 100%;
+}
+.promotion-product-row .checkbox-wrapper input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+.checkbox-label-text {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .promotion-products-header {
+    display: none;
+  }
+  .promotion-products-list {
+    max-height: 280px;
+    gap: 8px;
+    padding: 8px;
+    background: var(--admin-inner-bg);
+  }
+  .promotion-product-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--soft-line);
+    background: #fff;
+  }
+  .promotion-product-row.is-selected {
+    border-color: color-mix(in srgb, var(--green) 30%, var(--soft-line));
+    background: #fff;
+  }
+  .promotion-product-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    border-top: 1px solid var(--soft-line);
+    padding-top: 8px;
+  }
+  .promotion-product-row .checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px;
+    background: var(--admin-inner-bg);
+    border-radius: 8px;
+    width: auto;
+    transition: background-color 150ms ease;
+  }
+  .promotion-product-row .checkbox-wrapper:has(input:checked) {
+    background: color-mix(in srgb, var(--green) 8%, #fff);
+    border: 1px solid color-mix(in srgb, var(--green) 15%, var(--soft-line));
+    padding: 7px;
+  }
+  .checkbox-label-text {
+    display: inline;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ink);
+  }
 }
 
 /* Keep the shared custom dropdown inside the viewport while preserving fixed actions. */

@@ -106,18 +106,32 @@ export function PromotionSettingsForm({
       <Modal title={t("Quantity promotion")} isOpen={isEditing} onClose={reset} wide mobileSheet className="admin-promotion-modal">
         <form className="admin-form admin-promotion-form" onSubmit={handleSubmit}>
           <div className="admin-promotion-editor">
-            <div className="admin-promotion-quantities">
-              <Field label={t("Customer buys")} hint={t("Paid items required in each offer group.")}>
-                <TextInput type="text" inputMode="numeric" value={draft.buy_quantity} onChange={(event) => setDraft({ ...draft, buy_quantity: boundedQuantity(event.target.value) })} />
-              </Field>
-              <Field label={t("Customer gets free")} hint={t("Customers choose free items from the selected reward products.")}>
-                <TextInput type="text" inputMode="numeric" value={draft.free_quantity} onChange={(event) => setDraft({ ...draft, free_quantity: boundedQuantity(event.target.value) })} />
-              </Field>
-            </div>
+            <div className="admin-promotion-setup-grid">
+              <div className="admin-promotion-fields-group">
+                <Field label={t("Customer buys")}>
+                  <TextInput type="text" inputMode="numeric" value={draft.buy_quantity} onChange={(event) => setDraft({ ...draft, buy_quantity: boundedQuantity(event.target.value) })} />
+                </Field>
+                <Field label={t("Customer gets free")}>
+                  <TextInput type="text" inputMode="numeric" value={draft.free_quantity} onChange={(event) => setDraft({ ...draft, free_quantity: boundedQuantity(event.target.value) })} />
+                </Field>
+              </div>
 
-            <div className="admin-switch-row">
-              <label><span><strong>{t("Promotion active")}</strong><small>{t("Apply this offer in the storefront and checkout.")}</small></span><input type="checkbox" checked={draft.enabled} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} /></label>
-              <label><span><strong>{t("Repeat offer")}</strong><small>{t("Apply the reward again for each complete group.")}</small></span><input type="checkbox" checked={draft.repeatable} onChange={(event) => setDraft({ ...draft, repeatable: event.target.checked })} /></label>
+              <div className="admin-promotion-switches-group">
+                <label className="compact-switch-label">
+                  <input type="checkbox" checked={draft.enabled} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} />
+                  <span className="switch-text">
+                    <strong>{t("Promotion active")}</strong>
+                    <small>{t("Apply this offer in the storefront and checkout.")}</small>
+                  </span>
+                </label>
+                <label className="compact-switch-label">
+                  <input type="checkbox" checked={draft.repeatable} onChange={(event) => setDraft({ ...draft, repeatable: event.target.checked })} />
+                  <span className="switch-text">
+                    <strong>{t("Repeat offer")}</strong>
+                    <small>{t("Apply the reward again for each complete group.")}</small>
+                  </span>
+                </label>
+              </div>
             </div>
 
             <div className="promotion-rule-preview">
@@ -130,21 +144,27 @@ export function PromotionSettingsForm({
               })}</strong>
             </div>
 
-            <div className="promotion-product-groups">
-              <section>
-                <header className="promotion-product-group-header">
-                  <div>
-                    <strong>{t("Products that count toward Buy {{buy}}", { buy: draft.buy_quantity })}</strong>
-                    <small>{t("These paid products count toward the Buy quantity.")}</small>
-                  </div>
-                  <span>{draft.qualifying_product_ids.length}/{products.length}</span>
-                </header>
-                <div className="promotion-product-list">
-                  {products.map((product) => {
-                    const selected = draft.qualifying_product_ids.includes(product.id);
-                    const image = product.image_variants?.[0]?.thumbnail ?? product.images[0];
-                    return (
-                      <label key={`buy-${product.id}`} className={selected ? "is-selected" : ""}>
+            <div className="promotion-products-selection">
+              <div className="promotion-products-header">
+                <span className="col-product-info">{t("Product")}</span>
+                <span className="col-action col-buy-action">
+                  <span>{t("Customer buys")}</span>
+                  <span className="counter-badge">{draft.qualifying_product_ids.length}/{products.length}</span>
+                </span>
+                <span className="col-action col-free-action">
+                  <span>{t("Customer gets free")}</span>
+                  <span className="counter-badge">{draft.reward_product_ids.length}/{products.length}</span>
+                </span>
+              </div>
+              <div className="promotion-products-list">
+                {products.map((product) => {
+                  const isBuySelected = draft.qualifying_product_ids.includes(product.id);
+                  const isFreeSelected = draft.reward_product_ids.includes(product.id);
+                  const isAnySelected = isBuySelected || isFreeSelected;
+                  const image = product.image_variants?.[0]?.thumbnail ?? product.images[0];
+                  return (
+                    <div key={product.id} className={`promotion-product-row ${isAnySelected ? "is-selected" : ""}`}>
+                      <div className="promotion-product-info">
                         <span className="promotion-product-thumb">
                           {image ? <img src={image} alt="" /> : <span>{product.name.charAt(0)}</span>}
                         </span>
@@ -152,39 +172,29 @@ export function PromotionSettingsForm({
                           <strong>{product.name}</strong>
                           <small>{product.item_code}</small>
                         </span>
-                        <input type="checkbox" checked={selected} onChange={() => toggleProduct("qualifying_product_ids", product.id)} />
-                      </label>
-                    );
-                  })}
-                </div>
-              </section>
-              <section>
-                <header className="promotion-product-group-header">
-                  <div>
-                    <strong>{t("Products customers can choose free")}</strong>
-                    <small>{t("Customers choose free items from this reward group.")}</small>
-                  </div>
-                  <span>{draft.reward_product_ids.length}/{products.length}</span>
-                </header>
-                <div className="promotion-product-list">
-                  {products.map((product) => {
-                    const selected = draft.reward_product_ids.includes(product.id);
-                    const image = product.image_variants?.[0]?.thumbnail ?? product.images[0];
-                    return (
-                      <label key={`reward-${product.id}`} className={selected ? "is-selected" : ""}>
-                        <span className="promotion-product-thumb">
-                          {image ? <img src={image} alt="" /> : <span>{product.name.charAt(0)}</span>}
-                        </span>
-                        <span className="promotion-product-copy">
-                          <strong>{product.name}</strong>
-                          <small>{product.item_code}</small>
-                        </span>
-                        <input type="checkbox" checked={selected} onChange={() => toggleProduct("reward_product_ids", product.id)} />
-                      </label>
-                    );
-                  })}
-                </div>
-              </section>
+                      </div>
+                      <div className="promotion-product-actions">
+                        <label className="checkbox-wrapper">
+                          <input
+                            type="checkbox"
+                            checked={isBuySelected}
+                            onChange={() => toggleProduct("qualifying_product_ids", product.id)}
+                          />
+                          <span className="checkbox-label-text">{t("Customer buys")}</span>
+                        </label>
+                        <label className="checkbox-wrapper">
+                          <input
+                            type="checkbox"
+                            checked={isFreeSelected}
+                            onChange={() => toggleProduct("reward_product_ids", product.id)}
+                          />
+                          <span className="checkbox-label-text">{t("Customer gets free")}</span>
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

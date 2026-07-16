@@ -945,6 +945,7 @@ const vi: Record<string, string> = {
   "Banner presentation, pool, and item stats.":
     "Giao diện banner, pool và chỉ số vật phẩm.",
   "Banner title": "Tên banner",
+  "Bilingual: English | Tiếng Việt or [en]English[vi]Tiếng Việt": "Song ngữ: Tiếng Anh | Tiếng Việt hoặc [en]English[vi]Tiếng Việt",
   "Banner type": "Loại banner",
   "Banner copy": "Nội dung banner",
   "Featured items shown": "Số vật phẩm nổi bật",
@@ -1078,6 +1079,14 @@ const vi: Record<string, string> = {
   "Public copy": "Nội dung công khai",
   "Name the experience and briefly tell customers what they can win.":
     "Đặt tên trải nghiệm và giới thiệu ngắn gọn phần thưởng cho khách hàng.",
+  "Turn this minigame on or off for customers.":
+    "Bật hoặc tắt minigame này cho khách hàng.",
+  "Choose the active simulator game.":
+    "Chọn trò chơi mô phỏng đang hoạt động.",
+  "Title shown on the storefront banner.":
+    "Tiêu đề hiển thị trên banner cửa hàng.",
+  "Brief description of rewards.":
+    "Mô tả ngắn gọn về phần thưởng.",
   "Warp pool": "Pool Warp",
   "Current banner": "Banner hiện tại",
   "Reward setup": "Thiết lập phần thưởng",
