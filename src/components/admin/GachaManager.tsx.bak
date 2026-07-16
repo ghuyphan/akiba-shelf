@@ -1259,7 +1259,6 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                   </label>
                 </div>
                 <DropdownField
-                  className="gacha-game-selector-field"
                   label={t("Game editor")}
                   value={settings.game_type}
                   options={[
@@ -1285,7 +1284,6 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               </div>
               <div className="gacha-rules-copy">
                 <Field
-                  className="gacha-public-title-field"
                   label={t(gameType === "hsr" ? "Warp title" : "Wish title")}
                 >
                   <TextInput
@@ -1303,10 +1301,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                     }
                   />
                 </Field>
-                <Field
-                  className="gacha-public-description-field"
-                  label={t("Introduction")}
-                >
+                <Field label={t("Introduction")}>
                   <TextArea
                     maxLength={240}
                     value={settings.description}
@@ -1340,10 +1335,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                 <ChevronDown size={17} />
               </summary>
               <div className="gacha-rules-pity">
-                <Field
-                  className="gacha-pity-rare-field"
-                  label={t("4-star pity")}
-                >
+                <Field label={t("4-star pity")}>
                   <TextInput
                     type="number"
                     min={2}
@@ -1360,7 +1352,6 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                   />
                 </Field>
                 <Field
-                  className="gacha-pity-legendary-field"
                   label={t(
                     gameType === "hsr"
                       ? "Character 5-star pity"
@@ -1383,10 +1374,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                   />
                 </Field>
                 {gameType === "hsr" && (
-                  <Field
-                    className="gacha-pity-lightcone-field"
-                    label={t("Light Cone 5-star pity")}
-                  >
+                  <Field label={t("Light Cone 5-star pity")}>
                     <TextInput
                       type="number"
                       min={10}

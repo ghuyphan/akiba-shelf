@@ -15,8 +15,12 @@ type PromotionSettingsFormProps = {
   onSave: (promotion: PromotionSettings) => Promise<void>;
 };
 
+function quantityDigits(value: string) {
+  return value.replace(/\D/g, "").slice(0, 2);
+}
+
 function boundedQuantity(value: string) {
-  return Math.min(99, Math.max(1, Number(value.replace(/\D/g, "")) || 1));
+  return Math.min(99, Math.max(1, Number(quantityDigits(value)) || 1));
 }
 
 export function PromotionSettingsForm({
@@ -25,6 +29,12 @@ export function PromotionSettingsForm({
   onSave,
 }: PromotionSettingsFormProps) {
   const [draft, setDraft] = useState(promotion);
+  const [buyQuantityInput, setBuyQuantityInput] = useState(
+    String(promotion.buy_quantity),
+  );
+  const [freeQuantityInput, setFreeQuantityInput] = useState(
+    String(promotion.free_quantity),
+  );
   const [isEditing, setIsEditing] = useState(false);
   const { busy, error, run, setError } = useAsyncAction();
   const toast = useToast();
@@ -32,6 +42,8 @@ export function PromotionSettingsForm({
 
   useEffect(() => {
     setDraft(promotion);
+    setBuyQuantityInput(String(promotion.buy_quantity));
+    setFreeQuantityInput(String(promotion.free_quantity));
     setIsEditing(false);
     setError("");
   }, [promotion, setError]);
@@ -46,7 +58,17 @@ export function PromotionSettingsForm({
     event.preventDefault();
     let saved = false;
     await run(async () => {
-      await onSave(draft);
+      const normalizedDraft = {
+        ...draft,
+        buy_quantity: boundedQuantity(buyQuantityInput),
+        free_quantity: boundedQuantity(freeQuantityInput),
+      };
+
+      setDraft(normalizedDraft);
+      setBuyQuantityInput(String(normalizedDraft.buy_quantity));
+      setFreeQuantityInput(String(normalizedDraft.free_quantity));
+
+      await onSave(normalizedDraft);
       saved = true;
     }).catch(() => undefined);
     if (saved) setIsEditing(false);
@@ -54,6 +76,8 @@ export function PromotionSettingsForm({
 
   function reset() {
     setDraft(promotion);
+    setBuyQuantityInput(String(promotion.buy_quantity));
+    setFreeQuantityInput(String(promotion.free_quantity));
     setIsEditing(false);
     setError("");
   }
@@ -109,10 +133,62 @@ export function PromotionSettingsForm({
             <div className="admin-promotion-setup-grid">
               <div className="admin-promotion-fields-group">
                 <Field label={t("Customer buys")}>
-                  <TextInput type="text" inputMode="numeric" value={draft.buy_quantity} onChange={(event) => setDraft({ ...draft, buy_quantity: boundedQuantity(event.target.value) })} />
+                  <TextInput
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={2}
+                    value={buyQuantityInput}
+                    onFocus={(event) => event.currentTarget.select()}
+                    onChange={(event) => {
+                      const value = quantityDigits(event.target.value);
+                      setBuyQuantityInput(value);
+
+                      if (value) {
+                        setDraft((current) => ({
+                          ...current,
+                          buy_quantity: boundedQuantity(value),
+                        }));
+                      }
+                    }}
+                    onBlur={() => {
+                      const value = boundedQuantity(buyQuantityInput);
+                      setBuyQuantityInput(String(value));
+                      setDraft((current) => ({
+                        ...current,
+                        buy_quantity: value,
+                      }));
+                    }}
+                  />
                 </Field>
                 <Field label={t("Customer gets free")}>
-                  <TextInput type="text" inputMode="numeric" value={draft.free_quantity} onChange={(event) => setDraft({ ...draft, free_quantity: boundedQuantity(event.target.value) })} />
+                  <TextInput
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={2}
+                    value={freeQuantityInput}
+                    onFocus={(event) => event.currentTarget.select()}
+                    onChange={(event) => {
+                      const value = quantityDigits(event.target.value);
+                      setFreeQuantityInput(value);
+
+                      if (value) {
+                        setDraft((current) => ({
+                          ...current,
+                          free_quantity: boundedQuantity(value),
+                        }));
+                      }
+                    }}
+                    onBlur={() => {
+                      const value = boundedQuantity(freeQuantityInput);
+                      setFreeQuantityInput(String(value));
+                      setDraft((current) => ({
+                        ...current,
+                        free_quantity: value,
+                      }));
+                    }}
+                  />
                 </Field>
               </div>
 
