@@ -5,7 +5,6 @@ import { cookie } from '$lib/helpers/dataAPI/api-cookie';
 import { browser } from '$app/environment';
 
 const sfxList = [
-	'allbanner',
 	'balance-click',
 	'camera',
 	'click',

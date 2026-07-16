@@ -72,11 +72,7 @@
 	};
 
 	const navigate = getContext('navigate');
-	// Switch Banner
-	const switchBanner = () => {
-		playSfx();
-		navigate('allbanner');
-	};
+
 
 	// Phonograph
 	const openPhonograph = () => {
@@ -141,12 +137,7 @@
 				<i class="hsr-music"></i>
 			</button>
 
-			<!-- Switch Banner -->
-		{:else if optionName === 'switchbanner'}
-			<button class="selected-option" on:click={switchBanner}>
-				{$activeVersion === '1000000.0' ? 'Preview' : $activeVersion} - {$activePhase}
-				<i class="hsr-caret-down"></i>
-			</button>
+
 
 			<!-- Number of Warps -->
 		{:else if optionName === 'warpnumber'}

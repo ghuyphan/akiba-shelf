@@ -224,9 +224,7 @@
 		<slot />
 	{/if}
 
-	{#if !previewScreen}
-		<span class="uid"> HSR.WishSimulator.App </span>
-	{/if}
+
 </main>
 
 <style>
@@ -257,16 +255,5 @@
 		visibility: hidden;
 	}
 
-	.uid {
-		display: block;
-		position: fixed;
-		bottom: 0px;
-		left: 5%;
-		padding: 0.2%;
-		z-index: 9999;
-		color: #ddd;
-		text-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.7);
-		-webkit-text-stroke: 0.01rem #000;
-		pointer-events: none;
-	}
+
 </style>

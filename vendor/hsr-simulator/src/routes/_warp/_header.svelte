@@ -21,10 +21,9 @@
 			: $t(`banner.${bannerName}`, { default: bannerName })
 		: 'Subject To Change';
 
-	const navigate = getContext('navigate');
-	const openAllBanners = () => {
-		playSfx();
-		navigate('allbanner');
+	const closeSimulator = () => {
+		playSfx('close');
+		window.parent.postMessage({ type: 'matsuri-gacha-close' }, window.location.origin);
 	};
 </script>
 
@@ -38,6 +37,6 @@
 		</MyFund>
 	</div>
 	<div class="close">
-		<ButtonIcon on:click={openAllBanners} />
+		<ButtonIcon on:click={closeSimulator} />
 	</div>
 </Header>

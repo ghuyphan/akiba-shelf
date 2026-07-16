@@ -105,18 +105,7 @@
 
 	<!-- Show on Shareable screen -->
 	<img class="starrail-logo" src={$assets['starrail-logo.webp']} alt="star rail logo" />
-	<div class="tanda-air">
-		{#if standalone}
-			<div class="get-yours">Get Yours!!!</div>
-		{:else}
-			<div class="via">WARPVIA</div>
-		{/if}
-		<div class="site">
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a href="/" title="Try Your Luck by this Simulator"> HSR.WISHSIMULATOR.APP </a>
-		</div>
-	</div>
-	<!-- End Show on Shareable screen -->
+
 
 	{#if !standalone}
 		{#if list.length > 1 && !showResultList}

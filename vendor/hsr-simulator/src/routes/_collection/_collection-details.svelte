@@ -70,14 +70,7 @@
 			<ButtonIcon on:click={close} />
 		</div>
 
-		<!-- Show on Shareable screen -->
-		<div class="tanda-air">
-			<div class="via">WARPVIA</div>
-			<div class="site">
-				<span> HSR.WISHSIMULATOR.APP </span>
-			</div>
-		</div>
-		<!-- End Show on Shareable screen -->
+
 
 		<div class="container">
 			{#await loadItem(name) then { path, rarity, combat_type, splashartOffset, time, animationID }}

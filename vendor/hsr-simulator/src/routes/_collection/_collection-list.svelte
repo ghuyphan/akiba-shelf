@@ -6,8 +6,7 @@
 	import { isMobile, isMobileLandscape, liteMode } from '$lib/stores/app-store';
 	import { cookie } from '$lib/helpers/dataAPI/api-cookie';
 	import { owneditem } from '$lib/helpers/dataAPI/api-localstorage';
-	import { data as charDB } from '$lib/data/characters.json';
-	import { data as lcDB } from '$lib/data/light-cones.json';
+	import { getMerchItems } from '$lib/helpers/merch';
 
 	import CollectionItem from './_collection-item.svelte';
 	import Scrollable from '$lib/components/Scrollable.svelte';
@@ -40,11 +39,9 @@
 	};
 
 	const loadItems = (type) => {
-		const showHidden = cookie.get('showHiddenBanner');
-		const isChar = type === 'character';
-		const data = isChar ? charDB : lcDB;
+		const allMerch = getMerchItems();
+		const data = allMerch.filter((item) => item.type === type);
 		const result = data
-			.filter(({ pro }) => showHidden || !pro)
 			.map(({ name, itemID, path, rarity, combat_type }) => {
 				const { warp = 0, manual = 0 } = ownedItems[itemID] || {};
 				const qty = warp + manual;

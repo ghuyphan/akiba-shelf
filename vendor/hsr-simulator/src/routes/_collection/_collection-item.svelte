@@ -4,6 +4,7 @@
 	import { assets } from '$lib/stores/app-store';
 	import { lazyLoad } from '$lib/helpers/lazyload';
 	import LightCones from '$lib/components/LightCones.svelte';
+	import Path from '$lib/components/Path.svelte';
 
 	export let rarity = 3;
 	export let name = '';
@@ -47,7 +48,7 @@
 			{#if !isLightCone && combatType}
 				<span> <i class="hsr-{combatType} {combatType} icon-gradient"></i> </span>
 			{/if}
-			<span><i class="hsr-{path}"></i> </span>
+			<span class="path-icon"><Path {path} /></span>
 		</div>
 		{#if qty > 1}
 			<span class="qty">{getQty(qty)}</span>
@@ -171,6 +172,12 @@
 		top: 0;
 		left: 0;
 		padding: 5%;
+	}
+	.path-icon {
+		width: 1em;
+		height: 1em;
+		display: inline-block;
+		line-height: 0;
 	}
 
 	span.qty {

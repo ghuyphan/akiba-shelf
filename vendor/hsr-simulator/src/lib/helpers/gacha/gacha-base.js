@@ -2,6 +2,7 @@ import { data as lcDB } from '$lib/data/light-cones.json';
 import { data as charsDB } from '$lib/data/characters.json';
 import { getRate, prob } from './probabilities';
 import { guaranteedStatus } from '$lib/helpers/dataAPI/api-localstorage';
+import { getMerchItems } from '$lib/helpers/merch';
 
 export const randomNumber = (min = 1, max = 9) => {
 	return Math.floor(Math.random() * (max - min + 1) + min);
@@ -42,13 +43,19 @@ export const getAllLightCones = (star) =>
 export const getCharDetails = (charName) => {
 	if (!charName) return {};
 	const findChar = charsDB.find(({ name }) => charName === name);
-	return findChar || {};
+	if (findChar) return findChar;
+	const merchItems = getMerchItems();
+	const findMerch = merchItems.find(({ name }) => charName === name);
+	return findMerch || {};
 };
 
 export const getLCDetails = (lcName) => {
 	if (!lcName) return {};
 	const findLC = lcDB.find(({ name }) => lcName === name);
-	return findLC || {};
+	if (findLC) return findLC;
+	const merchItems = getMerchItems();
+	const findMerch = merchItems.find(({ name }) => lcName === name);
+	return findMerch || {};
 };
 
 export const regularChars5Star = (nameList) => {

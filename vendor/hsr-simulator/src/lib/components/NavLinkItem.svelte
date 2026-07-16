@@ -1,5 +1,6 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
+	import Path from '$lib/components/Path.svelte';
 
 	export let active = false;
 	export let icon = '';
@@ -8,6 +9,19 @@
 	const click = () => {
 		dispatch('click');
 	};
+
+	const paths = [
+		'abundance',
+		'destruction',
+		'erudition',
+		'harmony',
+		'hunt',
+		'nihility',
+		'preservation',
+		'remembrance',
+		'elation'
+	];
+	$: isPath = paths.includes(icon);
 </script>
 
 <div class="item">
@@ -15,7 +29,13 @@
 		<div class="icon-wrapper">
 			<div class="icon">
 				<div class="ornament"><span></span></div>
-				<i class="hsr-{icon}"></i>
+				{#if isPath}
+					<div class="svg-path-icon">
+						<Path path={icon} dark={active} />
+					</div>
+				{:else}
+					<i class="hsr-{icon}"></i>
+				{/if}
 			</div>
 		</div>
 		<span> <slot /> </span>
@@ -127,6 +147,14 @@
 		top: 50%;
 		right: 0;
 		transform: translate(50%, -50%);
+	}
+
+	.svg-path-icon {
+		width: 60%;
+		height: 60%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 
 	@keyframes rotate {

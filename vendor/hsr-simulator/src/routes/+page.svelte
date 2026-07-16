@@ -20,12 +20,11 @@
 	import Banners from './_warp/index.svelte';
 	import Menu from './_menu/index.svelte';
 
-	let AllBanner, Collection, Shop, GachaInfo, Phonograph, ObtainedItem, ModalConvert;
+	let Collection, Shop, GachaInfo, Phonograph, ObtainedItem, ModalConvert;
 	const asyncLoadComponent = async () => {
 		ObtainedItem = (await import('$lib/components/ObtainedItem.svelte')).default;
 		ModalConvert = (await import('$lib/components/ModalConvert.svelte')).default;
 
-		AllBanner = (await import('./_allbanner/index.svelte')).default;
 		Collection = (await import('./_collection/index.svelte')).default;
 		Shop = (await import('./_shop/index.svelte')).default;
 		GachaInfo = (await import('./_gachainfo/index.svelte')).default;
@@ -133,9 +132,7 @@
 	<Banners />
 	<Menu />
 
-	<!-- Banner List -->
-{:else if pageActive === 'allbanner'}
-	<svelte:component this={AllBanner} />
+
 
 	<!-- Inventory -->
 {:else if pageActive === 'collection'}
