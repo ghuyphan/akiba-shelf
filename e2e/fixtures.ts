@@ -264,6 +264,22 @@ export async function mockSupabase(
             ]
           : [],
       );
+    if (url.pathname.includes("/rest/v1/rpc/get_order_status_counts"))
+      return json(route, {
+        pending: 0,
+        confirmed: 0,
+        cancelled: 0,
+        expired: 0,
+        all: 0,
+      });
+    if (url.pathname.includes("/rest/v1/rpc/get_public_product_categories"))
+      return json(
+        route,
+        [...new Set(catalogProducts.map((product) => product.category))]
+          .filter((category) => category.trim() !== "")
+          .sort()
+          .map((category) => ({ category })),
+      );
     if (url.pathname.includes("/rest/v1/shops")) {
       const requestedSlug =
         url.searchParams.get("slug")?.replace(/^eq\./, "") ?? "akiba-shelf";
