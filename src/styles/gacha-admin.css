@@ -513,7 +513,7 @@
 .gacha-pity-heading {
   display: grid;
   flex: 1;
-  min-width: 0;
+  min-width: 150px;
   gap: 2px;
 }
 
@@ -666,6 +666,19 @@
 .gacha-banner-card > i.is-live {
   background: var(--accent, #5f8d55);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #5f8d55) 14%, transparent);
+}
+
+.gacha-banner-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.gacha-add-banner {
+  min-height: 38px;
+  border-radius: 11px;
 }
 
 .gacha-banner-editor {
