@@ -91,12 +91,14 @@ function renderQueue(overrides: Partial<QueueProps> = {}) {
   const props: QueueProps = {
     orders: [pendingOrder],
     filter: "pending",
+    todayOnly: false,
     counts: { pending: 1, confirmed: 0, cancelled: 0, expired: 0, all: 1 },
     page: 1,
     pageSize: 10,
     total: 1,
     loading: false,
     onFilterChange: vi.fn(),
+    onTodayOnlyChange: vi.fn(),
     onPageChange: vi.fn(),
     onOrderUpdated: vi.fn(),
     ...overrides,
@@ -213,5 +215,39 @@ describe("OrderQueue", () => {
 
     expect(apiMocks.cancelOrder).not.toHaveBeenCalled();
     expect(props.onOrderUpdated).not.toHaveBeenCalled();
+  });
+
+  it("toggles the today-only filter from the filter bar", async () => {
+    const props = renderQueue();
+    const user = userEvent.setup();
+
+    const toggle = screen.getByRole("button", { name: /^today$/i });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(toggle);
+
+    expect(props.onTodayOnlyChange).toHaveBeenCalledWith(true);
+  });
+
+  it("shows a today-specific empty state that can reset both filters", async () => {
+    const props = renderQueue({
+      orders: [],
+      filter: "all",
+      todayOnly: true,
+      total: 0,
+      counts: { pending: 0, confirmed: 0, cancelled: 0, expired: 0, all: 0 },
+    });
+    const user = userEvent.setup();
+
+    expect(screen.getByText("No orders today")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^today$/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await user.click(screen.getByRole("button", { name: /view all orders/i }));
+
+    expect(props.onFilterChange).toHaveBeenCalledWith("all");
+    expect(props.onTodayOnlyChange).toHaveBeenCalledWith(false);
   });
 });

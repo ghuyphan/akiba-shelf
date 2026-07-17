@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Ban, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Inbox, LoaderCircle, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
+import { Ban, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Inbox, LoaderCircle, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
 import type { Order } from "../../types/catalog";
 import type { OrderFilter, OrderStatusCounts } from "../../lib/api";
 import { formatRelativeTime, formatVnd } from "../../lib/format";
@@ -13,17 +13,19 @@ import { usePlatformI18n } from "../../lib/platformI18n";
 type OrderQueueProps = {
   orders: Order[];
   filter: OrderFilter;
+  todayOnly: boolean;
   counts: OrderStatusCounts;
   page: number;
   pageSize: number;
   total: number;
   loading: boolean;
   onFilterChange: (filter: OrderFilter) => void;
+  onTodayOnlyChange: (todayOnly: boolean) => void;
   onPageChange: (page: number) => void;
   onOrderUpdated: () => void;
 };
 
-export function OrderQueue({ orders, filter, counts, page, pageSize, total, loading, onFilterChange, onPageChange, onOrderUpdated }: OrderQueueProps) {
+export function OrderQueue({ orders, filter, todayOnly, counts, page, pageSize, total, loading, onFilterChange, onTodayOnlyChange, onPageChange, onOrderUpdated }: OrderQueueProps) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const toast = useToast();
@@ -61,12 +63,25 @@ export function OrderQueue({ orders, filter, counts, page, pageSize, total, load
     finally { setCancellingId(null); }
   }
 
+  const emptyTitle = loading
+    ? t("Loading orders…")
+    : todayOnly
+      ? filter === "all"
+        ? t("No orders today")
+        : t("No {{status}} orders today", { status: t(filter) })
+      : filter === "all"
+        ? t("No orders yet")
+        : t("No {{status}} orders", { status: t(filter) });
+
   return (
     <section className="admin-orders-view">
       <div className="admin-filter-bar">
         <div className="admin-filter-tabs" role="tablist" aria-label={t("Order status")}>
           {filters.map((item) => <button key={item} type="button" className={filter === item ? "active" : ""} onClick={() => onFilterChange(item)}><span>{t(item)}</span><b>{counts[item]}</b></button>)}
         </div>
+        <button type="button" className={`admin-today-toggle ${todayOnly ? "active" : ""}`} aria-pressed={todayOnly} onClick={() => onTodayOnlyChange(!todayOnly)}>
+          <CalendarDays size={14} /><span>{t("Today")}</span>
+        </button>
         <span className="admin-live-indicator"><i /> {t("Live queue")}</span>
       </div>
 
@@ -88,10 +103,10 @@ export function OrderQueue({ orders, filter, counts, page, pageSize, total, load
         <EmptyState
           tone={loading ? "loading" : "neutral"}
           icon={loading ? <LoaderCircle className="state-spinner" size={27} /> : <Inbox size={27} />}
-          title={loading ? t("Loading orders…") : filter === "all" ? t("No orders yet") : t("No {{status}} orders", { status: t(filter) })}
+          title={emptyTitle}
           message={loading ? t("Fetching the latest queue from the server.") : filter === "pending" ? t("You’re all caught up. New orders will appear here automatically.") : t("There are no orders with this status yet.")}
-          meta={loading ? [] : [filter === "all" ? t("All statuses") : t(filter), t("Live updates on")]}
-          action={!loading && filter !== "all" ? <Button type="button" variant="secondary" onClick={() => onFilterChange("all")}>{t("View all orders")}</Button> : undefined}
+          meta={loading ? [] : [...(todayOnly ? [t("Today")] : []), filter === "all" ? t("All statuses") : t(filter), t("Live updates on")]}
+          action={!loading && (filter !== "all" || todayOnly) ? <Button type="button" variant="secondary" onClick={() => { onFilterChange("all"); onTodayOnlyChange(false); }}>{t("View all orders")}</Button> : undefined}
         />
       ) : <div className={`admin-orders-grid ${loading ? "is-loading" : ""}`}>{orders.map((order) => <OrderCard key={order.id} order={order} isConfirming={confirmingId === order.id} isCancelling={cancellingId === order.id} onConfirm={() => handleConfirm(order.id)} onCancel={() => handleCancel(order.id)} />)}</div>}
       {totalPages > 1 && <nav className="admin-orders-pagination" aria-label={t("Order pages")}><button type="button" disabled={page <= 1 || loading} onClick={() => onPageChange(page - 1)}><ChevronLeft size={16} /> {t("Previous")}</button><span>{t("Page")} <b>{page}</b> {t("of")} {totalPages}</span><button type="button" disabled={page >= totalPages || loading} onClick={() => onPageChange(page + 1)}>{t("Next")} <ChevronRight size={16} /></button></nav>}

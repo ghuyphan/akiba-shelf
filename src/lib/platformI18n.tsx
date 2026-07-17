@@ -606,6 +606,9 @@ const vi: Record<string, string> = {
   "Loading orders…": "Đang tải đơn hàng…",
   "No orders yet": "Chưa có đơn hàng",
   "No {{status}} orders": "Không có đơn {{status}}",
+  Today: "Hôm nay",
+  "No orders today": "Chưa có đơn hàng nào hôm nay",
+  "No {{status}} orders today": "Không có đơn {{status}} nào hôm nay",
   "Fetching the latest queue from the server.":
     "Đang tải hàng đợi mới nhất từ máy chủ.",
   "You’re all caught up. New orders will appear here automatically.":

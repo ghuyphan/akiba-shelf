@@ -1386,7 +1386,15 @@ export async function getOrders(
     page = 1,
     pageSize = 12,
     status = "all",
-  }: { page?: number; pageSize?: number; status?: OrderFilter } = {},
+    createdAfter,
+    createdBefore,
+  }: {
+    page?: number;
+    pageSize?: number;
+    status?: OrderFilter;
+    createdAfter?: string;
+    createdBefore?: string;
+  } = {},
 ): Promise<{ orders: Order[]; total: number }> {
   const client = requireSupabase();
   const from = Math.max(0, page - 1) * pageSize;
@@ -1401,6 +1409,8 @@ export async function getOrders(
     .eq("shop_id", shopId);
 
   if (status !== "all") query = query.eq("status", status);
+  if (createdAfter) query = query.gte("created_at", createdAfter);
+  if (createdBefore) query = query.lt("created_at", createdBefore);
 
   const { data, error, count } = await query
     .order("created_at", { ascending: false })

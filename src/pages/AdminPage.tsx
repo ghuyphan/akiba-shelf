@@ -134,6 +134,7 @@ export function AdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderFilter, setOrderFilter] = useState<OrderFilter>("pending");
+  const [ordersTodayOnly, setOrdersTodayOnly] = useState(false);
   const [orderPage, setOrderPage] = useState(1);
   const [orderTotal, setOrderTotal] = useState(0);
   const [orderCounts, setOrderCounts] =
@@ -179,6 +180,7 @@ export function AdminPage() {
   const orderReloadTimerRef = useRef<number | undefined>(undefined);
   const orderPageRef = useRef(orderPage);
   const orderFilterRef = useRef(orderFilter);
+  const ordersTodayOnlyRef = useRef(ordersTodayOnly);
   const tRef = useRef(t);
   const lastLocalWriteRef = useRef(0);
   const { containerRef: desktopNavRef, registerItem: registerDesktopTab } =
@@ -227,7 +229,8 @@ export function AdminPage() {
   useEffect(() => {
     orderPageRef.current = orderPage;
     orderFilterRef.current = orderFilter;
-  }, [orderPage, orderFilter]);
+    ordersTodayOnlyRef.current = ordersTodayOnly;
+  }, [orderPage, orderFilter, ordersTodayOnly]);
 
   useEffect(() => {
     tRef.current = t;
@@ -263,11 +266,25 @@ export function AdminPage() {
     const requestId = ++orderRequestRef.current;
     setOrdersLoading(true);
     try {
+      // "Today" follows the staff's local day, recomputed on every fetch so an
+      // open admin session rolls over correctly at midnight.
+      let createdAfter: string | undefined;
+      let createdBefore: string | undefined;
+      if (ordersTodayOnlyRef.current) {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const startOfTomorrow = new Date(startOfToday);
+        startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+        createdAfter = startOfToday.toISOString();
+        createdBefore = startOfTomorrow.toISOString();
+      }
       const [result, counts] = await Promise.all([
         getOrders(shopId, {
           page,
           pageSize: orderPageSize,
           status: orderFilterRef.current,
+          createdAfter,
+          createdBefore,
         }),
         refreshCounts ? getOrderStatusCounts(shopId) : Promise.resolve(null),
       ]);
@@ -363,7 +380,7 @@ export function AdminPage() {
       if (isSessionNoise(error)) return;
       toast.error(t("Could not load the admin workspace."), t("Admin unavailable"));
     });
-  }, [isAuthed, orderFilter, orderPage, isInitialLoading, reloadOrders, t, toast]);
+  }, [isAuthed, orderFilter, ordersTodayOnly, orderPage, isInitialLoading, reloadOrders, t, toast]);
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -906,6 +923,7 @@ export function AdminPage() {
               <OrderQueue
                 orders={orders}
                 filter={orderFilter}
+                todayOnly={ordersTodayOnly}
                 counts={orderCounts}
                 page={orderPage}
                 pageSize={orderPageSize}
@@ -913,6 +931,10 @@ export function AdminPage() {
                 loading={ordersLoading}
                 onFilterChange={(filter) => {
                   setOrderFilter(filter);
+                  setOrderPage(1);
+                }}
+                onTodayOnlyChange={(todayOnly) => {
+                  setOrdersTodayOnly(todayOnly);
                   setOrderPage(1);
                 }}
                 onPageChange={setOrderPage}
