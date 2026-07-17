@@ -44,6 +44,7 @@ import type {
   GachaGameConfigurations,
   GachaGameType,
   GachaItemKind,
+  GachaLiveStatus,
   GachaPoolEntry,
   GachaPoolItem,
   GachaRarity,
@@ -505,55 +506,16 @@ function normalizeStoredGameConfiguration(
   };
 }
 
-function normalizeGameConfigurations(
-  value: unknown,
-  shopId: string,
-): GachaGameConfigurations {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  const record = value as Record<string, unknown>;
-  return (["genshin", "hsr"] as GachaGameType[]).reduce<GachaGameConfigurations>(
-    (configs, gameType) => {
-      const normalized = normalizeStoredGameConfiguration(
-        record[gameType],
-        shopId,
-        gameType,
-      );
-      if (normalized) configs[gameType] = normalized;
-      return configs;
-    },
-    {},
-  );
-}
-
-async function getCompatiblePublicGachaSettings(shopId: string) {
-  const client = requireSupabase();
-  const current = await client
-    .from("gacha_settings")
-    .select(GACHA_SETTINGS_COLUMNS)
-    .eq("shop_id", shopId)
-    .maybeSingle();
-  if (
-    !current.error ||
-    (!current.error.message.includes("lightcone_legendary_pity") &&
-      current.error.code !== "42703")
-  ) {
-    return current;
-  }
-  return client
-    .from("gacha_settings")
-    .select(
-      "shop_id,enabled,game_type,title,description,rare_pity,legendary_pity,updated_at",
-    )
-    .eq("shop_id", shopId)
-    .maybeSingle();
-}
-
 export async function getGachaCatalog(
   shopId: string,
 ): Promise<GachaCatalog> {
   const client = requireSupabase();
   const [settingsResult, bannersResult, poolResult] = await Promise.all([
-    getCompatiblePublicGachaSettings(shopId),
+    client
+      .from("gacha_settings")
+      .select(GACHA_SETTINGS_COLUMNS)
+      .eq("shop_id", shopId)
+      .maybeSingle(),
     client
       .from("gacha_banners")
       .select(GACHA_BANNER_COLUMNS)
@@ -610,188 +572,156 @@ export async function getPublicGachaEnabled(shopId: string): Promise<boolean> {
   return data?.enabled === true;
 }
 
-export async function getAdminGachaConfiguration(shopId: string) {
+/**
+ * Loads the admin gacha workspace: both games' editor drafts plus the
+ * currently published ("live") status. Drafts are the only admin-side store;
+ * the relational tables are the public projection written by publishing.
+ * Games without a stored draft seed from defaults.
+ */
+export async function getAdminGachaConfiguration(shopId: string): Promise<{
+  configurations: GachaGameConfigurations;
+  live: GachaLiveStatus | null;
+}> {
   const client = requireSupabase();
-  const [settingsResult, bannersResult, poolResult, configsResult] = await Promise.all([
-    client
-      .from("gacha_settings")
-      .select(GACHA_SETTINGS_COLUMNS)
-      .eq("shop_id", shopId)
-      .maybeSingle(),
-    client
-      .from("gacha_banners")
-      .select(GACHA_BANNER_COLUMNS)
-      .eq("shop_id", shopId)
-      .order("sort_order", { ascending: true })
-      .order("id", { ascending: true }),
-    client
-      .from("gacha_pool_entries")
-      .select(GACHA_POOL_COLUMNS)
-      .eq("shop_id", shopId)
-      .order("rarity", { ascending: false })
-      .order("product_id", { ascending: true }),
-    client
-      .from("gacha_game_configs")
-      .select("game_type,config")
-      .eq("shop_id", shopId),
-  ]);
+  const [configsResult, settingsResult, bannersResult, entriesResult] =
+    await Promise.all([
+      client
+        .from("gacha_game_configs")
+        .select("game_type,config")
+        .eq("shop_id", shopId),
+      client
+        .from("gacha_settings")
+        .select(GACHA_SETTINGS_COLUMNS)
+        .eq("shop_id", shopId)
+        .maybeSingle(),
+      client
+        .from("gacha_banners")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", shopId)
+        .eq("active", true),
+      client
+        .from("gacha_pool_entries")
+        .select("product_id", { count: "exact", head: true })
+        .eq("shop_id", shopId)
+        .eq("active", true),
+    ]);
+  if (configsResult.error) throw configsResult.error;
   if (settingsResult.error) throw settingsResult.error;
   if (bannersResult.error) throw bannersResult.error;
-  if (poolResult.error) throw poolResult.error;
-  if (configsResult.error) throw configsResult.error;
-  const settings = settingsResult.data
-    ? normalizeGachaSettings(
-        settingsResult.data as Record<string, unknown>,
-        shopId,
-      )
-    : defaultGachaSettings(shopId);
-  const banners = ((bannersResult.data ?? []) as Record<string, unknown>[]).map(
-    (row) => normalizeGachaBanner(row, shopId, settings.game_type),
-  );
-  const entries = ((poolResult.data ?? []) as Record<string, unknown>[]).map(
-    (row) => normalizeGachaPoolEntry(row, shopId),
-  );
+  if (entriesResult.error) throw entriesResult.error;
+
   const storedConfigs = Object.fromEntries(
     ((configsResult.data ?? []) as { game_type: string; config: unknown }[])
       .filter((row) => row.game_type === "genshin" || row.game_type === "hsr")
       .map((row) => [row.game_type, row.config]),
   );
-  const configurations = normalizeGameConfigurations(storedConfigs, shopId);
-  const cappedEntries = capGachaFeaturedEntries(
-    entries,
-    banners,
-    settings.game_type,
-  );
-  configurations[settings.game_type] = {
-    settings,
-    banners,
-    entries: cappedEntries,
-  };
-  return { settings, banners, entries: cappedEntries, configurations };
+  const configurations = (["genshin", "hsr"] as GachaGameType[]).reduce<
+    GachaGameConfigurations
+  >((configs, gameType) => {
+    configs[gameType] =
+      normalizeStoredGameConfiguration(storedConfigs[gameType], shopId, gameType) ??
+      {
+        settings: { ...defaultGachaSettings(shopId), game_type: gameType },
+        banners: [],
+        entries: [],
+      };
+    return configs;
+  }, {});
+
+  const live: GachaLiveStatus | null = settingsResult.data
+    ? {
+        settings: normalizeGachaSettings(
+          settingsResult.data as Record<string, unknown>,
+          shopId,
+        ),
+        bannerCount: bannersResult.count ?? 0,
+        entryCount: entriesResult.count ?? 0,
+      }
+    : null;
+  return { configurations, live };
 }
 
-export async function saveGachaConfiguration(
+/**
+ * Normalizes a draft before persistence: trims copy, clamps display limits to
+ * the game's rules, and caps featured flags. Shared by draft saving and
+ * publishing so the stored draft and the RPC payload never diverge.
+ */
+function normalizedDraftConfig(
   shopId: string,
-  settings: GachaSettings,
-  banners: GachaBanner[],
-  entries: GachaPoolEntry[],
-  configurations: GachaGameConfigurations = {},
-) {
-  const client = requireSupabase();
-  const settingsPayload = {
-    shop_id: shopId,
-    enabled: settings.enabled,
-    game_type: settings.game_type,
-    title: settings.title.trim(),
-    description: settings.description.trim(),
-    rare_pity: settings.rare_pity,
-    legendary_pity: settings.legendary_pity,
-    lightcone_legendary_pity: settings.lightcone_legendary_pity,
-  };
-  const { error: settingsError } = await client
-    .from("gacha_settings")
-    .upsert(settingsPayload, { onConflict: "shop_id" });
-  if (settingsError) throw settingsError;
-
-  const configPayload = (Object.entries(configurations) as [
-    GachaGameType,
-    GachaGameConfiguration | undefined,
-  ][]).flatMap(([gameType, config]) => {
-    if (!config) return [];
-    const normalizedBanners = normalizeGachaBanners(config.banners, gameType);
-    return [{
+  gameType: GachaGameType,
+  config: GachaGameConfiguration,
+): GachaGameConfiguration {
+  const banners = normalizeGachaBanners(config.banners, gameType);
+  return {
+    settings: {
+      ...config.settings,
       shop_id: shopId,
       game_type: gameType,
-      config: {
-        ...config,
-        banners: normalizedBanners,
-        entries: capGachaFeaturedEntries(
-          config.entries,
-          normalizedBanners,
-          gameType,
-        ),
-      },
-    }];
-  });
-  if (configPayload.length) {
-    const { error } = await client
-      .from("gacha_game_configs")
-      .upsert(configPayload, { onConflict: "shop_id,game_type" });
-    if (error) throw error;
-  }
+      title: config.settings.title.trim(),
+      description: config.settings.description.trim(),
+    },
+    banners,
+    entries: capGachaFeaturedEntries(config.entries, banners, gameType),
+  };
+}
 
-  if (banners.length) {
-    const bannerPayload = normalizeGachaBanners(
-      banners,
-      settings.game_type,
-    ).map((banner, index) => ({
-      id: banner.id,
-      shop_id: shopId,
-      name: banner.name.trim(),
-      description: banner.description.trim(),
-      kind: banner.kind,
-      theme: banner.theme,
-      display_limit: banner.display_limit,
-      sort_order: index,
-      active: banner.active,
-    }));
-    const { error } = await client
-      .from("gacha_banners")
-      .upsert(bannerPayload, { onConflict: "id" });
-    if (error) throw error;
-  }
-
-  const { data: previousBanners, error: previousBannersError } = await client
-    .from("gacha_banners")
-    .select("id")
-    .eq("shop_id", shopId);
-  if (previousBannersError) throw previousBannersError;
-  const nextBannerIds = new Set(banners.map((banner) => banner.id));
-  const removedBannerIds = ((previousBanners ?? []) as { id: string }[])
-    .map((banner) => banner.id)
-    .filter((id) => !nextBannerIds.has(id));
-  if (removedBannerIds.length) {
-    const { error } = await client
-      .from("gacha_banners")
-      .delete()
-      .eq("shop_id", shopId)
-      .in("id", removedBannerIds);
-    if (error) throw error;
-  }
-
-  const { error: clearError } = await client
-    .from("gacha_pool_entries")
-    .delete()
-    .eq("shop_id", shopId);
-  if (clearError) throw clearError;
-
-  if (entries.length) {
-    const normalizedBanners = normalizeGachaBanners(
-      banners,
-      settings.game_type,
+/** Persists one game's editor draft. Drafts never affect the storefront. */
+export async function saveGachaDraft(
+  shopId: string,
+  gameType: GachaGameType,
+  config: GachaGameConfiguration,
+): Promise<GachaGameConfiguration> {
+  const draft = normalizedDraftConfig(shopId, gameType, config);
+  const { error } = await requireSupabase()
+    .from("gacha_game_configs")
+    .upsert(
+      { shop_id: shopId, game_type: gameType, config: draft },
+      { onConflict: "shop_id,game_type" },
     );
-    const payload = capGachaFeaturedEntries(
-      entries,
-      normalizedBanners,
-      settings.game_type,
-    ).map((entry) => ({
-      shop_id: shopId,
-      banner_id: entry.banner_id,
-      product_id: entry.product_id,
-      kind: entry.kind as GachaItemKind,
-      element: entry.element as GachaElement,
-      weapon_type: entry.weapon_type as GachaWeaponType,
-      rarity: entry.rarity,
-      weight: entry.weight,
-      featured: entry.featured,
-      active: entry.active,
-    }));
-    const { error } = await client
-      .from("gacha_pool_entries")
-      .upsert(payload, { onConflict: "banner_id,product_id" });
-    if (error) throw error;
-  }
-  return getAdminGachaConfiguration(shopId);
+  if (error) throw error;
+  return draft;
+}
+
+/**
+ * Saves the draft, then atomically replaces the published configuration for
+ * the shop via the publish RPC (which also switches the live game). If the
+ * RPC rejects the payload the draft remains saved.
+ */
+export async function publishGachaConfiguration(
+  shopId: string,
+  gameType: GachaGameType,
+  config: GachaGameConfiguration,
+): Promise<GachaGameConfiguration> {
+  const draft = await saveGachaDraft(shopId, gameType, config);
+  const { error } = await requireSupabase().rpc("publish_gacha_configuration", {
+    p_shop_id: shopId,
+    p_game_type: gameType,
+    p_config: {
+      settings: draft.settings,
+      banners: draft.banners.map((banner) => ({
+        id: banner.id,
+        name: banner.name,
+        description: banner.description,
+        kind: banner.kind,
+        theme: banner.theme,
+        display_limit: banner.display_limit,
+        active: banner.active,
+      })),
+      entries: draft.entries.map((entry) => ({
+        banner_id: entry.banner_id,
+        product_id: entry.product_id,
+        kind: entry.kind,
+        element: entry.element,
+        weapon_type: entry.weapon_type,
+        rarity: entry.rarity,
+        weight: entry.weight,
+        featured: entry.featured,
+        active: entry.active,
+      })),
+    },
+  });
+  if (error) throw error;
+  return draft;
 }
 
 export async function getPublicBoothSettings(

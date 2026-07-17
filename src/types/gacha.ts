@@ -92,6 +92,13 @@ export type GachaGameConfigurations = Partial<
   Record<GachaGameType, GachaGameConfiguration>
 >;
 
+/** The currently published minigame state, as seen by the public storefront. */
+export type GachaLiveStatus = {
+  settings: GachaSettings;
+  bannerCount: number;
+  entryCount: number;
+};
+
 export const defaultGachaSettings = (shopId: string): GachaSettings => ({
   shop_id: shopId,
   enabled: false,

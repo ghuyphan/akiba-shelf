@@ -3,14 +3,12 @@ import type {
   GachaGameType,
   GachaPoolEntry,
 } from "../types/gacha";
+import { getGachaGameDescriptor } from "./gachaGames";
 
 export const GACHA_FEATURED_ITEM_LIMITS: Record<GachaGameType, number> = {
-  genshin: 5,
-  hsr: 4,
+  genshin: getGachaGameDescriptor("genshin").displayLimitMax,
+  hsr: getGachaGameDescriptor("hsr").displayLimitMax,
 };
-
-export const HSR_PRIMARY_FEATURED_LIMIT = 1;
-export const HSR_SECONDARY_FEATURED_LIMIT = 3;
 
 export function matchesGachaBannerKind(
   entry: GachaPoolEntry,
@@ -22,7 +20,7 @@ export function matchesGachaBannerKind(
 }
 
 export function getGachaFeaturedItemLimit(gameType: GachaGameType): number {
-  return GACHA_FEATURED_ITEM_LIMITS[gameType];
+  return getGachaGameDescriptor(gameType).displayLimitMax;
 }
 
 export function normalizeGachaDisplayLimit(
@@ -30,7 +28,7 @@ export function normalizeGachaDisplayLimit(
   gameType: GachaGameType,
 ): number {
   const parsed = typeof value === "number" ? value : Number(value);
-  const fallback = gameType === "hsr" ? 4 : 3;
+  const fallback = getGachaGameDescriptor(gameType).defaults.displayLimit;
   const limit = Number.isFinite(parsed) ? Math.trunc(parsed) : fallback;
   return Math.min(getGachaFeaturedItemLimit(gameType), Math.max(1, limit));
 }
@@ -56,7 +54,8 @@ export function capGachaFeaturedEntries(
       normalizeGachaDisplayLimit(banner.display_limit, gameType),
     ]),
   );
-  if (gameType === "hsr") {
+  const rule = getGachaGameDescriptor(gameType).featuredRule;
+  if (rule.kind === "primary-secondary") {
     const allowed = new Set<GachaPoolEntry>();
 
     for (const banner of banners) {
@@ -72,8 +71,8 @@ export function capGachaFeaturedEntries(
       if (primary) allowed.add(primary);
 
       const secondaryLimit = Math.min(
-        HSR_SECONDARY_FEATURED_LIMIT,
-        Math.max(0, limit - HSR_PRIMARY_FEATURED_LIMIT),
+        rule.secondaryLimit,
+        Math.max(0, limit - rule.primaryLimit),
       );
       candidates
         .filter((entry) => entry.rarity === 4)

@@ -1130,6 +1130,17 @@ const vi: Record<string, string> = {
   Wind: "Phong",
   Quantum: "Lượng Tử",
   Imaginary: "Số Ảo",
+  "Could not save draft": "Không thể lưu bản nháp",
+  "Gacha draft saved.": "Đã lưu bản nháp gacha.",
+  "Publishing switches the public minigame to {{game}}. Continue?": "Xuất bản sẽ chuyển minigame công khai sang {{game}}. Tiếp tục?",
+  "Delete banner “{{name}}”? Its pool items will be removed too.": "Xóa banner “{{name}}”? Các vật phẩm trong pool của nó cũng sẽ bị xóa theo.",
+  "Availability, public copy, and pity rules for this game.": "Trạng thái hoạt động, nội dung công khai và luật bảo hiểm của game này.",
+  Availability: "Trạng thái hoạt động",
+  "Live now": "Đang hoạt động",
+  Unsaved: "Chưa lưu",
+  Draft: "Bản nháp",
+  "{{banners}} banners · {{items}} items": "{{banners}} banner · {{items}} vật phẩm",
+  "Save draft": "Lưu bản nháp",
 };
 
 type Variables = Record<string, string | number>;

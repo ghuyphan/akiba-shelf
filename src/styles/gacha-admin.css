@@ -16,9 +16,12 @@
 
 /* ---------------------------------------------------------------- toolbar */
 
-.gacha-toolbar {
-  display: grid;
-  gap: 10px;
+.gacha-status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 12px;
   border: 1px solid var(--line, #ded9cf);
   border-radius: 17px;
@@ -26,15 +29,58 @@
   box-shadow: 0 10px 30px rgb(20 33 53 / 5%);
 }
 
-.gacha-toolbar-main {
+.gacha-status-games {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--soft-line, #eee9e1);
+  border-radius: 11px;
+  background: var(--admin-inner-bg, #f8fafc);
 }
 
-.gacha-toolbar-actions {
+.gacha-status-games button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 40px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted, #677284);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.gacha-status-games button strong {
+  color: var(--ink, #20304a);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gacha-status-games button small {
+  color: var(--muted, #677284);
+  font-size: 10px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.gacha-status-games button:hover:not(.active) {
+  background: rgb(255 255 255 / 40%);
+}
+
+.gacha-status-games button.active {
+  color: var(--ink, #20304a);
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(15 23 42 / 10%);
+}
+
+.gacha-status-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -170,6 +216,12 @@
 .gacha-admin-page .select-menu-trigger {
   min-height: 44px;
   border-radius: 11px;
+}
+
+.gacha-admin-page .input:disabled {
+  color: var(--muted, #677284);
+  background: #f3f4f5;
+  cursor: not-allowed;
 }
 
 .gacha-admin-page .textarea {
@@ -1003,6 +1055,10 @@
   background: #fff;
 }
 
+.gacha-item-editor .input {
+  min-height: 42px;
+}
+
 .gacha-item-editor .select-menu-popover {
   width: 100%;
   min-width: 0;
@@ -1068,17 +1124,17 @@
 }
 
 @media (max-width: 760px) {
-  .gacha-toolbar-main {
+  .gacha-status-bar {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .gacha-toolbar-actions {
+  .gacha-status-actions {
     justify-content: flex-start;
   }
 
-  .gacha-toolbar-actions .gacha-preview-button,
-  .gacha-toolbar-actions > .button:last-child {
+  .gacha-status-actions .gacha-preview-button,
+  .gacha-status-actions > .button:last-child {
     flex: 1;
     justify-content: center;
   }
