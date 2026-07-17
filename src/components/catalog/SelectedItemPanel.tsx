@@ -1,7 +1,7 @@
 import { Banknote, ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
 import type { CartItem, Product, PromotionSettings } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
-import { calculateCartPricing } from "../../lib/pricing";
+import { calculateCartPricing, getPricingLine } from "../../lib/pricing";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { useCatalogCopy } from "../../lib/catalogI18n";
@@ -57,35 +57,37 @@ export function SelectedItemPanel({
       className={`selected-panel ${isExpanded ? "mobile-expanded" : "mobile-collapsed"}`}
     >
       <div className="mobile-drag-handle">
-        <SheetHandle onClick={requestCollapse} label="Collapse cart" />
+        <SheetHandle onClick={requestCollapse} label={copy.collapseCart} />
       </div>
 
       {/* Mobile collapsed summary bar (only visible on mobile collapsed state) */}
-      <div
+      <button
+        type="button"
         className="mobile-cart-summary-bar"
+        aria-label={copy.viewCart}
         onClick={onToggleExpand}
+        style={{
+          padding: 0,
+          border: "none",
+          background: "none",
+          textAlign: "left",
+          cursor: "pointer",
+        }}
       >
-        <div className="mobile-cart-summary-info">
-          <div className="mobile-cart-summary-icon-wrap">
+        <span className="mobile-cart-summary-info">
+          <span className="mobile-cart-summary-icon-wrap">
             <ShoppingBag size={20} />
             <span className="mobile-cart-count-badge">{totalItems}</span>
-          </div>
-          <div className="mobile-cart-summary-text">
+          </span>
+          <span className="mobile-cart-summary-text">
             <strong>{copy.cart}</strong>
             <span>{formatVnd(totalAmount)}</span>
-          </div>
-        </div>
-        <Button
-          variant="primary"
-          className="mobile-cart-summary-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onToggleExpand) onToggleExpand();
-          }}
-        >
-          {copy.viewCart}
-        </Button>
-      </div>
+          </span>
+        </span>
+        <span className="button button-primary mobile-cart-summary-btn">
+          <span>{copy.viewCart}</span>
+        </span>
+      </button>
 
       {/* Full cart content */}
       <div className="cart-full-content">
@@ -98,7 +100,10 @@ export function SelectedItemPanel({
 
         <div className="cart-items-container">
           {cart.map((item) => {
-            const pricingLine = pricing.lines.find((line) => line.productId === item.product.id)!;
+            const pricingLine = getPricingLine(pricing, item.product.id);
+            // Cart state can briefly lag the pricing snapshot during
+            // realtime reconciles; skip the row instead of crashing.
+            if (!pricingLine) return null;
             const primaryImage = item.product.images.find(Boolean);
             const maxQuantity = Math.max(1, item.product.quantity_available);
             const canDecrease = item.quantity > 0;
@@ -122,6 +127,7 @@ export function SelectedItemPanel({
                     <button
                       type="button"
                       disabled={!canDecrease}
+                      aria-label={copy.decreaseQuantity(item.product.name)}
                       onClick={() => onQuantityChange(item.product.id, item.quantity - 1)}
                     >
                       <Minus size={12} />
@@ -130,6 +136,7 @@ export function SelectedItemPanel({
                     <button
                       type="button"
                       disabled={!canIncrease}
+                      aria-label={copy.increaseQuantity(item.product.name)}
                       onClick={() => onQuantityChange(item.product.id, item.quantity + 1)}
                     >
                       <Plus size={12} />
@@ -138,7 +145,7 @@ export function SelectedItemPanel({
                   <button
                     className="cart-item-remove"
                     type="button"
-                    aria-label="Remove item"
+                    aria-label={copy.removeItem(item.product.name)}
                     onClick={() => onRemove(item.product.id)}
                   >
                     <Trash2 size={16} />

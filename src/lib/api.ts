@@ -13,8 +13,10 @@ import { getAppUrl } from "./authUrls";
 import { LIMITED_STOCK_THRESHOLD } from "./constants";
 import {
   boothSettingsSchema,
+  orderItemProductSchema,
   orderMutationSchema,
   orderSchema,
+  orderStatusCountsSchema,
   paymentSettingsSchema,
   promotionSettingsSchema,
   productRowSchema,
@@ -27,6 +29,7 @@ import type {
   Product,
   StockStatus,
   Order,
+  OrderItemProduct,
   OrderStatus,
   CartItem,
   OrderMutationResult,
@@ -221,10 +224,6 @@ export async function getPublicShop(slug: string): Promise<Shop | null> {
   return data as Shop | null;
 }
 
-export async function getDefaultShop(): Promise<Shop | null> {
-  return getPublicShop("akiba-shelf");
-}
-
 export async function getCatalogCoreData(
   shopId: string,
 ): Promise<Pick<CatalogData, "products" | "booth">> {
@@ -357,26 +356,11 @@ export async function getPublicProductCategories(
   shopId: string,
 ): Promise<string[]> {
   const client = requireSupabase();
-  const categories = new Set<string>();
-  const batchSize = 1000;
-
-  for (let offset = 0; ; offset += batchSize) {
-    const { data, error } = await client
-      .from("products")
-      .select("category")
-      .eq("shop_id", shopId)
-      .eq("active", true)
-      .order("category", { ascending: true })
-      .range(offset, offset + batchSize - 1);
-    if (error) throw error;
-    const rows = (data ?? []) as { category: string | null }[];
-    rows.forEach((row) => {
-      if (row.category?.trim()) categories.add(row.category.trim());
-    });
-    if (rows.length < batchSize) break;
-  }
-
-  return [...categories];
+  const { data, error } = await client.rpc("get_public_product_categories", {
+    p_shop_id: shopId,
+  });
+  if (error) throw error;
+  return ((data ?? []) as { category: string }[]).map((row) => row.category);
 }
 
 export async function getPublicProductsByIds(
@@ -950,21 +934,37 @@ export async function getShopWorkspaceSummary(
   };
 }
 
+// Read one product's private storage paths through the member-safe RPC so the
+// browser never needs SELECT on image_paths (hardened column grants deny it).
+async function getProductImagePaths(
+  client: ReturnType<typeof requireSupabase>,
+  shopId: string,
+  productId: string,
+): Promise<string[] | null> {
+  const { data, error } = await client
+    .rpc("get_admin_products", { p_shop_id: shopId })
+    .select("image_paths")
+    .eq("id", productId)
+    .maybeSingle();
+  if (error) throw error;
+  return data
+    ? textArray((data as { image_paths?: unknown }).image_paths)
+    : null;
+}
+
 export async function saveProduct(
   shopId: string,
   product: Product,
 ): Promise<Product> {
   const client = requireSupabase();
-  const previous = (await getAdminProducts(shopId)).find(
-    (item) => item.id === product.id,
-  );
+  const previousPaths = await getProductImagePaths(client, shopId, product.id);
   const editableProduct = { ...product };
   delete editableProduct.effective_price_vnd;
   const payload = { ...editableProduct, shop_id: shopId };
   // Do not collapse these into an upsert. ON CONFLICT reads every proposed
   // update column, while hardened grants intentionally deny browser SELECT
   // access to private storage metadata such as image_paths.
-  const write = previous
+  const write = previousPaths
     ? client
         .from("products")
         .update(payload)
@@ -975,7 +975,7 @@ export async function saveProduct(
     .select(PUBLIC_PRODUCT_COLUMNS)
     .single();
   if (error) throw error;
-  const removedPaths = textArray(previous?.image_paths).filter(
+  const removedPaths = (previousPaths ?? []).filter(
     (path) => !textArray(product.image_paths).includes(path),
   );
   if (removedPaths.length)
@@ -990,32 +990,37 @@ async function removeUnreferencedProductImages(
   shopId: string,
   paths: string[],
 ) {
-  const references = await getAdminProducts(shopId);
+  // Targeted overlap query: only products still referencing these paths come
+  // back, instead of transferring the entire catalog for a reference check.
+  const { data, error } = await client
+    .rpc("get_admin_products", { p_shop_id: shopId })
+    .select("image_paths")
+    .overlaps("image_paths", paths);
+  if (error) throw error;
   const referenced = new Set(
-    references.flatMap((row) => textArray(row.image_paths)),
+    ((data ?? []) as { image_paths?: unknown }[]).flatMap((row) =>
+      textArray(row.image_paths),
+    ),
   );
   const removable = paths.filter((path) => !referenced.has(path));
   if (removable.length) {
-    const { error } = await client.storage
+    const { error: removeError } = await client.storage
       .from("product-images")
       .remove(removable);
-    if (error) throw error;
+    if (removeError) throw removeError;
   }
 }
 
 export async function deleteProduct(shopId: string, id: string) {
   const client = requireSupabase();
-  const product = (await getAdminProducts(shopId)).find(
-    (item) => item.id === id,
-  );
-  if (!product) throw new Error("Product not found.");
+  const paths = await getProductImagePaths(client, shopId, id);
+  if (!paths) throw new Error("Product not found.");
   const { error } = await client
     .from("products")
     .delete()
     .eq("shop_id", shopId)
     .eq("id", id);
   if (error) throw error;
-  const paths = textArray(product.image_paths);
   if (paths.length)
     await removeUnreferencedProductImages(client, shopId, paths);
 }
@@ -1360,6 +1365,21 @@ export async function getCustomerOrder(
 export type OrderFilter = OrderStatus | "all";
 export type OrderStatusCounts = Record<OrderFilter, number>;
 
+// The order queue only renders a line item's name, item code, and first image,
+// so the nested product projection stays narrow instead of embedding the full
+// 21-column public product shape on every row.
+const ORDER_ITEM_PRODUCT_COLUMNS = "id,name,item_code,images";
+
+function normalizeOrderItemProduct(row: unknown): OrderItemProduct {
+  const parsed = orderItemProductSchema.parse(row);
+  return {
+    id: parsed.id,
+    name: parsed.name,
+    item_code: parsed.item_code,
+    images: parsed.images.flatMap((value) => safePublicUrl(value) ?? []),
+  };
+}
+
 export async function getOrders(
   shopId: string,
   {
@@ -1375,7 +1395,7 @@ export async function getOrders(
   let query = client
     .from("orders")
     .select(
-      `id,shop_id,order_code,customer_name,total_amount,discount_amount,status,created_at,updated_at,expires_at,confirmed_at,cancelled_at,expired_at,order_items(id,order_id,product_id,quantity,unit_price,free_quantity,discount_amount,product:products(${PUBLIC_PRODUCT_COLUMNS}))`,
+      `id,shop_id,order_code,customer_name,total_amount,discount_amount,status,created_at,updated_at,expires_at,confirmed_at,cancelled_at,expired_at,order_items(id,order_id,product_id,quantity,unit_price,free_quantity,discount_amount,product:products(${ORDER_ITEM_PRODUCT_COLUMNS}))`,
       { count: "exact" },
     )
     .eq("shop_id", shopId);
@@ -1393,9 +1413,9 @@ export async function getOrders(
     order_items: (row.order_items ?? []).map((item) => ({
       ...item,
       product: Array.isArray(item.product)
-        ? normalizeProduct(productRowSchema.parse(item.product[0]))
+        ? normalizeOrderItemProduct(item.product[0])
         : item.product
-          ? normalizeProduct(productRowSchema.parse(item.product))
+          ? normalizeOrderItemProduct(item.product)
           : undefined,
     })),
   })) as Order[];
@@ -1406,28 +1426,11 @@ export async function getOrderStatusCounts(
   shopId: string,
 ): Promise<OrderStatusCounts> {
   const client = requireSupabase();
-  const statuses: OrderStatus[] = [
-    "pending",
-    "confirmed",
-    "cancelled",
-    "expired",
-  ];
-  const counts = await Promise.all(
-    statuses.map(async (status) => {
-      const { count, error } = await client
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("shop_id", shopId)
-        .eq("status", status);
-      if (error) throw error;
-      return [status, count ?? 0] as const;
-    }),
-  );
-  const result = Object.fromEntries(counts) as Record<OrderStatus, number>;
-  return {
-    ...result,
-    all: statuses.reduce((sum, status) => sum + result[status], 0),
-  };
+  const { data, error } = await client.rpc("get_order_status_counts", {
+    p_shop_id: shopId,
+  });
+  if (error) throw error;
+  return orderStatusCountsSchema.parse(data) as OrderStatusCounts;
 }
 
 export async function confirmOrderPayment(

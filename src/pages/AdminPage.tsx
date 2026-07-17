@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin.css";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import {
@@ -110,6 +110,9 @@ function createBlankProduct(nextSort: number): Product {
 }
 
 const orderPageSize = 12;
+// Realtime events caused by this tab's own writes are ignored inside this
+// window; the local reload/state update already reflects them.
+const localWriteQuietMs = 2000;
 const emptyOrderCounts: OrderStatusCounts = {
   all: 0,
   pending: 0,
@@ -174,6 +177,10 @@ export function AdminPage() {
   const orderRequestRef = useRef(0);
   const catalogRequestRef = useRef(0);
   const orderReloadTimerRef = useRef<number | undefined>(undefined);
+  const orderPageRef = useRef(orderPage);
+  const orderFilterRef = useRef(orderFilter);
+  const tRef = useRef(t);
+  const lastLocalWriteRef = useRef(0);
   const { containerRef: desktopNavRef, registerItem: registerDesktopTab } =
     useTabIndicator<string, HTMLDivElement>(viewTab, [
       isAuthed,
@@ -217,7 +224,20 @@ export function AdminPage() {
     setWorkspaceLoadFailed(false);
     setIsInitialLoading(true);
   }, [shopId]);
-  async function reloadCatalogAdmin() {
+  useEffect(() => {
+    orderPageRef.current = orderPage;
+    orderFilterRef.current = orderFilter;
+  }, [orderPage, orderFilter]);
+
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
+
+  const markLocalWrite = useCallback(() => {
+    lastLocalWriteRef.current = Date.now();
+  }, []);
+
+  const reloadCatalogAdmin = useCallback(async () => {
     const requestId = ++catalogRequestRef.current;
     const requestedShopId = shopId;
     setCatalogLoading(true);
@@ -236,36 +256,24 @@ export function AdminPage() {
     } finally {
       if (requestId === catalogRequestRef.current) setCatalogLoading(false);
     }
-  }
+  }, [shopId]);
 
-  function scheduleOrdersReload() {
-    window.clearTimeout(orderReloadTimerRef.current);
-    orderReloadTimerRef.current = window.setTimeout(() => {
-      reloadOrders(true).catch((error) => {
-        if (isSessionNoise(error)) return;
-        toast.error(
-          t(getErrorMessage(error, "Could not refresh orders.")),
-          t("Refresh failed"),
-        );
-      });
-    }, 200);
-  }
-
-  async function reloadOrders(refreshCounts = false) {
+  const reloadOrders = useCallback(async (refreshCounts = false) => {
+    const page = orderPageRef.current;
     const requestId = ++orderRequestRef.current;
     setOrdersLoading(true);
     try {
       const [result, counts] = await Promise.all([
         getOrders(shopId, {
-          page: orderPage,
+          page,
           pageSize: orderPageSize,
-          status: orderFilter,
+          status: orderFilterRef.current,
         }),
         refreshCounts ? getOrderStatusCounts(shopId) : Promise.resolve(null),
       ]);
       if (requestId !== orderRequestRef.current) return;
       const lastPage = Math.max(1, Math.ceil(result.total / orderPageSize));
-      if (orderPage > lastPage) {
+      if (page > lastPage) {
         setOrderPage(lastPage);
         return;
       }
@@ -275,7 +283,20 @@ export function AdminPage() {
     } finally {
       if (requestId === orderRequestRef.current) setOrdersLoading(false);
     }
-  }
+  }, [shopId]);
+
+  const scheduleOrdersReload = useCallback(() => {
+    window.clearTimeout(orderReloadTimerRef.current);
+    orderReloadTimerRef.current = window.setTimeout(() => {
+      reloadOrders(true).catch((error) => {
+        if (isSessionNoise(error)) return;
+        toast.error(
+          tRef.current(getErrorMessage(error, "Could not refresh orders.")),
+          tRef.current("Refresh failed"),
+        );
+      });
+    }, 200);
+  }, [reloadOrders, toast]);
 
   // Load initial workspace data in parallel before showing the admin panel
   useEffect(() => {
@@ -322,8 +343,7 @@ export function AdminPage() {
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, canManageCatalog, shopId, isInitialLoading]);
+  }, [isAuthed, canManageCatalog, shopId, isInitialLoading, reloadCatalogAdmin, reloadOrders, t, toast]);
 
   useEffect(() => {
     if (!canManageCatalog) return;
@@ -333,9 +353,7 @@ export function AdminPage() {
       if (isSessionNoise(error)) return;
       toast.error(t("Could not load the admin workspace."), t("Admin unavailable"));
     });
-    // Reload helpers intentionally use the current pagination refs/state for this authorization transition.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canManageCatalog, shopId, isInitialLoading]);
+  }, [canManageCatalog, isInitialLoading, reloadCatalogAdmin, t, toast]);
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -345,8 +363,7 @@ export function AdminPage() {
       if (isSessionNoise(error)) return;
       toast.error(t("Could not load the admin workspace."), t("Admin unavailable"));
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, orderFilter, orderPage, shopId, isInitialLoading]);
+  }, [isAuthed, orderFilter, orderPage, isInitialLoading, reloadOrders, t, toast]);
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -358,8 +375,7 @@ export function AdminPage() {
         if (isSessionNoise(error)) return;
         toast.error(t("Could not load the admin workspace."), t("Admin unavailable"));
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, shopId, isInitialLoading]);
+  }, [isAuthed, shopId, isInitialLoading, t, toast]);
 
   // Real-time catalog subscription
   useEffect(() => {
@@ -370,11 +386,12 @@ export function AdminPage() {
       onChange: () => {
         window.clearTimeout(reloadTimer);
         reloadTimer = window.setTimeout(() => {
+          if (Date.now() - lastLocalWriteRef.current < localWriteQuietMs) return;
           reloadCatalogAdmin().catch((error) => {
             if (isSessionNoise(error)) return;
             toast.error(
-              t(getErrorMessage(error, "Could not refresh admin data.")),
-              t("Refresh failed"),
+              tRef.current(getErrorMessage(error, "Could not refresh admin data.")),
+              tRef.current("Refresh failed"),
             );
           });
         }, 150);
@@ -386,10 +403,10 @@ export function AdminPage() {
       window.clearTimeout(reloadTimer);
       unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canManageCatalog, shopId]);
+  }, [canManageCatalog, shopId, reloadCatalogAdmin, toast]);
 
-  // Real-time orders subscription
+  // Real-time orders subscription. Filter/page changes do not resubscribe;
+  // scheduleOrdersReload reads the current pagination from refs.
   useEffect(() => {
     if (!isAuthed || !supabase) return undefined;
 
@@ -422,9 +439,7 @@ export function AdminPage() {
       window.clearTimeout(orderReloadTimerRef.current);
       void client.removeChannel(channel);
     };
-    // Re-subscribe only when the visible order window changes; the callback reads current state.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, orderFilter, orderPage, shopId]);
+  }, [isAuthed, shopId, scheduleOrdersReload]);
 
   useEffect(() => {
     if (!isAuthed || !shopId) return;
@@ -507,7 +522,9 @@ export function AdminPage() {
 
   async function handleSaveProduct(product: Product) {
     await runAdminAction(async () => {
+      markLocalWrite();
       await saveProduct(shopId, product);
+      markLocalWrite();
       await reloadCatalogAdmin();
       setSelectedProduct(product);
     }, "Item saved.");
@@ -515,7 +532,9 @@ export function AdminPage() {
 
   async function handleDeleteProduct(id: string) {
     await runAdminAction(async () => {
+      markLocalWrite();
       await deleteProduct(shopId, id);
+      markLocalWrite();
       setSelectedProduct(undefined);
       await reloadCatalogAdmin();
     }, "Item deleted.");
@@ -907,7 +926,9 @@ export function AdminPage() {
                   promotion={promotion}
                   products={products}
                   onSave={async (nextPromotion) => {
+                    markLocalWrite();
                     const saved = await savePromotionSettings(shopId, nextPromotion);
+                    markLocalWrite();
                     setPromotion(saved);
                     toast.success(t("Promotion saved."));
                   }}
@@ -1006,13 +1027,17 @@ export function AdminPage() {
                 payment={payment}
                 onSave={(settings) =>
                   runAdminAction(async () => {
+                    markLocalWrite();
                     const saved = await saveBoothSettings(shopId, settings);
+                    markLocalWrite();
                     setBooth(saved);
                   }, "Storefront design published.")
                 }
                 onSavePayment={(settings) =>
                   runAdminAction(async () => {
+                    markLocalWrite();
                     const saved = await savePaymentSettings(shopId, settings);
+                    markLocalWrite();
                     setPayment(saved);
                   }, "Checkout settings saved.")
                 }
@@ -1024,7 +1049,9 @@ export function AdminPage() {
                   shopId={shopId}
                   settings={booth}
                   onSave={async (settings) => {
+                    markLocalWrite();
                     const saved = await saveBoothSettings(shopId, settings);
+                    markLocalWrite();
                     setBooth(saved);
                     toast.success(t("Booth settings saved."));
                   }}
@@ -1033,7 +1060,9 @@ export function AdminPage() {
                   shopId={shopId}
                   settings={payment}
                   onSave={async (settings) => {
+                    markLocalWrite();
                     const saved = await savePaymentSettings(shopId, settings);
+                    markLocalWrite();
                     setPayment(saved);
                     toast.success(t("Checkout settings saved."));
                   }}

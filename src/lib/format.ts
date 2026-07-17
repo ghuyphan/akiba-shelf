@@ -12,11 +12,24 @@ export function formatNumber(value: number) {
   }).format(value);
 }
 
-export function formatRelativeTime(value: string | Date, now = Date.now()) {
+export function formatRelativeTime(
+  value: string | Date,
+  now = Date.now(),
+  locale: "en" | "vi" = "en",
+) {
   const seconds = Math.max(
     0,
     Math.floor((now - new Date(value).getTime()) / 1000),
   );
+  if (locale === "vi") {
+    if (seconds < 60) return "Vừa xong";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} phút trước`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} giờ trước`;
+    return `${Math.floor(hours / 24)} ngày trước`;
+  }
+
   if (seconds < 60) return "Just now";
 
   const minutes = Math.floor(seconds / 60);

@@ -2,7 +2,7 @@ import { lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/catalog.css";
 import { applyPageTheme, getStorefrontSectionStyleClass, getThemeStyle, resetPageTheme } from "../lib/theme";
 import { getShopBranding, useDocumentBranding } from "../lib/branding";
-import type { CartItem, Order, Product, PromotionSettings, StorefrontSection } from "../types/catalog";
+import type { Order, Product, StorefrontSection } from "../types/catalog";
 import { CatalogLocaleProvider, translations } from "../lib/catalogI18n";
 import { PromotionProvider } from "../lib/promotionContext";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
@@ -31,44 +31,15 @@ import { useParams } from "react-router-dom";
 import { getPublicGachaEnabled, getPublicShop, type PublicProductSort } from "../lib/api";
 import { prepareGachaLaunch } from "../lib/gachaLaunch";
 import type { Shop } from "../types/catalog";
-import { calculateCartPricing } from "../lib/pricing";
+import { calculateCartPricing, normalizePromotionRewards } from "../lib/pricing";
+import { prefersLightweightCatalog } from "../lib/network";
+import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
     default: module.ShopUnavailablePage,
   })),
 );
-
-type NetworkConnection = { effectiveType?: string; saveData?: boolean };
-
-function prefersLightweightCatalog() {
-  const connection = (
-    navigator as Navigator & { connection?: NetworkConnection }
-  ).connection;
-  return Boolean(
-    connection?.saveData ||
-      connection?.effectiveType === "slow-2g" ||
-      connection?.effectiveType === "2g",
-  );
-}
-
-function normalizePromotionRewards(cart: CartItem[], promotion: PromotionSettings) {
-  const qualifyingIds = new Set(promotion.qualifying_product_ids);
-  const rewardIds = new Set(promotion.reward_product_ids);
-  const qualifyingQuantity = cart.reduce((sum, item) => sum + (qualifyingIds.has(item.product.id) ? item.quantity : 0), 0);
-  let rewardsRemaining = promotion.enabled
-    ? promotion.repeatable
-      ? Math.floor(qualifyingQuantity / promotion.buy_quantity) * promotion.free_quantity
-      : qualifyingQuantity >= promotion.buy_quantity ? promotion.free_quantity : 0
-    : 0;
-  return cart.flatMap((item) => {
-    const rewardQuantity = rewardIds.has(item.product.id)
-      ? Math.min(item.reward_quantity ?? 0, rewardsRemaining, Math.max(0, item.product.quantity_available - item.quantity))
-      : 0;
-    rewardsRemaining -= rewardQuantity;
-    return item.quantity + rewardQuantity > 0 ? [{ ...item, reward_quantity: rewardQuantity }] : [];
-  });
-}
 
 export function CatalogPage() {
   const { shopSlug = "" } = useParams();
@@ -127,6 +98,13 @@ export function CatalogPage() {
     [catalogBooth, shop?.catalog_source_shop_id, shop?.name],
   );
   const catalogCopy = translations[booth.catalog_locale ?? "en"];
+  // Latest-copy ref for stable callbacks: the loaded booth locale flips
+  // catalogCopy once (default -> shop locale), and loadShop must not refire
+  // (and reset the shop back to undefined) when that happens.
+  const catalogCopyRef = useRef(catalogCopy);
+  useEffect(() => {
+    catalogCopyRef.current = catalogCopy;
+  }, [catalogCopy]);
   const { flyingItems, animateAdd } = useAddToCartFeedback(lightweightMode);
   const [online, setOnline] = useState(navigator.onLine);
   const [isQrOpen, setIsQrOpen] = useState(false);
@@ -171,7 +149,7 @@ export function CatalogPage() {
       setShopLoadError(
         error instanceof Error
           ? error.message
-          : "Could not connect to the shop.",
+          : catalogCopyRef.current.shopConnectError,
       );
     }
   }, [shopSlug]);
@@ -224,7 +202,7 @@ export function CatalogPage() {
 
   useEffect(() => {
     if (!loadError) return;
-    toast.error(loadError, "Catalog unavailable");
+    toast.error(loadError, catalogCopyRef.current.catalogUnavailableTitle);
   }, [loadError, toast]);
 
   useEffect(() => {
@@ -260,66 +238,78 @@ export function CatalogPage() {
     return () => window.clearTimeout(timer);
   }, [searchQuery]);
 
-  const handleAddToCart = (product: Product, event?: React.MouseEvent) => {
-    if (
-      !product.active ||
-      product.quantity_available <= 0 ||
-      product.stock_status === "sold_out"
-    ) {
-      toast.error(
-        "This item is sold out and cannot be added to your cart.",
-        "Item unavailable",
-      );
-      return;
-    }
-    const currentItem = cart.find((item) => item.product.id === product.id);
-    if (currentItem && currentItem.quantity + (currentItem.reward_quantity ?? 0) >= product.quantity_available) {
-      toast.info(
-        `Only ${product.quantity_available} units are available.`,
-        "Cart limit reached",
-      );
-      return;
-    }
+  // Keep the latest cart readable from stable callbacks so memoized children
+  // do not re-render when only cart contents change.
+  const cartRef = useRef(cart);
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
 
-    setSelectedProductId(product.id);
-    window.clearTimeout(selectedFeedbackTimerRef.current);
-    selectedFeedbackTimerRef.current = window.setTimeout(() => {
-      setSelectedProductId((current) =>
-        current === product.id ? null : current,
-      );
-    }, 650);
-    setCart((prevCart) => {
-      const existingIndex = prevCart.findIndex(
+  const handleAddToCart = useCallback(
+    (product: Product, event?: React.MouseEvent) => {
+      if (
+        !product.active ||
+        product.quantity_available <= 0 ||
+        product.stock_status === "sold_out"
+      ) {
+        toast.error(catalogCopy.soldOutToast, catalogCopy.itemUnavailableTitle);
+        return;
+      }
+      const currentItem = cartRef.current.find(
         (item) => item.product.id === product.id,
       );
-      if (existingIndex > -1) {
-        const nextQty = prevCart[existingIndex].quantity + 1;
-        if (nextQty + (prevCart[existingIndex].reward_quantity ?? 0) > product.quantity_available) return prevCart;
-        const nextCart = [...prevCart];
-        nextCart[existingIndex] = {
-          ...nextCart[existingIndex],
-          quantity: nextQty,
-        };
-        return normalizePromotionRewards(nextCart, promotion);
+      if (currentItem && currentItem.quantity + (currentItem.reward_quantity ?? 0) >= product.quantity_available) {
+        toast.info(
+          catalogCopy.cartLimitMessage(product.quantity_available),
+          catalogCopy.cartLimitTitle,
+        );
+        return;
       }
-      return normalizePromotionRewards([...prevCart, { product, quantity: 1 }], promotion);
-    });
 
-    if (event) animateAdd(product, event);
-  };
-
-  const handleUpdateCartQuantity = (productId: string, quantity: number) => {
-    setCart((prevCart) =>
-      normalizePromotionRewards(prevCart.map((item) => {
-        if (item.product.id === productId) {
-          const maxQty = Math.max(0, item.product.quantity_available - (item.reward_quantity ?? 0));
-          const newQty = Math.min(maxQty, Math.max(0, quantity));
-          return { ...item, quantity: newQty };
+      setSelectedProductId(product.id);
+      window.clearTimeout(selectedFeedbackTimerRef.current);
+      selectedFeedbackTimerRef.current = window.setTimeout(() => {
+        setSelectedProductId((current) =>
+          current === product.id ? null : current,
+        );
+      }, 650);
+      setCart((prevCart) => {
+        const existingIndex = prevCart.findIndex(
+          (item) => item.product.id === product.id,
+        );
+        if (existingIndex > -1) {
+          const nextQty = prevCart[existingIndex].quantity + 1;
+          if (nextQty + (prevCart[existingIndex].reward_quantity ?? 0) > product.quantity_available) return prevCart;
+          const nextCart = [...prevCart];
+          nextCart[existingIndex] = {
+            ...nextCart[existingIndex],
+            quantity: nextQty,
+          };
+          return normalizePromotionRewards(nextCart, promotion);
         }
-        return item;
-      }), promotion),
-    );
-  };
+        return normalizePromotionRewards([...prevCart, { product, quantity: 1 }], promotion);
+      });
+
+      if (event) animateAdd(product, event);
+    },
+    [animateAdd, catalogCopy, promotion, setCart, toast],
+  );
+
+  const handleUpdateCartQuantity = useCallback(
+    (productId: string, quantity: number) => {
+      setCart((prevCart) =>
+        normalizePromotionRewards(prevCart.map((item) => {
+          if (item.product.id === productId) {
+            const maxQty = Math.max(0, item.product.quantity_available - (item.reward_quantity ?? 0));
+            const newQty = Math.min(maxQty, Math.max(0, quantity));
+            return { ...item, quantity: newQty };
+          }
+          return item;
+        }), promotion),
+      );
+    },
+    [promotion, setCart],
+  );
 
   const handleAddReward = useCallback((product: Product) => {
     setCart((current) => {
@@ -344,20 +334,70 @@ export function CatalogPage() {
     handleAddReward(rewardProducts[0]);
   }, [cart, handleAddReward, promotion, rewardProducts]);
 
-  const handleRemoveFromCart = (productId: string) => {
-    setCart((prevCart) =>
-      normalizePromotionRewards(prevCart.filter((item) => item.product.id !== productId), promotion),
-    );
-    if (selectedProductId === productId) {
-      setSelectedProductId(null);
-    }
-  };
+  const handleRemoveFromCart = useCallback(
+    (productId: string) => {
+      setCart((prevCart) =>
+        normalizePromotionRewards(prevCart.filter((item) => item.product.id !== productId), promotion),
+      );
+      setSelectedProductId((current) =>
+        current === productId ? null : current,
+      );
+    },
+    [promotion, setCart],
+  );
 
   const handleClearCart = useCallback(() => {
     setCart([]);
     setSelectedProductId(null);
     setIsCartExpanded(false);
   }, [setCart]);
+
+  const handleResetFilters = useCallback(() => {
+    setActiveCategory("All");
+    setSearchQuery("");
+  }, []);
+
+  const handleRetryCatalog = useCallback(() => {
+    void loadCatalog();
+  }, [loadCatalog]);
+
+  const handleLoadMore = useCallback(() => {
+    void loadMore();
+  }, [loadMore]);
+
+  const handleToggleCartExpand = useCallback(() => {
+    setIsCartExpanded((current) => !current);
+  }, []);
+
+  const handleOpenPayment = useCallback(() => {
+    if (!orderingEnabled) {
+      toast.info(
+        catalogCopy.demoCheckoutMessage,
+        catalogCopy.demoCheckoutTitle,
+      );
+      return;
+    }
+    if (!online) {
+      toast.info(catalogCopy.cartSavedOffline, catalogCopy.reconnectCheckoutTitle);
+      return;
+    }
+    const closingMobileSheet =
+      isCartExpanded && window.matchMedia("(max-width: 760px)").matches;
+    setIsCartExpanded(false);
+    const sheetExit = closingMobileSheet
+      ? new Promise<void>((resolve) => window.setTimeout(resolve, 260))
+      : Promise.resolve();
+    void Promise.all([ensurePayment(), sheetExit])
+      .then(() => setIsQrOpen(true))
+      .catch((error) =>
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : catalogCopy.paymentSettingsError,
+          catalogCopy.checkoutUnavailableTitle,
+        ),
+      );
+  }, [catalogCopy, ensurePayment, isCartExpanded, online, orderingEnabled, toast]);
 
   const categories = useMemo(
     () => ["All", ...catalogCategories],
@@ -376,104 +416,104 @@ export function CatalogPage() {
     return saved.success ? saved.data : fallback;
   }, [booth.layout_order]);
 
-  const storefrontBlocks: Record<StorefrontSection, React.ReactNode> = {
-    featured: (
-      <StackedFeatured
-        products={featuredProducts}
-        onSelect={handleAddToCart}
-        autoRotate={!lightweightMode && (booth.featured_autoplay ?? true)}
-      />
-    ),
-    controls: (
-      <div
-        className="catalog-controls"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <CategoryFilters
-          categories={categories}
+  const storefrontBlocks = useMemo<Record<StorefrontSection, React.ReactNode>>(
+    () => ({
+      featured: (
+        <StackedFeatured
+          products={featuredProducts}
+          onSelect={handleAddToCart}
+          autoRotate={!lightweightMode && (booth.featured_autoplay ?? true)}
+        />
+      ),
+      controls: (
+        <div
+          className="catalog-controls"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <CategoryFilters
+            categories={categories}
+            activeCategory={activeCategory}
+            onChange={setActiveCategory}
+          />
+          <CatalogToolbar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            sort={sort}
+            viewMode={viewMode}
+            onSortChange={setSort}
+            onViewModeChange={setViewMode}
+          />
+        </div>
+      ),
+      products: (
+        <ProductGrid
+          products={products}
+          totalProducts={products.length + (hasMore ? 1 : 0)}
           activeCategory={activeCategory}
-          onChange={setActiveCategory}
-        />
-        <CatalogToolbar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          sort={sort}
+          selectedProduct={products.find((p) => p.id === selectedProductId)}
           viewMode={viewMode}
-          onSortChange={setSort}
-          onViewModeChange={setViewMode}
+          onSelect={handleAddToCart}
+          onViewDetails={setDetailProduct}
+          onResetFilters={handleResetFilters}
+          loading={isLoading}
+          error={loadError}
+          onRetry={handleRetryCatalog}
+          searchActive={Boolean(searchQuery.trim())}
+          hasMore={hasMore}
+          loadingMore={isLoadingMore}
+          onLoadMore={handleLoadMore}
         />
-      </div>
-    ),
-    products: (
-      <ProductGrid
-        products={products}
-        totalProducts={products.length + (hasMore ? 1 : 0)}
-        activeCategory={activeCategory}
-        selectedProduct={products.find((p) => p.id === selectedProductId)}
-        viewMode={viewMode}
-        onSelect={handleAddToCart}
-        onViewDetails={setDetailProduct}
-        onResetFilters={() => {
-          setActiveCategory("All");
-          setSearchQuery("");
-        }}
-        loading={isLoading}
-        error={loadError}
-        onRetry={() => void loadCatalog()}
-        searchActive={Boolean(searchQuery.trim())}
-        hasMore={hasMore}
-        loadingMore={isLoadingMore}
-        onLoadMore={() => void loadMore()}
-      />
-    ),
-    booth: <BoothInfoPanel booth={booth} />,
-    cart: (
-      <SelectedItemPanel
-        cart={cart}
-        promotion={promotion}
-        rewardProducts={rewardProducts}
-        onAddReward={handleAddReward}
-        onQuantityChange={handleUpdateCartQuantity}
-        onRemove={handleRemoveFromCart}
-        onOpenPayment={() => {
-          if (!orderingEnabled) {
-            toast.info(
-              catalogCopy.demoCheckoutMessage,
-              catalogCopy.demoCheckoutTitle,
-            );
-            return;
-          }
-          if (!online) {
-            toast.info(
-              "Your cart is saved locally, but stock must be verified online before payment.",
-              "Reconnect to checkout",
-            );
-            return;
-          }
-          const closingMobileSheet =
-            isCartExpanded && window.matchMedia("(max-width: 760px)").matches;
-          setIsCartExpanded(false);
-          const sheetExit = closingMobileSheet
-            ? new Promise<void>((resolve) => window.setTimeout(resolve, 260))
-            : Promise.resolve();
-          void Promise.all([ensurePayment(), sheetExit])
-            .then(() => setIsQrOpen(true))
-            .catch((error) =>
-              toast.error(
-                error instanceof Error
-                  ? error.message
-                  : "Could not load payment settings.",
-                "Checkout unavailable",
-              ),
-            );
-        }}
-        onClearCart={handleClearCart}
-        checkoutLabel={orderingEnabled ? undefined : catalogCopy.demoCheckout}
-        isExpanded={isCartExpanded}
-        onToggleExpand={() => setIsCartExpanded(!isCartExpanded)}
-      />
-    ),
-  };
+      ),
+      booth: <BoothInfoPanel booth={booth} />,
+      cart: (
+        <SelectedItemPanel
+          cart={cart}
+          promotion={promotion}
+          rewardProducts={rewardProducts}
+          onAddReward={handleAddReward}
+          onQuantityChange={handleUpdateCartQuantity}
+          onRemove={handleRemoveFromCart}
+          onOpenPayment={handleOpenPayment}
+          onClearCart={handleClearCart}
+          checkoutLabel={orderingEnabled ? undefined : catalogCopy.demoCheckout}
+          isExpanded={isCartExpanded}
+          onToggleExpand={handleToggleCartExpand}
+        />
+      ),
+    }),
+    [
+      activeCategory,
+      booth,
+      cart,
+      catalogCopy,
+      categories,
+      featuredProducts,
+      handleAddReward,
+      handleAddToCart,
+      handleClearCart,
+      handleLoadMore,
+      handleOpenPayment,
+      handleRemoveFromCart,
+      handleResetFilters,
+      handleRetryCatalog,
+      handleToggleCartExpand,
+      handleUpdateCartQuantity,
+      hasMore,
+      isCartExpanded,
+      isLoading,
+      isLoadingMore,
+      lightweightMode,
+      loadError,
+      orderingEnabled,
+      products,
+      promotion,
+      rewardProducts,
+      searchQuery,
+      selectedProductId,
+      sort,
+      viewMode,
+    ],
+  );
   const handleOrderChange = useCallback(
     (nextOrder: Order | null) => {
       if (!activeOrderRef.current && nextOrder?.status === "pending")
@@ -539,8 +579,8 @@ export function CatalogPage() {
   if (shop === undefined) {
     return (
       <PageLoading
-        title="Opening the shop…"
-        message="Getting the shelves ready for you."
+        title={catalogCopy.openingShop}
+        message={catalogCopy.openingShopHint}
       />
     );
   }
@@ -556,8 +596,8 @@ export function CatalogPage() {
   if (isInitialLoading) {
     return (
       <PageLoading
-        title="Opening the shop…"
-        message="Getting the shelves ready for you."
+        title={catalogCopy.openingShop}
+        message={catalogCopy.openingShopHint}
       />
     );
   }
@@ -565,6 +605,12 @@ export function CatalogPage() {
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
       <PromotionProvider promotion={promotion}>
+      <ErrorBoundary
+        title={catalogCopy.crashTitle}
+        message={catalogCopy.crashHint}
+        reloadLabel={catalogCopy.crashReload}
+        resetKey={shopSlug}
+      >
       <main
         className={`app-shell ${lightweightMode ? "catalog-lightweight" : ""}`}
         style={getThemeStyle(booth)}
@@ -577,9 +623,8 @@ export function CatalogPage() {
           onOpenInfo={() => setIsInfoOpen(true)}
         />
         {!online && (
-          <Alert variant="info" title="You are offline.">
-            Your cart is saved on this device. Reconnect to verify stock and
-            continue checkout.
+          <Alert variant="info" title={catalogCopy.offlineTitle}>
+            {catalogCopy.offlineHint}
           </Alert>
         )}
         <div className="catalog-layout storefront-layout-grid">
@@ -636,6 +681,7 @@ export function CatalogPage() {
         />
         <FlyingItemsLayer items={flyingItems} />
       </main>
+      </ErrorBoundary>
       </PromotionProvider>
     </CatalogLocaleProvider>
   );

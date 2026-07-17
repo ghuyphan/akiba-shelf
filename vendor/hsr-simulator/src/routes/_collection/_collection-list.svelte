@@ -42,11 +42,16 @@
 		const allMerch = getMerchItems();
 		const data = allMerch.filter((item) => item.type === type);
 		const result = data
-			.map(({ name, itemID, path, rarity, combat_type }) => {
+			.map(({ name, itemID, bannerId, path, rarity, combat_type }, i) => {
 				const { warp = 0, manual = 0 } = ownedItems[itemID] || {};
 				const qty = warp + manual;
 				itemQty[type] = qty > 0 ? itemQty[type] + 1 : itemQty[type];
-				return { name, path, rarity, combat_type, qty, isOwned: qty > 0 };
+				// Merch product names are not unique: the same product can appear on
+				// several banners and different products can share a name. Keying the
+				// each block by name throws Svelte's each_key_duplicate, so derive a
+				// per-entry key instead.
+				const key = `${type}:${bannerId ?? ''}:${itemID ?? name}:${i}`;
+				return { key, name, path, rarity, combat_type, qty, isOwned: qty > 0 };
 			});
 		const sorted = result.sort((a, b) => b.rarity - a.rarity);
 		return sorted;
@@ -112,13 +117,13 @@
 		<Scrollable>
 			<div class="list" style="--itemWidth: {itemWidth}%">
 				{#if $liteMode || $isMobile}
-					{#each dataToShow as { rarity, name, path, combat_type, isOwned, qty } (name)}
+					{#each dataToShow as { key, rarity, name, path, combat_type, isOwned, qty } (key)}
 						<div class="item">
 							<CollectionItem {rarity} {name} {path} {isOwned} combatType={combat_type} {qty} type={itemtype} />
 						</div>
 					{/each}
 				{:else}
-					{#each dataToShow as { rarity, name, path, combat_type, isOwned, qty }, i (name)}
+					{#each dataToShow as { key, rarity, name, path, combat_type, isOwned, qty }, i (key)}
 						<div
 							class="item"
 							in:fade={{ duration: 350, delay: i * 25 }}

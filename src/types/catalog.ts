@@ -142,6 +142,8 @@ export type Order = {
 export type OrderMutationOutcome = "confirmed" | "cancelled" | "expired" | "already_confirmed" | "already_cancelled" | "already_expired" | "not_found" | "invalid_state";
 export type OrderMutationResult = { outcome: OrderMutationOutcome; order: Order | null };
 
+export type OrderItemProduct = Pick<Product, "id" | "name" | "item_code" | "images">;
+
 export type OrderItem = {
   id: string;
   order_id: string;
@@ -149,5 +151,5 @@ export type OrderItem = {
   quantity: number;
   unit_price: number;
   discount_amount?: number;
-  product?: Product;
+  product?: OrderItemProduct;
 };

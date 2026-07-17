@@ -46,6 +46,16 @@ export const orderSchema = z.object({
   confirmed_at: z.string().nullable().optional(), cancelled_at: z.string().nullable().optional(), expired_at: z.string().nullable().optional(),
 }).passthrough();
 
+export const orderItemProductSchema = z.object({
+  id: z.string().min(1), name: z.string(), item_code: z.string(), images: z.array(z.string()),
+}).passthrough();
+
+export const orderStatusCountsSchema = z.object({
+  pending: z.coerce.number().int().nonnegative(), confirmed: z.coerce.number().int().nonnegative(),
+  cancelled: z.coerce.number().int().nonnegative(), expired: z.coerce.number().int().nonnegative(),
+  all: z.coerce.number().int().nonnegative(),
+});
+
 export const orderMutationSchema = z.object({
   outcome: z.enum(["confirmed", "cancelled", "expired", "already_confirmed", "already_cancelled", "already_expired", "not_found", "invalid_state"]),
   order: orderSchema.nullable(),

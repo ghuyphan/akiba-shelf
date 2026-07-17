@@ -11,6 +11,7 @@ import {
 import { useEffect } from "react";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { PageLoading } from "./components/ui/PageLoading";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { PLATFORM_BRAND, resetDocumentBranding } from "./lib/branding";
 import { resetPageTheme } from "./lib/theme";
 import { PlatformI18nProvider, usePlatformI18n } from "./lib/platformI18n";
@@ -153,7 +154,14 @@ export function App() {
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/auth/set-password" element={<SetPasswordPage />} />
-              <Route path="/admin" element={<AdminPage />} />
+              <Route
+                path="/admin"
+                element={
+                  <ErrorBoundary>
+                    <AdminPage />
+                  </ErrorBoundary>
+                }
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

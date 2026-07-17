@@ -11,7 +11,7 @@ There are two connected experiences:
 
 Supabase is the source of truth. Catalog and order screens subscribe to Realtime changes. Do not replace server-authoritative stock or price checks with client-only logic.
 
-Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dashboard`, and `/dashboard/shops/new`; storefront/admin remain `/s/:shopSlug` and `/admin`. Production requires SMTP/email confirmation, callback allow-list entries under the deployed base, and `PUBLIC_SITE_URL`. Preserve safe GitHub Pages deep-link restoration, deploy both Edge Functions explicitly, recommend CAPTCHA/Auth rate limits, and never direct end users to Supabase Dashboard.
+Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dashboard`, and `/dashboard/shops/new`; storefront/admin remain `/s/:shopSlug`, `/s/:shopSlug/play`, and `/admin`. Production requires SMTP/email confirmation, callback allow-list entries under the deployed base, and `PUBLIC_SITE_URL`. Preserve safe GitHub Pages deep-link restoration, deploy both Edge Functions explicitly, recommend CAPTCHA/Auth rate limits, and never direct end users to Supabase Dashboard.
 
 ## Non-negotiable database rules
 
@@ -31,7 +31,7 @@ Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dash
   the remote schema and run the linked security/performance advisors. A local
   Supabase database is optional supplemental coverage, not a prerequisite or a
   blocker for a linked migration.
-- When changing Supabase code or SQL, follow `.agents/skills/supabase/SKILL.md` and the Postgres best-practices skill.
+- When changing Supabase code or SQL, follow `.agents/skills/supabase/SKILL.md` and the Postgres best-practices skill. The `.agents/` directory is gitignored, so that skill file may be absent in fresh clones; the same migration knowledge also lives in `docs/` and the migration files themselves.
 
 ## UI and design language
 
@@ -63,6 +63,9 @@ Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dash
 - `src/styles/global.css`: tokens, resets, shared buttons/fields/modal/alert/toast primitives only.
 - `src/styles/catalog.css`: catalog page, product cards, featured banner, booth/cart/payment UI.
 - `src/styles/admin.css`: admin header, login, product editor, orders, settings, designer.
+- `src/styles/gacha-admin.css`: GachaManager admin workspace styles.
+- `src/styles/gacha-entry.css`: storefront minigame entry UI in the catalog header.
+- `src/styles/gacha-host.css`: `/s/:shopSlug/play` host page and simulator embeds.
 - `src/styles/legacy.css`: compatibility layer. Avoid adding new rules here. When touching an old rule, prefer moving the final behavior into the screen-specific stylesheet.
 - Follow `docs/legacy-css-migration.md`: move one ownership slice at a time,
   prove desktop/phone and grid/list behavior, then delete only the superseded

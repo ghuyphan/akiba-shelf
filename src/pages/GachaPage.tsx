@@ -2,25 +2,19 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../components/ui/EmptyState";
-import { getGachaSimulatorPath, loadGachaLaunch } from "../lib/gachaLaunch";
+import {
+  GACHA_CLOSE_MESSAGE_TYPE,
+  GACHA_CONFIG_STORAGE_PREFIX,
+  GACHA_PREVIEW_CONFIG_STORAGE_PREFIX,
+  getGachaSimulatorPath,
+  loadGachaLaunch,
+  parseGachaPreviewConfig,
+} from "../lib/gachaLaunch";
 import { translations } from "../lib/catalogI18n";
 import { getErrorMessage } from "../lib/errors";
-import type { GachaCatalog } from "../types/gacha";
+import { prefersLightweightCatalog } from "../lib/network";
 import type { GachaLaunchData } from "../lib/gachaLaunch";
 import "../styles/gacha-host.css";
-
-type NetworkConnection = { effectiveType?: string; saveData?: boolean };
-
-function prefersLightweightCatalog() {
-  const connection = (
-    navigator as Navigator & { connection?: NetworkConnection }
-  ).connection;
-  return Boolean(
-    connection?.saveData ||
-      connection?.effectiveType === "slow-2g" ||
-      connection?.effectiveType === "2g",
-  );
-}
 
 export function GachaPage() {
   const { shopSlug = "" } = useParams();
@@ -45,18 +39,21 @@ export function GachaPage() {
         const { shop, booth, catalog } = await loadGachaLaunch(shopSlug);
         if (!active) return;
         const previewCatalog = preview
-          ? localStorage.getItem(`matsuri-gacha-preview-config:${shop.slug}`)
+          ? parseGachaPreviewConfig(
+              localStorage.getItem(
+                `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${shop.slug}`,
+              ),
+            )
           : null;
-        const simulatorCatalog = previewCatalog
-          ? (JSON.parse(previewCatalog) as GachaCatalog)
-          : catalog;
+        const simulatorCatalog = previewCatalog ?? catalog;
         localStorage.setItem(
-          `matsuri-gacha-config:${shop.slug}`,
+          `${GACHA_CONFIG_STORAGE_PREFIX}${shop.slug}`,
           JSON.stringify(simulatorCatalog),
         );
         setState({ shop, booth, catalog: simulatorCatalog });
       } catch (cause) {
-        if (active) setError(getErrorMessage(cause, "Could not load minigame."));
+        if (active)
+          setError(getErrorMessage(cause, translations.en.wishLoadError));
       }
     }
     void load();
@@ -69,7 +66,7 @@ export function GachaPage() {
     function onMessage(event: MessageEvent) {
       if (
         event.origin === window.location.origin &&
-        event.data?.type === "matsuri-gacha-close"
+        event.data?.type === GACHA_CLOSE_MESSAGE_TYPE
       ) {
         navigate(`/s/${shopSlug}`);
       }
@@ -87,16 +84,18 @@ export function GachaPage() {
     queryParams.set("lightweight", "1");
   }
 
+  const copy = translations[state?.booth.catalog_locale ?? "en"];
+
   if (error) {
     return (
       <main className="gacha-host-state">
         <EmptyState
           icon={<Sparkles size={28} />}
-          title="Couldn’t open the wish simulator"
+          title={copy.wishLoadFailed}
           message={error}
           action={
             <Link className="button button-primary" to={`/s/${shopSlug}`}>
-              <ArrowLeft size={17} /> Back to store
+              <ArrowLeft size={17} /> {copy.backToStore}
             </Link>
           }
         />
@@ -114,7 +113,6 @@ export function GachaPage() {
       state.catalog.banners.length === 0 ||
       state.catalog.entries.length === 0)
   ) {
-    const copy = translations[state.booth.catalog_locale ?? "en"];
     return (
       <main className="gacha-host-state">
         <EmptyState

@@ -35,6 +35,53 @@ export type CartPricing = {
   availableRewardQuantity: number;
 };
 
+export function getPricingLine(
+  pricing: CartPricing,
+  productId: string,
+): CartPricingLine | undefined {
+  return pricing.lines.find((line) => line.productId === productId);
+}
+
+/**
+ * Single source of truth for applying promotion rewards to a cart. Recomputes
+ * each reward line's `reward_quantity` from the current promotion settings,
+ * capping rewards at both the unlocked reward count and the stock left after
+ * the paid quantity. Lines that end up with zero units are dropped.
+ */
+export function normalizePromotionRewards(
+  cart: CartItem[],
+  promotion: PromotionSettings,
+): CartItem[] {
+  const qualifyingIds = new Set(promotion.qualifying_product_ids);
+  const rewardIds = new Set(promotion.reward_product_ids);
+  const qualifyingQuantity = cart.reduce(
+    (sum, item) =>
+      sum + (qualifyingIds.has(item.product.id) ? item.quantity : 0),
+    0,
+  );
+  let rewardsRemaining = promotion.enabled
+    ? promotion.repeatable
+      ? Math.floor(qualifyingQuantity / promotion.buy_quantity) *
+        promotion.free_quantity
+      : qualifyingQuantity >= promotion.buy_quantity
+        ? promotion.free_quantity
+        : 0
+    : 0;
+  return cart.flatMap((item) => {
+    const rewardQuantity = rewardIds.has(item.product.id)
+      ? Math.min(
+          item.reward_quantity ?? 0,
+          rewardsRemaining,
+          Math.max(0, item.product.quantity_available - item.quantity),
+        )
+      : 0;
+    rewardsRemaining -= rewardQuantity;
+    return item.quantity + rewardQuantity > 0
+      ? [{ ...item, reward_quantity: rewardQuantity }]
+      : [];
+  });
+}
+
 export function calculateCartPricing(
   cart: CartItem[],
   promotion: PromotionSettings = defaultPromotion,

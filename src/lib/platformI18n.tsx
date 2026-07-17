@@ -351,6 +351,8 @@ const vi: Record<string, string> = {
   "Shop URLs cannot currently be changed after creation.":
     "Hiện không thể đổi URL gian hàng sau khi tạo.",
   "Save changes": "Lưu thay đổi",
+  "Unsaved changes": "Thay đổi chưa lưu",
+  "Reset changes": "Đặt lại thay đổi",
   "Could not upload image.": "Không thể tải ảnh lên.",
   "Upload failed": "Tải lên thất bại",
   "Uploading…": "Đang tải lên…",
@@ -977,6 +979,7 @@ const vi: Record<string, string> = {
   "Simulator rules": "Quy tắc mô phỏng",
   "Shared availability and pity across every banner.":
     "Trạng thái và bảo hiểm dùng chung cho mọi banner.",
+  Element: "Nguyên tố",
   "Element icon": "Biểu tượng nguyên tố",
   "Weapon class": "Loại vũ khí",
   "featured items": "vật phẩm nổi bật",
@@ -1007,6 +1010,8 @@ const vi: Record<string, string> = {
     "Tạo minigame nhân vật và vũ khí miễn phí từ danh mục merch thật.",
   "Open preview": "Mở bản xem thử",
   "Public minigame": "Minigame công khai",
+  "Add merch, then tune rarity, role, and featured placement.":
+    "Thêm merch, sau đó điều chỉnh độ hiếm, vai trò và vị trí nổi bật.",
   "Customers can play from the storefront.": "Khách có thể chơi từ cửa hàng.",
   "Only staff can preview it until you open it.":
     "Chỉ staff có thể xem thử cho đến khi bạn mở minigame.",
@@ -1093,6 +1098,17 @@ const vi: Record<string, string> = {
   Configure: "Cấu hình",
   "Select a banner, edit its public copy, then choose its featured rewards.":
     "Chọn banner, chỉnh sửa nội dung công khai, rồi chọn phần thưởng nổi bật.",
+  "Banners & pool": "Banner & pool",
+  "Gacha status": "Trạng thái gacha",
+  "Each game keeps its own banners and prize pool.":
+    "Mỗi game giữ banner và pool phần thưởng riêng.",
+  "Banner duplicated": "Đã nhân bản banner",
+  "Pool items are not copied — each merch item can only belong to one banner.":
+    "Các vật phẩm trong pool không được sao chép — mỗi merch chỉ có thể thuộc về một banner.",
+  "Already in another banner": "Đã có trong banner khác",
+  "This item is already in “{{banner}}”. Remove it there first.":
+    "Vật phẩm này đã có trong “{{banner}}”. Hãy xóa nó ở đó trước.",
+  "In “{{banner}}”": "Trong “{{banner}}”",
   "Banner {{number}}": "Banner {{number}}",
   "Editing banner": "Đang chỉnh sửa banner",
   "Light Cone": "Nón Ánh Sáng",

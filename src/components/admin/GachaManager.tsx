@@ -191,6 +191,21 @@ function productImage(product: Product) {
   );
 }
 
+/**
+ * A merch item may only live in one banner of a game. Keep the first
+ * occurrence (in banner order) and drop later duplicates.
+ */
+function dedupeGachaEntriesByProduct(
+  entries: GachaPoolEntry[],
+): GachaPoolEntry[] {
+  const seen = new Set<string>();
+  return entries.filter((entry) => {
+    if (seen.has(entry.product_id)) return false;
+    seen.add(entry.product_id);
+    return true;
+  });
+}
+
 function DropdownField({
   label,
   value,
@@ -260,10 +275,8 @@ function createGameState(
     configuration?.banners.length ? configuration.banners : [fallbackBanner],
     gameType,
   );
-  const entries = capGachaFeaturedEntries(
-    configuration?.entries ?? [],
-    banners,
-    gameType,
+  const entries = dedupeGachaEntriesByProduct(
+    capGachaFeaturedEntries(configuration?.entries ?? [], banners, gameType),
   );
   return {
     settings: { ...settings, game_type: gameType },
@@ -388,9 +401,6 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   });
   const [initialConfigs, setInitialConfigs] = useState<GachaStatesByGame>({});
   const gameDraftsRef = useRef<GachaStatesByGame>({});
-  const [workspaceSection, setWorkspaceSection] = useState<
-    "setup" | "banners" | "pool"
-  >("setup");
   const [query, setQuery] = useState("");
   const [poolFilter, setPoolFilter] = useState<"included" | "available">(
     "included",
@@ -399,8 +409,14 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   const [saving, setSaving] = useState(false);
 
   const settings = historyState.present?.settings ?? null;
-  const banners = historyState.present?.banners ?? [];
-  const entries = historyState.present?.entries ?? [];
+  const banners = useMemo(
+    () => historyState.present?.banners ?? [],
+    [historyState.present],
+  );
+  const entries = useMemo(
+    () => historyState.present?.entries ?? [],
+    [historyState.present],
+  );
   const selectedBannerId = historyState.present?.selectedBannerId ?? "";
 
   const hasChanges = useMemo(() => {
@@ -638,10 +654,8 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
         gameType,
         next.configurations[gameType],
       );
-      state.entries = capGachaFeaturedEntries(
-        state.entries,
-        state.banners,
-        gameType,
+      state.entries = dedupeGachaEntriesByProduct(
+        capGachaFeaturedEntries(state.entries, state.banners, gameType),
       );
       states[gameType] = state;
       return states;
@@ -691,6 +705,17 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     () => new Map(selectedEntries.map((entry) => [entry.product_id, entry])),
     [selectedEntries],
   );
+  // Which banner (if any) already owns each product across this game. A merch
+  // item can only belong to one banner at a time.
+  const assignedBannerByProduct = useMemo(() => {
+    const map = new Map<string, GachaBanner>();
+    for (const entry of entries) {
+      if (map.has(entry.product_id)) continue;
+      const owner = banners.find((banner) => banner.id === entry.banner_id);
+      if (owner) map.set(entry.product_id, owner);
+    }
+    return map;
+  }, [banners, entries]);
   const visibleProducts = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     const searched = normalized
@@ -711,11 +736,25 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
         ? entriesByProduct.has(product.id)
         : !entriesByProduct.has(product.id);
     });
-    return [...filtered].sort(
-      (a, b) =>
-        Number(entriesByProduct.has(b.id)) - Number(entriesByProduct.has(a.id)),
-    );
-  }, [entriesByProduct, poolFilter, products, query]);
+    return [...filtered].sort((a, b) => {
+      // Selected-banner items first, then freely addable products, then
+      // products already assigned to another banner.
+      const rank = (product: Product) => {
+        if (entriesByProduct.has(product.id)) return 0;
+        const owner = assignedBannerByProduct.get(product.id);
+        if (owner && owner.id !== selectedBannerId) return 2;
+        return 1;
+      };
+      return rank(a) - rank(b);
+    });
+  }, [
+    assignedBannerByProduct,
+    entriesByProduct,
+    poolFilter,
+    products,
+    query,
+    selectedBannerId,
+  ]);
 
   function updateBanner(changes: Partial<GachaBanner>) {
     const isTextChange = "name" in changes || "description" in changes;
@@ -763,15 +802,13 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       sort_order: banners.length,
     };
     setBanners((current) => [...current, banner]);
-    if (source) {
-      setEntries((current) => [
-        ...current,
-        ...current
-          .filter((entry) => entry.banner_id === source.id)
-          .map((entry) => ({ ...entry, banner_id: banner.id })),
-      ]);
-    }
     setSelectedBannerId(banner.id);
+    if (source) {
+      toast.info(
+        t("Pool items are not copied — each merch item can only belong to one banner."),
+        t("Banner duplicated"),
+      );
+    }
   }
 
   function removeBanner() {
@@ -796,6 +833,18 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   function toggleProduct(productId: string) {
     if (!selectedBanner) return;
     const isIncluded = entriesByProduct.has(productId);
+    if (!isIncluded) {
+      const owner = assignedBannerByProduct.get(productId);
+      if (owner && owner.id !== selectedBanner.id) {
+        toast.info(
+          t("This item is already in “{{banner}}”. Remove it there first.", {
+            banner: owner.name,
+          }),
+          t("Already in another banner"),
+        );
+        return;
+      }
+    }
     setEntries((current) => {
       const existing = current.some(
         (entry) =>
@@ -990,10 +1039,8 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     setSaving(true);
     try {
       const normalizedBanners = normalizeGachaBanners(banners, gameType);
-      const cappedEntries = capGachaFeaturedEntries(
-        entries,
-        normalizedBanners,
-        gameType,
+      const cappedEntries = dedupeGachaEntriesByProduct(
+        capGachaFeaturedEntries(entries, normalizedBanners, gameType),
       );
       const activeState: GachaState = {
         settings,
@@ -1057,40 +1104,9 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   const totalActiveEntries = entries.filter((entry) => entry.active).length;
   return (
     <div className="gacha-admin-page">
-      <section className="gacha-workspace-overview">
-        <div className="admin-filter-bar">
-          <nav
-            className="admin-filter-tabs gacha-workflow-nav"
-            aria-label={t("Gacha setup steps")}
-          >
-            {(["setup", "banners", "pool"] as const).map((section, index) => (
-              <button
-                type="button"
-                key={section}
-                className={workspaceSection === section ? "active" : ""}
-                aria-current={workspaceSection === section ? "step" : undefined}
-                onClick={() => setWorkspaceSection(section)}
-              >
-                <span>
-                  {t(
-                    section === "setup"
-                      ? "Game setup"
-                      : section === "banners"
-                        ? "Banners"
-                        : "Prize pool",
-                  )}
-                </span>
-                <b>
-                  {section === "setup"
-                    ? index + 1
-                    : section === "banners"
-                      ? banners.length
-                      : selectedEntries.length}
-                </b>
-              </button>
-            ))}
-          </nav>
-          <div className="gacha-header-actions">
+      <header className="gacha-toolbar">
+        <div className="gacha-toolbar-main">
+          <div className="gacha-toolbar-actions">
             {hasChanges && (
               <span className="gacha-unsaved-badge">
                 {t("Unsaved changes")}
@@ -1102,6 +1118,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               disabled={historyState.past.length === 0 || saving}
               onClick={() => dispatch({ type: "UNDO" })}
               title={t("Undo")}
+              aria-label={t("Undo")}
             >
               <Undo2 size={16} />
             </button>
@@ -1111,6 +1128,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               disabled={historyState.future.length === 0 || saving}
               onClick={() => dispatch({ type: "REDO" })}
               title={t("Redo")}
+              aria-label={t("Redo")}
             >
               <Redo2 size={16} />
             </button>
@@ -1120,12 +1138,13 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               disabled={!hasChanges || saving}
               onClick={resetChanges}
               title={t("Reset changes")}
+              aria-label={t("Reset changes")}
             >
               <RotateCcw size={16} />
             </button>
             <button
               type="button"
-              className="button button-secondary"
+              className="button button-secondary gacha-preview-button"
               onClick={openPreview}
             >
               <Eye size={16} /> <span>{t("Preview")}</span>
@@ -1141,333 +1160,310 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
             </Button>
           </div>
         </div>
+        <div className="gacha-status-chips" aria-label={t("Gacha status")}>
+          <span className="gacha-chip">
+            <Gamepad2 size={13} aria-hidden="true" />
+            {gameType === "hsr" ? "Honkai: Star Rail" : "Genshin Impact"}
+          </span>
+          <span
+            className={`gacha-chip ${settings.enabled ? "is-open" : "is-closed"}`}
+          >
+            <i aria-hidden="true" />
+            {t(
+              settings.enabled
+                ? "Public minigame open"
+                : "Public minigame closed",
+            )}
+          </span>
+          <span className="gacha-chip">
+            <Layers3 size={13} aria-hidden="true" />
+            {t("Live banners")}: {liveBannerCount}/{banners.length}
+          </span>
+          <span className="gacha-chip">
+            <Star size={13} aria-hidden="true" />
+            {t("Pool items")}: {totalActiveEntries}
+          </span>
+        </div>
+      </header>
 
-        <div className="admin-order-metrics gacha-workspace-metrics">
-          <article>
-            <span className="admin-metric-icon coral">
-              <Gamepad2 size={19} />
-            </span>
-            <div>
-              <small>{t("Game editor")}</small>
-              <strong>{gameType === "hsr" ? "Star Rail" : "Genshin"}</strong>
+      <AdminCard
+        className="gacha-setup-card"
+        icon={<Gamepad2 size={18} />}
+        title={t("Game setup")}
+        description={t(
+          "Choose the game, public copy, and advanced pity rules.",
+        )}
+      >
+        <div className="gacha-setup-grid">
+          <section className="gacha-panel">
+            <header className="gacha-panel-heading">
+              <h3>{t("Availability & game")}</h3>
               <p>
                 {t(
-                  settings.enabled
-                    ? "Public minigame open"
-                    : "Public minigame closed",
+                  "Choose the simulator and whether customers can play it.",
                 )}
               </p>
+            </header>
+            <div
+              className={`gacha-availability ${settings.enabled ? "is-open" : ""}`}
+            >
+              <label className="gacha-toggle">
+                <input
+                  type="checkbox"
+                  checked={settings.enabled}
+                  onChange={(event) =>
+                    updateState(
+                      (curr) => ({
+                        ...curr,
+                        settings: {
+                          ...curr.settings,
+                          enabled: event.target.checked,
+                        },
+                      }),
+                      true,
+                    )
+                  }
+                />
+                <span aria-hidden="true" />
+              </label>
+              <span className="gacha-availability-copy">
+                <strong>{t(settings.enabled ? "Open" : "Closed")}</strong>
+                <small>
+                  {t(
+                    settings.enabled
+                      ? "Customers can play from the storefront."
+                      : "Only staff can preview it until you open it.",
+                  )}
+                </small>
+              </span>
             </div>
-          </article>
-          <article>
-            <span className="admin-metric-icon teal">
-              <Layers3 size={19} />
-            </span>
-            <div>
-              <small>{t("Live banners")}</small>
-              <strong>
-                {liveBannerCount} / {banners.length}
-              </strong>
-              <p>{selectedBanner.name}</p>
-            </div>
-          </article>
-          <article>
-            <span className="admin-metric-icon mustard">
-              <Star size={19} />
-            </span>
-            <div>
-              <small>{t("Pool items")}</small>
-              <strong>{totalActiveEntries}</strong>
-              <p>
-                {t("{{count}} featured on this banner", {
-                  count: featuredCount,
-                })}
+            <div className="gacha-game-picker">
+              <span className="gacha-panel-subhead">{t("Game editor")}</span>
+              <div
+                className="gacha-game-options"
+                role="group"
+                aria-label={t("Game editor")}
+              >
+                {(["genshin", "hsr"] as const).map((option) => (
+                  <button
+                    type="button"
+                    key={option}
+                    className={gameType === option ? "active" : ""}
+                    aria-pressed={gameType === option}
+                    onClick={() => switchGame(option)}
+                  >
+                    <strong>
+                      {option === "hsr"
+                        ? "Honkai: Star Rail"
+                        : "Genshin Impact"}
+                    </strong>
+                    <small>{t(option === "hsr" ? "Warps" : "Wishes")}</small>
+                  </button>
+                ))}
+              </div>
+              <p className="gacha-panel-note">
+                {t("Each game keeps its own banners and prize pool.")}
               </p>
             </div>
-          </article>
-        </div>
+          </section>
 
-        <div className="admin-section-heading">
-          <div>
-            <span>{t("Gacha workflow")}</span>
-            <h2>
-              {t(
-                workspaceSection === "setup"
-                  ? "Game setup"
-                  : workspaceSection === "banners"
-                    ? "Banners"
-                    : "Prize pool",
-              )}
-            </h2>
-          </div>
-          <small>
-            {t(
-              workspaceSection === "setup"
-                ? "Set the public experience."
-                : workspaceSection === "banners"
-                  ? "Choose what each banner shows."
-                  : "Add and configure prize items.",
-            )}
-          </small>
-        </div>
-      </section>
-
-      {workspaceSection === "setup" && (
-        <AdminCard
-          className="gacha-global-card"
-          icon={<Gamepad2 size={18} />}
-          title={t("Game setup")}
-          description={t(
-            "Choose the game, public copy, and advanced pity rules.",
-          )}
-        >
-          <div className="gacha-global-rules">
-            <section className="gacha-setup-section gacha-setup-basics">
-              <div className="gacha-setup-section-heading">
-                <span>1</span>
-                <div>
-                  <h3>{t("Availability & game")}</h3>
-                  <p>
-                    {t(
-                      "Choose the simulator and whether customers can play it.",
-                    )}
-                  </p>
-                </div>
-              </div>
-              <div className="gacha-setup-basics-controls">
-                <div className="gacha-global-status">
-                  <small>{t("Public minigame")}</small>
-                  <label className="gacha-toggle">
-                    <input
-                      type="checkbox"
-                      checked={settings.enabled}
-                      onChange={(event) =>
-                        updateState(
-                          (curr) => ({
-                            ...curr,
-                            settings: {
-                              ...curr.settings,
-                              enabled: event.target.checked,
-                            },
-                          }),
-                          true,
-                        )
-                      }
-                    />
-                    <span aria-hidden="true" />
-                    <b>{t(settings.enabled ? "Open" : "Closed")}</b>
-                  </label>
-                </div>
-                <DropdownField
-                  className="gacha-game-selector-field"
-                  label={t("Game editor")}
-                  value={settings.game_type}
-                  options={[
-                    { value: "genshin", label: "Genshin Impact" },
-                    { value: "hsr", label: "Honkai: Star Rail" },
-                  ]}
-                  onChange={(value) => switchGame(value as GachaGameType)}
+          <section className="gacha-panel">
+            <header className="gacha-panel-heading">
+              <h3>{t("Public copy")}</h3>
+              <p>
+                {t(
+                  "Name the experience and briefly tell customers what they can win.",
+                )}
+              </p>
+            </header>
+            <div className="gacha-copy-fields">
+              <Field
+                label={t(gameType === "hsr" ? "Warp title" : "Wish title")}
+              >
+                <TextInput
+                  maxLength={80}
+                  value={settings.title}
+                  onFocus={startTextEditSession}
+                  onChange={(event) =>
+                    handleTextChange((curr) => ({
+                      ...curr,
+                      settings: {
+                        ...curr.settings,
+                        title: event.target.value,
+                      },
+                    }))
+                  }
                 />
-              </div>
-            </section>
+              </Field>
+              <Field label={t("Introduction")}>
+                <TextArea
+                  maxLength={240}
+                  value={settings.description}
+                  onFocus={startTextEditSession}
+                  onChange={(event) =>
+                    handleTextChange((curr) => ({
+                      ...curr,
+                      settings: {
+                        ...curr.settings,
+                        description: event.target.value,
+                      },
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+          </section>
 
-            <section className="gacha-setup-section gacha-setup-copy">
-              <div className="gacha-setup-section-heading">
-                <span>2</span>
-                <div>
-                  <h3>{t("Public copy")}</h3>
-                  <p>
-                    {t(
-                      "Name the experience and briefly tell customers what they can win.",
-                    )}
-                  </p>
-                </div>
-              </div>
-              <div className="gacha-rules-copy">
+          <details className="gacha-pity">
+            <summary>
+              <span className="gacha-pity-heading">
+                <strong>{t("Pity rules")}</strong>
+                <small>
+                  {t("Maximum pulls before each rarity is guaranteed.")}
+                </small>
+              </span>
+              <span className="gacha-pity-values">
+                <span>4★ · {settings.rare_pity}</span>
+                <span>5★ · {settings.legendary_pity}</span>
+                {gameType === "hsr" && (
+                  <span>LC 5★ · {settings.lightcone_legendary_pity}</span>
+                )}
+              </span>
+              <ChevronDown size={16} aria-hidden="true" />
+            </summary>
+            <div className="gacha-pity-fields">
+              <Field
+                label={t("4-star pity")}
+                hint={t(
+                  "Guarantee a 4-star or higher within this many pulls.",
+                )}
+              >
+                <TextInput
+                  type="number"
+                  min={2}
+                  max={30}
+                  value={settings.rare_pity}
+                  onFocus={startTextEditSession}
+                  onChange={(event) => {
+                    const val = Number(event.target.value);
+                    handleTextChange((curr) => ({
+                      ...curr,
+                      settings: { ...curr.settings, rare_pity: val },
+                    }));
+                  }}
+                />
+              </Field>
+              <Field
+                label={t(
+                  gameType === "hsr"
+                    ? "Character 5-star pity"
+                    : "5-star pity",
+                )}
+                hint={t("Guarantee a 5-star within this many pulls.")}
+              >
+                <TextInput
+                  type="number"
+                  min={10}
+                  max={100}
+                  value={settings.legendary_pity}
+                  onFocus={startTextEditSession}
+                  onChange={(event) => {
+                    const val = Number(event.target.value);
+                    handleTextChange((curr) => ({
+                      ...curr,
+                      settings: { ...curr.settings, legendary_pity: val },
+                    }));
+                  }}
+                />
+              </Field>
+              {gameType === "hsr" && (
                 <Field
-                  className="gacha-public-title-field"
-                  label={t(gameType === "hsr" ? "Warp title" : "Wish title")}
-                >
-                  <TextInput
-                    maxLength={80}
-                    value={settings.title}
-                    onFocus={startTextEditSession}
-                    onChange={(event) =>
-                      handleTextChange((curr) => ({
-                        ...curr,
-                        settings: {
-                          ...curr.settings,
-                          title: event.target.value,
-                        },
-                      }))
-                    }
-                  />
-                </Field>
-                <Field
-                  className="gacha-public-description-field"
-                  label={t("Introduction")}
-                >
-                  <TextArea
-                    maxLength={240}
-                    value={settings.description}
-                    onFocus={startTextEditSession}
-                    onChange={(event) =>
-                      handleTextChange((curr) => ({
-                        ...curr,
-                        settings: {
-                          ...curr.settings,
-                          description: event.target.value,
-                        },
-                      }))
-                    }
-                  />
-                </Field>
-              </div>
-            </section>
-
-            <details className="gacha-pity-details">
-              <summary>
-                <span className="gacha-setup-step">3</span>
-                <span>
-                  <strong>{t("Pity rules")}</strong>
-                  <small>{t("Advanced pull guarantees")}</small>
-                </span>
-                <span className="gacha-pity-values">
-                  4★ {settings.rare_pity} · 5★ {settings.legendary_pity}
-                  {gameType === "hsr" &&
-                    ` · LC ${settings.lightcone_legendary_pity}`}
-                </span>
-                <ChevronDown size={17} />
-              </summary>
-              <div className="gacha-rules-pity">
-                <Field
-                  className="gacha-pity-rare-field"
-                  label={t("4-star pity")}
-                >
-                  <TextInput
-                    type="number"
-                    min={2}
-                    max={30}
-                    value={settings.rare_pity}
-                    onFocus={startTextEditSession}
-                    onChange={(event) => {
-                      const val = Number(event.target.value);
-                      handleTextChange((curr) => ({
-                        ...curr,
-                        settings: { ...curr.settings, rare_pity: val },
-                      }));
-                    }}
-                  />
-                </Field>
-                <Field
-                  className="gacha-pity-legendary-field"
-                  label={t(
-                    gameType === "hsr"
-                      ? "Character 5-star pity"
-                      : "5-star pity",
-                  )}
+                  label={t("Light Cone 5-star pity")}
+                  hint={t("Guarantee a 5-star within this many pulls.")}
                 >
                   <TextInput
                     type="number"
                     min={10}
                     max={100}
-                    value={settings.legendary_pity}
+                    value={settings.lightcone_legendary_pity}
                     onFocus={startTextEditSession}
                     onChange={(event) => {
                       const val = Number(event.target.value);
                       handleTextChange((curr) => ({
                         ...curr,
-                        settings: { ...curr.settings, legendary_pity: val },
+                        settings: {
+                          ...curr.settings,
+                          lightcone_legendary_pity: val,
+                        },
                       }));
                     }}
                   />
                 </Field>
-                {gameType === "hsr" && (
-                  <Field
-                    className="gacha-pity-lightcone-field"
-                    label={t("Light Cone 5-star pity")}
-                  >
-                    <TextInput
-                      type="number"
-                      min={10}
-                      max={100}
-                      value={settings.lightcone_legendary_pity}
-                      onFocus={startTextEditSession}
-                      onChange={(event) => {
-                        const val = Number(event.target.value);
-                        handleTextChange((curr) => ({
-                          ...curr,
-                          settings: {
-                            ...curr.settings,
-                            lightcone_legendary_pity: val,
-                          },
-                        }));
-                      }}
-                    />
-                  </Field>
-                )}
-              </div>
-            </details>
-          </div>
-        </AdminCard>
-      )}
+              )}
+            </div>
+          </details>
+        </div>
+      </AdminCard>
 
-      {workspaceSection === "banners" && (
-        <AdminCard
-          className="gacha-banner-workspace"
-          icon={<Layers3 size={18} />}
-          title={t("Banners")}
-          description={t(
-            "Select a banner, edit its public copy, then choose its featured rewards.",
-          )}
-          action={
-            <button
-              type="button"
-              className="button button-secondary gacha-add-banner"
-              aria-label={t("Add banner")}
-              onClick={() => addBanner()}
-            >
-              <Plus size={16} /> {t("Add banner")}
-            </button>
-          }
-        >
-          <div className="gacha-banner-list" aria-label={t("Banners")}>
-            {banners.map((banner, index) => {
-              const count = entries.filter(
-                (entry) => entry.banner_id === banner.id && entry.active,
-              ).length;
-              return (
-                <button
-                  type="button"
-                  key={banner.id}
-                  className={`gacha-banner-item ${banner.id === selectedBannerId ? "active" : ""}`}
-                  aria-pressed={banner.id === selectedBannerId}
-                  onClick={() => setSelectedBannerId(banner.id)}
-                >
-                  <span className={`gacha-banner-kind ${banner.kind}`}>
-                    {banner.kind !== "character" ? (
-                      <Sword size={16} />
-                    ) : (
-                      <UserRound size={16} />
-                    )}
-                  </span>
-                  <span>
-                    <small>
-                      {t("Banner {{number}}", { number: index + 1 })}
-                    </small>
-                    <strong>{banner.name}</strong>
-                    <small>
-                      {count} {t("items")} · {banner.display_limit} {t("shown")}
-                    </small>
-                  </span>
-                  <i className={banner.active ? "is-live" : ""} />
-                </button>
-              );
-            })}
-          </div>
+      <AdminCard
+        className="gacha-banners-card"
+        icon={<Layers3 size={18} />}
+        title={t("Banners & pool")}
+        description={t(
+          "Select a banner, edit its public copy, then choose its featured rewards.",
+        )}
+        action={
+          <button
+            type="button"
+            className="button button-secondary gacha-add-banner"
+            onClick={() => addBanner()}
+          >
+            <Plus size={16} /> {t("Add banner")}
+          </button>
+        }
+      >
+        <div className="gacha-banner-strip" aria-label={t("Banners")}>
+          {banners.map((banner, index) => {
+            const count = entries.filter(
+              (entry) => entry.banner_id === banner.id && entry.active,
+            ).length;
+            return (
+              <button
+                type="button"
+                key={banner.id}
+                className={`gacha-banner-card ${banner.id === selectedBannerId ? "active" : ""}`}
+                aria-pressed={banner.id === selectedBannerId}
+                onClick={() => setSelectedBannerId(banner.id)}
+              >
+                <span className={`gacha-banner-kind ${banner.kind}`}>
+                  {banner.kind !== "character" ? (
+                    <Sword size={16} />
+                  ) : (
+                    <UserRound size={16} />
+                  )}
+                </span>
+                <span className="gacha-banner-card-copy">
+                  <small>
+                    {t("Banner {{number}}", { number: index + 1 })}
+                  </small>
+                  <strong>{banner.name}</strong>
+                  <small>
+                    {count} {t("items")} · {banner.display_limit}{" "}
+                    {t("shown")}
+                  </small>
+                </span>
+                <i
+                  className={banner.active ? "is-live" : ""}
+                  title={t(banner.active ? "Banner active" : "Banner inactive")}
+                />
+              </button>
+            );
+          })}
+        </div>
 
-          <div className="gacha-banner-editor-bar">
-            <div className="gacha-banner-editor-context">
+        <div className="gacha-banner-editor">
+          <header className="gacha-banner-editor-head">
+            <div className="gacha-banner-editor-id">
               <span className={`gacha-banner-kind ${selectedBanner.kind}`}>
                 {selectedBanner.kind !== "character" ? (
                   <Sword size={16} />
@@ -1475,7 +1471,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                   <UserRound size={16} />
                 )}
               </span>
-              <span>
+              <span className="gacha-banner-editor-name">
                 <small>{t("Editing banner")}</small>
                 <strong>{selectedBanner.name}</strong>
               </span>
@@ -1491,47 +1487,53 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                 />
                 <Sparkles size={15} /> {t("Banner active")}
               </label>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => moveBanner(-1)}
-                disabled={bannerIndex === 0}
-                aria-label={t("Move banner up")}
-              >
-                <ArrowUp size={16} />
-              </button>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => moveBanner(1)}
-                disabled={bannerIndex === banners.length - 1}
-                aria-label={t("Move banner down")}
-              >
-                <ArrowDown size={16} />
-              </button>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => addBanner(selectedBanner)}
-                aria-label={t("Duplicate banner")}
-              >
-                <Copy size={16} />
-              </button>
-              <button
-                type="button"
-                className="icon-button danger"
-                onClick={removeBanner}
-                disabled={banners.length === 1}
-                aria-label={t("Delete banner")}
-              >
-                <Trash2 size={16} />
-              </button>
+              <span className="gacha-banner-editor-tools">
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => moveBanner(-1)}
+                  disabled={bannerIndex === 0}
+                  title={t("Move banner up")}
+                  aria-label={t("Move banner up")}
+                >
+                  <ArrowUp size={16} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => moveBanner(1)}
+                  disabled={bannerIndex === banners.length - 1}
+                  title={t("Move banner down")}
+                  aria-label={t("Move banner down")}
+                >
+                  <ArrowDown size={16} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => addBanner(selectedBanner)}
+                  title={t("Duplicate banner")}
+                  aria-label={t("Duplicate banner")}
+                >
+                  <Copy size={16} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-button danger"
+                  onClick={removeBanner}
+                  disabled={banners.length === 1}
+                  title={t("Delete banner")}
+                  aria-label={t("Delete banner")}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </span>
             </div>
-          </div>
+          </header>
 
-          <div className="gacha-banner-settings-grid">
+          <div className="gacha-banner-fields">
             <Field
-              className="gacha-banner-title-field"
+              className="gacha-field-title"
               label={t("Banner title")}
               hint="English | Tiếng Việt or [en]English[vi]Tiếng Việt"
             >
@@ -1539,11 +1541,13 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                 maxLength={80}
                 value={selectedBanner.name}
                 onFocus={startTextEditSession}
-                onChange={(event) => updateBanner({ name: event.target.value })}
+                onChange={(event) =>
+                  updateBanner({ name: event.target.value })
+                }
               />
             </Field>
             <DropdownField
-              className="gacha-banner-type-field"
+              className="gacha-field-type"
               label={t("Banner type")}
               value={selectedBanner.kind}
               options={kindOptions}
@@ -1552,7 +1556,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               }
             />
             <Field
-              className="gacha-banner-copy-field"
+              className="gacha-field-copy"
               label={t("Banner copy")}
               hint="English | Tiếng Việt or [en]English[vi]Tiếng Việt"
             >
@@ -1566,7 +1570,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               />
             </Field>
             <DropdownField
-              className="gacha-banner-slots-field"
+              className="gacha-field-slots"
               label={t(
                 gameType === "hsr"
                   ? "Featured banner slots"
@@ -1576,15 +1580,8 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               options={displayLimitOptions}
               onChange={(value) => updateDisplayLimit(Number(value))}
             />
-            {gameType === "hsr" && (
-              <p className="field-hint gacha-banner-slots-hint">
-                {t(
-                  "HSR banners show one 5-star primary and up to three 4-star rate-ups.",
-                )}
-              </p>
-            )}
             <DropdownField
-              className="gacha-banner-element-field"
+              className="gacha-field-theme"
               label={t(gameType === "hsr" ? "Banner element" : "Banner theme")}
               value={selectedBanner.theme}
               options={elementOptions}
@@ -1592,31 +1589,34 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                 updateBanner({ theme: value as GachaElement })
               }
             />
+            {gameType === "hsr" && (
+              <p className="field-hint gacha-slots-hint">
+                {t(
+                  "HSR banners show one 5-star primary and up to three 4-star rate-ups.",
+                )}
+              </p>
+            )}
           </div>
-        </AdminCard>
-      )}
-
-      {workspaceSection === "pool" && (
-        <AdminCard
-          className="gacha-pool-editor"
-          icon={<Star size={18} />}
-          title={t(gameType === "hsr" ? "Warp pool" : "Wish pool")}
-          description={t(
-            "Add merch, then tune rarity, role, and featured placement.",
-          )}
-          action={
-            <div className="gacha-pool-banner-context">
-              <small>{t("Current banner")}</small>
-              <strong>{selectedBanner.name}</strong>
-              <span>
-                {featuredCount}/{selectedBanner.display_limit} {t("featured")}
-              </span>
-            </div>
-          }
-        >
-          <div className="gacha-pool-tools">
+        </div>
+        <div className="gacha-pool-section">
+          <div className="gacha-pool-head">
+            <header className="gacha-panel-heading">
+              <h3>{t(gameType === "hsr" ? "Warp pool" : "Wish pool")}</h3>
+              <p>
+                {t(
+                  "Add merch, then tune rarity, role, and featured placement.",
+                )}
+              </p>
+            </header>
+            <span className="gacha-chip">
+              <Star size={13} aria-hidden="true" />
+              {featuredCount}/{selectedBanner.display_limit} {t("featured")}
+            </span>
+          </div>
+          <div className="gacha-pool-toolbar">
             <div
-              className="gacha-pool-filters"
+              className="gacha-segmented"
+              role="group"
               aria-label={t("Filter pool items")}
             >
               {(["included", "available"] as const).map((filter) => (
@@ -1639,8 +1639,8 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                 </button>
               ))}
             </div>
-            <label className="gacha-product-search">
-              <Search size={17} />
+            <label className="gacha-search">
+              <Search size={16} />
               <input
                 value={query}
                 placeholder={t("Search merch…")}
@@ -1648,7 +1648,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               />
             </label>
           </div>
-          <div className="gacha-product-list">
+          <div className="gacha-pool-list">
             {visibleProducts.length ? (
               visibleProducts.map((product) => {
                 const entry = entriesByProduct.get(product.id);
@@ -1675,8 +1675,8 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                           hsrFeaturedRoleFull))),
                 );
                 const identity = (
-                  <span className="gacha-product-identity gacha-product-identity-compact">
-                    <span className="gacha-product-image">
+                  <span className="gacha-item-id">
+                    <span className="gacha-item-img">
                       {image ? (
                         <img
                           src={image}
@@ -1688,7 +1688,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                         <Sparkles size={20} />
                       )}
                     </span>
-                    <span className="gacha-product-copy">
+                    <span className="gacha-item-name">
                       <strong>{product.name}</strong>
                       <small>{product.item_code || product.category}</small>
                     </span>
@@ -1696,27 +1696,45 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                 );
 
                 if (!entry) {
+                  const owner = assignedBannerByProduct.get(product.id);
                   return (
                     <article
                       key={product.id}
-                      className={`gacha-product-row is-available ${!product.active ? "is-inactive" : ""}`}
+                      className={`gacha-item is-available ${!product.active ? "is-inactive" : ""}`}
                     >
-                      <div className="gacha-product-identity">
-                        {identity}
-                        {!product.active && (
-                          <span className="admin-badge-hidden">
-                            {t("Hidden")}
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          className="gacha-pool-membership add"
-                          disabled={!product.active}
-                          onClick={() => toggleProduct(product.id)}
+                      {identity}
+                      {owner && (
+                        <span
+                          className="gacha-tag is-owned"
+                          title={t(
+                            "This item is already in “{{banner}}”. Remove it there first.",
+                            { banner: owner.name },
+                          )}
                         >
-                          <Plus size={15} /> {t("Add to pool")}
-                        </button>
-                      </div>
+                          {t("In “{{banner}}”", { banner: owner.name })}
+                        </span>
+                      )}
+                      {!product.active && (
+                        <span className="gacha-tag is-hidden">
+                          {t("Hidden")}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        className="gacha-item-add"
+                        disabled={!product.active || Boolean(owner)}
+                        title={
+                          owner
+                            ? t(
+                                "This item is already in “{{banner}}”. Remove it there first.",
+                                { banner: owner.name },
+                              )
+                            : undefined
+                        }
+                        onClick={() => toggleProduct(product.id)}
+                      >
+                        <Plus size={15} /> {t("Add to pool")}
+                      </button>
                     </article>
                   );
                 }
@@ -1724,45 +1742,35 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                 return (
                   <details
                     key={product.id}
-                    className={`gacha-product-row is-included ${!product.active ? "is-inactive" : ""}`}
+                    className={`gacha-item is-included ${!product.active ? "is-inactive" : ""}`}
                   >
-                    <summary className="gacha-product-summary">
+                    <summary>
                       {identity}
-                      <span className="gacha-product-reward">
-                        <small>{t("Reward setup")}</small>
+                      <span className="gacha-item-config">
+                        <b className={`rarity-${entry.rarity}`}>
+                          {entry.rarity}★
+                        </b>
+                        {entry.kind === "character" ? (
+                          <GachaElementIcon
+                            element={entry.element}
+                            size={16}
+                          />
+                        ) : (
+                          <Sword size={14} />
+                        )}
                         <span>
-                          <b className={`rarity-${entry.rarity}`}>
-                            {entry.rarity}★
-                          </b>
-                          {entry.kind === "character" && (
-                            <GachaElementIcon
-                              element={entry.element}
-                              size={20}
-                            />
+                          {t(
+                            entry.kind === "character"
+                              ? entry.element[0].toUpperCase() +
+                                  entry.element.slice(1)
+                              : entry.weapon_type[0].toUpperCase() +
+                                  entry.weapon_type.slice(1),
                           )}
-                          <strong>
-                            {t(
-                              entry.kind === "character"
-                                ? entry.element[0].toUpperCase() +
-                                    entry.element.slice(1)
-                                : entry.weapon_type[0].toUpperCase() +
-                                    entry.weapon_type.slice(1),
-                            )}
-                          </strong>
-                          <em>
-                            {t(
-                              entry.kind === "character"
-                                ? "Character"
-                                : gameType === "hsr"
-                                  ? "Light Cone"
-                                  : "Weapon",
-                            )}
-                          </em>
                         </span>
                       </span>
-                      <span className="gacha-product-summary-tags">
+                      <span className="gacha-item-tags">
                         {entry.featured && (
-                          <span className="featured">
+                          <span className="gacha-tag is-featured">
                             {t(
                               gameType === "hsr"
                                 ? entry.rarity === 5
@@ -1772,16 +1780,18 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                             )}
                           </span>
                         )}
-                        <span className={entry.active ? "active" : "inactive"}>
+                        <span
+                          className={`gacha-tag ${entry.active ? "is-active" : "is-inactive"}`}
+                        >
                           {t(entry.active ? "Active" : "Inactive")}
                         </span>
                       </span>
-                      <span className="gacha-product-edit-label">
-                        {t("Configure")} <ChevronDown size={16} />
+                      <span className="gacha-item-expand" aria-hidden="true">
+                        <ChevronDown size={16} />
                       </span>
                     </summary>
                     <div
-                      className={`gacha-product-controls ${!product.active ? "is-disabled" : ""}`}
+                      className={`gacha-item-editor ${!product.active ? "is-disabled" : ""}`}
                     >
                       <DropdownField
                         label={t("Role")}
@@ -1904,11 +1914,9 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                         )}
                         {t("Active")}
                       </label>
-                    </div>
-                    <div className="gacha-product-row-footer">
                       <button
                         type="button"
-                        className="gacha-pool-membership remove"
+                        className="gacha-item-remove"
                         onClick={() => toggleProduct(product.id)}
                       >
                         <Trash2 size={14} /> {t("Remove from pool")}
@@ -1926,8 +1934,8 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
               />
             )}
           </div>
-        </AdminCard>
-      )}
+        </div>
+      </AdminCard>
     </div>
   );
 }

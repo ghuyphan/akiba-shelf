@@ -5,7 +5,7 @@
 	import { fade } from 'svelte/transition';
 	import { writable } from 'svelte/store';
 	import { isLoading, locale } from 'svelte-i18n';
-	import { dev } from '$app/environment';
+	import { dev, browser } from '$app/environment';
 	import { base } from '$app/paths';
 	import './styles.css';
 
@@ -91,9 +91,11 @@
 	});
 
 	onDestroy(() => {
-		window.removeEventListener('orientationchange', handleOrientationChange);
-		document.removeEventListener('contextmenu', preventContextMenu);
-		disposeWakeLock();
+		if (browser) {
+			window.removeEventListener('orientationchange', handleOrientationChange);
+			document.removeEventListener('contextmenu', preventContextMenu);
+			disposeWakeLock();
+		}
 	});
 </script>
 

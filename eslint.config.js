@@ -21,6 +21,12 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "warn",
       "react-hooks/exhaustive-deps": "warn",
+      // jsx-a11y interaction rules stay off for now: re-enabling them surfaces
+      // 59 warnings across 18 files. The remediation plan (per-site fixes and
+      // patterns) lives in docs/audit-remaining-work.md — flip these back on
+      // as that list is worked down. The 2026-07-17 pass already fixed the
+      // ProductCard / SelectedItemPanel / OrderQueue / CatalogToolbar /
+      // SwipeConfirmButton sites, which pass with the rules enabled.
       "jsx-a11y/label-has-for": "off",
       "jsx-a11y/control-has-associated-label": "off",
       "jsx-a11y/no-autofocus": "off",

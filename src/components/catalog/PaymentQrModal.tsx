@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { Ban, Check, CheckCircle2, CloudOff, Copy, Loader2, ReceiptText, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { Ban, CheckCircle2, CloudOff, Copy, Loader2, ReceiptText, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import type { CartItem, PaymentSettings, PromotionSettings, Order } from "../../types/catalog";
 import { formatVnd } from "../../lib/format";
-import { calculateCartPricing } from "../../lib/pricing";
+import { calculateCartPricing, getPricingLine } from "../../lib/pricing";
 import { useCatalogCopy } from "../../lib/catalogI18n";
 import { canGenerateVietQr } from "../../lib/vietqr";
 import { Modal } from "../ui/Modal";
@@ -33,6 +33,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   const [showSuccess, setShowSuccess] = useState(false);
   const [connectionState, setConnectionState] = useState<"online" | "reconnecting">(navigator.onLine ? "online" : "reconnecting");
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const completionHandledRef = useRef(false);
   const recoveryAttemptedRef = useRef(false);
   const orderRef = useRef<Order | null>(null);
@@ -75,11 +76,11 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
       setOrder(created);
       onOrderChange?.(created);
     } catch (err: unknown) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to submit order. Please try again.");
+      setSubmitError(err instanceof Error ? err.message : copy.orderSubmitError);
     } finally {
       setIsSubmittingOrder(false);
     }
-  }, [onOrderChange, shopSlug]);
+  }, [copy, onOrderChange, shopSlug]);
 
   useEffect(() => {
     if (recoveryAttemptedRef.current || !recovery || recovery.order) return;
@@ -165,8 +166,9 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   const bankName = selectedBank?.name || payment.bank_code || payment.bank_label || "N/A";
   const remaining = useOrderCountdown(order, reconcileOrder);
 
-  async function handleCancel() {
-    if (!order || !recovery || !navigator.onLine || !window.confirm("Cancel this reservation and release the items?")) return;
+  async function confirmCancel() {
+    if (!order || !recovery || !navigator.onLine) return;
+    setIsCancelConfirmOpen(false);
     setIsCancelling(true);
     try { const result = await cancelCustomerOrder(order.id, recovery.recoveryToken); if (result.order) { setOrder(result.order); onOrderChange?.(result.order); saveOrderRecovery({ ...recovery, order: result.order }, shopSlug); } }
     finally { setIsCancelling(false); }
@@ -174,10 +176,10 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
 
   if (showSuccess) {
     return (
-      <Modal title={copy.paymentComplete} isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal" mobileSheet>
+      <Modal title={copy.paymentComplete} isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal" mobileSheet closeLabel={copy.closeModal}>
         <div className="payment-success-state">
           <div className="success-icon-wrap"><CheckCircle2 size={42} /></div>
-          <span className="payment-success-eyebrow">Order {order?.order_code}</span>
+          <span className="payment-success-eyebrow">{copy.orderCode} {order?.order_code}</span>
           <h2>{copy.allSet}</h2>
           <p>{copy.reservedPickup}</p>
           <div className="payment-success-summary"><span>{copy.totalPaid}</span><strong>{formatVnd(order?.total_amount ?? totalAmount)}</strong></div>
@@ -189,7 +191,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
 
   if (order?.status === "cancelled") {
     return (
-      <Modal title={copy.orderCancelled} isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal" mobileSheet>
+      <Modal title={copy.orderCancelled} isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal" mobileSheet closeLabel={copy.closeModal}>
         <div className="payment-success-state payment-cancelled-state">
           <div className="success-icon-wrap"><Ban size={38} /></div>
           <span className="payment-success-eyebrow">{copy.orderCode} {order.order_code}</span>
@@ -202,17 +204,26 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   }
 
   if (order?.status === "expired") {
-    return <Modal title="Reservation expired" isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal" mobileSheet><div className="payment-success-state payment-cancelled-state"><Ban size={38} /><h2>Reservation expired.</h2><p>Payment may have been sent after this reservation expired. Please ask booth staff for assistance.</p><button type="button" className="button button-primary" onClick={handleSuccessClose}>Back to shop</button></div></Modal>;
+    return (
+      <Modal title={copy.reservationExpired} isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal" mobileSheet closeLabel={copy.closeModal}>
+        <div className="payment-success-state payment-cancelled-state">
+          <Ban size={38} />
+          <h2>{copy.reservationExpired}</h2>
+          <p>{copy.reservationExpiredHint}</p>
+          <button type="button" className="button button-primary" onClick={handleSuccessClose}>{copy.backShop}</button>
+        </div>
+      </Modal>
+    );
   }
 
   // Step 1: Input Nickname/Name before checkout
   if (!order) {
     return (
-      <Modal title={copy.confirmOrder} isOpen={isOpen} onClose={onClose} className="payment-modal order-confirm-modal" mobileSheet>
+      <Modal title={copy.confirmOrder} isOpen={isOpen} onClose={onClose} className="payment-modal order-confirm-modal" mobileSheet closeLabel={copy.closeModal}>
         <form onSubmit={handlePlaceOrder} className="order-confirm-layout">
           <div className="order-confirm-main">
             <div className="order-confirm-intro"><span><ReceiptText size={20} /></span><div><h3>{copy.lastCheck}</h3><p>{copy.reviewCart}</p></div></div>
-            <div className="order-confirm-items">{checkoutCart.map((item) => { const image = item.product.images.find(Boolean); const line = pricing.lines.find((candidate) => candidate.productId === item.product.id)!; return <div key={item.product.id}>{image ? <img src={image} alt="" /> : <span className="order-confirm-placeholder" />}<div><strong>{item.product.name}</strong><small>{line.quantity} × {formatVnd(line.unitPrice)}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</small></div><b>{formatVnd(line.total)}</b></div>; })}</div>
+            <div className="order-confirm-items">{checkoutCart.map((item) => { const image = item.product.images.find(Boolean); const line = getPricingLine(pricing, item.product.id); if (!line) return null; return <div key={item.product.id}>{image ? <img src={image} alt="" /> : <span className="order-confirm-placeholder" />}<div><strong>{item.product.name}</strong><small>{line.quantity} × {formatVnd(line.unitPrice)}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</small></div><b>{formatVnd(line.total)}</b></div>; })}</div>
             {pricing.discountAmount > 0 && <div className="order-confirm-discount"><span>{copy.discount}</span><strong>−{formatVnd(pricing.discountAmount)}</strong></div>}
             <div className="order-confirm-total"><span>{copy.total}</span><strong>{formatVnd(totalAmount)}</strong></div>
           </div>
@@ -229,13 +240,14 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
 
   // Step 2: Show QR & Wait for Staff approval
   return (
-    <Modal title={copy.scanPay} isOpen={isOpen} onClose={onClose} className="payment-modal payment-qr-modal-redesign" mobileSheet>
+    <>
+    <Modal title={copy.scanPay} isOpen={isOpen} onClose={onClose} className="payment-modal payment-qr-modal-redesign" mobileSheet closeLabel={copy.closeModal}>
       <div className="payment-qr-layout">
         <div className="payment-qr-pane">
           <div className="payment-qr-heading"><span>{paymentLabel}</span><strong>{formatVnd(order.total_amount)}</strong><small>{copy.exactNote}</small></div>
           <div className="qr-display payment-qr-display">
           {qrSrc && !isGenerating ? (
-            <img src={qrSrc} alt="Payment QR code" className="payment-qr-image" />
+            <img src={qrSrc} alt={copy.paymentQrAlt} className="payment-qr-image" />
           ) : qrUnavailable ? (
             <div className="qr-loading payment-qr-loading"><CloudOff size={28} /><span>{copy.qrUnavailable}</span></div>
           ) : (
@@ -251,93 +263,43 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
         <div className="payment-receipt payment-receipt-redesign">
           <div className="payment-order-identity"><div><span>{copy.orderCode}</span><strong>{order.order_code}</strong></div>{order.customer_name && <div><span>{copy.pickupName}</span><strong>{order.customer_name}</strong></div>}</div>
           <div className="payment-transfer-card"><span>{copy.transferTo}</span><div><small>{copy.accountName}</small><strong>{payment.bank_account_name || "N/A"}</strong></div><div><small>{copy.accountNumber}</small><button type="button" onClick={() => void navigator.clipboard.writeText(payment.bank_account_no || "")}><strong>{payment.bank_account_no || "N/A"}</strong><Copy size={14} /></button></div><div><small>{copy.bank}</small><strong>{bankName}</strong></div><div className="payment-transfer-note"><small>{copy.transferNote}</small><strong>{order.order_code}</strong></div></div>
-          <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => { const line = pricing.lines.find((candidate) => candidate.productId === item.product.id)!; return <div key={item.product.id}><span>{line.quantity} × {item.product.name}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</span>{totalAmount === order.total_amount && <strong>{formatVnd(line.total)}</strong>}</div>; })}{pricing.discountAmount > 0 && <div className="payment-receipt-discount"><span>{copy.discount}</span><strong>−{formatVnd(pricing.discountAmount)}</strong></div>}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
+          <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => { const line = getPricingLine(pricing, item.product.id); if (!line) return null; return <div key={item.product.id}><span>{line.quantity} × {item.product.name}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</span>{totalAmount === order.total_amount && <strong>{formatVnd(line.total)}</strong>}</div>; })}{pricing.discountAmount > 0 && <div className="payment-receipt-discount"><span>{copy.discount}</span><strong>−{formatVnd(pricing.discountAmount)}</strong></div>}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
           {payment.payment_instructions.trim() && <div className="receipt-instructions"><Sparkles size={16} /><span>{payment.payment_instructions}</span></div>}
-          <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button><button type="button" className="button button-secondary" onClick={() => void handleCancel()} disabled={isCancelling || connectionState !== "online"}>{isCancelling ? copy.cancelling : copy.cancelOrder}</button>
+          <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button><button type="button" className="button button-secondary" onClick={() => setIsCancelConfirmOpen(true)} disabled={isCancelling || connectionState !== "online"}>{isCancelling ? copy.cancelling : copy.cancelOrder}</button>
         </div>
       </div>
     </Modal>
-  );
-}
-
-// Re-export SwipeConfirmButton for use in Admin Queue dashboard
-type SwipeConfirmButtonProps = {
-  onConfirm: () => boolean | Promise<boolean>;
-  isConfirming: boolean;
-};
-
-export function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButtonProps) {
-  const [progress, setProgress] = useState(0);
-  const [phase, setPhase] = useState<"idle" | "dragging" | "committing" | "success" | "error">("idle");
-  const trackRef = useRef<HTMLDivElement>(null);
-  const progressRef = useRef(0);
-  const phaseRef = useRef<typeof phase>("idle");
-  const startXRef = useRef(0);
-  const lastXRef = useRef(0);
-  const lastTimeRef = useRef(0);
-
-  const updateProgress = useCallback((next: number) => { progressRef.current = next; setProgress(next); }, []);
-  const updatePhase = useCallback((next: typeof phase) => { phaseRef.current = next; setPhase(next); }, []);
-
-  const commit = useCallback(async () => {
-    if (phaseRef.current === "committing" || phaseRef.current === "success" || isConfirming) return;
-    updateProgress(1);
-    updatePhase("committing");
-    const succeeded = await onConfirm();
-    if (succeeded) {
-      updatePhase("success");
-      return;
-    }
-    updatePhase("error");
-    window.setTimeout(() => { updateProgress(0); updatePhase("idle"); }, 700);
-  }, [isConfirming, onConfirm, updatePhase, updateProgress]);
-
-  const finishGesture = (velocity = 0) => {
-    if (phaseRef.current !== "dragging") return;
-    if (progressRef.current >= 0.88 || (progressRef.current >= 0.68 && velocity > 0.55)) void commit();
-    else { updateProgress(0); updatePhase("idle"); }
-  };
-
-  return (
-    <div
-      className={`swipe-track phase-${phase}`}
-      ref={trackRef}
-      role="button"
-      tabIndex={isConfirming ? -1 : 0}
-      aria-label="Swipe right or press Enter to confirm payment and update stock"
-      aria-disabled={isConfirming || phase === "committing"}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          void commit();
-        }
-      }}
-      onPointerDown={(event) => {
-        if (isConfirming || phaseRef.current !== "idle") return;
-        event.currentTarget.setPointerCapture(event.pointerId);
-        startXRef.current = event.clientX;
-        lastXRef.current = event.clientX;
-        lastTimeRef.current = performance.now();
-        updatePhase("dragging");
-      }}
-      onPointerMove={(event) => {
-        if (phaseRef.current !== "dragging" || !trackRef.current) return;
-        const maxTravel = Math.max(1, trackRef.current.clientWidth - 54);
-        updateProgress(Math.max(0, Math.min(1, (event.clientX - startXRef.current) / maxTravel)));
-        lastXRef.current = event.clientX;
-        lastTimeRef.current = performance.now();
-      }}
-      onPointerUp={(event) => {
-        const elapsed = Math.max(1, performance.now() - lastTimeRef.current);
-        finishGesture((event.clientX - lastXRef.current) / elapsed);
-      }}
-      onPointerCancel={() => finishGesture()}
-      style={{ "--swipe-progress": progress } as React.CSSProperties}
+    <Modal
+      title={copy.cancelReservationTitle}
+      isOpen={isCancelConfirmOpen}
+      onClose={() => setIsCancelConfirmOpen(false)}
+      className="payment-modal"
+      mobileSheet
+      closeLabel={copy.closeModal}
     >
-      <div className="swipe-bg" />
-      <span className="swipe-text">{phase === "committing" || isConfirming ? "Confirming payment…" : phase === "success" ? "Payment confirmed" : phase === "error" ? "Could not confirm — try again" : "Swipe to confirm payment"}</span>
-      <div className="swipe-handle">{phase === "success" ? <Check size={19} /> : phase === "committing" ? <Loader2 size={18} className="spin-icon" /> : <span>›</span>}</div>
-      <span className="sr-only" aria-live="polite">{phase === "success" ? "Payment confirmed and stock updated" : phase === "error" ? "Confirmation failed. Try again." : ""}</span>
-    </div>
+      <div className="payment-success-state payment-cancelled-state">
+        <Ban size={38} />
+        <p>{copy.cancelReservationHint}</p>
+        <div className="order-confirm-actions">
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() => setIsCancelConfirmOpen(false)}
+            disabled={isCancelling}
+          >
+            {copy.keepOrder}
+          </button>
+          <button
+            type="button"
+            className="button button-primary"
+            onClick={() => void confirmCancel()}
+            disabled={isCancelling}
+          >
+            {isCancelling ? copy.cancelling : copy.cancelOrder}
+          </button>
+        </div>
+      </div>
+    </Modal>
+    </>
   );
 }

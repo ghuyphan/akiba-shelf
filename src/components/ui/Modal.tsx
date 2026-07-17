@@ -13,9 +13,12 @@ type ModalProps = {
   wide?: boolean;
   className?: string;
   mobileSheet?: boolean;
+  /** Accessible label for the close button. Localized callers should pass
+   * their own string; staff screens keep the English default. */
+  closeLabel?: string;
 };
 
-export function Modal({ title, isOpen, onClose, children, wide = false, className = "", mobileSheet = false }: ModalProps) {
+export function Modal({ title, isOpen, onClose, children, wide = false, className = "", mobileSheet = false, closeLabel = "Close modal" }: ModalProps) {
   const [shouldRender, setShouldRender] = useState(isOpen);
   const dialogRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -94,7 +97,7 @@ export function Modal({ title, isOpen, onClose, children, wide = false, classNam
         {mobileSheet && <SheetHandle />}
         <header className="modal-header">
           <h2>{title}</h2>
-          <Button variant="ghost" icon={<X size={22} />} aria-label="Close modal" onClick={requestClose} />
+          <Button variant="ghost" icon={<X size={22} />} aria-label={closeLabel} onClick={requestClose} />
         </header>
         {children}
     </MobileSheetShell>

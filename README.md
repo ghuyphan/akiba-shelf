@@ -12,6 +12,7 @@ Matsuri is a touch-friendly storefront and live order platform for independent a
 - Realtime catalog and order updates through Supabase.
 - Role-authorized staff workspace for orders, products, booth/payment settings, and storefront design.
 - Storefront designer with drag-and-drop ordering of the real featured, booth, controls, cart, and product modules; fixed safe grid spans; editable palette presets; card personality; corner radius; and English/Vietnamese UI.
+- Free gacha minigame per shop that turns real merch into character and weapon wishes, configured from the admin workspace.
 - Shared queued toast system through `useToast()`.
 
 ## Stack
@@ -66,12 +67,19 @@ npm run build
 git diff --check
 ```
 
+## Gacha minigame
+
+Each shop can publish a free gacha minigame at `/s/:shopSlug/play` that presents real merch as characters and weapons. Staff manage pools, rarity, roles, and featured placement from the admin workspace's `GachaManager`, and the storefront header links customers to the minigame.
+
+The play page embeds two vendored simulators kept under `vendor/` (`gacha-simulator` and `hsr-simulator`). In development, `npm run dev` builds them into `.gacha-dist/` and `.hsr-gacha-dist/` when missing, and `vite.config.ts` serves those directories locally. Production builds run `scripts/build-simulators.mjs` after `vite build` to emit both simulators into `dist/`.
+
 ## Routes
 
 - `/` — platform homepage
 - `/auth`, `/auth/callback`, `/auth/set-password` — account, confirmation, invitation, and recovery lifecycle
 - `/dashboard`, `/dashboard/shops/new` — shop selection and creation
 - `/s/:shopSlug` — shop-specific customer storefront
+- `/s/:shopSlug/play` — shop-specific gacha minigame
 - `/admin` — authenticated admin workspace
 
 Production Auth must use the deployed app URL as its Site URL (`https://matsuri.pro`) and allow `/auth/callback` and `/auth/set-password`. Its 404 redirect preserves safe relative routes, queries, and Auth fragments. Configure SMTP and email confirmation, set `PUBLIC_SITE_URL` to `https://matsuri.pro`, and deploy both `invite-shop-member` and `notify-new-order`. CAPTCHA and conservative Auth rate limits are recommended. End users never need Supabase Dashboard access.
@@ -112,14 +120,20 @@ src/
   components/admin/       Admin-only components
   components/catalog/     Storefront-only components
   components/ui/          Shared primitives, toast provider, modal, fields
+  data/                   Static reference data (VietQR bank list)
   hooks/                  Reusable stateful behavior
   lib/                    Supabase API, theme, i18n, formatting, validation
   pages/                  Route-level composition
   styles/global.css       Tokens and genuinely shared primitives
   styles/catalog.css      Storefront-only layout and responsive rules
   styles/admin.css        Admin-only layout and responsive rules
+  styles/gacha-*.css      Gacha minigame admin, entry, and host styles
   styles/legacy.css       Compatibility rules awaiting gradual removal
+  test/                   Shared test setup and integration suites
   types/catalog.ts        Shared domain models
+e2e/                      Playwright end-to-end specs
+scripts/                  Simulator build and maintenance scripts
+vendor/                   Vendored gacha simulator sources
 supabase/migrations/      Ordered database migrations
 ```
 

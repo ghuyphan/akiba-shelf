@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultBooth } from "../lib/constants";
 import { getPublicProductsByIds } from "../lib/api";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
@@ -51,33 +51,63 @@ export function useCatalogData(
   const refreshPayment = storefront.refreshPayment;
   const refreshPromotion = storefront.refreshPromotion;
 
-  const loadCartProducts = useCallback(async () => {
-    if (!shopId || cartProductIds.length === 0) {
-      setCartError("");
-      return;
-    }
-    try {
-      const requestedIds = [...cartProductIds];
-      const nextProducts = await getPublicProductsByIds(shopId, requestedIds);
-      onProductsLoaded(nextProducts, requestedIds);
-      setCartError("");
-    } catch (error) {
-      if (!isSessionNoise(error))
-        setCartError(getErrorMessage(error, "Could not refresh your cart."));
-    }
-  }, [cartProductIds, onProductsLoaded, shopId]);
+  // Latest-value refs keep the Realtime channel lifetime tied to shopId only:
+  // the subscription effect reads these instead of closing over props/state
+  // that change on every cart edit or catalog query change.
+  const cartProductIdsRef = useRef(cartProductIds);
+  cartProductIdsRef.current = cartProductIds;
+  const loadedProductsRef = useRef(initialProducts);
+  loadedProductsRef.current = productCatalog.products;
+
+  const loadCartProducts = useCallback(
+    async ({ forceRefresh = false }: { forceRefresh?: boolean } = {}) => {
+      const requestedIds = [...cartProductIdsRef.current];
+      if (!shopId || requestedIds.length === 0) {
+        setCartError("");
+        return;
+      }
+      try {
+        // Reconcile from the already-loaded product list where possible and
+        // only fetch the ids missing from that cache (e.g. filtered out by
+        // the current category/search). Realtime stock changes and manual
+        // reloads bypass the cache to stay server-authoritative.
+        const cached = new Map(
+          loadedProductsRef.current.map((product) => [product.id, product]),
+        );
+        const missingIds = forceRefresh
+          ? requestedIds
+          : requestedIds.filter((id) => !cached.has(id));
+        const fetched = missingIds.length
+          ? await getPublicProductsByIds(shopId, missingIds)
+          : [];
+        const fetchedById = new Map(
+          fetched.map((product) => [product.id, product]),
+        );
+        const nextProducts = requestedIds.flatMap((id) => {
+          const product = cached.get(id) ?? fetchedById.get(id);
+          return product ? [product] : [];
+        });
+        onProductsLoaded(nextProducts, requestedIds);
+        setCartError("");
+      } catch (error) {
+        if (!isSessionNoise(error))
+          setCartError(getErrorMessage(error, "Could not refresh your cart."));
+      }
+    },
+    [onProductsLoaded, shopId],
+  );
 
   const reloadAll = useCallback(async () => {
     await Promise.all([
       reloadProducts(),
       reloadStorefront(),
-      loadCartProducts(),
+      loadCartProducts({ forceRefresh: true }),
     ]);
   }, [loadCartProducts, reloadProducts, reloadStorefront]);
 
   useEffect(() => {
     void loadCartProducts();
-  }, [loadCartProducts]);
+  }, [cartProductIds, loadCartProducts]);
 
   useEffect(() => {
     if (!shopId || storefront.promotion.reward_product_ids.length === 0) {
@@ -115,6 +145,23 @@ export function useCatalogData(
     storefront.isInitialLoading,
   ]);
 
+  const realtimeHandlersRef = useRef({
+    loadCartProducts,
+    refreshBooth,
+    refreshPayment,
+    refreshPromotion,
+    refreshProductMetadata,
+    refreshVisibleProducts,
+  });
+  realtimeHandlersRef.current = {
+    loadCartProducts,
+    refreshBooth,
+    refreshPayment,
+    refreshPromotion,
+    refreshProductMetadata,
+    refreshVisibleProducts,
+  };
+
   useEffect(() => {
     const timers = new Map<string, number>();
     if (!shopId) return;
@@ -124,18 +171,19 @@ export function useCatalogData(
         timers.set(
           table,
           window.setTimeout(() => {
+            const handlers = realtimeHandlersRef.current;
             const request =
               table === "products"
                 ? Promise.all([
-                    refreshVisibleProducts(),
-                    refreshProductMetadata(),
-                    loadCartProducts(),
+                    handlers.refreshVisibleProducts(),
+                    handlers.refreshProductMetadata(),
+                    handlers.loadCartProducts({ forceRefresh: true }),
                   ])
                 : table === "booth_settings"
-                  ? refreshBooth()
+                  ? handlers.refreshBooth()
                   : table === "payment_settings"
-                    ? refreshPayment()
-                    : refreshPromotion();
+                    ? handlers.refreshPayment()
+                    : handlers.refreshPromotion();
             void request;
           }, 150),
         );
@@ -145,15 +193,7 @@ export function useCatalogData(
       timers.forEach((timer) => window.clearTimeout(timer));
       unsubscribe();
     };
-  }, [
-    loadCartProducts,
-    refreshBooth,
-    refreshPayment,
-    refreshPromotion,
-    refreshProductMetadata,
-    refreshVisibleProducts,
-    shopId,
-  ]);
+  }, [shopId]);
 
   return {
     products: productCatalog.products,

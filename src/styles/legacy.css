@@ -634,10 +634,6 @@
     width: 100% !important;
   }
 
-  .checkout-guide {
-    grid-template-columns: 1fr;
-  }
-
   .catalog-side {
     position: static;
   }
@@ -1280,110 +1276,12 @@
   font-size: 12px;
 }
 
-.payment-card,
 .selected-panel,
 .booth-card {
   border-radius: 8px;
   background: #fff;
   border: 1px solid var(--line);
   box-shadow: var(--soft-shadow);
-}
-
-.payment-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.payment-card-header h2 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.payment-card-header strong {
-  color: var(--coral);
-  font-size: 18px;
-  letter-spacing: 0;
-}
-
-.payment-flow {
-  display: grid;
-  grid-template-columns: 112px 1fr;
-  gap: 16px;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  text-align: left;
-  background: transparent;
-  cursor: pointer;
-}
-
-.payment-flow img {
-  width: 112px;
-  height: 112px;
-  object-fit: cover;
-  border: 1px solid var(--soft-line);
-  border-radius: 8px;
-}
-
-.payment-qr-placeholder {
-  width: 112px;
-  height: 112px;
-  border: 1px dashed var(--line);
-  border-radius: 8px;
-  background: var(--surface-soft);
-}
-
-.payment-flow ol {
-  display: grid;
-  gap: 12px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.payment-flow li {
-  display: grid;
-  grid-template-columns: 22px 1fr;
-  column-gap: 10px;
-}
-
-.payment-flow li span {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  color: var(--coral);
-  background: #ffe8f1;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.payment-flow li strong,
-.payment-flow li small {
-  grid-column: 2;
-}
-
-.payment-flow li small {
-  color: var(--muted);
-}
-
-.how-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 40px;
-  margin-top: 18px;
-  border: 1px solid color-mix(in srgb, var(--coral) 30%, transparent);
-  border-radius: 7px;
-  color: var(--coral);
-  background: color-mix(in srgb, var(--coral) 5%, var(--surface));
-  font-weight: 800;
 }
 
 .selected-panel {
@@ -2510,16 +2408,6 @@ select.input {
 
   .product-card-list .product-image-wrap {
     min-height: 172px;
-  }
-
-  .payment-flow {
-    grid-template-columns: 96px 1fr;
-    gap: 12px;
-  }
-
-  .payment-flow img {
-    width: 96px;
-    height: 96px;
   }
 
   .selected-cart-item {

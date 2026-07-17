@@ -43,9 +43,16 @@ export const initializeBanner = async (version, phase) => {
 				displayItems.find((item) => item.rarity === 5) ||
 				displayItems[0] ||
 				[...poolItems].sort((a, b) => b.rarity - a.rarity)[0];
-			const rateupItems = displayItems
-				.filter((item) => item !== featuredItem && item.rarity === 4)
-				.slice(0, 3);
+			const seenNames = new Set(featuredItem ? [featuredItem.name] : []);
+			const rateupItems = [];
+			for (const item of displayItems) {
+				// Rate-up names feed keyed {#each} blocks, so they must be unique:
+				// several entries can reference the same or identically named products.
+				if (item.rarity !== 4 || seenNames.has(item.name)) continue;
+				seenNames.add(item.name);
+				rateupItems.push(item);
+				if (rateupItems.length >= 3) break;
+			}
 			return {
 				isMerch: true,
 				bannerName: parseEnglishText(banner.name),
