@@ -79,6 +79,11 @@ Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dash
 - Reusable screen components belong in `components/admin` or `components/catalog`.
 - Cross-screen primitives belong in `components/ui`.
 - Keep Supabase calls in `src/lib/api.ts`, not inside presentational components.
+- When you add or change a data path in `src/lib/api.ts` (new RPC, new table
+  query, changed response shape), update the Playwright mock in
+  `e2e/fixtures.ts` in the same change. Unmocked requests fall through to a
+  catch-all that returns `[]`, which silently empties rendered lists and makes
+  schema-parsed RPC responses crash the page under test.
 - Keep shared domain types in `src/types/catalog.ts`.
 - Use `useAsyncAction` for form busy/error state.
 - Use `useToast()` for transient feedback:
@@ -120,8 +125,9 @@ git diff --check
 ```
 
 When Edge Functions change, also run `npm run test:functions`. When dependencies
-change, run `npm audit --omit=dev`. Preserve `:focus-visible` behavior when
-verifying touch/highlight changes.
+change, run `npm audit --omit=dev`. When data paths in `src/lib/api.ts` or
+page-level flows change, also run `npm run test:e2e`. Preserve `:focus-visible`
+behavior when verifying touch/highlight changes.
 
 For database changes, validate migrations against the linked Supabase project
 when this checkout is linked. When the user requested deployment, push and

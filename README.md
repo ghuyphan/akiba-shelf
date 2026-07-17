@@ -215,6 +215,12 @@ and the integration suite) or an explicitly documented reason they could not be
 run. For a linked project, run both security and performance advisors with
 `npx supabase db advisors --linked --type security` and `--type performance`.
 
+Run `npm run test:e2e` when data paths or page flows change. The Playwright
+specs stub Supabase through `e2e/fixtures.ts`; keep that mock in sync with
+`src/lib/api.ts` — every new RPC, table query, or response-shape change needs a
+matching mock route in the same change, or specs fail against the fixture
+catch-all.
+
 The 2026-07-14 review and its remaining operational checks are recorded in
 [`docs/repository-review.md`](docs/repository-review.md). The staged stylesheet
 cleanup plan is in
