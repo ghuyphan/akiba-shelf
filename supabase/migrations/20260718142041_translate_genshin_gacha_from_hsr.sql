@@ -26,10 +26,14 @@ begin
   select jsonb_agg(
     jsonb_build_object(
       'shop_id', v_shop_id::text,
-      'banner_id', banner_id::text,
-      'product_id', product_id,
-      'kind', case when kind = 'lightcone' then 'weapon' else kind end,
-      'element', case element
+      'banner_id', case old_banner.sort_order
+        when 0 then '82938a89-1ede-4ca2-b8df-d069c3404673'::text
+        when 1 then '531be07e-5ec2-4e96-b456-9d295f08d549'::text
+        when 2 then '994bf2a6-b51c-43f0-bbcd-631cda4054a1'::text
+      end,
+      'product_id', entry.product_id,
+      'kind', case when entry.kind = 'lightcone' then 'weapon' else entry.kind end,
+      'element', case entry.element
         when 'wind' then 'anemo'
         when 'fire' then 'pyro'
         when 'ice' then 'cryo'
@@ -39,7 +43,7 @@ begin
         when 'physical' then 'geo'
         else 'anemo'
       end,
-      'weapon_type', case weapon_type
+      'weapon_type', case entry.weapon_type
         when 'destruction' then 'claymore'
         when 'hunt' then 'bow'
         when 'erudition' then 'catalyst'
@@ -49,10 +53,10 @@ begin
         when 'abundance' then 'polearm'
         else 'sword'
       end,
-      'rarity', rarity,
-      'weight', weight,
-      'featured', featured,
-      'active', active
+      'rarity', entry.rarity,
+      'weight', entry.weight,
+      'featured', entry.featured,
+      'active', entry.active
     )
   )
   into v_new_entries
@@ -68,7 +72,13 @@ begin
     weight integer,
     featured boolean,
     active boolean
-  );
+  )
+  join jsonb_to_recordset(
+    (select config->'banners' from public.gacha_game_configs where shop_id = v_shop_id and game_type = 'hsr')
+  ) as old_banner(
+    id uuid,
+    sort_order integer
+  ) on entry.banner_id = old_banner.id;
 
   -- 2. Build new banners
   v_new_banners := jsonb_build_array(
