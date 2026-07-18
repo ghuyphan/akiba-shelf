@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { ArrowLeft, Download, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Download, Sparkles } from "lucide-react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../components/ui/EmptyState";
 import {
@@ -342,9 +342,39 @@ export function GachaPage() {
   if (!activeGame || !activeCatalog) {
     return (
       <main className="gacha-game-select">
-        <Link className="gacha-select-back" to={`/s/${shopSlug}`}>
-          <ArrowLeft size={18} /> {copy.backToStore}
-        </Link>
+        <div className="gacha-select-actions">
+          <Link className="gacha-select-back" to={`/s/${shopSlug}`} title={copy.backToStore}>
+            <ArrowLeft size={18} /> <span>{copy.backToStore}</span>
+          </Link>
+          <button
+            type="button"
+            className={`gacha-cache-btn is-${packDownload.status}`}
+            disabled={packDownload.status === "downloading"}
+            onClick={() => void saveAvailableGames()}
+            title={
+              packDownload.status === "ready"
+                ? copy.gachaOfflineReady
+                : packDownload.status === "downloading"
+                  ? copy.savingGachaOffline
+                  : copy.saveBothGachaOffline
+            }
+          >
+            {packDownload.status === "downloading" ? (
+              <span className="gacha-cache-pct">{packDownload.progress}%</span>
+            ) : packDownload.status === "ready" ? (
+              <Check size={18} />
+            ) : (
+              <Download size={18} />
+            )}
+            <span>
+              {packDownload.status === "ready"
+                ? copy.gachaOfflineReady
+                : packDownload.status === "downloading"
+                  ? copy.savingGachaOffline
+                  : copy.saveBothGachaOffline}
+            </span>
+          </button>
+        </div>
         <section className="gacha-select-panel">
           <div className="gacha-select-heading">
             <span>{state.shop.name}</span>
@@ -352,7 +382,6 @@ export function GachaPage() {
           </div>
           <div className="gacha-game-portals">
             {availableGames.map((gameType) => {
-              const catalog = state.catalogs[gameType]!;
               const isHsr = gameType === "hsr";
               return (
                 <Link
@@ -379,7 +408,6 @@ export function GachaPage() {
                       alt={isHsr ? "Honkai: Star Rail" : "Genshin Impact"}
                     />
                     <small>{isHsr ? "Warp Simulator" : "Wish Simulator"}</small>
-                    <strong>{catalog.settings?.title}</strong>
                     <span className="gacha-portal-enter">
                       <span>{copy.enterGacha}</span>
                       <span aria-hidden="true">›</span>
@@ -389,30 +417,6 @@ export function GachaPage() {
               );
             })}
           </div>
-          <button
-            type="button"
-            className="gacha-cache-all"
-            disabled={packDownload.status === "downloading"}
-            onClick={() => void saveAvailableGames()}
-          >
-            <Download size={18} />
-            <span>
-              <strong>
-                {packDownload.status === "ready"
-                  ? copy.gachaOfflineReady
-                  : packDownload.status === "downloading"
-                    ? copy.savingGachaOffline
-                    : copy.saveBothGachaOffline}
-              </strong>
-              <small>
-                {packDownload.status === "downloading"
-                  ? `${packDownload.game === "hsr" ? "Star Rail" : "Genshin"} · ${packDownload.progress}%`
-                  : packDownload.status === "error"
-                    ? copy.gachaOfflineFailed
-                    : copy.saveBothGachaOfflineHint}
-              </small>
-            </span>
-          </button>
         </section>
       </main>
     );
