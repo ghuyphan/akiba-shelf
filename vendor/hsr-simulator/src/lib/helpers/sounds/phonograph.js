@@ -224,8 +224,12 @@ const randomTrack = () => {
 export const initTrack = () => {
 	const unfinisedTrack = cookie.get('trackID');
 	if (!unfinisedTrack) return randomTrack();
-	playTrack(unfinisedTrack);
 	const trackData = tracks.find(({ sourceID }) => sourceID === unfinisedTrack);
+	if (!trackData) {
+		cookie.remove('trackID');
+		return randomTrack();
+	}
+	playTrack(unfinisedTrack);
 	activeBacksound.set(trackData);
 	return;
 };

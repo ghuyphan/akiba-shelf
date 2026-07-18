@@ -48,7 +48,7 @@ export const HistoryManager = {
 		try {
 			const idb = await IndexedDB;
 			const keys = await idb.getAllKeysFromIndex('history', 'banner', banner);
-			keys.forEach((key) => idb.delete('history', key));
+			await Promise.all(keys.map((key) => idb.delete('history', key)));
 			return 'success';
 		} catch (e) {
 			return 'failed';

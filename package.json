@@ -28,7 +28,7 @@
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build",
     "build:app": "tsc -b && vite build",
     "build:perf": "tsc -b && vite build --outDir .perf-dist",
-    "build": "npm run build:app && npm run build:simulators",
+    "build": "npm run build:app && npm run build:simulators && node scripts/build-offline-assets.mjs",
     "preview": "vite preview --host ::",
     "preview:perf": "vite preview --host 127.0.0.1 --outDir .perf-dist --port 4174 --strictPort"
   },

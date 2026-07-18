@@ -1,11 +1,36 @@
-import { closeSync, createReadStream, fstatSync, openSync } from "node:fs";
-import { extname, resolve, sep } from "node:path";
+import {
+  closeSync,
+  createReadStream,
+  fstatSync,
+  openSync,
+  readdirSync,
+  statSync,
+} from "node:fs";
+import { extname, relative, resolve, sep } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 const gachaDevRoot = resolve(process.cwd(), ".gacha-dist");
 const hsrDevRoot = resolve(process.cwd(), ".hsr-gacha-dist");
+
+function listDevelopmentOfflineAssets(root: string, prefix: string) {
+  const files: { path: string; size: number }[] = [];
+  const visit = (directory: string) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = resolve(directory, entry.name);
+      if (entry.isDirectory()) visit(path);
+      else if (entry.name !== ".nojekyll" && !entry.name.endsWith(".map")) {
+        files.push({
+          path: `/${prefix}/${relative(root, path).split(sep).join("/")}`,
+          size: statSync(path).size,
+        });
+      }
+    }
+  };
+  visit(root);
+  return files;
+}
 // Keep the isolated simulator available at its production path during local development.
 const contentTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -103,6 +128,32 @@ function serveGachaInDevelopment(): Plugin {
       server.middlewares.use((request, response, next) => {
         if (!request.url) return next();
         const pathname = new URL(request.url, "http://localhost").pathname;
+        if (pathname === "/offline-assets.json") {
+          try {
+            const body = JSON.stringify({
+              version: 1,
+              generatedAt: new Date().toISOString(),
+              packs: {
+                genshin: listDevelopmentOfflineAssets(
+                  gachaDevRoot,
+                  "gacha-simulator",
+                ),
+                hsr: listDevelopmentOfflineAssets(
+                  hsrDevRoot,
+                  "hsr-simulator",
+                ),
+              },
+            });
+            response.statusCode = 200;
+            response.setHeader("Content-Type", "application/json; charset=utf-8");
+            response.setHeader("Cache-Control", "no-store");
+            response.end(body);
+          } catch {
+            response.statusCode = 503;
+            response.end("Offline assets are still being prepared.");
+          }
+          return;
+        }
         const isGenshin = pathname === "/gacha-simulator" || pathname.startsWith("/gacha-simulator/");
         const isHsr = pathname === "/hsr-simulator" || pathname.startsWith("/hsr-simulator/");
 
@@ -208,7 +259,10 @@ function serveGachaInDevelopment(): Plugin {
           response.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
         }
 
-        response.setHeader("Content-Length", Math.max(0, end - start + 1));
+        response.setHeader(
+          "Content-Length",
+          fileSize === 0 ? 0 : Math.max(0, end - start + 1),
+        );
         if (request.method === "HEAD") {
           closeSync(fileDescriptor);
           response.end();
@@ -234,7 +288,7 @@ function serveGachaInDevelopment(): Plugin {
   };
 }
 
-export default defineConfig(() => ({
+export default defineConfig(({ command }) => ({
   base: "/",
   build: {
     rollupOptions: {
@@ -251,14 +305,21 @@ export default defineConfig(() => ({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: null,
+      // Production registration is route-aware in src/lib/pwa.ts. Development
+      // needs the plugin's virtual worker URL so offline refreshes are testable.
+      injectRegister: command === "serve" ? "auto" : null,
       includeAssets: ["favicon.svg"],
       manifest: false,
+      devOptions: {
+        enabled: true,
+        navigateFallbackAllowlist: [
+          /^\/(?:admin|dashboard|auth)(?:\/|$)/,
+          /^\/s\/[^/]+(?:\/play)?\/?$/,
+        ],
+      },
       workbox: {
         globIgnores: [
           "404.html",
-          "**/CatalogPage-*.js",
-          "**/GachaPage-*.js",
           "**/HomePage-*.js",
           "**/AuthPage-*.js",
           "**/AuthCallbackPage-*.js",
@@ -266,9 +327,37 @@ export default defineConfig(() => ({
         ],
         importScripts: ["push-handlers.js"],
         navigateFallback: "index.html",
-        navigateFallbackAllowlist: [/^\/(?:admin|dashboard|auth)(?:\/|$)/],
+        navigateFallbackAllowlist: [
+          /^\/(?:admin|dashboard|auth)(?:\/|$)/,
+          /^\/s\/[^/]+(?:\/play)?\/?$/,
+        ],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
+          {
+            // Keep Vite's module graph available for realistic offline-F5 testing.
+            // These URLs do not exist in a production build.
+            urlPattern:
+              /\/(?:@vite\/|@vite-plugin-pwa\/|@react-refresh(?:$|\?)|@fs\/|src\/|node_modules\/|vendor\/|brand\/)/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "vite-dev-app-shell",
+              networkTimeoutSeconds: 2,
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern:
+              /\/(?:gacha-simulator|hsr-simulator)\/(?:$|.*\.(?:html|js|css|json))$/,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "gacha-app-shell-v2",
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 90 * 24 * 60 * 60,
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             urlPattern:
               /\/(?:gacha-simulator|hsr-simulator)\/.*\.(?:mp4|webm|ogg|mp3|wav)$/,
@@ -288,7 +377,7 @@ export default defineConfig(() => ({
           {
             urlPattern:
               /\/(?:gacha-simulator|hsr-simulator)\/.*\.(?:woff2?|ttf|png|jpe?g|webp|svg)$/,
-            handler: "StaleWhileRevalidate",
+            handler: "CacheFirst",
             options: {
               cacheName: "gacha-static-cache-v1",
               expiration: {
@@ -302,16 +391,28 @@ export default defineConfig(() => ({
           },
           {
             urlPattern: /\/storage\/v1\/object\/public\//,
-            handler: "StaleWhileRevalidate",
+            handler: "CacheFirst",
             options: {
               cacheName: "supabase-storage-cache",
               expiration: {
                 maxEntries: 200,
-                maxAgeSeconds: 7 * 24 * 60 * 60, // 7 Days
+                maxAgeSeconds: 30 * 24 * 60 * 60,
               },
               cacheableResponse: {
                 statuses: [0, 200],
               },
+            },
+          },
+          {
+            urlPattern: ({ request }) => request.destination === "image",
+            handler: "CacheFirst",
+            options: {
+              cacheName: "product-image-cache-v1",
+              expiration: {
+                maxEntries: 300,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+              },
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
         ],

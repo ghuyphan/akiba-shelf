@@ -96,6 +96,7 @@
 		"loadExpressMsg": "加载{item}的动画",
 		"expressNotLoaded": "在你的存储中找不到星穹列车的动画，请先<span>加载星穹列车</span>，或者<span>打开</span>跳过星穹列车的选项",
 		"preloadFilesMsg": "* 加载的文件将存储到浏览器的存储中，因此在网站更新之前无需再次加载它们。",
+		"offlinePackMsg": "完整模拟器和摊位图片也会保存，供离线游玩。",
 		"firstTimeShare": "首次分享奖励：",
 		"firstShareObtain": "首次分享可获得{reward}",
 		"sharingTxt": "快来试试《崩坏：星穹铁道跃迁模拟器》吧！"

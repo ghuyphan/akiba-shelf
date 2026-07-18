@@ -1183,6 +1183,15 @@ const vi: Record<string, string> = {
   Imaginary: "Số Ảo",
   "Could not save draft": "Không thể lưu bản nháp",
   "Gacha draft saved.": "Đã lưu bản nháp gacha.",
+  "Add at least three active products so the pool can include 3-star, 4-star, and 5-star rewards.":
+    "Hãy thêm ít nhất ba sản phẩm đang hoạt động để pool có phần thưởng 3 sao, 4 sao và 5 sao.",
+  "More merch needed": "Cần thêm merch",
+  "Recommended pool created. Review it, then publish when ready.":
+    "Đã tạo pool đề xuất. Hãy kiểm tra rồi xuất bản khi sẵn sàng.",
+  "Quick setup": "Thiết lập nhanh",
+  "Create a playable pool from your active merch, using safe recommended defaults. Everything remains editable and undoable.":
+    "Tạo pool chơi được từ merch đang hoạt động bằng thiết lập đề xuất an toàn. Bạn vẫn có thể chỉnh sửa hoặc hoàn tác mọi thứ.",
+  "Use recommended setup": "Dùng thiết lập đề xuất",
   "Publishing switches the public minigame to {{game}}. Continue?": "Xuất bản sẽ chuyển minigame công khai sang {{game}}. Tiếp tục?",
   "Delete banner “{{name}}”? Its pool items will be removed too.": "Xóa banner “{{name}}”? Các vật phẩm trong pool của nó cũng sẽ bị xóa theo.",
   "Availability, public copy, and pity rules for this game.": "Trạng thái hoạt động, nội dung công khai và luật bảo hiểm của game này.",

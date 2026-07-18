@@ -59,7 +59,10 @@
 	.wrapper-info {
 		height: 100%;
 		width: 97.5%;
-		background-image: linear-gradient(rgba(255, 255, 255, 0.9) 85%, transparent);
+		background-image: linear-gradient(
+			rgba(255, 255, 255, 0.97),
+			rgba(238, 240, 244, 0.97)
+		);
 		border-top-right-radius: calc(0.05 * var(--bw));
 		padding: 4.5%;
 	}

@@ -11,20 +11,24 @@ import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import type { BoothSettings, PaymentSettings, Product, PromotionSettings } from "../types/catalog";
 
 type BootstrapPhase = "initial-loading" | "ready";
+const EMPTY_CATEGORIES: string[] = [];
 
 export function useStorefrontBootstrap(
   shopId: string | undefined,
   paymentEnabled: boolean,
   initialBooth: BoothSettings,
   initialProducts: Product[],
+  initialPayment: PaymentSettings = defaultPayment,
+  initialPromotion: PromotionSettings = defaultPromotion,
+  initialCategories: string[] = EMPTY_CATEGORIES,
 ) {
   const [booth, setBooth] = useState(initialBooth);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>(
     initialProducts.filter((product) => product.featured),
   );
-  const [categories, setCategories] = useState<string[]>([]);
-  const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
-  const [promotion, setPromotion] = useState<PromotionSettings>(defaultPromotion);
+  const [categories, setCategories] = useState<string[]>(initialCategories);
+  const [payment, setPayment] = useState<PaymentSettings>(initialPayment);
+  const [promotion, setPromotion] = useState<PromotionSettings>(initialPromotion);
   const [phase, setPhase] = useState<BootstrapPhase>("initial-loading");
   const [error, setError] = useState("");
   const shopIdentityRef = useRef(0);
@@ -37,12 +41,12 @@ export function useStorefrontBootstrap(
     setFeaturedProducts(
       initialProducts.filter((product) => product.featured),
     );
-    setCategories([]);
-    setPayment(defaultPayment);
-    setPromotion(defaultPromotion);
+    setCategories(initialCategories);
+    setPayment(initialPayment);
+    setPromotion(initialPromotion);
     setError("");
     setPhase("initial-loading");
-  }, [initialBooth, initialProducts, shopId]);
+  }, [initialBooth, initialCategories, initialPayment, initialProducts, initialPromotion, shopId]);
 
   const captureError = useCallback((requestError: unknown) => {
     if (!isSessionNoise(requestError))
@@ -82,6 +86,8 @@ export function useStorefrontBootstrap(
     if (!paymentEnabled) return Promise.resolve(defaultPayment);
     if (paymentRequestRef.current) return paymentRequestRef.current;
     if (!shopId) return Promise.reject(new Error("Shop is not loaded."));
+    if (!navigator.onLine && initialPayment !== defaultPayment)
+      return Promise.resolve(initialPayment);
     const identity = shopIdentityRef.current;
     const request = getPublicPaymentSettings(shopId)
       .then((nextPayment) => {
@@ -93,7 +99,7 @@ export function useStorefrontBootstrap(
       });
     paymentRequestRef.current = request;
     return request;
-  }, [paymentEnabled, shopId]);
+  }, [initialPayment, paymentEnabled, shopId]);
 
   const settleRequests = useCallback(
     async (requests: Promise<unknown>[]) => {

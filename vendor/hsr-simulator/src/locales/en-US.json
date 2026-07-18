@@ -96,6 +96,7 @@
 		"loadExpressMsg": "Load {item} Animation",
 		"expressNotLoaded": "Cannot find Astral Express Animations in your storage, <span> Load the Astral Express</span> first, or <span> Turn ON </span> the option to skip Astral Express!",
 		"preloadFilesMsg": "* Loaded files will be stored to Browser Storage, so you don't need to load them again until the site update.",
+		"offlinePackMsg": "The complete simulator and booth artwork will also be saved for offline play.",
 		"firstTimeShare": "First-time Share Rewards:",
 		"firstShareObtain": "First-time Sharing will Obtain {reward}",
 		"sharingTxt": "Come and try this Honkai: Star Rail Warp Simulator!"

@@ -82,7 +82,9 @@
 		width: 100%;
 		height: 100%;
 		z-index: -1;
-		mask-image: linear-gradient(black 85%, transparent);
+		/* Merch photography must remain an opaque card instead of fading into
+		   the blurred full-screen backdrop. */
+		mask-image: none;
 		background-image: linear-gradient(
 			170deg,
 			rgb(0, 0, 0, 1),
@@ -128,7 +130,7 @@
 		display: block;
 		width: 100%;
 		height: 100%;
-		mask-image: linear-gradient(black 75%, transparent 100%);
+		mask-image: none;
 	}
 	.mask-content {
 		display: block;

@@ -42,6 +42,9 @@ export function useCatalogData(
     paymentEnabled,
     initialBooth,
     initialProducts,
+    cached?.payment,
+    cached?.promotion,
+    cached?.categories,
   );
   const reloadProducts = productCatalog.reload;
   const refreshVisibleProducts = productCatalog.refreshVisible;
@@ -133,6 +136,9 @@ export function useCatalogData(
       {
         products: productCatalog.products,
         booth: storefront.booth,
+        payment: storefront.payment,
+        promotion: storefront.promotion,
+        categories: storefront.categories,
       },
       shopId,
     );
@@ -142,7 +148,10 @@ export function useCatalogData(
     productCatalog.products,
     shopId,
     storefront.booth,
+    storefront.categories,
     storefront.isInitialLoading,
+    storefront.payment,
+    storefront.promotion,
   ]);
 
   const realtimeHandlersRef = useRef({

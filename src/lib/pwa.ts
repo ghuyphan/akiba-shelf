@@ -66,7 +66,7 @@ export function isStaffPwaPath(pathname: string) {
 
 export function shouldRegisterPwa(pathname: string) {
   const path = appRelativePath(pathname);
-  return isStaffPwaPath(pathname) || /^\/s\/[^/]+\/play\/?$/.test(path);
+  return isStaffPwaPath(pathname) || /^\/s\/[^/]+(?:\/play)?\/?$/.test(path);
 }
 
 function setManifestEnabled(enabled: boolean) {
@@ -86,6 +86,9 @@ function setManifestEnabled(enabled: boolean) {
 }
 
 function performRegistration() {
+  if (import.meta.env.DEV) {
+    return navigator.serviceWorker.ready;
+  }
   return navigator.serviceWorker
     .register(`${import.meta.env.BASE_URL}sw.js`, {
       scope: import.meta.env.BASE_URL,
@@ -128,10 +131,47 @@ export function registerPwa(pathname = window.location.pathname) {
   return registrationPromise;
 }
 
+export async function ensureOfflineNavigationReady(
+  pathname = window.location.pathname,
+) {
+  const registration = await registerPwa(pathname);
+  if (!registration?.active) {
+    throw new Error("Offline navigation could not be enabled in this browser.");
+  }
+  if (import.meta.env.DEV && "caches" in window) {
+    const developmentAssetPath =
+      /^\/(?:@vite\/|@vite-plugin-pwa\/|@react-refresh(?:$|\?)|@fs\/|src\/|node_modules\/|vendor\/|brand\/)/;
+    const urls = new Set(
+      performance
+        .getEntriesByType("resource")
+        .map((entry) => entry.name)
+        .filter((value) => {
+          const url = new URL(value, location.href);
+          return url.origin === location.origin && developmentAssetPath.test(url.pathname);
+        }),
+    );
+    document.querySelectorAll<HTMLScriptElement>("script[src]").forEach((script) => {
+      const url = new URL(script.src, location.href);
+      if (url.origin === location.origin && developmentAssetPath.test(url.pathname))
+        urls.add(url.href);
+    });
+    const cache = await caches.open("vite-dev-app-shell");
+    await Promise.all(
+      [...urls].map(async (url) => {
+        const request = new Request(url);
+        const response = await fetch(request);
+        if (response.ok) await cache.put(request, response);
+      }),
+    );
+  }
+  return registration;
+}
+
 export function configurePwaForPath(pathname: string) {
   const isStaff = isStaffPwaPath(pathname);
-  setManifestEnabled(isStaff);
-  if (isStaff) {
+  const isStorefront = /^\/s\/[^/]+(?:\/play)?\/?$/.test(appRelativePath(pathname));
+  setManifestEnabled(isStaff || isStorefront);
+  if (isStaff || isStorefront) {
     ensureInstallListeners();
   }
   if (shouldRegisterPwa(pathname)) {

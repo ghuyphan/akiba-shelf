@@ -1,11 +1,25 @@
-import type { BoothSettings, CartItem, CatalogData, Product, Shop } from "../types/catalog";
-import { boothSettingsSchema, productRowSchema, shopSchema } from "./schemas";
+import type { BoothSettings, CartItem, CatalogData, PaymentSettings, Product, PromotionSettings, Shop } from "../types/catalog";
+import { boothSettingsSchema, paymentSettingsSchema, productRowSchema, promotionSettingsSchema, shopSchema } from "./schemas";
 
 const SNAPSHOT_KEY = "akiba-shelf-catalog-v1";
 const CART_KEY = "akiba-shelf-cart-v1";
 const scopedKey = (key: string, shopId?: string) => shopId ? `${key}:${shopId}` : key;
 
-type Snapshot = { version: 1; savedAt: string; products: Product[]; booth: BoothSettings };
+type Snapshot = {
+  version: 2;
+  savedAt: string;
+  products: Product[];
+  booth: BoothSettings;
+  payment?: PaymentSettings;
+  promotion?: PromotionSettings;
+  categories?: string[];
+};
+
+export type CatalogSnapshot = Pick<CatalogData, "products" | "booth"> & {
+  payment?: PaymentSettings;
+  promotion?: PromotionSettings;
+  categories?: string[];
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object";
@@ -30,25 +44,46 @@ export function isCartItem(value: unknown): value is CartItem {
     && quantity + (typeof rewardQuantity === "number" ? rewardQuantity : 0) > 0;
 }
 
-export function loadCatalogSnapshot(shopId?: string): Pick<CatalogData, "products" | "booth"> | null {
+export function loadCatalogSnapshot(shopId?: string): CatalogSnapshot | null {
   try {
     const key = scopedKey(SNAPSHOT_KEY, shopId);
     const value = JSON.parse(localStorage.getItem(key) || "null") as unknown;
-    if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.products) || !value.products.every(isProduct) || !boothSettingsSchema.safeParse(value.booth).success) {
+    if (!isRecord(value) || ![1, 2].includes(Number(value.version)) || !Array.isArray(value.products) || !value.products.every(isProduct) || !boothSettingsSchema.safeParse(value.booth).success) {
       localStorage.removeItem(key);
       return null;
     }
-    const snapshot = value as Snapshot;
-    return { products: snapshot.products, booth: snapshot.booth };
+    const snapshot = value as unknown as Snapshot;
+    const payment = paymentSettingsSchema.safeParse(snapshot.payment);
+    const promotion = promotionSettingsSchema.safeParse(snapshot.promotion);
+    return {
+      products: snapshot.products,
+      booth: snapshot.booth,
+      payment: payment.success ? payment.data : undefined,
+      promotion: promotion.success ? promotion.data : undefined,
+      categories: Array.isArray(snapshot.categories)
+        ? snapshot.categories.filter((item): item is string => typeof item === "string")
+        : undefined,
+    };
   } catch {
     localStorage.removeItem(scopedKey(SNAPSHOT_KEY, shopId));
     return null;
   }
 }
 
-export function saveCatalogSnapshot(data: Pick<CatalogData, "products" | "booth">, shopId?: string) {
+export function saveCatalogSnapshot(data: CatalogSnapshot, shopId?: string) {
   try {
-    localStorage.setItem(scopedKey(SNAPSHOT_KEY, shopId), JSON.stringify({ version: 1, savedAt: new Date().toISOString(), products: data.products, booth: data.booth }));
+    const previous = loadCatalogSnapshot(shopId);
+    const products = new Map(previous?.products.map((product) => [product.id, product]) ?? []);
+    data.products.forEach((product) => products.set(product.id, product));
+    localStorage.setItem(scopedKey(SNAPSHOT_KEY, shopId), JSON.stringify({
+      version: 2,
+      savedAt: new Date().toISOString(),
+      products: [...products.values()],
+      booth: data.booth,
+      payment: data.payment ?? previous?.payment,
+      promotion: data.promotion ?? previous?.promotion,
+      categories: data.categories ?? previous?.categories,
+    }));
   } catch {
     // Offline caching is best-effort.
   }

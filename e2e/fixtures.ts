@@ -126,6 +126,7 @@ export async function mockSupabase(
     teamMembers?: boolean;
     socialLinks?: boolean;
     catalogLocale?: "en" | "vi";
+    dualGacha?: boolean;
   } = {},
 ) {
   const catalogProducts = options.manyProducts
@@ -280,8 +281,57 @@ export async function mockSupabase(
           .sort()
           .map((category) => ({ category })),
       );
-    if (url.pathname.includes("/rest/v1/rpc/publish_gacha_configuration_v4"))
+    if (url.pathname.includes("/rest/v1/rpc/publish_gacha_configuration_v5"))
       return json(route, null);
+    if (url.pathname.includes("/rest/v1/gacha_published_configs")) {
+      const rows = options.dualGacha
+        ? (["genshin", "hsr"] as const).map((gameType) => ({
+            game_type: gameType,
+            config: {
+              settings: {
+                shop_id: "main",
+                game_type: gameType,
+                enabled: true,
+                title: gameType === "hsr" ? "Stellar Warp" : "Event Wish",
+                description: "Fixture minigame",
+              },
+              banners: [
+                {
+                  id: `${gameType}-banner`,
+                  shop_id: "main",
+                  name: gameType === "hsr" ? "Departure Warp" : "Character Event Wish",
+                  description: "Fixture banner",
+                  kind: "character",
+                  theme: gameType === "hsr" ? "physical" : "anemo",
+                  display_limit: 1,
+                  sort_order: 0,
+                  active: true,
+                  starts_at: null,
+                  ends_at: null,
+                },
+              ],
+              entries: [
+                {
+                  shop_id: "main",
+                  banner_id: `${gameType}-banner`,
+                  product_id: "moon-stand",
+                  kind: "character",
+                  element: gameType === "hsr" ? "physical" : "anemo",
+                  weapon_type: gameType === "hsr" ? "destruction" : "sword",
+                  rarity: 5,
+                  weight: 100,
+                  featured: true,
+                  active: true,
+                },
+              ],
+            },
+          }))
+        : [];
+      const limit = Number(url.searchParams.get("limit") ?? rows.length);
+      return json(route, rows.slice(0, limit));
+    }
+    if (url.pathname.includes("/rest/v1/gacha_game_configs"))
+      return json(route, []);
     if (url.pathname.includes("/rest/v1/shops")) {
       const requestedSlug =
         url.searchParams.get("slug")?.replace(/^eq\./, "") ?? "akiba-shelf";

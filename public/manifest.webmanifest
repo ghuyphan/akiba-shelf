@@ -1,9 +1,9 @@
 {
   "name": "Matsuri",
   "short_name": "Matsuri",
-  "id": "./admin",
-  "description": "The Matsuri staff workspace for shops, catalog management, and live orders.",
-  "start_url": "./admin",
+  "id": "./",
+  "description": "Offline-ready Matsuri storefronts, gacha minigames, and staff tools.",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f5f0e8",

@@ -96,6 +96,7 @@
 		"loadExpressMsg": "{item}アニメーションをダウンロード中",
 		"expressNotLoaded": "跳躍アニメーションがストレージに見つかりません。スムーズな跳躍のために、事前に<span>ダウンロード</span>するか、<span>跳躍アニメーションのスキップをオン</span>にします",
 		"preloadFilesMsg": "*読み込まれたファイルはブラウザストレージに保存されるため、サイトが更新されるまで再度読み込む必要はありません。",
+		"offlinePackMsg": "シミュレーター全体とブース画像もオフラインプレイ用に保存されます。",
 		"firstTimeShare": "初回シェアで獲得:",
 		"firstShareObtain": "初回シェアで獲得 {reward}",
 		"sharingTxt": "崩壊:スターレイル 跳躍シミュを試してみてね！"

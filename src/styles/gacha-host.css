@@ -36,3 +36,209 @@
   padding: 24px;
   background: #f8f4eb;
 }
+
+.gacha-game-select {
+  position: fixed;
+  inset: 0;
+  overflow: auto;
+  color: #f7f4ec;
+  background:
+    radial-gradient(circle at 18% 15%, rgb(92 122 157 / 42%), transparent 34%),
+    radial-gradient(circle at 82% 82%, rgb(147 117 82 / 34%), transparent 38%),
+    #111924;
+}
+
+.gacha-game-select::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.28;
+  background-image:
+    linear-gradient(120deg, transparent 0 48%, rgb(255 255 255 / 7%) 49% 50%, transparent 51%),
+    radial-gradient(circle, rgb(255 255 255 / 38%) 0 1px, transparent 1.5px);
+  background-size: 180px 180px, 84px 84px;
+}
+
+.gacha-select-back {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 24px;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.gacha-select-panel {
+  position: relative;
+  z-index: 1;
+  width: min(1040px, calc(100% - 40px));
+  margin: 4vh auto 64px;
+}
+
+.gacha-select-heading {
+  max-width: 620px;
+  margin-bottom: 30px;
+}
+
+.gacha-select-heading > span {
+  color: #e7c77f;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.gacha-select-heading h1 {
+  margin: 8px 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.4rem, 6vw, 4.8rem);
+  font-weight: 500;
+  line-height: 0.98;
+}
+
+.gacha-select-heading p {
+  margin: 14px 0 0;
+  color: rgb(237 241 246 / 72%);
+  line-height: 1.6;
+}
+
+.gacha-game-portals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.gacha-game-portal {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 330px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding: 32px;
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 8px 42px 8px 42px;
+  box-shadow: 0 26px 70px rgb(0 0 0 / 34%);
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.gacha-game-portal::before,
+.gacha-game-portal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.gacha-game-portal::after {
+  background: linear-gradient(180deg, transparent 10%, rgb(7 12 19 / 88%) 100%);
+}
+
+.gacha-game-portal.is-genshin::before {
+  background:
+    radial-gradient(circle at 78% 20%, rgb(247 225 176 / 70%), transparent 28%),
+    linear-gradient(135deg, #7392aa, #d2ba8a 58%, #69584f);
+}
+
+.gacha-game-portal.is-hsr::before {
+  background:
+    linear-gradient(115deg, transparent 42%, rgb(240 192 100 / 40%) 43% 45%, transparent 46%),
+    radial-gradient(circle at 74% 22%, #d7e6ff 0 3%, transparent 4%),
+    linear-gradient(135deg, #16284e, #536889 53%, #211d31);
+}
+
+.gacha-game-portal:hover,
+.gacha-game-portal:focus-visible {
+  transform: translateY(-5px);
+  border-color: #f5d58d;
+}
+
+.gacha-portal-mark {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  font-size: 4rem;
+  color: rgb(255 241 199 / 84%);
+}
+
+.gacha-game-portal small {
+  color: #f1d594;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.gacha-game-portal strong {
+  margin-top: 5px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 500;
+}
+
+.gacha-game-portal p {
+  margin: 8px 0 22px;
+  color: rgb(255 255 255 / 72%);
+}
+
+.gacha-game-portal i {
+  align-self: flex-start;
+  padding-bottom: 4px;
+  font-style: normal;
+  font-weight: 800;
+  border-bottom: 2px solid #e9c97e;
+}
+
+.gacha-cache-all {
+  width: min(560px, 100%);
+  min-height: 66px;
+  margin: 22px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 12px 20px;
+  color: #f7f4ec;
+  text-align: left;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 999px;
+  background: rgb(5 11 18 / 48%);
+  backdrop-filter: blur(12px);
+}
+
+.gacha-cache-all span {
+  display: grid;
+  gap: 2px;
+}
+
+.gacha-cache-all small {
+  color: rgb(255 255 255 / 62%);
+}
+
+@media (max-width: 760px) {
+  .gacha-select-panel {
+    margin-top: 1vh;
+  }
+
+  .gacha-game-portals {
+    grid-template-columns: 1fr;
+  }
+
+  .gacha-game-portal {
+    min-height: 250px;
+    padding: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gacha-game-portal {
+    transition: none;
+  }
+}

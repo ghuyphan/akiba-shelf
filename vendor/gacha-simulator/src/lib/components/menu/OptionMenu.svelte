@@ -49,6 +49,16 @@
 	let clearCache = false;
 	let showToast = false;
 	let storageSize = '..B';
+	let offlineStatus = 'idle';
+	let offlineProgress = 0;
+	$: offlineLabel =
+		offlineStatus === 'ready'
+			? $t('menu.offlineReady')
+			: offlineStatus === 'downloading'
+				? $t('menu.offlineDownloading', { values: { progress: offlineProgress } })
+				: offlineStatus === 'error'
+					? $t('menu.offlineRetry')
+					: $t('menu.offlineDownload');
 
 	const getSize = async () => {
 		const { usage } = await navigator.storage.estimate();
@@ -73,10 +83,35 @@
 		showResetModal = false;
 	};
 
+	const downloadOffline = () => {
+		if (offlineStatus === 'ready' || offlineStatus === 'downloading') return;
+		offlineStatus = 'downloading';
+		offlineProgress = 0;
+		window.parent.postMessage(
+			{ type: 'matsuri-gacha-offline-request' },
+			window.location.origin
+		);
+	};
+
 	let optionsContainer;
 	onMount(() => {
 		OverlayScrollbars(optionsContainer, { sizeAutoCapable: false, className: 'os-theme-light' });
 		getSize();
+		const handleOfflineProgress = (event) => {
+			if (
+				event.origin !== window.location.origin ||
+				event.data?.type !== 'matsuri-gacha-offline-progress'
+			)
+				return;
+			offlineStatus = event.data.status;
+			offlineProgress = Number(event.data.progress) || 0;
+		};
+		window.addEventListener('message', handleOfflineProgress);
+		window.parent.postMessage(
+			{ type: 'matsuri-gacha-offline-status' },
+			window.location.origin
+		);
+		return () => window.removeEventListener('message', handleOfflineProgress);
 	});
 </script>
 
@@ -161,6 +196,14 @@
 		activeIndicator={animatedbg}
 		on:select={showAnimatedBG}
 		showOption={optionToShow === 'animatedbg'}
+	/>
+
+	<OptionMenu
+		name="offline"
+		text={$t('menu.offlineMode')}
+		activeIndicator={offlineLabel}
+		disabled={offlineStatus === 'ready' || offlineStatus === 'downloading'}
+		on:select={downloadOffline}
 	/>
 
 	<OptionMenu name="reset" text={$t('menu.factoryReset')} />

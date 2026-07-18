@@ -119,7 +119,9 @@
 	setContext('closeObtained', closeObtained);
 
 	// Express Loader
-	const readyToPull = writable(true);
+	// Keep the preload/offline prompt visible until PreloadExpress verifies
+	// either auto-skip or a genuinely available local animation/offline pack.
+	const readyToPull = writable(false);
 	setContext('readyToPull', readyToPull);
 </script>
 

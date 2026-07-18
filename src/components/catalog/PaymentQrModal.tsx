@@ -41,6 +41,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   const onOrderChangeRef = useRef(onOrderChange);
   const onSuccessRef = useRef(onSuccess);
   const reconcileInFlightRef = useRef(false);
+  const loadedShopSlugRef = useRef(shopSlug);
   const checkoutCart = recovery?.cart ?? cart;
 
   orderRef.current = order;
@@ -49,6 +50,8 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   onSuccessRef.current = onSuccess;
 
   useEffect(() => {
+    if (loadedShopSlugRef.current === shopSlug) return;
+    loadedShopSlugRef.current = shopSlug;
     const next = loadOrderRecovery(shopSlug);
     setRecovery(next); setOrder(next?.order ?? null); setCustomerName(next?.customerName ?? "");
     recoveryAttemptedRef.current = false; completionHandledRef.current = false;

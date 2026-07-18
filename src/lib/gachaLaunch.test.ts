@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BoothSettings } from "../types/catalog";
+import { defaultGachaSettings } from "../types/gacha";
+import { defaultBooth } from "./constants";
 
 const api = vi.hoisted(() => ({
-  getGachaCatalog: vi.fn(),
+  getGachaCatalogs: vi.fn(),
   getPublicBoothSettings: vi.fn(),
   getPublicShop: vi.fn(),
 }));
@@ -14,29 +16,39 @@ import {
   isGachaBannerRunning,
   loadGachaLaunch,
   prepareGachaLaunch,
+  refreshGachaLaunch,
   runningGachaCatalog,
 } from "./gachaLaunch";
 
 const shop = {
-  id: "shop-1",
+  id: "11111111-1111-4111-8111-111111111111",
   name: "Shop",
   slug: "test-shop",
   active: true,
   accepting_orders: true,
 };
-const booth = { shop_id: "shop-1", booth_name: "Shop" };
+const booth = {
+  ...defaultBooth,
+  shop_id: "11111111-1111-4111-8111-111111111111",
+  booth_name: "Shop",
+};
 const catalog = {
-  settings: { enabled: true, game_type: "hsr" },
+  settings: {
+    ...defaultGachaSettings("11111111-1111-4111-8111-111111111111"),
+    enabled: true,
+    game_type: "hsr" as const,
+  },
   banners: [],
   entries: [],
 };
 
 beforeEach(() => {
   clearGachaLaunchCache();
+  localStorage.clear();
   vi.clearAllMocks();
   api.getPublicShop.mockResolvedValue(shop);
   api.getPublicBoothSettings.mockResolvedValue(booth);
-  api.getGachaCatalog.mockResolvedValue(catalog);
+  api.getGachaCatalogs.mockResolvedValue({ hsr: catalog });
 });
 
 describe("gacha launch preparation", () => {
@@ -80,10 +92,10 @@ describe("gacha launch preparation", () => {
     const second = loadGachaLaunch("TEST-SHOP");
 
     expect(first).toBe(second);
-    await expect(first).resolves.toMatchObject({ shop, booth, catalog });
+    await expect(first).resolves.toMatchObject({ shop, booth, catalogs: { hsr: catalog } });
     expect(api.getPublicShop).toHaveBeenCalledTimes(1);
     expect(api.getPublicBoothSettings).toHaveBeenCalledTimes(1);
-    expect(api.getGachaCatalog).toHaveBeenCalledTimes(1);
+    expect(api.getGachaCatalogs).toHaveBeenCalledTimes(1);
   });
 
   it("reuses storefront shop and booth data supplied during intent prefetch", async () => {
@@ -91,17 +103,17 @@ describe("gacha launch preparation", () => {
 
     expect(api.getPublicShop).not.toHaveBeenCalled();
     expect(api.getPublicBoothSettings).not.toHaveBeenCalled();
-    expect(api.getGachaCatalog).toHaveBeenCalledWith("shop-1");
+    expect(api.getGachaCatalogs).toHaveBeenCalledWith(shop.id);
   });
 
   it("evicts failed requests so a later navigation can retry", async () => {
-    api.getGachaCatalog
+    api.getGachaCatalogs
       .mockRejectedValueOnce(new Error("offline"))
-      .mockResolvedValueOnce(catalog);
+      .mockResolvedValueOnce({ hsr: catalog });
 
     await expect(loadGachaLaunch("test-shop")).rejects.toThrow("offline");
-    await expect(loadGachaLaunch("test-shop")).resolves.toMatchObject({ catalog });
-    expect(api.getGachaCatalog).toHaveBeenCalledTimes(2);
+    await expect(loadGachaLaunch("test-shop")).resolves.toMatchObject({ catalogs: { hsr: catalog } });
+    expect(api.getGachaCatalogs).toHaveBeenCalledTimes(2);
   });
 
   it("prefetches the selected simulator document after launch data resolves", async () => {
@@ -110,5 +122,34 @@ describe("gacha launch preparation", () => {
     expect(
       document.head.querySelector('link[rel="prefetch"][href$="/hsr-simulator/"]'),
     ).not.toBeNull();
+  });
+
+  it("renders a stored launch immediately while refreshing it in the background", async () => {
+    await loadGachaLaunch("test-shop");
+    clearGachaLaunchCache();
+    api.getPublicShop.mockImplementation(() => new Promise(() => undefined));
+
+    await expect(loadGachaLaunch("test-shop")).resolves.toMatchObject({
+      shop,
+      booth,
+      catalogs: { hsr: catalog },
+    });
+  });
+
+  it("replaces a stored launch when an online refresh completes", async () => {
+    await loadGachaLaunch("test-shop");
+    clearGachaLaunchCache();
+    const freshCatalog = {
+      ...catalog,
+      settings: { ...catalog.settings, title: "Fresh pool" },
+    };
+    api.getGachaCatalogs.mockResolvedValue({ hsr: freshCatalog });
+
+    await expect(loadGachaLaunch("test-shop")).resolves.toMatchObject({
+      catalogs: { hsr: catalog },
+    });
+    await expect(refreshGachaLaunch("test-shop")).resolves.toMatchObject({
+      catalogs: { hsr: freshCatalog },
+    });
   });
 });

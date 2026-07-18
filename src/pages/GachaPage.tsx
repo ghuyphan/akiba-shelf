@@ -1,20 +1,32 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft, Download, Sparkles } from "lucide-react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../components/ui/EmptyState";
 import {
   GACHA_CLOSE_MESSAGE_TYPE,
   GACHA_CONFIG_STORAGE_PREFIX,
+  GACHA_OFFLINE_PROGRESS_MESSAGE_TYPE,
+  GACHA_OFFLINE_REQUEST_MESSAGE_TYPE,
+  GACHA_OFFLINE_STATUS_MESSAGE_TYPE,
   GACHA_PREVIEW_CONFIG_STORAGE_PREFIX,
   getGachaSimulatorPath,
+  hasStoredGachaLaunch,
   loadGachaLaunch,
   parseGachaPreviewConfig,
+  refreshGachaLaunch,
   runningGachaCatalog,
 } from "../lib/gachaLaunch";
 import { translations } from "../lib/catalogI18n";
 import { getErrorMessage } from "../lib/errors";
 import { prefersLightweightCatalog } from "../lib/network";
 import type { GachaLaunchData } from "../lib/gachaLaunch";
+import {
+  downloadGachaOfflinePack,
+  downloadGachaOfflinePacks,
+  hasGachaOfflinePack,
+  offlinePackPercent,
+} from "../lib/offlinePack";
+import type { GachaCatalog, GachaGameType } from "../types/gacha";
 import "../styles/gacha-host.css";
 
 export function GachaPage() {
@@ -22,10 +34,22 @@ export function GachaPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preview = searchParams.get("preview") === "1";
+  const requestedGame = searchParams.get("game");
+  const selectedGame: GachaGameType | null =
+    requestedGame === "genshin" || requestedGame === "hsr"
+      ? requestedGame
+      : null;
   const [state, setState] = useState<GachaLaunchData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lightweightMode] = useState(prefersLightweightCatalog);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const offlineDownloadRef = useRef<Promise<void> | null>(null);
+  const offlineProgressRef = useRef({ status: "idle", progress: 0 });
+  const [packDownload, setPackDownload] = useState<{
+    status: "idle" | "downloading" | "ready" | "error";
+    progress: number;
+    game?: GachaGameType;
+  }>({ status: "idle", progress: 0 });
 
   useEffect(() => {
     document.body.classList.add("gacha-screen");
@@ -35,27 +59,61 @@ export function GachaPage() {
   useEffect(() => {
     let active = true;
     async function load() {
+      let hasLaunch = false;
       setState(null);
       setError(null);
-      try {
-        const { shop, booth, catalog } = await loadGachaLaunch(shopSlug);
-        if (!active) return;
-        const previewCatalog = preview
+      const applyLaunch = (launch: GachaLaunchData) => {
+        const previewCatalog = preview && selectedGame
           ? parseGachaPreviewConfig(
               localStorage.getItem(
-                `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${shop.slug}`,
+                `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${launch.shop.slug}:${selectedGame}`,
+              ) ?? localStorage.getItem(
+                `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${launch.shop.slug}`,
               ),
             )
           : null;
-        const simulatorCatalog =
-          previewCatalog ?? runningGachaCatalog(catalog);
-        localStorage.setItem(
-          `${GACHA_CONFIG_STORAGE_PREFIX}${shop.slug}`,
-          JSON.stringify(simulatorCatalog),
-        );
-        setState({ shop, booth, catalog: simulatorCatalog });
+        const catalogs = Object.fromEntries(
+          Object.entries(launch.catalogs).map(([gameType, catalog]) => [
+            gameType,
+            runningGachaCatalog(catalog),
+          ]),
+        ) as GachaLaunchData["catalogs"];
+        if (previewCatalog && selectedGame) catalogs[selectedGame] = previewCatalog;
+        const available = (["genshin", "hsr"] as const).filter((gameType) => {
+          const catalog = catalogs[gameType];
+          return Boolean(
+            catalog?.settings &&
+              (catalog.settings.enabled || (preview && selectedGame === gameType)) &&
+              catalog.banners.length &&
+              catalog.entries.length,
+          );
+        });
+        const launchGame =
+          selectedGame && available.includes(selectedGame)
+            ? selectedGame
+            : available.length === 1
+              ? available[0]
+              : null;
+        if (launchGame) {
+          localStorage.setItem(
+            `${GACHA_CONFIG_STORAGE_PREFIX}${launch.shop.slug}`,
+            JSON.stringify(catalogs[launchGame]),
+          );
+        }
+        hasLaunch = true;
+        setState({ ...launch, catalogs });
+      };
+      try {
+        const hadStoredLaunch = hasStoredGachaLaunch(shopSlug);
+        const launch = await loadGachaLaunch(shopSlug);
+        if (!active) return;
+        applyLaunch(launch);
+        if (hadStoredLaunch && navigator.onLine) {
+          const fresh = await refreshGachaLaunch(shopSlug);
+          if (active) applyLaunch(fresh);
+        }
       } catch (cause) {
-        if (active)
+        if (active && !hasLaunch)
           setError(getErrorMessage(cause, translations.en.wishLoadError));
       }
     }
@@ -63,21 +121,128 @@ export function GachaPage() {
     return () => {
       active = false;
     };
-  }, [preview, shopSlug]);
+  }, [preview, selectedGame, shopSlug]);
+
+  const availableGames = (["genshin", "hsr"] as const).filter((gameType) => {
+    const catalog = state?.catalogs[gameType];
+    return Boolean(
+      catalog?.settings &&
+        (catalog.settings.enabled || (preview && selectedGame === gameType)) &&
+        catalog.banners.length &&
+        catalog.entries.length,
+    );
+  });
+  const activeGame =
+    selectedGame && availableGames.includes(selectedGame)
+      ? selectedGame
+      : availableGames.length === 1
+        ? availableGames[0]
+        : null;
+  const activeCatalog: GachaCatalog | null = activeGame
+    ? state?.catalogs[activeGame] ?? null
+    : null;
+  const activeCatalogFingerprint = activeCatalog
+    ? JSON.stringify(activeCatalog)
+    : "";
+
+  useEffect(() => {
+    if (!state || !activeCatalog) return;
+    localStorage.setItem(
+      `${GACHA_CONFIG_STORAGE_PREFIX}${state.shop.slug}`,
+      JSON.stringify(activeCatalog),
+    );
+  }, [activeCatalog, state]);
+
+  const sendOfflineProgress = useCallback(
+    (
+      status: "idle" | "downloading" | "ready" | "error",
+      progress = 0,
+      message?: string,
+    ) => {
+      offlineProgressRef.current = { status, progress };
+      iframeRef.current?.contentWindow?.postMessage(
+        {
+          type: GACHA_OFFLINE_PROGRESS_MESSAGE_TYPE,
+          status,
+          progress,
+          message,
+        },
+        window.location.origin,
+      );
+    },
+    [],
+  );
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (
-        event.origin === window.location.origin &&
-        event.source === iframeRef.current?.contentWindow &&
-        event.data?.type === GACHA_CLOSE_MESSAGE_TYPE
-      ) {
-        navigate(`/s/${shopSlug}`);
+        event.origin !== window.location.origin ||
+        event.source !== iframeRef.current?.contentWindow
+      )
+        return;
+      if (event.data?.type === GACHA_CLOSE_MESSAGE_TYPE) {
+        navigate(
+          availableGames.length > 1
+            ? `/s/${shopSlug}/play`
+            : `/s/${shopSlug}`,
+        );
+        return;
       }
+      if (!activeGame || !activeCatalog) return;
+      const gameType = activeGame;
+      if (event.data?.type === GACHA_OFFLINE_STATUS_MESSAGE_TYPE) {
+        void hasGachaOfflinePack(gameType).then((ready) => {
+          if (ready) sendOfflineProgress("ready", 100);
+          else
+            sendOfflineProgress(
+              offlineProgressRef.current.status as
+                | "idle"
+                | "downloading"
+                | "ready"
+                | "error",
+              offlineProgressRef.current.progress,
+            );
+        });
+        return;
+      }
+      if (
+        event.data?.type !== GACHA_OFFLINE_REQUEST_MESSAGE_TYPE ||
+        !state ||
+        offlineDownloadRef.current
+      )
+        return;
+      offlineDownloadRef.current = hasGachaOfflinePack(gameType)
+        .then(async (ready) => {
+          if (ready) {
+            sendOfflineProgress("ready", 100);
+            return;
+          }
+          const productImages = activeCatalog.entries.flatMap((entry) => [
+            ...(entry.product.images ?? []),
+            ...(entry.product.image_variants ?? []).flatMap((image) => [
+              image.thumbnail,
+              image.detail,
+            ]),
+          ]);
+          sendOfflineProgress("downloading", 0);
+          await downloadGachaOfflinePack(gameType, productImages, (progress) => {
+            sendOfflineProgress(
+              "downloading",
+              offlinePackPercent(progress),
+            );
+          });
+          sendOfflineProgress("ready", 100);
+        })
+        .catch((cause) =>
+          sendOfflineProgress("error", 0, getErrorMessage(cause)),
+        )
+        .finally(() => {
+          offlineDownloadRef.current = null;
+        });
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [navigate, shopSlug]);
+  }, [activeCatalog, activeGame, availableGames.length, navigate, sendOfflineProgress, shopSlug, state]);
 
   const queryParams = new URLSearchParams();
   queryParams.set("shop", shopSlug);
@@ -118,22 +283,14 @@ export function GachaPage() {
   // HSR stores would otherwise download Genshin first and then replace it.
   if (!state) return <main className="gacha-host" />;
 
-  if (
-    state &&
-    (!state.catalog.settings?.enabled ||
-      state.catalog.banners.length === 0 ||
-      state.catalog.entries.length === 0)
-  ) {
+  if (availableGames.length === 0) {
     return (
       <main className="gacha-host-state">
         <EmptyState
           icon={<Sparkles size={28} />}
           title={copy.wishUnavailable}
           message={
-            state.catalog.banners.length === 0 ||
-            state.catalog.entries.length === 0
-              ? copy.wishPoolEmptyHint
-              : copy.wishUnavailableHint
+            copy.wishPoolEmptyHint
           }
           action={
             <Link className="button button-primary" to={`/s/${shopSlug}`}>
@@ -145,14 +302,103 @@ export function GachaPage() {
     );
   }
 
-  const gameType = state.catalog.settings?.game_type === "hsr" ? "hsr" : "genshin";
+  async function saveAvailableGames() {
+    if (!state || packDownload.status === "downloading") return;
+    const imagesByGame = Object.fromEntries(
+      availableGames.map((gameType) => [
+        gameType,
+        (state.catalogs[gameType]?.entries ?? []).flatMap((entry) => [
+          ...(entry.product.images ?? []),
+          ...(entry.product.image_variants ?? []).flatMap((image) => [
+            image.thumbnail,
+            image.detail,
+          ]),
+        ]),
+      ]),
+    );
+    setPackDownload({ status: "downloading", progress: 1 });
+    try {
+      await downloadGachaOfflinePacks(availableGames, imagesByGame, (progress) => {
+        setPackDownload({
+          status: "downloading",
+          progress: progress.percent,
+          game: progress.gameType,
+        });
+      });
+      setPackDownload({ status: "ready", progress: 100 });
+    } catch {
+      setPackDownload({ status: "error", progress: 0 });
+    }
+  }
+
+  if (!activeGame || !activeCatalog) {
+    return (
+      <main className="gacha-game-select">
+        <Link className="gacha-select-back" to={`/s/${shopSlug}`}>
+          <ArrowLeft size={18} /> {copy.backToStore}
+        </Link>
+        <section className="gacha-select-panel">
+          <div className="gacha-select-heading">
+            <span>{copy.chooseGachaEyebrow}</span>
+            <h1>{copy.chooseGachaTitle}</h1>
+            <p>{copy.chooseGachaHint}</p>
+          </div>
+          <div className="gacha-game-portals">
+            {availableGames.map((gameType) => {
+              const catalog = state.catalogs[gameType]!;
+              return (
+                <Link
+                  key={gameType}
+                  className={`gacha-game-portal is-${gameType}`}
+                  to={`?game=${gameType}`}
+                >
+                  <span className="gacha-portal-mark" aria-hidden="true">
+                    {gameType === "hsr" ? "✦" : "✧"}
+                  </span>
+                  <small>{gameType === "hsr" ? "Warp" : "Wish"}</small>
+                  <strong>{gameType === "hsr" ? "Honkai: Star Rail" : "Genshin Impact"}</strong>
+                  <p>{catalog.settings?.title}</p>
+                  <i>{copy.enterGacha}</i>
+                </Link>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            className="gacha-cache-all"
+            disabled={packDownload.status === "downloading"}
+            onClick={() => void saveAvailableGames()}
+          >
+            <Download size={18} />
+            <span>
+              <strong>
+                {packDownload.status === "ready"
+                  ? copy.gachaOfflineReady
+                  : packDownload.status === "downloading"
+                    ? copy.savingGachaOffline
+                    : copy.saveBothGachaOffline}
+              </strong>
+              <small>
+                {packDownload.status === "downloading"
+                  ? `${packDownload.game === "hsr" ? "Star Rail" : "Genshin"} · ${packDownload.progress}%`
+                  : packDownload.status === "error"
+                    ? copy.gachaOfflineFailed
+                    : copy.saveBothGachaOfflineHint}
+              </small>
+            </span>
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="gacha-host">
       <iframe
+        key={`${activeGame}:${activeCatalogFingerprint}`}
         ref={iframeRef}
         title="wish simulator"
-        src={`${getGachaSimulatorPath(gameType)}?${queryParams.toString()}`}
+        src={`${getGachaSimulatorPath(activeGame)}?${queryParams.toString()}`}
         allow="fullscreen"
       />
     </main>

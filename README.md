@@ -12,7 +12,7 @@ Matsuri is a touch-friendly storefront and live order platform for independent a
 - Realtime catalog and order updates through Supabase.
 - Role-authorized staff workspace for orders, products, booth/payment settings, and storefront design.
 - Storefront designer with drag-and-drop ordering of the real featured, booth, controls, cart, and product modules; fixed safe grid spans; editable palette presets; card personality; corner radius; and English/Vietnamese UI.
-- Free gacha minigame per shop that turns real merch into character and weapon wishes, configured from the admin workspace.
+- Independently publishable Genshin-style and Star Rail-style merch gacha games per shop, configured from the admin workspace.
 - Shared queued toast system through `useToast()`.
 
 ## Stack
@@ -44,9 +44,11 @@ other credential in a `VITE_*` variable. Matsuri generates VietQR images from
 the public image endpoint and does not require a browser-side VietQR API key.
 Never commit `.env.local` or service-role credentials.
 
-## Staff PWA and Android order notifications
+## Offline PWA and Android order notifications
 
-Only `/admin` and `/dashboard` advertise and register the Matsuri staff PWA. Customer storefront routes remain ordinary web pages and are excluded from the service worker's offline navigation fallback and storefront-specific runtime caching. The installed app launches into `/admin`; storefront previews open in a regular browser tab. Because these staff routes are sibling root paths, the worker registration retains root scope for push delivery, while a strict navigation allow-list keeps the offline app shell limited to staff routes.
+`/admin`, `/dashboard`, storefronts, and minigame routes register the Matsuri PWA. Storefront booth details include a **Save shop for offline use** action that downloads the complete catalog and product artwork; cart quantities stay on the device until checkout can reconnect and run the server-authoritative stock reservation. Each minigame also exposes **Save offline**, backed by the generated `offline-assets.json` pack. Storefront, staff, and minigame navigations use a constrained app-shell fallback so a refresh can recover without a network connection.
+
+Production builds generate the offline asset manifest after both vendored simulators are built. VietQR payloads and QR images are generated locally in the browser; no VietQR image/API request is required.
 
 To enable background order notifications:
 
@@ -69,7 +71,7 @@ git diff --check
 
 ## Gacha minigame
 
-Each shop can publish a free gacha minigame at `/s/:shopSlug/play` that presents real merch as characters and weapons. Staff manage pools, rarity, roles, and featured placement from the admin workspace's `GachaManager`, and the storefront header links customers to the minigame.
+Each shop can publish either or both free gacha games at `/s/:shopSlug/play`, presenting real merch as characters, weapons, and Light Cones. When both are active, customers get a game-native selection screen and can save both simulators plus merch artwork for offline play in one action. Staff manage each game's independent pool, rarity, roles, and featured placement from the admin workspace's `GachaManager`.
 
 The play page embeds two vendored simulators kept under `vendor/` (`gacha-simulator` and `hsr-simulator`). In development, `npm run dev` builds them into `.gacha-dist/` and `.hsr-gacha-dist/` when missing, and `vite.config.ts` serves those directories locally. Production builds run `scripts/build-simulators.mjs` after `vite build` to emit both simulators into `dist/`.
 

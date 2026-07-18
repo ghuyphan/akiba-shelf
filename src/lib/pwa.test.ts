@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   configurePwaForPath,
+  ensureOfflineNavigationReady,
   enableOrderNotifications,
   isStaffPwaPath,
   shouldRegisterPwa,
@@ -27,14 +28,14 @@ describe("push configuration", () => {
     expect(isStaffPwaPath("/auth")).toBe(false);
   });
 
-  it("registers the worker for staff routes and the simulator host", () => {
+  it("registers the worker for staff routes, storefronts, and the simulator host", () => {
     expect(shouldRegisterPwa("/admin")).toBe(true);
     expect(shouldRegisterPwa("/dashboard/shops/new")).toBe(true);
-    expect(shouldRegisterPwa("/s/akiba-shelf")).toBe(false);
+    expect(shouldRegisterPwa("/s/akiba-shelf")).toBe(true);
     expect(shouldRegisterPwa("/s/akiba-shelf/play")).toBe(true);
   });
 
-  it("adds and removes the manifest as routes cross the staff boundary", () => {
+  it("keeps the manifest on installable staff and storefront routes", () => {
     configurePwaForPath("/dashboard");
     expect(document.head.querySelector("link[rel='manifest']")).toHaveAttribute(
       "href",
@@ -42,6 +43,12 @@ describe("push configuration", () => {
     );
 
     configurePwaForPath("/s/akiba-shelf");
-    expect(document.head.querySelector("link[rel='manifest']")).toBeNull();
+    expect(document.head.querySelector("link[rel='manifest']")).not.toBeNull();
+  });
+
+  it("does not claim an offline download is ready without an active worker", async () => {
+    await expect(ensureOfflineNavigationReady("/auth")).rejects.toThrow(
+      /Offline navigation/,
+    );
   });
 });

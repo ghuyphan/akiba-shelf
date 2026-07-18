@@ -1,7 +1,12 @@
 import { z } from "zod";
-import { getGachaCatalog, getPublicBoothSettings, getPublicShop } from "./api";
+import { getGachaCatalogs, getPublicBoothSettings, getPublicShop } from "./api";
 import type { BoothSettings, Shop } from "../types/catalog";
-import type { GachaCatalog, GachaGameType } from "../types/gacha";
+import type {
+  GachaCatalog,
+  GachaCatalogsByGame,
+  GachaGameType,
+} from "../types/gacha";
+import { boothSettingsSchema, shopSchema } from "./schemas";
 
 /** localStorage key prefix for the catalog handed to the wish simulator. */
 export const GACHA_CONFIG_STORAGE_PREFIX = "matsuri-gacha-config:";
@@ -10,11 +15,16 @@ export const GACHA_PREVIEW_CONFIG_STORAGE_PREFIX =
   "matsuri-gacha-preview-config:";
 /** postMessage type the simulator iframe sends to close the gacha host. */
 export const GACHA_CLOSE_MESSAGE_TYPE = "matsuri-gacha-close";
+export const GACHA_OFFLINE_REQUEST_MESSAGE_TYPE =
+  "matsuri-gacha-offline-request";
+export const GACHA_OFFLINE_STATUS_MESSAGE_TYPE = "matsuri-gacha-offline-status";
+export const GACHA_OFFLINE_PROGRESS_MESSAGE_TYPE =
+  "matsuri-gacha-offline-progress";
 
 export type GachaLaunchData = {
   shop: Shop;
   booth: BoothSettings;
-  catalog: GachaCatalog;
+  catalogs: GachaCatalogsByGame;
 };
 
 export function isGachaBannerRunning(
@@ -77,6 +87,40 @@ function prefetchSimulatorDocument(gameType: GachaGameType) {
   document.head.append(link);
 }
 
+async function fetchGachaLaunch(slug: string, seed: GachaLaunchSeed) {
+  const shop = seed.shop?.slug === slug ? seed.shop : await getPublicShop(slug);
+  if (!shop) throw new Error("Shop not found.");
+  const sourceShopId = shop.catalog_source_shop_id ?? shop.id;
+  const boothPromise =
+    seed.booth?.shop_id === sourceShopId
+      ? Promise.resolve(seed.booth)
+      : getPublicBoothSettings(sourceShopId);
+  const [catalogs, booth] = await Promise.all([
+    getGachaCatalogs(sourceShopId),
+    boothPromise,
+  ]);
+  const launch = { shop, booth, catalogs };
+  saveStoredGachaLaunch(slug, launch);
+  return launch;
+}
+
+export async function refreshGachaLaunch(
+  shopSlug: string,
+  seed: GachaLaunchSeed = {},
+) {
+  const slug = normalizedSlug(shopSlug);
+  const fresh = await fetchGachaLaunch(slug, seed);
+  launchCache.set(slug, {
+    expiresAt: Date.now() + CACHE_TTL_MS,
+    promise: Promise.resolve(fresh),
+  });
+  return fresh;
+}
+
+export function hasStoredGachaLaunch(shopSlug: string) {
+  return Boolean(loadStoredGachaLaunch(normalizedSlug(shopSlug)));
+}
+
 export function loadGachaLaunch(
   shopSlug: string,
   seed: GachaLaunchSeed = {},
@@ -84,21 +128,20 @@ export function loadGachaLaunch(
   const slug = normalizedSlug(shopSlug);
   const cached = launchCache.get(slug);
   if (cached && cached.expiresAt > Date.now()) return cached.promise;
+  const storedLaunch = loadStoredGachaLaunch(slug);
 
-  const promise = (async () => {
-    const shop = seed.shop?.slug === slug ? seed.shop : await getPublicShop(slug);
-    if (!shop) throw new Error("Shop not found.");
-    const sourceShopId = shop.catalog_source_shop_id ?? shop.id;
-    const boothPromise =
-      seed.booth?.shop_id === sourceShopId
-        ? Promise.resolve(seed.booth)
-        : getPublicBoothSettings(sourceShopId);
-    const [catalog, booth] = await Promise.all([
-      getGachaCatalog(sourceShopId),
-      boothPromise,
-    ]);
-    return { shop, booth, catalog };
-  })();
+  if (storedLaunch) {
+    const promise = Promise.resolve(storedLaunch);
+    launchCache.set(slug, { expiresAt: Date.now() + CACHE_TTL_MS, promise });
+    return promise;
+  }
+
+  const networkPromise = fetchGachaLaunch(slug, seed);
+  const promise = networkPromise.catch((error) => {
+    const fallback = loadStoredGachaLaunch(slug);
+    if (fallback) return fallback;
+    throw error;
+  });
 
   launchCache.set(slug, {
     expiresAt: Date.now() + CACHE_TTL_MS,
@@ -115,11 +158,17 @@ export async function prepareGachaLaunch(
   seed: GachaLaunchSeed = {},
   prefetchSimulator = true,
 ) {
-  const launch = await loadGachaLaunch(shopSlug, seed);
+  const hadStoredLaunch = hasStoredGachaLaunch(shopSlug);
+  let launch = await loadGachaLaunch(shopSlug, seed);
+  if (hadStoredLaunch && (typeof navigator === "undefined" || navigator.onLine)) {
+    launch = await refreshGachaLaunch(shopSlug, seed).catch(() => launch);
+  }
   if (prefetchSimulator) {
-    prefetchSimulatorDocument(
-      launch.catalog.settings?.game_type === "hsr" ? "hsr" : "genshin",
-    );
+    for (const gameType of ["genshin", "hsr"] as const) {
+      if (launch.catalogs[gameType]?.settings?.enabled) {
+        prefetchSimulatorDocument(gameType);
+      }
+    }
   }
 }
 
@@ -206,4 +255,50 @@ export function parseGachaPreviewConfig(raw: string | null): GachaCatalog | null
   }
   const parsed = gachaPreviewCatalogSchema.safeParse(json);
   return parsed.success ? (parsed.data as GachaCatalog) : null;
+}
+
+const GACHA_LAUNCH_STORAGE_PREFIX = "matsuri-gacha-launch-v2:";
+const LEGACY_GACHA_LAUNCH_STORAGE_PREFIX = "matsuri-gacha-launch-v1:";
+
+function loadStoredGachaLaunch(slug: string): GachaLaunchData | null {
+  try {
+    const raw =
+      localStorage.getItem(`${GACHA_LAUNCH_STORAGE_PREFIX}${slug}`) ??
+      localStorage.getItem(`${LEGACY_GACHA_LAUNCH_STORAGE_PREFIX}${slug}`);
+    const value = JSON.parse(raw || "null") as Record<string, unknown> | null;
+    if (!value) return null;
+    const shop = shopSchema.safeParse(value.shop);
+    const booth = boothSettingsSchema.safeParse(value.booth);
+    if (!shop.success || !booth.success) return null;
+    const catalogs = value.catalogs as Record<string, unknown> | undefined;
+    const parsedCatalogs: GachaCatalogsByGame = {};
+    for (const gameType of ["genshin", "hsr"] as const) {
+      const parsed = gachaPreviewCatalogSchema.safeParse(catalogs?.[gameType]);
+      if (parsed.success) parsedCatalogs[gameType] = parsed.data as GachaCatalog;
+    }
+    if (Object.keys(parsedCatalogs).length === 0) {
+      const legacyCatalog = gachaPreviewCatalogSchema.safeParse(value.catalog);
+      if (!legacyCatalog.success || !legacyCatalog.data.settings) return null;
+      parsedCatalogs[legacyCatalog.data.settings.game_type] =
+        legacyCatalog.data as GachaCatalog;
+    }
+    return {
+      shop: shop.data,
+      booth: booth.data,
+      catalogs: parsedCatalogs,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredGachaLaunch(slug: string, launch: GachaLaunchData) {
+  try {
+    localStorage.setItem(
+      `${GACHA_LAUNCH_STORAGE_PREFIX}${slug}`,
+      JSON.stringify({ ...launch, savedAt: new Date().toISOString() }),
+    );
+  } catch {
+    // Offline launch persistence is best effort.
+  }
 }

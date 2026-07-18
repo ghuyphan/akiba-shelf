@@ -22,13 +22,35 @@ import { localConfig } from '$lib/store/localstore';
 const { clearIDB } = HistoryIDB;
 
 const clearCacheStorage = async () => {
+	localStorage.removeItem('matsuri-offline-pack:genshin');
 	const keys = await caches.keys();
-	for (const key of keys) await caches.delete(key);
+	for (const key of keys) {
+		const cache = await caches.open(key);
+		const requests = await cache.keys();
+		await Promise.all(
+			requests
+				.filter(({ url }) => new URL(url).pathname.startsWith('/gacha-simulator/'))
+				.map((request) => cache.delete(request))
+		);
+	}
 	return true;
 };
 
+const clearSimulatorStorage = () => {
+	const fixedKeys = new Set([
+		'beginnerRoll', 'guaranteedStatus', 'version', 'firstshare', 'fatepoint',
+		'config', 'outfits', 'welkin', 'storageVersion', 'locale', 'primogem',
+		'genesis', 'stardust', 'starglitter', 'intertwined', 'acquaint'
+	]);
+	for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+		const key = localStorage.key(index);
+		if (!key) continue;
+		if (fixedKeys.has(key) || /(?:4s|5s)Pity$/.test(key)) localStorage.removeItem(key);
+	}
+};
+
 const factoryReset = async ({ clearCache = false }) => {
-	localStorage.clear();
+	clearSimulatorStorage();
 	localConfig.set('animatedBG', true);
 	localStorage.setItem('primogem', 1600);
 	locale.update((langID) => {

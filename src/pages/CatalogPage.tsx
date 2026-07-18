@@ -26,7 +26,6 @@ import { ProductGrid } from "../components/catalog/ProductGrid";
 import { ProductDetailModal } from "../components/catalog/ProductDetailModal";
 import { SelectedItemPanel } from "../components/catalog/SelectedItemPanel";
 import { StackedFeatured } from "../components/catalog/StackedFeatured";
-import { Alert } from "../components/ui/Alert";
 import { useToast } from "../components/ui/ToastProvider";
 import { loadOrderRecovery } from "../lib/orderRecovery";
 import { loadShopSnapshot, saveShopSnapshot } from "../lib/offline";
@@ -54,6 +53,7 @@ import {
 import { prefersLightweightCatalog } from "../lib/network";
 import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { lazyWithRetry } from "../lib/lazyWithRetry";
+import { isStorefrontOfflineReady, prepareStorefrontOffline } from "../lib/storefrontOffline";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -142,6 +142,9 @@ export function CatalogPage() {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [paymentModalRequested, setPaymentModalRequested] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [offlineState, setOfflineState] = useState<"idle" | "saving" | "ready">(
+    () => (isStorefrontOfflineReady(shopSlug) ? "ready" : "idle"),
+  );
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null,
   );
@@ -509,6 +512,17 @@ export function CatalogPage() {
     toast,
   ]);
 
+  const handleSaveOffline = useCallback(() => {
+    if (!shop || offlineState === "saving") return;
+    setOfflineState("saving");
+    void prepareStorefrontOffline(shop)
+      .then(() => setOfflineState("ready"))
+      .catch(() => {
+        setOfflineState("idle");
+        toast.error(catalogCopy.offlineSaveFailed);
+      });
+  }, [catalogCopy.offlineSaveFailed, offlineState, shop, toast]);
+
   const categories = useMemo(
     () => ["All", ...catalogCategories],
     [catalogCategories],
@@ -732,11 +746,6 @@ export function CatalogPage() {
               onPrepareGacha={prepareGacha}
               onOpenInfo={() => setIsInfoOpen(true)}
             />
-            {!online && (
-              <Alert variant="info" title={catalogCopy.offlineTitle}>
-                {catalogCopy.offlineHint}
-              </Alert>
-            )}
             <div className="catalog-layout storefront-layout-grid">
               <div className="storefront-hero-grid">
                 {heroStorefrontSections.map((section) => (
@@ -788,11 +797,13 @@ export function CatalogPage() {
               }}
               onAddToCart={handleAddToCart}
             />
-            <BoothDetailsModal
+      <BoothDetailsModal
               booth={booth}
               payment={payment}
               open={isInfoOpen}
-              onClose={() => setIsInfoOpen(false)}
+        onClose={() => setIsInfoOpen(false)}
+        offlineState={offlineState}
+        onSaveOffline={handleSaveOffline}
             />
             <FlyingItemsLayer items={flyingItems} />
           </main>

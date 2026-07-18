@@ -2,7 +2,7 @@
 	import { getContext, setContext } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { t } from 'svelte-i18n';
-	import { warpList, showStarterBanner, starterRemaining } from '$lib/stores/app-store';
+	import { warpList, showStarterBanner, starterRemaining, regReward } from '$lib/stores/app-store';
 	import { playSfx } from '$lib/helpers/sounds/audiofx';
 	import Modal from '$lib/components/Modal.svelte';
 	import Toast from '$lib/components/Toast.svelte';
@@ -50,16 +50,17 @@
 		await clearHistory(banner);
 		localPity.set(`pity5${banner}`, 0);
 		localPity.set(`pity4${banner}`, 0);
+		rollCounter.set(banner, 0);
 		if (banner.match('event')) {
 			guaranteedStatus.set(`${banner}-4star`, false);
 			guaranteedStatus.set(`${banner}-5star`, false);
 		} else guaranteedStatus.set(banner, false);
 
 		if (banner === 'starter') {
-			rollCounter.set('starter', 0);
 			showStarterBanner.set(true);
 			starterRemaining.set(50);
 		}
+		if (banner === 'regular') regReward.set({ rollcount: 0, isClaimed: false });
 		clear();
 		playSfx();
 

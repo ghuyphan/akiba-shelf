@@ -24,6 +24,7 @@
 	export let sub = false;
 	export let activeIndicator = null;
 	export let showOption = false;
+	export let disabled = false;
 
 	const handleOption = getContext('handleOption');
 	const reset = getContext('factoryReset');
@@ -241,6 +242,14 @@
 		<button class="option-select" on:click={openPrevious}>
 			<i class="gi-caret-down" />
 			{$patchVersion} - {$bannerPhase}
+		</button>
+	{:else if name === 'offline'}
+		<button
+			class="option-select"
+			disabled={disabled}
+			on:click|stopPropagation={() => dispatch('select')}
+		>
+			{activeIndicator}
 		</button>
 	{:else if name === 'reset'}
 		<button class="option-select" on:click={reset}>

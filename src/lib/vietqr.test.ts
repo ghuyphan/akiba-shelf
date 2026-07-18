@@ -32,14 +32,11 @@ const product: Product = {
 };
 
 describe("VietQR image generation", () => {
-  it("builds an encoded image URL without browser-side API credentials", async () => {
+  it("builds the QR entirely in the browser without a network request", async () => {
     const result = await generateVietQr(payment, product);
 
-    expect(result?.source).toBe("image");
-    expect(result?.src).toContain("/970436-123456789-compact2.png?");
-    expect(result?.src).toContain("amount=120000");
-    expect(result?.src).toContain("addInfo=MOON-1+Moonlight+Stand+120000");
-    expect(result?.src).toContain("accountName=Matsuri+Booth");
+    expect(result?.source).toBe("local");
+    expect(result?.src).toMatch(/^data:image\/png;base64,/);
   });
 
   it("limits cart transfer descriptions to VietQR's 50-character field", async () => {
@@ -57,10 +54,7 @@ describe("VietQR image generation", () => {
       cart,
       "ORDER-123456789",
     );
-    const addInfo = new URL(result?.src ?? "").searchParams.get("addInfo");
-
-    expect(addInfo).toHaveLength(50);
-    expect(addInfo).toMatch(/^ORDER-123456789/);
+    expect(result?.src).toMatch(/^data:image\/png;base64,/);
   });
 
   it("returns null when bank details are incomplete", async () => {

@@ -9,7 +9,34 @@ test.beforeEach(async ({ page }) => {
 test("does not advertise the staff PWA from a customer storefront", async ({
   page,
 }) => {
-  await expect(page.locator("link[rel='manifest']")).toHaveCount(0);
+  await expect(page.locator("link[rel='manifest']")).toHaveCount(1);
+});
+
+test("reloads the storefront while completely offline", async ({
+  context,
+  page,
+}) => {
+  await expect(
+    page.getByRole("button", { name: /Add Moon Stand to cart/i }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /Booth info/i }).click();
+  const boothDialog = page.getByRole("dialog", { name: "Booth details" });
+  await boothDialog
+    .getByRole("button", { name: "Save shop for offline use" })
+    .click();
+  await expect(
+    boothDialog.getByRole("button", { name: "Shop saved offline" }),
+  ).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)))
+    .toBe(true);
+
+  await context.setOffline(true);
+  await page.reload({ waitUntil: "domcontentloaded" });
+
+  await expect(
+    page.getByRole("button", { name: /Add Moon Stand to cart/i }),
+  ).toBeVisible();
 });
 
 test("uses a familiar featured icon and centers the collection badge", async ({
@@ -290,4 +317,21 @@ test("isolates storefront state when navigating between shops", async ({
   await expect(page.getByText("id-shop-a Moon Stand")).toHaveCount(0);
   await expect(page.getByText("Booth id-shop-b").first()).toBeVisible();
   await expect(page.getByText("id-shop-b Moon Stand").first()).toBeVisible();
+});
+
+test("offers native game portals when both gacha games are active", async ({
+  page,
+}) => {
+  await page.unrouteAll({ behavior: "wait" });
+  await mockSupabase(page, { dualGacha: true });
+  await page.goto("./s/akiba-shelf/play");
+
+  await expect(
+    page.getByRole("heading", { name: "Choose your journey" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /Genshin Impact/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Honkai: Star Rail/ })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Save both games for offline play/ }),
+  ).toBeVisible();
 });

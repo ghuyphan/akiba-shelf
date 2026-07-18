@@ -29,8 +29,17 @@ import { localConfig, storageLocal } from '$lib/helpers/dataAPI/api-localstorage
 const { clearIDB } = HistoryManager;
 
 const clearCacheStorage = async () => {
+	localStorage.removeItem('matsuri-offline-pack:hsr');
 	const keys = await caches.keys();
-	for (const key of keys) await caches.delete(key);
+	for (const key of keys) {
+		const cache = await caches.open(key);
+		const requests = await cache.keys();
+		await Promise.all(
+			requests
+				.filter(({ url }) => new URL(url).pathname.startsWith('/hsr-simulator/'))
+				.map((request) => cache.delete(request))
+		);
+	}
 	return true;
 };
 
@@ -59,7 +68,7 @@ export const storageReset = async ({ keepSetting = false, clearCache = false } =
 		return;
 	}
 
-	localStorage.clear();
+	localStorage.removeItem('WarpSimulator');
 	storageLocal.set('customTracks', customTracks);
 
 	stellarJade.set(balance.stellarJade);

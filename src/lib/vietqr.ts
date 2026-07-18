@@ -1,12 +1,68 @@
+import QRCode from "qrcode";
 import type { CartItem, PaymentSettings, Product } from "../types/catalog";
 import { getProductPrice } from "./pricing";
 
 type GeneratedVietQr = {
   src: string;
-  source: "image";
+  source: "local";
 };
 
-const DEFAULT_VIETQR_IMAGE_BASE = "https://img.vietqr.io/image";
+const VIETQR_GUID = "A000000727";
+const VIETQR_SERVICE = "QRIBFTTA";
+const encoder = new TextEncoder();
+
+function byteLength(value: string) {
+  return encoder.encode(value).length;
+}
+
+function tlv(id: string, value: string) {
+  return `${id}${String(byteLength(value)).padStart(2, "0")}${value}`;
+}
+
+function crc16(value: string) {
+  let crc = 0xffff;
+  for (const byte of encoder.encode(value)) {
+    crc ^= byte << 8;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc & 0x8000) !== 0 ? (crc << 1) ^ 0x1021 : crc << 1;
+      crc &= 0xffff;
+    }
+  }
+  return crc.toString(16).toUpperCase().padStart(4, "0");
+}
+
+function truncateUtf8(value: string, maxBytes: number) {
+  let result = "";
+  for (const character of value) {
+    if (byteLength(result + character) > maxBytes) break;
+    result += character;
+  }
+  return result.trim();
+}
+
+function buildVietQrPayload(
+  settings: PaymentSettings,
+  amount: number,
+  addInfo: string,
+) {
+  const acqId = settings.bank_acq_id?.trim() ?? "";
+  const accountNo = settings.bank_account_no?.replace(/\s/g, "") ?? "";
+  const beneficiary = tlv("00", acqId) + tlv("01", accountNo);
+  const merchantAccount =
+    tlv("00", VIETQR_GUID) +
+    tlv("01", beneficiary) +
+    tlv("02", VIETQR_SERVICE);
+  let payload =
+    tlv("00", "01") +
+    tlv("01", amount > 0 ? "12" : "11") +
+    tlv("38", merchantAccount) +
+    tlv("53", "704");
+  if (amount > 0) payload += tlv("54", String(Math.round(amount)));
+  payload += tlv("58", "VN");
+  if (addInfo) payload += tlv("62", tlv("08", truncateUtf8(addInfo, 50)));
+  payload += "6304";
+  return payload + crc16(payload);
+}
 
 function fillTemplate(
   template: string | undefined,
@@ -24,22 +80,21 @@ function fillTemplate(
     .trim();
 }
 
-function buildImageFallbackUrl(
+async function renderVietQr(
   settings: PaymentSettings,
   amount: number,
   addInfo: string,
-) {
-  const acqId = settings.bank_acq_id?.trim();
-  const accountNo = settings.bank_account_no?.trim();
-  if (!acqId || !accountNo) return "";
-
-  const params = new URLSearchParams();
-  if (amount > 0) params.set("amount", String(amount));
-  if (addInfo) params.set("addInfo", addInfo);
-  if (settings.bank_account_name)
-    params.set("accountName", settings.bank_account_name);
-
-  return `${DEFAULT_VIETQR_IMAGE_BASE}/${acqId}-${accountNo}-compact2.png?${params.toString()}`;
+): Promise<GeneratedVietQr> {
+  const payload = buildVietQrPayload(settings, amount, addInfo);
+  return {
+    src: await QRCode.toDataURL(payload, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width: 640,
+      color: { dark: "#07152a", light: "#ffffff" },
+    }),
+    source: "local",
+  };
 }
 
 export function canGenerateVietQr(settings: PaymentSettings) {
@@ -53,11 +108,12 @@ export async function generateVietQr(
   product?: Product,
 ): Promise<GeneratedVietQr | null> {
   if (!canGenerateVietQr(settings)) return null;
-
   const amount = product ? getProductPrice(product) : 0;
-  const addInfo = fillTemplate(settings.bank_add_info_template, product);
-  const imageUrl = buildImageFallbackUrl(settings, amount, addInfo);
-  return imageUrl ? { src: imageUrl, source: "image" } : null;
+  return renderVietQr(
+    settings,
+    amount,
+    fillTemplate(settings.bank_add_info_template, product),
+  );
 }
 
 export async function generateVietQrForCart(
@@ -70,35 +126,29 @@ export async function generateVietQrForCart(
 
   const amount =
     amountOverride ??
-    cart.reduce((sum, item) => sum + getProductPrice(item.product) * item.quantity, 0);
-
-  // Construct combined info
-  const codesStr = cart
+    cart.reduce(
+      (sum, item) => sum + getProductPrice(item.product) * item.quantity,
+      0,
+    );
+  const codes = cart
+    .map((item) => {
+      const quantity = item.quantity + (item.reward_quantity ?? 0);
+      return `${item.product.item_code}${quantity > 1 ? `x${quantity}` : ""}`;
+    })
+    .join(" ");
+  const items = cart
     .map(
       (item) =>
-        `${item.product.item_code}${item.quantity + (item.reward_quantity ?? 0) > 1 ? `x${item.quantity + (item.reward_quantity ?? 0)}` : ""}`,
+        `${item.quantity + (item.reward_quantity ?? 0)}x ${item.product.name}`,
     )
-    .join(" ");
-  const itemsStr = cart
-    .map((item) => `${item.quantity + (item.reward_quantity ?? 0)}x ${item.product.name}`)
     .join(", ");
-
-  const fallback = orderCode ? `${orderCode}` : `Booth order ${codesStr}`;
-  let addInfo = fallback;
+  let addInfo = orderCode ?? `Booth order ${codes}`;
   if (settings.bank_add_info_template) {
     addInfo = settings.bank_add_info_template
-      .replace(/\{code\}/g, orderCode ? `${orderCode} ${codesStr}` : codesStr)
-      .replace(/\{item\}/g, itemsStr)
+      .replace(/\{code\}/g, orderCode ? `${orderCode} ${codes}` : codes)
+      .replace(/\{item\}/g, items)
       .replace(/\{amount\}/g, String(amount))
       .trim();
-  } else if (orderCode) {
-    addInfo = `${orderCode}`;
   }
-
-  if (addInfo.length > 50) {
-    addInfo = addInfo.substring(0, 50).trim();
-  }
-
-  const imageUrl = buildImageFallbackUrl(settings, amount, addInfo);
-  return imageUrl ? { src: imageUrl, source: "image" } : null;
+  return renderVietQr(settings, amount, truncateUtf8(addInfo, 50));
 }

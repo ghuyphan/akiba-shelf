@@ -81,8 +81,9 @@
 	};
 
 	const dontShowAlbum = ['more-ost', 'custom-musics'];
-	$: dontShow = dontShowAlbum.includes($activeBacksound.album);
-	$: activeAlbum = dontShow ? '' : ' - ' + $t(`phonograph.${$activeBacksound.album}`);
+	$: backsound = $activeBacksound || {};
+	$: dontShow = dontShowAlbum.includes(backsound.album);
+	$: activeAlbum = !backsound.album || dontShow ? '' : ' - ' + $t(`phonograph.${backsound.album}`);
 </script>
 
 <div class="setting-item" class:sub>
@@ -132,7 +133,7 @@
 			>
 				<!-- svelte-ignore a11y-distracting-elements -->
 				<marquee style="width: 75%;">
-					{$activeBacksound.title}{activeAlbum}
+					{backsound.title || ''}{activeAlbum}
 				</marquee>
 				<i class="hsr-music"></i>
 			</button>

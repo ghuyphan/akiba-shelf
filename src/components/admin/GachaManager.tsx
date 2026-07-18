@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Layers3, LoaderCircle } from "lucide-react";
+import { Layers3, LoaderCircle, WandSparkles } from "lucide-react";
 import "../../styles/gacha-admin.css";
 import {
   getAdminGachaConfiguration,
@@ -22,7 +22,7 @@ import {
   type GachaBanner,
   type GachaGameConfiguration,
   type GachaGameType,
-  type GachaLiveStatus,
+  type GachaLiveStatusesByGame,
   type GachaPoolEntry,
   type GachaSettings,
 } from "../../types/gacha";
@@ -61,7 +61,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     redo,
   } = useGachaHistory();
   const [baselines, setBaselines] = useState<GachaStatesByGame>({});
-  const [live, setLive] = useState<GachaLiveStatus | null>(null);
+  const [liveByGame, setLiveByGame] = useState<GachaLiveStatusesByGame>({});
   const [loading, setLoading] = useState(true);
   const { busy: saving, run: runSave } = useAsyncAction();
   const { busy: publishing, run: runPublish } = useAsyncAction();
@@ -98,7 +98,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
         createGameState(shopId, gameType, next.configurations[gameType]),
       ]),
     ) as Record<GachaGameType, GachaState>;
-    return { states, live: next.live };
+    return { states, liveByGame: next.liveByGame };
   }, [shopId]);
 
   useEffect(() => {
@@ -108,10 +108,10 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       .then((workspace) => {
         if (cancelled) return;
         setBaselines(workspace.states);
-        setLive(workspace.live);
+        setLiveByGame(workspace.liveByGame);
         loadAll(
           workspace.states,
-          workspace.live?.settings.game_type ?? undefined,
+          GACHA_GAME_TYPES.find((gameType) => workspace.liveByGame[gameType]),
         );
       })
       .catch((error) => {
@@ -333,14 +333,6 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   async function publish() {
     if (!current || !validateBasics(current) || !validateGoLive(current))
       return;
-    if (live && live.settings.game_type !== activeGame) {
-      const confirmed = window.confirm(
-        t("Publishing switches the public minigame to {{game}}. Continue?", {
-          game: descriptor.label,
-        }),
-      );
-      if (!confirmed) return;
-    }
     const config = persistedGameState(current);
     let published = false;
     await runPublish(async () => {
@@ -352,11 +344,14 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       resetGame(activeGame, publishedState);
       // The RPC wrote exactly this configuration, so live status can be
       // derived locally without another round trip.
-      setLive({
-        settings: saved.settings,
-        bannerCount: saved.banners.filter((banner) => banner.active).length,
-        entryCount: saved.entries.filter((entry) => entry.active).length,
-      });
+      setLiveByGame((curr) => ({
+        ...curr,
+        [activeGame]: {
+          settings: saved.settings,
+          bannerCount: saved.banners.filter((banner) => banner.active).length,
+          entryCount: saved.entries.filter((entry) => entry.active).length,
+        },
+      }));
       published = true;
     }).catch((error: unknown) => {
       toast.error(
@@ -375,7 +370,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
         activeGame,
         next.configurations[activeGame],
       );
-      setLive(next.live);
+      setLiveByGame(next.liveByGame);
       setBaselines((curr) => ({ ...curr, [activeGame]: fresh }));
       resetGame(activeGame, fresh);
     } catch (error) {
@@ -397,6 +392,30 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     },
     [update, updateText],
   );
+
+  function applyRecommendedSetup() {
+    if (!current || entries.length > 0) return;
+    const availableProducts = products.filter((product) => product.active);
+    if (availableProducts.length < 3) {
+      toast.info(
+        t("Add at least three active products so the pool can include 3-star, 4-star, and 5-star rewards."),
+        t("More merch needed"),
+      );
+      return;
+    }
+    const banner = banners[0];
+    update((state) => ({
+      ...state,
+      settings: { ...state.settings, enabled: true },
+      selectedBannerId: banner.id,
+      entries: availableProducts.map((product, index) => ({
+        ...newEntry(shopId, banner.id, product.id, banner.kind, activeGame),
+        rarity: index === 0 ? 5 : index === 1 ? 4 : 3,
+        featured: index === 0,
+      })),
+    }), true);
+    toast.success(t("Recommended pool created. Review it, then publish when ready."));
+  }
 
   const updateBanner = useCallback(
     (changes: Partial<GachaBanner>) => {
@@ -728,7 +747,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       return product && entry.active ? [{ ...entry, product }] : [];
     });
     localStorage.setItem(
-      `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${shopSlug}`,
+      `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${shopSlug}:${activeGame}`,
       JSON.stringify({
         settings: current.settings,
         banners: current.banners,
@@ -736,7 +755,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       }),
     );
     window.open(
-      `/s/${shopSlug}/play?preview=1`,
+      `/s/${shopSlug}/play?preview=1&game=${activeGame}`,
       "_blank",
       "noopener,noreferrer",
     );
@@ -777,9 +796,9 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
         gameType,
         label: getGachaGameDescriptor(gameType).label,
         dirty: dirtyByGame[gameType],
-        isLive: live?.settings.game_type === gameType,
+        isLive: Boolean(liveByGame[gameType]),
       })),
-    [dirtyByGame, live],
+    [dirtyByGame, liveByGame],
   );
 
   if (loading || !current || !settings || !selectedBanner) {
@@ -798,13 +817,29 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       <GachaStatusBar
         games={statusGames}
         activeGame={activeGame}
-        currentLive={
-          live && live.settings.game_type === activeGame ? live : null
-        }
-        hasPublished={live !== null}
+        currentLive={liveByGame[activeGame] ?? null}
+        hasPublished={Object.keys(liveByGame).length > 0}
         onSwitchGame={switchGame}
         onPreview={openPreview}
       />
+      {entries.length === 0 && (
+        <AdminCard
+          className="gacha-quick-setup"
+          icon={<WandSparkles size={18} />}
+          title={t("Quick setup")}
+          description={t(
+            "Create a playable pool from your active merch, using safe recommended defaults. Everything remains editable and undoable.",
+          )}
+        >
+          <button
+            type="button"
+            className="button button-primary"
+            onClick={applyRecommendedSetup}
+          >
+            <WandSparkles size={17} /> {t("Use recommended setup")}
+          </button>
+        </AdminCard>
+      )}
       <GachaGeneralSection
         settings={settings}
         descriptor={descriptor}

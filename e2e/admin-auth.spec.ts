@@ -1,9 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mockSupabase } from "./fixtures";
 
-test("advertises the staff PWA only on dashboard and admin routes", async ({
-  page,
-}) => {
+test("advertises the PWA on staff and storefront routes", async ({ page }) => {
   await mockSupabase(page);
 
   await page.goto("./admin");
@@ -16,7 +14,7 @@ test("advertises the staff PWA only on dashboard and admin routes", async ({
   await expect(page.locator("link[rel='manifest']")).toHaveCount(1);
 
   await page.goto("./s/akiba-shelf");
-  await expect(page.locator("link[rel='manifest']")).toHaveCount(0);
+  await expect(page.locator("link[rel='manifest']")).toHaveCount(1);
 });
 
 test("offers an eligible staff browser a compact install banner", async ({

@@ -8,25 +8,60 @@
 	import { localConfig } from '$lib/helpers/dataAPI/api-localstorage';
 	import ButtonGeneral from '$lib/components/ButtonGeneral.svelte';
 
-	let onProgress = false;
+	let animationLoading = false;
+	let animationReady = false;
+	let expressLoadRequested = false;
+	let offlineStatus = 'idle';
+	let offlineProgress = 0;
 	let item = '';
 	let progress = 0;
 	let totalItem;
 	let itemIndex;
 	let loadError = '';
 	$: ({ item, progress, itemIndex, totalItem } = $loadProggress);
-	$: percentage = ((itemIndex * 100 + progress) / (totalItem * 100)) * 100;
+	$: animationPercentage = ((itemIndex * 100 + progress) / (totalItem * 100)) * 100;
+	$: onProgress = animationLoading || offlineStatus === 'downloading';
+	$: percentage = animationLoading ? animationPercentage : offlineProgress;
 	$: warpType = item.includes('regular') ? 'Regular Warp' : 'Special Warp';
 
 	const readyToPull = getContext('readyToPull');
 	$: ready = $readyToPull;
 
-	onMount(async () => {
+	onMount(() => {
+		const handleOfflineProgress = (event) => {
+			if (
+				event.origin !== window.location.origin ||
+				event.data?.type !== 'matsuri-gacha-offline-progress'
+			)
+				return;
+			offlineStatus = event.data.status;
+			offlineProgress = Number(event.data.progress) || 0;
+			if (offlineStatus === 'ready') {
+				if (animationReady) readyToPull.set(true);
+				else if (expressLoadRequested && !animationLoading) void loadExpressAnimation();
+			}
+			if (offlineStatus === 'error') {
+				loadError =
+					event.data?.message ||
+					'The offline files could not be saved. Check your connection and try again.';
+			}
+		};
+		window.addEventListener('message', handleOfflineProgress);
+		window.parent.postMessage(
+			{ type: 'matsuri-gacha-offline-status' },
+			window.location.origin
+		);
+
+		void (async () => {
 		const lskipConfig = localConfig.get('autoskip') || {};
 		const { express: skipExpress = false } = lskipConfig === true ? { express: true } : lskipConfig;
 		const hasStreamableAnimation = Boolean($assets['event-3star.mp4']);
-		const isReady = skipExpress || hasStreamableAnimation || (await check());
-		readyToPull.set(isReady);
+		animationReady = hasStreamableAnimation || (await check());
+		if (skipExpress) readyToPull.set(true);
+		else if (animationReady && offlineStatus === 'ready') readyToPull.set(true);
+		})();
+
+		return () => window.removeEventListener('message', handleOfflineProgress);
 	});
 
 	const skipExpress = () => {
@@ -36,10 +71,8 @@
 		localConfig.set('autoskip', { express: true, art: true });
 	};
 
-	const preloadExpress = async () => {
-		playSfx();
-		onProgress = true;
-		loadError = '';
+	const loadExpressAnimation = async () => {
+		animationLoading = true;
 		try {
 			const data = await loadAnimation();
 			assets.update((v) => {
@@ -49,13 +82,30 @@
 				});
 				return v;
 			});
-			readyToPull.set(true);
+			animationReady = true;
+			if (offlineStatus === 'ready') readyToPull.set(true);
 		} catch (error) {
 			console.error('Unable to preload the HSR warp animation.', error);
 			loadError = 'The warp animation could not be downloaded. Try again or skip it.';
 		} finally {
-			onProgress = false;
+			animationLoading = false;
 		}
+	};
+
+	const preloadExpress = () => {
+		playSfx();
+		expressLoadRequested = true;
+		loadError = '';
+		if (offlineStatus === 'ready') {
+			void loadExpressAnimation();
+			return;
+		}
+		offlineStatus = 'downloading';
+		offlineProgress = 0;
+		window.parent.postMessage(
+			{ type: 'matsuri-gacha-offline-request' },
+			window.location.origin
+		);
 	};
 </script>
 
@@ -64,7 +114,11 @@
 		{#if onProgress}
 			<div class="loader">
 				<div class="load-text" style="position: relative;">
-					{@html $t('warp.loadExpressMsg', { values: { item: `<span> ${warpType} </span>` } })}
+					{#if animationLoading}
+						{@html $t('warp.loadExpressMsg', { values: { item: `<span> ${warpType} </span>` } })}
+					{:else}
+						{$t('warp.offlinePackMsg')}
+					{/if}
 				</div>
 				<div class="progress-bar" style="--per:{percentage}%">
 					<span></span>
@@ -79,6 +133,7 @@
 				{@html $t('warp.expressNotLoaded')}
 				<small>
 					{$t('warp.preloadFilesMsg')}
+					<br />{$t('warp.offlinePackMsg')}
 				</small>
 			</div>
 			<div class="options">
@@ -101,8 +156,9 @@
 		bottom: 15%;
 		right: 5%;
 		z-index: +100;
-		background-color: rgba(0, 0, 0, 0.5);
+		background-color: rgba(16, 20, 25, 0.94);
 		backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.22);
 		padding: 2% 2% 1.5%;
 		border-radius: 0.5rem;
 		box-shadow: 0 0 1rem rgba(255, 255, 255, 1);

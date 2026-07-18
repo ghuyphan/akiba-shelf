@@ -92,6 +92,10 @@ export type GachaCatalog = {
   entries: GachaPoolItem[];
 };
 
+export type GachaCatalogsByGame = Partial<
+  Record<GachaGameType, GachaCatalog>
+>;
+
 export type GachaGameConfiguration = {
   settings: GachaSettings;
   banners: GachaBanner[];
@@ -102,12 +106,16 @@ export type GachaGameConfigurations = Partial<
   Record<GachaGameType, GachaGameConfiguration>
 >;
 
-/** The currently published minigame state, as seen by the public storefront. */
+/** One game's published minigame state, as seen by the public storefront. */
 export type GachaLiveStatus = {
   settings: GachaSettings;
   bannerCount: number;
   entryCount: number;
 };
+
+export type GachaLiveStatusesByGame = Partial<
+  Record<GachaGameType, GachaLiveStatus>
+>;
 
 export const defaultGachaSettings = (shopId: string): GachaSettings => ({
   shop_id: shopId,
