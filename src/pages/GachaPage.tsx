@@ -149,9 +149,6 @@ export function GachaPage() {
   const activeCatalog: GachaCatalog | null = activeGame
     ? state?.catalogs[activeGame] ?? null
     : null;
-  const activeCatalogFingerprint = activeCatalog
-    ? JSON.stringify(activeCatalog)
-    : "";
 
   useEffect(() => {
     if (!state || !activeCatalog) return;
@@ -425,7 +422,7 @@ export function GachaPage() {
   return (
     <main className="gacha-host">
       <iframe
-        key={`${activeGame}:${activeCatalogFingerprint}`}
+        key={activeGame}
         ref={iframeRef}
         title="wish simulator"
         src={`${getGachaSimulatorPath(activeGame)}?${queryParams.toString()}`}

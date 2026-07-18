@@ -346,8 +346,10 @@ export default defineConfig(({ command }) => ({
             },
           },
           {
-            urlPattern:
-              /\/(?:gacha-simulator|hsr-simulator)\/(?:$|.*\.(?:html|js|css|json))$/,
+            urlPattern: ({ url }) =>
+              /^\/(?:gacha-simulator|hsr-simulator)\/(?:$|.*\.(?:html|js|css|json))$/i.test(
+                url.pathname,
+              ),
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "gacha-app-shell-v2",
@@ -356,11 +358,14 @@ export default defineConfig(({ command }) => ({
                 maxAgeSeconds: 90 * 24 * 60 * 60,
               },
               cacheableResponse: { statuses: [0, 200] },
+              matchOptions: { ignoreSearch: true },
             },
           },
           {
-            urlPattern:
-              /\/(?:gacha-simulator|hsr-simulator)\/.*\.(?:mp4|webm|ogg|mp3|wav)$/,
+            urlPattern: ({ url }) =>
+              /^\/(?:gacha-simulator|hsr-simulator)\/.*\.(?:mp4|webm|ogg|mp3|wav)$/i.test(
+                url.pathname,
+              ),
             handler: "CacheFirst",
             options: {
               cacheName: "gacha-media-cache-v1",
@@ -375,8 +380,10 @@ export default defineConfig(({ command }) => ({
             },
           },
           {
-            urlPattern:
-              /\/(?:gacha-simulator|hsr-simulator)\/.*\.(?:woff2?|ttf|png|jpe?g|webp|svg)$/,
+            urlPattern: ({ url }) =>
+              /^\/(?:gacha-simulator|hsr-simulator)\/.*\.(?:woff2?|ttf|png|jpe?g|webp|svg)$/i.test(
+                url.pathname,
+              ),
             handler: "CacheFirst",
             options: {
               cacheName: "gacha-static-cache-v1",
