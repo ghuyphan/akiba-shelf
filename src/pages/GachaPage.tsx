@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { ArrowLeft, Download, Sparkles } from "lucide-react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -27,6 +27,14 @@ import {
   offlinePackPercent,
 } from "../lib/offlinePack";
 import type { GachaCatalog, GachaGameType } from "../types/gacha";
+import genshinWishBackground from "../../vendor/gacha-simulator/static/images/background/wish-background.webp";
+import genshinLogo from "../../vendor/gacha-simulator/static/images/utility/genshin-logo.webp";
+import genshinWishButton from "../../vendor/gacha-simulator/static/images/utility/button.webp";
+import intertwinedFate from "../../vendor/gacha-simulator/static/images/utility/intertwined-fate.webp";
+import hsrWarpBackground from "../../vendor/hsr-simulator/src/images/background/warp-bg.webp";
+import hsrCircleOrnament from "../../vendor/hsr-simulator/src/images/utils/circle-ornament1.svg";
+import hsrLogo from "../../vendor/hsr-simulator/src/images/utils/starrail-logo.webp";
+import hsrSpecialPass from "../../vendor/hsr-simulator/src/images/utils/special-pass-clean.webp";
 import "../styles/gacha-host.css";
 
 export function GachaPage() {
@@ -339,26 +347,44 @@ export function GachaPage() {
         </Link>
         <section className="gacha-select-panel">
           <div className="gacha-select-heading">
-            <span>{copy.chooseGachaEyebrow}</span>
+            <span>{state.shop.name}</span>
             <h1>{copy.chooseGachaTitle}</h1>
-            <p>{copy.chooseGachaHint}</p>
           </div>
           <div className="gacha-game-portals">
             {availableGames.map((gameType) => {
               const catalog = state.catalogs[gameType]!;
+              const isHsr = gameType === "hsr";
               return (
                 <Link
                   key={gameType}
                   className={`gacha-game-portal is-${gameType}`}
                   to={`?game=${gameType}`}
+                  style={{
+                    "--portal-background": `url(${isHsr ? hsrWarpBackground : genshinWishBackground})`,
+                    "--portal-button": isHsr ? "none" : `url(${genshinWishButton})`,
+                  } as CSSProperties}
                 >
-                  <span className="gacha-portal-mark" aria-hidden="true">
-                    {gameType === "hsr" ? "✦" : "✧"}
+                  <span className="gacha-portal-art" aria-hidden="true">
+                    {isHsr && <img className="gacha-hsr-ornament" src={hsrCircleOrnament} alt="" />}
+                    <img
+                      className="gacha-portal-currency"
+                      src={isHsr ? hsrSpecialPass : intertwinedFate}
+                      alt=""
+                    />
                   </span>
-                  <small>{gameType === "hsr" ? "Warp" : "Wish"}</small>
-                  <strong>{gameType === "hsr" ? "Honkai: Star Rail" : "Genshin Impact"}</strong>
-                  <p>{catalog.settings?.title}</p>
-                  <i>{copy.enterGacha}</i>
+                  <span className="gacha-portal-content">
+                    <img
+                      className="gacha-portal-logo"
+                      src={isHsr ? hsrLogo : genshinLogo}
+                      alt={isHsr ? "Honkai: Star Rail" : "Genshin Impact"}
+                    />
+                    <small>{isHsr ? "Warp Simulator" : "Wish Simulator"}</small>
+                    <strong>{catalog.settings?.title}</strong>
+                    <span className="gacha-portal-enter">
+                      <span>{copy.enterGacha}</span>
+                      <span aria-hidden="true">›</span>
+                    </span>
+                  </span>
                 </Link>
               );
             })}
