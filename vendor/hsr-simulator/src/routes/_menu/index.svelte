@@ -91,7 +91,7 @@
 
 		if (keepSetting) return;
 
-		const soundOn = isPlaying($activeBacksound.sourceID);
+		const soundOn = isPlaying($activeBacksound?.sourceID);
 		if (!soundOn) initTrack();
 		readyToPull.set(await checkExpress());
 		localConfig.set('litemode', $liteMode);

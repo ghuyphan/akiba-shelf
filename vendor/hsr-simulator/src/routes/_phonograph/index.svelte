@@ -71,7 +71,7 @@
 
 	const confirmDelete = () => {
 		playSfx();
-		if ($activeBacksound.sourceID === musicIDToDelete) nextTrack();
+		if ($activeBacksound?.sourceID === musicIDToDelete) nextTrack();
 		musics.update((m) => m.filter((m) => m.sourceID !== musicIDToDelete));
 		customTracks.delete(musicIDToDelete);
 		musicIDToDelete = '';

@@ -81,7 +81,9 @@ export const playTrack = async (ID) => {
 	// Fetch track data from network
 	try {
 		const { download, images, status } = await fetchMedia(ID);
-		const { album, title } = tracks.find((v) => v.sourceID === ID);
+		const trackMeta = tracks.find((v) => v.sourceID === ID);
+		if (!trackMeta) return { status: 'error' };
+		const { album, title } = trackMeta;
 		musicMediaSession[ID] = { images, album, title };
 		if (status === 'error') return;
 
@@ -171,9 +173,11 @@ export const nextTrack = () => {
 	const isSuffle = cookie.get('suffleTrack');
 	if (isSuffle === undefined || isSuffle) return randomTrack();
 
+	if (!tracks.length) return;
 	const playedIndex = tracks.findIndex(({ sourceID }) => id === sourceID);
 	const nextIndex = playedIndex >= tracks.length - 1 ? 0 : playedIndex + 1;
 	const trackData = tracks[nextIndex];
+	if (!trackData) return;
 	playTrack(trackData.sourceID);
 	activeBacksound.set(trackData);
 };
@@ -215,10 +219,11 @@ export const setTrackVolume = (val) => {
 };
 
 const randomTrack = () => {
+	if (!tracks.length) return { status: 'error' };
 	const { selected } = rand(tracks);
 	if (!selected) return { status: 'error' };
 	playTrack(selected.sourceID);
-	activeBacksound.set(selected || {});
+	activeBacksound.set(selected);
 };
 
 export const initTrack = () => {

@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import type { CartItem, Order, PaymentSettings, Product } from "../../types/catalog";
 import { defaultPromotion } from "../../lib/constants";
@@ -116,8 +115,15 @@ function renderModal(
 }
 
 describe("PaymentQrModal", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
   beforeEach(() => {
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      onLine: true,
+    });
     apiMocks.createOrder.mockReset();
     apiMocks.getCustomerOrder.mockReset();
     apiMocks.cancelCustomerOrder.mockReset();
@@ -149,13 +155,12 @@ describe("PaymentQrModal", () => {
     const pending = makeOrder("pending");
     apiMocks.createOrder.mockResolvedValue(pending);
     apiMocks.getCustomerOrder.mockResolvedValue(pending);
-    const user = userEvent.setup();
     renderModal();
 
-    await user.type(screen.getByPlaceholderText("e.g. Huy or Alice"), "Huy");
-    await user.click(
-      screen.getByRole("button", { name: "Create order & pay" }),
-    );
+    fireEvent.change(screen.getByPlaceholderText("e.g. Huy or Alice"), {
+      target: { value: "Huy" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
 
     expect(
       await screen.findByRole("dialog", { name: "Scan to pay" }),
@@ -179,13 +184,12 @@ describe("PaymentQrModal", () => {
     apiMocks.createOrder.mockResolvedValue(pending);
     apiMocks.getCustomerOrder.mockResolvedValue(confirmed);
     const onSuccess = vi.fn();
-    const user = userEvent.setup();
     renderModal({ onSuccess });
 
-    await user.type(screen.getByPlaceholderText("e.g. Huy or Alice"), "Huy");
-    await user.click(
-      screen.getByRole("button", { name: "Create order & pay" }),
-    );
+    fireEvent.change(screen.getByPlaceholderText("e.g. Huy or Alice"), {
+      target: { value: "Huy" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
 
     await waitFor(
       () =>
