@@ -383,9 +383,9 @@ export async function getPublicProductsByIds(
 }
 
 const GACHA_SETTINGS_COLUMNS =
-  "shop_id,enabled,game_type,title,description,rare_pity,legendary_pity,lightcone_legendary_pity,updated_at";
+  "shop_id,enabled,game_type,title,description,rare_base_rate,legendary_base_rate,lightcone_legendary_base_rate,rare_soft_pity,legendary_soft_pity,lightcone_legendary_soft_pity,featured_item_rate,featured_guaranteed_after_loss,rare_pity,legendary_pity,lightcone_legendary_pity,updated_at";
 const GACHA_BANNER_COLUMNS =
-  "id,shop_id,name,description,kind,theme,display_limit,sort_order,active,updated_at";
+  "id,shop_id,name,description,kind,theme,display_limit,sort_order,active,starts_at,ends_at,updated_at";
 const GACHA_POOL_COLUMNS =
   "shop_id,banner_id,product_id,kind,element,weapon_type,rarity,weight,featured,active,updated_at";
 
@@ -394,21 +394,83 @@ function normalizeGachaSettings(
   shopId: string,
 ): GachaSettings {
   const defaults = defaultGachaSettings(shopId);
+  const rarePity = Math.min(
+    30,
+    Math.max(2, numberValue(value.rare_pity, defaults.rare_pity)),
+  );
+  const legendaryPity = Math.min(
+    100,
+    Math.max(10, numberValue(value.legendary_pity, defaults.legendary_pity)),
+  );
+  const lightconePity = Math.min(
+    100,
+    Math.max(
+      10,
+      numberValue(
+        value.lightcone_legendary_pity,
+        defaults.lightcone_legendary_pity,
+      ),
+    ),
+  );
   return {
     shop_id: text(value.shop_id, shopId),
     enabled: booleanValue(value.enabled),
     game_type: (value.game_type === "hsr" ? "hsr" : "genshin") as "genshin" | "hsr",
     title: text(value.title, defaults.title),
     description: text(value.description, defaults.description),
-    rare_pity: Math.min(30, Math.max(2, numberValue(value.rare_pity, 10))),
-    legendary_pity: Math.min(
-      100,
-      Math.max(10, numberValue(value.legendary_pity, 50)),
+    rare_base_rate: Math.min(
+      99.99,
+      Math.max(0.01, numberValue(value.rare_base_rate, defaults.rare_base_rate)),
     ),
-    lightcone_legendary_pity: Math.min(
-      100,
-      Math.max(10, numberValue(value.lightcone_legendary_pity, 80)),
+    legendary_base_rate: Math.min(
+      99.99,
+      Math.max(
+        0.01,
+        numberValue(value.legendary_base_rate, defaults.legendary_base_rate),
+      ),
     ),
+    lightcone_legendary_base_rate: Math.min(
+      99.99,
+      Math.max(
+        0.01,
+        numberValue(
+          value.lightcone_legendary_base_rate,
+          defaults.lightcone_legendary_base_rate,
+        ),
+      ),
+    ),
+    rare_soft_pity: Math.min(
+      rarePity - 1,
+      Math.max(1, numberValue(value.rare_soft_pity, rarePity - 1)),
+    ),
+    legendary_soft_pity: Math.min(
+      legendaryPity - 1,
+      Math.max(1, numberValue(value.legendary_soft_pity, legendaryPity - 1)),
+    ),
+    lightcone_legendary_soft_pity: Math.min(
+      lightconePity - 1,
+      Math.max(
+        1,
+        numberValue(
+          value.lightcone_legendary_soft_pity,
+          lightconePity - 1,
+        ),
+      ),
+    ),
+    featured_item_rate: Math.min(
+      100,
+      Math.max(
+        0,
+        numberValue(value.featured_item_rate, defaults.featured_item_rate),
+      ),
+    ),
+    featured_guaranteed_after_loss: booleanValue(
+      value.featured_guaranteed_after_loss,
+      defaults.featured_guaranteed_after_loss,
+    ),
+    rare_pity: rarePity,
+    legendary_pity: legendaryPity,
+    lightcone_legendary_pity: lightconePity,
     updated_at: text(value.updated_at) || undefined,
   };
 }
@@ -440,6 +502,8 @@ function normalizeGachaBanner(
       Math.max(0, numberValue(value.sort_order, defaults.sort_order)),
     ),
     active: booleanValue(value.active, true),
+    starts_at: text(value.starts_at) || null,
+    ends_at: text(value.ends_at) || null,
     updated_at: text(value.updated_at) || undefined,
   };
 }
@@ -693,7 +757,7 @@ export async function publishGachaConfiguration(
   config: GachaGameConfiguration,
 ): Promise<GachaGameConfiguration> {
   const draft = await saveGachaDraft(shopId, gameType, config);
-  const { error } = await requireSupabase().rpc("publish_gacha_configuration", {
+  const { error } = await requireSupabase().rpc("publish_gacha_configuration_v4", {
     p_shop_id: shopId,
     p_game_type: gameType,
     p_config: {
@@ -706,6 +770,8 @@ export async function publishGachaConfiguration(
         theme: banner.theme,
         display_limit: banner.display_limit,
         active: banner.active,
+        starts_at: banner.starts_at,
+        ends_at: banner.ends_at,
       })),
       entries: draft.entries.map((entry) => ({
         banner_id: entry.banner_id,
@@ -1364,10 +1430,19 @@ export async function getOrders(
 
 export async function getOrderStatusCounts(
   shopId: string,
+  {
+    createdAfter,
+    createdBefore,
+  }: {
+    createdAfter?: string;
+    createdBefore?: string;
+  } = {},
 ): Promise<OrderStatusCounts> {
   const client = requireSupabase();
   const { data, error } = await client.rpc("get_order_status_counts", {
     p_shop_id: shopId,
+    p_created_after: createdAfter ?? null,
+    p_created_before: createdBefore ?? null,
   });
   if (error) throw error;
   return orderStatusCountsSchema.parse(data) as OrderStatusCounts;

@@ -129,7 +129,7 @@
 		{/if}
 
 		<!-- Probability Controller -->
-		{#if !fullscreen}
+		{#if !fullscreen && !item.isMerch}
 			<div class="prob-manager {banner}" class:inEdit={$probEdit}>
 				{#if $probEdit && banner !== 'starter'}
 					<ProbabilityEditor {banner} />
@@ -140,7 +140,7 @@
 </section>
 
 <!-- Probability Controller  Fullscreen -->
-{#if fullscreen}
+{#if fullscreen && !item.isMerch}
 	<div class="prob-manager fullscreen {banner}" class:inEdit={$probEdit}>
 		{#if $probEdit && banner !== 'starter'}
 			<ProbabilityEditor fullscreen {banner} />

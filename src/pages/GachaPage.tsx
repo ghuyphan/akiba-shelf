@@ -9,6 +9,7 @@ import {
   getGachaSimulatorPath,
   loadGachaLaunch,
   parseGachaPreviewConfig,
+  runningGachaCatalog,
 } from "../lib/gachaLaunch";
 import { translations } from "../lib/catalogI18n";
 import { getErrorMessage } from "../lib/errors";
@@ -46,7 +47,8 @@ export function GachaPage() {
               ),
             )
           : null;
-        const simulatorCatalog = previewCatalog ?? catalog;
+        const simulatorCatalog =
+          previewCatalog ?? runningGachaCatalog(catalog);
         localStorage.setItem(
           `${GACHA_CONFIG_STORAGE_PREFIX}${shop.slug}`,
           JSON.stringify(simulatorCatalog),

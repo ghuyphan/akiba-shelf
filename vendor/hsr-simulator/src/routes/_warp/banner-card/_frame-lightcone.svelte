@@ -7,6 +7,7 @@
 	import LightCones from '$lib/components/LightCones.svelte';
 	import Path from '$lib/components/Path.svelte';
 	import RateupLightones from './__rateup-lightcones.svelte';
+	import BannerDuration from '$lib/components/BannerDuration.svelte';
 
 	export let item = {};
 
@@ -40,7 +41,7 @@
 					</h1>
 					<div class="time">
 						<i class="hsr-time"></i>
-						<span class="duration-caption">{$t('warp.duration')}</span>
+						<BannerDuration endsAt={item.endsAt} />
 					</div>
 					<div class="description">
 						<p>{@html $t('warp.warpDescription')}</p>

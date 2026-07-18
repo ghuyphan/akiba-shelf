@@ -95,6 +95,7 @@
 					merchItems: displayItems,
 					title: banner.name,
 					description: banner.description || config.settings.description,
+					endsAt: banner.ends_at || null,
 					kind: banner.kind,
 					theme: banner.theme || 'anemo'
 				}

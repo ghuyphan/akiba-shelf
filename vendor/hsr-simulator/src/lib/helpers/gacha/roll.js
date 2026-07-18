@@ -11,6 +11,11 @@ import { getMerchConfig } from '$lib/helpers/merch';
 
 const { addHistory } = HistoryManager;
 
+const configuredRate = (value, fallback) => {
+	const rate = Number(value);
+	return Number.isFinite(rate) && rate > 0 && rate < 100 ? rate : fallback;
+};
+
 export const roll = async (banner, WarpInstance, indexOfBanner) => {
 	const pity5 = localPity.get(`pity5${banner}`) + 1;
 	const pity4 = localPity.get(`pity4${banner}`) + 1;
@@ -18,13 +23,29 @@ export const roll = async (banner, WarpInstance, indexOfBanner) => {
 	const configuredLegendaryPity = banner.includes('lightcone')
 		? settings.lightcone_legendary_pity
 		: settings.legendary_pity;
+	const configuredLegendaryRate = banner.includes('lightcone')
+		? settings.lightcone_legendary_base_rate
+		: settings.legendary_base_rate;
 	const maxPity = Number(configuredLegendaryPity) || getRate(banner, 'max5');
 	const maxPity4 = Number(settings.rare_pity) || getRate(banner, 'max4');
+	const configuredSoftPity = banner.includes('lightcone')
+		? settings.lightcone_legendary_soft_pity
+		: settings.legendary_soft_pity;
+	const softPity5 = Math.min(
+		Math.max(1, Number(configuredSoftPity) || getRate(banner, 'hard5')),
+		maxPity - 1
+	);
+	const softPity4 = Math.min(
+		Math.max(1, Number(settings.rare_soft_pity) || getRate(banner, 'hard4')),
+		maxPity4 - 1
+	);
+	const baseRate5 = configuredRate(configuredLegendaryRate, getRate(banner, 'baseRate5'));
+	const baseRate4 = configuredRate(settings.rare_base_rate, getRate(banner, 'baseRate4'));
 
 	const rate5star = () => {
 		return rates({
-			baseRate: getRate(banner, 'baseRate5'),
-			rateIncreasedAt: Math.min(getRate(banner, 'hard5'), maxPity - 1),
+			baseRate: baseRate5,
+			rateIncreasedAt: softPity5,
 			currentPity: pity5,
 			maxPity
 		});
@@ -32,9 +53,9 @@ export const roll = async (banner, WarpInstance, indexOfBanner) => {
 
 	const rate4star = () => {
 		return rates({
-			baseRate: getRate(banner, 'baseRate4'),
+			baseRate: baseRate4,
 			currentPity: pity4,
-			rateIncreasedAt: Math.min(getRate(banner, 'hard4'), maxPity4 - 1),
+			rateIncreasedAt: softPity4,
 			maxPity: maxPity4
 		});
 	};

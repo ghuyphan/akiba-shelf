@@ -2,8 +2,17 @@
 	import { fly } from 'svelte/transition';
 	import { t, locale } from 'svelte-i18n';
 	import { parseLocalizedText } from '$lib/helpers/localize';
+	import { onMount } from 'svelte';
 
 	export let data = {};
+	let now = Date.now();
+
+	onMount(() => {
+		const timer = window.setInterval(() => {
+			now = Date.now();
+		}, 60_000);
+		return () => window.clearInterval(timer);
+	});
 
 	const themePalettes = {
 		anemo: {
@@ -63,6 +72,10 @@
 	$: isWeapon = data.kind === 'weapon';
 	$: theme = data.theme || 'anemo';
 	$: palette = themePalettes[theme] || themePalettes.anemo;
+	$: endTime = data.endsAt ? Date.parse(data.endsAt) : Number.NaN;
+	$: remaining = Number.isFinite(endTime) ? Math.max(0, endTime - now) : null;
+	$: days = remaining === null ? null : Math.floor(remaining / 86_400_000);
+	$: hours = remaining === null ? null : Math.floor((remaining % 86_400_000) / 3_600_000);
 
 	$: featuredLabel = isWeapon
 		? featuredItems.length > 1
@@ -105,6 +118,12 @@
 			<div class="note card-stroke">
 				{description}
 			</div>
+
+			{#if remaining !== null}
+				<div class="schedule card-stroke" aria-label="Banner time remaining">
+					◷ {days}d {hours}h
+				</div>
+			{/if}
 		</div>
 	</div>
 
@@ -140,6 +159,11 @@
 </div>
 
 <style>
+	.schedule {
+		margin-top: 0.55em;
+		font-weight: 700;
+	}
+
 	.frame-content {
 		position: relative;
 		display: block;

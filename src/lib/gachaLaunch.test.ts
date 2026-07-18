@@ -11,8 +11,10 @@ vi.mock("./api", () => api);
 
 import {
   clearGachaLaunchCache,
+  isGachaBannerRunning,
   loadGachaLaunch,
   prepareGachaLaunch,
+  runningGachaCatalog,
 } from "./gachaLaunch";
 
 const shop = {
@@ -38,6 +40,41 @@ beforeEach(() => {
 });
 
 describe("gacha launch preparation", () => {
+  it("keeps only banners running inside their configured window", () => {
+    const now = Date.parse("2026-07-18T12:00:00Z");
+    const running = {
+      id: "running",
+      active: true,
+      starts_at: "2026-07-18T11:00:00Z",
+      ends_at: "2026-07-18T13:00:00Z",
+    };
+    const future = {
+      id: "future",
+      active: true,
+      starts_at: "2026-07-18T13:00:00Z",
+      ends_at: null,
+    };
+
+    expect(isGachaBannerRunning(running, now)).toBe(true);
+    expect(isGachaBannerRunning(future, now)).toBe(false);
+    expect(
+      runningGachaCatalog(
+        {
+          settings: null,
+          banners: [running, future],
+          entries: [
+            { banner_id: "running", product_id: "one" },
+            { banner_id: "future", product_id: "two" },
+          ],
+        } as never,
+        now,
+      ),
+    ).toMatchObject({
+      banners: [{ id: "running" }],
+      entries: [{ product_id: "one" }],
+    });
+  });
+
   it("deduplicates launch requests while navigation is in flight", async () => {
     const first = loadGachaLaunch("test-shop");
     const second = loadGachaLaunch("TEST-SHOP");

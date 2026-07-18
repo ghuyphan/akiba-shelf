@@ -59,7 +59,14 @@ function appRelativePath(pathname: string) {
 
 export function isStaffPwaPath(pathname: string) {
   const path = appRelativePath(pathname);
-  return path === "/admin" || path === "/dashboard" || path.startsWith("/dashboard/");
+  return (
+    path === "/admin" || path === "/dashboard" || path.startsWith("/dashboard/")
+  );
+}
+
+export function shouldRegisterPwa(pathname: string) {
+  const path = appRelativePath(pathname);
+  return isStaffPwaPath(pathname) || /^\/s\/[^/]+\/play\/?$/.test(path);
 }
 
 function setManifestEnabled(enabled: boolean) {
@@ -85,9 +92,12 @@ function performRegistration() {
       updateViaCache: "none",
     })
     .then((registration) => {
-      window.setInterval(() => {
-        void registration.update();
-      }, 60 * 60 * 1000);
+      window.setInterval(
+        () => {
+          void registration.update();
+        },
+        60 * 60 * 1000,
+      );
       return registration;
     })
     .catch(() => {
@@ -97,7 +107,7 @@ function performRegistration() {
 }
 
 export function registerPwa(pathname = window.location.pathname) {
-  if (!isStaffPwaPath(pathname) || !("serviceWorker" in navigator))
+  if (!shouldRegisterPwa(pathname) || !("serviceWorker" in navigator))
     return Promise.resolve<ServiceWorkerRegistration | undefined>(undefined);
   if (registrationPromise) return registrationPromise;
   if (document.readyState === "complete") {
@@ -119,10 +129,12 @@ export function registerPwa(pathname = window.location.pathname) {
 }
 
 export function configurePwaForPath(pathname: string) {
-  const enabled = isStaffPwaPath(pathname);
-  setManifestEnabled(enabled);
-  if (enabled) {
+  const isStaff = isStaffPwaPath(pathname);
+  setManifestEnabled(isStaff);
+  if (isStaff) {
     ensureInstallListeners();
+  }
+  if (shouldRegisterPwa(pathname)) {
     void registerPwa(pathname).catch(() => undefined);
   }
 }
@@ -155,9 +167,7 @@ export async function promptPwaInstall(): Promise<InstallOutcome> {
 function urlBase64ToUint8Array(value: string) {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
   const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
-  return Uint8Array.from(atob(base64), (character) =>
-    character.charCodeAt(0),
-  );
+  return Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
 }
 
 export function canUsePush(pathname = window.location.pathname) {

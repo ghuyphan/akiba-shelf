@@ -280,6 +280,8 @@ export async function mockSupabase(
           .sort()
           .map((category) => ({ category })),
       );
+    if (url.pathname.includes("/rest/v1/rpc/publish_gacha_configuration_v4"))
+      return json(route, null);
     if (url.pathname.includes("/rest/v1/shops")) {
       const requestedSlug =
         url.searchParams.get("slug")?.replace(/^eq\./, "") ?? "akiba-shelf";

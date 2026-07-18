@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Sparkles, Sword, UserRound } from "lucide-react";
+import { Clock3, Sparkles, Sword, UserRound } from "lucide-react";
 import type { GachaGameDescriptor } from "../../../lib/gachaGames";
 import { usePlatformI18n } from "../../../lib/platformI18n";
 import type { GachaBanner, GachaElement, GachaItemKind } from "../../../types/gacha";
@@ -15,6 +15,21 @@ type Props = {
   onUpdateDisplayLimit: (displayLimit: number) => void;
   onTextFocus: () => void;
 };
+
+function toLocalDateTime(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 16);
+}
+
+function fromLocalDateTime(value: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
 
 export function GachaBannerEditor({
   banner,
@@ -168,6 +183,41 @@ export function GachaBannerEditor({
             onUpdateBanner({ theme: value as GachaElement })
           }
         />
+        <Field
+          label={t("Banner starts")}
+          hint={t("Leave empty to make it available immediately.")}
+        >
+          <TextInput
+            type="datetime-local"
+            value={toLocalDateTime(banner.starts_at)}
+            onChange={(event) =>
+              onUpdateBanner({
+                starts_at: fromLocalDateTime(event.target.value),
+              })
+            }
+          />
+        </Field>
+        <Field
+          label={t("Banner ends")}
+          hint={t("Leave empty to keep it running until you close it.")}
+        >
+          <TextInput
+            type="datetime-local"
+            min={toLocalDateTime(banner.starts_at)}
+            value={toLocalDateTime(banner.ends_at)}
+            onChange={(event) =>
+              onUpdateBanner({
+                ends_at: fromLocalDateTime(event.target.value),
+              })
+            }
+          />
+        </Field>
+        {(banner.starts_at || banner.ends_at) && (
+          <p className="field-hint gacha-schedule-hint">
+            <Clock3 size={14} aria-hidden="true" />
+            {t("Times use your current device timezone.")}
+          </p>
+        )}
         {gameType === "hsr" && (
           <p className="field-hint gacha-slots-hint">
             {t(

@@ -63,6 +63,7 @@ export const initializeBanner = async (version, phase) => {
 				combat_type: banner.theme || featuredItem?.combat_type || 'physical',
 				rateup: rateupItems.map((item) => item.name),
 				bannerID: banner.id,
+				endsAt: banner.ends_at || null,
 				merchItems: featuredItem ? [featuredItem, ...rateupItems] : rateupItems,
 				description: parseEnglishText(banner.description || config.settings.description)
 			};

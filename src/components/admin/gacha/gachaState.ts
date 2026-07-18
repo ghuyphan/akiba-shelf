@@ -90,6 +90,7 @@ export function createGameState(
     title: defaults.title,
     description: defaults.description,
     legendary_pity: defaults.legendaryPity,
+    legendary_soft_pity: defaults.legendaryPity - 1,
   };
   const banners = normalizeGachaBanners(
     configuration?.banners.length ? configuration.banners : [fallbackBanner],

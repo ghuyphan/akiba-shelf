@@ -207,7 +207,7 @@ export function useCatalogData(
     loadError: productCatalog.error || storefront.error || cartError,
     isLoading: productCatalog.isLoading,
     isInitialLoading:
-      productCatalog.isInitialLoading || storefront.isInitialLoading,
+      (productCatalog.isInitialLoading || storefront.isInitialLoading) && !cached,
     isLoadingMore: productCatalog.isLoadingMore,
     loadMore: productCatalog.loadMore,
     reloadAll,

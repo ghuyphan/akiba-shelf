@@ -134,7 +134,7 @@ export function AdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderFilter, setOrderFilter] = useState<OrderFilter>("pending");
-  const [ordersTodayOnly, setOrdersTodayOnly] = useState(false);
+  const [ordersTodayOnly, setOrdersTodayOnly] = useState(true);
   const [orderPage, setOrderPage] = useState(1);
   const [orderTotal, setOrderTotal] = useState(0);
   const [orderCounts, setOrderCounts] =
@@ -286,7 +286,9 @@ export function AdminPage() {
           createdAfter,
           createdBefore,
         }),
-        refreshCounts ? getOrderStatusCounts(shopId) : Promise.resolve(null),
+        refreshCounts
+          ? getOrderStatusCounts(shopId, { createdAfter, createdBefore })
+          : Promise.resolve(null),
       ]);
       if (requestId !== orderRequestRef.current) return;
       const lastPage = Math.max(1, Math.ceil(result.total / orderPageSize));
@@ -386,13 +388,26 @@ export function AdminPage() {
     if (!isAuthed) return;
     if (isInitialLoading) return;
 
-    getOrderStatusCounts(shopId)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const startOfTomorrow = new Date(startOfToday);
+    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+    getOrderStatusCounts(
+      shopId,
+      ordersTodayOnly
+        ? {
+            createdAfter: startOfToday.toISOString(),
+            createdBefore: startOfTomorrow.toISOString(),
+          }
+        : {},
+    )
       .then(setOrderCounts)
       .catch((error) => {
         if (isSessionNoise(error)) return;
         toast.error(t("Could not load the admin workspace."), t("Admin unavailable"));
       });
-  }, [isAuthed, shopId, isInitialLoading, t, toast]);
+  }, [isAuthed, shopId, ordersTodayOnly, isInitialLoading, t, toast]);
 
   // Real-time catalog subscription
   useEffect(() => {

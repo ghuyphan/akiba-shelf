@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.perf-dist/
 .gacha-dist/
 .hsr-gacha-dist/
 .agents/

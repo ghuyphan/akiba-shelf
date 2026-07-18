@@ -79,10 +79,12 @@ export function OrderQueue({ orders, filter, todayOnly, counts, page, pageSize, 
         <div className="admin-filter-tabs" role="tablist" aria-label={t("Order status")}>
           {filters.map((item) => <button key={item} type="button" className={filter === item ? "active" : ""} onClick={() => onFilterChange(item)}><span>{t(item)}</span><b>{counts[item]}</b></button>)}
         </div>
-        <button type="button" className={`admin-today-toggle ${todayOnly ? "active" : ""}`} aria-pressed={todayOnly} onClick={() => onTodayOnlyChange(!todayOnly)}>
-          <CalendarDays size={14} /><span>{t("Today")}</span>
-        </button>
-        <span className="admin-live-indicator"><i /> {t("Live queue")}</span>
+        <div className="admin-queue-utilities">
+          <button type="button" className={`admin-today-toggle ${todayOnly ? "active" : ""}`} aria-pressed={todayOnly} onClick={() => onTodayOnlyChange(!todayOnly)}>
+            <CalendarDays size={14} /><span>{t("Today")}</span>
+          </button>
+          <span className="admin-live-indicator"><i /> {t("Live queue")}</span>
+        </div>
       </div>
 
       <div className="admin-order-metrics">

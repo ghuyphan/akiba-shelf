@@ -24,6 +24,8 @@
 	import ButtonShop from './button/_button-shop.svelte';
 
 	export let bannerType = 'starter';
+	export let isMerch = false;
+	$: if (isMerch && $probEdit) probEdit.set(false);
 
 	$: isStarter = bannerType === 'starter';
 	$: fit = $viewportHeight * ($isMobileLandscape ? 1.9 : 1.7) > $viewportWidth;
@@ -163,7 +165,7 @@
 				</Button>
 			</div>
 
-			{#if bannerType !== 'starter'}
+			{#if bannerType !== 'starter' && !isMerch}
 				<div class="btn">
 					<Button type="icon" on:click={editProb}>
 						<i class="hsr-{!$probEdit ? 'cog-bold' : 'check'}"></i>

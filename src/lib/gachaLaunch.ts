@@ -17,6 +17,34 @@ export type GachaLaunchData = {
   catalog: GachaCatalog;
 };
 
+export function isGachaBannerRunning(
+  banner: Pick<GachaCatalog["banners"][number], "active" | "starts_at" | "ends_at">,
+  now = Date.now(),
+) {
+  if (!banner.active) return false;
+  const startsAt = banner.starts_at ? Date.parse(banner.starts_at) : null;
+  const endsAt = banner.ends_at ? Date.parse(banner.ends_at) : null;
+  return (
+    (startsAt === null || Number.isNaN(startsAt) || startsAt <= now) &&
+    (endsAt === null || Number.isNaN(endsAt) || endsAt > now)
+  );
+}
+
+export function runningGachaCatalog(
+  catalog: GachaCatalog,
+  now = Date.now(),
+): GachaCatalog {
+  const banners = catalog.banners.filter((banner) =>
+    isGachaBannerRunning(banner, now),
+  );
+  const bannerIds = new Set(banners.map((banner) => banner.id));
+  return {
+    ...catalog,
+    banners,
+    entries: catalog.entries.filter((entry) => bannerIds.has(entry.banner_id)),
+  };
+}
+
 type GachaLaunchSeed = {
   shop?: Shop | null;
   booth?: BoothSettings;
@@ -108,6 +136,14 @@ const gachaPreviewSettingsSchema = z
     game_type: z.enum(["genshin", "hsr"]),
     title: z.string(),
     description: z.string(),
+    rare_base_rate: z.number(),
+    legendary_base_rate: z.number(),
+    lightcone_legendary_base_rate: z.number(),
+    rare_soft_pity: z.number(),
+    legendary_soft_pity: z.number(),
+    lightcone_legendary_soft_pity: z.number(),
+    featured_item_rate: z.number(),
+    featured_guaranteed_after_loss: z.boolean(),
     rare_pity: z.number(),
     legendary_pity: z.number(),
     lightcone_legendary_pity: z.number(),
@@ -125,6 +161,8 @@ const gachaPreviewBannerSchema = z
     display_limit: z.number(),
     sort_order: z.number(),
     active: z.boolean(),
+    starts_at: z.string().nullable(),
+    ends_at: z.string().nullable(),
   })
   .passthrough();
 

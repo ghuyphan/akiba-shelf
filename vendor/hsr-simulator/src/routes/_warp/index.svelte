@@ -138,7 +138,7 @@
 			</div>
 		{/if}
 	{/each}
-	<Footer {bannerType} />
+	<Footer {bannerType} {isMerch} />
 </div>
 
 <style>

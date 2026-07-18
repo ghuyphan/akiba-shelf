@@ -1,6 +1,19 @@
-import { lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import "../styles/catalog.css";
-import { applyPageTheme, getStorefrontSectionStyleClass, getThemeStyle, resetPageTheme } from "../lib/theme";
+import {
+  applyPageTheme,
+  getStorefrontSectionStyleClass,
+  getThemeStyle,
+  resetPageTheme,
+} from "../lib/theme";
 import { getShopBranding, useDocumentBranding } from "../lib/branding";
 import type { Order, Product, StorefrontSection } from "../types/catalog";
 import { CatalogLocaleProvider, translations } from "../lib/catalogI18n";
@@ -9,7 +22,6 @@ import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
 import { CategoryFilters } from "../components/catalog/CategoryFilters";
 import { BoothInfoPanel } from "../components/catalog/BoothInfoPanel";
-import { PaymentQrModal } from "../components/catalog/PaymentQrModal";
 import { ProductGrid } from "../components/catalog/ProductGrid";
 import { ProductDetailModal } from "../components/catalog/ProductDetailModal";
 import { SelectedItemPanel } from "../components/catalog/SelectedItemPanel";
@@ -17,6 +29,7 @@ import { StackedFeatured } from "../components/catalog/StackedFeatured";
 import { Alert } from "../components/ui/Alert";
 import { useToast } from "../components/ui/ToastProvider";
 import { loadOrderRecovery } from "../lib/orderRecovery";
+import { loadShopSnapshot, saveShopSnapshot } from "../lib/offline";
 import { usePersistentCart } from "../hooks/usePersistentCart";
 import { useCatalogData } from "../hooks/useCatalogData";
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
@@ -28,12 +41,19 @@ import {
 import { layoutOrderSchema } from "../lib/schemas";
 import { PageLoading } from "../components/ui/PageLoading";
 import { useParams } from "react-router-dom";
-import { getPublicGachaEnabled, getPublicShop, type PublicProductSort } from "../lib/api";
-import { prepareGachaLaunch } from "../lib/gachaLaunch";
+import {
+  getPublicGachaEnabled,
+  getPublicShop,
+  type PublicProductSort,
+} from "../lib/api";
 import type { Shop } from "../types/catalog";
-import { calculateCartPricing, normalizePromotionRewards } from "../lib/pricing";
+import {
+  calculateCartPricing,
+  normalizePromotionRewards,
+} from "../lib/pricing";
 import { prefersLightweightCatalog } from "../lib/network";
 import { ErrorBoundary } from "../components/ui/ErrorBoundary";
+import { lazyWithRetry } from "../lib/lazyWithRetry";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -41,10 +61,18 @@ const ShopUnavailablePage = lazy(() =>
   })),
 );
 
+const PaymentQrModal = lazyWithRetry("PaymentQrModal", () =>
+  import("../components/catalog/PaymentQrModal").then((module) => ({
+    default: module.PaymentQrModal,
+  })),
+);
+
 export function CatalogPage() {
   const { shopSlug = "" } = useParams();
   const toast = useToast();
-  const [shop, setShop] = useState<Shop | null>();
+  const [shop, setShop] = useState<Shop | null | undefined>(() =>
+    loadShopSnapshot(shopSlug),
+  );
   const [shopLoadError, setShopLoadError] = useState("");
   const [showGacha, setShowGacha] = useState(false);
   const [lightweightMode] = useState(prefersLightweightCatalog);
@@ -54,11 +82,15 @@ export function CatalogPage() {
   const [sort, setSort] = useState<PublicProductSort>("recommended");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { cart, setCart, reconcileCart } = usePersistentCart(shopSlug);
+
+  useEffect(() => {
+    if (cart.length > 0) {
+      void import("../components/catalog/PaymentQrModal").catch(() => {});
+    }
+  }, [cart.length]);
   const catalogShopId = shop?.catalog_source_shop_id ?? shop?.id;
   const orderingEnabled = shop?.accepting_orders !== false;
-  const cartProductIdsKey = JSON.stringify(
-    cart.map((item) => item.product.id),
-  );
+  const cartProductIdsKey = JSON.stringify(cart.map((item) => item.product.id));
   const cartProductIds = useMemo(
     () => JSON.parse(cartProductIdsKey) as string[],
     [cartProductIdsKey],
@@ -108,6 +140,7 @@ export function CatalogPage() {
   const { flyingItems, animateAdd } = useAddToCartFeedback(lightweightMode);
   const [online, setOnline] = useState(navigator.onLine);
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [paymentModalRequested, setPaymentModalRequested] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null,
@@ -139,13 +172,28 @@ export function CatalogPage() {
     activeOrderRef.current = next;
   }, [shopSlug]);
 
+  useEffect(() => {
+    if (activeOrder?.status === "pending") {
+      setPaymentModalRequested(true);
+    }
+  }, [activeOrder?.status]);
+
   const loadShop = useCallback(async () => {
-    setShop(undefined);
+    const cachedShop = loadShopSnapshot(shopSlug);
+    if (!cachedShop) {
+      setShop(undefined);
+    }
     setShopLoadError("");
     try {
-      setShop(await getPublicShop(shopSlug));
+      const freshShop = await getPublicShop(shopSlug);
+      setShop(freshShop);
+      if (freshShop) {
+        saveShopSnapshot(freshShop, shopSlug);
+      }
     } catch (error) {
-      setShop(null);
+      if (!loadShopSnapshot(shopSlug)) {
+        setShop(null);
+      }
       setShopLoadError(
         error instanceof Error
           ? error.message
@@ -161,23 +209,36 @@ export function CatalogPage() {
   useEffect(() => {
     let active = true;
     setShowGacha(false);
-    if (!catalogShopId) return () => { active = false; };
+    if (!catalogShopId)
+      return () => {
+        active = false;
+      };
     void getPublicGachaEnabled(catalogShopId)
-      .then((enabled) => { if (active) setShowGacha(enabled); })
-      .catch(() => { if (active) setShowGacha(false); });
-    return () => { active = false; };
+      .then((enabled) => {
+        if (active) setShowGacha(enabled);
+      })
+      .catch(() => {
+        if (active) setShowGacha(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [catalogShopId]);
 
   const prepareGacha = useCallback(() => {
     if (!shop || !catalogShopId) return;
     void import("./GachaPage");
-    void prepareGachaLaunch(
-      shopSlug,
-      { shop, booth: catalogBooth },
-      !lightweightMode,
-    ).catch(() => {
-      // Navigation owns user-facing launch errors; intent prefetch stays silent.
-    });
+    void import("../lib/gachaLaunch")
+      .then(({ prepareGachaLaunch }) => {
+        void prepareGachaLaunch(
+          shopSlug,
+          { shop, booth: catalogBooth },
+          !lightweightMode,
+        );
+      })
+      .catch(() => {
+        // Navigation owns user-facing launch errors; intent prefetch stays silent.
+      });
   }, [catalogBooth, catalogShopId, lightweightMode, shop, shopSlug]);
 
   useEffect(() => {
@@ -258,7 +319,11 @@ export function CatalogPage() {
       const currentItem = cartRef.current.find(
         (item) => item.product.id === product.id,
       );
-      if (currentItem && currentItem.quantity + (currentItem.reward_quantity ?? 0) >= product.quantity_available) {
+      if (
+        currentItem &&
+        currentItem.quantity + (currentItem.reward_quantity ?? 0) >=
+          product.quantity_available
+      ) {
         toast.info(
           catalogCopy.cartLimitMessage(product.quantity_available),
           catalogCopy.cartLimitTitle,
@@ -279,7 +344,11 @@ export function CatalogPage() {
         );
         if (existingIndex > -1) {
           const nextQty = prevCart[existingIndex].quantity + 1;
-          if (nextQty + (prevCart[existingIndex].reward_quantity ?? 0) > product.quantity_available) return prevCart;
+          if (
+            nextQty + (prevCart[existingIndex].reward_quantity ?? 0) >
+            product.quantity_available
+          )
+            return prevCart;
           const nextCart = [...prevCart];
           nextCart[existingIndex] = {
             ...nextCart[existingIndex],
@@ -287,7 +356,10 @@ export function CatalogPage() {
           };
           return normalizePromotionRewards(nextCart, promotion);
         }
-        return normalizePromotionRewards([...prevCart, { product, quantity: 1 }], promotion);
+        return normalizePromotionRewards(
+          [...prevCart, { product, quantity: 1 }],
+          promotion,
+        );
       });
 
       if (event) animateAdd(product, event);
@@ -298,34 +370,56 @@ export function CatalogPage() {
   const handleUpdateCartQuantity = useCallback(
     (productId: string, quantity: number) => {
       setCart((prevCart) =>
-        normalizePromotionRewards(prevCart.map((item) => {
-          if (item.product.id === productId) {
-            const maxQty = Math.max(0, item.product.quantity_available - (item.reward_quantity ?? 0));
-            const newQty = Math.min(maxQty, Math.max(0, quantity));
-            return { ...item, quantity: newQty };
-          }
-          return item;
-        }), promotion),
+        normalizePromotionRewards(
+          prevCart.map((item) => {
+            if (item.product.id === productId) {
+              const maxQty = Math.max(
+                0,
+                item.product.quantity_available - (item.reward_quantity ?? 0),
+              );
+              const newQty = Math.min(maxQty, Math.max(0, quantity));
+              return { ...item, quantity: newQty };
+            }
+            return item;
+          }),
+          promotion,
+        ),
       );
     },
     [promotion, setCart],
   );
 
-  const handleAddReward = useCallback((product: Product) => {
-    setCart((current) => {
-      const pricing = calculateCartPricing(current, promotion);
-      if (pricing.availableRewardQuantity <= 0) return current;
-      const index = current.findIndex((item) => item.product.id === product.id);
-      if (index >= 0) {
-        const item = current[index];
-        if (item.quantity + (item.reward_quantity ?? 0) >= product.quantity_available) return current;
-        const next = [...current];
-        next[index] = { ...item, product, reward_quantity: (item.reward_quantity ?? 0) + 1 };
-        return normalizePromotionRewards(next, promotion);
-      }
-      return normalizePromotionRewards([...current, { product, quantity: 0, reward_quantity: 1 }], promotion);
-    });
-  }, [promotion, setCart]);
+  const handleAddReward = useCallback(
+    (product: Product) => {
+      setCart((current) => {
+        const pricing = calculateCartPricing(current, promotion);
+        if (pricing.availableRewardQuantity <= 0) return current;
+        const index = current.findIndex(
+          (item) => item.product.id === product.id,
+        );
+        if (index >= 0) {
+          const item = current[index];
+          if (
+            item.quantity + (item.reward_quantity ?? 0) >=
+            product.quantity_available
+          )
+            return current;
+          const next = [...current];
+          next[index] = {
+            ...item,
+            product,
+            reward_quantity: (item.reward_quantity ?? 0) + 1,
+          };
+          return normalizePromotionRewards(next, promotion);
+        }
+        return normalizePromotionRewards(
+          [...current, { product, quantity: 0, reward_quantity: 1 }],
+          promotion,
+        );
+      });
+    },
+    [promotion, setCart],
+  );
 
   useEffect(() => {
     if (rewardProducts.length !== 1) return;
@@ -337,7 +431,10 @@ export function CatalogPage() {
   const handleRemoveFromCart = useCallback(
     (productId: string) => {
       setCart((prevCart) =>
-        normalizePromotionRewards(prevCart.filter((item) => item.product.id !== productId), promotion),
+        normalizePromotionRewards(
+          prevCart.filter((item) => item.product.id !== productId),
+          promotion,
+        ),
       );
       setSelectedProductId((current) =>
         current === productId ? null : current,
@@ -378,7 +475,10 @@ export function CatalogPage() {
       return;
     }
     if (!online) {
-      toast.info(catalogCopy.cartSavedOffline, catalogCopy.reconnectCheckoutTitle);
+      toast.info(
+        catalogCopy.cartSavedOffline,
+        catalogCopy.reconnectCheckoutTitle,
+      );
       return;
     }
     const closingMobileSheet =
@@ -388,7 +488,10 @@ export function CatalogPage() {
       ? new Promise<void>((resolve) => window.setTimeout(resolve, 260))
       : Promise.resolve();
     void Promise.all([ensurePayment(), sheetExit])
-      .then(() => setIsQrOpen(true))
+      .then(() => {
+        setPaymentModalRequested(true);
+        setIsQrOpen(true);
+      })
       .catch((error) =>
         toast.error(
           error instanceof Error
@@ -397,7 +500,14 @@ export function CatalogPage() {
           catalogCopy.checkoutUnavailableTitle,
         ),
       );
-  }, [catalogCopy, ensurePayment, isCartExpanded, online, orderingEnabled, toast]);
+  }, [
+    catalogCopy,
+    ensurePayment,
+    isCartExpanded,
+    online,
+    orderingEnabled,
+    toast,
+  ]);
 
   const categories = useMemo(
     () => ["All", ...catalogCategories],
@@ -605,83 +715,88 @@ export function CatalogPage() {
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
       <PromotionProvider promotion={promotion}>
-      <ErrorBoundary
-        title={catalogCopy.crashTitle}
-        message={catalogCopy.crashHint}
-        reloadLabel={catalogCopy.crashReload}
-        resetKey={shopSlug}
-      >
-      <main
-        className={`app-shell ${lightweightMode ? "catalog-lightweight" : ""}`}
-        style={getThemeStyle(booth)}
-        onClick={() => setSelectedProductId(null)}
-      >
-        <CatalogHeader
-          booth={booth}
-          showGacha={showGacha}
-          onPrepareGacha={prepareGacha}
-          onOpenInfo={() => setIsInfoOpen(true)}
-        />
-        {!online && (
-          <Alert variant="info" title={catalogCopy.offlineTitle}>
-            {catalogCopy.offlineHint}
-          </Alert>
-        )}
-        <div className="catalog-layout storefront-layout-grid">
-          <div className="storefront-hero-grid">
-            {heroStorefrontSections.map((section) => (
-              <div
-                className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
-                key={section}
-                onClick={
-                  section === "booth"
-                    ? (event) => event.stopPropagation()
-                    : undefined
-                }
-              >
-                {storefrontBlocks[section]}
+        <ErrorBoundary
+          title={catalogCopy.crashTitle}
+          message={catalogCopy.crashHint}
+          reloadLabel={catalogCopy.crashReload}
+          resetKey={shopSlug}
+        >
+          <main
+            className={`app-shell ${lightweightMode ? "catalog-lightweight" : ""}`}
+            style={getThemeStyle(booth)}
+            onClick={() => setSelectedProductId(null)}
+          >
+            <CatalogHeader
+              booth={booth}
+              showGacha={showGacha}
+              onPrepareGacha={prepareGacha}
+              onOpenInfo={() => setIsInfoOpen(true)}
+            />
+            {!online && (
+              <Alert variant="info" title={catalogCopy.offlineTitle}>
+                {catalogCopy.offlineHint}
+              </Alert>
+            )}
+            <div className="catalog-layout storefront-layout-grid">
+              <div className="storefront-hero-grid">
+                {heroStorefrontSections.map((section) => (
+                  <div
+                    className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
+                    key={section}
+                    onClick={
+                      section === "booth"
+                        ? (event) => event.stopPropagation()
+                        : undefined
+                    }
+                  >
+                    {storefrontBlocks[section]}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="storefront-content-grid">
-            {contentStorefrontColumns.map((column) => column.node)}
-          </div>
-        </div>
-        {orderingEnabled && activeOrder?.status === "pending" && (
-          <PendingOrderBar
-            order={activeOrder}
-            onOpen={() => setIsQrOpen(true)}
-          />
-        )}
-        {orderingEnabled && (
-          <PaymentQrModal
-            shopSlug={shop.slug}
-            isOpen={isQrOpen}
-            payment={payment}
-            cart={cart}
-            promotion={promotion}
-            onClose={() => setIsQrOpen(false)}
-            onSuccess={() => void loadCatalog()}
-            onOrderChange={handleOrderChange}
-          />
-        )}
-        <ProductDetailModal
-          product={detailProduct}
-          onClose={() => {
-            setDetailProduct(null);
-            setSelectedProductId(null);
-          }}
-          onAddToCart={handleAddToCart}
-        />
-        <BoothDetailsModal
-          booth={booth}
-          payment={payment}
-          open={isInfoOpen}
-          onClose={() => setIsInfoOpen(false)}
-        />
-        <FlyingItemsLayer items={flyingItems} />
-      </main>
-      </ErrorBoundary>
+              <div className="storefront-content-grid">
+                {contentStorefrontColumns.map((column) => column.node)}
+              </div>
+            </div>
+            {orderingEnabled && activeOrder?.status === "pending" && (
+              <PendingOrderBar
+                order={activeOrder}
+                onOpen={() => {
+                  setPaymentModalRequested(true);
+                  setIsQrOpen(true);
+                }}
+              />
+            )}
+            {orderingEnabled && paymentModalRequested && (
+              <Suspense fallback={null}>
+                <PaymentQrModal
+                  shopSlug={shop.slug}
+                  isOpen={isQrOpen}
+                  payment={payment}
+                  cart={cart}
+                  promotion={promotion}
+                  onClose={() => setIsQrOpen(false)}
+                  onSuccess={() => void loadCatalog()}
+                  onOrderChange={handleOrderChange}
+                />
+              </Suspense>
+            )}
+            <ProductDetailModal
+              product={detailProduct}
+              onClose={() => {
+                setDetailProduct(null);
+                setSelectedProductId(null);
+              }}
+              onAddToCart={handleAddToCart}
+            />
+            <BoothDetailsModal
+              booth={booth}
+              payment={payment}
+              open={isInfoOpen}
+              onClose={() => setIsInfoOpen(false)}
+            />
+            <FlyingItemsLayer items={flyingItems} />
+          </main>
+        </ErrorBoundary>
       </PromotionProvider>
     </CatalogLocaleProvider>
   );

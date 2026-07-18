@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(7);
+select plan(10);
 
 insert into auth.users(
   id,instance_id,aud,role,email,encrypted_password,
@@ -24,15 +24,10 @@ insert into public.shop_members(shop_id,user_id,role) values (
 );
 insert into public.products(
   id,shop_id,name,item_code,quantity_available,category,active
-) values (
-  'gacha-product',
-  '51000000-0000-4000-8000-000000000001',
-  'Gacha Product',
-  'GACHA-1',
-  5,
-  'Test',
-  true
-);
+) values
+  ('gacha-product-3','51000000-0000-4000-8000-000000000001','Gacha Product 3','GACHA-3',5,'Test',true),
+  ('gacha-product-4','51000000-0000-4000-8000-000000000001','Gacha Product 4','GACHA-4',5,'Test',true),
+  ('gacha-product-5','51000000-0000-4000-8000-000000000001','Gacha Product 5','GACHA-5',5,'Test',true);
 
 set local role authenticated;
 set local request.jwt.claim.sub='50000000-0000-4000-8000-000000000001';
@@ -40,7 +35,7 @@ set local request.jwt.claim.sub='50000000-0000-4000-8000-000000000001';
 select ok(
   has_function_privilege(
     'authenticated',
-    'public.publish_gacha_configuration(uuid,text,jsonb)',
+    'public.publish_gacha_configuration_v4(uuid,text,jsonb)',
     'execute'
   ),
   'authenticated admins can execute the publish RPC'
@@ -59,13 +54,17 @@ select ok(
 );
 
 select lives_ok(
-  $$select public.publish_gacha_configuration(
+  $$select public.publish_gacha_configuration_v4(
     '51000000-0000-4000-8000-000000000001',
     'genshin',
     '{
-      "settings":{"enabled":true,"title":"Test Wish","description":"","rare_pity":10,"legendary_pity":50,"lightcone_legendary_pity":80},
-      "banners":[{"id":"52000000-0000-4000-8000-000000000001","name":"Test Banner","description":"","kind":"character","theme":"anemo","display_limit":1,"active":true}],
-      "entries":[{"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product","kind":"character","element":"anemo","weapon_type":"sword","rarity":5,"weight":100,"featured":true,"active":true}]
+      "settings":{"enabled":true,"title":"Test Wish","description":"","rare_base_rate":6.5,"legendary_base_rate":1.25,"lightcone_legendary_base_rate":0.8,"rare_soft_pity":8,"legendary_soft_pity":40,"lightcone_legendary_soft_pity":65,"featured_item_rate":60,"featured_guaranteed_after_loss":true,"rare_pity":10,"legendary_pity":50,"lightcone_legendary_pity":80},
+      "banners":[{"id":"52000000-0000-4000-8000-000000000001","name":"Test Banner","description":"","kind":"character","theme":"anemo","display_limit":1,"active":true,"starts_at":"2026-07-18T10:00:00Z","ends_at":"2026-07-19T10:00:00Z"}],
+      "entries":[
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-3","kind":"character","element":"anemo","weapon_type":"sword","rarity":3,"weight":100,"featured":false,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-4","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":false,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-5","kind":"character","element":"anemo","weapon_type":"sword","rarity":5,"weight":100,"featured":true,"active":true}
+      ]
     }'::jsonb
   )$$,
   'owner publishes a valid configuration through the RPC'
@@ -74,6 +73,21 @@ select is(
   (select game_type from public.gacha_settings where shop_id='51000000-0000-4000-8000-000000000001'),
   'genshin',
   'published game type is stored'
+);
+select is(
+  (select legendary_base_rate::text from public.gacha_settings where shop_id='51000000-0000-4000-8000-000000000001'),
+  '1.25',
+  'published configurable rate is stored'
+);
+select is(
+  (select (featured_item_rate::text || '/' || legendary_soft_pity::text) from public.gacha_settings where shop_id='51000000-0000-4000-8000-000000000001'),
+  '60.00/40',
+  'published featured odds and soft pity are stored'
+);
+select is(
+  (select starts_at::text from public.gacha_banners where id='52000000-0000-4000-8000-000000000001'),
+  '2026-07-18 10:00:00+00',
+  'published banner schedule is stored'
 );
 
 set local role postgres;

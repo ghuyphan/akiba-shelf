@@ -16,6 +16,7 @@
 	import { getLCDetails } from '$lib/helpers/gacha/gacha-base';
 	import positionToStyle from '$lib/helpers/css-transformer';
 	import ButtonBanner from '../button/_button-banner.svelte';
+	import BannerDuration from '$lib/components/BannerDuration.svelte';
 	import RateupLightcones from './__rateup-lightcones.svelte';
 	import LightCones from '$lib/components/LightCones.svelte';
 	import Path from '$lib/components/Path.svelte';
@@ -63,7 +64,7 @@
 					</h1>
 					<div class="time">
 						<i class="hsr-time"></i>
-						<span class="caption">{$t('warp.duration')}</span>
+						<BannerDuration endsAt={item.content[active]?.endsAt} />
 					</div>
 				</div>
 

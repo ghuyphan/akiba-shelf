@@ -27,6 +27,74 @@ const contentTypes: Record<string, string> = {
   ".eot": "application/vnd.ms-fontobject",
 };
 
+function injectModulePreloadAndPreconnect(): Plugin {
+  let supabaseUrl = "";
+  return {
+    name: "inject-module-preload-and-preconnect",
+    configResolved(config) {
+      supabaseUrl = config.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+    },
+    transformIndexHtml: {
+      order: "post",
+      handler(html, ctx) {
+        let AppChunkFileName = "";
+        if (ctx.bundle) {
+          for (const [, chunk] of Object.entries(ctx.bundle)) {
+            if (chunk.type === "chunk" && (chunk.name === "App" || chunk.fileName.startsWith("assets/App-") || chunk.fileName.includes("/App-"))) {
+              AppChunkFileName = chunk.fileName;
+              break;
+            }
+          }
+        }
+
+        const tags = [];
+
+        // 1. Module preload App chunk if found
+        if (AppChunkFileName) {
+          tags.push({
+            tag: "link",
+            attrs: {
+              rel: "modulepreload",
+              href: `${ctx.server ? "" : "/"}${AppChunkFileName}`,
+            },
+            injectTo: "head" as const,
+          });
+        }
+
+        // 2. Preconnect to Supabase if URL is set
+        if (supabaseUrl) {
+          try {
+            const origin = new URL(supabaseUrl).origin;
+            tags.push(
+              {
+                tag: "link",
+                attrs: {
+                  rel: "preconnect",
+                  href: origin,
+                  crossorigin: "anonymous",
+                },
+                injectTo: "head" as const,
+              },
+              {
+                tag: "link",
+                attrs: {
+                  rel: "dns-prefetch",
+                  href: origin,
+                },
+                injectTo: "head" as const,
+              }
+            );
+          } catch {
+            // Ignore malformed URL
+          }
+        }
+
+        return tags.length ? { html, tags } : html;
+      },
+    },
+  };
+}
+
 function serveGachaInDevelopment(): Plugin {
   return {
     name: "serve-gacha-in-development",
@@ -178,6 +246,7 @@ export default defineConfig(() => ({
     },
   },
   plugins: [
+    injectModulePreloadAndPreconnect(),
     serveGachaInDevelopment(),
     react(),
     VitePWA({
@@ -199,6 +268,53 @@ export default defineConfig(() => ({
         navigateFallback: "index.html",
         navigateFallbackAllowlist: [/^\/(?:admin|dashboard|auth)(?:\/|$)/],
         cleanupOutdatedCaches: true,
+        runtimeCaching: [
+          {
+            urlPattern:
+              /\/(?:gacha-simulator|hsr-simulator)\/.*\.(?:mp4|webm|ogg|mp3|wav)$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "gacha-media-cache-v1",
+              rangeRequests: true,
+              expiration: {
+                maxEntries: 80,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern:
+              /\/(?:gacha-simulator|hsr-simulator)\/.*\.(?:woff2?|ttf|png|jpe?g|webp|svg)$/,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "gacha-static-cache-v1",
+              expiration: {
+                maxEntries: 240,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /\/storage\/v1\/object\/public\//,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "supabase-storage-cache",
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 7 * 24 * 60 * 60, // 7 Days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       },
     }),
   ],

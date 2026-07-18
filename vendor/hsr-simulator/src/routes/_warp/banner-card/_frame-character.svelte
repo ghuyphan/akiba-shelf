@@ -5,6 +5,7 @@
 	import { data } from '$lib/data/characters.json';
 	import { assets, probEdit } from '$lib/stores/app-store';
 	import positionToStyle from '$lib/helpers/css-transformer';
+	import BannerDuration from '$lib/components/BannerDuration.svelte';
 
 	export let item = {};
 
@@ -42,7 +43,7 @@
 					</h1>
 					<div class="time">
 						<i class="hsr-time"></i>
-						<span>{$t('warp.duration')}</span>
+						<BannerDuration endsAt={item.endsAt} />
 					</div>
 					<div class="description">
 						<p>{@html $t('warp.warpDescription')}</p>

@@ -1,5 +1,5 @@
-import type { BoothSettings, CartItem, CatalogData, Product } from "../types/catalog";
-import { boothSettingsSchema, productRowSchema } from "./schemas";
+import type { BoothSettings, CartItem, CatalogData, Product, Shop } from "../types/catalog";
+import { boothSettingsSchema, productRowSchema, shopSchema } from "./schemas";
 
 const SNAPSHOT_KEY = "akiba-shelf-catalog-v1";
 const CART_KEY = "akiba-shelf-cart-v1";
@@ -74,5 +74,35 @@ export function saveCart(items: CartItem[], shopId?: string) {
     localStorage.setItem(scopedKey(CART_KEY, shopId), JSON.stringify({ version: 1, items }));
   } catch {
     // Offline persistence is best-effort.
+  }
+}
+
+const SHOP_SNAPSHOT_PREFIX = "akiba-shelf-shop-v1";
+
+export function loadShopSnapshot(slug: string): Shop | null {
+  if (!slug) return null;
+  try {
+    const key = `${SHOP_SNAPSHOT_PREFIX}:${slug}`;
+    const value = JSON.parse(localStorage.getItem(key) || "null") as unknown;
+    if (!isRecord(value) || value.version !== 1 || !shopSchema.safeParse(value.shop).success) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return value.shop as Shop;
+  } catch {
+    localStorage.removeItem(`${SHOP_SNAPSHOT_PREFIX}:${slug}`);
+    return null;
+  }
+}
+
+export function saveShopSnapshot(shop: Shop, slug: string) {
+  if (!slug || !shop) return;
+  try {
+    localStorage.setItem(
+      `${SHOP_SNAPSHOT_PREFIX}:${slug}`,
+      JSON.stringify({ version: 1, savedAt: new Date().toISOString(), shop }),
+    );
+  } catch {
+    // Offline caching is best-effort.
   }
 }

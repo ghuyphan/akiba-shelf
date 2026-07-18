@@ -10,6 +10,23 @@ restoreRedirect();
 hydrateInitialPageTheme();
 resetDocumentBranding();
 
+// Route-aware page chunk prefetching
+const pathname = window.location.pathname;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const appRelativePath = base && pathname.startsWith(`${base}/`)
+  ? pathname.slice(base.length)
+  : pathname;
+
+if (appRelativePath.startsWith("/s/")) {
+  void import("./pages/CatalogPage").catch(() => {});
+} else if (appRelativePath === "/admin") {
+  void import("./pages/AdminPage").catch(() => {});
+} else if (appRelativePath === "/dashboard") {
+  void import("./pages/DashboardPage").catch(() => {});
+} else if (appRelativePath === "/auth") {
+  void import("./pages/AuthPage").catch(() => {});
+}
+
 const appChunkRetryKey = "chunk-reload:app";
 void import("./App")
   .then(({ App }) => {

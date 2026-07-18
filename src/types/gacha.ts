@@ -39,6 +39,14 @@ export type GachaSettings = {
   game_type: GachaGameType;
   title: string;
   description: string;
+  rare_base_rate: number;
+  legendary_base_rate: number;
+  lightcone_legendary_base_rate: number;
+  rare_soft_pity: number;
+  legendary_soft_pity: number;
+  lightcone_legendary_soft_pity: number;
+  featured_item_rate: number;
+  featured_guaranteed_after_loss: boolean;
   rare_pity: number;
   legendary_pity: number;
   lightcone_legendary_pity: number;
@@ -69,6 +77,8 @@ export type GachaBanner = {
   display_limit: number;
   sort_order: number;
   active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
   updated_at?: string;
 };
 
@@ -106,6 +116,14 @@ export const defaultGachaSettings = (shopId: string): GachaSettings => ({
   title: "Wish upon the shelf",
   description:
     "Meet a surprise character or discover a featured weapon from this shop.",
+  rare_base_rate: 5.1,
+  legendary_base_rate: 0.6,
+  lightcone_legendary_base_rate: 0.8,
+  rare_soft_pity: 9,
+  legendary_soft_pity: 49,
+  lightcone_legendary_soft_pity: 79,
+  featured_item_rate: 50,
+  featured_guaranteed_after_loss: true,
   rare_pity: 10,
   legendary_pity: 50,
   lightcone_legendary_pity: 80,
@@ -124,4 +142,6 @@ export const defaultGachaBanner = (
   display_limit: 3,
   sort_order: 0,
   active: true,
+  starts_at: null,
+  ends_at: null,
 });

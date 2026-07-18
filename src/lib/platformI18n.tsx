@@ -929,6 +929,9 @@ const vi: Record<string, string> = {
   "Removed from pool.": "Đã xóa khỏi pool.",
   "Remove from pool": "Xóa khỏi pool",
   "Pity rules": "Quy tắc bảo hiểm",
+  "Rates and pity rules": "Tỷ lệ và quy tắc bảo hiểm",
+  "Base odds and maximum pulls before each guarantee.":
+    "Tỷ lệ cơ bản và số lượt tối đa trước mỗi mốc bảo hiểm.",
   "Advanced pull guarantees": "Cài đặt bảo hiểm nâng cao",
   "Pull guarantees": "Mốc bảo hiểm",
   "Maximum pulls before each rarity is guaranteed.":
@@ -973,12 +976,25 @@ const vi: Record<string, string> = {
   "Choose a matching role": "Chọn vai trò phù hợp",
   "Every active HSR banner needs one featured 5-star item.":
     "Mỗi banner HSR đang bật cần một vật phẩm 5 sao nổi bật.",
+  'The active banner "{{name}}" needs exactly one featured 5-star item.':
+    'Banner đang hoạt động "{{name}}" cần chính xác một vật phẩm 5 sao nổi bật.',
   "Rate-up": "Tăng tỉ lệ",
   "Primary featured": "Nổi bật chính",
   "Secondary rate-up": "Tăng tỉ lệ phụ",
   "Banner theme": "Chủ đề banner",
   "Banner element": "Nguyên tố banner",
   "Banner active": "Bật banner",
+  "Banner starts": "Banner bắt đầu",
+  "Banner ends": "Banner kết thúc",
+  "Leave empty to make it available immediately.":
+    "Để trống để banner khả dụng ngay lập tức.",
+  "Leave empty to keep it running until you close it.":
+    "Để trống để banner tiếp tục chạy cho đến khi bạn tắt.",
+  "Times use your current device timezone.":
+    "Thời gian sử dụng múi giờ hiện tại của thiết bị.",
+  'Banner "{{name}}" must end after it starts.':
+    'Banner "{{name}}" phải kết thúc sau thời gian bắt đầu.',
+  "Check banner schedule": "Kiểm tra lịch banner",
   "Simulator rules": "Quy tắc mô phỏng",
   "Shared availability and pity across every banner.":
     "Trạng thái và bảo hiểm dùng chung cho mọi banner.",
@@ -997,6 +1013,10 @@ const vi: Record<string, string> = {
     "Hãy đặt tên cho minigame và mọi banner.",
   "Every active banner needs at least one active merch item.":
     "Mỗi banner đang bật cần ít nhất một merch đang hoạt động.",
+  "The active game needs at least one active {{rarity}}-star item across its banners.":
+    "Game đang hoạt động cần ít nhất một vật phẩm {{rarity}} sao đang bật trong các banner.",
+  'The active banner "{{name}}" needs at least one active merch item.':
+    'Banner đang hoạt động "{{name}}" cần ít nhất một vật phẩm đang bán.',
   "Featured slots are full": "Đã đủ vị trí nổi bật",
   "This banner can show up to {{count}} featured items.":
     "Banner này có thể hiển thị tối đa {{count}} vật phẩm nổi bật.",
@@ -1028,10 +1048,34 @@ const vi: Record<string, string> = {
   "5-star pity": "Bảo hiểm 5 sao",
   "Character 5-star pity": "Bảo hiểm nhân vật 5 sao",
   "Light Cone 5-star pity": "Bảo hiểm Nón Ánh Sáng 5 sao",
+  "4-star base rate": "Tỷ lệ cơ bản 4 sao",
+  "5-star base rate": "Tỷ lệ cơ bản 5 sao",
+  "Character 5-star base rate": "Tỷ lệ cơ bản nhân vật 5 sao",
+  "Light Cone 5-star base rate": "Tỷ lệ cơ bản Nón Ánh Sáng 5 sao",
+  "Chance per pull before pity increases the rate.":
+    "Xác suất mỗi lượt trước khi bảo hiểm tăng tỷ lệ.",
   "Guarantee a 4-star or higher within this many pulls.":
     "Đảm bảo nhận 4 sao trở lên trong số lượt này.",
   "Guarantee a 5-star within this many pulls.":
     "Đảm bảo nhận 5 sao trong số lượt này.",
+  "4-star soft pity": "Mốc tăng tỷ lệ 4 sao",
+  "5-star soft pity": "Mốc tăng tỷ lệ 5 sao",
+  "Character 5-star soft pity": "Mốc tăng tỷ lệ nhân vật 5 sao",
+  "Light Cone 5-star soft pity": "Mốc tăng tỷ lệ Nón Ánh Sáng 5 sao",
+  "Start increasing the 4-star rate from this pull.":
+    "Bắt đầu tăng tỷ lệ 4 sao từ lượt này.",
+  "Start increasing the 5-star rate from this pull.":
+    "Bắt đầu tăng tỷ lệ 5 sao từ lượt này.",
+  "Featured-item rate": "Tỷ lệ vật phẩm nổi bật",
+  "Chance that a 4-star or 5-star pull uses its featured pool.":
+    "Xác suất lượt 4 hoặc 5 sao lấy vật phẩm từ pool nổi bật.",
+  "Featured guarantee": "Bảo hiểm vật phẩm nổi bật",
+  "After a non-featured pull, guarantee the next item of that rarity is featured.":
+    "Sau khi trượt vật phẩm nổi bật, đảm bảo vật phẩm tiếp theo cùng độ hiếm sẽ là vật phẩm nổi bật.",
+  "Each soft pity must be at least 1 and lower than its hard pity.":
+    "Mỗi mốc tăng tỷ lệ phải từ 1 trở lên và thấp hơn mốc bảo hiểm cứng.",
+  "The featured-item rate must be between 0% and 100%.":
+    "Tỷ lệ vật phẩm nổi bật phải nằm trong khoảng 0% đến 100%.",
   "Merch wish pool": "Pool điều ước merch",
   "Choose products, present them as characters or weapons, and tune their rarity.":
     "Chọn sản phẩm, đặt vai trò nhân vật hoặc vũ khí và điều chỉnh độ hiếm.",
@@ -1065,6 +1109,13 @@ const vi: Record<string, string> = {
     "Bảo hiểm 5 sao phải lớn hơn bảo hiểm 4 sao.",
   "The Light Cone 5-star pity must be higher than the 4-star pity.":
     "Bảo hiểm Nón Ánh Sáng 5 sao phải lớn hơn bảo hiểm 4 sao.",
+  "The 4-star and 5-star base rates must total less than 100%.":
+    "Tổng tỷ lệ cơ bản 4 sao và 5 sao phải nhỏ hơn 100%.",
+  "The 4-star and Light Cone 5-star base rates must total less than 100%.":
+    "Tổng tỷ lệ cơ bản 4 sao và Nón Ánh Sáng 5 sao phải nhỏ hơn 100%.",
+  "Incomplete prize pool": "Pool phần thưởng chưa đầy đủ",
+  'The active banner "{{name}}" needs at least one active 3-star, 4-star, and 5-star item.':
+    'Banner đang bật "{{name}}" cần ít nhất một vật phẩm 3 sao, 4 sao và 5 sao đang hoạt động.',
   "Check warp settings": "Kiểm tra cài đặt Warp",
   "Add at least one active merch item before opening the minigame.":
     "Thêm ít nhất một merch đang hoạt động trước khi mở minigame.",
@@ -1135,6 +1186,8 @@ const vi: Record<string, string> = {
   "Publishing switches the public minigame to {{game}}. Continue?": "Xuất bản sẽ chuyển minigame công khai sang {{game}}. Tiếp tục?",
   "Delete banner “{{name}}”? Its pool items will be removed too.": "Xóa banner “{{name}}”? Các vật phẩm trong pool của nó cũng sẽ bị xóa theo.",
   "Availability, public copy, and pity rules for this game.": "Trạng thái hoạt động, nội dung công khai và luật bảo hiểm của game này.",
+  "Availability, public copy, rates, and pity rules for this game.":
+    "Trạng thái hoạt động, nội dung công khai, tỷ lệ và luật bảo hiểm của game này.",
   Availability: "Trạng thái hoạt động",
   "Live now": "Đang hoạt động",
   Unsaved: "Chưa lưu",

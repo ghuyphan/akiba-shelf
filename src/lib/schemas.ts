@@ -60,3 +60,12 @@ export const orderMutationSchema = z.object({
   outcome: z.enum(["confirmed", "cancelled", "expired", "already_confirmed", "already_cancelled", "already_expired", "not_found", "invalid_state"]),
   order: orderSchema.nullable(),
 });
+
+export const shopSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  slug: z.string(),
+  active: z.boolean(),
+  accepting_orders: z.boolean(),
+  catalog_source_shop_id: z.string().uuid().nullable().optional(),
+}).passthrough();
