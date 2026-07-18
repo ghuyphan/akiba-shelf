@@ -220,7 +220,15 @@ test("loads the catalog in batches without hiding later search results", async (
   await expect(page.locator(".product-card")).toHaveCount(30);
   await expect(page.getByRole("button", { name: "Load more" })).toHaveCount(0);
 
+  const searchedProducts = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return (
+      url.pathname.includes("/rest/v1/products") &&
+      (url.searchParams.get("or") ?? "").includes("Product 30")
+    );
+  });
   await page.getByPlaceholder("Search items...").fill("Product 30");
+  await searchedProducts;
   await expect(
     page.getByRole("button", { name: "View details for Product 30" }),
   ).toBeVisible();

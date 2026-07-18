@@ -129,6 +129,15 @@ export async function mockSupabase(
     dualGacha?: boolean;
   } = {},
 ) {
+  await page.route("https://example.test/*.jpg", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "image/svg+xml",
+      headers: { "access-control-allow-origin": "*" },
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><path fill="#5f8d55" d="M0 0h2v2H0z"/></svg>',
+    }),
+  );
+
   const catalogProducts = options.manyProducts
     ? Array.from({ length: 30 }, (_, index) => ({
         ...products[index % products.length],
