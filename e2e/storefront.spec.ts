@@ -327,7 +327,7 @@ test("offers native game portals when both gacha games are active", async ({
   await page.goto("./s/akiba-shelf/play");
 
   await expect(
-    page.getByRole("heading", { name: "Choose your journey" }),
+    page.getByRole("heading", { name: "Select a game" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: /Genshin Impact/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Honkai: Star Rail/ })).toBeVisible();

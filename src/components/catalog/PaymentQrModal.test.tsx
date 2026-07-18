@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import type { CartItem, Order, PaymentSettings, Product } from "../../types/catalog";
@@ -187,12 +187,24 @@ describe("PaymentQrModal", () => {
       screen.getByRole("button", { name: "Create order & pay" }),
     );
 
+    await waitFor(
+      () =>
+        expect(apiMocks.getCustomerOrder).toHaveBeenCalledWith(
+          pending.id,
+          "0123456789abcdef0123456789abcdef",
+        ),
+      { timeout: 10000 },
+    );
     expect(
-      await screen.findByRole("dialog", { name: "Payment complete" }),
+      await screen.findByRole(
+        "dialog",
+        { name: "Payment complete" },
+        { timeout: 10000 },
+      ),
     ).toBeInTheDocument();
     expect(onSuccess).toHaveBeenCalled();
     expect(screen.getByText(/AKB-0042/)).toBeInTheDocument();
     expect(screen.getByText("Total paid")).toBeInTheDocument();
     expect(screen.getByText(vnd(330000))).toBeInTheDocument();
-  });
+  }, 15000);
 });

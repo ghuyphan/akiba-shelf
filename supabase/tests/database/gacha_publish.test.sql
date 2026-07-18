@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(11);
 
 insert into auth.users(
   id,instance_id,aud,role,email,encrypted_password,
@@ -35,10 +35,18 @@ set local request.jwt.claim.sub='50000000-0000-4000-8000-000000000001';
 select ok(
   has_function_privilege(
     'authenticated',
+    'public.publish_gacha_configuration_v5(uuid,text,jsonb)',
+    'execute'
+  ),
+  'authenticated admins can execute the current publish RPC'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated',
     'public.publish_gacha_configuration_v4(uuid,text,jsonb)',
     'execute'
   ),
-  'authenticated admins can execute the publish RPC'
+  'authenticated clients cannot execute the internal v4 publish RPC'
 );
 select ok(
   not has_table_privilege('authenticated','public.gacha_settings','insert'),
@@ -54,7 +62,7 @@ select ok(
 );
 
 select lives_ok(
-  $$select public.publish_gacha_configuration_v4(
+  $$select public.publish_gacha_configuration_v5(
     '51000000-0000-4000-8000-000000000001',
     'genshin',
     '{
@@ -67,7 +75,7 @@ select lives_ok(
       ]
     }'::jsonb
   )$$,
-  'owner publishes a valid configuration through the RPC'
+  'owner publishes a valid configuration through the current RPC'
 );
 select is(
   (select game_type from public.gacha_settings where shop_id='51000000-0000-4000-8000-000000000001'),
