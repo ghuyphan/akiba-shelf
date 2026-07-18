@@ -182,11 +182,12 @@ export async function getPushEnabled(shopId?: string) {
   const registration = await requireStaffRegistration();
   const subscription = await registration.pushManager.getSubscription();
   if (!subscription || !shopId || !supabase) return Boolean(subscription);
-  const { count } = await supabase
+  const { count, error } = await supabase
     .from("push_subscriptions")
     .select("endpoint", { count: "exact", head: true })
     .eq("shop_id", shopId)
     .eq("endpoint", subscription.endpoint);
+  if (error) throw error;
   return Boolean(count);
 }
 
@@ -198,6 +199,9 @@ export async function enableOrderNotifications(shopId = "") {
     );
   if (!shopId) throw new Error("Select a shop before enabling notifications.");
   if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  if (authError || !auth.user)
+    throw new Error("Sign in before enabling notifications.");
   if (!isStaffPwaPath(window.location.pathname))
     throw new Error("Order notifications are available only in the staff app.");
   const permission = await Notification.requestPermission();
@@ -208,8 +212,6 @@ export async function enableOrderNotifications(shopId = "") {
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(publicKey),
   });
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) throw new Error("Sign in before enabling notifications.");
   const json = subscription.toJSON();
   const { error } = await supabase.from("push_subscriptions").upsert(
     {
@@ -230,17 +232,20 @@ export async function enableOrderNotifications(shopId = "") {
 
 export async function disableOrderNotifications(shopId = "") {
   if (!supabase || !canUsePush()) return;
+  if (!shopId) throw new Error("Select a shop before disabling notifications.");
   const registration = await requireStaffRegistration();
   const subscription = await registration.pushManager.getSubscription();
   if (!subscription) return;
-  await supabase
+  const { error: deleteError } = await supabase
     .from("push_subscriptions")
     .delete()
     .eq("shop_id", shopId)
     .eq("endpoint", subscription.endpoint);
-  const { count } = await supabase
+  if (deleteError) throw deleteError;
+  const { count, error: countError } = await supabase
     .from("push_subscriptions")
     .select("endpoint", { count: "exact", head: true })
     .eq("endpoint", subscription.endpoint);
+  if (countError) throw countError;
   if (!count) await subscription.unsubscribe();
 }

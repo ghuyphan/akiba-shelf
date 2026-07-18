@@ -45,7 +45,14 @@ function serveGachaInDevelopment(): Plugin {
         const prefix = isGenshin ? "/gacha-simulator" : "/hsr-simulator";
         const devRoot = isGenshin ? gachaDevRoot : hsrDevRoot;
 
-        let relativePath = decodeURIComponent(pathname.slice(prefix.length));
+        let relativePath = "";
+        try {
+          relativePath = decodeURIComponent(pathname.slice(prefix.length));
+        } catch {
+          response.statusCode = 400;
+          response.end("Bad Request");
+          return;
+        }
         if (!relativePath || relativePath.endsWith("/")) {
           relativePath += "index.html";
         }
@@ -182,6 +189,7 @@ export default defineConfig(() => ({
         globIgnores: [
           "404.html",
           "**/CatalogPage-*.js",
+          "**/GachaPage-*.js",
           "**/HomePage-*.js",
           "**/AuthPage-*.js",
           "**/AuthCallbackPage-*.js",

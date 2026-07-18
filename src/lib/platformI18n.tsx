@@ -1141,6 +1141,9 @@ const vi: Record<string, string> = {
   Draft: "Bản nháp",
   "{{banners}} banners · {{items}} items": "{{banners}} banner · {{items}} vật phẩm",
   "Save draft": "Lưu bản nháp",
+  "Enable at least one banner before publishing the minigame.":
+  "Hãy bật ít nhất một banner trước khi xuất bản minigame.",
+"No active banner": "Không có banner đang hoạt động",
 };
 
 type Variables = Record<string, string | number>;

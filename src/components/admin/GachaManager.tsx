@@ -165,6 +165,13 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     const { settings: stateSettings, banners: stateBanners, entries: stateEntries } = state;
     if (!stateSettings.enabled) return true;
     const activeBanners = stateBanners.filter((banner) => banner.active);
+    if (activeBanners.length === 0) {
+      toast.error(
+        t("Enable at least one banner before publishing the minigame."),
+        t("No active banner"),
+      );
+      return false;
+    }
     if (
       activeBanners.some(
         (banner) =>

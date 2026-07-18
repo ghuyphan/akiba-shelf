@@ -23,13 +23,19 @@ import { configurePwaForPath } from "./lib/pwa";
  * crashing to a blank page.
  */
 function lazyWithRetry<T extends ComponentType<Record<string, never>>>(
+  chunkName: string,
   factory: () => Promise<{ default: T }>,
 ) {
+  const retryKey = `chunk-reload:${chunkName}`;
   return lazy(() =>
-    factory().catch((error: unknown) => {
-      const key = "chunk-reload";
-      if (!sessionStorage.getItem(key)) {
-        sessionStorage.setItem(key, "1");
+    factory()
+      .then((module) => {
+        sessionStorage.removeItem(retryKey);
+        return module;
+      })
+      .catch((error: unknown) => {
+      if (!sessionStorage.getItem(retryKey)) {
+        sessionStorage.setItem(retryKey, "1");
         window.location.reload();
         // Return a never-resolving promise so React keeps showing the
         // Suspense fallback while the browser navigates away.
@@ -37,39 +43,39 @@ function lazyWithRetry<T extends ComponentType<Record<string, never>>>(
       }
       // Already reloaded once — clear the flag and let the error propagate
       // so the user sees a real error rather than an infinite reload loop.
-      sessionStorage.removeItem(key);
+      sessionStorage.removeItem(retryKey);
       throw error;
-    }),
+      }),
   );
 }
 
-const HomePage = lazyWithRetry(() =>
+const HomePage = lazyWithRetry("home", () =>
   import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
 );
-const DashboardPage = lazyWithRetry(() =>
+const DashboardPage = lazyWithRetry("dashboard", () =>
   import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })),
 );
-const NewShopPage = lazyWithRetry(() =>
+const NewShopPage = lazyWithRetry("new-shop", () =>
   import("./pages/NewShopPage").then((m) => ({ default: m.NewShopPage })),
 );
-const AdminPage = lazyWithRetry(() =>
+const AdminPage = lazyWithRetry("admin", () =>
   import("./pages/AdminPage").then((m) => ({ default: m.AdminPage })),
 );
-const CatalogPage = lazyWithRetry(() =>
+const CatalogPage = lazyWithRetry("catalog", () =>
   import("./pages/CatalogPage").then((m) => ({ default: m.CatalogPage })),
 );
-const GachaPage = lazyWithRetry(() =>
+const GachaPage = lazyWithRetry("gacha", () =>
   import("./pages/GachaPage").then((m) => ({ default: m.GachaPage })),
 );
-const AuthPage = lazyWithRetry(() =>
+const AuthPage = lazyWithRetry("auth", () =>
   import("./pages/AuthPage").then((m) => ({ default: m.AuthPage })),
 );
-const AuthCallbackPage = lazyWithRetry(() =>
+const AuthCallbackPage = lazyWithRetry("auth-callback", () =>
   import("./pages/AuthCallbackPage").then((m) => ({
     default: m.AuthCallbackPage,
   })),
 );
-const SetPasswordPage = lazyWithRetry(() =>
+const SetPasswordPage = lazyWithRetry("set-password", () =>
   import("./pages/SetPasswordPage").then((m) => ({
     default: m.SetPasswordPage,
   })),
@@ -118,6 +124,11 @@ function RouteAwarePwa() {
   return null;
 }
 
+function RouteErrorBoundary({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  return <ErrorBoundary resetKey={pathname}>{children}</ErrorBoundary>;
+}
+
 function RouteLoading() {
   return <PageLoading />;
 }
@@ -136,6 +147,7 @@ export function App() {
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <RouteAwarePwa />
       <RouteAwareToastProvider>
+        <RouteErrorBoundary>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
             <Route
@@ -166,6 +178,7 @@ export function App() {
             </Route>
           </Routes>
         </Suspense>
+        </RouteErrorBoundary>
       </RouteAwareToastProvider>
     </BrowserRouter>
   );

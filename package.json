@@ -22,7 +22,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:db": "supabase test db",
-    "test:functions": "deno test --node-modules-dir=auto --no-lock --allow-env supabase/functions/invite-shop-member/index.test.ts supabase/functions/notify-new-order/index.test.ts",
+    "test:functions": "deno test --node-modules-dir=auto --no-lock --allow-env supabase/functions/invite-shop-member/index.test.ts supabase/functions/notify-new-order/index.test.ts supabase/functions/gacha-music-proxy/index.test.ts",
     "test:db:integration": "vitest run src/test/database.integration.test.ts",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build",
     "build": "tsc -b && vite build && npm run build:simulators",

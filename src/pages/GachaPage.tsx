@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -24,6 +24,7 @@ export function GachaPage() {
   const [state, setState] = useState<GachaLaunchData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lightweightMode] = useState(prefersLightweightCatalog);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     document.body.classList.add("gacha-screen");
@@ -66,6 +67,7 @@ export function GachaPage() {
     function onMessage(event: MessageEvent) {
       if (
         event.origin === window.location.origin &&
+        event.source === iframeRef.current?.contentWindow &&
         event.data?.type === GACHA_CLOSE_MESSAGE_TYPE
       ) {
         navigate(`/s/${shopSlug}`);
@@ -146,6 +148,7 @@ export function GachaPage() {
   return (
     <main className="gacha-host">
       <iframe
+        ref={iframeRef}
         title="wish simulator"
         src={`${getGachaSimulatorPath(gameType)}?${queryParams.toString()}`}
         allow="fullscreen"

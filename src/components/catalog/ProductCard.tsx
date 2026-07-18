@@ -13,6 +13,15 @@ type ProductCardProps = {
   onViewDetails: (product: Product) => void;
 };
 
+const preloadedDetailImages = new Set<string>();
+function preloadImage(url?: string) {
+  if (!url || preloadedDetailImages.has(url)) return;
+  preloadedDetailImages.add(url);
+  const image = new Image();
+  image.src = url;
+  void image.decode().catch(() => preloadedDetailImages.delete(url));
+}
+
 // The card reads as one large click target, but structurally it is a plain
 // container with a full-cover details button underneath the add-to-cart
 // button, so the two actions never nest interactive elements.
@@ -20,6 +29,7 @@ export const ProductCard = memo(function ProductCard({ product, selected, viewMo
   const copy = useCatalogCopy();
   const images = product.images.filter(Boolean);
   const primaryImage = product.image_variants?.[0]?.thumbnail || images[0];
+  const detailImage = product.image_variants?.[0]?.detail || images[0];
   const isSoldOut = product.quantity_available <= 0;
 
   return (
@@ -31,6 +41,9 @@ export const ProductCard = memo(function ProductCard({ product, selected, viewMo
         type="button"
         className="product-card-hit"
         aria-label={copy.viewDetails(product.name)}
+        onPointerEnter={() => preloadImage(detailImage)}
+        onFocus={() => preloadImage(detailImage)}
+        onPointerDown={() => preloadImage(detailImage)}
         onClick={(event) => { event.stopPropagation(); onViewDetails(product); }}
         style={{
           position: "absolute",

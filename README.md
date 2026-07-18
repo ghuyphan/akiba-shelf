@@ -73,6 +73,13 @@ Each shop can publish a free gacha minigame at `/s/:shopSlug/play` that presents
 
 The play page embeds two vendored simulators kept under `vendor/` (`gacha-simulator` and `hsr-simulator`). In development, `npm run dev` builds them into `.gacha-dist/` and `.hsr-gacha-dist/` when missing, and `vite.config.ts` serves those directories locally. Production builds run `scripts/build-simulators.mjs` after `vite build` to emit both simulators into `dist/`.
 
+HSR soundtrack metadata is fetched through the `gacha-music-proxy` Edge Function so the simulator does not call the upstream service directly from the browser. The function accepts requests only from `PUBLIC_SITE_URL`.
+
+```bash
+npx supabase secrets set PUBLIC_SITE_URL=https://matsuri.pro
+npx supabase functions deploy gacha-music-proxy
+```
+
 ## Routes
 
 - `/` — platform homepage
@@ -82,7 +89,7 @@ The play page embeds two vendored simulators kept under `vendor/` (`gacha-simula
 - `/s/:shopSlug/play` — shop-specific gacha minigame
 - `/admin` — authenticated admin workspace
 
-Production Auth must use the deployed app URL as its Site URL (`https://matsuri.pro`) and allow `/auth/callback` and `/auth/set-password`. Its 404 redirect preserves safe relative routes, queries, and Auth fragments. Configure SMTP and email confirmation, set `PUBLIC_SITE_URL` to `https://matsuri.pro`, and deploy both `invite-shop-member` and `notify-new-order`. CAPTCHA and conservative Auth rate limits are recommended. End users never need Supabase Dashboard access.
+Production Auth must use the deployed app URL as its Site URL (`https://matsuri.pro`) and allow `/auth/callback` and `/auth/set-password`. Its 404 redirect preserves safe relative routes, queries, and Auth fragments. Configure SMTP and email confirmation, set `PUBLIC_SITE_URL` to `https://matsuri.pro`, and deploy `invite-shop-member`, `notify-new-order`, and `gacha-music-proxy`. CAPTCHA and conservative Auth rate limits are recommended. End users never need Supabase Dashboard access.
 
 ### Google sign-in
 
@@ -194,9 +201,9 @@ Do not add an automatic auth-user trigger. Owners may manage staff; admins manag
 
 - Frontend: build with the three documented `VITE_*` values, then deploy `dist/`.
 - Database: review and apply `supabase/migrations` in order with `supabase db push`; pull requests never deploy schema.
-- Edge Functions: set `PUBLIC_SITE_URL`, then deploy `invite-shop-member` and
-  `notify-new-order` separately after migrations. Both restrict browser CORS to
-  that configured origin.
+- Edge Functions: set `PUBLIC_SITE_URL`, then deploy `invite-shop-member`,
+  `notify-new-order`, and `gacha-music-proxy` separately after migrations. All
+  three restrict browser CORS to that configured origin.
 - Secrets: set VAPID private material only with `supabase secrets set`; never expose it through Vite variables.
 
 ## Repository health

@@ -23,8 +23,15 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
   }, [product]);
   if (!displayedProduct) return null;
 
-  const images = displayedProduct.image_variants?.length ? displayedProduct.image_variants.map((variant) => variant.detail) : displayedProduct.images.filter(Boolean);
-  const image = images[activeImage] || images[0];
+  const variants = displayedProduct.image_variants ?? [];
+  const fallbackImages = displayedProduct.images.filter(Boolean);
+  const detailImages = variants.length
+    ? variants.map((variant) => variant.detail)
+    : fallbackImages;
+  const thumbnailImages = variants.length
+    ? variants.map((variant) => variant.thumbnail)
+    : fallbackImages;
+  const image = detailImages[activeImage] || detailImages[0];
   const isSoldOut = displayedProduct.quantity_available <= 0 || displayedProduct.stock_status === "sold_out";
 
   return (
@@ -32,11 +39,11 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
       <div className="product-detail-layout">
         <div className="product-detail-gallery">
           <div className="product-detail-main-image">
-            {image ? <img src={image} alt={displayedProduct.name} /> : <span className="product-image-placeholder" />}
+            {image ? <img src={image} alt={displayedProduct.name} decoding="async" /> : <span className="product-image-placeholder" />}
             {displayedProduct.badge && <span className="product-detail-image-badge" style={{ backgroundColor: displayedProduct.badge_color || undefined }}>{displayedProduct.badge}</span>}
-            {images.length > 1 && (
+            {thumbnailImages.length > 1 && (
               <div className="product-detail-thumbnails" aria-label="Product images">
-                {images.slice(0, 6).map((source, index) => (
+                {thumbnailImages.slice(0, 6).map((source, index) => (
                   <button
                     key={`${source}-${index}`}
                     type="button"
@@ -45,7 +52,7 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
                     aria-label={`Show image ${index + 1}`}
                     aria-pressed={index === activeImage}
                   >
-                    <img src={source} alt="" />
+                    <img src={source} alt="" loading="lazy" decoding="async" />
                   </button>
                 ))}
               </div>

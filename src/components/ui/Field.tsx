@@ -14,7 +14,7 @@ export function Field({ label, hint, error, className = "", children }: FieldPro
       <span className="field-label">{label}</span>
       {children}
       {error ? (
-        <span className="field-error-msg">{error}</span>
+        <span className="field-error-msg" role="alert">{error}</span>
       ) : (
         hint && <span className="field-hint">{hint}</span>
       )}

@@ -107,7 +107,9 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
               const offset = getFeaturedOffset(index, active, featured.length);
               if (Math.abs(offset) > 1) return null;
               const isActive = offset === 0;
-              const image = product.image_variants?.[0]?.thumbnail || product.images.find(Boolean);
+              const variant = product.image_variants?.[0];
+              const fallbackImage = product.images.find(Boolean);
+              const image = variant?.thumbnail || fallbackImage;
               return (
                 <button
                   key={product.id}
@@ -122,7 +124,23 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
                   aria-label={isActive ? `${product.name}, current featured item` : `Show ${product.name}`}
                   tabIndex={isActive ? 0 : -1}
                 >
-                  <span className="featured-deck-image">{image ? <img src={image} alt={isActive ? product.name : ""} draggable="false" loading={isActive ? "eager" : "lazy"} fetchPriority={isActive ? "high" : "low"} decoding="async" /> : <span className="image-placeholder" />}{product.badge && <i style={{ backgroundColor: product.badge_color || undefined }}>{product.badge}</i>}</span>
+                  <span className="featured-deck-image">
+                    {image ? (
+                      <img
+                        src={image}
+                        srcSet={variant ? `${variant.thumbnail} 600w, ${variant.detail} 1400w` : undefined}
+                        sizes="(max-width: 760px) 78vw, 480px"
+                        alt={isActive ? product.name : ""}
+                        draggable="false"
+                        loading={isActive ? "eager" : "lazy"}
+                        fetchPriority={isActive ? "high" : "low"}
+                        decoding="async"
+                      />
+                    ) : (
+                      <span className="image-placeholder" />
+                    )}
+                    {product.badge && <i style={{ backgroundColor: product.badge_color || undefined }}>{product.badge}</i>}
+                  </span>
                   <span className="featured-deck-footer"><strong>{product.name}</strong><ProductPrice product={product} /></span>
                 </button>
               );

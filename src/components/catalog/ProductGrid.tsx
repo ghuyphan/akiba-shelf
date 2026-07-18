@@ -25,7 +25,6 @@ type ProductGridProps = {
 
 export function ProductGrid({ products, totalProducts, activeCategory, selectedProduct, viewMode, onSelect, onViewDetails, onResetFilters, loading = false, error, onRetry, searchActive = false, hasMore = false, loadingMore = false, onLoadMore }: ProductGridProps) {
   const copy = useCatalogCopy();
-  const resultsKey = `${viewMode}:${products.map((product) => product.id).join("|")}`;
   if (loading && totalProducts === 0) return <EmptyState tone="loading" icon={<LoaderCircle className="state-spinner" size={28} />} title={copy.loadingCatalog} message={copy.loadingCatalogHint} />;
   if (error && totalProducts === 0) return <EmptyState tone="error" icon={<AlertTriangle size={28} />} title={copy.catalogUnavailable} message={copy.catalogUnavailableHint} action={onRetry ? <Button type="button" icon={<RotateCcw size={18} />} onClick={onRetry}>{copy.tryAgain}</Button> : undefined} />;
   if (products.length === 0) {
@@ -50,7 +49,7 @@ export function ProductGrid({ products, totalProducts, activeCategory, selectedP
 
   return (
     <div className="product-results" aria-busy={loading || loadingMore}>
-      <div key={resultsKey} className={`product-grid ${viewMode === "list" ? "product-grid-list" : ""}`}>
+      <div className={`product-grid ${viewMode === "list" ? "product-grid-list" : ""}`}>
         {products.map((product) => (
           <ProductCard
             key={product.id}

@@ -10,8 +10,10 @@ restoreRedirect();
 hydrateInitialPageTheme();
 resetDocumentBranding();
 
+const appChunkRetryKey = "chunk-reload:app";
 void import("./App")
   .then(({ App }) => {
+    sessionStorage.removeItem(appChunkRetryKey);
     createRoot(document.getElementById("root")!).render(
       <StrictMode>
         <App />
@@ -19,12 +21,11 @@ void import("./App")
     );
   })
   .catch(() => {
-    const key = "chunk-reload";
-    if (!sessionStorage.getItem(key)) {
-      sessionStorage.setItem(key, "1");
+    if (!sessionStorage.getItem(appChunkRetryKey)) {
+      sessionStorage.setItem(appChunkRetryKey, "1");
       window.location.reload();
     } else {
-      sessionStorage.removeItem(key);
+      sessionStorage.removeItem(appChunkRetryKey);
       document.body.textContent =
         "Failed to load the application. Please refresh the page.";
     }

@@ -373,6 +373,9 @@ to authenticated;
 
 -- The Light Cone pity cross-check the table was missing.
 alter table public.gacha_settings
+  drop constraint if exists gacha_settings_lightcone_pity_order_check;
+
+alter table public.gacha_settings
   add constraint gacha_settings_lightcone_pity_order_check
   check (lightcone_legendary_pity > rare_pity);
 
