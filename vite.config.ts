@@ -393,13 +393,17 @@ export default defineConfig(({ command }) => ({
             urlPattern: /\/storage\/v1\/object\/public\//,
             handler: "CacheFirst",
             options: {
-              cacheName: "supabase-storage-cache",
+              // v2 drops any opaque error response cached by the old policy.
+              cacheName: "supabase-storage-cache-v2",
               expiration: {
                 maxEntries: 200,
                 maxAgeSeconds: 30 * 24 * 60 * 60,
               },
               cacheableResponse: {
-                statuses: [0, 200],
+                // An opaque response hides its real HTTP status. Caching status
+                // 0 can therefore turn a transient/missing product image into a
+                // broken entry for the full cache lifetime.
+                statuses: [200],
               },
             },
           },
@@ -407,12 +411,12 @@ export default defineConfig(({ command }) => ({
             urlPattern: ({ request }) => request.destination === "image",
             handler: "CacheFirst",
             options: {
-              cacheName: "product-image-cache-v1",
+              cacheName: "product-image-cache-v2",
               expiration: {
                 maxEntries: 300,
                 maxAgeSeconds: 30 * 24 * 60 * 60,
               },
-              cacheableResponse: { statuses: [0, 200] },
+              cacheableResponse: { statuses: [200] },
             },
           },
         ],

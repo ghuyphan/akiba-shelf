@@ -22,6 +22,9 @@ export type MultiOfflinePackProgress = OfflinePackProgress & {
 };
 
 const DOWNLOAD_CONCURRENCY = 4;
+const OFFLINE_PACK_MARKER_PREFIX = "matsuri-offline-pack-v2";
+const STORAGE_CACHE_NAME = "supabase-storage-cache-v2";
+const PRODUCT_IMAGE_CACHE_NAME = "product-image-cache-v2";
 
 export function offlinePackPercent({
   completed,
@@ -62,8 +65,8 @@ export async function downloadGachaOfflinePack(
   const simulatorCache = await caches.open("gacha-app-shell-v2");
   const mediaCache = await caches.open("gacha-media-cache-v1");
   const staticCache = await caches.open("gacha-static-cache-v1");
-  const storageCache = await caches.open("supabase-storage-cache");
-  const productImageCache = await caches.open("product-image-cache-v1");
+  const storageCache = await caches.open(STORAGE_CACHE_NAME);
+  const productImageCache = await caches.open(PRODUCT_IMAGE_CACHE_NAME);
   const progress: OfflinePackProgress = {
     completed: 0,
     total: items.length,
@@ -87,8 +90,7 @@ export async function downloadGachaOfflinePack(
     const cached = await targetCache.match(request);
     if (!cached) {
       const response = await fetch(request);
-      if (!response.ok && response.type !== "opaque")
-        throw new Error(`Could not download ${pathname}.`);
+      if (!response.ok) throw new Error(`Could not download ${pathname}.`);
       await targetCache.put(request, response);
     }
     progress.completed += 1;
@@ -108,7 +110,10 @@ export async function downloadGachaOfflinePack(
       () => worker(),
     ),
   );
-  localStorage.setItem(`matsuri-offline-pack:${gameType}`, new Date().toISOString());
+  localStorage.setItem(
+    `${OFFLINE_PACK_MARKER_PREFIX}:${gameType}`,
+    new Date().toISOString(),
+  );
   return progress;
 }
 
@@ -157,7 +162,7 @@ export async function downloadGachaOfflinePacks(
 }
 
 export async function hasGachaOfflinePack(gameType: GachaGameType) {
-  const markerKey = `matsuri-offline-pack:${gameType}`;
+  const markerKey = `${OFFLINE_PACK_MARKER_PREFIX}:${gameType}`;
   if (!localStorage.getItem(markerKey) || !("caches" in window)) return false;
   const simulator = gameType === "hsr" ? "hsr-simulator" : "gacha-simulator";
   const shellUrl = new URL(

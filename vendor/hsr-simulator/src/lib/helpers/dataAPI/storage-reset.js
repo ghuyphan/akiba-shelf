@@ -30,6 +30,7 @@ const { clearIDB } = HistoryManager;
 
 const clearCacheStorage = async () => {
 	localStorage.removeItem('matsuri-offline-pack:hsr');
+	localStorage.removeItem('matsuri-offline-pack-v2:hsr');
 	const keys = await caches.keys();
 	for (const key of keys) {
 		const cache = await caches.open(key);

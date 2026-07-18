@@ -23,6 +23,7 @@ const { clearIDB } = HistoryIDB;
 
 const clearCacheStorage = async () => {
 	localStorage.removeItem('matsuri-offline-pack:genshin');
+	localStorage.removeItem('matsuri-offline-pack-v2:genshin');
 	const keys = await caches.keys();
 	for (const key of keys) {
 		const cache = await caches.open(key);

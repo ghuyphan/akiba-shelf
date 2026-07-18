@@ -20,7 +20,7 @@ describe("offline gacha pack readiness", () => {
   it("accepts a marker only when the simulator shell is still cached", async () => {
     const match = vi.fn().mockResolvedValue(new Response("cached"));
     vi.stubGlobal("caches", { open: vi.fn().mockResolvedValue({ match }) });
-    localStorage.setItem("matsuri-offline-pack:hsr", "saved");
+    localStorage.setItem("matsuri-offline-pack-v2:hsr", "saved");
 
     await expect(hasGachaOfflinePack("hsr")).resolves.toBe(true);
     expect(match).toHaveBeenCalledWith(
@@ -32,10 +32,10 @@ describe("offline gacha pack readiness", () => {
     vi.stubGlobal("caches", {
       open: vi.fn().mockResolvedValue({ match: vi.fn().mockResolvedValue(undefined) }),
     });
-    localStorage.setItem("matsuri-offline-pack:genshin", "saved");
+    localStorage.setItem("matsuri-offline-pack-v2:genshin", "saved");
 
     await expect(hasGachaOfflinePack("genshin")).resolves.toBe(false);
-    expect(localStorage.getItem("matsuri-offline-pack:genshin")).toBeNull();
+    expect(localStorage.getItem("matsuri-offline-pack-v2:genshin")).toBeNull();
   });
 
   it("reports one combined completion for two already cached games", async () => {
@@ -44,8 +44,8 @@ describe("offline gacha pack readiness", () => {
         match: vi.fn().mockResolvedValue(new Response("cached")),
       }),
     });
-    localStorage.setItem("matsuri-offline-pack:genshin", "saved");
-    localStorage.setItem("matsuri-offline-pack:hsr", "saved");
+    localStorage.setItem("matsuri-offline-pack-v2:genshin", "saved");
+    localStorage.setItem("matsuri-offline-pack-v2:hsr", "saved");
     const updates: number[] = [];
 
     await downloadGachaOfflinePacks(["genshin", "hsr"], {}, (progress) => {

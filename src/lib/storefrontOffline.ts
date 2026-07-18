@@ -7,6 +7,8 @@ import { saveCatalogSnapshot, saveShopSnapshot } from "./offline";
 import { ensureOfflineNavigationReady } from "./pwa";
 import type { Shop } from "../types/catalog";
 
+const STOREFRONT_OFFLINE_MARKER_PREFIX = "matsuri-storefront-offline-v2";
+
 export async function prepareStorefrontOffline(shop: Shop) {
   if (!("caches" in window))
     throw new Error("Offline downloads are not supported by this browser.");
@@ -40,18 +42,26 @@ export async function prepareStorefrontOffline(shop: Shop) {
       ]),
     ].filter((url): url is string => Boolean(url)),
   );
-  const storageCache = await caches.open("supabase-storage-cache");
-  await Promise.allSettled(
+  const storageCache = await caches.open("supabase-storage-cache-v2");
+  await Promise.all(
     [...imageUrls].map(async (url) => {
       const request = new Request(url, { credentials: "same-origin" });
       const response = await fetch(request);
-      if (response.ok || response.type === "opaque")
-        await storageCache.put(request, response);
+      if (!response.ok)
+        throw new Error(
+          `Could not download ${new URL(url, location.origin).pathname}.`,
+        );
+      await storageCache.put(request, response);
     }),
   );
-  localStorage.setItem(`matsuri-storefront-offline:${shop.slug}`, new Date().toISOString());
+  localStorage.setItem(
+    `${STOREFRONT_OFFLINE_MARKER_PREFIX}:${shop.slug}`,
+    new Date().toISOString(),
+  );
 }
 
 export function isStorefrontOfflineReady(slug: string) {
-  return Boolean(localStorage.getItem(`matsuri-storefront-offline:${slug}`));
+  return Boolean(
+    localStorage.getItem(`${STOREFRONT_OFFLINE_MARKER_PREFIX}:${slug}`),
+  );
 }
