@@ -15,11 +15,17 @@ export type ActiveOrderRecovery = {
   cart: CartItem[];
   customerName: string;
   startedAt: string;
+  offline?: boolean;
+  offlinePaid?: boolean;
+  offline_code?: string;
 };
 
 const recoverySchema = z.object({
   clientRequestId: z.string().uuid(), recoveryToken: z.string().min(32), order: orderSchema.nullable(),
   cart: z.array(z.object({ product: productRowSchema, quantity: z.number().int().positive() })), customerName: z.string(), startedAt: z.string().datetime(),
+  offline: z.boolean().optional(),
+  offlinePaid: z.boolean().optional(),
+  offline_code: z.string().optional(),
 });
 
 export function createOrderRecovery(cart: CartItem[], customerName: string): ActiveOrderRecovery {

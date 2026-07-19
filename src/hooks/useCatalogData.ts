@@ -120,9 +120,17 @@ export function useCatalogData(
     let active = true;
     void getPublicProductsByIds(shopId, storefront.promotion.reward_product_ids)
       .then((next) => { if (active) setRewardProducts(next); })
-      .catch(() => { if (active) setRewardProducts([]); });
+      .catch(() => {
+        if (active) {
+          const cachedMap = new Map(initialProducts.map((p) => [p.id, p]));
+          const fallback = storefront.promotion.reward_product_ids
+            .map((id) => cachedMap.get(id))
+            .filter((p): p is Product => Boolean(p));
+          setRewardProducts(fallback);
+        }
+      });
     return () => { active = false; };
-  }, [shopId, storefront.promotion.reward_product_ids]);
+  }, [shopId, storefront.promotion.reward_product_ids, initialProducts]);
 
   useEffect(() => {
     if (

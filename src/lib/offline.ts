@@ -13,12 +13,14 @@ type Snapshot = {
   payment?: PaymentSettings;
   promotion?: PromotionSettings;
   categories?: string[];
+  gachaEnabled?: boolean;
 };
 
 export type CatalogSnapshot = Pick<CatalogData, "products" | "booth"> & {
   payment?: PaymentSettings;
   promotion?: PromotionSettings;
   categories?: string[];
+  gachaEnabled?: boolean;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -63,6 +65,7 @@ export function loadCatalogSnapshot(shopId?: string): CatalogSnapshot | null {
       categories: Array.isArray(snapshot.categories)
         ? snapshot.categories.filter((item): item is string => typeof item === "string")
         : undefined,
+      gachaEnabled: typeof snapshot.gachaEnabled === "boolean" ? snapshot.gachaEnabled : undefined,
     };
   } catch {
     localStorage.removeItem(scopedKey(SNAPSHOT_KEY, shopId));
@@ -83,6 +86,7 @@ export function saveCatalogSnapshot(data: CatalogSnapshot, shopId?: string) {
       payment: data.payment ?? previous?.payment,
       promotion: data.promotion ?? previous?.promotion,
       categories: data.categories ?? previous?.categories,
+      gachaEnabled: data.gachaEnabled ?? previous?.gachaEnabled,
     }));
   } catch {
     // Offline caching is best-effort.

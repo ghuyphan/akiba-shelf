@@ -55,32 +55,48 @@ export function useStorefrontBootstrap(
 
   const loadBooth = useCallback(async () => {
     if (!shopId) return;
+    if (!navigator.onLine) {
+      setBooth(initialBooth);
+      return;
+    }
     const identity = shopIdentityRef.current;
     const nextBooth = await getPublicBoothSettings(shopId);
     if (identity === shopIdentityRef.current) setBooth(nextBooth);
-  }, [shopId]);
+  }, [shopId, initialBooth]);
 
   const loadFeatured = useCallback(async () => {
     if (!shopId) return;
+    if (!navigator.onLine) {
+      setFeaturedProducts(initialProducts.filter((product) => product.featured));
+      return;
+    }
     const identity = shopIdentityRef.current;
     const nextFeatured = await getPublicFeaturedProducts(shopId);
     if (identity === shopIdentityRef.current)
       setFeaturedProducts(nextFeatured);
-  }, [shopId]);
+  }, [shopId, initialProducts]);
 
   const loadCategories = useCallback(async () => {
     if (!shopId) return;
+    if (!navigator.onLine) {
+      setCategories(initialCategories);
+      return;
+    }
     const identity = shopIdentityRef.current;
     const nextCategories = await getPublicProductCategories(shopId);
     if (identity === shopIdentityRef.current) setCategories(nextCategories);
-  }, [shopId]);
+  }, [shopId, initialCategories]);
 
   const loadPromotion = useCallback(async () => {
     if (!shopId) return;
+    if (!navigator.onLine) {
+      setPromotion(initialPromotion);
+      return;
+    }
     const identity = shopIdentityRef.current;
     const nextPromotion = await getPublicPromotionSettings(shopId);
     if (identity === shopIdentityRef.current) setPromotion(nextPromotion);
-  }, [shopId]);
+  }, [shopId, initialPromotion]);
 
   const ensurePayment = useCallback(() => {
     if (!paymentEnabled) return Promise.resolve(defaultPayment);

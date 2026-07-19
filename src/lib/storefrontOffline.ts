@@ -1,5 +1,6 @@
 import {
   getCatalogCoreData,
+  getPublicGachaEnabled,
   getPublicPaymentSettings,
   getPublicPromotionSettings,
 } from "./api";
@@ -14,10 +15,11 @@ export async function prepareStorefrontOffline(shop: Shop) {
     throw new Error("Offline downloads are not supported by this browser.");
   await ensureOfflineNavigationReady();
   const shopId = shop.catalog_source_shop_id ?? shop.id;
-  const [catalog, payment, promotion] = await Promise.all([
+  const [catalog, payment, promotion, gachaEnabled] = await Promise.all([
     getCatalogCoreData(shopId),
     getPublicPaymentSettings(shopId),
     getPublicPromotionSettings(shopId),
+    getPublicGachaEnabled(shopId).catch(() => false),
   ]);
   saveShopSnapshot(shop, shop.slug);
   saveCatalogSnapshot(
@@ -26,6 +28,7 @@ export async function prepareStorefrontOffline(shop: Shop) {
       payment,
       promotion,
       categories: [...new Set(catalog.products.map((product) => product.category).filter(Boolean))],
+      gachaEnabled,
     },
     shopId,
   );

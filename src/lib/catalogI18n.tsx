@@ -34,6 +34,7 @@ export const translations = {
     reservationExpired: "Reservation expired", reservationExpiredHint: "Payment may have been sent after this reservation expired. Please ask booth staff for assistance.", cancelReservationTitle: "Cancel this reservation?", cancelReservationHint: "The reserved items will be released back to the shelf.", keepOrder: "Keep order", paymentQrAlt: "Payment QR code", orderSubmitError: "Failed to submit order. Please try again.",
     wishLoadFailed: "Couldn’t open the wish simulator", wishLoadError: "Could not load the minigame.",
     crashTitle: "Something went wrong at the booth", crashHint: "Please reload the page. Your cart is saved on this device.", crashReload: "Reload page",
+    offlineCheckoutTitle: "Offline Checkout", offlineCheckoutNote: "Show this transaction to staff, then swipe below to complete.", swipeToPay: "Swipe to confirm payment", offlineReceiptNote: "Offline Payment Confirmed! Please show this screen to the booth staff to pick up your items.", offlinePaidBadge: "Offline Paid", offlineSyncPending: "Pending server sync…", offlineSyncSuccess: "Order synchronized with server.",
   },
   vi: {
     all: "Tất cả", officialShop: "Gian hàng chính thức", boothInfo: "Thông tin gian hàng", boothInfoHint: "Giờ mở cửa, vị trí & mạng xã hội",
@@ -67,6 +68,7 @@ export const translations = {
     reservationExpired: "Đơn giữ hàng đã hết hạn", reservationExpiredHint: "Có thể bạn đã chuyển khoản sau khi đơn giữ hàng hết hạn. Vui lòng nhờ staff tại gian hàng hỗ trợ.", cancelReservationTitle: "Hủy đơn giữ hàng này?", cancelReservationHint: "Các sản phẩm đang giữ sẽ được trả lại kệ.", keepOrder: "Giữ đơn hàng", paymentQrAlt: "Mã QR thanh toán", orderSubmitError: "Không thể gửi đơn hàng. Vui lòng thử lại.",
     wishLoadFailed: "Không thể mở kệ điều ước", wishLoadError: "Không thể tải minigame.",
     crashTitle: "Gian hàng gặp lỗi bất ngờ", crashHint: "Hãy tải lại trang. Giỏ hàng vẫn được lưu trên thiết bị này.", crashReload: "Tải lại trang",
+    offlineCheckoutTitle: "Thanh toán Ngoại tuyến", offlineCheckoutNote: "Vui lòng trình giao dịch cho staff, sau đó vuốt bên dưới để xác nhận.", swipeToPay: "Vuốt để xác nhận thanh toán", offlineReceiptNote: "Đã xác nhận thanh toán ngoại tuyến! Hãy trình màn hình này cho staff để nhận sản phẩm.", offlinePaidBadge: "Đã thanh toán ngoại tuyến", offlineSyncPending: "Đang đồng bộ lên máy chủ…", offlineSyncSuccess: "Đơn hàng đã đồng bộ lên máy chủ.",
   },
 } as const;
 

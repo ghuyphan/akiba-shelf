@@ -27,8 +27,8 @@ import { ProductDetailModal } from "../components/catalog/ProductDetailModal";
 import { SelectedItemPanel } from "../components/catalog/SelectedItemPanel";
 import { StackedFeatured } from "../components/catalog/StackedFeatured";
 import { useToast } from "../components/ui/ToastProvider";
-import { loadOrderRecovery } from "../lib/orderRecovery";
-import { loadShopSnapshot, saveShopSnapshot } from "../lib/offline";
+import { loadOrderRecovery, saveOrderRecovery } from "../lib/orderRecovery";
+import { loadShopSnapshot, saveShopSnapshot, loadCatalogSnapshot } from "../lib/offline";
 import { usePersistentCart } from "../hooks/usePersistentCart";
 import { useCatalogData } from "../hooks/useCatalogData";
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
@@ -43,6 +43,7 @@ import { useParams } from "react-router-dom";
 import {
   getPublicGachaEnabled,
   getPublicShop,
+  createOrder,
   type PublicProductSort,
 } from "../lib/api";
 import type { Shop } from "../types/catalog";
@@ -221,7 +222,10 @@ export function CatalogPage() {
         if (active) setShowGacha(enabled);
       })
       .catch(() => {
-        if (active) setShowGacha(false);
+        if (active) {
+          const snapshot = loadCatalogSnapshot(catalogShopId);
+          setShowGacha(snapshot?.gachaEnabled ?? false);
+        }
       });
     return () => {
       active = false;
@@ -243,6 +247,41 @@ export function CatalogPage() {
         // Navigation owns user-facing launch errors; intent prefetch stays silent.
       });
   }, [catalogBooth, catalogShopId, lightweightMode, shop, shopSlug]);
+
+  const syncOfflineOrder = useCallback(async (recoveryData: any) => {
+    if (!recoveryData.offline || !recoveryData.order || !catalogShopId) return;
+    try {
+      const syncCustomerName = `${recoveryData.customerName} (${recoveryData.order.order_code})`;
+      const created = await createOrder(
+        shopSlug,
+        syncCustomerName,
+        recoveryData.cart,
+        recoveryData.clientRequestId,
+        recoveryData.recoveryToken
+      );
+
+      const saved = {
+        ...recoveryData,
+        order: created,
+        offline: false,
+      };
+      saveOrderRecovery(saved, shopSlug);
+      setActiveOrder(created);
+      activeOrderRef.current = created;
+      toast.success(catalogCopy.offlineSyncSuccess || "Order synced with server.");
+    } catch (error) {
+      console.error("Failed to sync offline order:", error);
+    }
+  }, [shopSlug, catalogShopId, toast, catalogCopy]);
+
+  useEffect(() => {
+    if (online && catalogShopId) {
+      const recoveryData = loadOrderRecovery(shopSlug);
+      if (recoveryData?.offline && recoveryData.order) {
+        void syncOfflineOrder(recoveryData);
+      }
+    }
+  }, [online, shopSlug, catalogShopId, syncOfflineOrder]);
 
   useEffect(() => {
     const handleOnline = () => {

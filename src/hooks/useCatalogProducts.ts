@@ -102,6 +102,65 @@ export function useCatalogProducts(
       }
       setError("");
 
+      if (!navigator.onLine) {
+        let filtered = [...initialProducts];
+
+        if (query.category && query.category !== "All") {
+          filtered = filtered.filter((p) => p.category === query.category);
+        }
+
+        const searchTerm = query.search.trim().toLowerCase();
+        if (searchTerm) {
+          filtered = filtered.filter((p) =>
+            [p.name, p.item_code, p.collection, p.description].some((val) =>
+              val?.toLowerCase().includes(searchTerm)
+            )
+          );
+        }
+
+        if (query.sort === "price-asc") {
+          filtered.sort((a, b) => (a.effective_price_vnd ?? a.price_vnd) - (b.effective_price_vnd ?? b.price_vnd));
+        } else if (query.sort === "price-desc") {
+          filtered.sort((a, b) => (b.effective_price_vnd ?? b.price_vnd) - (a.effective_price_vnd ?? a.price_vnd));
+        } else if (query.sort === "quantity") {
+          filtered.sort((a, b) => b.quantity_available - a.quantity_available);
+        } else if (query.sort === "name") {
+          filtered.sort((a, b) => a.name.localeCompare(b.name));
+        } else {
+          filtered.sort((a, b) => {
+            if (a.featured !== b.featured) {
+              return a.featured ? -1 : 1;
+            }
+            return a.sort_order - b.sort_order;
+          });
+        }
+
+        const pageProducts = filtered.slice(offset, offset + pageSize);
+        const hasMoreProducts = offset + pageSize < filtered.length;
+
+        if (requestId !== requestIdRef.current) return;
+
+        const currentIds = new Set(
+          append ? productsRef.current.map((product) => product.id) : [],
+        );
+        const nextProducts = append
+          ? [
+              ...productsRef.current,
+              ...pageProducts.filter((product) => !currentIds.has(product.id)),
+            ]
+          : pageProducts;
+
+        productsRef.current = nextProducts;
+        setProducts(nextProducts);
+        setHasMore(hasMoreProducts);
+        onProductsLoaded(pageProducts);
+
+        completedInitialLoadRef.current = true;
+        abortRef.current = null;
+        setPhase("ready");
+        return;
+      }
+
       try {
         const page = await getPublicProducts(shopId, {
           offset,
@@ -142,7 +201,7 @@ export function useCatalogProducts(
         }
       }
     },
-    [onProductsLoaded, query.category, query.search, query.sort, shopId],
+    [initialProducts, onProductsLoaded, query.category, query.search, query.sort, shopId],
   );
 
   const loadFirstPage = useCallback(async () => {

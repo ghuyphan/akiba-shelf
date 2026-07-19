@@ -10,6 +10,7 @@ import { cancelCustomerOrder, createOrder, getCustomerOrder } from "../../lib/ap
 import { clearOrderRecovery, createOrderRecovery, loadOrderRecovery, saveOrderRecovery, type ActiveOrderRecovery } from "../../lib/orderRecovery";
 import { useOrderCountdown, usePaymentQrSource } from "../../hooks/useCheckoutPresentation";
 import { getPaymentBank } from "../../lib/banks";
+import { SwipeButton } from "../ui/SwipeButton";
 
 type PaymentQrModalProps = {
   shopSlug: string;
@@ -71,9 +72,35 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   const submitOrder = useCallback(async (activeRecovery: ActiveOrderRecovery) => {
     setIsSubmittingOrder(true);
     setSubmitError("");
+
+    if (!navigator.onLine) {
+      const offlineCode = `OFF-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const localOfflineOrder: Order = {
+        id: activeRecovery.clientRequestId,
+        order_code: offlineCode,
+        customer_name: activeRecovery.customerName,
+        total_amount: totalAmount,
+        status: "pending",
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        updated_at: new Date().toISOString(),
+        confirmed_at: null,
+        cancelled_at: null,
+        expired_at: null,
+      };
+
+      const saved = { ...activeRecovery, order: localOfflineOrder, offline: true, offlinePaid: false, offline_code: offlineCode };
+      saveOrderRecovery(saved, shopSlug);
+      setRecovery(saved);
+      setOrder(localOfflineOrder);
+      onOrderChange?.(localOfflineOrder);
+      setIsSubmittingOrder(false);
+      return;
+    }
+
     try {
       const created = await createOrder(shopSlug, activeRecovery.customerName, activeRecovery.cart, activeRecovery.clientRequestId, activeRecovery.recoveryToken);
-      const saved = { ...activeRecovery, order: created };
+      const saved = { ...activeRecovery, order: created, offline: false };
       saveOrderRecovery(saved, shopSlug);
       setRecovery(saved);
       setOrder(created);
@@ -83,7 +110,28 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
     } finally {
       setIsSubmittingOrder(false);
     }
-  }, [copy, onOrderChange, shopSlug]);
+  }, [copy, onOrderChange, shopSlug, totalAmount]);
+
+  const handleOfflineSwipeConfirm = async () => {
+    if (!recovery || !order) return false;
+    const updatedOrder: Order = {
+      ...order,
+      status: "confirmed",
+    };
+    const saved = {
+      ...recovery,
+      order: updatedOrder,
+      offlinePaid: true,
+      offline_code: order.order_code,
+    };
+    saveOrderRecovery(saved, shopSlug);
+    setRecovery(saved);
+    setOrder(updatedOrder);
+    onOrderChange?.(updatedOrder);
+    onSuccessRef.current();
+    setShowSuccess(true);
+    return true;
+  };
 
   useEffect(() => {
     if (recoveryAttemptedRef.current || !recovery || recovery.order) return;
@@ -178,13 +226,21 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   }
 
   if (showSuccess) {
+    const isOffline = recovery?.offline || order?.order_code.startsWith("OFF-");
     return (
       <Modal title={copy.paymentComplete} isOpen={isOpen} onClose={handleSuccessClose} className="payment-modal payment-success-modal" mobileSheet closeLabel={copy.closeModal}>
         <div className="payment-success-state">
           <div className="success-icon-wrap"><CheckCircle2 size={42} /></div>
           <span className="payment-success-eyebrow">{copy.orderCode} {order?.order_code}</span>
           <h2>{copy.allSet}</h2>
-          <p>{copy.reservedPickup}</p>
+          <p>{isOffline ? copy.offlineReceiptNote : copy.reservedPickup}</p>
+          {isOffline && recovery?.offlinePaid && (
+            <div className="offline-paid-badge-wrap" style={{ marginBlock: "8px" }}>
+              <span className="product-badge product-badge-featured" style={{ background: "var(--booth-green, #5f8d55)" }}>
+                ✓ {copy.offlinePaidBadge}
+              </span>
+            </div>
+          )}
           <div className="payment-success-summary"><span>{copy.totalPaid}</span><strong>{formatVnd(order?.total_amount ?? totalAmount)}</strong></div>
           <button type="button" className="button button-primary" onClick={handleSuccessClose}>{copy.backShop}</button>
         </div>
@@ -226,7 +282,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
         <form onSubmit={handlePlaceOrder} className="order-confirm-layout">
           <div className="order-confirm-main">
             <div className="order-confirm-intro"><span><ReceiptText size={20} /></span><div><h3>{copy.lastCheck}</h3><p>{copy.reviewCart}</p></div></div>
-            <div className="order-confirm-items">{checkoutCart.map((item) => { const image = item.product.images.find(Boolean); const line = getPricingLine(pricing, item.product.id); if (!line) return null; return <div key={item.product.id}>{image ? <img src={image} alt="" /> : <span className="order-confirm-placeholder" />}<div><strong>{item.product.name}</strong><small>{line.quantity} × {formatVnd(line.unitPrice)}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</small></div><b>{formatVnd(line.total)}</b></div>; })}</div>
+             <div className="order-confirm-items">{checkoutCart.map((item) => { const image = item.product.image_variants?.[0]?.thumbnail || item.product.images.find(Boolean); const line = getPricingLine(pricing, item.product.id); if (!line) return null; return <div key={item.product.id}>{image ? <img src={image} alt="" /> : <span className="order-confirm-placeholder" />}<div><strong>{item.product.name}</strong><small>{line.quantity} × {formatVnd(line.unitPrice)}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</small></div><b>{formatVnd(line.total)}</b></div>; })}</div>
             {pricing.discountAmount > 0 && <div className="order-confirm-discount"><span>{copy.discount}</span><strong>−{formatVnd(pricing.discountAmount)}</strong></div>}
             <div className="order-confirm-total"><span>{copy.total}</span><strong>{formatVnd(totalAmount)}</strong></div>
           </div>
@@ -258,9 +314,23 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
             </div>
           )}
           </div>
-          <div className={`payment-waiting-pill ${connectionState === "reconnecting" ? "is-offline" : ""}`}>{connectionState === "reconnecting" ? <CloudOff size={14} /> : <Loader2 size={14} className="spin-icon" />}<span>{connectionState === "reconnecting" ? copy.reconnectingOrder : copy.waitingConfirmation}</span>
-          </div>
-          <p className="payment-reservation-copy"><strong>{copy.reservedFor(`${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`)}</strong><br />{copy.reservedWhilePaying}</p>
+          {recovery?.offline ? (
+            <>
+            <div className="payment-waiting-pill is-offline" style={{ background: "var(--amber-100, #fef3c7)", color: "var(--amber-800, #92400e)", border: "1px solid var(--amber-200, #fde68a)" }}>
+              <CloudOff size={14} />
+              <span>{copy.offlineCheckoutTitle}</span>
+            </div>
+            <p className="payment-reservation-copy" style={{ marginTop: "12px", fontSize: "11px", color: "var(--muted)", lineHeight: 1.5 }}>
+              {copy.offlineCheckoutNote}
+            </p>
+            </>
+          ) : (
+            <>
+            <div className={`payment-waiting-pill ${connectionState === "reconnecting" ? "is-offline" : ""}`}>{connectionState === "reconnecting" ? <CloudOff size={14} /> : <Loader2 size={14} className="spin-icon" />}<span>{connectionState === "reconnecting" ? copy.reconnectingOrder : copy.waitingConfirmation}</span>
+            </div>
+            <p className="payment-reservation-copy"><strong>{copy.reservedFor(`${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`)}</strong><br />{copy.reservedWhilePaying}</p>
+            </>
+          )}
         </div>
 
         <div className="payment-receipt payment-receipt-redesign">
@@ -268,7 +338,20 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
           <div className="payment-transfer-card"><span>{copy.transferTo}</span><div><small>{copy.accountName}</small><strong>{payment.bank_account_name || "N/A"}</strong></div><div><small>{copy.accountNumber}</small><button type="button" onClick={() => void navigator.clipboard.writeText(payment.bank_account_no || "")}><strong>{payment.bank_account_no || "N/A"}</strong><Copy size={14} /></button></div><div><small>{copy.bank}</small><strong>{bankName}</strong></div><div className="payment-transfer-note"><small>{copy.transferNote}</small><strong>{order.order_code}</strong></div></div>
           <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => { const line = getPricingLine(pricing, item.product.id); if (!line) return null; return <div key={item.product.id}><span>{line.quantity} × {item.product.name}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</span>{totalAmount === order.total_amount && <strong>{formatVnd(line.total)}</strong>}</div>; })}{pricing.discountAmount > 0 && <div className="payment-receipt-discount"><span>{copy.discount}</span><strong>−{formatVnd(pricing.discountAmount)}</strong></div>}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
           {payment.payment_instructions.trim() && <div className="receipt-instructions"><Sparkles size={16} /><span>{payment.payment_instructions}</span></div>}
-          <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button><button type="button" className="button button-secondary" onClick={() => setIsCancelConfirmOpen(true)} disabled={isCancelling || connectionState !== "online"}>{isCancelling ? copy.cancelling : copy.cancelOrder}</button>
+          <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button>
+          {recovery?.offline ? (
+            <SwipeButton
+              onConfirm={handleOfflineSwipeConfirm}
+              isConfirming={false}
+              idleText={copy.swipeToPay}
+              committingText={copy.checking}
+              successText={copy.paymentComplete}
+              errorText={copy.orderSubmitError}
+              ariaLabel={copy.swipeToPay}
+            />
+          ) : (
+            <button type="button" className="button button-secondary" onClick={() => setIsCancelConfirmOpen(true)} disabled={isCancelling || connectionState !== "online"}>{isCancelling ? copy.cancelling : copy.cancelOrder}</button>
+          )}
         </div>
       </div>
     </Modal>

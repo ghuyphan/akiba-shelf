@@ -1294,3 +1294,21 @@
   .style-featured-minimal .featured-banner-image-main { width: 170px; }
   .style-controls-floating .catalog-toolbar { padding: 6px; }
 }
+
+.swipe-track { --swipe-progress: 0; --swipe-confirm: #65915a; position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 54px; overflow: hidden; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--surface-soft); cursor: grab; user-select: none; touch-action: pan-y; isolation: isolate; outline: none; margin-top: 16px; }
+.swipe-track:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--swipe-confirm) 24%, transparent); }
+.swipe-track.phase-dragging { cursor: grabbing; touch-action: none; }
+.swipe-track.phase-committing { cursor: wait; }
+.swipe-bg { position: absolute; z-index: -1; inset: 0; width: calc(52px + (100% - 52px) * var(--swipe-progress)); border-radius: inherit; background: color-mix(in srgb, var(--swipe-confirm) 16%, #fff); transition: width 260ms var(--ease-out), background 220ms ease; }
+.phase-dragging .swipe-bg { transition: background 220ms ease; }
+.phase-success .swipe-bg { width: 100%; background: color-mix(in srgb, var(--swipe-confirm) 22%, #fff); }
+.phase-error .swipe-bg { width: 100%; background: #fff0f2; }
+.swipe-text { z-index: 1; padding-inline: 56px 12px; font-size: 11px; font-weight: 900; letter-spacing: .005em; text-align: center; pointer-events: none; opacity: calc(1 - var(--swipe-progress) * .7); transition: opacity 180ms ease, color 180ms ease; }
+.phase-committing .swipe-text,.phase-success .swipe-text,.phase-error .swipe-text { opacity: 1; }
+.phase-success .swipe-text { color: #34755e; }
+.phase-error .swipe-text { color: #b23e49; }
+.swipe-handle { position: absolute; z-index: 2; left: calc(3px + (100% - 54px) * var(--swipe-progress)); display: grid; place-items: center; width: 48px; height: 48px; border: 2px solid rgb(255 255 255 / 82%); border-radius: 50%; color: #fff; background: var(--swipe-confirm); box-shadow: 0 7px 18px color-mix(in srgb, var(--swipe-confirm) 32%, transparent); pointer-events: none; transition: left 260ms var(--ease-out), transform 180ms ease, background 180ms ease; }
+.phase-dragging .swipe-handle { transition: transform 180ms ease, background 180ms ease; transform: scale(1.04); }
+.phase-success .swipe-handle { background: #3a9a77; }
+.phase-error .swipe-handle { background: #b23e49; }
+.swipe-handle>span { font-size: 21px; font-weight: 900; transform: translateX(1px); }
