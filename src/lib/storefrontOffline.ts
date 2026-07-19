@@ -46,6 +46,7 @@ export async function prepareStorefrontOffline(shop: Shop) {
     ].filter((url): url is string => Boolean(url)),
   );
   const storageCache = await caches.open("supabase-storage-cache-v2");
+  const productImageCache = await caches.open("product-image-cache-v2");
   await Promise.all(
     [...imageUrls].map(async (url) => {
       const request = new Request(url, { credentials: "same-origin" });
@@ -54,7 +55,11 @@ export async function prepareStorefrontOffline(shop: Shop) {
         throw new Error(
           `Could not download ${new URL(url, location.origin).pathname}.`,
         );
-      await storageCache.put(request, response);
+      if (/\/storage\/v1\/object\/public\//.test(url)) {
+        await storageCache.put(request, response);
+      } else {
+        await productImageCache.put(request, response);
+      }
     }),
   );
   localStorage.setItem(

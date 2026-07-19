@@ -516,7 +516,8 @@ export function CatalogPage() {
       );
       return;
     }
-    if (!online) {
+    const hasCachedPayment = catalogBooth && loadCatalogSnapshot(catalogShopId)?.payment;
+    if (!online && !hasCachedPayment) {
       toast.info(
         catalogCopy.cartSavedOffline,
         catalogCopy.reconnectCheckoutTitle,
@@ -534,15 +535,17 @@ export function CatalogPage() {
         setPaymentModalRequested(true);
         setIsQrOpen(true);
       })
-      .catch((error) =>
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : catalogCopy.paymentSettingsError,
-          catalogCopy.checkoutUnavailableTitle,
-        ),
-      );
+      .catch((err) => {
+        if (!online && hasCachedPayment) {
+          setPaymentModalRequested(true);
+          setIsQrOpen(true);
+        } else {
+          toast.error(err instanceof Error ? err.message : "Could not open checkout.");
+        }
+      });
   }, [
+    catalogBooth,
+    catalogShopId,
     catalogCopy,
     ensurePayment,
     isCartExpanded,

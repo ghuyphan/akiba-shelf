@@ -60,8 +60,12 @@ export function useStorefrontBootstrap(
       return;
     }
     const identity = shopIdentityRef.current;
-    const nextBooth = await getPublicBoothSettings(shopId);
-    if (identity === shopIdentityRef.current) setBooth(nextBooth);
+    try {
+      const nextBooth = await getPublicBoothSettings(shopId);
+      if (identity === shopIdentityRef.current) setBooth(nextBooth);
+    } catch {
+      if (identity === shopIdentityRef.current) setBooth(initialBooth);
+    }
   }, [shopId, initialBooth]);
 
   const loadFeatured = useCallback(async () => {
@@ -71,9 +75,14 @@ export function useStorefrontBootstrap(
       return;
     }
     const identity = shopIdentityRef.current;
-    const nextFeatured = await getPublicFeaturedProducts(shopId);
-    if (identity === shopIdentityRef.current)
-      setFeaturedProducts(nextFeatured);
+    try {
+      const nextFeatured = await getPublicFeaturedProducts(shopId);
+      if (identity === shopIdentityRef.current)
+        setFeaturedProducts(nextFeatured);
+    } catch {
+      if (identity === shopIdentityRef.current)
+        setFeaturedProducts(initialProducts.filter((product) => product.featured));
+    }
   }, [shopId, initialProducts]);
 
   const loadCategories = useCallback(async () => {
@@ -83,8 +92,12 @@ export function useStorefrontBootstrap(
       return;
     }
     const identity = shopIdentityRef.current;
-    const nextCategories = await getPublicProductCategories(shopId);
-    if (identity === shopIdentityRef.current) setCategories(nextCategories);
+    try {
+      const nextCategories = await getPublicProductCategories(shopId);
+      if (identity === shopIdentityRef.current) setCategories(nextCategories);
+    } catch {
+      if (identity === shopIdentityRef.current) setCategories(initialCategories);
+    }
   }, [shopId, initialCategories]);
 
   const loadPromotion = useCallback(async () => {
@@ -94,8 +107,12 @@ export function useStorefrontBootstrap(
       return;
     }
     const identity = shopIdentityRef.current;
-    const nextPromotion = await getPublicPromotionSettings(shopId);
-    if (identity === shopIdentityRef.current) setPromotion(nextPromotion);
+    try {
+      const nextPromotion = await getPublicPromotionSettings(shopId);
+      if (identity === shopIdentityRef.current) setPromotion(nextPromotion);
+    } catch {
+      if (identity === shopIdentityRef.current) setPromotion(initialPromotion);
+    }
   }, [shopId, initialPromotion]);
 
   const ensurePayment = useCallback(() => {
@@ -109,6 +126,13 @@ export function useStorefrontBootstrap(
       .then((nextPayment) => {
         if (identity === shopIdentityRef.current) setPayment(nextPayment);
         return nextPayment;
+      })
+      .catch((err) => {
+        if (identity === shopIdentityRef.current && initialPayment !== defaultPayment) {
+          setPayment(initialPayment);
+          return initialPayment;
+        }
+        throw err;
       })
       .finally(() => {
         paymentRequestRef.current = null;
