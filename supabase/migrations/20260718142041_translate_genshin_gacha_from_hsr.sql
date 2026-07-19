@@ -9,9 +9,25 @@ declare
   v_config jsonb;
 begin
   select shop.id
-  into strict v_shop_id
+  into v_shop_id
   from public.shops shop
-  where shop.slug = 'arigatosan';
+  where shop.slug = 'arigatosan' or shop.id = '00000000-0000-4000-8000-000000000001';
+
+  if v_shop_id is null then
+    return;
+  end if;
+
+  -- Skip translation if HSR has no entries (e.g. fresh database in CI)
+  if not exists (
+    select 1
+    from public.gacha_game_configs
+    where shop_id = v_shop_id
+      and game_type = 'hsr'
+      and jsonb_typeof(config->'entries') = 'array'
+      and jsonb_array_length(config->'entries') > 0
+  ) then
+    return;
+  end if;
 
   select member.user_id
   into strict v_owner_id
