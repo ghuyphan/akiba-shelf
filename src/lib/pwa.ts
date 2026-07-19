@@ -135,7 +135,30 @@ export async function ensureOfflineNavigationReady(
   pathname = window.location.pathname,
 ) {
   const registration = await registerPwa(pathname);
-  if (!registration?.active) {
+  if (!registration) {
+    throw new Error("Offline navigation could not be enabled in this browser.");
+  }
+
+  if (!registration.active) {
+    const worker = registration.installing || registration.waiting;
+    if (worker) {
+      await new Promise<void>((resolve) => {
+        if (worker.state === "activated") {
+          resolve();
+          return;
+        }
+        const stateChangeHandler = () => {
+          if (worker.state === "activated") {
+            worker.removeEventListener("statechange", stateChangeHandler);
+            resolve();
+          }
+        };
+        worker.addEventListener("statechange", stateChangeHandler);
+      });
+    }
+  }
+
+  if (!registration.active && !navigator.serviceWorker.controller) {
     throw new Error("Offline navigation could not be enabled in this browser.");
   }
   if (import.meta.env.DEV && "caches" in window) {
