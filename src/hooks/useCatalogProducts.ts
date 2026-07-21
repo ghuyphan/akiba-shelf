@@ -6,6 +6,7 @@ import {
 import { getErrorMessage, isSessionNoise, isTransportError } from "../lib/errors";
 import { queryLocalCatalog } from "../lib/catalogQueries";
 import type { Product } from "../types/catalog";
+import { loadOfflineEventSession } from "../lib/offline/offlineEvents";
 
 const PRODUCT_PAGE_SIZE = 24;
 
@@ -103,9 +104,9 @@ export function useCatalogProducts(
       }
       setError("");
 
-      const applyLocalFallback = () => {
+      const applyLocalFallback = (sourceProducts = initialProducts) => {
         const page = queryLocalCatalog(
-          initialProducts,
+          sourceProducts,
           {
             category: query.category,
             search: query.search,
@@ -129,6 +130,27 @@ export function useCatalogProducts(
         setHasMore(page.hasMore);
         onProductsLoaded(page.products);
       };
+
+      const eventSession = await loadOfflineEventSession(shopId);
+      if (eventSession?.status === "active") {
+        applyLocalFallback(
+          eventSession.allocations.map((allocation) => ({
+            ...allocation.product,
+            quantity_available:
+              allocation.quantityAllocated - allocation.quantitySold,
+            stock_status:
+              allocation.quantityAllocated - allocation.quantitySold === 0
+                ? "sold_out"
+                : allocation.quantityAllocated - allocation.quantitySold <= 5
+                  ? "limited"
+                  : "in_stock",
+          })),
+        );
+        completedInitialLoadRef.current = true;
+        abortRef.current = null;
+        setPhase("ready");
+        return;
+      }
 
       if (!navigator.onLine) {
         applyLocalFallback();

@@ -123,20 +123,23 @@ export function BoothDetailsModal({
           </div>
         )}
         <div className="booth-modal-utility-row">
-          <button
-            type="button"
-            className="button button-secondary booth-save-offline"
-            onClick={onSaveOffline}
-            disabled={offlineState === "saving"}
-          >
-            {offlineState === "saving" ? (
-              <><Loader2 size={17} className="spin-icon" /> {copy.savingOffline}</>
-            ) : offlineState === "ready" ? (
-              <><Check size={17} /> {copy.offlineReady}</>
-            ) : (
-              <><Download size={17} /> {copy.saveOffline}</>
-            )}
-          </button>
+          <div className="booth-modal-offline-action">
+            <button
+              type="button"
+              className="button button-secondary booth-save-offline"
+              onClick={onSaveOffline}
+              disabled={offlineState === "saving"}
+            >
+              {offlineState === "saving" ? (
+                <><Loader2 size={17} className="spin-icon" /> {copy.savingOffline}</>
+              ) : offlineState === "ready" ? (
+                <><Check size={17} /> {copy.offlineReady}</>
+              ) : (
+                <><Download size={17} /> {copy.saveOffline}</>
+              )}
+            </button>
+            <small>{copy.offlineBrowseHint}</small>
+          </div>
           <Link to="/admin" className="booth-staff-link">
             {copy.staffAccess} →
           </Link>

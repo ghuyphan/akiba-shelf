@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import type { BoothSettings } from "../../types/catalog";
 import type { AdminViewTab } from "./adminWorkspaceTypes";
@@ -10,6 +11,7 @@ type AdminViewHeroProps = {
   hiddenCount: number;
   pendingOrderCount: number;
   matchingOrderCount: number;
+  ordersAction?: ReactNode;
 };
 
 const viewCopy: Record<
@@ -57,52 +59,56 @@ export function AdminViewHero({
   hiddenCount,
   pendingOrderCount,
   matchingOrderCount,
+  ordersAction,
 }: AdminViewHeroProps) {
   const { t } = usePlatformI18n();
   const copy = viewCopy[viewTab];
 
   return (
-    <section className="admin-view-hero">
+    <section className={`admin-view-hero admin-view-hero-${viewTab}`}>
       <div>
         <span>{t(copy.eyebrow)}</span>
         <h1>{t(copy.title)}</h1>
         <p>{t(copy.description)}</p>
       </div>
-      <div className="admin-view-chips">
-        {viewTab === "orders" && (
-          <>
-            <span>
-              <b>{pendingOrderCount}</b> {t("pending")}
-            </span>
-            <span>
-              <b>{matchingOrderCount}</b> {t("matching orders")}
-            </span>
-          </>
-        )}
-        {viewTab === "products" && (
-          <>
-            <span>
-              <b>{productsCount}</b> {t("total")}
-            </span>
-            <span>
-              <b>{lowStockCount}</b> {t("need attention")}
-            </span>
-            <span>
-              <b>{hiddenCount}</b> {t("hidden")}
-            </span>
-          </>
-        )}
-        {viewTab === "design" && (
-          <>
-            <span>
-              <b>{booth.corner_radius ?? 16}px</b> {t("corners")}
-            </span>
-            <span>
-              <b>{(booth.catalog_locale ?? "en").toUpperCase()}</b>{" "}
-              {t("locale")}
-            </span>
-          </>
-        )}
+      <div className="admin-view-hero-actions">
+        <div className="admin-view-chips">
+          {viewTab === "orders" && (
+            <>
+              <span>
+                <b>{pendingOrderCount}</b> {t("pending")}
+              </span>
+              <span>
+                <b>{matchingOrderCount}</b> {t("matching orders")}
+              </span>
+            </>
+          )}
+          {viewTab === "products" && (
+            <>
+              <span>
+                <b>{productsCount}</b> {t("total")}
+              </span>
+              <span>
+                <b>{lowStockCount}</b> {t("need attention")}
+              </span>
+              <span>
+                <b>{hiddenCount}</b> {t("hidden")}
+              </span>
+            </>
+          )}
+          {viewTab === "design" && (
+            <>
+              <span>
+                <b>{booth.corner_radius ?? 16}px</b> {t("corners")}
+              </span>
+              <span>
+                <b>{(booth.catalog_locale ?? "en").toUpperCase()}</b>{" "}
+                {t("locale")}
+              </span>
+            </>
+          )}
+        </div>
+        {viewTab === "orders" && ordersAction}
       </div>
     </section>
   );

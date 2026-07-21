@@ -89,6 +89,41 @@ test("allows authorized staff into orders without restricted settings", async ({
   await expect(page.getByRole("button", { name: /Products/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Storefront/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Settings/ })).toHaveCount(0);
+  await expect(page.locator(".offline-event-launcher")).toHaveCount(0);
+});
+
+test("integrates offline event controls into the Orders hero", async ({
+  page,
+}) => {
+  await mockSupabase(page, { staffRole: "owner" });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+
+  const navigation = page.locator(".admin-nav-tabs");
+  await expect(
+    navigation.getByRole("button", { name: "Event mode" }),
+  ).toHaveCount(0);
+
+  const hero = page.locator(".admin-view-hero-orders");
+  const eventControl = hero.locator(".offline-event-launcher");
+  await expect(eventControl).toBeVisible();
+  await expect(eventControl).toContainText("Event sales");
+  await expect(eventControl).toContainText("Not prepared");
+
+  await eventControl.getByRole("button", { name: "Set up" }).click();
+  const dialog = page.getByRole("dialog", { name: "Offline event mode" });
+  await expect(dialog).toBeVisible();
+  const eventName = dialog.getByLabel("Event name");
+  await expect(eventName).toHaveClass(/input/);
+  await expect(eventName).toHaveCSS("min-height", "44px");
+  await expect(eventName).not.toHaveCSS("border-style", "none");
+  await expect(
+    page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).resolves.toBe(true);
 });
 
 test("loads the initial owner workspace without duplicate requests", async ({

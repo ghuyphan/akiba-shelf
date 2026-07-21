@@ -160,6 +160,10 @@ export type Order = {
   cancelled_at: string | null;
   expired_at: string | null;
   order_items?: OrderItem[];
+  source?: "online" | "offline_event";
+  offline_event_session_id?: string;
+  payment_method?: OfflineEventPaymentMethod;
+  payment_state?: OfflineEventPaymentState;
 };
 
 export type OrderMutationOutcome = "confirmed" | "cancelled" | "expired" | "already_confirmed" | "already_cancelled" | "already_expired" | "not_found" | "invalid_state";
@@ -175,4 +179,56 @@ export type OrderItem = {
   unit_price: number;
   discount_amount?: number;
   product?: OrderItemProduct;
+};
+
+export type OfflineEventPaymentMethod = "cash" | "vietqr";
+export type OfflineEventPaymentState =
+  | "awaiting_payment"
+  | "cash_confirmed"
+  | "bank_verification_pending"
+  | "bank_confirmed";
+
+export type OfflineEventAllocation = {
+  product: Product;
+  quantityAllocated: number;
+  quantitySold: number;
+};
+
+export type OfflineEventOrderItem = {
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  discount_amount: number;
+};
+
+export type OfflineEventOrder = {
+  version: 1;
+  id: string;
+  sessionId: string;
+  shopId: string;
+  orderCode: string;
+  customerName: string;
+  totalAmount: number;
+  status: "pending" | "confirmed" | "cancelled";
+  paymentMethod: OfflineEventPaymentMethod;
+  paymentState: OfflineEventPaymentState;
+  items: OfflineEventOrderItem[];
+  createdAt: string;
+  updatedAt: string;
+  syncedAt?: string;
+};
+
+export type OfflineEventSession = {
+  version: 1;
+  id: string;
+  shopId: string;
+  shopSlug: string;
+  deviceId: string;
+  name: string;
+  status: "active" | "closed";
+  allocations: OfflineEventAllocation[];
+  payment: PaymentSettings;
+  promotion: PromotionSettings;
+  createdAt: string;
+  updatedAt: string;
 };

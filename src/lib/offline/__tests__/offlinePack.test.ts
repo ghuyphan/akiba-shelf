@@ -5,6 +5,7 @@ import {
   hasGachaOfflinePack,
   offlinePackPercent,
 } from "../offlinePack";
+import { ensureOfflineNavigationReady } from "../pwa";
 
 vi.mock("../pwa", () => ({
   ensureOfflineNavigationReady: vi.fn().mockResolvedValue(undefined),
@@ -49,7 +50,10 @@ function marker(game: "genshin" | "hsr", id: string, paths: string[]) {
   );
 }
 
-function installCaches(entries: Record<string, string[]> = {}) {
+function installCaches(
+  entries: Record<string, string[]> = {},
+  options: { deleteError?: Error } = {},
+) {
   const deleted: string[] = [];
   const stored = new Map(
     Object.entries(entries).map(([name, urls]) => [name, new Set(urls)]),
@@ -70,6 +74,7 @@ function installCaches(entries: Record<string, string[]> = {}) {
         urls?.add(url);
       }),
       delete: vi.fn(async (request: RequestInfo | URL) => {
+        if (options.deleteError) throw options.deleteError;
         const url = request instanceof Request ? request.url : String(request);
         deleted.push(url);
         return urls?.delete(url) ?? false;
@@ -158,6 +163,26 @@ describe("offline gacha pack readiness", () => {
     expect(localStorage.getItem("matsuri-offline-pack-v3:genshin")).toBeNull();
   });
 
+  it("never trusts a proven stale pack when cache cleanup fails", async () => {
+    installCaches(
+      {
+        "gacha-app-shell-v3": [
+          "http://localhost:3000/gacha-simulator/index.html",
+          "http://localhost:3000/gacha-simulator/app.js",
+        ],
+      },
+      { deleteError: new Error("cache is locked") },
+    );
+    vi.stubGlobal("fetch", mockManifest());
+    marker("genshin", "older-build", [
+      "/gacha-simulator/index.html",
+      "/gacha-simulator/app.js",
+    ]);
+
+    await expect(hasGachaOfflinePack("genshin")).resolves.toBe(false);
+    expect(localStorage.getItem("matsuri-offline-pack-v3:genshin")).toBeNull();
+  });
+
   it("redownloads stable asset URLs when the simulator build changes", async () => {
     const cacheState = installCaches({
       "gacha-app-shell-v3": [
@@ -227,6 +252,17 @@ describe("offline gacha pack readiness", () => {
       total: 2,
     });
     expect(localStorage.getItem("matsuri-offline-pack-v3:genshin")).not.toBeNull();
+  });
+
+  it("prepares the app shell once when saving both games", async () => {
+    installCaches();
+    vi.stubGlobal("fetch", mockManifest());
+    const navigationMock = vi.mocked(ensureOfflineNavigationReady);
+    navigationMock.mockClear();
+
+    await downloadGachaOfflinePacks(["genshin", "hsr"]);
+
+    expect(navigationMock).toHaveBeenCalledTimes(1);
   });
 
   it("fails before downloading when the estimate cannot fit missing assets", async () => {

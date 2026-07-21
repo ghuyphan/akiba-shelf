@@ -88,6 +88,7 @@
 .payment-waiting-pill { display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 7px; padding: 9px 13px; border-radius: 16px; color: var(--coral); background: color-mix(in srgb, var(--coral) 8%, #fff); font-size: 13px; font-weight: 800; }
 .payment-waiting-pill.is-error { color: #a33d48; background: #fff0f2; }
 .payment-waiting-pill.is-offline { color: #7a5712; background: #fff4d6; }
+.payment-waiting-pill.is-event { color: #3f6f43; background: #edf6ec; }
 .payment-waiting-pill.is-reconnecting { color: #315f8b; background: #edf5ff; }
 .payment-status-retry { min-height: 34px; padding: 0 11px; border: 1px solid currentColor; border-radius: 999px; color: inherit; background: rgb(255 255 255 / 70%); cursor: pointer; font: inherit; font-size: 11px; }
 .payment-status-retry:focus-visible { outline: 3px solid color-mix(in srgb, currentColor 22%, transparent); outline-offset: 2px; }
@@ -1083,7 +1084,6 @@
 }
 
 .payment-hide-order { width: 100%; min-height: 42px; padding: 0 16px; border: 0; border-radius: 999px; color: var(--muted); background: var(--surface-soft); cursor: pointer; font-size: 14px; font-weight: 900; }
-.payment-waiting-pill.is-offline { color: #7a5712; background: #fff4d6; }
 .payment-cancelled-state .success-icon-wrap { color: #b23e49; background: #fff0f2; }
 
 @media (max-width: 760px) {
@@ -1596,6 +1596,8 @@
   width: 100% !important;
   gap: 12px;
 }
+.booth-modal-offline-action { display: grid; gap: 5px; min-width: 0; }
+.booth-modal-offline-action small { max-width: 390px; color: var(--muted); font-size: 9px; line-height: 1.4; }
 
 /* Subtle Save Offline Button */
 .booth-save-offline {
@@ -1621,6 +1623,13 @@
   background: var(--surface-soft) !important;
   color: var(--ink) !important;
   border-color: var(--muted) !important;
+}
+
+@media (max-width: 760px) {
+  .booth-modal-utility-row { align-items: stretch !important; flex-direction: column; }
+  .booth-save-offline { width: 100% !important; min-height: 42px; }
+  .booth-modal-offline-action small { max-width: none; }
+  .booth-staff-link { align-self: flex-end; }
 }
 
 /* Subtle Staff Access Link */

@@ -15,6 +15,48 @@ import type { Shop } from "../../types/catalog";
 
 const STOREFRONT_OFFLINE_MARKER_PREFIX = "matsuri-storefront-offline-v2";
 const OFFLINE_DOWNLOAD_CONCURRENCY = 6;
+type StorefrontOfflineMarker = {
+  version: 4;
+  shopId: string;
+  savedAt: string;
+  required: Array<{ url: string; cacheName: string }>;
+};
+
+function storefrontMarkerKey(slug: string) {
+  return `${STOREFRONT_OFFLINE_MARKER_PREFIX}:${slug}`;
+}
+
+function cacheNameForStorefrontUrl(url: string) {
+  return /\/storage\/v1\/object\/public\//.test(url)
+    ? "supabase-storage-cache-v2"
+    : "product-image-cache-v2";
+}
+
+function readStorefrontMarker(slug: string): StorefrontOfflineMarker | null {
+  try {
+    const marker = JSON.parse(
+      localStorage.getItem(storefrontMarkerKey(slug)) || "null",
+    ) as Partial<StorefrontOfflineMarker> | null;
+    if (
+      marker?.version !== 4 ||
+      typeof marker.shopId !== "string" ||
+      !Array.isArray(marker.required) ||
+      marker.required.some(
+        (item) =>
+          !item ||
+          typeof item.url !== "string" ||
+          typeof item.cacheName !== "string",
+      )
+    ) {
+      localStorage.removeItem(storefrontMarkerKey(slug));
+      return null;
+    }
+    return marker as StorefrontOfflineMarker;
+  } catch {
+    localStorage.removeItem(storefrontMarkerKey(slug));
+    return null;
+  }
+}
 
 async function cacheStorefrontAssets(urls: string[]) {
   const storageCache = await caches.open("supabase-storage-cache-v2");
@@ -30,7 +72,7 @@ async function cacheStorefrontAssets(urls: string[]) {
         throw new Error(
           `Could not download ${new URL(url, location.origin).pathname}.`,
         );
-      const cache = /\/storage\/v1\/object\/public\//.test(url)
+      const cache = cacheNameForStorefrontUrl(url) === "supabase-storage-cache-v2"
         ? storageCache
         : productImageCache;
       await cache.put(request, response);
@@ -92,24 +134,41 @@ export async function prepareStorefrontOffline(shop: Shop) {
     ].filter((url): url is string => Boolean(url)),
   );
   await cacheStorefrontAssets([...imageUrls]);
-  localStorage.setItem(
-    `${STOREFRONT_OFFLINE_MARKER_PREFIX}:${shop.slug}`,
-    JSON.stringify({ version: 3, shopId, savedAt: new Date().toISOString() }),
-  );
+  localStorage.setItem(storefrontMarkerKey(shop.slug), JSON.stringify({
+    version: 4,
+    shopId,
+    savedAt: new Date().toISOString(),
+    required: [...imageUrls].map((url) => ({
+      url,
+      cacheName: cacheNameForStorefrontUrl(url),
+    })),
+  } satisfies StorefrontOfflineMarker));
 }
 
 export function isStorefrontOfflineReady(slug: string) {
+  const marker = readStorefrontMarker(slug);
+  return Boolean(marker && loadCatalogSnapshot(marker.shopId)?.complete === true);
+}
+
+export async function verifyStorefrontOfflineReady(slug: string) {
+  const marker = readStorefrontMarker(slug);
+  if (
+    !marker ||
+    loadCatalogSnapshot(marker.shopId)?.complete !== true ||
+    !("caches" in window)
+  ) return false;
   try {
-    const marker = JSON.parse(
-      localStorage.getItem(`${STOREFRONT_OFFLINE_MARKER_PREFIX}:${slug}`) ||
-        "null",
-    ) as unknown;
-    if (!marker || typeof marker !== "object" || !("shopId" in marker))
-      return false;
-    const shopId = (marker as { shopId?: unknown }).shopId;
-    return typeof shopId === "string" && loadCatalogSnapshot(shopId)?.complete === true;
+    const cacheByName = new Map<string, Cache>();
+    for (const item of marker.required) {
+      let cache = cacheByName.get(item.cacheName);
+      if (!cache) {
+        cache = await caches.open(item.cacheName);
+        cacheByName.set(item.cacheName, cache);
+      }
+      if (!(await cache.match(item.url))) return false;
+    }
+    return true;
   } catch {
-    localStorage.removeItem(`${STOREFRONT_OFFLINE_MARKER_PREFIX}:${slug}`);
     return false;
   }
 }

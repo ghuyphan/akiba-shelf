@@ -2,6 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { getShopMemberships } from "../lib/api";
 import type { ShopMembership } from "../types/catalog";
+import { isTransportError } from "../lib/errors";
+import {
+  clearAdminAccessSnapshot,
+  loadAdminAccessSnapshot,
+  saveAdminAccessSnapshot,
+} from "../lib/offline/adminOffline";
 
 const STORAGE_KEY = "akiba-active-shop";
 const ACCESS_ERROR_MESSAGE =
@@ -62,6 +68,7 @@ export function useAdminSession() {
       if (currentRequest !== requestId.current) return;
       resolvedUserId.current = user.id;
       resolvingUserId.current = null;
+      saveAdminAccessSnapshot(user.id, user.email, memberships);
       if (!memberships.length) {
         setState({
           status: "unauthorized",
@@ -94,8 +101,29 @@ export function useAdminSession() {
         userId: user.id,
         email: user.email,
       });
-    } catch {
+    } catch (error) {
       resolvingUserId.current = null;
+      const cached =
+        !navigator.onLine || isTransportError(error)
+          ? loadAdminAccessSnapshot(user.id)
+          : null;
+      const activeMemberships = cached?.memberships.filter(
+        (item) => item.active && item.shop_active,
+      );
+      if (cached && activeMemberships?.length) {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        const access =
+          activeMemberships.find((item) => item.shop_id === stored) ??
+          activeMemberships[0];
+        setState({
+          status: "authorized",
+          access,
+          memberships: cached.memberships,
+          userId: user.id,
+          email: cached.email,
+        });
+        return;
+      }
       setState({ status: "error", message: ACCESS_ERROR_MESSAGE });
     }
   }, []);
@@ -111,6 +139,7 @@ export function useAdminSession() {
         requestId.current += 1;
         resolvedUserId.current = null;
         resolvingUserId.current = null;
+        clearAdminAccessSnapshot();
         setState({ status: "unauthenticated" });
         return;
       }

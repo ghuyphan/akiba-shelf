@@ -223,10 +223,11 @@ export async function downloadGachaOfflinePack(
   gameType: GachaGameType,
   extraUrls: string[] = [],
   onProgress?: (progress: OfflinePackProgress) => void,
+  navigationPrepared = false,
 ) {
   if (!("caches" in window))
     throw new Error("Offline downloads are not supported by this browser.");
-  await ensureOfflineNavigationReady();
+  if (!navigationPrepared) await ensureOfflineNavigationReady();
   const previousMarker = readMarker(gameType);
   const pack = await fetchManifestPack(gameType);
   // Without a matching current marker, cached stable URLs may belong to an
@@ -342,6 +343,7 @@ export async function downloadGachaOfflinePacks(
   onProgress?: (progress: MultiOfflinePackProgress) => void,
 ) {
   const uniqueGames = [...new Set(gameTypes)];
+  if (uniqueGames.length) await ensureOfflineNavigationReady();
   for (let gameIndex = 0; gameIndex < uniqueGames.length; gameIndex += 1) {
     const gameType = uniqueGames[gameIndex];
     if (await hasGachaOfflinePack(gameType)) {
@@ -375,6 +377,7 @@ export async function downloadGachaOfflinePacks(
           ),
         });
       },
+      true,
     );
   }
 }
@@ -385,20 +388,27 @@ export async function hasGachaOfflinePack(gameType: GachaGameType) {
   if (!marker) return false;
   try {
     if (navigator.onLine) {
+      let currentPack: OfflinePackManifest | null = null;
       try {
-        const currentPack = await fetchManifestPack(gameType);
-        if (currentPack.id !== marker.packId) {
+        currentPack = await fetchManifestPack(gameType);
+      } catch {
+        // A transient manifest failure must not invalidate a complete local pack.
+      }
+      if (currentPack?.id !== undefined && currentPack.id !== marker.packId) {
+        localStorage.removeItem(markerKey(gameType));
+        try {
           await deleteCachedPackAssets(marker, gameType);
-          localStorage.removeItem(markerKey(gameType));
-          return false;
+        } catch {
+          // The removed marker keeps a proven stale pack from being trusted.
         }
+        return false;
+      }
+      if (currentPack) {
         const requiredUrls = new Set(marker.required.map((item) => item.url));
         if (currentPack.assets.some((asset) => !requiredUrls.has(asset.path))) {
           localStorage.removeItem(markerKey(gameType));
           return false;
         }
-      } catch {
-        // A transient manifest failure must not invalidate a complete local pack.
       }
     }
     if (await hasRequiredAssets(marker)) return true;

@@ -54,7 +54,10 @@ import {
 import { prefersLightweightCatalog } from "../lib/network";
 import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
-import { isStorefrontOfflineReady, prepareStorefrontOffline } from "../lib/offline/storefrontOffline";
+import {
+  prepareStorefrontOffline,
+  verifyStorefrontOfflineReady,
+} from "../lib/offline/storefrontOffline";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -166,9 +169,7 @@ export function CatalogPage() {
     Boolean(initialCheckoutRef.current),
   );
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-  const [offlineState, setOfflineState] = useState<"idle" | "saving" | "ready">(
-    () => (isStorefrontOfflineReady(shopSlug) ? "ready" : "idle"),
-  );
+  const [offlineState, setOfflineState] = useState<"idle" | "saving" | "ready">("idle");
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null,
   );
@@ -194,6 +195,17 @@ export function CatalogPage() {
         )
       : null;
   useDocumentBranding(verifiedBranding);
+
+  useEffect(() => {
+    let active = true;
+    setOfflineState("idle");
+    void verifyStorefrontOfflineReady(shopSlug).then((ready) => {
+      if (active && ready) setOfflineState("ready");
+    });
+    return () => {
+      active = false;
+    };
+  }, [shopSlug]);
 
   useEffect(() => {
     const next = loadCheckoutSession(shopSlug)?.order ?? null;

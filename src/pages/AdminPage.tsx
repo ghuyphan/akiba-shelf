@@ -21,7 +21,7 @@ import {
   defaultPromotion,
   MAX_OWNED_SHOPS,
 } from "../lib/constants";
-import { getErrorMessage, isSessionNoise } from "../lib/errors";
+import { getErrorMessage, isSessionNoise, isTransportError } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import {
   applyPageTheme,
@@ -50,8 +50,17 @@ import { useAdminOrderRealtime } from "../hooks/useAdminOrderRealtime";
 import { AdminWorkspaceHeader } from "../components/admin/AdminWorkspaceHeader";
 import { AdminViewHero } from "../components/admin/AdminViewHero";
 import { AdminWorkspaceContent } from "../components/admin/AdminWorkspaceContent";
+import { OfflineEventManager } from "../components/admin/OfflineEventManager";
 import type { AdminViewTab } from "../components/admin/adminWorkspaceTypes";
 import { SignOutDialog } from "../components/ui/SignOutDialog";
+import {
+  loadAdminOrdersSnapshot,
+  saveAdminOrdersSnapshot,
+} from "../lib/offline/adminOffline";
+import {
+  loadCatalogSnapshot,
+  saveCatalogSnapshot,
+} from "../lib/offline/offline";
 
 const orderPageSize = 12;
 // Realtime events caused by this tab's own writes are ignored inside this
@@ -191,11 +200,29 @@ export function AdminPage() {
         setPayment(catalog.payment);
         setPromotion(catalog.promotion);
         setProducts(catalog.products);
+        saveCatalogSnapshot(catalog, shopId, {
+          replaceProducts: true,
+          complete: true,
+        });
         loadedCatalogShopRef.current = shopId;
         setSelectedProduct((current) => {
           if (!current) return undefined;
           return catalog.products.find((p) => p.id === current.id);
         });
+      })
+      .catch((error) => {
+        if (navigator.onLine && !isTransportError(error)) throw error;
+        const snapshot = loadCatalogSnapshot(shopId);
+        if (
+          !snapshot?.complete ||
+          !snapshot.payment ||
+          !snapshot.promotion
+        ) throw error;
+        setBooth(snapshot.booth);
+        setPayment(snapshot.payment);
+        setPromotion(snapshot.promotion);
+        setProducts(snapshot.products);
+        loadedCatalogShopRef.current = shopId;
       })
       .finally(() => {
         if (requestId === catalogRequestRef.current) setCatalogLoading(false);
@@ -246,6 +273,7 @@ export function AdminPage() {
             : Promise.resolve(null),
         ]);
         if (requestId !== orderRequestRef.current) return;
+        saveAdminOrdersSnapshot(shopId, result.orders);
         const lastPage = Math.max(1, Math.ceil(result.total / orderPageSize));
         if (page > lastPage) {
           setOrderPage(lastPage);
@@ -266,11 +294,57 @@ export function AdminPage() {
             ordersTodayOnlyRef.current,
           ].join(":");
         }
-      })().finally(() => {
-        if (requestId === orderRequestRef.current) setOrdersLoading(false);
-        if (orderLoadRef.current?.promise === promise)
-          orderLoadRef.current = null;
-      });
+      })()
+        .catch((error) => {
+          if (navigator.onLine && !isTransportError(error)) throw error;
+          const cached = loadAdminOrdersSnapshot(shopId);
+          if (!cached.length) throw error;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const scoped = cached.filter((order) => {
+            if (
+              orderFilterRef.current !== "all" &&
+              order.status !== orderFilterRef.current
+            ) return false;
+            const created = new Date(order.created_at);
+            return !ordersTodayOnlyRef.current ||
+              (created >= today && created < tomorrow);
+          });
+          const from = Math.max(0, page - 1) * orderPageSize;
+          setOrders(scoped.slice(from, from + orderPageSize));
+          setOrderTotal(scoped.length);
+          loadedOrderQueryRef.current = [
+            shopId,
+            page,
+            orderFilterRef.current,
+            ordersTodayOnlyRef.current,
+          ].join(":");
+          const counts = cached.reduce<OrderStatusCounts>(
+            (result, order) => {
+              const created = new Date(order.created_at);
+              if (
+                ordersTodayOnlyRef.current &&
+                (created < today || created >= tomorrow)
+              ) return result;
+              result[order.status] += 1;
+              result.all += 1;
+              return result;
+            },
+            { ...emptyOrderCounts },
+          );
+          setOrderCounts(counts);
+          loadedOrderCountScopeRef.current = [
+            shopId,
+            ordersTodayOnlyRef.current,
+          ].join(":");
+        })
+        .finally(() => {
+          if (requestId === orderRequestRef.current) setOrdersLoading(false);
+          if (orderLoadRef.current?.promise === promise)
+            orderLoadRef.current = null;
+        });
       orderLoadRef.current = { key: loadKey, promise };
       return promise;
     },
@@ -584,6 +658,18 @@ export function AdminPage() {
           hiddenCount={hiddenCount}
           pendingOrderCount={orderCounts.pending}
           matchingOrderCount={orderTotal}
+          ordersAction={
+            canManageCatalog ? (
+              <OfflineEventManager
+                shopId={shopId}
+                shopSlug={adminSession.access.shop_slug}
+                products={products}
+                booth={booth}
+                payment={payment}
+                promotion={promotion}
+              />
+            ) : undefined
+          }
         />
         <AdminWorkspaceContent
           viewTab={viewTab}

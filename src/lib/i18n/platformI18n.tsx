@@ -1318,6 +1318,63 @@ const vi: Record<string, string> = {
   "Dismiss notification": "Đóng thông báo",
   "Close modal": "Đóng hộp thoại",
   "Admin sections": "Các mục quản trị",
+  "Offline event mode": "Chế độ sự kiện ngoại tuyến",
+  "Offline selling": "Bán hàng ngoại tuyến",
+  "Event sales": "Bán hàng tại sự kiện",
+  "Event mode status": "Trạng thái chế độ sự kiện",
+  "Not prepared": "Chưa chuẩn bị",
+  "Set up": "Thiết lập",
+  Manage: "Quản lý",
+  left: "còn",
+  "Preparing device…": "Đang chuẩn bị thiết bị…",
+  "This device is ready for offline sales.":
+    "Thiết bị này đã sẵn sàng bán hàng ngoại tuyến.",
+  "Event mode unavailable": "Không thể mở chế độ sự kiện",
+  "Offline orders synchronized.": "Đã đồng bộ đơn hàng ngoại tuyến.",
+  "Sync failed": "Đồng bộ thất bại",
+  "Offline event closed and unused stock returned.":
+    "Đã đóng sự kiện ngoại tuyến và hoàn lại tồn kho chưa dùng.",
+  "Close failed": "Không thể đóng sự kiện",
+  "Prepare this device for an offline event":
+    "Chuẩn bị thiết bị này cho sự kiện ngoại tuyến",
+  "Current active stock will be assigned to this device, removed from online availability, and safely returned when the event closes.":
+    "Tồn kho đang hoạt động sẽ được giao cho thiết bị này, gỡ khỏi lượng hàng trực tuyến và hoàn lại an toàn khi đóng sự kiện.",
+  "Use one designated staff device while offline. Other devices cannot spend this allocation.":
+    "Chỉ dùng một thiết bị staff được chỉ định khi ngoại tuyến. Thiết bị khác không thể sử dụng phần tồn kho này.",
+  "Event name": "Tên sự kiện",
+  "Convention day or booth session": "Ngày hội chợ hoặc ca trực gian hàng",
+  "Stock to reserve": "Tồn kho cần giữ",
+  products: "sản phẩm",
+  "Reserve stock and prepare device": "Giữ tồn kho và chuẩn bị thiết bị",
+  "Reconnect to prepare event mode": "Kết nối lại để chuẩn bị chế độ sự kiện",
+  Online: "Trực tuyến",
+  "Offline ready": "Sẵn sàng ngoại tuyến",
+  "This device is the inventory authority for the allocated event stock.":
+    "Thiết bị này là nguồn tồn kho chính xác cho lượng hàng đã phân bổ.",
+  "Sync now": "Đồng bộ ngay",
+  "Export backup": "Xuất bản sao lưu",
+  remaining: "còn lại",
+  "sold locally": "đã bán tại chỗ",
+  "local orders": "đơn cục bộ",
+  "awaiting verification": "chờ xác minh",
+  "Local order ledger": "Sổ đơn hàng cục bộ",
+  "Orders remain on this device until they synchronize.":
+    "Đơn hàng được giữ trên thiết bị này cho đến khi đồng bộ.",
+  "Open the storefront on this device to create the first offline order.":
+    "Mở cửa hàng trên thiết bị này để tạo đơn ngoại tuyến đầu tiên.",
+  "Walk-in customer": "Khách tại quầy",
+  Confirmed: "Đã xác nhận",
+  Cancelled: "Đã hủy",
+  Cash: "Tiền mặt",
+  VietQR: "VietQR",
+  "Confirm cash": "Xác nhận tiền mặt",
+  "Verify payment": "Xác minh thanh toán",
+  "Synchronization is idempotent; retrying cannot duplicate an offline order.":
+    "Đồng bộ có tính lặp an toàn; thử lại sẽ không tạo trùng đơn ngoại tuyến.",
+  "Sales are safe on this device. Reconnect before closing the event or switching devices.":
+    "Dữ liệu bán hàng an toàn trên thiết bị này. Hãy kết nối lại trước khi đóng sự kiện hoặc đổi thiết bị.",
+  "Resolve pending payments first": "Xử lý các khoản thanh toán đang chờ trước",
+  "Sync and close event": "Đồng bộ và đóng sự kiện",
 };
 
 type Variables = Record<string, string | number>;

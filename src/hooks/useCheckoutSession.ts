@@ -12,6 +12,13 @@ import {
   loadCheckoutSession,
   saveCheckoutSession,
 } from "../lib/offline/checkoutSession";
+import {
+  createOfflineEventOrder,
+  listOfflineEventOrders,
+  loadOfflineEventSessionBySlug,
+  offlineEventOrderAsOrder,
+  updateOfflineEventOrder,
+} from "../lib/offline/offlineEvents";
 import type { CartItem, CheckoutSession, Order } from "../types/catalog";
 
 type CheckoutConnectionState =
@@ -89,17 +96,30 @@ export function useCheckoutSession({
       persist(attempting);
       setIsSubmitting(true);
 
-      const request = createOrder(
-        shopSlug,
-        attempting.customerName,
-        attempting.cart,
-        attempting.clientRequestId,
-        attempting.recoveryToken,
-      )
+      const request = loadOfflineEventSessionBySlug(shopSlug)
+        .then((eventSession) =>
+          eventSession?.status === "active"
+            ? createOfflineEventOrder(
+                eventSession,
+                attempting.cart,
+                attempting.customerName,
+              ).then(offlineEventOrderAsOrder)
+            : createOrder(
+                shopSlug,
+                attempting.customerName,
+                attempting.cart,
+                attempting.clientRequestId,
+                attempting.recoveryToken,
+              ),
+        )
         .then((order) => {
           const reserved = sessionWithOrder(attempting, order);
           persist(reserved);
-          setConnectionState("online");
+          setConnectionState(
+            order.source === "offline_event" && !navigator.onLine
+              ? "offline"
+              : "online",
+          );
           onOrderChangeRef.current?.(order);
           if (order.status === "confirmed" && !confirmedHandledRef.current) {
             confirmedHandledRef.current = true;
@@ -168,21 +188,33 @@ export function useCheckoutSession({
     const current = sessionRef.current;
     if (!current?.order || current.order.status !== "pending")
       return Promise.resolve();
-    if (!navigator.onLine) {
+    if (!navigator.onLine && current.order.source !== "offline_event") {
       setConnectionState("offline");
       return Promise.resolve();
     }
     if (refreshRef.current) return refreshRef.current;
 
-    const request = getCustomerOrder(
-      current.order.id,
-      current.recoveryToken,
+    const request = (
+      current.order.source === "offline_event"
+        ? loadOfflineEventSessionBySlug(shopSlug).then(async (eventSession) => {
+            if (!eventSession) return null;
+            const orders = await listOfflineEventOrders(eventSession.id);
+            const localOrder = orders.find(
+              (order) => order.id === current.order?.id,
+            );
+            return localOrder ? offlineEventOrderAsOrder(localOrder) : null;
+          })
+        : getCustomerOrder(current.order.id, current.recoveryToken)
     )
       .then((order) => {
         if (!order) throw new Error("Order recovery details are no longer valid.");
         const next = sessionWithOrder(current, order);
         persist(next);
-        setConnectionState("online");
+        setConnectionState(
+          order.source === "offline_event" && !navigator.onLine
+            ? "offline"
+            : "online",
+        );
         onOrderChangeRef.current?.(order);
         if (order.status === "confirmed" && !confirmedHandledRef.current) {
           confirmedHandledRef.current = true;
@@ -203,13 +235,29 @@ export function useCheckoutSession({
       });
     refreshRef.current = request;
     return request;
-  }, [persist]);
+  }, [persist, shopSlug]);
 
   const cancel = useCallback(async () => {
     const current = sessionRef.current;
-    if (!current?.order || !navigator.onLine) return null;
+    if (!current?.order) return null;
+    if (current.order.source !== "offline_event" && !navigator.onLine)
+      return null;
     setIsCancelling(true);
     try {
+      if (current.order.source === "offline_event") {
+        const eventSession = await loadOfflineEventSessionBySlug(shopSlug);
+        if (!eventSession) return null;
+        const result = await updateOfflineEventOrder(
+          eventSession,
+          current.order.id,
+          { status: "cancelled", paymentState: "awaiting_payment" },
+        );
+        const order = offlineEventOrderAsOrder(result.order);
+        const next = sessionWithOrder(current, order);
+        persist(next);
+        onOrderChangeRef.current?.(order);
+        return order;
+      }
       const result = await cancelCustomerOrder(
         current.order.id,
         current.recoveryToken,
@@ -222,7 +270,7 @@ export function useCheckoutSession({
     } finally {
       setIsCancelling(false);
     }
-  }, [persist]);
+  }, [persist, shopSlug]);
 
   const clear = useCallback(() => {
     persist(null);
@@ -271,6 +319,8 @@ export function useCheckoutSession({
   useEffect(() => {
     const order = session?.order;
     if (!order || order.status !== "pending") return;
+    if (connectionState === "offline" && order.source !== "offline_event")
+      return;
     void refreshOrder();
     const poll = window.setInterval(
       () => void refreshOrder(),

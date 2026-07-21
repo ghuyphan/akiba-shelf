@@ -18,6 +18,7 @@ import {
   type CatalogQuery,
 } from "./useCatalogProducts";
 import { useStorefrontBootstrap } from "./useStorefrontBootstrap";
+import { OFFLINE_EVENT_UPDATED } from "../lib/offline/offlineEvents";
 
 const EMPTY_PRODUCTS: Product[] = [];
 
@@ -80,6 +81,17 @@ export function useCatalogData(
   const refreshBooth = storefront.refreshBooth;
   const refreshPayment = storefront.refreshPayment;
   const refreshPromotion = storefront.refreshPromotion;
+
+  useEffect(() => {
+    if (!shopId) return;
+    const refreshEventStock = (event: Event) => {
+      const detail = (event as CustomEvent<{ shopId?: string }>).detail;
+      if (!detail?.shopId || detail.shopId === shopId) void reloadProducts();
+    };
+    window.addEventListener(OFFLINE_EVENT_UPDATED, refreshEventStock);
+    return () =>
+      window.removeEventListener(OFFLINE_EVENT_UPDATED, refreshEventStock);
+  }, [reloadProducts, shopId]);
 
   const refreshCompleteOfflineSnapshot = useCallback(async () => {
     if (!shopId || loadCatalogSnapshot(shopId)?.complete !== true) return;

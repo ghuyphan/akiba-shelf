@@ -7,3 +7,4 @@ export * from "./api/auth";
 export * from "./api/shops";
 export * from "./api/staff";
 export * from "./api/storage";
+export * from "./api/offlineEvents";

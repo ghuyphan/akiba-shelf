@@ -254,6 +254,32 @@ export async function mockSupabase(
         logo_url: booth.logo_url,
         theme_background: booth.theme_background,
       });
+    if (url.pathname.includes("/rest/v1/rpc/get_active_offline_event_session"))
+      return json(route, null);
+    if (url.pathname.includes("/rest/v1/rpc/start_offline_event_session"))
+      return json(route, {
+        session: {
+          id: "71000000-0000-4000-8000-000000000001",
+          shop_id: "00000000-0000-4000-8000-000000000001",
+          device_id: "72000000-0000-4000-8000-000000000001",
+          name: "Fixture Event",
+          status: "active",
+          payment_snapshot: payment,
+          promotion_snapshot: promotion,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        allocations: catalogProducts.slice(0, 1).map((product) => ({
+          product_id: product.id,
+          quantity_allocated: Math.max(1, product.quantity_available),
+          quantity_sold: 0,
+          product_snapshot: product,
+        })),
+      });
+    if (url.pathname.includes("/rest/v1/rpc/sync_offline_event_orders"))
+      return json(route, { inserted: 0, updated: 0 });
+    if (url.pathname.includes("/rest/v1/rpc/close_offline_event_session"))
+      return json(route, { status: "closed" });
     if (url.pathname.includes("/rest/v1/rpc/get_admin_products"))
       return json(route, catalogProducts);
     if (url.pathname.includes("/rest/v1/rpc/get_admin_booth_settings"))

@@ -59,7 +59,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   const remaining = useOrderCountdown(order, checkout.refreshOrder);
 
   async function confirmCancel() {
-    if (!order || !navigator.onLine) return;
+    if (!order || (!navigator.onLine && order.source !== "offline_event")) return;
     setIsCancelConfirmOpen(false);
     await checkout.cancel();
   }
@@ -276,9 +276,9 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
           </div>
 
           <div className="payment-status-footer">
-            <div className={`payment-waiting-pill is-${connectionState}`}>
-              {connectionState === "offline" ? <CloudOff size={14} /> : connectionState === "error" ? <CircleAlert size={14} /> : <Loader2 size={14} className="spin-icon" />}
-              <span>{connectionState === "offline" ? copy.offlineOrder : connectionState === "error" ? copy.orderStatusError : connectionState === "reconnecting" ? copy.reconnectingOrder : copy.waitingConfirmation}</span>
+            <div className={`payment-waiting-pill ${order.source === "offline_event" && connectionState === "online" ? "is-event" : `is-${connectionState}`}`}>
+              {connectionState === "offline" ? <CloudOff size={14} /> : connectionState === "error" ? <CircleAlert size={14} /> : order.source === "offline_event" ? <ShieldCheck size={14} /> : <Loader2 size={14} className="spin-icon" />}
+              <span>{connectionState === "offline" && order.source !== "offline_event" ? copy.offlineOrder : connectionState === "error" ? copy.orderStatusError : connectionState === "reconnecting" ? copy.reconnectingOrder : order.source === "offline_event" ? copy.offlineEventOrder : copy.waitingConfirmation}</span>
               {(connectionState === "error" || connectionState === "reconnecting") && (
                 <button type="button" className="payment-status-retry" onClick={() => void checkout.refreshOrder()}>
                   {copy.retryOrderStatus}
@@ -286,8 +286,14 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
               )}
             </div>
             <p className="payment-reservation-copy">
-              <strong>{copy.reservedFor(`${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`)}</strong>
-              <br />{copy.reservedWhilePaying}
+              {order.source === "offline_event" ? (
+                <strong>{copy.offlineEventReserved}</strong>
+              ) : (
+                <>
+                  <strong>{copy.reservedFor(`${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`)}</strong>
+                  <br />{copy.reservedWhilePaying}
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -298,7 +304,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
           <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => { const line = getPricingLine(pricing, item.product.id); if (!line) return null; return <div key={item.product.id}><span>{line.quantity} × {item.product.name}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</span>{totalAmount === order.total_amount && <strong>{formatVnd(line.total)}</strong>}</div>; })}{pricing.discountAmount > 0 && <div className="payment-receipt-discount"><span>{copy.discount}</span><strong>−{formatVnd(pricing.discountAmount)}</strong></div>}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
           {payment.payment_instructions.trim() && <div className="receipt-instructions"><Sparkles size={16} /><span>{payment.payment_instructions}</span></div>}
           <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button>
-          <button type="button" className="button button-secondary" onClick={() => setIsCancelConfirmOpen(true)} disabled={isCancelling || connectionState === "offline"}>{isCancelling ? copy.cancelling : copy.cancelOrder}</button>
+          <button type="button" className="button button-secondary" onClick={() => setIsCancelConfirmOpen(true)} disabled={isCancelling || (connectionState === "offline" && order.source !== "offline_event")}>{isCancelling ? copy.cancelling : copy.cancelOrder}</button>
         </div>
       </div>
     </Modal>

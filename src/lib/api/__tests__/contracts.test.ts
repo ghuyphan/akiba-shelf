@@ -366,6 +366,8 @@ describe("Playwright Supabase request inventory", () => {
       "/rest/v1/products",
       "/rest/v1/promotion_products",
       "/rest/v1/promotions",
+      "/rest/v1/rpc/close_offline_event_session",
+      "/rest/v1/rpc/get_active_offline_event_session",
       "/rest/v1/rpc/get_admin_booth_settings",
       "/rest/v1/rpc/get_admin_products",
       "/rest/v1/rpc/get_customer_order",
@@ -375,6 +377,8 @@ describe("Playwright Supabase request inventory", () => {
       "/rest/v1/rpc/get_shop_members",
       "/rest/v1/rpc/get_shop_workspace_summary",
       "/rest/v1/rpc/publish_gacha_configuration_v6",
+      "/rest/v1/rpc/start_offline_event_session",
+      "/rest/v1/rpc/sync_offline_event_orders",
       "/rest/v1/shops",
       "/rest/v1/staff_members",
     ]);

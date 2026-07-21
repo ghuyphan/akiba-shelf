@@ -4,6 +4,12 @@ import type { ComponentProps } from "react";
 import type { CartItem, Order, PaymentSettings, Product } from "../../types/catalog";
 import { defaultPromotion } from "../../lib/constants";
 import { formatVnd } from "../../utils/format";
+import {
+  listOfflineEventOrders,
+  loadOfflineEventSession,
+  saveOfflineEventSession,
+  updateOfflineEventOrder,
+} from "../../lib/offline/offlineEvents";
 
 const apiMocks = vi.hoisted(() => ({
   createOrder: vi.fn(),
@@ -131,6 +137,7 @@ describe("PaymentQrModal", () => {
     vi.unstubAllGlobals();
   });
   beforeEach(() => {
+    localStorage.clear();
     checkoutStorage.current = null;
     vi.stubGlobal("navigator", {
       ...navigator,
@@ -370,5 +377,88 @@ describe("PaymentQrModal", () => {
     expect(onOrderChange).not.toHaveBeenCalledWith(
       expect.objectContaining({ status: "pending" }),
     );
+  });
+
+  it("creates a real device-bound event order while the booth is offline", async () => {
+    vi.stubGlobal("navigator", { ...navigator, onLine: false });
+    const now = new Date().toISOString();
+    await saveOfflineEventSession({
+      version: 1,
+      id: "71000000-0000-4000-8000-000000000001",
+      shopId: "70000000-0000-4000-8000-000000000001",
+      shopSlug: "test-shop",
+      deviceId: "72000000-0000-4000-8000-000000000001",
+      name: "Convention day",
+      status: "active",
+      allocations: cart.map((item) => ({
+        product: item.product,
+        quantityAllocated: 12,
+        quantitySold: 0,
+      })),
+      payment,
+      promotion: defaultPromotion,
+      createdAt: now,
+      updatedAt: now,
+    });
+    renderModal();
+
+    fireEvent.change(screen.getByPlaceholderText("e.g. Huy or Alice"), {
+      target: { value: "Huy" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
+
+    expect(
+      await screen.findByText("Event order saved on this booth device"),
+    ).toBeInTheDocument();
+    expect(document.querySelectorAll(".payment-waiting-pill")).toHaveLength(1);
+    expect(screen.getAllByText(/EVT-[A-F0-9]{8}/)).toHaveLength(2);
+    expect(apiMocks.createOrder).not.toHaveBeenCalled();
+  });
+
+  it("refreshes a local event order while the device remains offline", async () => {
+    vi.stubGlobal("navigator", { ...navigator, onLine: false });
+    const now = new Date().toISOString();
+    await saveOfflineEventSession({
+      version: 1,
+      id: "71000000-0000-4000-8000-000000000002",
+      shopId: "70000000-0000-4000-8000-000000000001",
+      shopSlug: "test-shop",
+      deviceId: "72000000-0000-4000-8000-000000000001",
+      name: "Convention day",
+      status: "active",
+      allocations: cart.map((item) => ({
+        product: item.product,
+        quantityAllocated: 12,
+        quantitySold: 0,
+      })),
+      payment,
+      promotion: defaultPromotion,
+      createdAt: now,
+      updatedAt: now,
+    });
+    const onSuccess = vi.fn();
+    renderModal({ onSuccess });
+
+    fireEvent.change(screen.getByPlaceholderText("e.g. Huy or Alice"), {
+      target: { value: "Huy" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
+    await screen.findByText("Event order saved on this booth device");
+
+    const eventSession = await loadOfflineEventSession(
+      "70000000-0000-4000-8000-000000000001",
+    );
+    expect(eventSession).not.toBeNull();
+    const [localOrder] = await listOfflineEventOrders(eventSession!.id);
+    await updateOfflineEventOrder(eventSession!, localOrder.id, {
+      status: "confirmed",
+      paymentState: "bank_confirmed",
+    });
+    window.dispatchEvent(new Event("focus"));
+
+    expect(
+      await screen.findByRole("dialog", { name: "Payment complete" }),
+    ).toBeInTheDocument();
+    expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 });
