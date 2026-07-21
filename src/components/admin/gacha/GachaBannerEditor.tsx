@@ -1,8 +1,15 @@
 import { useMemo } from "react";
 import { Clock3, Sparkles, Sword, UserRound } from "lucide-react";
-import type { GachaGameDescriptor } from "../../../lib/gacha/gachaGames";
+import {
+  getGachaBannerFeaturedRule,
+  type GachaGameDescriptor,
+} from "../../../lib/gacha/gachaGames";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
-import type { GachaBanner, GachaElement, GachaItemKind } from "../../../types/gacha";
+import type {
+  GachaBanner,
+  GachaElement,
+  GachaItemKind,
+} from "../../../types/gacha";
 import { Field, TextArea, TextInput } from "../../ui/Field";
 import type { SelectMenuOption } from "../../ui/SelectMenu";
 import { DropdownField } from "./DropdownField";
@@ -51,9 +58,7 @@ export function GachaBannerEditor({
       {
         value: descriptor.gearKind,
         label:
-          descriptor.gearKind === "lightcone"
-            ? t("Light Cone")
-            : t("Weapon"),
+          descriptor.gearKind === "lightcone" ? t("Light Cone") : t("Weapon"),
         icon: <Sword size={15} />,
       },
     ],
@@ -66,34 +71,25 @@ export function GachaBannerEditor({
         value: meta.id,
         label: t(meta.id[0].toUpperCase() + meta.id.slice(1)),
         icon: (
-          <GachaElementIcon
-            gameType={gameType}
-            element={meta.id}
-            size={18}
-          />
+          <GachaElementIcon gameType={gameType} element={meta.id} size={18} />
         ),
       })),
     [descriptor, gameType, t],
   );
 
-  const displayLimitOptions = useMemo<SelectMenuOption[]>(
-    () =>
-      Array.from(
-        { length: descriptor.displayLimitMax },
-        (_, index) => index + 1,
-      ).map((value) => ({
-        value: String(value),
-        label:
-          gameType === "hsr"
-            ? value === 1
-              ? t("1 primary item")
-              : t("1 primary + {{count}} secondary", { count: value - 1 })
-            : t(value === 1 ? "1 featured item" : "{{count}} featured items", {
-                count: value,
-              }),
-      })),
-    [descriptor, gameType, t],
-  );
+  const displayLimitOptions = useMemo<SelectMenuOption[]>(() => {
+    const rule = getGachaBannerFeaturedRule(gameType, banner.kind);
+    return [
+      {
+        value: String(rule.displayLimit),
+        label: t("{{count}} slots: {{five}}×5★ + {{four}}×4★", {
+          count: rule.displayLimit,
+          five: rule.fiveStarLimit,
+          four: rule.fourStarLimit,
+        }),
+      },
+    ];
+  }, [banner.kind, gameType, t]);
 
   return (
     <div className="gacha-banner-editor">
@@ -129,15 +125,15 @@ export function GachaBannerEditor({
         <Field
           className="gacha-field-title"
           label={t("Banner title")}
-          hint={t("Bilingual: English | Tiếng Việt or [en]English[vi]Tiếng Việt")}
+          hint={t(
+            "Bilingual: English | Tiếng Việt or [en]English[vi]Tiếng Việt",
+          )}
         >
           <TextInput
             maxLength={80}
             value={banner.name}
             onFocus={onTextFocus}
-            onChange={(event) =>
-              onUpdateBanner({ name: event.target.value })
-            }
+            onChange={(event) => onUpdateBanner({ name: event.target.value })}
           />
         </Field>
         <DropdownField
@@ -145,14 +141,14 @@ export function GachaBannerEditor({
           label={t("Banner type")}
           value={banner.kind}
           options={kindOptions}
-          onChange={(value) =>
-            onUpdateBanner({ kind: value as GachaItemKind })
-          }
+          onChange={(value) => onUpdateBanner({ kind: value as GachaItemKind })}
         />
         <Field
           className="gacha-field-copy"
           label={t("Banner copy")}
-          hint={t("Bilingual: English | Tiếng Việt or [en]English[vi]Tiếng Việt")}
+          hint={t(
+            "Bilingual: English | Tiếng Việt or [en]English[vi]Tiếng Việt",
+          )}
         >
           <TextArea
             maxLength={240}
@@ -166,9 +162,7 @@ export function GachaBannerEditor({
         <DropdownField
           className="gacha-field-slots"
           label={t(
-            gameType === "hsr"
-              ? "Featured banner slots"
-              : "Featured items shown",
+            gameType === "hsr" ? "Featured banner slots" : "Official lineup",
           )}
           value={String(banner.display_limit)}
           options={displayLimitOptions}
@@ -179,9 +173,7 @@ export function GachaBannerEditor({
           label={t(gameType === "hsr" ? "Banner element" : "Banner theme")}
           value={banner.theme}
           options={elementOptions}
-          onChange={(value) =>
-            onUpdateBanner({ theme: value as GachaElement })
-          }
+          onChange={(value) => onUpdateBanner({ theme: value as GachaElement })}
         />
         <Field
           label={t("Banner starts")}

@@ -32,7 +32,7 @@ begin
   order by member.created_at
   limit 1;
 
-  -- publish_gacha_configuration_v5 performs its normal shop-role check.
+  -- publish_gacha_configuration_v6 performs its normal shop-role check.
   perform set_config('request.jwt.claim.sub', v_owner_id::text, true);
   perform set_config('request.jwt.claim.role', 'authenticated', true);
   perform set_config(
@@ -68,7 +68,7 @@ begin
     v_live := jsonb_set(v_live, '{banners}', v_draft->'banners', true);
     v_live := jsonb_set(v_live, '{entries}', v_draft->'entries', true);
 
-    perform public.publish_gacha_configuration_v5(
+    perform public.publish_gacha_configuration_v6(
       v_shop_id,
       v_game_type,
       v_live

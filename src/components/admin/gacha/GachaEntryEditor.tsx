@@ -1,6 +1,9 @@
 import { useMemo } from "react";
 import { Star, Sword, Trash2, UserRound } from "lucide-react";
-import type { GachaGameDescriptor } from "../../../lib/gacha/gachaGames";
+import {
+  getGachaBannerFeaturedRule,
+  type GachaGameDescriptor,
+} from "../../../lib/gacha/gachaGames";
 import { matchesGachaBannerKind } from "../../../lib/gacha/gachaLimits";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type {
@@ -62,9 +65,7 @@ export function GachaEntryEditor({
       {
         value: descriptor.gearKind,
         label:
-          descriptor.gearKind === "lightcone"
-            ? t("Light Cone")
-            : t("Weapon"),
+          descriptor.gearKind === "lightcone" ? t("Light Cone") : t("Weapon"),
         icon: <Sword size={15} />,
       },
     ],
@@ -77,11 +78,7 @@ export function GachaEntryEditor({
         value: meta.id,
         label: t(meta.id[0].toUpperCase() + meta.id.slice(1)),
         icon: (
-          <GachaElementIcon
-            gameType={gameType}
-            element={meta.id}
-            size={18}
-          />
+          <GachaElementIcon gameType={gameType} element={meta.id} size={18} />
         ),
       })),
     [descriptor, gameType, t],
@@ -96,28 +93,20 @@ export function GachaEntryEditor({
     [descriptor, t],
   );
 
-  const rule = descriptor.featuredRule;
+  const rule = getGachaBannerFeaturedRule(gameType, banner.kind);
   const roleFull =
-    rule.kind === "primary-secondary" &&
     !entry.featured &&
     (!matchesGachaBannerKind(entry, banner) ||
       entry.rarity === 3 ||
-      (entry.rarity === 5 && primaryFeaturedCount >= rule.primaryLimit) ||
-      (entry.rarity === 4 &&
-        secondaryFeaturedCount >=
-          Math.min(
-            rule.secondaryLimit,
-            Math.max(0, banner.display_limit - rule.primaryLimit),
-          )));
+      (entry.rarity === 5 && primaryFeaturedCount >= rule.fiveStarLimit) ||
+      (entry.rarity === 4 && secondaryFeaturedCount >= rule.fourStarLimit));
 
   const featuredSelectionDisabled =
     !productActive ||
     (!entry.featured && (featuredCount >= banner.display_limit || roleFull));
 
   return (
-    <div
-      className={`gacha-item-editor ${!productActive ? "is-disabled" : ""}`}
-    >
+    <div className={`gacha-item-editor ${!productActive ? "is-disabled" : ""}`}>
       <DropdownField
         label={t("Role")}
         value={entry.kind}
@@ -126,8 +115,7 @@ export function GachaEntryEditor({
         onChange={(value) =>
           onUpdateEntry({
             kind: value as GachaItemKind,
-            featured:
-              gameType === "hsr" && entry.featured ? false : entry.featured,
+            featured: false,
           })
         }
       />
@@ -139,8 +127,7 @@ export function GachaEntryEditor({
         onChange={(value) =>
           onUpdateEntry({
             rarity: Number(value) as GachaRarity,
-            featured:
-              gameType === "hsr" && entry.featured ? false : entry.featured,
+            featured: false,
           })
         }
       />
@@ -195,13 +182,11 @@ export function GachaEntryEditor({
         />
         <Star size={15} />
         {t(
-          gameType === "hsr"
-            ? entry.rarity === 5
-              ? "Primary featured"
-              : entry.rarity === 4
-                ? "Secondary rate-up"
-                : "Featured"
-            : "Featured",
+          entry.rarity === 5
+            ? "5★ featured"
+            : entry.rarity === 4
+              ? "4★ rate-up"
+              : "Featured",
         )}
       </label>
       <label
@@ -225,11 +210,7 @@ export function GachaEntryEditor({
         )}
         {t("Active")}
       </label>
-      <button
-        type="button"
-        className="gacha-item-remove"
-        onClick={onRemove}
-      >
+      <button type="button" className="gacha-item-remove" onClick={onRemove}>
         <Trash2 size={14} /> {t("Remove from pool")}
       </button>
     </div>

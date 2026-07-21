@@ -82,6 +82,7 @@ export function createGameState(
     display_limit: normalizeGachaDisplayLimit(
       defaults.displayLimit,
       gameType,
+      "character",
     ),
   };
   const settings = configuration?.settings ?? {

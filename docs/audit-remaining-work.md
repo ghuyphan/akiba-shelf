@@ -27,18 +27,18 @@ creation.
 
 ## Status dashboard
 
-| Area | Status | Current position |
-|---|---|---|
-| Offline storefront | Good | Versioned snapshots, local queries, persistent cart, and offline asset packs are implemented. |
-| Checkout correctness | Good | Versioned recovery states replace synthetic offline orders; final reservation remains server-authoritative. |
-| Realtime | Good | Storefront subscription lifetime is tied to the shop instead of cart/query changes. |
-| Database migrations | Deployed | Local and linked histories match; linked dry-run reports the remote database is up to date. |
-| API architecture | Needs refactor | `src/lib/api.ts` remains a 1,476-line, 55-export module spanning unrelated domains. |
-| Admin architecture | Partial | `GachaManager` was reduced substantially; `AdminPage` remains a large orchestration component. |
-| Accessibility | Partial | Important interaction fixes are present, but four jsx-a11y rules remain disabled. |
-| CSS ownership | Partial | Screen ownership is documented, but `legacy.css` remains large and must be migrated incrementally. |
-| Frontend verification | Good | The latest full gate passed 142 unit tests and the application/simulator builds; Playwright passed 67 tests with 3 skipped. |
-| Database test coverage | Partial | Linked lint/advisors ran, but local pgTAP was unavailable because Docker was not running. |
+| Area                   | Status         | Current position                                                                                                            |
+| ---------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Offline storefront     | Good           | Versioned snapshots, local queries, persistent cart, and offline asset packs are implemented.                               |
+| Checkout correctness   | Good           | Versioned recovery states replace synthetic offline orders; final reservation remains server-authoritative.                 |
+| Realtime               | Good           | Storefront subscription lifetime is tied to the shop instead of cart/query changes.                                         |
+| Database migrations    | Deployed       | Local and linked histories match; linked dry-run reports the remote database is up to date.                                 |
+| API architecture       | Needs refactor | `src/lib/api.ts` remains a 1,476-line, 55-export module spanning unrelated domains.                                         |
+| Admin architecture     | Partial        | `GachaManager` was reduced substantially; `AdminPage` remains a large orchestration component.                              |
+| Accessibility          | Partial        | Important interaction fixes are present, but four jsx-a11y rules remain disabled.                                           |
+| CSS ownership          | Partial        | Screen ownership is documented, but `legacy.css` remains large and must be migrated incrementally.                          |
+| Frontend verification  | Good           | The latest full gate passed 142 unit tests and the application/simulator builds; Playwright passed 67 tests with 3 skipped. |
+| Database test coverage | Partial        | Linked lint/advisors ran, but local pgTAP was unavailable because Docker was not running.                                   |
 
 ## Completed since the baseline audit
 
@@ -95,7 +95,7 @@ Verification completed on 2026-07-21:
   transaction.
 - A custom 3-star pool is no longer required; built-in shared souvenirs are
   the fallback.
-- Only the current `publish_gacha_configuration_v5` entry point is granted to
+- Only the current `publish_gacha_configuration_v6` entry point is granted to
   authenticated clients; internal publish versions remain revoked.
 
 Immediate repository risk: both deployed migration files are currently
@@ -299,7 +299,7 @@ every data path remains mocked in `e2e/fixtures.ts`.
   draft loading/saving, and publish payload construction into `gacha.ts`.
 - Keep featured caps and per-game defaults synchronized with the existing
   gacha domain helpers and database RPC.
-- Continue calling only `publish_gacha_configuration_v5` from the frontend.
+- Continue calling only `publish_gacha_configuration_v6` from the frontend.
 
 Exit gate: Genshin/HSR tests pass, publish payload behavior is unchanged, and
 the database gacha regressions pass.

@@ -36,7 +36,7 @@ publish). Complexity drivers:
 2. **One primary action.** Everything funnels to "Publish". Draft becomes
    invisible autosave, not a decision.
 3. **Progressive disclosure.** The screen answers three questions in order:
-   *Is it on? What can people win? How lucky are they?* Everything else is
+   _Is it on? What can people win? How lucky are they?_ Everything else is
    collapsed by default.
 4. **No data-contract changes.** Presentation only; the RPC stays the real
    validation gate.
@@ -64,9 +64,10 @@ publish). Complexity drivers:
   banner (today it silently attaches entries to the selected banner) must
   become explicit UI or be fixed to a banner-agnostic slot.
 - Featured selection becomes a "Promote on banner" star toggle per row with
-  the counter "2/4 promoted" and the per-game rule hint inline:
+  separate 5★ and 4★ counters and the per-game rule hint inline:
   - HSR: "Shows one 5★ primary and up to three 4★ rate-ups."
-  - Genshin: "Shows up to N promoted prizes, any mix of 4★ and 5★."
+  - Genshin character: "Requires one 5★ and three 4★ characters."
+  - Genshin weapon: "Requires two 5★ and five 4★ weapons."
 - Add disabled-reason tooltips on the promoted toggle ("The 5★ primary slot is
   taken", "All 4★ rate-up slots are full", "This banner already shows N
   promoted prizes").
@@ -91,15 +92,15 @@ publish). Complexity drivers:
 
 ### Copy renames (update en + vi together in `catalogI18n.tsx`)
 
-| Today | Proposed |
-| --- | --- |
-| Featured item | Promoted prize |
-| Featured-item rate | Promoted-prize chance |
-| Featured guarantee | Guarantee promoted prize after a miss |
-| 4-star pity | 4★ guaranteed within N pulls |
-| Soft pity | Luck improves after pull #N |
+| Today                   | Proposed                                 |
+| ----------------------- | ---------------------------------------- |
+| Featured item           | Promoted prize                           |
+| Featured-item rate      | Promoted-prize chance                    |
+| Featured guarantee      | Guarantee promoted prize after a miss    |
+| 4-star pity             | 4★ guaranteed within N pulls             |
+| Soft pity               | Luck improves after pull #N              |
 | Shared 3★ souvenir pool | 3★ filler prizes (shared by all banners) |
-| Save draft | (removed — autosave) |
+| Save draft              | (removed — autosave)                     |
 
 ### Validation
 

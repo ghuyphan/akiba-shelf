@@ -90,7 +90,7 @@ begin
     where draft.shop_id = v_shop_id
       and draft.game_type = v_game_type;
 
-    perform public.publish_gacha_configuration_v5(
+    perform public.publish_gacha_configuration_v6(
       v_shop_id,
       v_game_type,
       v_config

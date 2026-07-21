@@ -92,9 +92,7 @@ export type GachaCatalog = {
   entries: GachaPoolItem[];
 };
 
-export type GachaCatalogsByGame = Partial<
-  Record<GachaGameType, GachaCatalog>
->;
+export type GachaCatalogsByGame = Partial<Record<GachaGameType, GachaCatalog>>;
 
 export type GachaGameConfiguration = {
   settings: GachaSettings;
@@ -147,7 +145,7 @@ export const defaultGachaBanner = (
   description: "Featured finds from this shelf.",
   kind: "character",
   theme: "anemo",
-  display_limit: 3,
+  display_limit: 4,
   sort_order: 0,
   active: true,
   starts_at: null,

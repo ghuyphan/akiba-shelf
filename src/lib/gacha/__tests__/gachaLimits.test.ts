@@ -1,59 +1,124 @@
 import { describe, expect, it } from "vitest";
 import {
   capGachaFeaturedEntries,
+  getGachaFeaturedComposition,
+  isGachaFeaturedCompositionComplete,
   normalizeGachaDisplayLimit,
 } from "../gachaLimits";
-import type { GachaBanner, GachaPoolEntry } from "../../../types/gacha";
+import type {
+  GachaBanner,
+  GachaItemKind,
+  GachaPoolEntry,
+  GachaRarity,
+} from "../../../types/gacha";
 
-const banner = {
-  id: "banner",
-  display_limit: 5,
-  kind: "character",
-} as GachaBanner;
-const entries = ["one", "two", "three"].map(
-  (product_id, index): GachaPoolEntry =>
-    ({
-      banner_id: banner.id,
-      product_id,
-      active: true,
-      featured: true,
-      rarity: index === 0 ? 5 : 4,
-      kind: "character",
-    }) as GachaPoolEntry,
-);
+function banner(kind: GachaItemKind): GachaBanner {
+  return {
+    id: `${kind}-banner`,
+    kind,
+    display_limit: kind === "character" ? 4 : 7,
+  } as GachaBanner;
+}
+
+function entry(
+  bannerId: string,
+  productId: string,
+  rarity: GachaRarity,
+  kind: GachaItemKind,
+): GachaPoolEntry {
+  return {
+    banner_id: bannerId,
+    product_id: productId,
+    active: true,
+    featured: true,
+    rarity,
+    kind,
+  } as GachaPoolEntry;
+}
 
 describe("gacha featured-item limits", () => {
-  it("keeps one HSR primary and up to three secondary rate-ups", () => {
-    const hsrEntries = [
-      ...entries,
-      { ...entries[0], product_id: "second-five" },
-      { ...entries[1], product_id: "third-four" },
-      { ...entries[1], product_id: "fourth-four" },
-      { ...entries[1], product_id: "three-star", rarity: 3 as const },
-      { ...entries[1], product_id: "wrong-kind", kind: "lightcone" as const },
+  it("keeps the generic Genshin limit at five while normalizing kinds to four or seven", () => {
+    expect(normalizeGachaDisplayLimit(9, "genshin")).toBe(5);
+    expect(normalizeGachaDisplayLimit(2, "genshin", "character")).toBe(4);
+    expect(normalizeGachaDisplayLimit(2, "genshin", "weapon")).toBe(7);
+    expect(normalizeGachaDisplayLimit(9, "hsr", "character")).toBe(4);
+    expect(normalizeGachaDisplayLimit(9, "hsr", "lightcone")).toBe(4);
+  });
+
+  it("caps Genshin character banners at one 5-star and three 4-star characters", () => {
+    const characterBanner = banner("character");
+    const entries = [
+      entry(characterBanner.id, "five-1", 5, "character"),
+      entry(characterBanner.id, "five-2", 5, "character"),
+      entry(characterBanner.id, "four-1", 4, "character"),
+      entry(characterBanner.id, "four-2", 4, "character"),
+      entry(characterBanner.id, "four-3", 4, "character"),
+      entry(characterBanner.id, "four-4", 4, "character"),
+      entry(characterBanner.id, "wrong-kind", 4, "weapon"),
+      entry(characterBanner.id, "three-star", 3, "character"),
     ];
 
-    expect(normalizeGachaDisplayLimit(9, "hsr")).toBe(4);
     expect(
-      capGachaFeaturedEntries(hsrEntries, [banner], "hsr").map(
-        (entry) => entry.featured,
+      capGachaFeaturedEntries(entries, [characterBanner], "genshin").map(
+        ({ featured }) => featured,
       ),
-    ).toEqual([true, true, true, false, true, false, false, false]);
+    ).toEqual([true, false, true, true, true, false, false, false]);
   });
 
-  it("uses the HSR display limit for primary plus secondary slots", () => {
+  it("caps Genshin weapon banners at two 5-star and five 4-star weapons", () => {
+    const weaponBanner = banner("weapon");
+    const entries = [
+      ...Array.from({ length: 3 }, (_, index) =>
+        entry(weaponBanner.id, `five-${index}`, 5, "weapon"),
+      ),
+      ...Array.from({ length: 6 }, (_, index) =>
+        entry(weaponBanner.id, `four-${index}`, 4, "weapon"),
+      ),
+      entry(weaponBanner.id, "wrong-kind", 4, "character"),
+    ];
+    const capped = capGachaFeaturedEntries(entries, [weaponBanner], "genshin");
+
     expect(
-      capGachaFeaturedEntries(
-        entries,
-        [{ ...banner, display_limit: 2 }],
-        "hsr",
-      ).map((entry) => entry.featured),
-    ).toEqual([true, true, false]);
+      capped.filter((item) => item.featured && item.rarity === 5),
+    ).toHaveLength(2);
+    expect(
+      capped.filter((item) => item.featured && item.rarity === 4),
+    ).toHaveLength(5);
+    expect(
+      capped.find((item) => item.product_id === "wrong-kind")?.featured,
+    ).toBe(false);
+    expect(
+      isGachaFeaturedCompositionComplete(capped, weaponBanner, "genshin"),
+    ).toBe(true);
   });
 
-  it("keeps Genshin banner limits between one and five", () => {
-    expect(normalizeGachaDisplayLimit(0, "genshin")).toBe(1);
-    expect(normalizeGachaDisplayLimit(3, "genshin")).toBe(3);
-    expect(normalizeGachaDisplayLimit(9, "genshin")).toBe(5);
+  it("keeps HSR at one 5-star primary and up to three matching 4-star rate-ups", () => {
+    const hsrBanner = banner("character");
+    const entries = [
+      entry(hsrBanner.id, "five-1", 5, "character"),
+      entry(hsrBanner.id, "five-2", 5, "character"),
+      ...Array.from({ length: 4 }, (_, index) =>
+        entry(hsrBanner.id, `four-${index}`, 4, "character"),
+      ),
+      entry(hsrBanner.id, "wrong-kind", 4, "lightcone"),
+    ];
+    const capped = capGachaFeaturedEntries(entries, [hsrBanner], "hsr");
+    const composition = getGachaFeaturedComposition(capped, hsrBanner);
+
+    expect(composition).toMatchObject({
+      fiveStarCount: 1,
+      fourStarCount: 3,
+      invalidCount: 0,
+      totalCount: 4,
+    });
+  });
+
+  it("treats partial Genshin drafts as incomplete without inventing slots", () => {
+    const characterBanner = banner("character");
+    const partial = [entry(characterBanner.id, "five-1", 5, "character")];
+
+    expect(
+      isGachaFeaturedCompositionComplete(partial, characterBanner, "genshin"),
+    ).toBe(false);
   });
 });

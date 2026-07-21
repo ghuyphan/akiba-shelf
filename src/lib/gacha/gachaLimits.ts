@@ -1,9 +1,13 @@
 import type {
   GachaBanner,
   GachaGameType,
+  GachaItemKind,
   GachaPoolEntry,
 } from "../../types/gacha";
-import { getGachaGameDescriptor } from "./gachaGames";
+import {
+  getGachaBannerFeaturedRule,
+  getGachaGameDescriptor,
+} from "./gachaGames";
 
 export const GACHA_FEATURED_ITEM_LIMITS: Record<GachaGameType, number> = {
   genshin: getGachaGameDescriptor("genshin").displayLimitMax,
@@ -19,14 +23,22 @@ export function matchesGachaBannerKind(
     : entry.kind !== "character";
 }
 
-export function getGachaFeaturedItemLimit(gameType: GachaGameType): number {
-  return getGachaGameDescriptor(gameType).displayLimitMax;
+export function getGachaFeaturedItemLimit(
+  gameType: GachaGameType,
+  bannerKind?: GachaItemKind,
+): number {
+  return bannerKind
+    ? getGachaBannerFeaturedRule(gameType, bannerKind).displayLimit
+    : getGachaGameDescriptor(gameType).displayLimitMax;
 }
 
 export function normalizeGachaDisplayLimit(
   value: unknown,
   gameType: GachaGameType,
+  bannerKind?: GachaItemKind,
 ): number {
+  if (bannerKind)
+    return getGachaBannerFeaturedRule(gameType, bannerKind).displayLimit;
   const parsed = typeof value === "number" ? value : Number(value);
   const fallback = getGachaGameDescriptor(gameType).defaults.displayLimit;
   const limit = Number.isFinite(parsed) ? Math.trunc(parsed) : fallback;
@@ -39,8 +51,53 @@ export function normalizeGachaBanners(
 ): GachaBanner[] {
   return banners.map((banner) => ({
     ...banner,
-    display_limit: normalizeGachaDisplayLimit(banner.display_limit, gameType),
+    display_limit: normalizeGachaDisplayLimit(
+      banner.display_limit,
+      gameType,
+      banner.kind,
+    ),
   }));
+}
+
+export type GachaFeaturedComposition = {
+  fiveStarCount: number;
+  fourStarCount: number;
+  invalidCount: number;
+  totalCount: number;
+};
+
+export function getGachaFeaturedComposition(
+  entries: GachaPoolEntry[],
+  banner: GachaBanner,
+): GachaFeaturedComposition {
+  const featured = entries.filter(
+    (entry) => entry.banner_id === banner.id && entry.active && entry.featured,
+  );
+  const valid = featured.filter((entry) =>
+    matchesGachaBannerKind(entry, banner),
+  );
+  const fiveStarCount = valid.filter((entry) => entry.rarity === 5).length;
+  const fourStarCount = valid.filter((entry) => entry.rarity === 4).length;
+  return {
+    fiveStarCount,
+    fourStarCount,
+    invalidCount: featured.length - fiveStarCount - fourStarCount,
+    totalCount: featured.length,
+  };
+}
+
+export function isGachaFeaturedCompositionComplete(
+  entries: GachaPoolEntry[],
+  banner: GachaBanner,
+  gameType: GachaGameType,
+): boolean {
+  const rule = getGachaBannerFeaturedRule(gameType, banner.kind);
+  const composition = getGachaFeaturedComposition(entries, banner);
+  return (
+    composition.invalidCount === 0 &&
+    composition.fiveStarCount === rule.fiveStarLimit &&
+    composition.fourStarCount === rule.fourStarLimit
+  );
 }
 
 export function capGachaFeaturedEntries(
@@ -48,53 +105,30 @@ export function capGachaFeaturedEntries(
   banners: GachaBanner[],
   gameType: GachaGameType,
 ): GachaPoolEntry[] {
-  const limits = new Map(
-    banners.map((banner) => [
-      banner.id,
-      normalizeGachaDisplayLimit(banner.display_limit, gameType),
-    ]),
-  );
-  const rule = getGachaGameDescriptor(gameType).featuredRule;
-  if (rule.kind === "primary-secondary") {
-    const allowed = new Set<GachaPoolEntry>();
+  const allowed = new Set<GachaPoolEntry>();
 
-    for (const banner of banners) {
-      const limit = limits.get(banner.id) ?? 4;
-      const candidates = entries.filter(
-        (entry) =>
-          entry.banner_id === banner.id &&
-          entry.active &&
-          entry.featured &&
-          matchesGachaBannerKind(entry, banner),
-      );
-      const primary = candidates.find((entry) => entry.rarity === 5);
-      if (primary) allowed.add(primary);
-
-      const secondaryLimit = Math.min(
-        rule.secondaryLimit,
-        Math.max(0, limit - rule.primaryLimit),
-      );
-      candidates
-        .filter((entry) => entry.rarity === 4)
-        .slice(0, secondaryLimit)
-        .forEach((entry) => allowed.add(entry));
-    }
-
-    return entries.map((entry) =>
-      !entry.active || !entry.featured || allowed.has(entry)
-        ? entry
-        : { ...entry, featured: false },
+  for (const banner of banners) {
+    const rule = getGachaBannerFeaturedRule(gameType, banner.kind);
+    const candidates = entries.filter(
+      (entry) =>
+        entry.banner_id === banner.id &&
+        entry.active &&
+        entry.featured &&
+        matchesGachaBannerKind(entry, banner),
     );
+    candidates
+      .filter((entry) => entry.rarity === 5)
+      .slice(0, rule.fiveStarLimit)
+      .forEach((entry) => allowed.add(entry));
+    candidates
+      .filter((entry) => entry.rarity === 4)
+      .slice(0, rule.fourStarLimit)
+      .forEach((entry) => allowed.add(entry));
   }
 
-  const featuredSeen = new Map<string, number>();
-
-  return entries.map((entry) => {
-    if (!entry.active || !entry.featured) return entry;
-    const seen = featuredSeen.get(entry.banner_id) ?? 0;
-    featuredSeen.set(entry.banner_id, seen + 1);
-    return seen < (limits.get(entry.banner_id) ?? 1)
+  return entries.map((entry) =>
+    !entry.active || !entry.featured || allowed.has(entry)
       ? entry
-      : { ...entry, featured: false };
-  });
+      : { ...entry, featured: false },
+  );
 }

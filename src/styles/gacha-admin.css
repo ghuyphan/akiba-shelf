@@ -854,6 +854,13 @@
   gap: 10px;
 }
 
+.gacha-pool-slot-counts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 .gacha-shared-3star-body {
   display: grid;
   gap: 14px;
@@ -1540,7 +1547,7 @@
 
 .gacha-banner-menu-popover button:disabled {
   cursor: not-allowed;
-  opacity: .45;
+  opacity: 0.45;
 }
 
 .gacha-shared-pool-tab {

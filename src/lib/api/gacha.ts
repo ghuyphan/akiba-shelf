@@ -148,20 +148,24 @@ function normalizeGachaBanner(
 ): GachaBanner {
   const defaults = defaultGachaBanner(shopId, text(value.id));
   const theme = text(value.theme);
+  const kind = (
+    value.kind === "weapon" || value.kind === "lightcone"
+      ? value.kind
+      : "character"
+  ) as GachaItemKind;
   return {
     id: text(value.id, defaults.id),
     shop_id: text(value.shop_id, shopId),
     name: text(value.name, defaults.name),
     description: text(value.description, defaults.description),
-    kind: (value.kind === "weapon" || value.kind === "lightcone"
-      ? value.kind
-      : "character") as GachaItemKind,
+    kind,
     theme: (elements.includes(theme as GachaElement)
       ? theme
       : defaults.theme) as GachaElement,
     display_limit: normalizeGachaDisplayLimit(
       numberValue(value.display_limit, defaults.display_limit),
       gameType,
+      kind,
     ),
     sort_order: Math.min(
       1000,
@@ -409,7 +413,7 @@ export async function publishGachaConfiguration(
 ): Promise<GachaGameConfiguration> {
   const draft = await saveGachaDraft(shopId, gameType, config);
   const { error } = await requireSupabase().rpc(
-    "publish_gacha_configuration_v5",
+    "publish_gacha_configuration_v6",
     {
       p_shop_id: shopId,
       p_game_type: gameType,

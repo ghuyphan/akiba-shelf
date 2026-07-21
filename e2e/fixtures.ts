@@ -47,6 +47,16 @@ export const products = [
   },
 ];
 
+const gachaProducts = Array.from({ length: 7 }, (_, index) => ({
+  ...products[index % products.length],
+  id: `gacha-product-${index + 1}`,
+  name: `Gacha Product ${index + 1}`,
+  item_code: `GACHA-${index + 1}`,
+  images: [`https://example.test/gacha-${index + 1}.jpg`],
+  featured: false,
+  sort_order: index + 20,
+}));
+
 const booth = {
   id: "main",
   shop_id: "main",
@@ -149,17 +159,17 @@ export async function mockSupabase(
       }))
     : options.manyCategories
       ? [
-        ...products,
-        ...["Badge", "Sticker pack", "Apparel", "Charm", "Stationery"].map(
-          (category, index) => ({
-            ...products[1],
-            id: `category-${index}`,
-            name: `${category} fixture`,
-            item_code: `CATEGORY-${index}`,
-            category,
-            sort_order: index + 3,
-          }),
-        ),
+          ...products,
+          ...["Badge", "Sticker pack", "Apparel", "Charm", "Stationery"].map(
+            (category, index) => ({
+              ...products[1],
+              id: `category-${index}`,
+              name: `${category} fixture`,
+              item_code: `CATEGORY-${index}`,
+              category,
+              sort_order: index + 3,
+            }),
+          ),
         ]
       : products;
 
@@ -290,7 +300,7 @@ export async function mockSupabase(
           .sort()
           .map((category) => ({ category })),
       );
-    if (url.pathname.includes("/rest/v1/rpc/publish_gacha_configuration_v5"))
+    if (url.pathname.includes("/rest/v1/rpc/publish_gacha_configuration_v6"))
       return json(route, null);
     if (url.pathname.includes("/rest/v1/gacha_published_configs")) {
       const rows = options.dualGacha
@@ -308,31 +318,34 @@ export async function mockSupabase(
                 {
                   id: `${gameType}-banner`,
                   shop_id: "main",
-                  name: gameType === "hsr" ? "Departure Warp" : "Character Event Wish",
+                  name:
+                    gameType === "hsr"
+                      ? "Departure Warp"
+                      : "Epitome Invocation",
                   description: "Fixture banner",
-                  kind: "character",
+                  kind: gameType === "hsr" ? "character" : "weapon",
                   theme: gameType === "hsr" ? "physical" : "anemo",
-                  display_limit: 1,
+                  display_limit: gameType === "hsr" ? 4 : 7,
                   sort_order: 0,
                   active: true,
                   starts_at: null,
                   ends_at: null,
                 },
               ],
-              entries: [
-                {
+              entries: gachaProducts
+                .slice(0, gameType === "hsr" ? 4 : 7)
+                .map((product, index) => ({
                   shop_id: "main",
                   banner_id: `${gameType}-banner`,
-                  product_id: "moon-stand",
-                  kind: "character",
+                  product_id: product.id,
+                  kind: gameType === "hsr" ? "character" : "weapon",
                   element: gameType === "hsr" ? "physical" : "anemo",
                   weapon_type: gameType === "hsr" ? "destruction" : "sword",
-                  rarity: 5,
+                  rarity: index < (gameType === "hsr" ? 1 : 2) ? 5 : 4,
                   weight: 100,
                   featured: true,
                   active: true,
-                },
-              ],
+                })),
             },
           }))
         : [];
@@ -401,9 +414,7 @@ export async function mockSupabase(
             shop_id: id,
           }))
         : [...catalogProducts];
-      const category = url.searchParams
-        .get("category")
-        ?.replace(/^eq\./, "");
+      const category = url.searchParams.get("category")?.replace(/^eq\./, "");
       if (category)
         matchingProducts = matchingProducts.filter(
           (product) => product.category === category,
@@ -425,9 +436,13 @@ export async function mockSupabase(
           ].some((value) => value.toLowerCase().includes(normalized)),
         );
       }
-      const requestedIds = url.searchParams.get("id")?.match(/^in\.\((.*)\)$/)?.[1];
+      const requestedIds = url.searchParams
+        .get("id")
+        ?.match(/^in\.\((.*)\)$/)?.[1];
       if (requestedIds) {
         const ids = new Set(requestedIds.split(","));
+        if (options.dualGacha)
+          matchingProducts = [...matchingProducts, ...gachaProducts];
         matchingProducts = matchingProducts.filter((product) =>
           ids.has(product.id),
         );
@@ -435,14 +450,23 @@ export async function mockSupabase(
       const order = url.searchParams.get("order") ?? "";
       matchingProducts.sort((first, second) => {
         if (order.startsWith("effective_price_vnd.asc"))
-          return (first.sale_price_vnd ?? first.price_vnd) - (second.sale_price_vnd ?? second.price_vnd);
+          return (
+            (first.sale_price_vnd ?? first.price_vnd) -
+            (second.sale_price_vnd ?? second.price_vnd)
+          );
         if (order.startsWith("effective_price_vnd.desc"))
-          return (second.sale_price_vnd ?? second.price_vnd) - (first.sale_price_vnd ?? first.price_vnd);
+          return (
+            (second.sale_price_vnd ?? second.price_vnd) -
+            (first.sale_price_vnd ?? first.price_vnd)
+          );
         if (order.startsWith("quantity_available.desc"))
           return second.quantity_available - first.quantity_available;
         if (order.startsWith("name.asc"))
           return first.name.localeCompare(second.name);
-        if (order.startsWith("featured.desc") && first.featured !== second.featured)
+        if (
+          order.startsWith("featured.desc") &&
+          first.featured !== second.featured
+        )
           return first.featured ? -1 : 1;
         return first.sort_order - second.sort_order;
       });
@@ -454,15 +478,13 @@ export async function mockSupabase(
           (range?.length === 2 ? range[1] - range[0] + 1 : total),
       );
       matchingProducts = matchingProducts.slice(offset, offset + limit);
-      const responseBody = url.searchParams.get("select") === "category"
-        ? matchingProducts.map((product) => ({ category: product.category }))
-        : matchingProducts;
-      return json(
-        route,
-        responseBody,
-        200,
-        { "content-range": `0-${Math.max(0, matchingProducts.length - 1)}/${total}` },
-      );
+      const responseBody =
+        url.searchParams.get("select") === "category"
+          ? matchingProducts.map((product) => ({ category: product.category }))
+          : matchingProducts;
+      return json(route, responseBody, 200, {
+        "content-range": `0-${Math.max(0, matchingProducts.length - 1)}/${total}`,
+      });
     }
     if (url.pathname.includes("/rest/v1/booth_settings")) {
       const id = url.searchParams.get("shop_id")?.replace(/^eq\./, "");

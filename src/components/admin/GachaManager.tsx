@@ -7,13 +7,19 @@ import {
   saveGachaDraft,
 } from "../../lib/api";
 import { getErrorMessage } from "../../lib/errors";
-import { GACHA_GAME_TYPES, getGachaGameDescriptor } from "../../lib/gacha/gachaGames";
+import {
+  GACHA_GAME_TYPES,
+  getGachaBannerFeaturedRule,
+  getGachaGameDescriptor,
+} from "../../lib/gacha/gachaGames";
 import {
   clearGachaLaunchCache,
   GACHA_PREVIEW_CONFIG_STORAGE_PREFIX,
 } from "../../lib/gacha/gachaLaunch";
 import {
   capGachaFeaturedEntries,
+  getGachaFeaturedComposition,
+  isGachaFeaturedCompositionComplete,
   matchesGachaBannerKind,
   normalizeGachaDisplayLimit,
 } from "../../lib/gacha/gachaLimits";
@@ -322,30 +328,49 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       return false;
     }
 
-    const rule = descriptor.featuredRule;
-    if (rule.kind === "primary-secondary") {
-      const offendingBanner = activeBanners.find((banner) => {
-        // If the banner has zero featured entries of any rarity, it is a standard banner
-        // and does not require a featured 5-star item.
-        const bannerEntries = stateEntries.filter(
-          (entry) => entry.banner_id === banner.id && entry.active,
-        );
-        const hasAnyFeatured = bannerEntries.some((entry) => entry.featured);
-        if (!hasAnyFeatured) return false;
-
-        const primaryFeaturedCount = bannerEntries.filter(
-          (entry) =>
-            entry.featured &&
-            entry.rarity === 5 &&
-            matchesGachaBannerKind(entry, banner),
-        ).length;
-        return primaryFeaturedCount !== rule.primaryLimit;
-      });
-      if (offendingBanner) {
+    for (const banner of activeBanners) {
+      const rule = getGachaBannerFeaturedRule(activeGame, banner.kind);
+      const composition = getGachaFeaturedComposition(stateEntries, banner);
+      if (composition.invalidCount > 0) {
         toast.error(
           t(
-            'The active banner "{{name}}" needs exactly one featured 5-star item.',
-            { name: offendingBanner.name },
+            'Featured items in "{{name}}" must match its banner type and use 4★ or 5★ rarity.',
+            { name: banner.name },
+          ),
+          t("Check featured items"),
+        );
+        return false;
+      }
+      if (rule.requireCompleteComposition) {
+        if (
+          !isGachaFeaturedCompositionComplete(stateEntries, banner, activeGame)
+        ) {
+          toast.error(
+            t(
+              'The active banner "{{name}}" needs exactly {{five}} featured 5★ and {{four}} featured 4★ items.',
+              {
+                name: banner.name,
+                five: rule.fiveStarLimit,
+                four: rule.fourStarLimit,
+              },
+            ),
+            t("Incomplete featured lineup"),
+          );
+          return false;
+        }
+      } else if (
+        composition.totalCount > 0 &&
+        (composition.fiveStarCount !== rule.fiveStarLimit ||
+          composition.fourStarCount > rule.fourStarLimit)
+      ) {
+        toast.error(
+          t(
+            'The active banner "{{name}}" supports {{five}} featured 5★ and up to {{four}} featured 4★ items.',
+            {
+              name: banner.name,
+              five: rule.fiveStarLimit,
+              four: rule.fourStarLimit,
+            },
           ),
           t("Check warp settings"),
         );
@@ -428,26 +453,30 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   function applyRecommendedSetup() {
     if (!current || entries.length > 0) return;
     const availableProducts = products.filter((product) => product.active);
-    if (availableProducts.length < 3) {
+    const banner = banners[0];
+    const rule = getGachaBannerFeaturedRule(activeGame, banner.kind);
+    if (availableProducts.length < rule.displayLimit) {
       toast.info(
         t(
-          "Add at least three active products so the pool can include 3-star, 4-star, and 5-star rewards.",
+          "Add at least {{count}} active products to fill this banner's featured lineup.",
+          { count: rule.displayLimit },
         ),
         t("More merch needed"),
       );
       return;
     }
-    const banner = banners[0];
     update(
       (state) => ({
         ...state,
         settings: { ...state.settings, enabled: true },
         selectedBannerId: banner.id,
-        entries: availableProducts.map((product, index) => ({
-          ...newEntry(shopId, banner.id, product.id, banner.kind, activeGame),
-          rarity: index === 0 ? 5 : index === 1 ? 4 : 3,
-          featured: index === 0,
-        })),
+        entries: availableProducts
+          .slice(0, rule.displayLimit)
+          .map((product, index) => ({
+            ...newEntry(shopId, banner.id, product.id, banner.kind, activeGame),
+            rarity: index < rule.fiveStarLimit ? 5 : 4,
+            featured: true,
+          })),
       }),
       true,
     );
@@ -459,18 +488,34 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   const updateBanner = useCallback(
     (changes: Partial<GachaBanner>) => {
       const isTextChange = "name" in changes || "description" in changes;
-      const updater = (curr: GachaState): GachaState => ({
-        ...curr,
-        banners: curr.banners.map((banner) =>
-          banner.id === curr.selectedBannerId
-            ? { ...banner, ...changes }
-            : banner,
-        ),
-      });
+      const updater = (curr: GachaState): GachaState => {
+        const nextBanners = curr.banners.map((banner) => {
+          if (banner.id !== curr.selectedBannerId) return banner;
+          const kind = changes.kind ?? banner.kind;
+          return {
+            ...banner,
+            ...changes,
+            display_limit: normalizeGachaDisplayLimit(
+              changes.display_limit ?? banner.display_limit,
+              activeGame,
+              kind,
+            ),
+          };
+        });
+        return {
+          ...curr,
+          banners: nextBanners,
+          entries: capGachaFeaturedEntries(
+            curr.entries,
+            nextBanners,
+            activeGame,
+          ),
+        };
+      };
       if (isTextChange) updateText(updater);
       else update(updater, true);
     },
-    [update, updateText],
+    [activeGame, update, updateText],
   );
 
   const setSelectedBannerId = useCallback(
@@ -482,16 +527,18 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
 
   const updateDisplayLimit = useCallback(
     (displayLimit: number) => {
-      const normalizedLimit = normalizeGachaDisplayLimit(
-        displayLimit,
-        activeGame,
-      );
       update((curr) => {
-        const nextBanners = curr.banners.map((banner) =>
-          banner.id === curr.selectedBannerId
-            ? { ...banner, display_limit: normalizedLimit }
-            : banner,
-        );
+        const nextBanners = curr.banners.map((banner) => {
+          if (banner.id !== curr.selectedBannerId) return banner;
+          return {
+            ...banner,
+            display_limit: normalizeGachaDisplayLimit(
+              displayLimit,
+              activeGame,
+              banner.kind,
+            ),
+          };
+        });
         return {
           ...curr,
           banners: nextBanners,
@@ -527,6 +574,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
         display_limit: normalizeGachaDisplayLimit(
           source?.display_limit ?? defaults.displayLimit,
           activeGame,
+          source?.kind ?? "character",
         ),
         sort_order: banners.length,
       };
@@ -706,40 +754,36 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     (productId: string, featured: boolean) => {
       const entry = entriesByProduct.get(productId);
       if (!entry || !selectedBanner) return;
-      const rule = descriptor.featuredRule;
-      if (featured && rule.kind === "primary-secondary") {
+      const rule = getGachaBannerFeaturedRule(activeGame, selectedBanner.kind);
+      if (featured) {
         if (!matchesGachaBannerKind(entry, selectedBanner)) {
           toast.info(
-            t("Featured items must match the HSR banner type."),
+            t("Featured items must match the banner type."),
             t("Choose a matching role"),
           );
           return;
         }
         if (entry.rarity === 3) {
           toast.info(
-            t(
-              "Only 5-star primary and 4-star secondary items can be featured.",
-            ),
+            t("Only 5★ and 4★ items can use featured banner slots."),
             t("Choose a featured rarity"),
           );
           return;
         }
         const sameRarityCount = activeEntries.filter(
-          (c) => c.featured && c.rarity === entry.rarity,
+          (candidate) =>
+            candidate.featured &&
+            candidate.rarity === entry.rarity &&
+            matchesGachaBannerKind(candidate, selectedBanner),
         ).length;
         const rarityLimit =
-          entry.rarity === 5
-            ? rule.primaryLimit
-            : Math.min(
-                rule.secondaryLimit,
-                Math.max(0, selectedBanner.display_limit - rule.primaryLimit),
-              );
+          entry.rarity === 5 ? rule.fiveStarLimit : rule.fourStarLimit;
         if (sameRarityCount >= rarityLimit) {
           toast.info(
             t(
               entry.rarity === 5
-                ? "HSR banners support one primary 5-star item."
-                : "This HSR banner has filled its 4-star rate-up slots.",
+                ? "This banner has filled its 5★ featured slots."
+                : "This banner has filled its 4★ rate-up slots.",
             ),
             t("Featured slots are full"),
           );
@@ -762,7 +806,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     },
     [
       activeEntries,
-      descriptor.featuredRule,
+      activeGame,
       entriesByProduct,
       featuredCount,
       selectedBanner,

@@ -33,11 +33,18 @@ export type GachaElementMeta = {
   visual: GachaElementVisual;
 };
 
-export type GachaFeaturedRule =
-  /** Featured items per banner are capped by the banner's display limit. */
-  | { kind: "display-limit" }
-  /** HSR: one featured 5★ primary plus up to N featured 4★ rate-ups. */
-  | { kind: "primary-secondary"; primaryLimit: number; secondaryLimit: number };
+export type GachaBannerFeaturedRule = {
+  displayLimit: number;
+  fiveStarLimit: number;
+  fourStarLimit: number;
+  /** Genshin banners must fill every official rate-up slot before going live. */
+  requireCompleteComposition: boolean;
+};
+
+export type GachaBannerFeaturedRules = {
+  character: GachaBannerFeaturedRule;
+  gear: GachaBannerFeaturedRule;
+};
 
 export type GachaGameDefaults = {
   title: string;
@@ -62,9 +69,9 @@ export type GachaGameDescriptor = {
   weaponTypes: GachaWeaponType[];
   /** Whether the game has a separate gear-banner 5★ pity. */
   hasLightconePity: boolean;
-  /** Maximum featured items a banner can display. */
+  /** Legacy generic limit used only when a banner kind is unavailable. */
   displayLimitMax: number;
-  featuredRule: GachaFeaturedRule;
+  featuredRules: GachaBannerFeaturedRules;
   defaults: GachaGameDefaults;
 };
 
@@ -167,7 +174,20 @@ export const GACHA_GAMES: Record<GachaGameType, GachaGameDescriptor> = {
     weaponTypes: ["sword", "claymore", "polearm", "bow", "catalyst"],
     hasLightconePity: false,
     displayLimitMax: 5,
-    featuredRule: { kind: "display-limit" },
+    featuredRules: {
+      character: {
+        displayLimit: 4,
+        fiveStarLimit: 1,
+        fourStarLimit: 3,
+        requireCompleteComposition: true,
+      },
+      gear: {
+        displayLimit: 7,
+        fiveStarLimit: 2,
+        fourStarLimit: 5,
+        requireCompleteComposition: true,
+      },
+    },
     defaults: {
       title: "Wish upon the shelf",
       description:
@@ -177,7 +197,7 @@ export const GACHA_GAMES: Record<GachaGameType, GachaGameDescriptor> = {
       bannerTheme: "anemo",
       entryElement: "anemo",
       entryWeaponType: "sword",
-      displayLimit: 3,
+      displayLimit: 4,
     },
   },
   hsr: {
@@ -196,10 +216,19 @@ export const GACHA_GAMES: Record<GachaGameType, GachaGameDescriptor> = {
     ],
     hasLightconePity: true,
     displayLimitMax: 4,
-    featuredRule: {
-      kind: "primary-secondary",
-      primaryLimit: 1,
-      secondaryLimit: 3,
+    featuredRules: {
+      character: {
+        displayLimit: 4,
+        fiveStarLimit: 1,
+        fourStarLimit: 3,
+        requireCompleteComposition: false,
+      },
+      gear: {
+        displayLimit: 4,
+        fiveStarLimit: 1,
+        fourStarLimit: 3,
+        requireCompleteComposition: false,
+      },
     },
     defaults: {
       title: "Warp upon the shelf",
@@ -219,6 +248,14 @@ export function getGachaGameDescriptor(
   gameType: GachaGameType,
 ): GachaGameDescriptor {
   return GACHA_GAMES[gameType];
+}
+
+export function getGachaBannerFeaturedRule(
+  gameType: GachaGameType,
+  bannerKind: GachaItemKind,
+): GachaBannerFeaturedRule {
+  const rules = getGachaGameDescriptor(gameType).featuredRules;
+  return bannerKind === "character" ? rules.character : rules.gear;
 }
 
 export function getGachaElementMeta(

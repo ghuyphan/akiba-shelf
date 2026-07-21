@@ -19,7 +19,7 @@
 	$: featuredMerchItems = merch
 		? (character?.merchItems?.length ? character.merchItems : [character?.featuredItem])
 				.filter(Boolean)
-				.slice(0, 5)
+				.slice(0, 7)
 		: [];
 
 	let clientWidth;
@@ -44,24 +44,22 @@
 	style="--content-width:{clientWidth}px; --content-height:{clientHeight}px"
 >
 	{#if merch}
-		<div class="merch-event-background custom-merch-banner {character.kind || 'character'} theme-{character.theme || 'anemo'}">
+		<div
+			class="merch-event-background custom-merch-banner {character.kind ||
+				'character'} theme-{character.theme || 'anemo'}"
+		>
 			<img
 				class="custom-banner-template"
 				src="/images/banner/blank/character-{character.theme || 'anemo'}.png"
 				alt=""
 				aria-hidden="true"
 			/>
-			<div class="merch-art merch-count-{featuredMerchItems.length} {character.kind || 'character'}">
+			<div
+				class="merch-art merch-count-{featuredMerchItems.length} {character.kind || 'character'}"
+			>
 				{#each featuredMerchItems as item, i (item.name)}
-					<div
-						class="featured-art merch-item merch-item-{i}"
-					>
-						<img
-							src={item.imageUrl}
-							alt={item.name}
-							loading="eager"
-							decoding="async"
-						/>
+					<div class="featured-art merch-item merch-item-{i} rarity-{item.rarity}">
+						<img src={item.imageUrl} alt={item.name} loading="eager" decoding="async" />
 					</div>
 				{/each}
 			</div>
@@ -155,8 +153,12 @@
 		position: absolute;
 		inset: 0;
 		overflow: hidden;
-		background:
-			linear-gradient(106deg, rgba(250, 247, 235, 0.98) 0 45%, rgba(225, 241, 237, 0.68) 61%, rgba(99, 171, 166, 0.45) 100%),
+		background: linear-gradient(
+				106deg,
+				rgba(250, 247, 235, 0.98) 0 45%,
+				rgba(225, 241, 237, 0.68) 61%,
+				rgba(99, 171, 166, 0.45) 100%
+			),
 			radial-gradient(circle at 82% 45%, #d9f1e7, #b9d9da 52%, #eee7d5);
 	}
 	.merch-event-background::before,
@@ -166,13 +168,21 @@
 		pointer-events: none;
 	}
 	.merch-event-background.weapon {
-		background:
-			linear-gradient(106deg, rgba(250, 247, 235, 0.98) 0 43%, rgba(241, 227, 205, 0.72) 59%, rgba(125, 83, 154, 0.48) 100%),
+		background: linear-gradient(
+				106deg,
+				rgba(250, 247, 235, 0.98) 0 43%,
+				rgba(241, 227, 205, 0.72) 59%,
+				rgba(125, 83, 154, 0.48) 100%
+			),
 			radial-gradient(circle at 82% 45%, #ffe5a5, #ccb6d8 54%, #eee7d5);
 	}
 	.merch-event-background.weapon::before {
-		background-image:
-			linear-gradient(118deg, transparent 0 42%, rgba(255, 235, 176, 0.7) 42.2% 43%, transparent 43.2%),
+		background-image: linear-gradient(
+				118deg,
+				transparent 0 42%,
+				rgba(255, 235, 176, 0.7) 42.2% 43%,
+				transparent 43.2%
+			),
 			repeating-linear-gradient(45deg, transparent 0 8%, rgba(132, 91, 156, 0.12) 8.2% 8.6%);
 	}
 	.merch-event-background.weapon .merch-shard {
@@ -186,39 +196,67 @@
 		transform: rotate(2deg);
 	}
 	.merch-event-background.theme-1:not(.weapon) {
-		background:
-			linear-gradient(106deg, rgba(253, 248, 239, 0.98) 0 44%, rgba(245, 220, 220, 0.7) 61%, rgba(178, 107, 135, 0.48) 100%),
+		background: linear-gradient(
+				106deg,
+				rgba(253, 248, 239, 0.98) 0 44%,
+				rgba(245, 220, 220, 0.7) 61%,
+				rgba(178, 107, 135, 0.48) 100%
+			),
 			radial-gradient(circle at 82% 45%, #ffe0de, #dbc2d6 52%, #f2eadb);
 	}
 	.merch-event-background.theme-2:not(.weapon) {
-		background:
-			linear-gradient(106deg, rgba(248, 248, 239, 0.98) 0 44%, rgba(226, 233, 198, 0.72) 61%, rgba(99, 139, 92, 0.48) 100%),
+		background: linear-gradient(
+				106deg,
+				rgba(248, 248, 239, 0.98) 0 44%,
+				rgba(226, 233, 198, 0.72) 61%,
+				rgba(99, 139, 92, 0.48) 100%
+			),
 			radial-gradient(circle at 82% 45%, #eaf0c9, #bcd0b5 52%, #eee8d8);
 	}
 	.merch-event-background.theme-3:not(.weapon) {
-		background:
-			linear-gradient(106deg, rgba(248, 247, 243, 0.98) 0 44%, rgba(211, 224, 244, 0.72) 61%, rgba(88, 112, 170, 0.48) 100%),
+		background: linear-gradient(
+				106deg,
+				rgba(248, 247, 243, 0.98) 0 44%,
+				rgba(211, 224, 244, 0.72) 61%,
+				rgba(88, 112, 170, 0.48) 100%
+			),
 			radial-gradient(circle at 82% 45%, #dce9ff, #bdc8df 52%, #ece7dc);
 	}
 	.merch-event-background.weapon.theme-1 {
-		background:
-			linear-gradient(106deg, rgba(251, 248, 238, 0.98) 0 43%, rgba(226, 232, 207, 0.75) 59%, rgba(89, 125, 91, 0.5) 100%),
+		background: linear-gradient(
+				106deg,
+				rgba(251, 248, 238, 0.98) 0 43%,
+				rgba(226, 232, 207, 0.75) 59%,
+				rgba(89, 125, 91, 0.5) 100%
+			),
 			radial-gradient(circle at 82% 45%, #f0dfa5, #afc5ae 54%, #eee7d5);
 	}
 	.merch-event-background.weapon.theme-2 {
-		background:
-			linear-gradient(106deg, rgba(250, 247, 239, 0.98) 0 43%, rgba(222, 225, 244, 0.75) 59%, rgba(71, 91, 151, 0.5) 100%),
+		background: linear-gradient(
+				106deg,
+				rgba(250, 247, 239, 0.98) 0 43%,
+				rgba(222, 225, 244, 0.75) 59%,
+				rgba(71, 91, 151, 0.5) 100%
+			),
 			radial-gradient(circle at 82% 45%, #e6d39a, #aeb9dc 54%, #eee7d5);
 	}
 	.merch-event-background.weapon.theme-3 {
-		background:
-			linear-gradient(106deg, rgba(251, 247, 239, 0.98) 0 43%, rgba(242, 218, 211, 0.75) 59%, rgba(157, 75, 73, 0.5) 100%),
+		background: linear-gradient(
+				106deg,
+				rgba(251, 247, 239, 0.98) 0 43%,
+				rgba(242, 218, 211, 0.75) 59%,
+				rgba(157, 75, 73, 0.5) 100%
+			),
 			radial-gradient(circle at 82% 45%, #f7d79b, #dfb3ad 54%, #eee7d5);
 	}
 	.merch-event-background::before {
 		inset: 0;
-		background-image:
-			linear-gradient(118deg, transparent 0 43%, rgba(255, 255, 255, 0.62) 43.2% 44%, transparent 44.2%),
+		background-image: linear-gradient(
+				118deg,
+				transparent 0 43%,
+				rgba(255, 255, 255, 0.62) 43.2% 44%,
+				transparent 44.2%
+			),
 			repeating-linear-gradient(135deg, transparent 0 7%, rgba(255, 255, 255, 0.12) 7.2% 7.5%);
 	}
 	.merch-event-background::after {
@@ -268,7 +306,8 @@
 		overflow: hidden;
 		background: rgba(255, 255, 255, 0.55);
 		border: calc(0.12 / 100 * var(--content-width)) solid rgba(255, 255, 255, 0.88);
-		box-shadow: 0 calc(0.8 / 100 * var(--content-width)) calc(2 / 100 * var(--content-width)) rgba(40, 57, 66, 0.28);
+		box-shadow: 0 calc(0.8 / 100 * var(--content-width)) calc(2 / 100 * var(--content-width))
+			rgba(40, 57, 66, 0.28);
 		transform: rotate(-3deg);
 	}
 	.featured-art {
@@ -284,15 +323,24 @@
 		left: 7%;
 		clip-path: polygon(9% 0, 100% 4%, 91% 100%, 0 96%);
 	}
-	.support-1 { top: 2%; transform: rotate(4deg); }
-	.support-2 { bottom: 1%; left: 3%; transform: rotate(-4deg); }
+	.support-1 {
+		top: 2%;
+		transform: rotate(4deg);
+	}
+	.support-2 {
+		bottom: 1%;
+		left: 3%;
+		transform: rotate(-4deg);
+	}
 	.featured-art img,
 	.support-art img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
 	}
-	.featured-art img { object-position: center; }
+	.featured-art img {
+		object-position: center;
+	}
 
 	/* Use the simulator's original blank elemental banner as the base layer. */
 	.custom-merch-banner {
@@ -317,11 +365,21 @@
 		border: calc(0.18 / 100 * var(--content-width)) solid rgba(255, 248, 226, 0.88);
 		border-radius: calc(1.2 / 100 * var(--content-width));
 		background: rgba(255, 255, 255, 0.22);
-		box-shadow: 0 calc(0.8 / 100 * var(--content-width)) calc(2 / 100 * var(--content-width)) rgba(37, 31, 43, 0.28);
+		box-shadow: 0 calc(0.8 / 100 * var(--content-width)) calc(2 / 100 * var(--content-width))
+			rgba(37, 31, 43, 0.28);
 		clip-path: none;
 	}
 	.custom-merch-banner .featured-art img {
 		object-fit: cover;
+	}
+	.custom-merch-banner .featured-art.rarity-5 {
+		border-color: rgba(255, 218, 122, 0.96);
+		box-shadow: 0 0 calc(1.2 / 100 * var(--content-width)) rgba(255, 198, 71, 0.5),
+			0 calc(0.9 / 100 * var(--content-width)) calc(2.2 / 100 * var(--content-width))
+				rgba(78, 48, 12, 0.34);
+	}
+	.custom-merch-banner .featured-art.rarity-4 {
+		border-color: rgba(225, 202, 255, 0.9);
 	}
 	/* Clean card deck layout on right side — strictly keeping clear of left text panel */
 	.merch-art .merch-item-0 {
@@ -393,9 +451,21 @@
 		width: 48%;
 		height: 38%;
 	}
-	.merch-count-4 .merch-item-1 { top: 0; z-index: 3; transform: rotate(3.5deg); }
-	.merch-count-4 .merch-item-2 { top: 31%; z-index: 2; transform: rotate(-1.5deg); }
-	.merch-count-4 .merch-item-3 { bottom: 0; z-index: 1; transform: rotate(3deg); }
+	.merch-count-4 .merch-item-1 {
+		top: 0;
+		z-index: 3;
+		transform: rotate(3.5deg);
+	}
+	.merch-count-4 .merch-item-2 {
+		top: 31%;
+		z-index: 2;
+		transform: rotate(-1.5deg);
+	}
+	.merch-count-4 .merch-item-3 {
+		bottom: 0;
+		z-index: 1;
+		transform: rotate(3deg);
+	}
 	.merch-count-5 .merch-item-0 {
 		left: 24%;
 		right: auto;
@@ -409,10 +479,213 @@
 		width: 42%;
 		height: 50%;
 	}
-	.merch-count-5 .merch-item-1 { left: 0; top: 0; z-index: 3; transform: rotate(-5deg); }
-	.merch-count-5 .merch-item-2 { right: 0; top: 1%; z-index: 4; transform: rotate(5deg); }
-	.merch-count-5 .merch-item-3 { left: 0; bottom: 0; z-index: 1; transform: rotate(4deg); }
-	.merch-count-5 .merch-item-4 { right: 0; bottom: 0; z-index: 2; transform: rotate(-4deg); }
+	.merch-count-5 .merch-item-1 {
+		left: 0;
+		top: 0;
+		z-index: 3;
+		transform: rotate(-5deg);
+	}
+	.merch-count-5 .merch-item-2 {
+		right: 0;
+		top: 1%;
+		z-index: 4;
+		transform: rotate(5deg);
+	}
+	.merch-count-5 .merch-item-3 {
+		left: 0;
+		bottom: 0;
+		z-index: 1;
+		transform: rotate(4deg);
+	}
+	.merch-count-5 .merch-item-4 {
+		right: 0;
+		bottom: 0;
+		z-index: 2;
+		transform: rotate(-4deg);
+	}
+
+	/* Weapon banners use a portrait-friendly fan instead of the character hero layout. */
+	.merch-art.weapon .featured-art {
+		bottom: auto;
+		transform-origin: center bottom;
+	}
+	.merch-art.weapon.merch-count-2 .merch-item {
+		top: 4%;
+		width: 58%;
+		height: 76%;
+	}
+	.merch-art.weapon.merch-count-2 .merch-item-0 {
+		left: 4%;
+		right: auto;
+		z-index: 1;
+		transform: rotate(-3deg);
+	}
+	.merch-art.weapon.merch-count-2 .merch-item-1 {
+		left: 38%;
+		right: auto;
+		z-index: 2;
+		transform: rotate(3deg);
+	}
+	.merch-art.weapon.merch-count-3 .merch-item {
+		width: 52%;
+		height: 70%;
+	}
+	.merch-art.weapon.merch-count-3 .merch-item-0 {
+		left: 5%;
+		top: 5%;
+		z-index: 3;
+		transform: rotate(-3deg);
+	}
+	.merch-art.weapon.merch-count-3 .merch-item-1 {
+		left: 43%;
+		top: 7%;
+		z-index: 2;
+		transform: rotate(3deg);
+	}
+	.merch-art.weapon.merch-count-3 .merch-item-2 {
+		left: 25%;
+		right: auto;
+		top: 1%;
+		z-index: 1;
+		transform: rotate(0deg);
+	}
+	.merch-art.weapon.merch-count-4 .merch-item {
+		width: 43%;
+		height: 68%;
+	}
+	.merch-art.weapon.merch-count-4 .merch-item-0 {
+		left: 8%;
+		top: 3%;
+		z-index: 4;
+		transform: rotate(-2.5deg);
+	}
+	.merch-art.weapon.merch-count-4 .merch-item-1 {
+		left: 49%;
+		right: auto;
+		top: 5%;
+		z-index: 3;
+		transform: rotate(2.5deg);
+	}
+	.merch-art.weapon.merch-count-4 .merch-item-2 {
+		left: 0;
+		right: auto;
+		top: 12%;
+		z-index: 1;
+		transform: rotate(-5deg);
+	}
+	.merch-art.weapon.merch-count-4 .merch-item-3 {
+		left: 57%;
+		right: auto;
+		top: 11%;
+		z-index: 2;
+		transform: rotate(5deg);
+	}
+	.merch-art.weapon.merch-count-5 .merch-item {
+		width: 40%;
+		height: 66%;
+	}
+	.merch-art.weapon.merch-count-5 .merch-item-0 {
+		left: 8%;
+		top: 4%;
+		z-index: 5;
+		transform: rotate(-2.5deg);
+	}
+	.merch-art.weapon.merch-count-5 .merch-item-1 {
+		left: 49%;
+		top: 6%;
+		z-index: 4;
+		transform: rotate(2.5deg);
+	}
+	.merch-art.weapon.merch-count-5 .merch-item-2 {
+		left: 0;
+		right: auto;
+		top: 13%;
+		z-index: 1;
+		transform: rotate(-5deg);
+	}
+	.merch-art.weapon.merch-count-5 .merch-item-3 {
+		left: 30%;
+		bottom: auto;
+		top: 0;
+		z-index: 2;
+		transform: rotate(0deg);
+	}
+	.merch-art.weapon.merch-count-5 .merch-item-4 {
+		left: 60%;
+		right: auto;
+		bottom: auto;
+		top: 12%;
+		z-index: 3;
+		transform: rotate(5deg);
+	}
+	.merch-art.weapon.merch-count-6 .merch-item,
+	.merch-art.weapon.merch-count-7 .merch-item {
+		bottom: auto;
+	}
+	.merch-art.weapon.merch-count-6 .merch-item-0,
+	.merch-art.weapon.merch-count-7 .merch-item-0 {
+		left: 17%;
+		right: auto;
+		top: 3%;
+		z-index: 7;
+		width: 38%;
+		height: 60%;
+		transform: rotate(-2deg);
+	}
+	.merch-art.weapon.merch-count-6 .merch-item-1,
+	.merch-art.weapon.merch-count-7 .merch-item-1 {
+		left: 48%;
+		right: auto;
+		top: 5%;
+		z-index: 6;
+		width: 38%;
+		height: 60%;
+		transform: rotate(2deg);
+	}
+	.merch-art.weapon.merch-count-6 .merch-item:not(.merch-item-0):not(.merch-item-1),
+	.merch-art.weapon.merch-count-7 .merch-item:not(.merch-item-0):not(.merch-item-1) {
+		width: 25%;
+		height: 31%;
+	}
+	.merch-art.weapon.merch-count-6 .merch-item-2,
+	.merch-art.weapon.merch-count-7 .merch-item-2 {
+		left: 0;
+		right: auto;
+		top: 9%;
+		z-index: 2;
+		transform: rotate(-5deg);
+	}
+	.merch-art.weapon.merch-count-6 .merch-item-3,
+	.merch-art.weapon.merch-count-7 .merch-item-3 {
+		left: 75%;
+		right: auto;
+		top: 10%;
+		z-index: 3;
+		transform: rotate(5deg);
+	}
+	.merch-art.weapon.merch-count-6 .merch-item-4,
+	.merch-art.weapon.merch-count-7 .merch-item-4 {
+		left: 2%;
+		right: auto;
+		top: 40%;
+		z-index: 1;
+		transform: rotate(3deg);
+	}
+	.merch-art.weapon.merch-count-6 .merch-item-5,
+	.merch-art.weapon.merch-count-7 .merch-item-6 {
+		left: 73%;
+		right: auto;
+		top: 41%;
+		z-index: 4;
+		transform: rotate(-3deg);
+	}
+	.merch-art.weapon.merch-count-7 .merch-item-5 {
+		left: 38%;
+		right: auto;
+		top: 0;
+		z-index: 1;
+		transform: rotate(0deg);
+	}
 	.merch-frame {
 		z-index: 2;
 		pointer-events: none;

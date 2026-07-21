@@ -1,6 +1,18 @@
 import { type ReactNode, useMemo, useState } from "react";
-import { ChevronDown, Gift, Plus, Search, Star, Sword, Sparkles } from "lucide-react";
-import type { GachaGameDescriptor } from "../../../lib/gacha/gachaGames";
+import {
+  ChevronDown,
+  Gift,
+  Plus,
+  Search,
+  Star,
+  Sword,
+  Sparkles,
+} from "lucide-react";
+import {
+  getGachaBannerFeaturedRule,
+  type GachaGameDescriptor,
+} from "../../../lib/gacha/gachaGames";
+import { matchesGachaBannerKind } from "../../../lib/gacha/gachaLimits";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { Product } from "../../../types/catalog";
 import type { GachaBanner, GachaPoolEntry } from "../../../types/gacha";
@@ -78,16 +90,29 @@ export function GachaPoolEditor({
 
   const primaryFeaturedCount = useMemo(
     () =>
-      activeEntries.filter((entry) => entry.featured && entry.rarity === 5)
-        .length,
-    [activeEntries],
+      activeEntries.filter(
+        (entry) =>
+          entry.featured &&
+          entry.rarity === 5 &&
+          matchesGachaBannerKind(entry, banner),
+      ).length,
+    [activeEntries, banner],
   );
 
   const secondaryFeaturedCount = useMemo(
     () =>
-      activeEntries.filter((entry) => entry.featured && entry.rarity === 4)
-        .length,
-    [activeEntries],
+      activeEntries.filter(
+        (entry) =>
+          entry.featured &&
+          entry.rarity === 4 &&
+          matchesGachaBannerKind(entry, banner),
+      ).length,
+    [activeEntries, banner],
+  );
+
+  const featuredRule = getGachaBannerFeaturedRule(
+    descriptor.gameType,
+    banner.kind,
   );
 
   const visibleProducts = useMemo(() => {
@@ -141,14 +166,24 @@ export function GachaPoolEditor({
           </h3>
           <p>
             {t(
-              "Assign 4★ and 5★ merch prizes for this specific banner. 3★ pulls use the shared souvenir pool.",
+              descriptor.gameType === "genshin"
+                ? banner.kind === "character"
+                  ? "Character wishes go live with exactly 1 featured 5★ character and 3 featured 4★ characters."
+                  : "Weapon wishes go live with exactly 2 featured 5★ weapons and 5 featured 4★ weapons."
+                : "HSR banners support 1 featured 5★ primary and up to 3 featured 4★ rate-ups. 3★ pulls use the shared souvenir pool.",
             )}
           </p>
         </header>
-        <span className="gacha-chip">
-          <Star size={13} aria-hidden="true" />
-          {featuredCount}/{banner.display_limit} {t("featured")}
-        </span>
+        <div className="gacha-pool-slot-counts">
+          <span className="gacha-chip rarity-5">
+            <Star size={13} aria-hidden="true" />
+            {primaryFeaturedCount}/{featuredRule.fiveStarLimit} 5★
+          </span>
+          <span className="gacha-chip rarity-4">
+            <Star size={13} aria-hidden="true" />
+            {secondaryFeaturedCount}/{featuredRule.fourStarLimit} 4★
+          </span>
+        </div>
       </div>
 
       <div className="gacha-pool-toolbar">
@@ -171,10 +206,10 @@ export function GachaPoolEditor({
                   })
                 : filter === "available"
                   ? t("Add merch ({{count}})", {
-                    count: products.filter(
-                      (product) => !entriesByProduct.has(product.id),
-                    ).length,
-                  })
+                      count: products.filter(
+                        (product) => !entriesByProduct.has(product.id),
+                      ).length,
+                    })
                   : t("3★ filler ({{count}})", { count: sharedCount })}
             </button>
           ))}
@@ -197,149 +232,145 @@ export function GachaPoolEditor({
           {sharedPool}
         </div>
       ) : (
-      <div className="gacha-pool-list">
-        {visibleProducts.length ? (
-          visibleProducts.map((product) => {
-            const entry = entriesByProduct.get(product.id);
-            const image = productImage(product);
+        <div className="gacha-pool-list">
+          {visibleProducts.length ? (
+            visibleProducts.map((product) => {
+              const entry = entriesByProduct.get(product.id);
+              const image = productImage(product);
 
-            const identity = (
-              <span className="gacha-item-id">
-                <span className="gacha-item-img">
-                  {image ? (
-                    <img src={image} alt="" loading="lazy" decoding="async" />
-                  ) : (
-                    <Sparkles size={20} />
-                  )}
-                </span>
-                <span className="gacha-item-name">
-                  <strong>{product.name}</strong>
-                  <small>{product.item_code || product.category}</small>
-                </span>
-              </span>
-            );
-
-            if (!entry) {
-              const owner = assignedBannerByProduct.get(product.id);
-              return (
-                <article
-                  key={product.id}
-                  className={`gacha-item is-available ${!product.active ? "is-inactive" : ""}`}
-                >
-                  {identity}
-                  {owner && (
-                    <span
-                      className="gacha-tag is-owned"
-                      title={t(
-                        "This item is already in “{{banner}}”. Remove it there first.",
-                        { banner: owner.name },
-                      )}
-                    >
-                      {t("In “{{banner}}”", { banner: owner.name })}
-                    </span>
-                  )}
-                  {!product.active && (
-                    <span className="gacha-tag is-hidden">{t("Hidden")}</span>
-                  )}
-                  <button
-                    type="button"
-                    className="gacha-item-add"
-                    disabled={!product.active || Boolean(owner)}
-                    title={
-                      owner
-                        ? t(
-                            "This item is already in “{{banner}}”. Remove it there first.",
-                            { banner: owner.name },
-                          )
-                        : undefined
-                    }
-                    onClick={() => onToggleProduct(product.id)}
-                  >
-                    <Plus size={15} /> {t("Add to banner")}
-                  </button>
-                </article>
-              );
-            }
-
-            return (
-              <details
-                key={product.id}
-                className={`gacha-item is-included ${!product.active ? "is-inactive" : ""}`}
-              >
-                <summary>
-                  {identity}
-                  <span className="gacha-item-config">
-                    <b className={`rarity-${entry.rarity}`}>{entry.rarity}★</b>
-                    {entry.kind === "character" ? (
-                      <GachaElementIcon
-                        gameType={descriptor.gameType}
-                        element={entry.element}
-                        size={16}
-                      />
+              const identity = (
+                <span className="gacha-item-id">
+                  <span className="gacha-item-img">
+                    {image ? (
+                      <img src={image} alt="" loading="lazy" decoding="async" />
                     ) : (
-                      <Sword size={14} />
+                      <Sparkles size={20} />
                     )}
-                    <span>
-                      {t(
-                        entry.kind === "character"
-                          ? entry.element[0].toUpperCase() +
-                              entry.element.slice(1)
-                          : entry.weapon_type[0].toUpperCase() +
-                              entry.weapon_type.slice(1),
-                      )}
-                    </span>
                   </span>
-                  <span className="gacha-item-tags">
-                    {entry.featured && (
-                      <span className="gacha-tag is-featured">
+                  <span className="gacha-item-name">
+                    <strong>{product.name}</strong>
+                    <small>{product.item_code || product.category}</small>
+                  </span>
+                </span>
+              );
+
+              if (!entry) {
+                const owner = assignedBannerByProduct.get(product.id);
+                return (
+                  <article
+                    key={product.id}
+                    className={`gacha-item is-available ${!product.active ? "is-inactive" : ""}`}
+                  >
+                    {identity}
+                    {owner && (
+                      <span
+                        className="gacha-tag is-owned"
+                        title={t(
+                          "This item is already in “{{banner}}”. Remove it there first.",
+                          { banner: owner.name },
+                        )}
+                      >
+                        {t("In “{{banner}}”", { banner: owner.name })}
+                      </span>
+                    )}
+                    {!product.active && (
+                      <span className="gacha-tag is-hidden">{t("Hidden")}</span>
+                    )}
+                    <button
+                      type="button"
+                      className="gacha-item-add"
+                      disabled={!product.active || Boolean(owner)}
+                      title={
+                        owner
+                          ? t(
+                              "This item is already in “{{banner}}”. Remove it there first.",
+                              { banner: owner.name },
+                            )
+                          : undefined
+                      }
+                      onClick={() => onToggleProduct(product.id)}
+                    >
+                      <Plus size={15} /> {t("Add to banner")}
+                    </button>
+                  </article>
+                );
+              }
+
+              return (
+                <details
+                  key={product.id}
+                  className={`gacha-item is-included ${!product.active ? "is-inactive" : ""}`}
+                >
+                  <summary>
+                    {identity}
+                    <span className="gacha-item-config">
+                      <b className={`rarity-${entry.rarity}`}>
+                        {entry.rarity}★
+                      </b>
+                      {entry.kind === "character" ? (
+                        <GachaElementIcon
+                          gameType={descriptor.gameType}
+                          element={entry.element}
+                          size={16}
+                        />
+                      ) : (
+                        <Sword size={14} />
+                      )}
+                      <span>
                         {t(
-                          descriptor.gameType === "hsr"
-                            ? entry.rarity === 5
-                              ? "Primary"
-                              : "Rate-up"
-                            : "Promoted",
+                          entry.kind === "character"
+                            ? entry.element[0].toUpperCase() +
+                                entry.element.slice(1)
+                            : entry.weapon_type[0].toUpperCase() +
+                                entry.weapon_type.slice(1),
                         )}
                       </span>
-                    )}
-                    {!entry.active && (
-                      <span className="gacha-tag is-inactive">
-                        {t("Inactive")}
-                      </span>
-                    )}
-                  </span>
-                  <span className="gacha-item-expand" aria-hidden="true">
-                    <ChevronDown size={16} />
-                  </span>
-                </summary>
-                <GachaEntryEditor
-                  entry={entry}
-                  productActive={product.active}
-                  banner={banner}
-                  descriptor={descriptor}
-                  featuredCount={featuredCount}
-                  primaryFeaturedCount={primaryFeaturedCount}
-                  secondaryFeaturedCount={secondaryFeaturedCount}
-                  onUpdateEntry={(changes) =>
-                    onUpdateEntry(product.id, changes)
-                  }
-                  onToggleFeatured={(featured) =>
-                    onToggleFeatured(product.id, featured)
-                  }
-                  onRemove={() => onToggleProduct(product.id)}
-                  onTextFocus={onTextFocus}
-                />
-              </details>
-            );
-          })
-        ) : (
-          <EmptyState
-            variant="compact"
-            icon={<Search size={24} />}
-            title={t("No matching merch")}
-            message={t("Try another product name, code, or category.")}
-          />
-        )}
-      </div>
+                    </span>
+                    <span className="gacha-item-tags">
+                      {entry.featured && (
+                        <span className="gacha-tag is-featured">
+                          {t(entry.rarity === 5 ? "5★ featured" : "4★ rate-up")}
+                        </span>
+                      )}
+                      {!entry.active && (
+                        <span className="gacha-tag is-inactive">
+                          {t("Inactive")}
+                        </span>
+                      )}
+                    </span>
+                    <span className="gacha-item-expand" aria-hidden="true">
+                      <ChevronDown size={16} />
+                    </span>
+                  </summary>
+                  <GachaEntryEditor
+                    entry={entry}
+                    productActive={product.active}
+                    banner={banner}
+                    descriptor={descriptor}
+                    featuredCount={featuredCount}
+                    primaryFeaturedCount={primaryFeaturedCount}
+                    secondaryFeaturedCount={secondaryFeaturedCount}
+                    onUpdateEntry={(changes) =>
+                      onUpdateEntry(product.id, changes)
+                    }
+                    onToggleFeatured={(featured) =>
+                      onToggleFeatured(product.id, featured)
+                    }
+                    onRemove={() => onToggleProduct(product.id)}
+                    onTextFocus={onTextFocus}
+                  />
+                </details>
+              );
+            })
+          ) : (
+            <EmptyState
+              variant="compact"
+              icon={<Search size={24} />}
+              title={t("No matching merch")}
+              message={t("Try another product name, code, or category.")}
+            />
+          )}
+        </div>
       )}
     </div>
   );

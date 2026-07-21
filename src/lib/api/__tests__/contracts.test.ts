@@ -162,7 +162,7 @@ describe("order API contracts", () => {
 });
 
 describe("gacha publish contract", () => {
-  it("keeps draft persistence and the v5 publish payload stable", async () => {
+  it("keeps draft persistence and the v6 publish payload stable", async () => {
     const settings = {
       ...defaultGachaSettings(shopId),
       enabled: true,
@@ -219,7 +219,7 @@ describe("gacha publish contract", () => {
       },
       { onConflict: "shop_id,game_type" },
     );
-    expect(mocks.rpc).toHaveBeenCalledWith("publish_gacha_configuration_v5", {
+    expect(mocks.rpc).toHaveBeenCalledWith("publish_gacha_configuration_v6", {
       p_shop_id: shopId,
       p_game_type: "genshin",
       p_config: {
@@ -235,7 +235,7 @@ describe("gacha publish contract", () => {
             description: banner.description,
             kind: banner.kind,
             theme: banner.theme,
-            display_limit: banner.display_limit,
+            display_limit: 4,
             active: true,
             starts_at: null,
             ends_at: null,
@@ -333,7 +333,7 @@ describe("Playwright Supabase request inventory", () => {
       "/rest/v1/rpc/get_public_product_categories",
       "/rest/v1/rpc/get_shop_members",
       "/rest/v1/rpc/get_shop_workspace_summary",
-      "/rest/v1/rpc/publish_gacha_configuration_v5",
+      "/rest/v1/rpc/publish_gacha_configuration_v6",
       "/rest/v1/shops",
       "/rest/v1/staff_members",
     ]);

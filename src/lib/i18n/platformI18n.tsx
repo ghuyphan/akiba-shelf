@@ -548,16 +548,20 @@ const vi: Record<string, string> = {
   "Promotion savings": "Tiết kiệm khuyến mãi",
   "Buy products": "Sản phẩm khách mua",
   "Reward products": "Sản phẩm tặng",
-  "{{buy}} buy products · {{reward}} reward products": "{{buy}} sản phẩm mua · {{reward}} sản phẩm tặng",
+  "{{buy}} buy products · {{reward}} reward products":
+    "{{buy}} sản phẩm mua · {{reward}} sản phẩm tặng",
   "What customers buy": "Sản phẩm khách mua",
   "Products that count toward Buy {{buy}}": "Sản phẩm tính vào mốc Mua {{buy}}",
-  "These paid products count toward the Buy quantity.": "Các sản phẩm trả tiền này được tính vào số lượng Mua.",
+  "These paid products count toward the Buy quantity.":
+    "Các sản phẩm trả tiền này được tính vào số lượng Mua.",
   "What customers get": "Sản phẩm khách được tặng",
   "Products customers can choose free": "Sản phẩm khách có thể chọn miễn phí",
-  "Customers choose free items from this reward group.": "Khách chọn sản phẩm miễn phí từ nhóm quà tặng này.",
+  "Customers choose free items from this reward group.":
+    "Khách chọn sản phẩm miễn phí từ nhóm quà tặng này.",
   "Buy any {{buy}} from {{qualifying}} selected products, then choose {{free}} free from {{reward}} reward products.":
     "Mua bất kỳ {{buy}} trong {{qualifying}} sản phẩm đã chọn, sau đó chọn miễn phí {{free}} trong {{reward}} sản phẩm tặng.",
-  "Select at least one buy product and one reward product before publishing this offer.": "Chọn ít nhất một sản phẩm mua và một sản phẩm tặng trước khi bật ưu đãi.",
+  "Select at least one buy product and one reward product before publishing this offer.":
+    "Chọn ít nhất một sản phẩm mua và một sản phẩm tặng trước khi bật ưu đãi.",
   "Visible in catalog": "Hiển thị trong danh mục",
   "Customers can find and purchase this item.":
     "Khách hàng có thể tìm và mua sản phẩm này.",
@@ -955,11 +959,15 @@ const vi: Record<string, string> = {
   "Banner presentation, pool, and item stats.":
     "Giao diện banner, pool và chỉ số vật phẩm.",
   "Banner title": "Tên banner",
-  "Bilingual: English | Tiếng Việt or [en]English[vi]Tiếng Việt": "Song ngữ: Tiếng Anh | Tiếng Việt hoặc [en]English[vi]Tiếng Việt",
+  "Bilingual: English | Tiếng Việt or [en]English[vi]Tiếng Việt":
+    "Song ngữ: Tiếng Anh | Tiếng Việt hoặc [en]English[vi]Tiếng Việt",
   "Banner type": "Loại banner",
   "Banner copy": "Nội dung banner",
   "Featured items shown": "Số vật phẩm nổi bật",
   "Featured banner slots": "Vị trí nổi bật trên banner",
+  "Official lineup": "Đội hình chính thức",
+  "{{count}} slots: {{five}}×5★ + {{four}}×4★":
+    "{{count}} vị trí: {{five}}×5★ + {{four}}×4★",
   "1 primary item": "1 vật phẩm chính",
   "1 primary + {{count}} secondary": "1 chính + {{count}} phụ",
   "1 featured item": "1 vật phẩm nổi bật",
@@ -976,11 +984,21 @@ const vi: Record<string, string> = {
   "Featured items must match the HSR banner type.":
     "Vật phẩm nổi bật phải khớp với loại banner HSR.",
   "Choose a matching role": "Chọn vai trò phù hợp",
+  "Featured items must match the banner type.":
+    "Vật phẩm nổi bật phải khớp với loại banner.",
+  "Only 5★ and 4★ items can use featured banner slots.":
+    "Chỉ vật phẩm 5★ và 4★ mới có thể dùng vị trí nổi bật trên banner.",
+  "This banner has filled its 5★ featured slots.":
+    "Banner này đã đủ vị trí nổi bật 5★.",
+  "This banner has filled its 4★ rate-up slots.":
+    "Banner này đã đủ vị trí tăng tỉ lệ 4★.",
   "Every active HSR banner needs one featured 5-star item.":
     "Mỗi banner HSR đang bật cần một vật phẩm 5 sao nổi bật.",
   'The active banner "{{name}}" needs exactly one featured 5-star item.':
     'Banner đang hoạt động "{{name}}" cần chính xác một vật phẩm 5 sao nổi bật.',
   "Rate-up": "Tăng tỉ lệ",
+  "5★ featured": "Nổi bật 5★",
+  "4★ rate-up": "Tăng tỉ lệ 4★",
   "Primary featured": "Nổi bật chính",
   "Secondary rate-up": "Tăng tỉ lệ phụ",
   "Banner theme": "Chủ đề banner",
@@ -1020,6 +1038,14 @@ const vi: Record<string, string> = {
   'The active banner "{{name}}" needs at least one active merch item.':
     'Banner đang hoạt động "{{name}}" cần ít nhất một vật phẩm đang bán.',
   "Featured slots are full": "Đã đủ vị trí nổi bật",
+  "Check featured items": "Kiểm tra vật phẩm nổi bật",
+  "Incomplete featured lineup": "Đội hình nổi bật chưa đủ",
+  'Featured items in "{{name}}" must match its banner type and use 4★ or 5★ rarity.':
+    'Vật phẩm nổi bật trong "{{name}}" phải khớp loại banner và có độ hiếm 4★ hoặc 5★.',
+  'The active banner "{{name}}" needs exactly {{five}} featured 5★ and {{four}} featured 4★ items.':
+    'Banner đang hoạt động "{{name}}" cần chính xác {{five}} vật phẩm 5★ và {{four}} vật phẩm 4★ nổi bật.',
+  'The active banner "{{name}}" supports {{five}} featured 5★ and up to {{four}} featured 4★ items.':
+    'Banner đang hoạt động "{{name}}" hỗ trợ {{five}} vật phẩm 5★ và tối đa {{four}} vật phẩm 4★ nổi bật.',
   "This banner can show up to {{count}} featured items.":
     "Banner này có thể hiển thị tối đa {{count}} vật phẩm nổi bật.",
   Sword: "Kiếm",
@@ -1142,12 +1168,10 @@ const vi: Record<string, string> = {
     "Đặt tên trải nghiệm và giới thiệu ngắn gọn phần thưởng cho khách hàng.",
   "Turn this minigame on or off for customers.":
     "Bật hoặc tắt minigame này cho khách hàng.",
-  "Choose the active simulator game.":
-    "Chọn trò chơi mô phỏng đang hoạt động.",
+  "Choose the active simulator game.": "Chọn trò chơi mô phỏng đang hoạt động.",
   "Title shown on the storefront banner.":
     "Tiêu đề hiển thị trên banner cửa hàng.",
-  "Brief description of rewards.":
-    "Mô tả ngắn gọn về phần thưởng.",
+  "Brief description of rewards.": "Mô tả ngắn gọn về phần thưởng.",
   "Warp pool": "Pool Warp",
   "Current banner": "Banner hiện tại",
   "Reward setup": "Thiết lập phần thưởng",
@@ -1194,9 +1218,12 @@ const vi: Record<string, string> = {
   "Create a playable pool from your active merch, using safe recommended defaults. Everything remains editable and undoable.":
     "Tạo pool chơi được từ merch đang hoạt động bằng thiết lập đề xuất an toàn. Bạn vẫn có thể chỉnh sửa hoặc hoàn tác mọi thứ.",
   "Use recommended setup": "Dùng thiết lập đề xuất",
-  "Publishing switches the public minigame to {{game}}. Continue?": "Xuất bản sẽ chuyển minigame công khai sang {{game}}. Tiếp tục?",
-  "Delete banner “{{name}}”? Its pool items will be removed too.": "Xóa banner “{{name}}”? Các vật phẩm trong pool của nó cũng sẽ bị xóa theo.",
-  "Availability, public copy, and pity rules for this game.": "Trạng thái hoạt động, nội dung công khai và luật bảo hiểm của game này.",
+  "Publishing switches the public minigame to {{game}}. Continue?":
+    "Xuất bản sẽ chuyển minigame công khai sang {{game}}. Tiếp tục?",
+  "Delete banner “{{name}}”? Its pool items will be removed too.":
+    "Xóa banner “{{name}}”? Các vật phẩm trong pool của nó cũng sẽ bị xóa theo.",
+  "Availability, public copy, and pity rules for this game.":
+    "Trạng thái hoạt động, nội dung công khai và luật bảo hiểm của game này.",
   "Availability, public copy, rates, and pity rules for this game.":
     "Trạng thái hoạt động, nội dung công khai, tỷ lệ và luật bảo hiểm của game này.",
   "1 · Status & copy": "1 · Trạng thái & nội dung",
@@ -1214,7 +1241,8 @@ const vi: Record<string, string> = {
   "Live now": "Đang hoạt động",
   Unsaved: "Chưa lưu",
   Draft: "Bản nháp",
-  "{{banners}} banners · {{items}} items": "{{banners}} banner · {{items}} vật phẩm",
+  "{{banners}} banners · {{items}} items":
+    "{{banners}} banner · {{items}} vật phẩm",
   "Save draft": "Lưu bản nháp",
   "Enable at least one banner before publishing the minigame.":
     "Hãy bật ít nhất một banner trước khi xuất bản minigame.",
@@ -1247,6 +1275,14 @@ const vi: Record<string, string> = {
     "Sau khi lượt 4★ hoặc 5★ trật phần thưởng quảng bá, lượt tiếp theo chắc chắn nhận.",
   "Assign 4★ and 5★ merch prizes for this specific banner. 3★ pulls use the shared souvenir pool.":
     "Gán phần thưởng merch 4★ và 5★ cho banner này. Lượt quay 3★ sẽ dùng kho quà lưu niệm chung.",
+  "Character wishes go live with exactly 1 featured 5★ character and 3 featured 4★ characters.":
+    "Banner nhân vật cần chính xác 1 nhân vật 5★ và 3 nhân vật 4★ nổi bật trước khi phát hành.",
+  "Weapon wishes go live with exactly 2 featured 5★ weapons and 5 featured 4★ weapons.":
+    "Banner vũ khí cần chính xác 2 vũ khí 5★ và 5 vũ khí 4★ nổi bật trước khi phát hành.",
+  "HSR banners support 1 featured 5★ primary and up to 3 featured 4★ rate-ups. 3★ pulls use the shared souvenir pool.":
+    "Banner HSR hỗ trợ 1 vật phẩm 5★ chính và tối đa 3 vật phẩm 4★ tăng tỉ lệ. Lượt quay 3★ dùng kho quà lưu niệm chung.",
+  "Add at least {{count}} active products to fill this banner's featured lineup.":
+    "Hãy thêm ít nhất {{count}} sản phẩm đang hoạt động để điền đủ đội hình nổi bật của banner này.",
   "Banner Prizes ({{count}})": "Phần thưởng banner ({{count}})",
   "Add merch ({{count}})": "Thêm merch ({{count}})",
   "Included ({{count}})": "Đã thêm ({{count}})",

@@ -77,30 +77,33 @@
 	const loaded = getContext('bannerLoaded');
 	const updateBannerListToShow = (showBeginner) => {
 		const config = getMerchConfig();
-		list = (config.banners || []).filter((banner) => banner.active).map((banner) => {
-			const poolItems = getMerchItems(banner.id);
-			const featuredItems = poolItems.filter((item) => item.featured);
-			const displayItems = [...(featuredItems.length ? featuredItems : poolItems)]
-				.sort((a, b) => b.rarity - a.rarity)
-				.slice(0, banner.display_limit || 3);
-			const featuredItem = displayItems[0] || poolItems[0];
-			return {
-				type: banner.kind === 'weapon' ? 'weapons' : 'events',
-				merch: true,
-				character: {
-					id: banner.id,
-					name: banner.name,
-					character: featuredItem?.name || '',
-					featuredItem,
-					merchItems: displayItems,
-					title: banner.name,
-					description: banner.description || config.settings.description,
-					endsAt: banner.ends_at || null,
-					kind: banner.kind,
-					theme: banner.theme || 'anemo'
-				}
-			};
-		});
+		list = (config.banners || [])
+			.filter((banner) => banner.active)
+			.map((banner) => {
+				const poolItems = getMerchItems(banner.id);
+				const featuredItems = poolItems.filter((item) => item.featured);
+				const defaultDisplayLimit = banner.kind === 'weapon' ? 7 : 4;
+				const displayItems = [...(featuredItems.length ? featuredItems : poolItems)]
+					.sort((a, b) => b.rarity - a.rarity)
+					.slice(0, banner.display_limit || defaultDisplayLimit);
+				const featuredItem = displayItems[0] || poolItems[0];
+				return {
+					type: banner.kind === 'weapon' ? 'weapons' : 'events',
+					merch: true,
+					character: {
+						id: banner.id,
+						name: banner.name,
+						character: featuredItem?.name || '',
+						featuredItem,
+						merchItems: displayItems,
+						title: banner.name,
+						description: banner.description || config.settings.description,
+						endsAt: banner.ends_at || null,
+						kind: banner.kind,
+						theme: banner.theme || 'anemo'
+					}
+				};
+			});
 		bannerList.set(list);
 		bannerActive.update((index) =>
 			Math.min(Math.max(Number.isInteger(index) ? index : 0, 0), Math.max(list.length - 1, 0))

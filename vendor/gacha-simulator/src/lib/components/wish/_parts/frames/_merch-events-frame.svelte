@@ -48,25 +48,19 @@
 	$: featuredItems = data.merchItems?.length
 		? data.merchItems
 		: data.featuredItem
-			? [data.featuredItem]
-			: [];
+		? [data.featuredItem]
+		: [];
 
 	$: primaryFeaturedName = featuredItems[0]?.name
 		? parseLocalizedText(featuredItems[0].name, $locale)
 		: title;
 
-	$: featuredRarity = Math.max(
-		0,
-		Math.min(5, Math.trunc(Number(featuredItems[0]?.rarity) || 0))
-	);
+	$: featuredRarity = Math.max(0, Math.min(5, Math.trunc(Number(featuredItems[0]?.rarity) || 0)));
 
-	$: title =
-		parseLocalizedText(data.title, $locale) ||
-		'Matsuri Shelf Wishes';
+	$: title = parseLocalizedText(data.title, $locale) || 'Matsuri Shelf Wishes';
 
 	$: description =
-		parseLocalizedText(data.description, $locale) ||
-		$t('wish.banner.wishDescription');
+		parseLocalizedText(data.description, $locale) || $t('wish.banner.wishDescription');
 
 	$: isWeapon = data.kind === 'weapon';
 	$: theme = data.theme || 'anemo';
@@ -78,11 +72,11 @@
 
 	$: featuredLabel = isWeapon
 		? featuredItems.length > 1
-			? 'Featured Weapons'
-			: 'Featured Weapon'
+			? $t('wish.banner.featuredWeapons')
+			: $t('wish.banner.featuredWeapon')
 		: featuredItems.length > 1
-			? 'Featured Characters'
-			: 'Featured Character';
+		? $t('wish.banner.featuredCharacters')
+		: $t('wish.banner.featuredCharacter');
 </script>
 
 <div
@@ -140,10 +134,7 @@
 			</div>
 
 			{#if featuredRarity > 0}
-				<div
-					class="merch-stars"
-					aria-label={`${featuredRarity}-star rarity`}
-				>
+				<div class="merch-stars" aria-label={`${featuredRarity}-star rarity`}>
 					{#each Array(featuredRarity) as _}
 						<i class="gi-star" aria-hidden="true" />
 					{/each}
@@ -184,8 +175,7 @@
 	}
 
 	.frame-content::before {
-		background:
-			radial-gradient(
+		background: radial-gradient(
 				circle at 36% 64%,
 				transparent 0 23%,
 				rgba(211, 196, 167, 0.22) 23.2% 23.5%,
@@ -206,28 +196,15 @@
 	}
 
 	.frame-content::after {
-		background-image:
-			repeating-linear-gradient(
+		background-image: repeating-linear-gradient(
 				90deg,
 				rgba(208, 196, 171, 0.06) 0 1px,
 				transparent 1px 52px
 			),
-			repeating-linear-gradient(
-				0deg,
-				rgba(208, 196, 171, 0.05) 0 1px,
-				transparent 1px 52px
-			);
+			repeating-linear-gradient(0deg, rgba(208, 196, 171, 0.05) 0 1px, transparent 1px 52px);
 		opacity: 0.34;
-		-webkit-mask-image: linear-gradient(
-			to right,
-			rgba(0, 0, 0, 0.9) 0 48%,
-			transparent 72%
-		);
-		mask-image: linear-gradient(
-			to right,
-			rgba(0, 0, 0, 0.9) 0 48%,
-			transparent 72%
-		);
+		-webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 0.9) 0 48%, transparent 72%);
+		mask-image: linear-gradient(to right, rgba(0, 0, 0, 0.9) 0 48%, transparent 72%);
 	}
 
 	h1,
@@ -260,9 +237,7 @@
 		border-radius: 1.3rem 0.25rem 0.25rem 1.3rem;
 		color: #fff;
 		line-height: 120%;
-		box-shadow:
-			0 calc(0.14 / 100 * var(--content-width))
-			calc(0.45 / 100 * var(--content-width))
+		box-shadow: 0 calc(0.14 / 100 * var(--content-width)) calc(0.45 / 100 * var(--content-width))
 			rgba(0, 0, 0, 0.16);
 		transform: translate(-1%, -2%);
 	}
@@ -350,9 +325,7 @@
 		left: 54%;
 		bottom: 8%;
 		width: 39%;
-		filter: drop-shadow(
-			0 0.3rem 0.5rem rgba(0, 0, 0, 0.55)
-		);
+		filter: drop-shadow(0 0.3rem 0.5rem rgba(0, 0, 0, 0.55));
 	}
 
 	.featured-stack {
@@ -404,9 +377,7 @@
 		color: #f5c84c;
 		font-size: calc(2.3 / 100 * var(--content-width));
 		line-height: 1;
-		text-shadow:
-			0 calc(0.12 / 100 * var(--content-width))
-			calc(0.35 / 100 * var(--content-width))
+		text-shadow: 0 calc(0.12 / 100 * var(--content-width)) calc(0.35 / 100 * var(--content-width))
 			rgba(91, 53, 7, 0.58);
 		-webkit-text-stroke: 0.02rem #b57617;
 	}
