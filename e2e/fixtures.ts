@@ -367,24 +367,22 @@ export async function mockSupabase(
         },
       ]);
     }
-    if (url.pathname.includes("/rest/v1/rpc/create_order"))
+    if (url.pathname.includes("/functions/v1/create-order"))
       return options.checkoutFails
-        ? json(route, { message: "Stock changed" }, 409)
-        : json(route, [
-            {
-              id: "40000000-0000-4000-8000-000000000001",
-              order_code: "A100",
-              customer_name: "Customer",
-              total_amount: 120000,
-              status: "pending",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              expires_at: new Date(Date.now() + 600000).toISOString(),
-              confirmed_at: null,
-              cancelled_at: null,
-              expired_at: null,
-            },
-          ]);
+        ? json(route, { error: "Stock changed" }, 409)
+        : json(route, {
+            id: "40000000-0000-4000-8000-000000000001",
+            order_code: "A100",
+            customer_name: "Customer",
+            total_amount: 120000,
+            status: "pending",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            expires_at: new Date(Date.now() + 600000).toISOString(),
+            confirmed_at: null,
+            cancelled_at: null,
+            expired_at: null,
+          });
     if (url.pathname.includes("/rest/v1/rpc/get_customer_order"))
       return json(route, []);
     if (url.pathname.includes("/functions/v1/notify-new-order"))

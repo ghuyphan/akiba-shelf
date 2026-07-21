@@ -17,7 +17,7 @@ import {
 } from "../utils/theme";
 import { getShopBranding, useDocumentBranding } from "../lib/branding";
 import type { Order, Product, StorefrontSection } from "../types/catalog";
-import { CatalogLocaleProvider, translations } from "../lib/i18n/catalogI18n";
+import { CatalogLocaleProvider, translations, useCatalogCopy } from "../lib/i18n/catalogI18n";
 import { PromotionProvider } from "../lib/promotionContext";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
@@ -27,7 +27,7 @@ import { ProductGrid } from "../components/catalog/ProductGrid";
 import { ProductDetailModal } from "../components/catalog/ProductDetailModal";
 import { SelectedItemPanel } from "../components/catalog/SelectedItemPanel";
 import { StackedFeatured } from "../components/catalog/StackedFeatured";
-import { useToast } from "../components/ui/ToastProvider";
+import { ToastLocalization, useToast } from "../components/ui/ToastProvider";
 import { loadCheckoutSession } from "../lib/offline/checkoutSession";
 import { loadShopSnapshot, saveShopSnapshot, loadCatalogSnapshot } from "../lib/offline/offline";
 import { usePersistentCart } from "../hooks/usePersistentCart";
@@ -67,6 +67,20 @@ const PaymentQrModal = lazyWithRetry("PaymentQrModal", () =>
     default: module.PaymentQrModal,
   })),
 );
+
+function CatalogToastLocalization() {
+  const copy = useCatalogCopy();
+  return (
+    <ToastLocalization
+      labels={{
+        successTitle: copy.toastSuccessTitle,
+        errorTitle: copy.toastErrorTitle,
+        infoTitle: copy.toastInfoTitle,
+        dismiss: copy.dismissNotification,
+      }}
+    />
+  );
+}
 
 export function CatalogPage() {
   const { shopSlug = "" } = useParams();
@@ -760,11 +774,14 @@ export function CatalogPage() {
   }
   if (shop === null)
     return (
-      <ShopUnavailablePage
-        hasLoadError={Boolean(shopLoadError)}
-        showDemoLink={shopSlug !== "demo-booth"}
-        onRetry={() => void loadShop()}
-      />
+      <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
+        <CatalogToastLocalization />
+        <ShopUnavailablePage
+          hasLoadError={Boolean(shopLoadError)}
+          showDemoLink={shopSlug !== "demo-booth"}
+          onRetry={() => void loadShop()}
+        />
+      </CatalogLocaleProvider>
     );
 
   if (isInitialLoading) {
@@ -778,6 +795,7 @@ export function CatalogPage() {
 
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
+      <CatalogToastLocalization />
       <PromotionProvider promotion={promotion}>
         <ErrorBoundary
           title={catalogCopy.crashTitle}

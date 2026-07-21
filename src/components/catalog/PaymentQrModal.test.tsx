@@ -9,6 +9,10 @@ const apiMocks = vi.hoisted(() => ({
   createOrder: vi.fn(),
   getCustomerOrder: vi.fn(),
   cancelCustomerOrder: vi.fn(),
+  isCheckoutOutcomeUnknownError: vi.fn((error: unknown) => {
+    void error;
+    return false;
+  }),
 }));
 const checkoutStorage = vi.hoisted(() => ({ current: null as unknown }));
 
@@ -135,6 +139,8 @@ describe("PaymentQrModal", () => {
     apiMocks.createOrder.mockReset();
     apiMocks.getCustomerOrder.mockReset();
     apiMocks.cancelCustomerOrder.mockReset();
+    apiMocks.isCheckoutOutcomeUnknownError.mockReset();
+    apiMocks.isCheckoutOutcomeUnknownError.mockReturnValue(false);
   });
 
   it("reviews the cart with quantities, prices, and total before ordering", () => {
@@ -319,6 +325,30 @@ describe("PaymentQrModal", () => {
     expect(
       screen.queryByRole("dialog", { name: "Reconnect to checkout" }),
     ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry safely" })).toBeEnabled();
+  });
+
+  it("keeps an ambiguous checkout identity when the customer closes the modal", async () => {
+    const unknownOutcome = new Error("The checkout result could not be verified.");
+    apiMocks.isCheckoutOutcomeUnknownError.mockImplementation(
+      (error: unknown) => error === unknownOutcome,
+    );
+    apiMocks.createOrder.mockRejectedValue(unknownOutcome);
+    const props = renderModal();
+
+    fireEvent.change(screen.getByPlaceholderText("e.g. Huy or Alice"), {
+      target: { value: "Huy" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
+
+    expect(
+      await screen.findByRole("dialog", { name: "Couldn’t reach checkout" }),
+    ).toBeInTheDocument();
+    const savedSession = checkoutStorage.current;
+    fireEvent.click(screen.getByRole("button", { name: "Keep shopping" }));
+
+    expect(props.onClose).toHaveBeenCalled();
+    expect(checkoutStorage.current).toBe(savedSession);
   });
 
   it("queues checkout without creating a local order when offline", async () => {

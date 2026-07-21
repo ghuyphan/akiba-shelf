@@ -6,6 +6,7 @@
 	import { data as charsDB } from '$lib/data/characters.json';
 	import positionToStyle from '$lib/helpers/cssPosition';
 	import { getBannerName } from '$lib/helpers/nameText';
+	import HighlightedBannerName from '$lib/components/utility/HighlightedBannerName.svelte';
 
 	export let data = {};
 	export let event2 = false;
@@ -17,11 +18,6 @@
 	$: ({ character, name, textOffset } = data);
 	$: vision = charsDB.find(({ name }) => name === character).vision;
 	$: featuredC = `--text-width: calc(${textOffset?.w || 30} / 100 * var(--content-width));`;
-
-	const highlightBannerName = (bannerName) => {
-		const splited = bannerName.split(' ');
-		return `<span class="${vision}-flat">${splited[0]}</span> ${splited.slice(1).join(' ')}`;
-	};
 
 	let bannerInfo;
 	onMount(() => {
@@ -39,7 +35,7 @@
 		{event2 ? ($locale === 'ja-JP' ? '2' : '— 2') : ''}
 	</div>
 	<h1 class="card-stroke" in:fly={{ x: 15, duration: 700 }}>
-		{@html highlightBannerName(bannerName)}
+		<HighlightedBannerName name={bannerName} highlightClass={`${vision}-flat`} />
 	</h1>
 
 	<div class="info" bind:this={bannerInfo} in:fly={{ x: 15, duration: 700 }}>

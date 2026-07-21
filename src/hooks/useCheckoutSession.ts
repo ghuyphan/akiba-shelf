@@ -3,6 +3,7 @@ import {
   cancelCustomerOrder,
   createOrder,
   getCustomerOrder,
+  isCheckoutOutcomeUnknownError,
 } from "../lib/api";
 import { getErrorMessage, isTransportError } from "../lib/errors";
 import {
@@ -107,7 +108,8 @@ export function useCheckoutSession({
           return order;
         })
         .catch((error: unknown) => {
-          const queued = isTransportError(error);
+          const queued =
+            isTransportError(error) || isCheckoutOutcomeUnknownError(error);
           persist({
             ...attempting,
             state: queued ? "queued" : "needs_review",

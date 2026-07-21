@@ -10,12 +10,19 @@ import { extname, relative, resolve, sep } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import { createOfflinePack } from "./scripts/offline-pack-identity.mjs";
 
 const gachaDevRoot = resolve(process.cwd(), ".gacha-dist");
 const hsrDevRoot = resolve(process.cwd(), ".hsr-gacha-dist");
 
+type DevelopmentOfflineAsset = {
+  path: string;
+  size: number;
+  sourcePath: string;
+};
+
 function listDevelopmentOfflineAssets(root: string, prefix: string) {
-  const files: { path: string; size: number }[] = [];
+  const files: DevelopmentOfflineAsset[] = [];
   const visit = (directory: string) => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
       const path = resolve(directory, entry.name);
@@ -24,6 +31,7 @@ function listDevelopmentOfflineAssets(root: string, prefix: string) {
         files.push({
           path: `/${prefix}/${relative(root, path).split(sep).join("/")}`,
           size: statSync(path).size,
+          sourcePath: path,
         });
       }
     }
@@ -31,6 +39,7 @@ function listDevelopmentOfflineAssets(root: string, prefix: string) {
   visit(root);
   return files;
 }
+
 // Keep the isolated simulator available at its production path during local development.
 const contentTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -130,18 +139,20 @@ function serveGachaInDevelopment(): Plugin {
         const pathname = new URL(request.url, "http://localhost").pathname;
         if (pathname === "/offline-assets.json") {
           try {
+            const genshinAssets = listDevelopmentOfflineAssets(
+              gachaDevRoot,
+              "gacha-simulator",
+            ).sort((a, b) => a.path.localeCompare(b.path));
+            const hsrAssets = listDevelopmentOfflineAssets(
+              hsrDevRoot,
+              "hsr-simulator",
+            ).sort((a, b) => a.path.localeCompare(b.path));
             const body = JSON.stringify({
-              version: 1,
+              version: 2,
               generatedAt: new Date().toISOString(),
               packs: {
-                genshin: listDevelopmentOfflineAssets(
-                  gachaDevRoot,
-                  "gacha-simulator",
-                ),
-                hsr: listDevelopmentOfflineAssets(
-                  hsrDevRoot,
-                  "hsr-simulator",
-                ),
+                genshin: createOfflinePack(genshinAssets),
+                hsr: createOfflinePack(hsrAssets),
               },
             });
             response.statusCode = 200;
@@ -318,13 +329,22 @@ export default defineConfig(({ command }) => ({
         ],
       },
       workbox: {
-        globIgnores: [
-          "404.html",
-          "**/HomePage-*.js",
-          "**/AuthPage-*.js",
-          "**/AuthCallbackPage-*.js",
-          "**/SetPasswordPage-*.js",
-        ],
+        // Precache only the static app bootstrap. Route modules and their
+        // dependencies are cached when visited, or captured by Save offline.
+        globPatterns:
+          command === "build"
+            ? [
+                "index.html",
+                "assets/index-*.{js,css}",
+                "assets/App-*.js",
+                "assets/PlatformMark-*.js",
+                "assets/pwa-*.js",
+                "assets/lazyWithRetry-*.js",
+                "assets/platformI18n-*.js",
+                "assets/supabase-*.js",
+                "assets/EmptyState-*.js",
+              ]
+            : [],
         importScripts: ["push-handlers.js"],
         navigateFallback: "index.html",
         navigateFallbackAllowlist: [
@@ -333,6 +353,19 @@ export default defineConfig(({ command }) => ({
         ],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              /\/assets\/.*\.(?:js|css)$/i.test(url.pathname),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "app-route-chunks-v1",
+              expiration: {
+                maxEntries: 80,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+              },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
           {
             // Keep Vite's module graph available for realistic offline-F5 testing.
             // These URLs do not exist in a production build.

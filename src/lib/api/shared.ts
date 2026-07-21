@@ -37,8 +37,12 @@ export async function extractEdgeFunctionError(
   error: unknown,
 ): Promise<string | null> {
   if (!(error instanceof FunctionsHttpError)) return null;
-  const body = await error.context.json();
-  return body && typeof body === "object" && typeof body.error === "string"
-    ? body.error
-    : null;
+  try {
+    const body = await error.context.json();
+    return body && typeof body === "object" && typeof body.error === "string"
+      ? body.error
+      : null;
+  } catch {
+    return null;
+  }
 }

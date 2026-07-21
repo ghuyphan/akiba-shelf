@@ -6,7 +6,7 @@ Matsuri is a touch-friendly storefront and live order platform for independent a
 
 - Multi-shop storefronts at `/s/:shopSlug`, with Matsuri platform pages kept separate from individual shop branding.
 - Responsive storefront with featured-product swipe deck, grid/list browsing, product details, and mobile cart sheet.
-- Server-authoritative ordering: totals and stock are validated inside the `create_order` Postgres function.
+- Server-authoritative ordering: the `create-order` Edge Function applies request-level abuse controls, then `create_order` validates totals and stock atomically in Postgres.
 - Configurable mix-and-match buy-X-get-Y promotions with cheapest-item discounts enforced during checkout.
 - VietQR payment flow with live order confirmation.
 - Realtime catalog and order updates through Supabase.
@@ -96,7 +96,7 @@ npx supabase functions deploy gacha-music-proxy
 - `/s/:shopSlug/play` — shop-specific gacha minigame
 - `/admin` — authenticated admin workspace
 
-Production Auth must use the deployed app URL as its Site URL (`https://matsuri.pro`) and allow `/auth/callback` and `/auth/set-password`. Its 404 redirect preserves safe relative routes, queries, and Auth fragments. Configure SMTP and email confirmation, set `PUBLIC_SITE_URL` to `https://matsuri.pro`, and deploy `invite-shop-member`, `notify-new-order`, and `gacha-music-proxy`. CAPTCHA and conservative Auth rate limits are recommended. End users never need Supabase Dashboard access.
+Production Auth must use the deployed app URL as its Site URL (`https://matsuri.pro`) and allow `/auth/callback` and `/auth/set-password`. Its 404 redirect preserves safe relative routes, queries, and Auth fragments. Configure SMTP and email confirmation, set `PUBLIC_SITE_URL` to `https://matsuri.pro`, set an independent `CHECKOUT_RATE_LIMIT_SALT`, and deploy `create-order`, `invite-shop-member`, `notify-new-order`, and `gacha-music-proxy`. CAPTCHA and conservative Auth rate limits are recommended. End users never need Supabase Dashboard access.
 
 ### Google sign-in
 
@@ -168,7 +168,7 @@ Core tables:
 - `order_items` — immutable product quantities and unit prices for each order.
 - `promotions` — per-shop buy/free quantities, activation, and repeat behavior; products opt into the active offer.
 
-The browser cannot directly insert orders or order items. `createOrder()` calls the `create_order` RPC, which locks requested product rows, rejects inactive/sold-out/insufficient stock, calculates the total from database prices, creates the order atomically, and immediately reserves inventory. Confirmation finalizes that reservation without deducting stock again. Customer/staff cancellation and expiry restore reserved stock exactly once. Customer recovery requires both the order ID and its recovery token; only the token hash is stored.
+The browser cannot directly insert orders or order items or invoke `create_order`. `createOrder()` calls the `create-order` Edge Function, which applies per-client reservation limits before its service-role client invokes the existing `create_order` RPC. The RPC locks requested product rows, rejects inactive/sold-out/insufficient stock, calculates the total from database prices, creates the order atomically, and immediately reserves inventory. Confirmation finalizes that reservation without deducting stock again. Customer/staff cancellation and expiry restore reserved stock exactly once. Customer recovery requires both the order ID and its recovery token; only the token hash is stored.
 
 Apply migrations in filename order. For a linked project:
 
@@ -214,9 +214,10 @@ Do not add an automatic auth-user trigger. Owners may manage staff; admins manag
 
 - Frontend: build with the three documented `VITE_*` values, then deploy `dist/`.
 - Database: review and apply `supabase/migrations` in order with `supabase db push`; pull requests never deploy schema.
-- Edge Functions: set `PUBLIC_SITE_URL`, then deploy `invite-shop-member`,
+- Edge Functions: set `PUBLIC_SITE_URL` and an independent
+  `CHECKOUT_RATE_LIMIT_SALT`, then deploy `create-order`, `invite-shop-member`,
   `notify-new-order`, and `gacha-music-proxy` separately after migrations. All
-  three restrict browser CORS to that configured origin.
+  four restrict browser CORS to that configured origin.
 - Secrets: set VAPID private material only with `supabase secrets set`; never expose it through Vite variables.
 
 ## Repository health

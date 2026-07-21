@@ -92,6 +92,11 @@ const productStyleOptions = [
   ["framed", "Framed", "Inset product photography"],
   ["playful", "Playful", "Colorful collectible cards"],
 ] as const;
+const inspectorTabs = [
+  ["layout", LayoutTemplate, "Layout"],
+  ["content", Type, "Content"],
+  ["style", Palette, "Style"],
+] as const;
 
 function normalizedOrder(order?: StorefrontSection[]) {
   return order?.length === allowedSections.length && allowedSections.every((item) => order.includes(item)) ? order : allowedSections;
@@ -127,6 +132,23 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   const { t } = usePlatformI18n();
   useEffect(() => { if (error) { toast.error(t(error), t("Could not publish")); setError(""); } }, [error, setError, t, toast]);
   const order = normalizedOrder(draft.layout_order);
+
+  function handleInspectorTabKeyDown(
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    currentTab: InspectorTab,
+  ) {
+    const currentIndex = inspectorTabs.findIndex(([value]) => value === currentTab);
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % inspectorTabs.length;
+    else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + inspectorTabs.length) % inspectorTabs.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = inspectorTabs.length - 1;
+    else return;
+    event.preventDefault();
+    setTab(inspectorTabs[nextIndex][0]);
+    const buttons = event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    buttons?.[nextIndex]?.focus();
+  }
 
   useEffect(() => { draftRef.current = settings; paymentDraftRef.current = payment; setDraft(settings); setPaymentDraft(payment); setHistory([]); setFuture([]); setError(""); }, [settings, payment, setError]);
 
@@ -472,10 +494,10 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
 
         {sidebarOpen && <>
           <div className="builder-tabs" role="tablist" aria-label={t("Builder tools")}>
-            {([['layout', LayoutTemplate, 'Layout'], ['content', Type, 'Content'], ['style', Palette, 'Style']] as const).map(([value, Icon, label]) => <button key={value} type="button" className={tab === value ? "active" : ""} onClick={() => setTab(value)}><Icon size={15} />{t(label)}</button>)}
+            {inspectorTabs.map(([value, Icon, label]) => <button key={value} id={`builder-tab-${value}`} type="button" role="tab" className={tab === value ? "active" : ""} aria-selected={tab === value} aria-controls={`builder-panel-${value}`} tabIndex={tab === value ? 0 : -1} onClick={() => setTab(value)} onKeyDown={(event) => handleInspectorTabKeyDown(event, value)}><Icon size={15} />{t(label)}</button>)}
           </div>
 
-          <div className="builder-inspector">
+          <div className="builder-inspector" id={`builder-panel-${tab}`} role="tabpanel" aria-labelledby={`builder-tab-${tab}`} tabIndex={0}>
             {tab === "layout" && <>
               <div className="builder-section-heading"><div><strong>{t("Page sections")}</strong><small>{t("Drag to reorder the public page.")}</small></div></div>
               <div className="designer-block-list">
@@ -605,7 +627,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
               <div className="designer-style-section-heading designer-custom-colors-heading"><strong>{t("Custom colors")}</strong><small>{t("Make this palette completely yours.")}</small></div>
               <div className="designer-color-grid">{([['theme_primary','Primary',DEFAULT_STOREFRONT_PALETTE.primary],['theme_secondary','Dark',DEFAULT_STOREFRONT_PALETTE.secondary],['theme_accent','Accent',DEFAULT_STOREFRONT_PALETTE.accent],['theme_background','Page',DEFAULT_STOREFRONT_PALETTE.background]] as const).map(([key,label,fallback]) => <label key={key}><span>{t(label)}</span><div><input type="color" value={draft[key] ?? fallback} onChange={(event) => update(key, event.target.value)} /><code>{draft[key] ?? fallback}</code></div></label>)}</div>
               <div className="designer-setting-group"><div><Palette size={16} /><span><strong>{t("Corner radius")}</strong><small>{t("{{radius}}px across storefront cards", { radius: draft.corner_radius ?? 16 })}</small></span></div><input type="range" min="0" max="32" step="1" value={draft.corner_radius ?? 16} onChange={(event) => update("corner_radius", Number(event.target.value))} /></div>
-              <div className="designer-locale"><Languages size={17} /><span><strong>{t("Storefront language")}</strong><small>{t("Customer-facing interface copy.")}</small></span><div><button type="button" className={(draft.catalog_locale ?? "en") === "en" ? "active" : ""} onClick={() => update("catalog_locale", "en")}>EN</button><button type="button" className={draft.catalog_locale === "vi" ? "active" : ""} onClick={() => update("catalog_locale", "vi")}>VI</button></div></div>
+              <div className="designer-locale"><Languages size={17} /><span><strong>{t("Storefront language")}</strong><small>{t("Customer-facing interface copy.")}</small></span><div><button type="button" className={(draft.catalog_locale ?? "en") === "en" ? "active" : ""} aria-pressed={(draft.catalog_locale ?? "en") === "en"} onClick={() => update("catalog_locale", "en")}>EN</button><button type="button" className={draft.catalog_locale === "vi" ? "active" : ""} aria-pressed={draft.catalog_locale === "vi"} onClick={() => update("catalog_locale", "vi")}>VI</button></div></div>
             </>}
 
           </div>
@@ -617,7 +639,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
         <div className="builder-toolbar">
           <div><strong>{t(sectionMeta[selected].title)}</strong><small>{t(hasChanges ? "Unpublished changes" : "Published storefront")}</small></div>
           <div className="builder-toolbar-controls">
-            <div className="builder-device-switcher" aria-label={t("Preview size")}><button type="button" className={device === "desktop" ? "active" : ""} onClick={() => changeDevice("desktop")}><Monitor size={16} />{t("Desktop")}</button><button type="button" className={device === "phone" ? "active" : ""} onClick={() => changeDevice("phone")}><Smartphone size={16} />{t("Phone")}</button></div>
+            <div className="builder-device-switcher" aria-label={t("Preview size")}><button type="button" className={device === "desktop" ? "active" : ""} aria-pressed={device === "desktop"} onClick={() => changeDevice("desktop")}><Monitor size={16} />{t("Desktop")}</button><button type="button" className={device === "phone" ? "active" : ""} aria-pressed={device === "phone"} onClick={() => changeDevice("phone")}><Smartphone size={16} />{t("Phone")}</button></div>
             <div className="builder-zoom-controls" aria-label={t("Preview zoom")}><button type="button" onClick={() => adjustZoom(-10)} disabled={displayedZoom <= 20} aria-label={t("Zoom out")}><Minus size={14} /></button><button type="button" className={previewZoom === "fit" ? "active" : ""} onClick={fitPreview} aria-label={t("Fit preview")}><Maximize2 size={13} /><span>{displayedZoom}%</span></button><button type="button" onClick={() => adjustZoom(10)} disabled={displayedZoom >= 150} aria-label={t("Zoom in")}><Plus size={14} /></button></div>
           </div>
           <div className="builder-history-actions">

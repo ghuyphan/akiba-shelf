@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
 import { SOCIAL_QR_COLORS } from "../../utils/social";
@@ -12,6 +12,7 @@ type SocialQrCardProps = {
   brandColor?: string;
   brandGradient?: string;
   showLabel?: boolean;
+  deferOnPhone?: boolean;
 };
 
 const DEFAULT_QR_COLORS: [string, string, string] = ["#486a55", "#5f8d55", "#17233c"];
@@ -124,29 +125,57 @@ function profileName(url: string, fallback: string) {
   }
 }
 
-export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradient, showLabel = true }: SocialQrCardProps) {
+export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradient, showLabel = true, deferOnPhone = false }: SocialQrCardProps) {
   const copy = useCatalogCopy();
   const [qrSrc, setQrSrc] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const generationRef = useRef<Promise<void> | null>(null);
+  const generationTokenRef = useRef(0);
   const platform = label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const handle = profileName(url, label);
   const qrColors = SOCIAL_QR_COLORS[label] ?? DEFAULT_QR_COLORS;
 
-  useEffect(() => {
-    let cancelled = false;
-
-    generateSocialQr(url, qrColors, logoUrl)
+  const ensureQr = useCallback(() => {
+    if (qrSrc || generationRef.current) return generationRef.current;
+    const token = ++generationTokenRef.current;
+    const generation = generateSocialQr(url, qrColors, logoUrl)
       .then((src) => {
-        if (!cancelled) setQrSrc(src);
+        if (generationTokenRef.current === token) setQrSrc(src);
       })
       .catch(() => {
-        if (!cancelled) setQrSrc("");
+        if (generationTokenRef.current === token) setQrSrc("");
+      })
+      .finally(() => {
+        if (generationTokenRef.current === token) generationRef.current = null;
       });
+    generationRef.current = generation;
+    return generation;
+  }, [logoUrl, qrColors, qrSrc, url]);
 
+  useEffect(() => {
+    generationTokenRef.current += 1;
+    generationRef.current = null;
+    setQrSrc("");
     return () => {
-      cancelled = true;
+      generationTokenRef.current += 1;
+      generationRef.current = null;
     };
   }, [logoUrl, qrColors, url]);
+
+  useEffect(() => {
+    const phone = window.matchMedia("(max-width: 760px)");
+    if (!phone.matches || !deferOnPhone) void ensureQr();
+    const handleBreakpoint = (event: MediaQueryListEvent) => {
+      if (!event.matches) void ensureQr();
+    };
+    phone.addEventListener("change", handleBreakpoint);
+    return () => phone.removeEventListener("change", handleBreakpoint);
+  }, [deferOnPhone, ensureQr]);
+
+  const openQr = () => {
+    void ensureQr();
+    setIsModalOpen(true);
+  };
 
   const accentGradient = brandGradient ?? brandColor ?? undefined;
   const cardStyle = accentGradient
@@ -165,12 +194,12 @@ export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradi
         style={{ ...cardStyle, cursor: "pointer" }}
         onClick={(e) => {
           e.stopPropagation();
-          setIsModalOpen(true);
+          openQr();
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            setIsModalOpen(true);
+            openQr();
           }
         }}
       >
@@ -189,6 +218,7 @@ export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradi
         onClose={() => setIsModalOpen(false)}
         className="social-qr-zoom-modal"
         mobileSheet
+        closeLabel={copy.closeModal}
       >
         <div className="social-qr-zoom-content" onClick={(e) => e.stopPropagation()}>
           <div className="social-qr-zoom-icon" style={brandColor ? { color: brandColor } : undefined}>

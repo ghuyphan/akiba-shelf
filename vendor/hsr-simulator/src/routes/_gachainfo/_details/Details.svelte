@@ -15,7 +15,15 @@
 	import ItemCard from './_item-card.svelte';
 	import Table from './_table.svelte';
 
-	let { type, bannerName, bannerID, rateup = [], merchItems = [], isMerch = false } = $activeWarp;
+	let {
+		type,
+		bannerName,
+		bannerID,
+		rateup = [],
+		merchItems = [],
+		isMerch = false,
+		description = ''
+	} = $activeWarp;
 	const { featured } = identifyBanner(bannerID);
 	const standardCharacters = (regularConfig?.regular || regularConfig)?.[0]?.characters || [];
 	const getItemDetails = (name, itemType) =>
@@ -133,6 +141,8 @@
 		bannerName={nameOfbanner}
 		bannerType={type}
 		data={{ drop5char, drop4char, drop5lc, drop4lc }}
+		{isMerch}
+		merchDescription={description}
 	/>
 
 	<h2>{$t('details.entityList')}</h2>

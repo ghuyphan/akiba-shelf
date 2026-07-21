@@ -5,6 +5,7 @@ import "./styles/legacy.css";
 import { resetDocumentBranding } from "./lib/branding";
 import { hydrateInitialPageTheme } from "./utils/theme";
 import { restoreRedirect } from "./lib/auth/authUrls";
+import { getRoutePrefetchTarget } from "./lib/routePrefetch";
 
 restoreRedirect();
 hydrateInitialPageTheme();
@@ -12,18 +13,15 @@ resetDocumentBranding();
 
 // Route-aware page chunk prefetching
 const pathname = window.location.pathname;
-const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-const appRelativePath = base && pathname.startsWith(`${base}/`)
-  ? pathname.slice(base.length)
-  : pathname;
+const prefetchTarget = getRoutePrefetchTarget(pathname, import.meta.env.BASE_URL);
 
-if (appRelativePath.startsWith("/s/")) {
+if (prefetchTarget === "catalog") {
   void import("./pages/CatalogPage").catch(() => {});
-} else if (appRelativePath === "/admin") {
+} else if (prefetchTarget === "admin") {
   void import("./pages/AdminPage").catch(() => {});
-} else if (appRelativePath === "/dashboard") {
+} else if (prefetchTarget === "dashboard") {
   void import("./pages/DashboardPage").catch(() => {});
-} else if (appRelativePath === "/auth") {
+} else if (prefetchTarget === "auth") {
   void import("./pages/AuthPage").catch(() => {});
 }
 

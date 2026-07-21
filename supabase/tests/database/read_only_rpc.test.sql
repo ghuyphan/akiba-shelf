@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(20);
 
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values
 ('40000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','categories-staff@test.local','',now(),now(),now()),
@@ -45,6 +45,8 @@ select is_empty(
 );
 select ok(has_function_privilege('anon','public.get_public_product_categories(uuid)','execute'),'anonymous can execute public product categories');
 select ok(not has_function_privilege('anon','public.get_order_status_counts(uuid,timestamptz,timestamptz)','execute'),'anonymous cannot execute order status counts');
+select ok(not has_function_privilege('anon','public.create_order(text,text,jsonb,uuid,text)','execute'),'anonymous cannot invoke the internal order transaction');
+select ok(not has_function_privilege('anon','public.create_order_rate_limited(text,text,jsonb,uuid,text,text)','execute'),'anonymous cannot bypass the checkout Edge Function');
 
 set local role authenticated;
 set local request.jwt.claim.sub='40000000-0000-4000-8000-000000000002';
@@ -59,6 +61,8 @@ select is_empty(
 );
 select ok(has_function_privilege('authenticated','public.get_public_product_categories(uuid)','execute'),'authenticated can execute public product categories');
 select ok(has_function_privilege('authenticated','public.get_order_status_counts(uuid,timestamptz,timestamptz)','execute'),'authenticated can execute order status counts');
+select ok(not has_function_privilege('authenticated','public.create_order(text,text,jsonb,uuid,text)','execute'),'authenticated users cannot invoke the internal order transaction');
+select ok(not has_function_privilege('authenticated','public.create_order_rate_limited(text,text,jsonb,uuid,text,text)','execute'),'authenticated users cannot bypass the checkout Edge Function');
 select is(
   public.get_order_status_counts('41000000-0000-4000-8000-000000000001'),
   '{"pending":0,"confirmed":0,"cancelled":0,"expired":0,"all":0}'::jsonb,
@@ -82,6 +86,8 @@ select is(
 );
 
 set local role postgres;
+select ok(has_function_privilege('service_role','public.create_order(text,text,jsonb,uuid,text)','execute'),'service role can invoke the internal order transaction');
+select ok(has_function_privilege('service_role','public.create_order_rate_limited(text,text,jsonb,uuid,text,text)','execute'),'service role can invoke the checkout wrapper');
 update public.shops set active=false where id='41000000-0000-4000-8000-000000000001';
 set local role authenticated;
 set local request.jwt.claim.sub='40000000-0000-4000-8000-000000000001';

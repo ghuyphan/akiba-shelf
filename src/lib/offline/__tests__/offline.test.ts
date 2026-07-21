@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   loadCart,
   loadCatalogSnapshot,
+  replaceCompleteCatalogSnapshot,
   saveCart,
   saveCatalogSnapshot,
 } from "../offline";
@@ -33,6 +34,38 @@ describe("offline cart persistence", () => {
       products: [product],
       complete: true,
     });
+  });
+
+  it("reconciles an authoritative refresh only into complete snapshots", () => {
+    const removedProduct = { ...product, id: "removed", item_code: "REMOVED" };
+    saveCatalogSnapshot(
+      { products: [product, removedProduct], booth: defaultBooth },
+      "complete-shop",
+      { replaceProducts: true, complete: true },
+    );
+    saveCatalogSnapshot(
+      { products: [product, removedProduct], booth: defaultBooth },
+      "partial-shop",
+    );
+
+    expect(
+      replaceCompleteCatalogSnapshot(
+        { products: [product], booth: defaultBooth },
+        "complete-shop",
+      ),
+    ).toBe(true);
+    expect(
+      replaceCompleteCatalogSnapshot(
+        { products: [product], booth: defaultBooth },
+        "partial-shop",
+      ),
+    ).toBe(false);
+
+    expect(loadCatalogSnapshot("complete-shop")?.products).toEqual([product]);
+    expect(loadCatalogSnapshot("partial-shop")?.products).toEqual([
+      product,
+      removedProduct,
+    ]);
   });
 
   it("requires a complete catalog before claiming a storefront is offline-ready", () => {

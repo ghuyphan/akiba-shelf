@@ -147,24 +147,27 @@ export async function ensureOfflineNavigationReady() {
   if (!registration.active && !navigator.serviceWorker.controller) {
     throw new Error("Offline navigation could not be enabled in this browser.");
   }
-  if (import.meta.env.DEV && "caches" in window) {
-    const developmentAssetPath =
-      /^\/(?:@vite\/|@vite-plugin-pwa\/|@react-refresh(?:$|\?)|@fs\/|src\/|node_modules\/|vendor\/|brand\/)/;
+  if ("caches" in window) {
+    const offlineAssetPath = import.meta.env.DEV
+      ? /^\/(?:@vite\/|@vite-plugin-pwa\/|@react-refresh(?:$|\?)|@fs\/|src\/|node_modules\/|vendor\/|brand\/)/
+      : /\/assets\/.*\.(?:js|css)$/i;
     const urls = new Set(
       performance
         .getEntriesByType("resource")
         .map((entry) => entry.name)
         .filter((value) => {
           const url = new URL(value, location.href);
-          return url.origin === location.origin && developmentAssetPath.test(url.pathname);
+          return url.origin === location.origin && offlineAssetPath.test(url.pathname);
         }),
     );
     document.querySelectorAll<HTMLScriptElement>("script[src]").forEach((script) => {
       const url = new URL(script.src, location.href);
-      if (url.origin === location.origin && developmentAssetPath.test(url.pathname))
+      if (url.origin === location.origin && offlineAssetPath.test(url.pathname))
         urls.add(url.href);
     });
-    const cache = await caches.open("vite-dev-app-shell");
+    const cache = await caches.open(
+      import.meta.env.DEV ? "vite-dev-app-shell" : "app-route-chunks-v1",
+    );
     await Promise.all(
       [...urls].map(async (url) => {
         const request = new Request(url);

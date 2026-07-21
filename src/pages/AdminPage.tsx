@@ -114,9 +114,20 @@ export function AdminPage() {
 
   const orderRequestRef = useRef(0);
   const catalogRequestRef = useRef(0);
+  const catalogLoadRef = useRef<{
+    shopId: string;
+    promise: Promise<void>;
+  } | null>(null);
+  const orderLoadRef = useRef<{
+    key: string;
+    promise: Promise<void>;
+  } | null>(null);
+  const loadedCatalogShopRef = useRef("");
   const orderPageRef = useRef(orderPage);
   const orderFilterRef = useRef(orderFilter);
   const ordersTodayOnlyRef = useRef(ordersTodayOnly);
+  const loadedOrderQueryRef = useRef("");
+  const loadedOrderCountScopeRef = useRef("");
   const tRef = useRef(t);
   const lastLocalWriteRef = useRef(0);
   const lowStockCount = useMemo(
@@ -143,6 +154,11 @@ export function AdminPage() {
     setPromotion(defaultPromotion);
     setWorkspaceLoadFailed(false);
     setIsInitialLoading(true);
+    loadedOrderQueryRef.current = "";
+    loadedOrderCountScopeRef.current = "";
+    loadedCatalogShopRef.current = "";
+    catalogLoadRef.current = null;
+    orderLoadRef.current = null;
   }, [shopId]);
   useEffect(() => {
     orderPageRef.current = orderPage;
@@ -158,33 +174,53 @@ export function AdminPage() {
     lastLocalWriteRef.current = Date.now();
   }, []);
 
-  const reloadCatalogAdmin = useCallback(async () => {
+  const reloadCatalogAdmin = useCallback(() => {
+    if (catalogLoadRef.current?.shopId === shopId)
+      return catalogLoadRef.current.promise;
     const requestId = ++catalogRequestRef.current;
     const requestedShopId = shopId;
     setCatalogLoading(true);
-    try {
-      const catalog = await getAdminCatalogData(shopId);
-      if (requestId !== catalogRequestRef.current || requestedShopId !== shopId)
-        return;
-      setBooth(catalog.booth);
-      setPayment(catalog.payment);
-      setPromotion(catalog.promotion);
-      setProducts(catalog.products);
-      setSelectedProduct((current) => {
-        if (!current) return undefined;
-        return catalog.products.find((p) => p.id === current.id);
+    const promise = getAdminCatalogData(shopId)
+      .then((catalog) => {
+        if (
+          requestId !== catalogRequestRef.current ||
+          requestedShopId !== shopId
+        )
+          return;
+        setBooth(catalog.booth);
+        setPayment(catalog.payment);
+        setPromotion(catalog.promotion);
+        setProducts(catalog.products);
+        loadedCatalogShopRef.current = shopId;
+        setSelectedProduct((current) => {
+          if (!current) return undefined;
+          return catalog.products.find((p) => p.id === current.id);
+        });
+      })
+      .finally(() => {
+        if (requestId === catalogRequestRef.current) setCatalogLoading(false);
+        if (catalogLoadRef.current?.promise === promise)
+          catalogLoadRef.current = null;
       });
-    } finally {
-      if (requestId === catalogRequestRef.current) setCatalogLoading(false);
-    }
+    catalogLoadRef.current = { shopId, promise };
+    return promise;
   }, [shopId]);
 
   const reloadOrders = useCallback(
     async (refreshCounts = false) => {
       const page = orderPageRef.current;
+      const loadKey = [
+        shopId,
+        page,
+        orderFilterRef.current,
+        ordersTodayOnlyRef.current,
+        refreshCounts,
+      ].join(":");
+      if (orderLoadRef.current?.key === loadKey)
+        return orderLoadRef.current.promise;
       const requestId = ++orderRequestRef.current;
       setOrdersLoading(true);
-      try {
+      const promise = (async () => {
         // "Today" follows the staff's local day, recomputed on every fetch so an
         // open admin session rolls over correctly at midnight.
         let createdAfter: string | undefined;
@@ -217,10 +253,26 @@ export function AdminPage() {
         }
         setOrders(result.orders);
         setOrderTotal(result.total);
-        if (counts) setOrderCounts(counts);
-      } finally {
+        loadedOrderQueryRef.current = [
+          shopId,
+          page,
+          orderFilterRef.current,
+          ordersTodayOnlyRef.current,
+        ].join(":");
+        if (counts) {
+          setOrderCounts(counts);
+          loadedOrderCountScopeRef.current = [
+            shopId,
+            ordersTodayOnlyRef.current,
+          ].join(":");
+        }
+      })().finally(() => {
         if (requestId === orderRequestRef.current) setOrdersLoading(false);
-      }
+        if (orderLoadRef.current?.promise === promise)
+          orderLoadRef.current = null;
+      });
+      orderLoadRef.current = { key: loadKey, promise };
+      return promise;
     },
     [shopId],
   );
@@ -298,8 +350,8 @@ export function AdminPage() {
   ]);
 
   useEffect(() => {
-    if (!canManageCatalog) return;
-    if (isInitialLoading) return;
+    if (!canManageCatalog || isInitialLoading) return;
+    if (loadedCatalogShopRef.current === shopId) return;
 
     reloadCatalogAdmin().catch((error) => {
       if (isSessionNoise(error)) return;
@@ -308,11 +360,13 @@ export function AdminPage() {
         t("Admin unavailable"),
       );
     });
-  }, [canManageCatalog, isInitialLoading, reloadCatalogAdmin, t, toast]);
+  }, [canManageCatalog, isInitialLoading, reloadCatalogAdmin, shopId, t, toast]);
 
   useEffect(() => {
     if (!isAuthed) return;
     if (isInitialLoading) return;
+    const queryKey = [shopId, orderPage, orderFilter, ordersTodayOnly].join(":");
+    if (loadedOrderQueryRef.current === queryKey) return;
 
     reloadOrders().catch((error) => {
       if (isSessionNoise(error)) return;
@@ -323,6 +377,7 @@ export function AdminPage() {
     });
   }, [
     isAuthed,
+    shopId,
     orderFilter,
     ordersTodayOnly,
     orderPage,
@@ -335,6 +390,8 @@ export function AdminPage() {
   useEffect(() => {
     if (!isAuthed) return;
     if (isInitialLoading) return;
+    const countScope = [shopId, ordersTodayOnly].join(":");
+    if (loadedOrderCountScopeRef.current === countScope) return;
 
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
@@ -350,7 +407,10 @@ export function AdminPage() {
           }
         : {},
     )
-      .then(setOrderCounts)
+      .then((counts) => {
+        setOrderCounts(counts);
+        loadedOrderCountScopeRef.current = countScope;
+      })
       .catch((error) => {
         if (isSessionNoise(error)) return;
         toast.error(

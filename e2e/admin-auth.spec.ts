@@ -91,6 +91,43 @@ test("allows authorized staff into orders without restricted settings", async ({
   await expect(page.getByRole("button", { name: /Settings/ })).toHaveCount(0);
 });
 
+test("loads the initial owner workspace without duplicate requests", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-chromium");
+  const requestCounts = {
+    catalog: 0,
+    orders: 0,
+    counts: 0,
+  };
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.pathname.endsWith("/rpc/get_admin_products"))
+      requestCounts.catalog += 1;
+    else if (url.pathname.endsWith("/rest/v1/orders"))
+      requestCounts.orders += 1;
+    else if (url.pathname.endsWith("/rpc/get_order_status_counts"))
+      requestCounts.counts += 1;
+  });
+
+  await mockSupabase(page, { staffRole: "owner" });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Orders", exact: true }),
+  ).toBeVisible();
+
+  await expect
+    .poll(() => requestCounts)
+    .toEqual({
+      catalog: 1,
+      orders: 1,
+      counts: 1,
+    });
+});
+
 test("highlights the default Orders navigation tab", async ({ page }) => {
   await mockSupabase(page, { staffRole: "owner" });
   await page.goto("./admin");

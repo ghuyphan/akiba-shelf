@@ -74,6 +74,7 @@ export function DashboardEditShopDialog({
       isOpen={shop !== null}
       onClose={onClose}
       className="edit-shop-modal"
+      closeLabel={t("Close modal")}
     >
       <form onSubmit={handleSubmit} className="admin-form dashboard-edit-form">
         <div className="dashboard-edit-intro">

@@ -26,6 +26,12 @@ describe.skipIf(!run)("database concurrency", () => {
   let staffUserId = "";
   let staff: ReturnType<typeof createClient>;
 
+  const checkout = (args: Record<string, unknown>) =>
+    admin.rpc("create_order_rate_limited", {
+      ...args,
+      p_fingerprint_hash: "a".repeat(64),
+    });
+
   beforeAll(async () => {
     const { data: created, error: userError } =
       await admin.auth.admin.createUser({
@@ -97,22 +103,22 @@ describe.skipIf(!run)("database concurrency", () => {
       p_recovery_token: token,
     };
     const retries = await Promise.all([
-      customer.rpc("create_order", args),
-      customer.rpc("create_order", args),
-      customer.rpc("create_order", args),
+      checkout(args),
+      checkout(args),
+      checkout(args),
     ]);
     expect(retries.every((result) => !result.error)).toBe(true);
     expect(new Set(retries.map((result) => result.data?.[0]?.id)).size).toBe(1);
 
     const competing = await Promise.all([
-      customer.rpc("create_order", {
+      checkout({
         ...args,
         p_customer_name: `test-${suffix}-a`,
         p_client_request_id: crypto.randomUUID(),
         p_recovery_token: `${crypto.randomUUID()}${crypto.randomUUID()}`,
         p_items: [{ product_id: productId, quantity: 3 }],
       }),
-      customer.rpc("create_order", {
+      checkout({
         ...args,
         p_customer_name: `test-${suffix}-b`,
         p_client_request_id: crypto.randomUUID(),
@@ -135,7 +141,7 @@ describe.skipIf(!run)("database concurrency", () => {
       .update({ quantity_available: 2, stock_status: "limited" })
       .eq("id", productId);
     const recoveryToken = `${crypto.randomUUID()}${crypto.randomUUID()}`;
-    const { data, error } = await customer.rpc("create_order", {
+    const { data, error } = await checkout({
       p_shop_slug: shopSlug,
       p_customer_name: `test-${suffix}-terminal`,
       p_items: [{ product_id: productId, quantity: 1 }],
@@ -179,7 +185,7 @@ describe.skipIf(!run)("database concurrency", () => {
       .eq("id", productId);
     if (priceError) throw priceError;
 
-    const { data, error } = await customer.rpc("create_order", {
+    const { data, error } = await checkout({
       p_shop_slug: shopSlug,
       p_customer_name: `test-${suffix}-sale`,
       p_items: [{ product_id: productId, quantity: 1 }],

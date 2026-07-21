@@ -3,16 +3,13 @@
 	import { t } from 'svelte-i18n';
 	import { fatePoint, selectedCourse } from '$lib/store/stores';
 	import positionToStyle from '$lib/helpers/cssPosition';
+	import HighlightedBannerName from '$lib/components/utility/HighlightedBannerName.svelte';
 
 	export let data = {};
 	const { featured, rateup, textOffset } = data;
 	const w = textOffset?.featured?.w || 29;
 	const feturedW = `--text-width: calc(${w} / 100 * var(--content-width));`;
 
-	const highlightBannerName = (bannerName) => {
-		const splited = bannerName.split(' ');
-		return `<span class="epitome-flat">${splited[0]}</span> ${splited.slice(1).join(' ')}`;
-	};
 </script>
 
 <div class="frame-content">
@@ -20,7 +17,10 @@
 		{$t('wish.banner.weapons')}
 	</div>
 	<h1 in:fly={{ x: 10, duration: 700 }}>
-		{@html highlightBannerName($t(`wish.banner.name.epitome-invocation`))}
+		<HighlightedBannerName
+			name={$t('wish.banner.name.epitome-invocation')}
+			highlightClass="epitome-flat"
+		/>
 	</h1>
 
 	<div class="info" in:fly={{ x: 10, duration: 700 }}>

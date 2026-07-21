@@ -35,7 +35,7 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
   const isSoldOut = displayedProduct.quantity_available <= 0 || displayedProduct.stock_status === "sold_out";
 
   return (
-    <Modal title={copy.itemDetails} isOpen={Boolean(product)} onClose={onClose} className="product-detail-modal" mobileSheet>
+    <Modal title={copy.itemDetails} isOpen={Boolean(product)} onClose={onClose} className="product-detail-modal" mobileSheet closeLabel={copy.closeModal}>
       <div className="product-detail-layout">
         <div className="product-detail-gallery">
           <div className="product-detail-main-image">

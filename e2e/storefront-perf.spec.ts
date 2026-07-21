@@ -6,20 +6,15 @@ test("production storefront starts quickly on a slow uncached connection", async
   context,
 }) => {
   test.setTimeout(120000);
-  // Mock Supabase calls
   await mockSupabase(page);
-
-  // Clear cookies and local storage to simulate a fresh first load
   await context.clearCookies();
-  await page.goto("./s/akiba-shelf");
-  await page.evaluate(() => localStorage.clear());
-  await page.goto("about:blank");
+  await page.addInitScript(() => localStorage.clear());
 
-  // Attach CDP session to throttle network
   const client = await context.newCDPSession(page);
   await client.send("Network.enable");
+  await client.send("Network.setCacheDisabled", { cacheDisabled: true });
 
-  // Emulate moderate slow network conditions for dev mode:
+  // Measure a cold production load on a constrained mobile-class connection:
   // - Latency: 150ms
   // - Download: 1200 kb/s (150,000 B/s)
   // - Upload: 1200 kb/s (150,000 B/s)
@@ -30,7 +25,6 @@ test("production storefront starts quickly on a slow uncached connection", async
     uploadThroughput: 150_000,
   });
 
-  // Track network request start times
   const requestStartTimes = new Map<string, number>();
   page.on("request", (request) => {
     const url = request.url();
@@ -42,14 +36,13 @@ test("production storefront starts quickly on a slow uncached connection", async
     }
   });
 
-  // Navigate to the storefront
   const startTime = Date.now();
   await page.goto("./s/akiba-shelf");
 
-  // Wait for the catalog to finish loading (specifically waiting for products to be visible)
   await expect(page.locator(".product-grid")).toBeVisible({ timeout: 60000 });
   const loadDuration = Date.now() - startTime;
   console.log(`[Perf Test] Page fully loaded in ${loadDuration}ms`);
+  expect(loadDuration).toBeLessThan(15000);
 
   await expect(page.locator("script[src*='src/main.tsx']")).toHaveCount(0);
 

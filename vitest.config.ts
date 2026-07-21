@@ -16,13 +16,15 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      // Ratchet floors measured 2026-07-17: lines 6.98, branches 52.5,
-      // functions 26.3, statements 6.98 (vendor simulators sit at 0%).
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/test/**", "src/**/*.d.ts"],
+      // Keep the ratchet scoped to application source, not generated builds,
+      // vendored simulators, scripts, or Playwright infrastructure.
       thresholds: {
-        lines: 5,
-        functions: 22,
-        statements: 5,
-        branches: 45,
+        lines: 20,
+        functions: 25,
+        statements: 20,
+        branches: 55,
       },
     },
   },

@@ -51,6 +51,7 @@ export function BoothDetailsModal({
       onClose={onClose}
       className="booth-info-modal-container booth-modal-redesign"
       mobileSheet
+      closeLabel={copy.closeModal}
     >
       <div className="booth-info-modal booth-modal-content">
         <div className="booth-modal-hero">

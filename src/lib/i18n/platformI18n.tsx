@@ -1312,6 +1312,12 @@ const vi: Record<string, string> = {
   "Add as 3★ item": "Thêm làm vật phẩm 3★",
   "No available merch products to add as 3★ items.":
     "Không có sản phẩm merch nào khả dụng để thêm làm vật phẩm 3★.",
+  Done: "Hoàn tất",
+  "Something went wrong": "Đã xảy ra lỗi",
+  Notice: "Thông báo",
+  "Dismiss notification": "Đóng thông báo",
+  "Close modal": "Đóng hộp thoại",
+  "Admin sections": "Các mục quản trị",
 };
 
 type Variables = Record<string, string | number>;

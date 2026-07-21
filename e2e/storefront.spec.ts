@@ -375,7 +375,7 @@ test("keeps one payment modal and shows the QR spinner while reserving", async (
   await paymentDialog.getByLabel(/Pickup name/i).fill("Customer");
 
   await page.route(
-    "**/mock-supabase/rest/v1/rpc/create_order",
+    "**/mock-supabase/functions/v1/create-order",
     async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 650));
       await route.fallback();
@@ -416,7 +416,7 @@ test("queues checkout offline and reserves it safely after reconnect", async ({
   await page.getByRole("button", { name: /Pay now/i }).click();
   await page.getByLabel(/Pickup name/i).fill("Customer");
 
-  const createOrderPattern = "**/mock-supabase/rest/v1/rpc/create_order";
+  const createOrderPattern = "**/mock-supabase/functions/v1/create-order";
   await page.route(createOrderPattern, (route) =>
     route.abort("internetdisconnected"),
   );

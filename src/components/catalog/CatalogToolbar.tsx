@@ -1,7 +1,7 @@
-import { ArrowDownUp, Check, ChevronDown, Grid2X2, List, Search, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowDownUp, Grid2X2, List, Search, X } from "lucide-react";
 import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
 import type { PublicProductSort } from "../../lib/api";
+import { SelectMenu } from "../ui/SelectMenu";
 
 type CatalogToolbarProps = {
   searchQuery: string;
@@ -28,21 +28,6 @@ export function CatalogToolbar({
     { value: "quantity", label: copy.mostStock },
     { value: "name", label: copy.name },
   ];
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const selectedOption = sortOptions.find((opt) => opt.value === sort) || sortOptions[0];
-
   return (
     <div className="catalog-toolbar">
       <div className={`search-control${searchQuery ? " search-active" : ""}`}>
@@ -66,48 +51,21 @@ export function CatalogToolbar({
         )}
       </div>
 
-      <div className="sort-control-dropdown-wrapper" ref={dropdownRef}>
-        <button
-          type="button"
-          className={`sort-control-trigger ${isOpen ? "open" : ""}`}
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label={selectedOption.label}
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
-        >
-          <ArrowDownUp size={15} />
-          <span>{selectedOption.label}</span>
-          <ChevronDown size={13} className={`sort-chevron ${isOpen ? "open" : ""}`} />
-        </button>
-
-        {isOpen && (
-          <ul className="sort-dropdown-menu">
-            {sortOptions.map((opt) => (
-              <li key={opt.value}>
-                <button
-                  type="button"
-                  className={`sort-dropdown-item ${opt.value === sort ? "active" : ""}`}
-                  role="option"
-                  aria-selected={opt.value === sort}
-                  onClick={() => {
-                    onSortChange(opt.value);
-                    setIsOpen(false);
-                  }}
-                >
-                  <span>{opt.label}</span>
-                  {opt.value === sort && <Check size={13} className="check-icon" />}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <SelectMenu
+        className="sort-control-select"
+        label={copy.sortBy}
+        value={sort}
+        options={sortOptions}
+        triggerIcon={<ArrowDownUp size={15} />}
+        onChange={(value) => onSortChange(value as PublicProductSort)}
+      />
 
       <div className="view-toggle" aria-label={copy.viewModeLabel}>
         <button
           type="button"
           className={viewMode === "grid" ? "active" : ""}
           aria-label={copy.gridView}
+          aria-pressed={viewMode === "grid"}
           onClick={() => onViewModeChange("grid")}
         >
           <Grid2X2 size={16} />
@@ -116,6 +74,7 @@ export function CatalogToolbar({
           type="button"
           className={viewMode === "list" ? "active" : ""}
           aria-label={copy.listView}
+          aria-pressed={viewMode === "list"}
           onClick={() => onViewModeChange("list")}
         >
           <List size={16} />

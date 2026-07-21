@@ -77,6 +77,7 @@ export function BoothInfoPanel({ booth }: BoothInfoPanelProps) {
                 brandColor={item.color}
                 brandGradient={item.gradient}
                 showLabel={false}
+                deferOnPhone
               />
             ))}
           </div>

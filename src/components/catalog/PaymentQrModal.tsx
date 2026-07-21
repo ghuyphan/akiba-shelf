@@ -145,16 +145,14 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
             >
               {copy.keepShopping}
             </button>
-            {!needsReview && (
-              <button
-                type="button"
-                className="button button-primary"
-                onClick={() => void checkout.retry()}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.retryOrder}
-              </button>
-            )}
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={() => void checkout.retry()}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.retryOrder}
+            </button>
           </div>
         </div>
       </Modal>

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(32);
+select plan(35);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values('20000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','staff-orders@test.local','',now(),now(),now());
 insert into public.shops(id,name,slug,created_by) values('21000000-0000-4000-8000-000000000001','Orders','orders-test','20000000-0000-4000-8000-000000000001');
 insert into public.shop_members(shop_id,user_id,role) values('21000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','staff');
@@ -9,13 +9,13 @@ insert into public.products(id,shop_id,name,item_code,price_vnd,quantity_availab
 ('order-b','21000000-0000-4000-8000-000000000001','B','ORDER-B',20000,1,'Test',true),
 ('order-inactive','21000000-0000-4000-8000-000000000001','Inactive','ORDER-I',30000,5,'Test',false);
 
-set local role anon;
+set local role service_role;
 select throws_ok($$select * from public.create_order('orders-test',null,'[]',gen_random_uuid(),repeat('a',32))$$,'Cart must contain between 1 and 50 items','empty cart fails');
 select throws_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-a","quantity":0}]',gen_random_uuid(),repeat('b',32))$$,'Cart contains an invalid item','invalid quantity fails');
 select throws_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"missing","quantity":1}]',gen_random_uuid(),repeat('c',32))$$,'One or more items are sold out or no longer have enough stock','missing product fails');
 select throws_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-b","quantity":2}]',gen_random_uuid(),repeat('d',32))$$,'One or more items are sold out or no longer have enough stock','insufficient stock fails');
 select throws_ok($$select * from public.create_order('missing-shop',null,'[{"product_id":"order-a","quantity":1}]',gen_random_uuid(),repeat('e',32))$$,'Shop not found or inactive','unknown shop fails');
-select lives_ok($$select * from public.create_order('orders-test','Customer','[{"product_id":"order-a","quantity":1},{"product_id":"order-a","quantity":2}]','30000000-0000-4000-8000-000000000001',repeat('f',32))$$,'valid order succeeds');
+select lives_ok($$select * from public.create_order_rate_limited('orders-test','Customer','[{"product_id":"order-a","quantity":1},{"product_id":"order-a","quantity":2}]','30000000-0000-4000-8000-000000000001',repeat('f',32),repeat('1',64))$$,'valid rate-limited order succeeds');
 
 set local role postgres;
 create temporary table test_order_ids(label text primary key,id uuid not null);
@@ -25,11 +25,12 @@ select is((select total_amount from public.orders where client_request_id='30000
 select is((select quantity from public.order_items limit 1),3,'duplicate cart rows aggregate');
 select is((select quantity_available from public.products where id='order-a'),7,'creation reserves once');
 
-set local role anon;
-select lives_ok($$select * from public.create_order('orders-test','Customer','[{"product_id":"order-a","quantity":3}]','30000000-0000-4000-8000-000000000001',repeat('f',32))$$,'retry is idempotent');
+set local role service_role;
+select lives_ok($$select * from public.create_order_rate_limited('orders-test','Customer','[{"product_id":"order-a","quantity":3}]','30000000-0000-4000-8000-000000000001',repeat('f',32),repeat('1',64))$$,'rate-limited retry is idempotent');
 
 set local role postgres;
 select is((select count(*) from public.orders),1::bigint,'retry creates one order');
+select is((select count(*) from private.checkout_reservation_clients where client_request_id='30000000-0000-4000-8000-000000000001'),1::bigint,'retry stores one client reservation record');
 
 set local role authenticated;set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000001';
 select is((public.confirm_order_payment((select id from test_order_ids where label='first'))->>'outcome'),'confirmed','staff confirms own order');
@@ -40,7 +41,7 @@ select is((select quantity_available from public.products where id='order-a'),7,
 set local role authenticated;set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000001';
 select is((public.cancel_order((select id from test_order_ids where label='first'))->>'outcome'),'already_confirmed','confirmed order is terminal');
 
-set local role anon;
+set local role service_role;
 select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-a","quantity":2}]','30000000-0000-4000-8000-000000000002',repeat('h',32))$$,'second order succeeds');
 
 set local role postgres;
@@ -60,7 +61,7 @@ set local role postgres;
 select is((select quantity_available from public.products where id='order-a'),7,'terminal retry does not restore twice');
 update public.products set sale_price_vnd=8000 where id='order-a';
 
-set local role anon;
+set local role service_role;
 select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000003',repeat('s',32))$$,'sale-priced order succeeds');
 
 set local role postgres;
@@ -77,7 +78,7 @@ insert into public.promotion_products(shop_id,product_id,role) values
 ('21000000-0000-4000-8000-000000000001','order-b','both'),
 ('21000000-0000-4000-8000-000000000001','order-c','both');
 
-set local role anon;
+set local role service_role;
 select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-a","quantity":1,"reward_quantity":1},{"product_id":"order-b","quantity":1},{"product_id":"order-c","quantity":1}]','30000000-0000-4000-8000-000000000004',repeat('p',32))$$,'dynamic mixed-product promotion succeeds');
 
 set local role postgres;
@@ -86,15 +87,41 @@ select is((select discount_amount from public.orders where client_request_id='30
 select is((select oi.discount_amount from public.order_items oi join public.orders o on o.id=oi.order_id where o.client_request_id='30000000-0000-4000-8000-000000000004' and oi.product_id='order-a'),10000,'line snapshots the allocated free item');
 
 update public.promotions set buy_quantity=1,free_quantity=1,repeatable=true where shop_id='21000000-0000-4000-8000-000000000001';
-set local role anon;
+set local role service_role;
 select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-c","quantity":4,"reward_quantity":2}]','30000000-0000-4000-8000-000000000005',repeat('q',32))$$,'repeating dynamic promotion succeeds');
 set local role postgres;
 select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000005'),30000,'repeating offer applies to every complete group');
 
 update public.promotions set repeatable=false where shop_id='21000000-0000-4000-8000-000000000001';
-set local role anon;
+set local role service_role;
 select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-c","quantity":4,"reward_quantity":1}]','30000000-0000-4000-8000-000000000006',repeat('r',32))$$,'non-repeating dynamic promotion succeeds');
 set local role postgres;
 select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000006'),45000,'non-repeating offer applies only once');
 select is((select quantity_available from public.products where id='order-c'),1,'free items are still reserved from stock');
+
+set local role postgres;
+with inserted as (
+  insert into public.orders(shop_id,customer_name,total_amount,status,client_request_id,expires_at)
+  select '21000000-0000-4000-8000-000000000001','rate-active-' || value,0,'pending',gen_random_uuid(),now()+interval '10 minutes'
+  from generate_series(1,8) value
+  returning id,client_request_id
+)
+insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash)
+select id,client_request_id,'21000000-0000-4000-8000-000000000001',repeat('9',64) from inserted;
+
+set local role service_role;
+select throws_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000009',repeat('w',32),repeat('9',64))$$,'Too many active checkout reservations. Complete or cancel an existing order first.','ninth active reservation for one network is rate limited');
+
+set local role postgres;
+with inserted as (
+  insert into public.orders(shop_id,customer_name,total_amount,status,client_request_id,cancelled_at)
+  select '21000000-0000-4000-8000-000000000001','rate-recent-' || value,0,'cancelled',gen_random_uuid(),now()
+  from generate_series(1,30) value
+  returning id,client_request_id
+)
+insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash)
+select id,client_request_id,'21000000-0000-4000-8000-000000000001',repeat('8',64) from inserted;
+
+set local role service_role;
+select throws_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000010',repeat('z',32),repeat('8',64))$$,'Too many checkout attempts. Please wait a few minutes and try again.','thirty-first recent reservation for one network is rate limited');
 select * from finish();rollback;

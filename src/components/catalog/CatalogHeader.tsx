@@ -51,7 +51,7 @@ export function CatalogHeader({
           <h1>{booth.booth_name}</h1>
           <div className="brand-meta">
             {booth.booth_code && (
-              <span className="brand-meta-code">Booth {booth.booth_code}</span>
+              <span className="brand-meta-code">{copy.boothCode(booth.booth_code)}</span>
             )}
             <span className="brand-meta-subtitle">{copy.officialShop}</span>
           </div>
@@ -97,7 +97,7 @@ export function CatalogHeader({
                 className="designer-module-handle designer-staff-handle"
                 onClick={onOpenStaff}
               >
-                <span>Staff access</span>
+                <span>{copy.staffAccess}</span>
               </button>
             )}
           </div>

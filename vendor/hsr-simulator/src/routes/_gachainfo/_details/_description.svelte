@@ -1,9 +1,12 @@
 <script>
 	import { json, t } from 'svelte-i18n';
+	import HighlightedText from '$lib/components/HighlightedText.svelte';
 
 	export let bannerName;
 	export let bannerType;
 	export let data = {};
+	export let isMerch = false;
+	export let merchDescription = '';
 
 	const isEventWarp = bannerType.match('event');
 	const isCharBanner = bannerType === 'character-event';
@@ -92,17 +95,22 @@
 <div class="description">
 	{#if isEventWarp}
 		<p>
-			{@html $t('details.bannerStarted', { values: { banner: bannerName } })}
+			<HighlightedText text={$t('details.bannerStarted', { values: { banner: bannerName } })} />
 		</p>
+		{#if isMerch && merchDescription}
+			<p>{merchDescription}</p>
+		{/if}
 		<p>
 			{#each $json('details.eventDetails') as txt (txt)}
-				{@html $t(txt, {
-					values: {
-						banner: bannerName,
-						rateupList: rateUpList(isCharBanner ? 'rateupCharList' : 'rateupLCList'),
-						itemType: isCharBanner ? $t('character') : $t('lightcone')
-					}
-				})}
+				<HighlightedText
+					text={$t(txt, {
+						values: {
+							banner: bannerName,
+							rateupList: rateUpList(isCharBanner ? 'rateupCharList' : 'rateupLCList'),
+							itemType: isCharBanner ? $t('character') : $t('lightcone')
+						}
+					})}
+				/>
 				<br />
 			{/each}
 		</p>
@@ -113,29 +121,33 @@
 
 		<p>
 			{#each $json('details.eventWarpRate') as txt (txt)}
-				{@html $t(txt, {
-					values: {
-						itemType: isCharBanner ? $t('character') : $t('lightcone'),
-						banner: bannerName,
-						...rates(isCharBanner)
-					}
-				})}
+				<HighlightedText
+					text={$t(txt, {
+						values: {
+							itemType: isCharBanner ? $t('character') : $t('lightcone'),
+							banner: bannerName,
+							...rates(isCharBanner)
+						}
+					})}
+				/>
 				<br />
 			{/each}
 		</p>
 
 		<p>
 			{#each $json('details.boostedRate') as txt (txt)}
-				{@html $t(txt, {
-					values: {
-						rateupList: rateUpList(isCharBanner ? 'rateupCharList' : 'rateupLCList'),
-						featuredName: $t(itemName),
-						featuredPath: $t(`path.${path}`),
-						featuredCombatType: $t(combat_type),
-						itemType: isCharBanner ? $t('character') : $t('lightcone'),
-						...rates(isCharBanner)
-					}
-				})}
+				<HighlightedText
+					text={$t(txt, {
+						values: {
+							rateupList: rateUpList(isCharBanner ? 'rateupCharList' : 'rateupLCList'),
+							featuredName: $t(itemName),
+							featuredPath: $t(`path.${path}`),
+							featuredCombatType: $t(combat_type),
+							itemType: isCharBanner ? $t('character') : $t('lightcone'),
+							...rates(isCharBanner)
+						}
+					})}
+				/>
 				<br />
 			{/each}
 		</p>

@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import { FunctionsFetchError, FunctionsRelayError } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBooth } from "../../constants";
 import {
+  CheckoutOutcomeUnknownError,
   createOrder,
   getCustomerOrder,
   getOrderStatusCounts,
@@ -83,9 +85,11 @@ beforeEach(() => {
 });
 
 describe("order API contracts", () => {
-  it("keeps the create_order request payload and notification boundary stable", async () => {
+  it("keeps the create-order request payload and notification boundary stable", async () => {
     const cart: CartItem[] = [{ product, quantity: 2, reward_quantity: 1 }];
-    mocks.rpc.mockResolvedValueOnce({ data: [orderResponse], error: null });
+    mocks.invoke
+      .mockResolvedValueOnce({ data: orderResponse, error: null })
+      .mockResolvedValueOnce({ data: { sent: 0 }, error: null });
 
     const order = await createOrder(
       "akiba-shelf",
@@ -95,14 +99,18 @@ describe("order API contracts", () => {
       "recovery-token-1",
     );
 
-    expect(mocks.rpc).toHaveBeenCalledWith("create_order", {
-      p_shop_slug: "akiba-shelf",
-      p_customer_name: "Customer",
-      p_items: [{ product_id: "moon-stand", quantity: 3, reward_quantity: 1 }],
-      p_client_request_id: "client-request-1",
-      p_recovery_token: "recovery-token-1",
+    expect(mocks.invoke).toHaveBeenNthCalledWith(1, "create-order", {
+      body: {
+        shopSlug: "akiba-shelf",
+        customerName: "Customer",
+        items: [
+          { product_id: "moon-stand", quantity: 3, reward_quantity: 1 },
+        ],
+        clientRequestId: "client-request-1",
+        recoveryToken: "recovery-token-1",
+      },
     });
-    expect(mocks.invoke).toHaveBeenCalledWith("notify-new-order", {
+    expect(mocks.invoke).toHaveBeenNthCalledWith(2, "notify-new-order", {
       body: { orderId, recoveryToken: "recovery-token-1" },
     });
     expect(order).toMatchObject({
@@ -110,6 +118,38 @@ describe("order API contracts", () => {
       total_amount: 120000,
       status: "pending",
     });
+  });
+
+  it("treats an invalid success response as an unknown retryable outcome", async () => {
+    mocks.invoke.mockResolvedValueOnce({ data: { id: orderId }, error: null });
+
+    await expect(
+      createOrder(
+        "akiba-shelf",
+        "Customer",
+        [{ product, quantity: 1 }],
+        "client-request-1",
+        "recovery-token-1",
+      ),
+    ).rejects.toBeInstanceOf(CheckoutOutcomeUnknownError);
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    new FunctionsFetchError(new Error("network interrupted")),
+    new FunctionsRelayError(new Response(null, { status: 503 })),
+  ])("treats %s as an unknown retryable outcome", async (error) => {
+    mocks.invoke.mockResolvedValueOnce({ data: null, error });
+
+    await expect(
+      createOrder(
+        "akiba-shelf",
+        "Customer",
+        [{ product, quantity: 1 }],
+        "client-request-1",
+        "recovery-token-1",
+      ),
+    ).rejects.toBeInstanceOf(CheckoutOutcomeUnknownError);
   });
 
   it("parses customer recovery rows and empty responses without changing shape", async () => {
@@ -312,10 +352,12 @@ describe("Playwright Supabase request inventory", () => {
       "utf8",
     );
     const actual = [
-      ...fixture.matchAll(/\/(?:rest)\/v1\/[A-Za-z0-9_/-]+/g),
+      ...fixture.matchAll(/\/(?:rest|functions)\/v1\/[A-Za-z0-9_/-]+/g),
     ].map(([value]) => value);
 
     expect([...new Set(actual)].sort()).toEqual([
+      "/functions/v1/create-order",
+      "/functions/v1/notify-new-order",
       "/rest/v1/booth_settings",
       "/rest/v1/gacha_game_configs",
       "/rest/v1/gacha_published_configs",
@@ -324,7 +366,6 @@ describe("Playwright Supabase request inventory", () => {
       "/rest/v1/products",
       "/rest/v1/promotion_products",
       "/rest/v1/promotions",
-      "/rest/v1/rpc/create_order",
       "/rest/v1/rpc/get_admin_booth_settings",
       "/rest/v1/rpc/get_admin_products",
       "/rest/v1/rpc/get_customer_order",

@@ -127,9 +127,7 @@
 						{#if description}
 							<div class="description">
 								<Scrollable dark>
-									<p>
-										{@html description.replace(/\n/g, '<br/>')}
-									</p>
+									<p>{description}</p>
 								</Scrollable>
 							</div>
 						{/if}
@@ -188,6 +186,7 @@
 		text-decoration: underline;
 	}
 	.info .description {
+		white-space: pre-line;
 		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 		margin-top: 3%;
 		height: 10vh;

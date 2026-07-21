@@ -109,6 +109,7 @@ export function CategoryFilters({ categories, activeCategory, onChange }: Catego
             ref={registerItem(category)}
             className={`chip ${category === activeCategory ? "chip-active" : ""}`}
             type="button"
+            aria-pressed={category === activeCategory}
             onClick={() => onChange(category)}
           >
             {category === "All" ? copy.all : category}

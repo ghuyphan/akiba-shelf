@@ -9,7 +9,7 @@ import {
   useParams,
 } from "react-router-dom";
 import { useEffect } from "react";
-import { ToastProvider } from "./components/ui/ToastProvider";
+import { ToastLocalization, ToastProvider } from "./components/ui/ToastProvider";
 import { PageLoading } from "./components/ui/PageLoading";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { PLATFORM_BRAND, resetDocumentBranding } from "./lib/branding";
@@ -102,10 +102,27 @@ function RouteLoading() {
 }
 
 function PlatformLayout() {
+  const { t } = usePlatformI18n();
   return (
-    <PlatformI18nProvider>
+    <>
+      <ToastLocalization
+        labels={{
+          successTitle: t("Done"),
+          errorTitle: t("Something went wrong"),
+          infoTitle: t("Notice"),
+          dismiss: t("Dismiss notification"),
+        }}
+      />
       <PlatformRouteBranding />
       <Outlet />
+    </>
+  );
+}
+
+function PlatformLayoutProvider() {
+  return (
+    <PlatformI18nProvider>
+      <PlatformLayout />
     </PlatformI18nProvider>
   );
 }
@@ -127,7 +144,7 @@ export function App() {
               }
             />
             <Route path="/s/:shopSlug" element={<KeyedCatalogPage />} />
-            <Route element={<PlatformLayout />}>
+            <Route element={<PlatformLayoutProvider />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/dashboard/shops/new" element={<NewShopPage />} />

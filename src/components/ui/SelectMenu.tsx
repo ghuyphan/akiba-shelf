@@ -16,6 +16,7 @@ type Props = {
   label: string;
   disabled?: boolean;
   className?: string;
+  triggerIcon?: ReactNode;
 };
 
 export function SelectMenu({
@@ -25,6 +26,7 @@ export function SelectMenu({
   label,
   disabled,
   className = "",
+  triggerIcon,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -179,6 +181,7 @@ export function SelectMenu({
           }
         }}
       >
+        {triggerIcon && <span className="select-menu-icon">{triggerIcon}</span>}
         {selected?.icon && (
           <span className="select-menu-icon">{selected.icon}</span>
         )}

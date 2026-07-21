@@ -2,9 +2,20 @@ import type { GachaGameType } from "../../types/gacha";
 import { ensureOfflineNavigationReady } from "./pwa";
 
 type OfflineAsset = { path: string; size: number };
+type OfflinePackManifest = {
+  id: string;
+  assets: OfflineAsset[];
+};
 type OfflineManifest = {
-  version: number;
-  packs: Record<GachaGameType, OfflineAsset[]>;
+  version: 2;
+  packs: Record<GachaGameType, OfflinePackManifest>;
+};
+
+type OfflinePackMarker = {
+  version: 3;
+  manifestVersion: 2;
+  packId: string;
+  required: Array<{ url: string; cacheName: string }>;
 };
 
 export type OfflinePackProgress = {
@@ -22,10 +33,183 @@ export type MultiOfflinePackProgress = OfflinePackProgress & {
 };
 
 const DOWNLOAD_CONCURRENCY = 4;
-const OFFLINE_PACK_MARKER_PREFIX = "matsuri-offline-pack-v2";
+const OFFLINE_PACK_MARKER_PREFIX = "matsuri-offline-pack-v3";
 const APP_SHELL_CACHE_NAME = "gacha-app-shell-v3";
+const MEDIA_CACHE_NAME = "gacha-media-cache-v1";
+const STATIC_CACHE_NAME = "gacha-static-cache-v1";
 const STORAGE_CACHE_NAME = "supabase-storage-cache-v2";
 const PRODUCT_IMAGE_CACHE_NAME = "product-image-cache-v2";
+
+function markerKey(gameType: GachaGameType) {
+  return `${OFFLINE_PACK_MARKER_PREFIX}:${gameType}`;
+}
+
+function cacheNameForUrl(url: string, productImage: boolean) {
+  const pathname = new URL(url).pathname;
+  if (productImage && !pathname.includes("/storage/v1/object/public/"))
+    return PRODUCT_IMAGE_CACHE_NAME;
+  if (pathname.includes("/storage/v1/object/public/"))
+    return STORAGE_CACHE_NAME;
+  if (/\.(?:mp4|webm|ogg|mp3|wav)$/i.test(pathname)) return MEDIA_CACHE_NAME;
+  if (/\.(?:woff2?|ttf|png|jpe?g|webp|svg)$/i.test(pathname))
+    return STATIC_CACHE_NAME;
+  return APP_SHELL_CACHE_NAME;
+}
+
+function parseManifestPack(
+  value: unknown,
+  gameType: GachaGameType,
+): OfflinePackManifest {
+  if (!value || typeof value !== "object")
+    throw new Error("The offline download list is invalid.");
+  const manifest = value as Partial<OfflineManifest>;
+  const pack = manifest.packs?.[gameType];
+  if (
+    manifest.version !== 2 ||
+    !pack ||
+    typeof pack.id !== "string" ||
+    !pack.id ||
+    !Array.isArray(pack.assets) ||
+    pack.assets.length === 0
+  ) {
+    throw new Error("The offline download list is invalid.");
+  }
+
+  const simulator = gameType === "hsr" ? "hsr-simulator" : "gacha-simulator";
+  const prefix = new URL(
+    `${import.meta.env.BASE_URL}${simulator}/`,
+    location.origin,
+  );
+  const assets = pack.assets.map((asset) => {
+    if (
+      !asset ||
+      typeof asset.path !== "string" ||
+      !Number.isSafeInteger(asset.size) ||
+      asset.size < 0
+    ) {
+      throw new Error("The offline download list is invalid.");
+    }
+    const url = new URL(asset.path, location.origin);
+    if (
+      url.origin !== location.origin ||
+      !url.pathname.startsWith(prefix.pathname)
+    )
+      throw new Error("The offline download list is invalid.");
+    return { path: url.href, size: asset.size };
+  });
+  if (
+    !assets.some(
+      (asset) =>
+        new URL(asset.path).pathname === `${prefix.pathname}index.html`,
+    )
+  )
+    throw new Error("The offline download list is incomplete.");
+  return { id: pack.id, assets };
+}
+
+async function fetchManifestPack(gameType: GachaGameType) {
+  const response = await fetch(`${import.meta.env.BASE_URL}offline-assets.json`, {
+    cache: "no-store",
+  });
+  if (!response.ok)
+    throw new Error("The offline download list is not available yet.");
+  return parseManifestPack(await response.json(), gameType);
+}
+
+async function ensureStorageCapacity(requiredBytes: number) {
+  if (!requiredBytes || !navigator.storage?.estimate) return;
+  let estimate: StorageEstimate;
+  try {
+    estimate = await navigator.storage.estimate();
+  } catch {
+    return;
+  }
+  const quota = estimate.quota;
+  const usage = estimate.usage;
+  if (
+    typeof quota === "number" &&
+    Number.isFinite(quota) &&
+    typeof usage === "number" &&
+    Number.isFinite(usage) &&
+    Math.max(0, quota - usage) < requiredBytes
+  ) {
+    throw new Error("There is not enough browser storage for this offline game.");
+  }
+}
+
+function isQuotaError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { name?: unknown; code?: unknown };
+  return candidate.name === "QuotaExceededError" || candidate.code === 22;
+}
+
+function readMarker(gameType: GachaGameType): OfflinePackMarker | null {
+  try {
+    const marker = JSON.parse(
+      localStorage.getItem(markerKey(gameType)) || "null",
+    ) as unknown;
+    if (!marker || typeof marker !== "object") return null;
+    const candidate = marker as Partial<OfflinePackMarker>;
+    if (
+      candidate.version !== 3 ||
+      candidate.manifestVersion !== 2 ||
+      typeof candidate.packId !== "string" ||
+      !candidate.packId ||
+      !Array.isArray(candidate.required) ||
+      candidate.required.length === 0 ||
+      candidate.required.some(
+        (item) =>
+          !item ||
+          typeof item.url !== "string" ||
+          typeof item.cacheName !== "string" ||
+          !item.cacheName,
+      )
+    ) {
+      localStorage.removeItem(markerKey(gameType));
+      return null;
+    }
+    return candidate as OfflinePackMarker;
+  } catch {
+    localStorage.removeItem(markerKey(gameType));
+    return null;
+  }
+}
+
+async function hasRequiredAssets(marker: OfflinePackMarker) {
+  const cacheByName = new Map<string, Cache>();
+  for (const item of marker.required) {
+    let cache = cacheByName.get(item.cacheName);
+    if (!cache) {
+      cache = await caches.open(item.cacheName);
+      cacheByName.set(item.cacheName, cache);
+    }
+    if (!(await cache.match(item.url))) return false;
+  }
+  return true;
+}
+
+async function deleteCachedPackAssets(
+  marker: OfflinePackMarker,
+  gameType: GachaGameType,
+) {
+  const simulator = gameType === "hsr" ? "hsr-simulator" : "gacha-simulator";
+  const prefix = new URL(
+    `${import.meta.env.BASE_URL}${simulator}/`,
+    location.origin,
+  );
+  const cacheByName = new Map<string, Cache>();
+  for (const item of marker.required) {
+    const url = new URL(item.url, location.origin);
+    if (url.origin !== location.origin || !url.pathname.startsWith(prefix.pathname))
+      continue;
+    let cache = cacheByName.get(item.cacheName);
+    if (!cache) {
+      cache = await caches.open(item.cacheName);
+      cacheByName.set(item.cacheName, cache);
+    }
+    await cache.delete(item.url);
+  }
+}
 
 export function offlinePackPercent({
   completed,
@@ -43,78 +227,111 @@ export async function downloadGachaOfflinePack(
   if (!("caches" in window))
     throw new Error("Offline downloads are not supported by this browser.");
   await ensureOfflineNavigationReady();
-  const manifestResponse = await fetch(
-    `${import.meta.env.BASE_URL}offline-assets.json`,
-    { cache: "no-store" },
-  );
-  if (!manifestResponse.ok)
-    throw new Error("The offline download list is not available yet.");
-  const manifest = (await manifestResponse.json()) as OfflineManifest;
-  const assets = manifest.packs?.[gameType] ?? [];
-  const known = new Set(assets.map((asset) => new URL(asset.path, location.origin).href));
+  const previousMarker = readMarker(gameType);
+  const pack = await fetchManifestPack(gameType);
+  // Without a matching current marker, cached stable URLs may belong to an
+  // older build and must be overwritten before the new pack is trusted.
+  const refreshPackAssets =
+    !previousMarker || previousMarker.packId !== pack.id;
+  localStorage.removeItem(markerKey(gameType));
+  if (previousMarker && refreshPackAssets)
+    await deleteCachedPackAssets(previousMarker, gameType);
+  const known = new Set(pack.assets.map((asset) => asset.path));
   const extras = extraUrls
     .map((url) => new URL(url, location.origin).href)
     .filter((url) => !known.has(url));
   const items = [
-    ...assets.map((asset) => ({
-      url: new URL(asset.path, location.origin).href,
+    ...pack.assets.map((asset) => ({
+      url: asset.path,
       size: asset.size,
       productImage: false,
     })),
     ...extras.map((url) => ({ url, size: 0, productImage: true })),
-  ];
-  const simulatorCache = await caches.open(APP_SHELL_CACHE_NAME);
-  const mediaCache = await caches.open("gacha-media-cache-v1");
-  const staticCache = await caches.open("gacha-static-cache-v1");
-  const storageCache = await caches.open(STORAGE_CACHE_NAME);
-  const productImageCache = await caches.open(PRODUCT_IMAGE_CACHE_NAME);
+  ].map((item) => ({
+    ...item,
+    cacheName: cacheNameForUrl(item.url, item.productImage),
+  }));
+  const cacheByName = new Map<string, Cache>();
+  const getCache = async (cacheName: string) => {
+    let cache = cacheByName.get(cacheName);
+    if (!cache) {
+      cache = await caches.open(cacheName);
+      cacheByName.set(cacheName, cache);
+    }
+    return cache;
+  };
+  const cachedItems = await Promise.all(
+    items.map(async (item) => ({
+      item,
+      cached:
+        refreshPackAssets && !item.productImage
+          ? false
+          : Boolean(await (await getCache(item.cacheName)).match(item.url)),
+    })),
+  );
+  await ensureStorageCapacity(
+    cachedItems.reduce(
+      (total, entry) => total + (entry.cached ? 0 : entry.item.size),
+      0,
+    ),
+  );
   const progress: OfflinePackProgress = {
     completed: 0,
     total: items.length,
     downloadedBytes: 0,
-    totalBytes: assets.reduce((sum, asset) => sum + asset.size, 0),
+    totalBytes: pack.assets.reduce((sum, asset) => sum + asset.size, 0),
   };
   onProgress?.({ ...progress });
   let nextItem = 0;
-  const downloadItem = async (item: (typeof items)[number]) => {
+  const downloadItem = async ({
+    item,
+    cached,
+  }: (typeof cachedItems)[number]) => {
     const request = new Request(item.url, { credentials: "same-origin" });
     const pathname = new URL(item.url).pathname;
-    const targetCache = item.productImage && !pathname.includes("/storage/v1/object/public/")
-      ? productImageCache
-      : pathname.includes("/storage/v1/object/public/")
-      ? storageCache
-      : /\.(?:mp4|webm|ogg|mp3|wav)$/i.test(pathname)
-        ? mediaCache
-        : /\.(?:woff2?|ttf|png|jpe?g|webp|svg)$/i.test(pathname)
-          ? staticCache
-          : simulatorCache;
-    const cached = await targetCache.match(request);
+    const targetCache = await getCache(item.cacheName);
     if (!cached) {
       const response = await fetch(request);
       if (!response.ok) throw new Error(`Could not download ${pathname}.`);
-      await targetCache.put(request, response);
+      try {
+        await targetCache.put(request, response);
+      } catch (error) {
+        if (isQuotaError(error))
+          throw new Error("The offline download ran out of browser storage.");
+        throw error;
+      }
     }
     progress.completed += 1;
     progress.downloadedBytes += item.size;
     onProgress?.({ ...progress });
   };
   const worker = async () => {
-    while (nextItem < items.length) {
-      const item = items[nextItem];
+    while (nextItem < cachedItems.length) {
+      const item = cachedItems[nextItem];
       nextItem += 1;
       await downloadItem(item);
     }
   };
   await Promise.all(
     Array.from(
-      { length: Math.min(DOWNLOAD_CONCURRENCY, items.length) },
+      { length: Math.min(DOWNLOAD_CONCURRENCY, cachedItems.length) },
       () => worker(),
     ),
   );
-  localStorage.setItem(
-    `${OFFLINE_PACK_MARKER_PREFIX}:${gameType}`,
-    new Date().toISOString(),
-  );
+  const marker: OfflinePackMarker = {
+    version: 3,
+    manifestVersion: 2,
+    packId: pack.id,
+    required: items.map((item) => ({
+      url: item.url,
+      cacheName: item.cacheName,
+    })),
+  };
+  try {
+    localStorage.setItem(markerKey(gameType), JSON.stringify(marker));
+  } catch {
+    throw new Error("The browser could not save offline game readiness.");
+  }
   return progress;
 }
 
@@ -163,16 +380,31 @@ export async function downloadGachaOfflinePacks(
 }
 
 export async function hasGachaOfflinePack(gameType: GachaGameType) {
-  const markerKey = `${OFFLINE_PACK_MARKER_PREFIX}:${gameType}`;
-  if (!localStorage.getItem(markerKey) || !("caches" in window)) return false;
-  const simulator = gameType === "hsr" ? "hsr-simulator" : "gacha-simulator";
-  const shellUrl = new URL(
-    `${import.meta.env.BASE_URL}${simulator}/index.html`,
-    location.origin,
-  );
-  const shellCache = await caches.open(APP_SHELL_CACHE_NAME);
-  const shell = await shellCache.match(shellUrl.href);
-  if (shell) return true;
-  localStorage.removeItem(markerKey);
+  if (!("caches" in window)) return false;
+  const marker = readMarker(gameType);
+  if (!marker) return false;
+  try {
+    if (navigator.onLine) {
+      try {
+        const currentPack = await fetchManifestPack(gameType);
+        if (currentPack.id !== marker.packId) {
+          await deleteCachedPackAssets(marker, gameType);
+          localStorage.removeItem(markerKey(gameType));
+          return false;
+        }
+        const requiredUrls = new Set(marker.required.map((item) => item.url));
+        if (currentPack.assets.some((asset) => !requiredUrls.has(asset.path))) {
+          localStorage.removeItem(markerKey(gameType));
+          return false;
+        }
+      } catch {
+        // A transient manifest failure must not invalidate a complete local pack.
+      }
+    }
+    if (await hasRequiredAssets(marker)) return true;
+  } catch {
+    // Cache access can fail in private/low-storage browser modes.
+  }
+  localStorage.removeItem(markerKey(gameType));
   return false;
 }

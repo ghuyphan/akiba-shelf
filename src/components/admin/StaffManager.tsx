@@ -352,6 +352,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
         title={t("Confirm ownership change")}
         isOpen={Boolean(ownerChange)}
         onClose={() => setOwnerChange(null)}
+        closeLabel={t("Close modal")}
       >
         <div className="staff-remove-confirm">
           <p>
@@ -384,6 +385,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
         title={t("Remove shop access?")}
         isOpen={Boolean(removing)}
         onClose={() => setRemoving(null)}
+        closeLabel={t("Close modal")}
       >
         <div className="staff-remove-confirm">
           <p>

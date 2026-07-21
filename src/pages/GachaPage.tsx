@@ -544,9 +544,11 @@ export function GachaPage() {
       <iframe
         key={activeGame}
         ref={iframeRef}
-        title="wish simulator"
+        title={activeGame === "hsr" ? copy.warpSimulator : copy.wishSimulator}
         src={`${getGachaSimulatorPath(activeGame)}?${queryParams.toString()}`}
         allow="fullscreen"
+        sandbox="allow-downloads allow-same-origin allow-scripts"
+        referrerPolicy="no-referrer"
       />
     </main>
   );

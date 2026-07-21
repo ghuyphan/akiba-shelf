@@ -35,6 +35,7 @@ export function SignOutDialog({
         if (!busy) onClose();
       }}
       className="signout-modal"
+      closeLabel={cancelLabel}
     >
       <div className="signout-confirmation">
         <span className="signout-confirmation-icon">

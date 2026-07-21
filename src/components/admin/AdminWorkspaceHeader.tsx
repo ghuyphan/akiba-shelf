@@ -158,12 +158,13 @@ export function AdminWorkspaceHeader({
         </>
       }
       navigation={
-        <div className="admin-nav-tabs" ref={containerRef}>
+        <div className="admin-nav-tabs" ref={containerRef} role="toolbar" aria-label={t("Admin sections")}>
           {canManageCatalog && (
             <button
               type="button"
               ref={registerItem("design")}
               className={`admin-nav-tab admin-nav-storefront ${viewTab === "design" ? "active" : ""}`}
+              aria-pressed={viewTab === "design"}
               onClick={() => onViewTabChange("design")}
             >
               <LayoutTemplate size={15} /> {t("Storefront")}
@@ -173,6 +174,7 @@ export function AdminWorkspaceHeader({
             type="button"
             ref={registerItem("orders")}
             className={`admin-nav-tab admin-nav-orders ${viewTab === "orders" ? "active" : ""}`}
+            aria-pressed={viewTab === "orders"}
             onClick={() => onViewTabChange("orders")}
           >
             <ClipboardList size={15} />
@@ -186,6 +188,7 @@ export function AdminWorkspaceHeader({
               type="button"
               ref={registerItem("products")}
               className={`admin-nav-tab ${viewTab === "products" ? "active" : ""}`}
+              aria-pressed={viewTab === "products"}
               onClick={() => onViewTabChange("products")}
             >
               <Package size={15} />
@@ -197,6 +200,7 @@ export function AdminWorkspaceHeader({
               type="button"
               ref={registerItem("gacha")}
               className={`admin-nav-tab ${viewTab === "gacha" ? "active" : ""}`}
+              aria-pressed={viewTab === "gacha"}
               onClick={() => onViewTabChange("gacha")}
             >
               <Gamepad2 size={15} />
@@ -208,6 +212,7 @@ export function AdminWorkspaceHeader({
               type="button"
               ref={registerItem("team")}
               className={`admin-nav-tab ${viewTab === "team" ? "active" : ""}`}
+              aria-pressed={viewTab === "team"}
               onClick={() => onViewTabChange("team")}
             >
               <Users size={15} /> {t("Team")}
@@ -218,6 +223,7 @@ export function AdminWorkspaceHeader({
               type="button"
               ref={registerItem("settings")}
               className={`admin-nav-tab admin-nav-mobile-settings ${viewTab === "settings" ? "active" : ""}`}
+              aria-pressed={viewTab === "settings"}
               onClick={() => onViewTabChange("settings")}
             >
               <Settings2 size={15} /> {t("Settings")}
@@ -269,6 +275,7 @@ export function AdminWorkspaceHeader({
               className="app-header-button admin-overflow-toggle"
               onClick={() => setOverflowOpen((open) => !open)}
               aria-label={t("More actions")}
+              aria-expanded={overflowOpen}
               title={t("More actions")}
             >
               <EllipsisVertical size={15} />
@@ -284,6 +291,7 @@ export function AdminWorkspaceHeader({
                         key={item}
                         type="button"
                         className={locale === item ? "active" : ""}
+                        aria-pressed={locale === item}
                         onClick={() => {
                           setLocale(item);
                           setOverflowOpen(false);

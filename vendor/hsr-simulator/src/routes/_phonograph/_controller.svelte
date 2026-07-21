@@ -28,9 +28,7 @@
 		<span class="onplay">"{playedTrack.title}"</span>
 		{#if playedTrack.description}
 			<div class="description">
-				<p>
-					{@html (playedTrack.description || '')?.replace(/\n/g, '<br/>')}
-				</p>
+				<p>{playedTrack.description || ''}</p>
 			</div>
 		{/if}
 	</div>
@@ -70,6 +68,7 @@
 
 	p {
 		line-height: 120%;
+		white-space: pre-line;
 	}
 
 	/* Mobile Landscape */

@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultBooth } from "../lib/constants";
-import { getPublicGachaEnabled, getPublicProductsByIds } from "../lib/api";
+import {
+  getCatalogCoreData,
+  getPublicGachaEnabled,
+  getPublicProductsByIds,
+} from "../lib/api";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
-import { loadCatalogSnapshot, saveCatalogSnapshot } from "../lib/offline/offline";
+import {
+  loadCatalogSnapshot,
+  replaceCompleteCatalogSnapshot,
+  saveCatalogSnapshot,
+} from "../lib/offline/offline";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import type { Product } from "../types/catalog";
 import {
@@ -73,6 +81,16 @@ export function useCatalogData(
   const refreshPayment = storefront.refreshPayment;
   const refreshPromotion = storefront.refreshPromotion;
 
+  const refreshCompleteOfflineSnapshot = useCallback(async () => {
+    if (!shopId || loadCatalogSnapshot(shopId)?.complete !== true) return;
+    try {
+      const completeCatalog = await getCatalogCoreData(shopId);
+      replaceCompleteCatalogSnapshot(completeCatalog, shopId);
+    } catch {
+      // Keep the last complete snapshot when a background reconciliation fails.
+    }
+  }, [shopId]);
+
   // Latest-value refs keep the Realtime channel lifetime tied to shopId only:
   // the subscription effect reads these instead of closing over props/state
   // that change on every cart edit or catalog query change.
@@ -124,8 +142,14 @@ export function useCatalogData(
       reloadProducts(),
       reloadStorefront(),
       loadCartProducts({ forceRefresh: true }),
+      refreshCompleteOfflineSnapshot(),
     ]);
-  }, [loadCartProducts, reloadProducts, reloadStorefront]);
+  }, [
+    loadCartProducts,
+    refreshCompleteOfflineSnapshot,
+    reloadProducts,
+    reloadStorefront,
+  ]);
 
   useEffect(() => {
     void loadCartProducts();
@@ -214,6 +238,7 @@ export function useCatalogData(
                     handlers.refreshVisibleProducts(),
                     handlers.refreshProductMetadata(),
                     handlers.loadCartProducts({ forceRefresh: true }),
+                    refreshCompleteOfflineSnapshot(),
                   ])
                 : table === "booth_settings"
                   ? handlers.refreshBooth()
@@ -229,7 +254,7 @@ export function useCatalogData(
       timers.forEach((timer) => window.clearTimeout(timer));
       unsubscribe();
     };
-  }, [shopId]);
+  }, [refreshCompleteOfflineSnapshot, shopId]);
 
   return {
     products: productCatalog.products,

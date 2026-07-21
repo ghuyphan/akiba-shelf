@@ -1,3 +1,7 @@
+import {
+  FunctionsFetchError,
+  FunctionsRelayError,
+} from "@supabase/supabase-js";
 import { safePublicUrl } from "../branding";
 import {
   orderItemProductSchema,
@@ -12,7 +16,20 @@ import type {
   OrderMutationResult,
   OrderStatus,
 } from "../../types/catalog";
-import { requireSupabase } from "./shared";
+import { extractEdgeFunctionError, requireSupabase } from "./shared";
+
+export class CheckoutOutcomeUnknownError extends Error {
+  constructor(message = "The checkout result could not be verified. Retry safely with the same checkout details.") {
+    super(message);
+    this.name = "CheckoutOutcomeUnknownError";
+  }
+}
+
+export function isCheckoutOutcomeUnknownError(
+  error: unknown,
+): error is CheckoutOutcomeUnknownError {
+  return error instanceof CheckoutOutcomeUnknownError;
+}
 
 export async function createOrder(
   shopSlug: string,
@@ -22,30 +39,44 @@ export async function createOrder(
   recoveryToken: string,
 ): Promise<Order> {
   const client = requireSupabase();
-  const { data, error } = await client.rpc("create_order", {
-    p_shop_slug: shopSlug,
-    p_customer_name: customerName?.trim() || null,
-    p_items: cart.map((item) => ({
-      product_id: item.product.id,
-      quantity: item.quantity + (item.reward_quantity ?? 0),
-      reward_quantity: item.reward_quantity ?? 0,
-    })),
-    p_client_request_id: clientRequestId,
-    p_recovery_token: recoveryToken,
+  const { data, error } = await client.functions.invoke("create-order", {
+    body: {
+      shopSlug,
+      customerName: customerName?.trim() || null,
+      items: cart.map((item) => ({
+        product_id: item.product.id,
+        quantity: item.quantity + (item.reward_quantity ?? 0),
+        reward_quantity: item.reward_quantity ?? 0,
+      })),
+      clientRequestId,
+      recoveryToken,
+    },
   });
-  if (error) throw error;
-  const createdOrder = Array.isArray(data) ? data[0] : data;
-  if (!createdOrder) {
-    throw new Error(
-      "The order was created but no order details were returned.",
-    );
+  if (error) {
+    if (
+      error instanceof FunctionsFetchError ||
+      error instanceof FunctionsRelayError
+    ) {
+      throw new CheckoutOutcomeUnknownError();
+    }
+    const message = await extractEdgeFunctionError(error);
+    const status = "context" in error ? error.context?.status : undefined;
+    if (typeof status === "number" && status >= 500) {
+      throw new CheckoutOutcomeUnknownError(message ?? undefined);
+    }
+    if (message) throw new Error(message);
+    throw error;
   }
+
+  const parsed = orderSchema.safeParse(data);
+  if (!parsed.success) throw new CheckoutOutcomeUnknownError();
+  const createdOrder = parsed.data as Order;
   void client.functions
     .invoke("notify-new-order", {
       body: { orderId: createdOrder.id, recoveryToken },
     })
     .catch(() => undefined);
-  return orderSchema.parse(createdOrder) as Order;
+  return createdOrder;
 }
 
 export async function getCustomerOrder(

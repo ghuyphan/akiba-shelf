@@ -5,15 +5,11 @@
 	import { t } from 'svelte-i18n';
 	import OverlayScrollbars from 'overlayscrollbars';
 	import { beginnerRoll } from '$lib/store/localstore';
+	import HighlightedBannerName from '$lib/components/utility/HighlightedBannerName.svelte';
 
 	export let character = '';
 	export let isError = false;
 	$: char = $t(`${character.character}.name`);
-
-	const highlightBannerName = (bannerName) => {
-		const splited = bannerName.split(' ');
-		return `${splited[0]} <span class="geo"> ${splited.slice(1).join(' ')}</span>`;
-	};
 
 	const remaining = browser ? 20 - beginnerRoll.get() : 0;
 
@@ -32,7 +28,11 @@
 		{$t('wish.banner.novice')}
 	</div>
 	<h1 class="card-stroke" in:fly={{ x: 10, duration: 700 }}>
-		{@html highlightBannerName($t(`wish.banner.beginner`))}
+		<HighlightedBannerName
+			name={$t('wish.banner.beginner')}
+			highlightClass="geo"
+			highlight="rest"
+		/>
 	</h1>
 
 	<div class="info" bind:this={bannerInfo} in:fly={{ x: 15, duration: 700 }}>

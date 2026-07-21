@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 import { safeUuid } from "../../utils/id";
@@ -14,13 +14,32 @@ type ToastApi = {
   dismiss: (id: string) => void;
 };
 
+export type ToastLabels = {
+  successTitle: string;
+  errorTitle: string;
+  infoTitle: string;
+  dismiss: string;
+};
+
+const defaultLabels: ToastLabels = {
+  successTitle: "Done",
+  errorTitle: "Something went wrong",
+  infoTitle: "Notice",
+  dismiss: "Dismiss notification",
+};
+
 const ToastContext = createContext<ToastApi | null>(null);
+const ToastLabelsContext = createContext<
+  ((labels: ToastLabels | null) => void) | null
+>(null);
 const icons = { info: Info, success: CheckCircle2, error: AlertCircle };
 
-export function ToastProvider({ children, enabled = true }: { children: ReactNode; enabled?: boolean }) {
+export function ToastProvider({ children, enabled = true, labels = defaultLabels }: { children: ReactNode; enabled?: boolean; labels?: ToastLabels }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [exitingIds, setExitingIds] = useState<string[]>([]);
+  const [localizedLabels, setLocalizedLabels] = useState<ToastLabels | null>(null);
   const timersRef = useRef(new Map<string, number>());
+  const activeLabels = localizedLabels ?? labels;
 
   useEffect(() => () => {
     timersRef.current.forEach((timer) => window.clearTimeout(timer));
@@ -70,7 +89,7 @@ export function ToastProvider({ children, enabled = true }: { children: ReactNod
     dismiss,
   }), [dismiss, show]);
 
-  return <ToastContext.Provider value={api}>{children}{enabled && createPortal(
+  return <ToastContext.Provider value={api}><ToastLabelsContext.Provider value={setLocalizedLabels}>{children}{enabled && createPortal(
     <div className="toast-region" aria-live="polite" aria-atomic="false">
       {toasts.map((toast) => {
         const Icon = icons[toast.variant];
@@ -82,12 +101,22 @@ export function ToastProvider({ children, enabled = true }: { children: ReactNod
           role={toast.variant === "error" ? "alert" : "status"}
         >
           <span className="toast-icon"><Icon size={17} /></span>
-          <div><strong>{toast.title ?? (toast.variant === "success" ? "Done" : toast.variant === "error" ? "Something went wrong" : "Notice")}</strong><p>{toast.message}</p></div>
-          <button type="button" aria-label="Dismiss notification" onClick={() => dismiss(toast.id)}><X size={14} /></button>
+          <div><strong>{toast.title ?? (toast.variant === "success" ? activeLabels.successTitle : toast.variant === "error" ? activeLabels.errorTitle : activeLabels.infoTitle)}</strong><p>{toast.message}</p></div>
+          <button type="button" aria-label={activeLabels.dismiss} onClick={() => dismiss(toast.id)}><X size={14} /></button>
           <span className="toast-life" aria-hidden="true" />
         </div>;
       })}
-    </div>, document.body)}</ToastContext.Provider>;
+    </div>, document.body)}</ToastLabelsContext.Provider></ToastContext.Provider>;
+}
+
+export function ToastLocalization({ labels }: { labels: ToastLabels }) {
+  const setLabels = useContext(ToastLabelsContext);
+  const { dismiss, errorTitle, infoTitle, successTitle } = labels;
+  useLayoutEffect(() => {
+    setLabels?.({ dismiss, errorTitle, infoTitle, successTitle });
+    return () => setLabels?.(null);
+  }, [dismiss, errorTitle, infoTitle, setLabels, successTitle]);
+  return null;
 }
 
 export function useToast() {

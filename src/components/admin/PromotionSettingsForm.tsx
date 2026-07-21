@@ -136,7 +136,7 @@ export function PromotionSettingsForm({
         </div>
       </AdminCard>
 
-      <Modal title={t("Quantity promotion")} isOpen={isEditing} onClose={reset} wide mobileSheet className="admin-promotion-modal">
+      <Modal title={t("Quantity promotion")} isOpen={isEditing} onClose={reset} wide mobileSheet className="admin-promotion-modal" closeLabel={t("Close modal")}>
         <form className="admin-form admin-promotion-form" onSubmit={handleSubmit}>
           <div className="admin-promotion-editor">
             <div className="admin-promotion-setup-grid">

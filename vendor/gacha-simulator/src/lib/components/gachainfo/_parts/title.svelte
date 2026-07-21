@@ -1,16 +1,12 @@
 <script>
 	import { assets } from '$lib/store/stores';
 	import { t } from 'svelte-i18n';
+	import HighlightedBannerName from '$lib/components/utility/HighlightedBannerName.svelte';
 
 	export let bannerTitle = '';
 	export let banner = '';
 	export let vision = '';
 
-	const highlightBannerName = (bannerName, vision = '') => {
-		const splited = bannerName.split(' ');
-		const joined = splited.slice(1).join(' ');
-		return `<span class="${vision || 'epitome'}-flat">${splited[0]}</span> ${joined}`;
-	};
 </script>
 
 {#if banner === 'history'}
@@ -22,10 +18,10 @@
 	<h1 class="standard v2">
 		<img src={$assets['brand.png']} alt="Icon" crossorigin="anonymous" />
 		<span>
-			{$t('wish.banner.standard')} "{@html highlightBannerName(
-				$t('wish.banner.name.wanderlust'),
-				'wanderlust'
-			)}"
+			{$t('wish.banner.standard')} "<HighlightedBannerName
+				name={$t('wish.banner.name.wanderlust')}
+				highlightClass="wanderlust-flat"
+			/>"
 		</span>
 	</h1>
 {:else}
@@ -35,7 +31,7 @@
 			{#if banner !== 'beginner'}
 				{$t(`wish.banner.${banner}`, { default: 'UnReleased Banner' })}
 			{/if}
-			"{@html highlightBannerName(bannerTitle, vision)}"
+			"<HighlightedBannerName name={bannerTitle} highlightClass={`${vision || 'epitome'}-flat`} />"
 		</span>
 	</h1>
 {/if}

@@ -13,7 +13,7 @@ Supabase is the source of truth. Catalog and order screens subscribe to Realtime
 
 Offline support covers browsing, saved assets, cart persistence, and a queued checkout intent. It must never fabricate a successful order, payment, or inventory reservation. Checkout must reconnect before `create_order` can validate stock and reserve inventory.
 
-Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dashboard`, and `/dashboard/shops/new`; storefront/admin remain `/s/:shopSlug`, `/s/:shopSlug/play`, and `/admin`. Production requires SMTP/email confirmation, callback allow-list entries under the deployed base, and `PUBLIC_SITE_URL`. Preserve safe GitHub Pages deep-link restoration, deploy all three Edge Functions (`invite-shop-member`, `notify-new-order`, and `gacha-music-proxy`) explicitly, recommend CAPTCHA/Auth rate limits, and never direct end users to Supabase Dashboard.
+Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dashboard`, and `/dashboard/shops/new`; storefront/admin remain `/s/:shopSlug`, `/s/:shopSlug/play`, and `/admin`. Production requires SMTP/email confirmation, callback allow-list entries under the deployed base, and `PUBLIC_SITE_URL`. Preserve safe GitHub Pages deep-link restoration, deploy all four Edge Functions (`create-order`, `invite-shop-member`, `notify-new-order`, and `gacha-music-proxy`) explicitly, recommend CAPTCHA/Auth rate limits, and never direct end users to Supabase Dashboard.
 
 ## Non-negotiable database rules
 

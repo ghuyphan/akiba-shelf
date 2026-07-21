@@ -49,9 +49,9 @@ select is(
   'demo tenant mirrors Arigato-san as its catalog source'
 );
 
-set local role anon;
+set local role service_role;
 select throws_ok(
-  $$select * from public.create_order('demo-booth', null, '[]', gen_random_uuid(), repeat('d', 32))$$,
+  $$select * from public.create_order_rate_limited('demo-booth', null, '[]', gen_random_uuid(), repeat('d', 32), repeat('d', 64))$$,
   'This storefront is a read-only demo and does not accept orders',
   'demo checkout is rejected before cart processing'
 );

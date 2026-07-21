@@ -1,5 +1,6 @@
 import { readdir, stat, writeFile } from "node:fs/promises";
 import { extname, join, relative, resolve, sep } from "node:path";
+import { createOfflinePack } from "./offline-pack-identity.mjs";
 
 const distRoot = resolve(process.cwd(), "dist");
 const packRoots = {
@@ -17,7 +18,7 @@ async function listFiles(root, directory = root) {
     else if (entry.name !== ".nojekyll" && !ignoredExtensions.has(extname(entry.name))) {
       const size = (await stat(path)).size;
       const pathname = `/${relative(distRoot, path).split(sep).join("/")}`;
-      files.push({ path: pathname, size });
+      files.push({ path: pathname, size, sourcePath: path });
     }
   }
   return files;
@@ -25,11 +26,16 @@ async function listFiles(root, directory = root) {
 
 const packs = Object.fromEntries(
   await Promise.all(
-    Object.entries(packRoots).map(async ([game, root]) => [game, await listFiles(root)]),
+    Object.entries(packRoots).map(async ([game, root]) => {
+      const assets = (await listFiles(root)).sort((a, b) =>
+        a.path.localeCompare(b.path),
+      );
+      return [game, createOfflinePack(assets)];
+    }),
   ),
 );
 await writeFile(
   resolve(distRoot, "offline-assets.json"),
-  `${JSON.stringify({ version: 1, generatedAt: new Date().toISOString(), packs })}\n`,
+  `${JSON.stringify({ version: 2, generatedAt: new Date().toISOString(), packs })}\n`,
 );
 console.log("Offline simulator asset manifest generated.");

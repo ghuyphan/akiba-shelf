@@ -110,6 +110,23 @@ export function saveCatalogSnapshot(
   }
 }
 
+export function replaceCompleteCatalogSnapshot(
+  data: Pick<CatalogData, "products" | "booth">,
+  shopId: string,
+) {
+  const previous = loadCatalogSnapshot(shopId);
+  if (!previous?.complete) return false;
+  saveCatalogSnapshot(
+    {
+      ...previous,
+      ...data,
+    },
+    shopId,
+    { replaceProducts: true, complete: true },
+  );
+  return true;
+}
+
 export function loadCart(shopId?: string): CartItem[] {
   try {
     const key = scopedKey(CART_KEY, shopId);
