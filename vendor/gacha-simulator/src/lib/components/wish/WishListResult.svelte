@@ -8,7 +8,6 @@
 	import Icon from '$lib/components/utility/Icon.svelte';
 	import ShareScreenshot from '$lib/components/utility/ShareScreenshot.svelte';
 	import { animeoff, assets } from '$lib/store/stores';
-	import { base } from '$app/paths';
 
 	export let preview = false;
 	export let list = [];
@@ -48,6 +47,10 @@
 	let container;
 	let encoded;
 	let scrollbars;
+	const encodeBase64 = (value) => {
+		const bytes = new TextEncoder().encode(value);
+		return btoa(Array.from(bytes, (byte) => String.fromCharCode(byte)).join(''));
+	};
 
 	onMount(async () => {
 		const itemBox = container.querySelectorAll('.item-box, .shadow');
@@ -65,11 +68,11 @@
 		playSfx('resultList');
 
 		const data = sortedWish
-			.map(({ name, rarity, type, isNew, fateType, stelaFortuna, outfit }) => {
-				return `${name}/${rarity}/${type}/${+isNew}/${fateType}/${+stelaFortuna}/${outfit}`;
+			.map(({ name, rarity, type, isNew, fateType, stelaFortuna, outfit, itemID }) => {
+				return `${name}/${rarity}/${type}/${+isNew}/${fateType}/${+stelaFortuna}/${outfit}/${itemID || ''}`;
 			})
 			.join('|');
-		encoded = btoa(data);
+		encoded = encodeBase64(data);
 	});
 	onDestroy(() => scrollbars?.destroy());
 

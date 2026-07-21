@@ -42,20 +42,18 @@ export const getAllLightCones = (star) =>
 
 export const getCharDetails = (charName) => {
 	if (!charName) return {};
-	const findChar = charsDB.find(({ name }) => charName === name);
-	if (findChar) return findChar;
 	const merchItems = getMerchItems();
 	const findMerch = merchItems.find(({ name }) => charName === name);
-	return findMerch || {};
+	if (findMerch) return findMerch;
+	return charsDB.find(({ name }) => charName === name) || {};
 };
 
 export const getLCDetails = (lcName) => {
 	if (!lcName) return {};
-	const findLC = lcDB.find(({ name }) => lcName === name);
-	if (findLC) return findLC;
 	const merchItems = getMerchItems();
 	const findMerch = merchItems.find(({ name }) => lcName === name);
-	return findMerch || {};
+	if (findMerch) return findMerch;
+	return lcDB.find(({ name }) => lcName === name) || {};
 };
 
 export const regularChars5Star = (nameList) => {

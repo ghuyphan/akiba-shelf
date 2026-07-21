@@ -3,29 +3,36 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import type { ComponentProps } from "react";
 import type { CartItem, Order, PaymentSettings, Product } from "../../types/catalog";
 import { defaultPromotion } from "../../lib/constants";
-import { formatVnd } from "../../lib/format";
+import { formatVnd } from "../../utils/format";
 
 const apiMocks = vi.hoisted(() => ({
   createOrder: vi.fn(),
   getCustomerOrder: vi.fn(),
   cancelCustomerOrder: vi.fn(),
 }));
+const checkoutStorage = vi.hoisted(() => ({ current: null as unknown }));
 
 vi.mock("../../lib/api", () => apiMocks);
 
-// Keep localStorage order recovery out of the happy path: no stored recovery,
-// deterministic identifiers for the recovery record created on submit.
-vi.mock("../../lib/orderRecovery", () => ({
-  loadOrderRecovery: vi.fn(() => null),
-  saveOrderRecovery: vi.fn(),
-  clearOrderRecovery: vi.fn(),
-  createOrderRecovery: vi.fn((cart: CartItem[], customerName: string) => ({
+vi.mock("../../lib/offline/checkoutSession", () => ({
+  loadCheckoutSession: vi.fn(() => checkoutStorage.current),
+  saveCheckoutSession: vi.fn((session: unknown) => {
+    checkoutStorage.current = session;
+  }),
+  clearCheckoutSession: vi.fn(() => {
+    checkoutStorage.current = null;
+  }),
+  createCheckoutSession: vi.fn((shopSlug: string, cart: CartItem[], customerName: string) => ({
+    version: 2,
+    shopSlug,
     clientRequestId: "11111111-1111-4111-8111-111111111111",
     recoveryToken: "0123456789abcdef0123456789abcdef",
     order: null,
     cart,
     customerName,
-    startedAt: "2026-07-17T10:00:00.000Z",
+    state: "queued",
+    createdAt: "2026-07-17T10:00:00.000Z",
+    updatedAt: "2026-07-17T10:00:00.000Z",
   })),
 }));
 
@@ -120,6 +127,7 @@ describe("PaymentQrModal", () => {
     vi.unstubAllGlobals();
   });
   beforeEach(() => {
+    checkoutStorage.current = null;
     vi.stubGlobal("navigator", {
       ...navigator,
       onLine: true,
@@ -133,7 +141,7 @@ describe("PaymentQrModal", () => {
     renderModal();
 
     expect(
-      screen.getByRole("dialog", { name: "Confirm your order" }),
+      screen.getByRole("dialog", { name: "Scan to pay" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Acrylic Stand — Miku")).toBeInTheDocument();
     expect(screen.getByText("Holo Badge — Rin")).toBeInTheDocument();
@@ -153,18 +161,35 @@ describe("PaymentQrModal", () => {
 
   it("creates the order on submit and waits for staff confirmation", async () => {
     const pending = makeOrder("pending");
-    apiMocks.createOrder.mockResolvedValue(pending);
+    let resolveOrder!: (order: Order) => void;
+    apiMocks.createOrder.mockReturnValue(
+      new Promise<Order>((resolve) => {
+        resolveOrder = resolve;
+      }),
+    );
     apiMocks.getCustomerOrder.mockResolvedValue(pending);
     renderModal();
+    const paymentDialog = screen.getByRole("dialog", { name: "Scan to pay" });
 
     fireEvent.change(screen.getByPlaceholderText("e.g. Huy or Alice"), {
       target: { value: "Huy" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
 
+    expect(await screen.findByText("Checking…")).toBeInTheDocument();
+    expect(document.querySelector(".payment-qr-loading .spin-icon")).toBeInTheDocument();
+    expect(screen.queryByText("Couldn’t reach checkout")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Scan to pay" })).toBe(
+      paymentDialog,
+    );
+    resolveOrder(pending);
+
     expect(
       await screen.findByRole("dialog", { name: "Scan to pay" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Scan to pay" })).toBe(
+      paymentDialog,
+    );
     expect(apiMocks.createOrder).toHaveBeenCalledWith(
       "test-shop",
       "Huy",
@@ -175,7 +200,44 @@ describe("PaymentQrModal", () => {
     expect(screen.getAllByText("AKB-0042").length).toBeGreaterThan(0);
     expect(screen.getByText("Huy")).toBeInTheDocument();
     expect(screen.getByText("Waiting for staff confirmation")).toBeInTheDocument();
-    expect(await screen.findByAltText("Payment QR code")).toBeInTheDocument();
+    const paymentQr = await screen.findByAltText("Payment QR code");
+    expect(paymentQr).toHaveAttribute(
+      "src",
+      expect.stringMatching(/^data:image\/svg\+xml;charset=utf-8,/),
+    );
+    const brandHeader = screen.getByAltText("VietQR").parentElement;
+    expect(brandHeader).toHaveClass("vietqr-card-header");
+    const vietQrCard = brandHeader?.parentElement;
+    const cardSections = Array.from(vietQrCard?.children ?? []);
+    expect(cardSections.map((section) => section.className)).toEqual([
+      "vietqr-card-header",
+      "vietqr-card-qr",
+      "vietqr-card-brands",
+      "vietqr-card-details",
+    ]);
+    const napasLogo = screen.getByAltText("Napas 247");
+    const bankLogo = vietQrCard?.querySelector<HTMLImageElement>(
+      ".vietqr-bank-icon img",
+    );
+    expect(napasLogo).toBeInTheDocument();
+    expect(bankLogo?.src).toMatch(/\/bank-logos\/MB\.png$/);
+
+    fireEvent.error(napasLogo);
+    if (bankLogo) fireEvent.error(bankLogo);
+    expect(screen.getByText("NAPAS 247")).not.toHaveAttribute("hidden");
+    expect(
+      vietQrCard?.querySelector(".vietqr-bank-name"),
+    ).toHaveTextContent("MB Bank");
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel order" }));
+    const cancelDialog = screen.getByRole("dialog", {
+      name: "Cancel this reservation?",
+    });
+    expect(cancelDialog).toHaveClass("cancel-order-modal");
+    expect(cancelDialog.querySelector(".payment-success-eyebrow")).toHaveTextContent("AKB-0042");
+    expect(cancelDialog.querySelector(".button-danger")).toHaveTextContent(
+      "Cancel order",
+    );
   });
 
   it("shows the success state once the order is confirmed", async () => {
@@ -211,4 +273,72 @@ describe("PaymentQrModal", () => {
     expect(screen.getByText("Total paid")).toBeInTheDocument();
     expect(screen.getByText(vnd(330000))).toBeInTheDocument();
   }, 15000);
+
+  it("shows an order service error without claiming the customer is offline", async () => {
+    const pending = makeOrder("pending");
+    checkoutStorage.current = {
+      version: 2,
+      shopSlug: "test-shop",
+      clientRequestId: "11111111-1111-4111-8111-111111111111",
+      recoveryToken: "0123456789abcdef0123456789abcdef",
+      order: pending,
+      cart,
+      customerName: "Huy",
+      state: "reserved",
+      createdAt: "2026-07-17T10:00:00.000Z",
+      updatedAt: "2026-07-17T10:00:00.000Z",
+    };
+    apiMocks.getCustomerOrder.mockRejectedValue(new Error("Permission denied"));
+
+    renderModal();
+
+    expect(
+      await screen.findByText("Couldn’t refresh order status"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/offline/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel order" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Retry status check" }),
+    ).toBeEnabled();
+  });
+
+  it("does not queue a programming TypeError as an offline checkout", async () => {
+    apiMocks.createOrder.mockRejectedValue(
+      new TypeError("Cannot read properties of undefined"),
+    );
+    renderModal();
+
+    fireEvent.change(screen.getByPlaceholderText("e.g. Huy or Alice"), {
+      target: { value: "Huy" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
+
+    expect(
+      await screen.findByRole("dialog", { name: "Checkout unavailable" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Reconnect to checkout" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("queues checkout without creating a local order when offline", async () => {
+    vi.stubGlobal("navigator", { ...navigator, onLine: false });
+    apiMocks.createOrder.mockRejectedValue(new TypeError("Failed to fetch"));
+    const onOrderChange = vi.fn();
+    renderModal({ onOrderChange });
+
+    fireEvent.change(screen.getByPlaceholderText("e.g. Huy or Alice"), {
+      target: { value: "Huy" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
+
+    expect(
+      await screen.findByRole("dialog", { name: "Reconnect to checkout" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/stock must be verified online/i)).toBeInTheDocument();
+    expect(screen.queryByAltText("Payment QR code")).not.toBeInTheDocument();
+    expect(onOrderChange).not.toHaveBeenCalledWith(
+      expect.objectContaining({ status: "pending" }),
+    );
+  });
 });

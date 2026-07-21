@@ -1,6 +1,6 @@
-import { formatVnd } from "../../lib/format";
-import { useCatalogCopy } from "../../lib/catalogI18n";
-import { getProductDiscountPercent, getProductPrice, isProductOnSale } from "../../lib/pricing";
+import { formatVnd } from "../../utils/format";
+import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
+import { getProductDiscountPercent, getProductPrice, isProductOnSale } from "../../utils/pricing";
 import type { Product } from "../../types/catalog";
 import { usePromotion } from "../../lib/promotionContext";
 

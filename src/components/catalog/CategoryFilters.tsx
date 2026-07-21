@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useCatalogCopy } from "../../lib/catalogI18n";
+import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
 import { useTabIndicator } from "../../hooks/useTabIndicator";
 
 type CategoryFiltersProps = {
@@ -90,7 +90,7 @@ export function CategoryFilters({ categories, activeCategory, onChange }: Catego
       <div
         className={`category-row${isDragging ? " is-dragging" : ""}`}
         ref={containerRef}
-        aria-label="Product categories"
+        aria-label={copy.productCategories}
         onPointerDown={startDrag}
         onPointerMove={drag}
         onPointerUp={stopDrag}

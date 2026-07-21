@@ -44,6 +44,7 @@ export const getMerchItems = (bannerId) =>
 		)
 		.map((entry) => ({
 		name: entry.product.name,
+		itemID: entry.product_id,
 		bannerId: entry.banner_id,
 		rarity: entry.rarity,
 		type: entry.kind,

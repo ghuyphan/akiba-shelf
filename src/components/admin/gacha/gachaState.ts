@@ -1,10 +1,10 @@
 import { safePublicUrl } from "../../../lib/branding";
-import { getGachaGameDescriptor } from "../../../lib/gachaGames";
+import { getGachaGameDescriptor } from "../../../lib/gacha/gachaGames";
 import {
   capGachaFeaturedEntries,
   normalizeGachaBanners,
   normalizeGachaDisplayLimit,
-} from "../../../lib/gachaLimits";
+} from "../../../lib/gacha/gachaLimits";
 import type { Product } from "../../../types/catalog";
 import {
   defaultGachaBanner,

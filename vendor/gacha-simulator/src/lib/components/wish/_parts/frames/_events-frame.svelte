@@ -100,11 +100,15 @@
 		position: absolute;
 	}
 	h1 {
-		bottom: 67%;
+		top: calc(13 / 100 * var(--content-height));
+		max-height: calc(26 / 100 * var(--content-height));
 		left: 0;
 		margin: 0 4%;
-		line-height: 125%;
-		font-size: calc(4.5 / 100 * var(--content-width));
+		line-height: 110%;
+		font-size: calc(4.2 / 100 * var(--content-width));
+		display: flex;
+		align-items: flex-end;
+		overflow: hidden;
 	}
 
 	:global(.zh-CN) h1 {

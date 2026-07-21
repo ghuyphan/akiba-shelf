@@ -36,3 +36,39 @@ export function subscribeToCatalogChanges(shopId: string, { onChange, onStatus }
     void client.removeChannel(channel);
   };
 }
+
+export function subscribeToAdminOrderChanges(
+  shopId: string,
+  onChange: () => void,
+) {
+  const client = supabase;
+  if (!client) return () => undefined;
+
+  const channel = client
+    .channel("admin-orders-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "orders",
+        filter: `shop_id=eq.${shopId}`,
+      },
+      onChange,
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "order_items",
+        filter: `shop_id=eq.${shopId}`,
+      },
+      onChange,
+    )
+    .subscribe();
+
+  return () => {
+    void client.removeChannel(channel);
+  };
+}

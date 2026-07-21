@@ -14,12 +14,9 @@
 	import HistoryIDB from '$lib/store/historyIdb';
 	import { APP_TITLE } from '$lib/env';
 	import { playSfx } from '$lib/helpers/audio/audio.svelte';
-	import charDB from '$lib/data/characters.json';
-	import weaponDB from '$lib/data/weapons.json';
 	import { localConfig } from '$lib/store/localstore';
 	import { assets, mobileMode, viewportHeight, viewportWidth } from '$lib/store/stores';
 	import InventoryDetails from './InventoryDetails.svelte';
-	import { checkActiveOutfit } from '$lib/helpers/outfit';
 	import { getMerchItems } from '$lib/helpers/merch';
 
 	const bg = ['dendro', 'anemo', 'cryo', 'hydro', 'electro', 'pyro', 'geo'];
@@ -102,17 +99,16 @@
 	const proccessData = (activeItem) => {
 		const dataFromIDB = activeItem === 'character' ? characters : weapons;
 		const merchData = getMerchItems().filter(({ type }) => type === activeItem);
-		const allData = merchData.length ? merchData : (activeItem === 'character' ? charDB : weaponDB).data;
-		loadedData = allData.map((dd) => {
+		loadedData = merchData.map((dd) => {
 			const d = filterObjProps(dd);
 			const owned = dataFromIDB.find(({ name }) => d.name === name);
 
 			d.type = activeItem;
 			if (d.type === 'character') {
-				d.localName = merchData.length ? d.name : $t(`${d.name}.name`);
-				d.outfit = merchData.length ? null : checkActiveOutfit(d.name)?.name;
+				d.localName = d.name;
+				d.outfit = null;
 			}
-			if (d.type === 'weapon') d.localName = merchData.length ? d.name : $t(d.name);
+			if (d.type === 'weapon') d.localName = d.name;
 
 			if (!owned) {
 				d.qty = 0;

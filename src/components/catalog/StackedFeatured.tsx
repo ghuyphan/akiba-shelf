@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, PackageCheck, ShoppingCart, Star } from "lucide-react";
 import type { Product } from "../../types/catalog";
-import { useCatalogCopy } from "../../lib/catalogI18n";
+import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
 import { EmptyState } from "../ui/EmptyState";
 import { ProductPrice } from "./ProductPrice";
 
@@ -66,7 +66,7 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
   return (
     <section
       className="featured-banner"
-      aria-label="Featured merchandise"
+      aria-label={copy.featuredMerchandise}
       onClick={(event) => event.stopPropagation()}
       onMouseEnter={() => { autoScrollPausedRef.current = true; }}
       onMouseLeave={() => { autoScrollPausedRef.current = false; }}
@@ -91,8 +91,8 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
             <span><PackageCheck size={15} /> {activeProduct.quantity_available > 10 ? copy.inStock : copy.onlyLeft(activeProduct.quantity_available)}</span>
           </div>
           <div className="featured-banner-actions">
-            <button type="button" className="featured-banner-add" onClick={(event) => onSelect(activeProduct, event)}><ShoppingCart size={17} /><span>{copy.addToCart}</span></button>
-            {featured.length > 1 && <div className="featured-banner-nav"><button type="button" onClick={(event) => { event.stopPropagation(); pauseAfterInteraction(); previous(); }} aria-label="Previous featured item"><ChevronLeft size={18} /></button><div>{featured.map((product, index) => <button key={product.id} type="button" className={index === active ? "active" : ""} onClick={(event) => { event.stopPropagation(); pauseAfterInteraction(); setActive(index); }} aria-label={`Show ${product.name}`} />)}</div><button type="button" onClick={(event) => { event.stopPropagation(); pauseAfterInteraction(); next(); }} aria-label="Next featured item"><ChevronRight size={18} /></button></div>}
+            <button type="button" className="featured-banner-add" aria-label={`${copy.addFeaturedSelection}: ${activeProduct.name}`} onClick={(event) => onSelect(activeProduct, event)}><ShoppingCart size={17} /><span>{copy.addToCart}</span></button>
+            {featured.length > 1 && <div className="featured-banner-nav"><button type="button" onClick={(event) => { event.stopPropagation(); pauseAfterInteraction(); previous(); }} aria-label={copy.previousFeatured}><ChevronLeft size={18} /></button><div>{featured.map((product, index) => <button key={product.id} type="button" className={index === active ? "active" : ""} onClick={(event) => { event.stopPropagation(); pauseAfterInteraction(); setActive(index); }} aria-label={copy.showFeaturedItem(product.name)} />)}</div><button type="button" onClick={(event) => { event.stopPropagation(); pauseAfterInteraction(); next(); }} aria-label={copy.nextFeatured}><ChevronRight size={18} /></button></div>}
           </div>
         </div>
 
@@ -121,7 +121,7 @@ export function StackedFeatured({ products, onSelect, autoRotate = true }: Stack
                     opacity: Math.abs(offset) > 2 ? 0 : 1,
                   }}
                   onClick={(event) => { event.stopPropagation(); if (!isActive) { pauseAfterInteraction(); setActive(index); } }}
-                  aria-label={isActive ? `${product.name}, current featured item` : `Show ${product.name}`}
+                  aria-label={isActive ? copy.currentFeaturedItem(product.name) : copy.showFeaturedItem(product.name)}
                   tabIndex={isActive ? 0 : -1}
                 >
                   <span className="featured-deck-image">

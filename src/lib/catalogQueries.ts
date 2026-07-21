@@ -1,3 +1,61 @@
+import type { Product } from "../types/catalog";
+
+export type PublicProductSort =
+  | "recommended"
+  | "price-asc"
+  | "price-desc"
+  | "quantity"
+  | "name";
+
+export type LocalCatalogQuery = {
+  category: string;
+  search: string;
+  sort: PublicProductSort;
+};
+
+export function queryLocalCatalog(
+  products: Product[],
+  query: LocalCatalogQuery,
+  offset: number,
+  pageSize: number,
+) {
+  let filtered = products.filter((product) => product.active);
+  if (query.category && query.category !== "All")
+    filtered = filtered.filter((product) => product.category === query.category);
+
+  const search = query.search.trim().toLocaleLowerCase();
+  if (search) {
+    filtered = filtered.filter((product) =>
+      [product.name, product.item_code, product.collection, product.description]
+        .filter(Boolean)
+        .some((value) => value.toLocaleLowerCase().includes(search)),
+    );
+  }
+
+  filtered.sort((first, second) => {
+    if (query.sort === "price-asc")
+      return (first.effective_price_vnd ?? first.price_vnd) -
+        (second.effective_price_vnd ?? second.price_vnd);
+    if (query.sort === "price-desc")
+      return (second.effective_price_vnd ?? second.price_vnd) -
+        (first.effective_price_vnd ?? first.price_vnd);
+    if (query.sort === "quantity")
+      return second.quantity_available - first.quantity_available;
+    if (query.sort === "name") return first.name.localeCompare(second.name);
+    if (first.featured !== second.featured) return first.featured ? -1 : 1;
+    if (first.sort_order !== second.sort_order)
+      return first.sort_order - second.sort_order;
+    return first.id.localeCompare(second.id);
+  });
+
+  const safeOffset = Math.max(0, offset);
+  const safePageSize = Math.max(1, pageSize);
+  return {
+    products: filtered.slice(safeOffset, safeOffset + safePageSize),
+    hasMore: safeOffset + safePageSize < filtered.length,
+  };
+}
+
 export const PUBLIC_PRODUCT_COLUMNS =
   "id,shop_id,name,collection,description,price_vnd,sale_price_vnd,effective_price_vnd,promotion_eligible,item_code,quantity_available,category,badge,badge_color,stock_status,stock_note,images,image_variants,featured,sort_order,active";
 export const ADMIN_PRODUCT_COLUMNS = `${PUBLIC_PRODUCT_COLUMNS},image_paths`;

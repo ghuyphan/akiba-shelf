@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defaultBooth } from "../../lib/constants";
-import { PlatformI18nProvider } from "../../lib/platformI18n";
+import { PlatformI18nProvider } from "../../lib/i18n/platformI18n";
 import { SocialLinkFields } from "./SocialLinkFields";
 
 describe("social link fields", () => {

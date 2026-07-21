@@ -1,25 +1,28 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, LoaderCircle, Mail } from "lucide-react";
-import { supabase } from "../lib/supabase";
-import { getAppUrl } from "../lib/authUrls";
-import { getShopMemberships } from "../lib/api";
+import {
+  getShopMemberships,
+  requestPasswordReset,
+  signInAdmin,
+  signUpAdmin,
+} from "../lib/api";
 import { useToast } from "../components/ui/ToastProvider";
 import "../styles/admin.css";
-import { routeAfterAuthentication } from "../lib/authRouting";
-import { getAuthErrorNotice } from "../lib/authErrors";
+import { routeAfterAuthentication } from "../lib/auth/authRouting";
+import { getAuthErrorNotice } from "../lib/auth/authErrors";
 import {
   getNewPasswordError,
   NEW_PASSWORD_HINT,
   NEW_PASSWORD_MIN_LENGTH,
-} from "../lib/authValidation";
+} from "../lib/auth/authValidation";
 import { PasswordField } from "../components/ui/PasswordField";
 import { AuthSecurityNote, AuthShell } from "../components/ui/AuthShell";
 import {
   AuthDivider,
   GoogleAuthButton,
 } from "../components/ui/GoogleAuthButton";
-import { usePlatformI18n } from "../lib/platformI18n";
+import { usePlatformI18n } from "../lib/i18n/platformI18n";
 
 type Mode = "signin" | "signup" | "forgot";
 type EmailCompletion = { mode: "signup" | "forgot"; email: string };
@@ -90,21 +93,11 @@ export function AuthPage() {
     requestMode: "signup" | "forgot",
     requestEmail: string,
   ) {
-    if (!supabase) return;
     if (requestMode === "forgot") {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        requestEmail,
-        { redirectTo: getAppUrl("/auth/callback?next=set-password") },
-      );
-      if (error) throw error;
+      await requestPasswordReset(requestEmail);
     } else {
-      const { data, error } = await supabase.auth.signUp({
-        email: requestEmail,
-        password,
-        options: { emailRedirectTo: getAppUrl("/auth/callback") },
-      });
-      if (error) throw error;
-      if (data.session) return false;
+      const { needsConfirmation } = await signUpAdmin(requestEmail, password);
+      if (!needsConfirmation) return false;
     }
     setCompletion({ mode: requestMode, email: requestEmail });
     setResendIn(30);
@@ -113,7 +106,6 @@ export function AuthPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!supabase) return;
     if (mode === "signup") {
       const passwordError = getNewPasswordError(password, confirmPassword);
       if (passwordError) {
@@ -136,11 +128,7 @@ export function AuthPage() {
         const needsConfirmation = await requestAccountEmail("signup", email);
         if (needsConfirmation) return;
       } else {
-        const { error: e } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (e) throw e;
+        await signInAdmin(email, password);
       }
       const memberships = await getShopMemberships();
       navigate(routeAfterAuthentication(memberships), { replace: true });

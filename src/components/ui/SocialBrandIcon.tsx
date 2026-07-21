@@ -1,4 +1,4 @@
-import type { SocialPlatform } from "../../lib/social";
+import type { SocialPlatform } from "../../utils/social";
 
 export function SocialBrandIcon({
   platform,

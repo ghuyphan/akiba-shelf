@@ -47,10 +47,13 @@
 
 	const setMobileMode = () => {
 		if ($isPWA) return mobileMode.set(true);
-		mobileMode.set(window.innerWidth > window.innerHeight);
+		const width = window.innerWidth || document.documentElement.clientWidth;
+		const height = window.innerHeight || document.documentElement.clientHeight;
+		const isPhone = Math.min(width, height) < 550 || Math.max(width, height) < 700;
+		mobileMode.set(isPhone);
 	};
 	const handleOrientationChange = () => {
-		if ($isMobile) setMobileMode();
+		setMobileMode();
 	};
 	const preventContextMenu = (event) => event.preventDefault();
 
@@ -70,8 +73,8 @@
 		importLocalBalance();
 		userCurrencies.init();
 
-		isMobile.set(mobileDetect() || innerWidth < 601);
-		if ($isMobile) setMobileMode();
+		isMobile.set(mobileDetect() || innerWidth < 768);
+		setMobileMode();
 
 		window.addEventListener('orientationchange', handleOrientationChange);
 		window.addEventListener('resize', setMobileMode);

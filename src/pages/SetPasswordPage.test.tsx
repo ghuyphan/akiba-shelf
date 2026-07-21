@@ -3,13 +3,13 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ToastProvider } from "../components/ui/ToastProvider";
-import { PlatformI18nProvider } from "../lib/platformI18n";
+import { PlatformI18nProvider } from "../lib/i18n/platformI18n";
 import {
   clearPasswordFlow,
   clearPendingInvitation,
   storePendingInvitation,
   storePasswordFlow,
-} from "../lib/authRouting";
+} from "../lib/auth/authRouting";
 
 const auth = vi.hoisted(() => ({
   getSession: vi.fn(),
@@ -17,7 +17,11 @@ const auth = vi.hoisted(() => ({
   rpc: vi.fn(),
 }));
 const api = vi.hoisted(() => ({
+  acceptShopInvitation: vi.fn(),
+  clearShopInvitationMetadata: vi.fn(),
+  getAuthSession: vi.fn(),
   getShopMemberships: vi.fn(),
+  updateAdminPassword: vi.fn(),
 }));
 
 vi.mock("../lib/supabase", () => ({
@@ -28,7 +32,11 @@ vi.mock("../lib/supabase", () => ({
   },
 }));
 vi.mock("../lib/api", () => ({
+  acceptShopInvitation: api.acceptShopInvitation,
+  clearShopInvitationMetadata: api.clearShopInvitationMetadata,
+  getAuthSession: api.getAuthSession,
   getShopMemberships: api.getShopMemberships,
+  updateAdminPassword: api.updateAdminPassword,
 }));
 
 import { SetPasswordPage } from "./SetPasswordPage";
@@ -66,7 +74,30 @@ describe("set-password invitation completion", () => {
     });
     auth.updateUser.mockReset().mockResolvedValue({ data: {}, error: null });
     auth.rpc.mockReset();
+    api.getAuthSession.mockReset().mockImplementation(async () => {
+      const result = await auth.getSession();
+      return { session: result.data.session, error: result.error };
+    });
+    api.acceptShopInvitation.mockReset().mockImplementation(async () => {
+      const result = await auth.rpc("accept_shop_invitation", {
+        p_invitation_id: "20000000-0000-4000-8000-000000000001",
+      });
+      if (result.error || typeof result.data !== "string") throw result.error;
+      return result.data;
+    });
+    api.clearShopInvitationMetadata.mockReset().mockImplementation(async () => {
+      const result = await auth.updateUser({
+        data: { shop_invitation_id: null },
+      });
+      if (result.error) throw result.error;
+    });
     api.getShopMemberships.mockReset().mockResolvedValue([]);
+    api.updateAdminPassword
+      .mockReset()
+      .mockImplementation(async (password: string) => {
+        const result = await auth.updateUser({ password });
+        if (result.error) throw result.error;
+      });
   });
 
   it("rejects direct navigation without a supported short-lived flow", async () => {

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { signInWithGoogle } from "../../lib/api";
-import { getAuthErrorNotice } from "../../lib/authErrors";
+import { getAuthErrorNotice } from "../../lib/auth/authErrors";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { useToast } from "./ToastProvider";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 
 function GoogleMark() {
   return (

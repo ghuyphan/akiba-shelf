@@ -51,10 +51,9 @@
 			? [data.featuredItem]
 			: [];
 
-	$: featuredNames = featuredItems
-		.map(({ name }) => parseLocalizedText(name, $locale))
-		.filter(Boolean)
-		.join(' · ');
+	$: primaryFeaturedName = featuredItems[0]?.name
+		? parseLocalizedText(featuredItems[0].name, $locale)
+		: title;
 
 	$: featuredRarity = Math.max(
 		0,
@@ -132,7 +131,7 @@
 			<div class="featured-name">
 				<span>
 					<i class="gi-{theme} {theme}-flat" />
-					{featuredNames || title}
+					{primaryFeaturedName}
 				</span>
 
 				<span class="up">

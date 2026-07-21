@@ -1,5 +1,5 @@
 import { Languages } from "lucide-react";
-import { usePlatformI18n, type PlatformLocale } from "../../lib/platformI18n";
+import { usePlatformI18n, type PlatformLocale } from "../../lib/i18n/platformI18n";
 import { SelectMenu } from "./SelectMenu";
 
 export function PlatformLanguageToggle() {

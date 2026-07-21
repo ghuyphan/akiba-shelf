@@ -28,8 +28,8 @@ import {
   Undo2,
 } from "lucide-react";
 import type { BoothSettings, PaymentSettings, Product, StorefrontCardStyle, StorefrontControlsStyle, StorefrontFeaturedStyle, StorefrontProductStyle, StorefrontSection } from "../../types/catalog";
-import { getStorefrontSectionStyleClass, getThemeStyle } from "../../lib/theme";
-import { CatalogLocaleProvider } from "../../lib/catalogI18n";
+import { getStorefrontSectionStyleClass, getThemeStyle } from "../../utils/theme";
+import { CatalogLocaleProvider } from "../../lib/i18n/catalogI18n";
 import type { PublicProductSort } from "../../lib/api";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { useToast } from "../ui/ToastProvider";
@@ -43,9 +43,9 @@ import { StackedFeatured } from "../catalog/StackedFeatured";
 import { BoothInfoPanel } from "../catalog/BoothInfoPanel";
 import { SelectedItemPanel } from "../catalog/SelectedItemPanel";
 import { ImageUpload } from "./ImageUpload";
-import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../lib/banks";
+import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../utils/banks";
 import { DEFAULT_STOREFRONT_PALETTE, STOREFRONT_PALETTES } from "../../lib/constants";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { SocialLinkFields } from "./SocialLinkFields";
 
 type StorefrontDesignerProps = {

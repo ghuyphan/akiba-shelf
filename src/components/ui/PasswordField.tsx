@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Eye, EyeOff, Lock } from "lucide-react";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 
 type PasswordFieldProps = {
   label: string;

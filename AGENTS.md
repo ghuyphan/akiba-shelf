@@ -1,15 +1,17 @@
-# Akiba Shelf agent guide
+# Matsuri agent guide
 
-This file is the working contract for future coding sessions in this repository. Read `README.md` and this file before making broad UI, data, or architecture changes.
+This file is the working contract for future coding sessions in this repository. Read `README.md` and this file before making broad data or architecture changes. Read `DESIGN.md` before broad UI work or introducing a new visual pattern.
 
 ## Product model
 
 There are two connected experiences:
 
-1. The customer storefront at `/`: browse merch, inspect details, add stock-limited quantities, create an order, scan VietQR, and wait for staff approval.
+1. The customer storefront at `/s/:shopSlug`: browse merch, inspect details, add stock-limited quantities, create an order, scan VietQR, and wait for staff approval.
 2. The admin workspace at `/admin`: monitor orders, confirm/cancel fulfilment, manage products, configure booth/payment details, and design the storefront.
 
 Supabase is the source of truth. Catalog and order screens subscribe to Realtime changes. Do not replace server-authoritative stock or price checks with client-only logic.
+
+Offline support covers browsing, saved assets, cart persistence, and a queued checkout intent. It must never fabricate a successful order, payment, or inventory reservation. Checkout must reconnect before `create_order` can validate stock and reserve inventory.
 
 Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dashboard`, and `/dashboard/shops/new`; storefront/admin remain `/s/:shopSlug`, `/s/:shopSlug/play`, and `/admin`. Production requires SMTP/email confirmation, callback allow-list entries under the deployed base, and `PUBLIC_SITE_URL`. Preserve safe GitHub Pages deep-link restoration, deploy all three Edge Functions (`invite-shop-member`, `notify-new-order`, and `gacha-music-proxy`) explicitly, recommend CAPTCHA/Auth rate limits, and never direct end users to Supabase Dashboard.
 
@@ -33,7 +35,19 @@ Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dash
   blocker for a linked migration.
 - When changing Supabase code or SQL, follow `.agents/skills/supabase/SKILL.md` and the Postgres best-practices skill. The `.agents/` directory is gitignored, so that skill file may be absent in fresh clones; the same migration knowledge also lives in `docs/` and the migration files themselves.
 
+## Gacha featured-item limits
+
+The gacha minigame embeds two vendored Svelte simulators (`vendor/gacha-simulator` for Genshin wishes, `vendor/hsr-simulator` for HSR warps). Featured (rate-up) 4★/5★ limits are defined once per game in `src/lib/gacha/gachaGames.ts` (`displayLimitMax` + `featuredRule`) and enforced in three places that must stay in sync: the host normalizer `src/lib/gacha/gachaLimits.ts` (`capGachaFeaturedEntries`), the publish RPC migrations (the core featured-limit validation is defined in `20260718103000_gacha_standard_banner_bypass.sql` and may be wrapped by later migrations), and each simulator's banner assembly.
+
+- HSR (warp): `display_limit` max 4 (default 4). Rule `primary-secondary`: at most 1 featured 5★ primary plus up to 3 featured 4★ rate-ups, and the 4★ count is capped at `min(3, display_limit - 1)`. Kind matters: character banners only feature character entries; Light Cone banners only feature non-character (lightcone/weapon) entries. The publish RPC rejects banners with more than one featured 5★ or too many featured 4★. `vendor/hsr-simulator/src/lib/helpers/banner-loader.js` slices featured items to `display_limit`, picks the first 5★ as primary, and shows up to 3 uniquely named 4★ rate-ups on the banner card.
+- Genshin (wish): `display_limit` max 5 (default 3; table check allows 1–5). Rule `display-limit`: any mix of featured 4★/5★ entries, capped only by the banner's total `display_limit` — no primary/secondary split and no per-rarity cap. `vendor/gacha-simulator/src/routes/+page.svelte` sorts featured items by rarity descending, slices to `display_limit || 3`, and treats the first (highest rarity) as the primary shown on the banner card.
+- Neither simulator caps featured items at roll time: `merch.js` in both apps splits the rolled rarity into featured vs standard pools and applies `featured_item_rate` plus the guarantee-after-loss flag (tracked per banner + rarity in localStorage). Overflow featured entries are silently un-featured host-side by `capGachaFeaturedEntries` before publishing, never at roll time.
+- When changing these limits, update the game descriptor, `src/lib/gacha/gachaLimits.ts` and its test, the publish RPC migration, the GachaPoolEditor/GachaBannerEditor UI copy, and the e2e fixtures together.
+- The gacha admin simplification plan lives in `docs/gacha-admin-redesign.md`; follow its three-card structure, copy renames, and responsive rules when touching the gacha admin UI.
+
 ## UI and design language
+
+`DESIGN.md` is the visual source of truth. Keep this section as the short implementation guardrail.
 
 - Overall feeling: polished independent artist booth, friendly rather than corporate.
 - Main surfaces: white or near-white cards on a warm soft background.
@@ -78,8 +92,8 @@ Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dash
 - Route-level fetching and composition belong in `src/pages`.
 - Reusable screen components belong in `components/admin` or `components/catalog`.
 - Cross-screen primitives belong in `components/ui`.
-- Keep Supabase calls in `src/lib/api.ts`, not inside presentational components.
-- When you add or change a data path in `src/lib/api.ts` (new RPC, new table
+- Keep Supabase calls in the domain modules under `src/lib/api/`, not inside presentational components. `src/lib/api.ts` is a compatibility barrel only; do not add implementations to it.
+- When you add or change a data path under `src/lib/api/` (new RPC, new table
   query, changed response shape), update the Playwright mock in
   `e2e/fixtures.ts` in the same change. Unmocked requests fall through to a
   catch-all that returns `[]`, which silently empties rendered lists and makes
@@ -91,7 +105,7 @@ Platform routes are `/`, `/auth`, `/auth/callback`, `/auth/set-password`, `/dash
   - `toast.error(message, "Could not save item")`
   - `toast.info(message, title)`
 - Use inline `Alert` only when the message should remain attached to the current form or content region.
-- Customer-facing interface strings must come from `catalogI18n.tsx`; update both `en` and `vi` entries together.
+- Storefront and gacha interface strings must come from `src/lib/i18n/catalogI18n.tsx`; platform, auth, dashboard, and admin strings must come from `src/lib/i18n/platformI18n.tsx`. Update both `en` and `vi` entries together and preserve the parity tests.
 
 ## Storefront designer
 
@@ -125,7 +139,7 @@ git diff --check
 ```
 
 When Edge Functions change, also run `npm run test:functions`. When dependencies
-change, run `npm audit --omit=dev`. When data paths in `src/lib/api.ts` or
+change, run `npm audit --omit=dev`. When data paths under `src/lib/api/` or
 page-level flows change, also run `npm run test:e2e`. Preserve `:focus-visible`
 behavior when verifying touch/highlight changes.
 

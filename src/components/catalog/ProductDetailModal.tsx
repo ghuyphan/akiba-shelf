@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { PackageCheck, ShoppingCart, Tag } from "lucide-react";
 import type { Product } from "../../types/catalog";
 import { Modal } from "../ui/Modal";
-import { useCatalogCopy } from "../../lib/catalogI18n";
+import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
 import { ProductPrice } from "./ProductPrice";
 
 type ProductDetailModalProps = {
@@ -42,14 +42,14 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
             {image ? <img src={image} alt={displayedProduct.name} decoding="async" /> : <span className="product-image-placeholder" />}
             {displayedProduct.badge && <span className="product-detail-image-badge" style={{ backgroundColor: displayedProduct.badge_color || undefined }}>{displayedProduct.badge}</span>}
             {thumbnailImages.length > 1 && (
-              <div className="product-detail-thumbnails" aria-label="Product images">
+              <div className="product-detail-thumbnails" aria-label={copy.productImages}>
                 {thumbnailImages.slice(0, 6).map((source, index) => (
                   <button
                     key={`${source}-${index}`}
                     type="button"
                     className={index === activeImage ? "active" : ""}
                     onClick={() => setActiveImage(index)}
-                    aria-label={`Show image ${index + 1}`}
+                    aria-label={copy.showImage(index + 1)}
                     aria-pressed={index === activeImage}
                   >
                     <img src={source} alt="" loading="lazy" decoding="async" />

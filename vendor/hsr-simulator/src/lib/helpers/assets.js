@@ -2,46 +2,15 @@
 import { base } from '$app/paths';
 import { getMerchItems } from './merch';
 
-const charSplashArt4 = import.meta.glob('@images/characters/splash-art/4star/*.webp', {
-	query: { w: '640;1280', as: 'picture' },
-	import: 'default',
-	eager: true
-});
-const charSplashArt5 = import.meta.glob('@images/characters/splash-art/5star/*.webp', {
-	query: { w: '640;1280;2000', as: 'picture' },
-	import: 'default',
-	eager: true
-});
-
-const lightcones34 = import.meta.glob(
-	['@images/light-cones/full-art/3star/*.webp', '@images/light-cones/full-art/4star/*.webp'],
-	{ query: { w: '150;450;890', as: 'picture' }, import: 'default', eager: true }
-);
-
-const lightcone5star = import.meta.glob('@images/light-cones/full-art/5star/*.webp', {
-	query: { w: '150;450;890', as: 'picture' },
-	import: 'default',
-	eager: true
-});
-
 const utils = import.meta.glob(
 	[
 		'@images/utils/**/*',
-		'@images/banners/**/*',
-		'@images/background/**/*',
-		'@images/light-cones/icons/*.webp',
-		'@images/characters/icons/*.webp',
-		'@images/characters/closeup/**/*.webp',
-		'@images/characters/closeup-bg/**/*.webp'
+		'@images/background/**/*'
 	],
 	{ query: { as: 'picture' }, import: 'default', eager: true }
 );
 
 const imageModules = {
-	...charSplashArt4,
-	...charSplashArt5,
-	...lightcones34,
-	...lightcone5star,
 	...utils
 };
 

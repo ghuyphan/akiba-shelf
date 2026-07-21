@@ -3,22 +3,31 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "../components/ui/ToastProvider";
-import { PlatformI18nProvider } from "../lib/platformI18n";
+import { PlatformI18nProvider } from "../lib/i18n/platformI18n";
 
 const auth = vi.hoisted(() => ({
   signInWithPassword: vi.fn(),
   signUp: vi.fn(),
   resetPasswordForEmail: vi.fn(),
 }));
-const signInWithGoogle = vi.hoisted(() => vi.fn());
+const api = vi.hoisted(() => ({
+  getShopMemberships: vi.fn(),
+  requestPasswordReset: vi.fn(),
+  signInAdmin: vi.fn(),
+  signInWithGoogle: vi.fn(),
+  signUpAdmin: vi.fn(),
+}));
 
 vi.mock("../lib/supabase", () => ({
   supabase: { auth },
   isSupabaseConfigured: true,
 }));
 vi.mock("../lib/api", () => ({
-  getShopMemberships: vi.fn().mockResolvedValue([]),
-  signInWithGoogle,
+  getShopMemberships: api.getShopMemberships,
+  requestPasswordReset: api.requestPasswordReset,
+  signInAdmin: api.signInAdmin,
+  signInWithGoogle: api.signInWithGoogle,
+  signUpAdmin: api.signUpAdmin,
 }));
 
 import { AuthPage } from "./AuthPage";
@@ -66,7 +75,34 @@ describe("AuthPage credential fields", () => {
     auth.signInWithPassword.mockReset();
     auth.signUp.mockReset();
     auth.resetPasswordForEmail.mockReset();
-    signInWithGoogle.mockReset();
+    api.getShopMemberships.mockReset().mockResolvedValue([]);
+    api.requestPasswordReset
+      .mockReset()
+      .mockImplementation(async (email: string) => {
+      const result = await auth.resetPasswordForEmail(email, {
+        redirectTo: "http://localhost:3000/auth/callback?next=set-password",
+      });
+      if (result.error) throw result.error;
+      });
+    api.signInAdmin
+      .mockReset()
+      .mockImplementation(async (email: string, password: string) => {
+      const result = await auth.signInWithPassword({ email, password });
+      if (result.error) throw result.error;
+      return result.data;
+      });
+    api.signInWithGoogle.mockReset();
+    api.signUpAdmin
+      .mockReset()
+      .mockImplementation(async (email: string, password: string) => {
+      const result = await auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: "http://localhost:3000/auth/callback" },
+      });
+      if (result.error) throw result.error;
+      return { needsConfirmation: !result.data.session };
+      });
   });
 
   it("shows and hides the password with an accessible control", async () => {
@@ -90,7 +126,7 @@ describe("AuthPage credential fields", () => {
   });
 
   it("starts Google sign in with the app callback", async () => {
-    signInWithGoogle.mockResolvedValue({});
+    api.signInWithGoogle.mockResolvedValue({});
     const user = userEvent.setup();
     renderPage();
 
@@ -98,7 +134,7 @@ describe("AuthPage credential fields", () => {
       screen.getByRole("button", { name: "Continue with Google" }),
     );
 
-    expect(signInWithGoogle).toHaveBeenCalledOnce();
+    expect(api.signInWithGoogle).toHaveBeenCalledOnce();
   });
 
   it("keeps the email but clears and hides the password after a failed sign in", async () => {

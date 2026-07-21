@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client";
 import "./styles/global.css";
 import "./styles/legacy.css";
 import { resetDocumentBranding } from "./lib/branding";
-import { hydrateInitialPageTheme } from "./lib/theme";
-import { restoreRedirect } from "./lib/authUrls";
+import { hydrateInitialPageTheme } from "./utils/theme";
+import { restoreRedirect } from "./lib/auth/authUrls";
 
 restoreRedirect();
 hydrateInitialPageTheme();

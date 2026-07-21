@@ -7,20 +7,22 @@ import {
   saveGachaDraft,
 } from "../../lib/api";
 import { getErrorMessage } from "../../lib/errors";
-import { GACHA_GAME_TYPES, getGachaGameDescriptor } from "../../lib/gachaGames";
-import { GACHA_PREVIEW_CONFIG_STORAGE_PREFIX } from "../../lib/gachaLaunch";
+import { GACHA_GAME_TYPES, getGachaGameDescriptor } from "../../lib/gacha/gachaGames";
+import {
+  clearGachaLaunchCache,
+  GACHA_PREVIEW_CONFIG_STORAGE_PREFIX,
+} from "../../lib/gacha/gachaLaunch";
 import {
   capGachaFeaturedEntries,
   matchesGachaBannerKind,
   normalizeGachaDisplayLimit,
-} from "../../lib/gachaLimits";
-import { usePlatformI18n } from "../../lib/platformI18n";
+} from "../../lib/gacha/gachaLimits";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import type { Product } from "../../types/catalog";
 import {
   defaultGachaBanner,
   type GachaBanner,
-  type GachaGameConfiguration,
   type GachaGameType,
   type GachaLiveStatusesByGame,
   type GachaPoolEntry,
@@ -32,7 +34,9 @@ import { AdminCard } from "./AdminCard";
 import { GachaBannerEditor } from "./gacha/GachaBannerEditor";
 import { GachaBannerList } from "./gacha/GachaBannerList";
 import { GachaGeneralSection } from "./gacha/GachaGeneralSection";
+import { GachaLuckSection } from "./gacha/GachaLuckSection";
 import { GachaPoolEditor } from "./gacha/GachaPoolEditor";
+import { GachaShared3StarEditor } from "./gacha/GachaShared3StarEditor";
 import { GachaEditBar, GachaStatusBar } from "./gacha/GachaStatusBar";
 import {
   createGameState,
@@ -129,6 +133,46 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     };
   }, [fetchWorkspace, loadAll, t, toast]);
 
+  useEffect(() => {
+    if (
+      loading ||
+      !current ||
+      !settings ||
+      !dirty ||
+      saving ||
+      publishing ||
+      !settings.title.trim() ||
+      banners.some((banner) => !banner.name.trim())
+    ) {
+      return;
+    }
+
+    const gameType = activeGame;
+    const snapshot = persistedGameState(current);
+    const timer = window.setTimeout(() => {
+      void runSave(async () => {
+        const saved = await saveGachaDraft(shopId, gameType, snapshot);
+        const savedState = createGameState(shopId, gameType, saved);
+        setBaselines((curr) => ({ ...curr, [gameType]: savedState }));
+      }).catch(() => {
+        // Keep the dirty state visible; the next edit retries autosave.
+      });
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    activeGame,
+    banners,
+    current,
+    dirty,
+    loading,
+    publishing,
+    runSave,
+    saving,
+    settings,
+    shopId,
+  ]);
+
   function validateBasics(state: GachaState): boolean {
     const { settings: stateSettings, banners: stateBanners } = state;
     if (
@@ -142,7 +186,8 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       return false;
     }
     if (
-      stateSettings.rare_base_rate + stateSettings.legendary_base_rate >= 100
+      stateSettings.rare_base_rate + stateSettings.legendary_base_rate >=
+      100
     ) {
       toast.error(
         t("The 4-star and 5-star base rates must total less than 100%."),
@@ -257,12 +302,13 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     const activeBannerIds = new Set(activeBanners.map((banner) => banner.id));
     const activeRarities = new Set(
       stateEntries
-        .filter(
-          (entry) => entry.active && activeBannerIds.has(entry.banner_id),
-        )
+        .filter((entry) => entry.active && activeBannerIds.has(entry.banner_id))
         .map((entry) => entry.rarity),
     );
-    const missingRarity = ([3, 4, 5] as const).find(
+    // 3-star pulls fall back to the shared souvenir pool (see migration
+    // 20260720080000_allow_gacha_publish_without_3star.sql), so only 4- and
+    // 5-star items are required here, matching the server-side check.
+    const missingRarity = ([4, 5] as const).find(
       (rarity) => !activeRarities.has(rarity),
     );
     if (missingRarity) {
@@ -278,25 +324,23 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
 
     const rule = descriptor.featuredRule;
     if (rule.kind === "primary-secondary") {
-      const offendingBanner = activeBanners.find(
-        (banner) => {
-          // If the banner has zero featured entries of any rarity, it is a standard banner
-          // and does not require a featured 5-star item.
-          const bannerEntries = stateEntries.filter(
-            (entry) => entry.banner_id === banner.id && entry.active,
-          );
-          const hasAnyFeatured = bannerEntries.some((entry) => entry.featured);
-          if (!hasAnyFeatured) return false;
+      const offendingBanner = activeBanners.find((banner) => {
+        // If the banner has zero featured entries of any rarity, it is a standard banner
+        // and does not require a featured 5-star item.
+        const bannerEntries = stateEntries.filter(
+          (entry) => entry.banner_id === banner.id && entry.active,
+        );
+        const hasAnyFeatured = bannerEntries.some((entry) => entry.featured);
+        if (!hasAnyFeatured) return false;
 
-          const primaryFeaturedCount = bannerEntries.filter(
-            (entry) =>
-              entry.featured &&
-              entry.rarity === 5 &&
-              matchesGachaBannerKind(entry, banner),
-          ).length;
-          return primaryFeaturedCount !== rule.primaryLimit;
-        },
-      );
+        const primaryFeaturedCount = bannerEntries.filter(
+          (entry) =>
+            entry.featured &&
+            entry.rarity === 5 &&
+            matchesGachaBannerKind(entry, banner),
+        ).length;
+        return primaryFeaturedCount !== rule.primaryLimit;
+      });
       if (offendingBanner) {
         toast.error(
           t(
@@ -309,25 +353,6 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       }
     }
     return true;
-  }
-
-  async function saveDraft() {
-    if (!current || !validateBasics(current)) return;
-    const config = persistedGameState(current);
-    let saved: GachaGameConfiguration | null = null;
-    await runSave(async () => {
-      saved = await saveGachaDraft(shopId, activeGame, config);
-    }).catch((error: unknown) => {
-      toast.error(
-        t(getErrorMessage(error, "Could not save the minigame.")),
-        t("Could not save draft"),
-      );
-    });
-    if (!saved) return;
-    const savedState = createGameState(shopId, activeGame, saved);
-    setBaselines((curr) => ({ ...curr, [activeGame]: savedState }));
-    resetGame(activeGame, savedState);
-    toast.success(t("Gacha draft saved."));
   }
 
   async function publish() {
@@ -352,6 +377,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
           entryCount: saved.entries.filter((entry) => entry.active).length,
         },
       }));
+      clearGachaLaunchCache(shopSlug);
       published = true;
     }).catch((error: unknown) => {
       toast.error(
@@ -381,6 +407,12 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     }
   }
 
+  async function discardCurrentGame() {
+    if (!window.confirm(t("Discard all unpublished changes for this game?")))
+      return;
+    await resetCurrentGame();
+  }
+
   const updateSettings = useCallback(
     (changes: Partial<GachaSettings>, asTextEdit = false) => {
       const updater = (curr: GachaState): GachaState => ({
@@ -398,23 +430,30 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     const availableProducts = products.filter((product) => product.active);
     if (availableProducts.length < 3) {
       toast.info(
-        t("Add at least three active products so the pool can include 3-star, 4-star, and 5-star rewards."),
+        t(
+          "Add at least three active products so the pool can include 3-star, 4-star, and 5-star rewards.",
+        ),
         t("More merch needed"),
       );
       return;
     }
     const banner = banners[0];
-    update((state) => ({
-      ...state,
-      settings: { ...state.settings, enabled: true },
-      selectedBannerId: banner.id,
-      entries: availableProducts.map((product, index) => ({
-        ...newEntry(shopId, banner.id, product.id, banner.kind, activeGame),
-        rarity: index === 0 ? 5 : index === 1 ? 4 : 3,
-        featured: index === 0,
-      })),
-    }), true);
-    toast.success(t("Recommended pool created. Review it, then publish when ready."));
+    update(
+      (state) => ({
+        ...state,
+        settings: { ...state.settings, enabled: true },
+        selectedBannerId: banner.id,
+        entries: availableProducts.map((product, index) => ({
+          ...newEntry(shopId, banner.id, product.id, banner.kind, activeGame),
+          rarity: index === 0 ? 5 : index === 1 ? 4 : 3,
+          featured: index === 0,
+        })),
+      }),
+      true,
+    );
+    toast.success(
+      t("Recommended pool created. Review it, then publish when ready."),
+    );
   }
 
   const updateBanner = useCallback(
@@ -801,6 +840,40 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     [dirtyByGame, liveByGame],
   );
 
+  const toggleShared3StarProduct = useCallback(
+    (productId: string) => {
+      if (!selectedBanner) return;
+      update((curr) => {
+        const exists = curr.entries.some(
+          (entry) => entry.product_id === productId,
+        );
+        if (exists) {
+          return {
+            ...curr,
+            entries: curr.entries.filter(
+              (entry) => entry.product_id !== productId,
+            ),
+          };
+        }
+        const entry = {
+          ...newEntry(
+            shopId,
+            selectedBanner.id,
+            productId,
+            selectedBanner.kind,
+            activeGame,
+          ),
+          rarity: 3 as const,
+        };
+        return {
+          ...curr,
+          entries: [...curr.entries, entry],
+        };
+      }, true);
+    },
+    [activeGame, selectedBanner, shopId, update],
+  );
+
   if (loading || !current || !settings || !selectedBanner) {
     return (
       <EmptyState
@@ -842,16 +915,15 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       )}
       <GachaGeneralSection
         settings={settings}
-        descriptor={descriptor}
         onUpdateSettings={updateSettings}
         onTextFocus={beginTextSession}
       />
       <AdminCard
         className="gacha-banners-card"
         icon={<Layers3 size={18} />}
-        title={t("Banners & pool")}
+        title={t("2 · Prizes & banners")}
         description={t(
-          "Select a banner, edit its public copy, then choose its featured rewards.",
+          "Choose one banner, then manage its prizes without leaving this card.",
         )}
       >
         <GachaBannerList
@@ -884,18 +956,27 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
           onUpdateEntry={updateEntry}
           onToggleFeatured={updateFeatured}
           onTextFocus={beginTextSession}
+          sharedCount={entries.filter((entry) => entry.rarity === 3).length}
+          sharedPool={
+            <GachaShared3StarEditor
+              products={products}
+              entries={entries}
+              onToggleProduct={toggleShared3StarProduct}
+            />
+          }
         />
       </AdminCard>
+      <GachaLuckSection
+        settings={settings}
+        descriptor={descriptor}
+        onUpdateSettings={updateSettings}
+        onTextFocus={beginTextSession}
+      />
       <GachaEditBar
         dirty={dirty}
-        canUndo={history.past.length > 0}
-        canRedo={history.future.length > 0}
         saving={saving}
         publishing={publishing}
-        onUndo={undo}
-        onRedo={redo}
-        onReset={() => void resetCurrentGame()}
-        onSaveDraft={() => void saveDraft()}
+        onReset={() => void discardCurrentGame()}
         onPublish={() => void publish()}
       />
     </div>

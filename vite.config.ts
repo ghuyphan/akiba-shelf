@@ -352,7 +352,7 @@ export default defineConfig(({ command }) => ({
               ),
             handler: "StaleWhileRevalidate",
             options: {
-              cacheName: "gacha-app-shell-v2",
+              cacheName: "gacha-app-shell-v3",
               expiration: {
                 maxEntries: 500,
                 maxAgeSeconds: 90 * 24 * 60 * 60,

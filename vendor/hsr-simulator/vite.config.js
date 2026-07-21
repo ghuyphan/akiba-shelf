@@ -17,6 +17,7 @@ export default defineConfig({
 		}
 	},
 	build: {
+		emptyOutDir: false,
 		chunkSizeWarningLimit: 500,
 		reportCompressedSize: false,
 		target: ['es2020']

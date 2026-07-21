@@ -6,12 +6,17 @@
 	import characters from '$lib/data/characters.json';
 	import { assets } from '$lib/store/stores';
 	import { outfits as outfitDB } from '$lib/data/outfits.json';
+	import { getMerchItems } from '$lib/helpers/merch';
 	import WishListResult from '$lib/components/wish/WishListResult.svelte';
 
 	let title = 'No Name';
 	let metaTitle = APP_TITLE;
 	let isError;
 	let wishlist = [];
+	const decodeBase64 = (value) => {
+		const bytes = Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
+		return new TextDecoder().decode(bytes);
+	};
 
 	const getMilestoneQty = (rarity, stelaFortuna) => {
 		let stdqty = rarity === 4 ? 2 : 10;
@@ -24,7 +29,7 @@
 		const arr = decoded.split('|');
 
 		arr.forEach((v) => {
-			let [name, rarity, type, isNew, fateType, stelaFortuna, outfit] = v.split('/');
+			let [name, rarity, type, isNew, fateType, stelaFortuna, outfit, itemID] = v.split('/');
 			outfit = ['undefined', 'NaN'].includes(outfit) ? null : outfit;
 			stelaFortuna = stelaFortuna === '1';
 			rarity = parseInt(rarity, 10);
@@ -33,9 +38,15 @@
 			fateType = fateType !== 'undefined' ? fateType : false;
 
 			const items = type === 'weapon' ? weapons : characters;
-			const { weaponType, wishBoxPosition, vision } = items.data
-				.filter((d) => d.rarity === rarity)
-				.find((d) => d.name === name);
+			const item =
+				getMerchItems().find(
+					(candidate) =>
+						candidate.type === type &&
+						(itemID ? String(candidate.itemID) === itemID : candidate.name === name)
+				) ||
+				items.data.filter((d) => d.rarity === rarity).find((d) => d.name === name) ||
+				{};
+			const { weaponType, wishBoxPosition, vision } = item;
 			const outfitOffset = outfitDB.find(({ name }) => name === outfit)?.wishBoxPosition || null;
 
 			list.push({
@@ -44,6 +55,7 @@
 				vision,
 				wishBoxPosition,
 				name,
+				itemID,
 				rarity,
 				isNew,
 				stelaFortuna,
@@ -104,7 +116,7 @@
 			const searchParams = new URLSearchParams(url.search);
 			const encoded = searchParams.get('a');
 			if (encoded) {
-				let decoded = atob(encoded);
+				let decoded = decodeBase64(encoded);
 				wishlist = getList(decoded);
 				getTitle();
 				return;

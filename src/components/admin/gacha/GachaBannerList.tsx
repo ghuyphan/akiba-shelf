@@ -2,13 +2,14 @@ import {
   ArrowDown,
   ArrowUp,
   Copy,
+  Ellipsis,
   Plus,
   Sword,
   Trash2,
   UserRound,
 } from "lucide-react";
 import { useMemo } from "react";
-import { usePlatformI18n } from "../../../lib/platformI18n";
+import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaBanner, GachaPoolEntry } from "../../../types/gacha";
 
 type Props = {
@@ -89,47 +90,30 @@ export function GachaBannerList({
         >
           <Plus size={16} /> {t("Add banner")}
         </button>
-        <span className="gacha-banner-editor-tools">
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => onMove(-1)}
-            disabled={!canMoveUp}
-            title={t("Move banner up")}
-            aria-label={t("Move banner up")}
-          >
-            <ArrowUp size={16} />
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => onMove(1)}
-            disabled={!canMoveDown}
-            title={t("Move banner down")}
-            aria-label={t("Move banner down")}
-          >
-            <ArrowDown size={16} />
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={onDuplicate}
-            title={t("Duplicate banner")}
-            aria-label={t("Duplicate banner")}
-          >
-            <Copy size={16} />
-          </button>
-          <button
-            type="button"
-            className="icon-button danger"
-            onClick={onDelete}
-            disabled={!canDelete}
-            title={t("Delete banner")}
-            aria-label={t("Delete banner")}
-          >
-            <Trash2 size={16} />
-          </button>
-        </span>
+        <details className="gacha-banner-menu">
+          <summary className="icon-button" aria-label={t("Banner actions")}>
+            <Ellipsis size={18} />
+          </summary>
+          <div className="gacha-banner-menu-popover">
+            <button type="button" onClick={() => onMove(-1)} disabled={!canMoveUp}>
+              <ArrowUp size={16} /> {t("Move earlier")}
+            </button>
+            <button type="button" onClick={() => onMove(1)} disabled={!canMoveDown}>
+              <ArrowDown size={16} /> {t("Move later")}
+            </button>
+            <button type="button" onClick={onDuplicate}>
+              <Copy size={16} /> {t("Duplicate banner")}
+            </button>
+            <button
+              type="button"
+              className="danger"
+              onClick={onDelete}
+              disabled={!canDelete}
+            >
+              <Trash2 size={16} /> {t("Delete banner")}
+            </button>
+          </div>
+        </details>
       </div>
     </>
   );

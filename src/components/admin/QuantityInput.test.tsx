@@ -2,7 +2,7 @@ import { useState } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
-import { PlatformI18nProvider } from "../../lib/platformI18n";
+import { PlatformI18nProvider } from "../../lib/i18n/platformI18n";
 import { QuantityInput } from "./QuantityInput";
 
 afterEach(cleanup);

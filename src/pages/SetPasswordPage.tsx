@@ -1,7 +1,6 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, LoaderCircle, RotateCw } from "lucide-react";
-import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import { useToast } from "../components/ui/ToastProvider";
 import { PageLoading } from "../components/ui/PageLoading";
 import { Button } from "../components/ui/Button";
@@ -12,21 +11,25 @@ import {
   getPasswordFlow,
   getPendingInvitation,
   routeAfterAuthentication,
-} from "../lib/authRouting";
-import { getShopMemberships } from "../lib/api";
-import { getAuthErrorNotice } from "../lib/authErrors";
+} from "../lib/auth/authRouting";
+import {
+  acceptShopInvitation,
+  clearShopInvitationMetadata,
+  getAuthSession,
+  getShopMemberships,
+  updateAdminPassword,
+} from "../lib/api";
+import { getAuthErrorNotice } from "../lib/auth/authErrors";
 import {
   getNewPasswordError,
   NEW_PASSWORD_HINT,
   NEW_PASSWORD_MIN_LENGTH,
-} from "../lib/authValidation";
+} from "../lib/auth/authValidation";
 import { PasswordField } from "../components/ui/PasswordField";
 import { AuthSecurityNote, AuthShell } from "../components/ui/AuthShell";
-import { usePlatformI18n } from "../lib/platformI18n";
+import { usePlatformI18n } from "../lib/i18n/platformI18n";
 
 type RouteState = "checking" | "ready" | "invalid";
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function SetPasswordPage() {
   const { t } = usePlatformI18n();
@@ -44,8 +47,6 @@ export function SetPasswordPage() {
 
   useEffect(() => {
     if (
-      !supabase ||
-      !isSupabaseConfigured ||
       !flow ||
       (flow === "invitation" && !invitationId)
     ) {
@@ -53,23 +54,26 @@ export function SetPasswordPage() {
       return;
     }
     let active = true;
-    void supabase.auth.getSession().then(({ data, error }) => {
-      if (active) setRouteState(!error && data.session ? "ready" : "invalid");
-    });
+    void getAuthSession()
+      .then(({ session, error }) => {
+        if (active) setRouteState(!error && session ? "ready" : "invalid");
+      })
+      .catch(() => {
+        if (active) setRouteState("invalid");
+      });
     return () => {
       active = false;
     };
   }, [flow, invitationId]);
 
   const acceptInvitation = useCallback(async () => {
-    if (!supabase || !invitationId) return;
+    if (!invitationId) return;
     setBusy(true);
     setAcceptanceFailed(false);
-    const { data: shopId, error } = await supabase.rpc(
-      "accept_shop_invitation",
-      { p_invitation_id: invitationId },
-    );
-    if (error || typeof shopId !== "string" || !uuidPattern.test(shopId)) {
+    let shopId: string;
+    try {
+      shopId = await acceptShopInvitation(invitationId);
+    } catch {
       setBusy(false);
       setAcceptanceFailed(true);
       toast.error(
@@ -78,10 +82,9 @@ export function SetPasswordPage() {
       );
       return;
     }
-    const { error: metadataError } = await supabase.auth.updateUser({
-      data: { shop_invitation_id: null },
-    });
-    if (metadataError) {
+    try {
+      await clearShopInvitationMetadata();
+    } catch {
       setBusy(false);
       setAcceptanceFailed(true);
       toast.error(
@@ -116,7 +119,7 @@ export function SetPasswordPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!supabase || routeState !== "ready") return;
+    if (routeState !== "ready") return;
     const passwordError = getNewPasswordError(password, confirm);
     if (passwordError) {
       toast.error(
@@ -128,8 +131,9 @@ export function SetPasswordPage() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) {
+    try {
+      await updateAdminPassword(password);
+    } catch (error) {
       setBusy(false);
       const notice = getAuthErrorNotice(error, "password");
       toast.error(t(notice.message), t(notice.title));

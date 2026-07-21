@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import { ChevronDown, Plus, Search, Star, Sword, Sparkles } from "lucide-react";
-import type { GachaGameDescriptor } from "../../../lib/gachaGames";
-import { usePlatformI18n } from "../../../lib/platformI18n";
+import { type ReactNode, useMemo, useState } from "react";
+import { ChevronDown, Gift, Plus, Search, Star, Sword, Sparkles } from "lucide-react";
+import type { GachaGameDescriptor } from "../../../lib/gacha/gachaGames";
+import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { Product } from "../../../types/catalog";
 import type { GachaBanner, GachaPoolEntry } from "../../../types/gacha";
 import { EmptyState } from "../../ui/EmptyState";
@@ -19,6 +19,8 @@ type Props = {
   onUpdateEntry: (productId: string, changes: Partial<GachaPoolEntry>) => void;
   onToggleFeatured: (productId: string, featured: boolean) => void;
   onTextFocus: () => void;
+  sharedPool: ReactNode;
+  sharedCount: number;
 };
 
 export function GachaPoolEditor({
@@ -31,13 +33,21 @@ export function GachaPoolEditor({
   onUpdateEntry,
   onToggleFeatured,
   onTextFocus,
+  sharedPool,
+  sharedCount,
 }: Props) {
   const { t } = usePlatformI18n();
   const [query, setQuery] = useState("");
-  const [poolFilter, setPoolFilter] = useState<"included" | "available">("included");
+  const [poolFilter, setPoolFilter] = useState<
+    "included" | "available" | "shared"
+  >("included");
 
+  // Filter for entries in this banner with 4★ or 5★ rarity
   const selectedEntries = useMemo(
-    () => entries.filter((entry) => entry.banner_id === banner.id),
+    () =>
+      entries.filter(
+        (entry) => entry.banner_id === banner.id && entry.rarity >= 4,
+      ),
     [entries, banner.id],
   );
 
@@ -67,12 +77,16 @@ export function GachaPoolEditor({
   );
 
   const primaryFeaturedCount = useMemo(
-    () => activeEntries.filter((entry) => entry.featured && entry.rarity === 5).length,
+    () =>
+      activeEntries.filter((entry) => entry.featured && entry.rarity === 5)
+        .length,
     [activeEntries],
   );
 
   const secondaryFeaturedCount = useMemo(
-    () => activeEntries.filter((entry) => entry.featured && entry.rarity === 4).length,
+    () =>
+      activeEntries.filter((entry) => entry.featured && entry.rarity === 4)
+        .length,
     [activeEntries],
   );
 
@@ -119,10 +133,16 @@ export function GachaPoolEditor({
       <div className="gacha-pool-head">
         <header className="gacha-panel-heading">
           <h3>
-            {t(descriptor.gameType === "hsr" ? "Warp pool" : "Wish pool")}
+            {t(
+              descriptor.gameType === "hsr"
+                ? "Warp Banner Prizes (4★ & 5★)"
+                : "Wish Banner Prizes (4★ & 5★)",
+            )}
           </h3>
           <p>
-            {t("Add merch, then tune rarity, role, and featured placement.")}
+            {t(
+              "Assign 4★ and 5★ merch prizes for this specific banner. 3★ pulls use the shared souvenir pool.",
+            )}
           </p>
         </header>
         <span className="gacha-chip">
@@ -137,7 +157,7 @@ export function GachaPoolEditor({
           role="group"
           aria-label={t("Filter pool items")}
         >
-          {(["included", "available"] as const).map((filter) => (
+          {(["included", "available", "shared"] as const).map((filter) => (
             <button
               type="button"
               key={filter}
@@ -146,27 +166,37 @@ export function GachaPoolEditor({
               onClick={() => setPoolFilter(filter)}
             >
               {filter === "included"
-                ? t("Pool items ({{count}})", {
+                ? t("Banner Prizes ({{count}})", {
                     count: selectedEntries.length,
                   })
-                : t("Add products ({{count}})", {
+                : filter === "available"
+                  ? t("Add merch ({{count}})", {
                     count: products.filter(
                       (product) => !entriesByProduct.has(product.id),
                     ).length,
-                  })}
+                  })
+                  : t("3★ filler ({{count}})", { count: sharedCount })}
             </button>
           ))}
         </div>
-        <label className="gacha-search">
-          <Search size={16} />
-          <input
-            value={query}
-            placeholder={t("Search merch…")}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
+        {poolFilter !== "shared" && (
+          <label className="gacha-search">
+            <Search size={16} />
+            <input
+              value={query}
+              placeholder={t("Search merch…")}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+        )}
       </div>
 
+      {poolFilter === "shared" ? (
+        <div className="gacha-shared-pool-tab">
+          <Gift size={18} aria-hidden="true" />
+          {sharedPool}
+        </div>
+      ) : (
       <div className="gacha-pool-list">
         {visibleProducts.length ? (
           visibleProducts.map((product) => {
@@ -177,12 +207,7 @@ export function GachaPoolEditor({
               <span className="gacha-item-id">
                 <span className="gacha-item-img">
                   {image ? (
-                    <img
-                      src={image}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                    />
+                    <img src={image} alt="" loading="lazy" decoding="async" />
                   ) : (
                     <Sparkles size={20} />
                   )}
@@ -214,9 +239,7 @@ export function GachaPoolEditor({
                     </span>
                   )}
                   {!product.active && (
-                    <span className="gacha-tag is-hidden">
-                      {t("Hidden")}
-                    </span>
+                    <span className="gacha-tag is-hidden">{t("Hidden")}</span>
                   )}
                   <button
                     type="button"
@@ -232,7 +255,7 @@ export function GachaPoolEditor({
                     }
                     onClick={() => onToggleProduct(product.id)}
                   >
-                    <Plus size={15} /> {t("Add to pool")}
+                    <Plus size={15} /> {t("Add to banner")}
                   </button>
                 </article>
               );
@@ -274,15 +297,15 @@ export function GachaPoolEditor({
                             ? entry.rarity === 5
                               ? "Primary"
                               : "Rate-up"
-                            : "Featured",
+                            : "Promoted",
                         )}
                       </span>
                     )}
-                    <span
-                      className={`gacha-tag ${entry.active ? "is-active" : "is-inactive"}`}
-                    >
-                      {t(entry.active ? "Active" : "Inactive")}
-                    </span>
+                    {!entry.active && (
+                      <span className="gacha-tag is-inactive">
+                        {t("Inactive")}
+                      </span>
+                    )}
                   </span>
                   <span className="gacha-item-expand" aria-hidden="true">
                     <ChevronDown size={16} />
@@ -296,7 +319,9 @@ export function GachaPoolEditor({
                   featuredCount={featuredCount}
                   primaryFeaturedCount={primaryFeaturedCount}
                   secondaryFeaturedCount={secondaryFeaturedCount}
-                  onUpdateEntry={(changes) => onUpdateEntry(product.id, changes)}
+                  onUpdateEntry={(changes) =>
+                    onUpdateEntry(product.id, changes)
+                  }
                   onToggleFeatured={(featured) =>
                     onToggleFeatured(product.id, featured)
                   }
@@ -315,6 +340,7 @@ export function GachaPoolEditor({
           />
         )}
       </div>
+      )}
     </div>
   );
 }

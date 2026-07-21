@@ -7,12 +7,15 @@
 <style>
 	/* List */
 	.item-list {
-		height: calc(var(--content-height) * 0.78);
+		flex: 1;
+		min-height: 0;
 		margin: 15px 0;
 		overflow-y: auto;
 		overflow-x: hidden;
 	}
 	:global(.mobile) .item-list {
+		flex: 1;
+		min-height: 0;
 		margin: 5px 0 0;
 		padding: 0;
 	}

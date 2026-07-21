@@ -5,6 +5,7 @@
 
 	import { data as charDB } from '$lib/data/characters.json';
 	import { data as lcDB } from '$lib/data/light-cones.json';
+	import { getMerchItems } from '$lib/helpers/merch';
 	import { decodeAndReadData } from '$lib/helpers/shareable-link';
 	import WarpResult from '../../_warp/warp-result/WarpResult.svelte';
 
@@ -13,9 +14,16 @@
 
 	const completeMissingData = (data) => {
 		const mergeData = data.map((itemData) => {
-			const { type, name } = itemData;
+			const { type, name, itemID } = itemData;
 			const itemdb = type === 'character' ? charDB : lcDB;
-			const complement = itemdb.find((v) => v.name === name);
+			const complement =
+				getMerchItems().find(
+					(item) =>
+						item.type === type &&
+						(itemID ? String(item.itemID) === itemID : item.name === name)
+				) ||
+				itemdb.find((v) => v.name === name) ||
+				{};
 			return { ...itemData, ...complement };
 		});
 		return mergeData;

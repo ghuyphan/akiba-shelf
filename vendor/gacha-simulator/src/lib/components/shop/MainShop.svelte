@@ -112,7 +112,11 @@
 
 	.item-body {
 		height: 100%;
-		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		flex: 1;
+		min-height: 0;
 	}
 
 	:global(.mobile) section {
@@ -164,5 +168,8 @@
 
 	.items-container {
 		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
 	}
 </style>

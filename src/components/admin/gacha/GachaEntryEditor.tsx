@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { Star, Sword, Trash2, UserRound } from "lucide-react";
-import type { GachaGameDescriptor } from "../../../lib/gachaGames";
-import { matchesGachaBannerKind } from "../../../lib/gachaLimits";
-import { usePlatformI18n } from "../../../lib/platformI18n";
+import type { GachaGameDescriptor } from "../../../lib/gacha/gachaGames";
+import { matchesGachaBannerKind } from "../../../lib/gacha/gachaLimits";
+import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type {
   GachaBanner,
   GachaElement,

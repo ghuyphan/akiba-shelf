@@ -51,7 +51,7 @@
 				alt=""
 				aria-hidden="true"
 			/>
-			<div class="merch-art merch-count-{featuredMerchItems.length}">
+			<div class="merch-art merch-count-{featuredMerchItems.length} {character.kind || 'character'}">
 				{#each featuredMerchItems as item, i (item.name)}
 					<div
 						class="featured-art merch-item merch-item-{i}"
@@ -323,55 +323,64 @@
 	.custom-merch-banner .featured-art img {
 		object-fit: cover;
 	}
-	.merch-count-1 .merch-item-0 {
+	/* Clean card deck layout on right side — strictly keeping clear of left text panel */
+	.merch-art .merch-item-0 {
 		right: 4%;
 		top: 0;
-		width: 84%;
+		left: auto;
+		width: 82%;
 		height: 100%;
+		z-index: 5;
 		transform: rotate(1.5deg);
 	}
 	.merch-count-2 .merch-item-0 {
-		left: 48%;
+		left: 36%;
+		right: auto;
 		top: 1%;
 		z-index: 2;
-		width: 49%;
+		width: 60%;
 		height: 96%;
 		transform: rotate(2.5deg);
 	}
 	.merch-count-2 .merch-item-1 {
-		left: 3%;
+		left: 0;
+		right: auto;
 		top: 5%;
 		z-index: 1;
-		width: 49%;
+		width: 54%;
 		height: 90%;
 		transform: rotate(-4deg);
 	}
 	.merch-count-3 .merch-item-0 {
-		left: 25%;
+		left: 22%;
+		right: auto;
 		top: 1%;
 		z-index: 3;
-		width: 50%;
+		width: 58%;
 		height: 98%;
 		transform: rotate(0.5deg);
 	}
 	.merch-count-3 .merch-item-1 {
-		left: 1%;
+		left: 0;
+		right: auto;
 		top: 10%;
 		z-index: 1;
-		width: 39%;
+		width: 44%;
 		height: 82%;
 		transform: rotate(-5deg);
 	}
 	.merch-count-3 .merch-item-2 {
-		right: 1%;
+		right: 0;
+		left: auto;
 		top: 9%;
 		z-index: 2;
-		width: 39%;
+		width: 44%;
 		height: 82%;
 		transform: rotate(5deg);
 	}
 	.merch-count-4 .merch-item-0 {
-		left: 2%;
+		left: 0;
+		right: auto;
 		top: 3%;
 		z-index: 4;
 		width: 54%;
@@ -379,29 +388,31 @@
 		transform: rotate(-2.5deg);
 	}
 	.merch-count-4 .merch-item:not(.merch-item-0) {
-		right: 1%;
-		width: 47%;
-		height: 39%;
+		right: 0;
+		left: auto;
+		width: 48%;
+		height: 38%;
 	}
 	.merch-count-4 .merch-item-1 { top: 0; z-index: 3; transform: rotate(3.5deg); }
 	.merch-count-4 .merch-item-2 { top: 31%; z-index: 2; transform: rotate(-1.5deg); }
 	.merch-count-4 .merch-item-3 { bottom: 0; z-index: 1; transform: rotate(3deg); }
 	.merch-count-5 .merch-item-0 {
-		left: 28%;
+		left: 24%;
+		right: auto;
 		top: 1%;
 		z-index: 5;
-		width: 44%;
+		width: 48%;
 		height: 98%;
 		transform: rotate(-0.5deg);
 	}
 	.merch-count-5 .merch-item:not(.merch-item-0) {
-		width: 38%;
-		height: 53%;
+		width: 42%;
+		height: 50%;
 	}
 	.merch-count-5 .merch-item-1 { left: 0; top: 0; z-index: 3; transform: rotate(-5deg); }
 	.merch-count-5 .merch-item-2 { right: 0; top: 1%; z-index: 4; transform: rotate(5deg); }
-	.merch-count-5 .merch-item-3 { left: 1%; bottom: 0; z-index: 1; transform: rotate(4deg); }
-	.merch-count-5 .merch-item-4 { right: 1%; bottom: 0; z-index: 2; transform: rotate(-4deg); }
+	.merch-count-5 .merch-item-3 { left: 0; bottom: 0; z-index: 1; transform: rotate(4deg); }
+	.merch-count-5 .merch-item-4 { right: 0; bottom: 0; z-index: 2; transform: rotate(-4deg); }
 	.merch-frame {
 		z-index: 2;
 		pointer-events: none;

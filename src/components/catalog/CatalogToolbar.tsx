@@ -1,6 +1,6 @@
 import { ArrowDownUp, Check, ChevronDown, Grid2X2, List, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useCatalogCopy } from "../../lib/catalogI18n";
+import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
 import type { PublicProductSort } from "../../lib/api";
 
 type CatalogToolbarProps = {
@@ -103,7 +103,7 @@ export function CatalogToolbar({
         )}
       </div>
 
-      <div className="view-toggle" aria-label="View mode">
+      <div className="view-toggle" aria-label={copy.viewModeLabel}>
         <button
           type="button"
           className={viewMode === "grid" ? "active" : ""}

@@ -42,9 +42,12 @@ test("reloads the storefront while completely offline", async ({
 test("uses a familiar featured icon and centers the collection badge", async ({
   page,
 }) => {
+  const featured = page.getByRole("region", { name: "Featured merchandise" });
   await expect(page.locator(".featured-banner-kicker svg")).toHaveClass(
     /lucide-star/,
   );
+  await expect(featured.getByRole("heading", { name: "Moon Stand" })).toBeVisible();
+  await expect(featured.getByRole("button", { name: "Add front item: Moon Stand" })).toBeVisible();
   const collectionBadge = page.locator(".featured-banner-collection");
   await expect(collectionBadge).toHaveCSS("display", "flex");
   await expect(collectionBadge).toHaveCSS("align-items", "center");
@@ -235,6 +238,50 @@ test("loads the catalog in batches without hiding later search results", async (
   await expect(page.locator(".product-card")).toHaveCount(1);
 });
 
+test("keeps a long cart reachable while the customer continues browsing", async ({
+  page,
+}) => {
+  await page.unrouteAll({ behavior: "wait" });
+  await mockSupabase(page, { manyProducts: true });
+  await page.reload();
+
+  const addButtons = page.locator(".product-card .product-add-button");
+  for (let index = 0; index < 8; index += 1) {
+    await addButtons.nth(index).click();
+  }
+
+  const isPhone = (page.viewportSize()?.width ?? 1000) <= 760;
+  if (isPhone) {
+    await page.getByRole("button", { name: "View cart" }).click();
+  }
+
+  const cart = page.locator(".selected-panel:not(.selected-panel-empty)");
+  const cartItems = cart.locator(".cart-items-container");
+  await expect(cart.locator(".cart-item-row")).toHaveCount(8);
+  await expect(cart.getByRole("button", { name: /Pay now/i })).toBeVisible();
+  await expect
+    .poll(() =>
+      cartItems.evaluate(
+        (element) => element.scrollHeight > element.clientHeight,
+      ),
+    )
+    .toBe(true);
+
+  if (!isPhone) {
+    await page.evaluate(() => window.scrollTo(0, 1200));
+    const floatingCart = page.locator(".floating-cart-bar");
+    await expect(floatingCart).toBeVisible();
+    await expect(floatingCart).toContainText("8 items ready in your cart");
+    const revealCart = floatingCart.getByRole("button", { name: "View cart" });
+    await expect(revealCart).toBeVisible();
+    await revealCart.click();
+    await expect(floatingCart).toBeHidden();
+    await expect
+      .poll(async () => (await cart.boundingBox())?.y ?? -1)
+      .toBeGreaterThanOrEqual(0);
+  }
+});
+
 test("keeps the view toggle aligned and animates results as one grid", async ({
   page,
 }) => {
@@ -293,7 +340,7 @@ test("shows desktop category arrows when categories overflow", async ({
   ).toHaveCount(0);
 });
 
-test("loads payment settings before checkout and presents API failure", async ({
+test("keeps the cart available when server validation rejects checkout", async ({
   page,
 }) => {
   await page.unrouteAll({ behavior: "wait" });
@@ -307,7 +354,93 @@ test("loads payment settings before checkout and presents API failure", async ({
   await page.getByRole("button", { name: /Pay now/i }).click();
   await page.getByLabel(/Pickup name/i).fill("Customer");
   await page.getByRole("button", { name: /Create order & pay/i }).click();
-  await expect(page.getByText(/Failed to submit order/i)).toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: "Checkout unavailable" }),
+  ).toBeVisible();
+  await expect(page.getByText(/Stock changed/i)).toBeVisible();
+  const storedCart = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null"),
+  );
+  expect(storedCart?.items).toHaveLength(1);
+});
+
+test("keeps one payment modal and shows the QR spinner while reserving", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: /Add Moon Stand to cart/i }).click();
+  const viewCart = page.getByRole("button", { name: /View cart/i });
+  if (await viewCart.isVisible()) await viewCart.click();
+  await page.getByRole("button", { name: /Pay now/i }).click();
+  const paymentDialog = page.getByRole("dialog", { name: "Scan to pay" });
+  await paymentDialog.getByLabel(/Pickup name/i).fill("Customer");
+
+  await page.route(
+    "**/mock-supabase/rest/v1/rpc/create_order",
+    async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 650));
+      await route.fallback();
+    },
+  );
+  await paymentDialog
+    .getByRole("button", { name: /Create order & pay/i })
+    .click();
+
+  await expect(paymentDialog.locator(".payment-qr-loading .spin-icon")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Couldn’t reach checkout" })).toHaveCount(0);
+  await expect(paymentDialog.getByAltText("Payment QR code")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Scan to pay" })).toHaveCount(1);
+});
+
+test("shows an order-status error without calling an online customer offline", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: /Add Moon Stand to cart/i }).click();
+  const viewCart = page.getByRole("button", { name: /View cart/i });
+  if (await viewCart.isVisible()) await viewCart.click();
+  await page.getByRole("button", { name: /Pay now/i }).click();
+  await page.getByLabel(/Pickup name/i).fill("Customer");
+  await page.getByRole("button", { name: /Create order & pay/i }).click();
+
+  await expect(page.getByText("Couldn’t refresh order status")).toBeVisible();
+  await expect(page.getByText(/offline —/i)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Cancel order" })).toBeEnabled();
+});
+
+test("queues checkout offline and reserves it safely after reconnect", async ({
+  context,
+  page,
+}) => {
+  await page.getByRole("button", { name: /Add Moon Stand to cart/i }).click();
+  const viewCart = page.getByRole("button", { name: /View cart/i });
+  if (await viewCart.isVisible()) await viewCart.click();
+  await page.getByRole("button", { name: /Pay now/i }).click();
+  await page.getByLabel(/Pickup name/i).fill("Customer");
+
+  const createOrderPattern = "**/mock-supabase/rest/v1/rpc/create_order";
+  await page.route(createOrderPattern, (route) =>
+    route.abort("internetdisconnected"),
+  );
+  await context.setOffline(true);
+  await page.getByRole("button", { name: /Create order & pay/i }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Reconnect to checkout" }),
+  ).toBeVisible();
+  await expect(page.getByAltText("Payment QR code")).toHaveCount(0);
+  const queuedCart = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null"),
+  );
+  expect(queuedCart?.items).toHaveLength(1);
+
+  await page.unroute(createOrderPattern);
+  await context.setOffline(false);
+  await expect(
+    page.getByRole("dialog", { name: "Scan to pay" }),
+  ).toBeVisible();
+  await expect(page.getByText("A100").first()).toBeVisible();
+  const reservedCart = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null"),
+  );
+  expect(reservedCart?.items).toHaveLength(0);
 });
 
 test("isolates storefront state when navigating between shops", async ({
@@ -335,11 +468,15 @@ test("offers native game portals when both gacha games are active", async ({
   await page.goto("./s/akiba-shelf/play");
 
   await expect(
-    page.getByRole("heading", { name: "Select a game" }),
+    page.getByRole("heading", { name: "Choose your universe" }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: /Genshin Impact/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Honkai: Star Rail/ })).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Save both games for offline play/ }),
+    page.getByRole("link", { name: "Enter: Wish simulator" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Enter: Warp simulator" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save offline" }),
   ).toBeVisible();
 });

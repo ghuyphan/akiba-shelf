@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { generateVietQrForCart } from "../lib/vietqr";
+import { generateVietQrForCart } from "../utils/vietqr";
 import type { CartItem, Order, PaymentSettings } from "../types/catalog";
 
 export function usePaymentQrSource(isOpen: boolean, order: Order | null, payment: PaymentSettings, cart: CartItem[]) {
@@ -14,7 +14,7 @@ export function usePaymentQrSource(isOpen: boolean, order: Order | null, payment
     setUnavailable(false);
     void generateVietQrForCart(payment, cart, order.order_code, order.total_amount)
       .catch(() => null)
-      .then((generated) => {
+      .then((generated: { src: string } | null) => {
         if (cancelled) return;
         const nextSource = generated?.src || payment.bank_qr_url || payment.momo_qr_url;
         setSource(nextSource);

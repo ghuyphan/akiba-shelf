@@ -1,7 +1,16 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { ArrowLeft, Check, Download, Sparkles } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+} from "react";
+import { ArrowLeft, ArrowRight, Check, Download, Sparkles } from "lucide-react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../components/ui/EmptyState";
+import { PageLoading } from "../components/ui/PageLoading";
 import {
   GACHA_CLOSE_MESSAGE_TYPE,
   GACHA_CONFIG_STORAGE_PREFIX,
@@ -15,17 +24,17 @@ import {
   parseGachaPreviewConfig,
   refreshGachaLaunch,
   runningGachaCatalog,
-} from "../lib/gachaLaunch";
-import { translations } from "../lib/catalogI18n";
+} from "../lib/gacha/gachaLaunch";
+import { translations } from "../lib/i18n/catalogI18n";
 import { getErrorMessage } from "../lib/errors";
 import { prefersLightweightCatalog } from "../lib/network";
-import type { GachaLaunchData } from "../lib/gachaLaunch";
+import type { GachaLaunchData } from "../lib/gacha/gachaLaunch";
 import {
   downloadGachaOfflinePack,
   downloadGachaOfflinePacks,
   hasGachaOfflinePack,
   offlinePackPercent,
-} from "../lib/offlinePack";
+} from "../lib/offline/offlinePack";
 import type { GachaCatalog, GachaGameType } from "../types/gacha";
 import genshinWishBackground from "../../vendor/gacha-simulator/static/images/background/wish-background.webp";
 import genshinLogo from "../../vendor/gacha-simulator/static/images/utility/genshin-logo.webp";
@@ -52,7 +61,10 @@ export function GachaPage() {
   const [lightweightMode] = useState(prefersLightweightCatalog);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const offlineDownloadRef = useRef<Promise<void> | null>(null);
+  const launchTimerRef = useRef<number | null>(null);
+  const skipSelectorIntroRef = useRef(false);
   const offlineProgressRef = useRef({ status: "idle", progress: 0 });
+  const [launchingGame, setLaunchingGame] = useState<GachaGameType | null>(null);
   const [packDownload, setPackDownload] = useState<{
     status: "idle" | "downloading" | "ready" | "error";
     progress: number;
@@ -61,7 +73,10 @@ export function GachaPage() {
 
   useEffect(() => {
     document.body.classList.add("gacha-screen");
-    return () => document.body.classList.remove("gacha-screen");
+    return () => {
+      document.body.classList.remove("gacha-screen");
+      if (launchTimerRef.current !== null) window.clearTimeout(launchTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -131,15 +146,18 @@ export function GachaPage() {
     };
   }, [preview, selectedGame, shopSlug]);
 
-  const availableGames = (["genshin", "hsr"] as const).filter((gameType) => {
-    const catalog = state?.catalogs[gameType];
-    return Boolean(
-      catalog?.settings &&
-        (catalog.settings.enabled || (preview && selectedGame === gameType)) &&
-        catalog.banners.length &&
-        catalog.entries.length,
-    );
-  });
+  const availableGames = useMemo(() => {
+    return (["genshin", "hsr"] as const).filter((gameType) => {
+      const catalog = state?.catalogs[gameType];
+      return Boolean(
+        catalog?.settings &&
+          (catalog.settings.enabled || (preview && selectedGame === gameType)) &&
+          catalog.banners.length &&
+          catalog.entries.length,
+      );
+    });
+  }, [state, preview, selectedGame]);
+
   const activeGame =
     selectedGame && availableGames.includes(selectedGame)
       ? selectedGame
@@ -149,6 +167,36 @@ export function GachaPage() {
   const activeCatalog: GachaCatalog | null = activeGame
     ? state?.catalogs[activeGame] ?? null
     : null;
+
+  useEffect(() => {
+    if (!activeGame) return;
+    skipSelectorIntroRef.current = true;
+    setLaunchingGame(null);
+    launchTimerRef.current = null;
+  }, [activeGame]);
+
+  useEffect(() => {
+    if (!state || availableGames.length === 0) return;
+    let active = true;
+    async function checkOfflineStatus() {
+      try {
+        const checks = await Promise.all(
+          availableGames.map((game) => hasGachaOfflinePack(game))
+        );
+        if (!active) return;
+        const allReady = checks.every(Boolean);
+        if (allReady) {
+          setPackDownload({ status: "ready", progress: 100 });
+        }
+      } catch {
+        // ignore
+      }
+    }
+    void checkOfflineStatus();
+    return () => {
+      active = false;
+    };
+  }, [state, availableGames]);
 
   useEffect(() => {
     if (!state || !activeCatalog) return;
@@ -286,7 +334,13 @@ export function GachaPage() {
 
   // Do not mount a default Genshin iframe while the catalog is unresolved.
   // HSR stores would otherwise download Genshin first and then replace it.
-  if (!state) return <main className="gacha-host" />;
+  if (!state) {
+    return (
+      <main className="gacha-host-state">
+        <PageLoading />
+      </main>
+    );
+  }
 
   if (availableGames.length === 0) {
     return (
@@ -336,60 +390,107 @@ export function GachaPage() {
     }
   }
 
+  function beginGachaLaunch(event: MouseEvent<HTMLAnchorElement>, gameType: GachaGameType) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (launchingGame) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      navigate(`?game=${gameType}`);
+      return;
+    }
+    setLaunchingGame(gameType);
+    launchTimerRef.current = window.setTimeout(() => {
+      navigate(`?game=${gameType}`);
+    }, 1350);
+  }
+
   if (!activeGame || !activeCatalog) {
     return (
-      <main className="gacha-game-select">
+      <main
+        className={`gacha-game-select${skipSelectorIntroRef.current ? " skip-selector-intro" : ""}${launchingGame ? ` is-launching is-launching-${launchingGame}` : ""}`}
+        aria-busy={launchingGame !== null}
+      >
         <div className="gacha-select-actions">
-          <Link className="gacha-select-back" to={`/s/${shopSlug}`} title={copy.backToStore}>
-            <ArrowLeft size={18} /> <span>{copy.backToStore}</span>
+          <Link
+            className="gacha-select-back"
+            to={`/s/${shopSlug}`}
+            title={copy.backToStore}
+            aria-label={copy.backToStore}
+          >
+            <ArrowLeft size={18} />
+            <span>{copy.backToStore}</span>
           </Link>
           <button
             type="button"
             className={`gacha-cache-btn is-${packDownload.status}`}
-            disabled={packDownload.status === "downloading"}
+            disabled={packDownload.status === "downloading" || packDownload.status === "ready"}
             onClick={() => void saveAvailableGames()}
-            title={
-              packDownload.status === "ready"
-                ? copy.gachaOfflineReady
-                : packDownload.status === "downloading"
-                  ? copy.savingGachaOffline
-                  : copy.saveBothGachaOffline
-            }
+            title={copy.saveBothGachaOfflineHint}
           >
             {packDownload.status === "downloading" ? (
-              <span className="gacha-cache-pct">{packDownload.progress}%</span>
+              <span className="gacha-progress-container" aria-hidden="true">
+                <svg className="gacha-progress-svg" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="16" fill="none" className="gacha-progress-track" />
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="16"
+                    fill="none"
+                    className="gacha-progress-bar"
+                    strokeDasharray="100.53"
+                    strokeDashoffset={100.53 - (packDownload.progress / 100) * 100.53}
+                    transform="rotate(-90 18 18)"
+                  />
+                </svg>
+                <span className="gacha-progress-text">{packDownload.progress}</span>
+              </span>
             ) : packDownload.status === "ready" ? (
               <Check size={18} />
             ) : (
               <Download size={18} />
             )}
             <span>
-              {packDownload.status === "ready"
-                ? copy.gachaOfflineReady
-                : packDownload.status === "downloading"
-                  ? copy.savingGachaOffline
+              {packDownload.status === "downloading"
+                ? copy.savingGachaOffline
+                : packDownload.status === "ready"
+                  ? copy.gachaOfflineReady
                   : copy.saveBothGachaOffline}
             </span>
           </button>
         </div>
         <section className="gacha-select-panel">
           <div className="gacha-select-heading">
-            <span>{state.shop.name}</span>
+            <span>{copy.chooseGachaEyebrow}</span>
             <h1>{copy.chooseGachaTitle}</h1>
+            <p>{copy.chooseGachaHint}</p>
+            <strong>{state.shop.name}</strong>
           </div>
           <div className="gacha-game-portals">
             {availableGames.map((gameType) => {
               const isHsr = gameType === "hsr";
+              const catalog = state.catalogs[gameType];
+              const uniqueProducts = Array.from(
+                new Map(
+                  (catalog?.entries ?? []).map((entry) => [entry.product.id, entry.product]),
+                ).values(),
+              );
+              const previewProducts = uniqueProducts
+                .filter((product) => product.images[0] || product.image_variants?.[0]?.thumbnail)
+                .slice(0, 4);
+              const simulatorName = isHsr ? copy.warpSimulator : copy.wishSimulator;
               return (
                 <Link
                   key={gameType}
                   className={`gacha-game-portal is-${gameType}`}
                   to={`?game=${gameType}`}
+                  aria-label={`${copy.enterGacha}: ${simulatorName}`}
+                  onClick={(event) => beginGachaLaunch(event, gameType)}
                   style={{
                     "--portal-background": `url(${isHsr ? hsrWarpBackground : genshinWishBackground})`,
                     "--portal-button": isHsr ? "none" : `url(${genshinWishButton})`,
                   } as CSSProperties}
                 >
+                  <span className="gacha-portal-glow" aria-hidden="true" />
                   <span className="gacha-portal-art" aria-hidden="true">
                     {isHsr && <img className="gacha-hsr-ornament" src={hsrCircleOrnament} alt="" />}
                     <img
@@ -399,15 +500,34 @@ export function GachaPage() {
                     />
                   </span>
                   <span className="gacha-portal-content">
+                    <span className="gacha-portal-kicker">{simulatorName}</span>
                     <img
                       className="gacha-portal-logo"
                       src={isHsr ? hsrLogo : genshinLogo}
                       alt={isHsr ? "Honkai: Star Rail" : "Genshin Impact"}
                     />
-                    <small>{isHsr ? "Warp Simulator" : "Wish Simulator"}</small>
+                    <span className="gacha-portal-meta">
+                      <span>{copy.gachaBannerCount(catalog?.banners.length ?? 0)}</span>
+                      <span aria-hidden="true">/</span>
+                      <span>{copy.gachaPrizeCount(uniqueProducts.length)}</span>
+                    </span>
+                    {previewProducts.length > 0 && (
+                      <span className="gacha-portal-prizes" aria-hidden="true">
+                        {previewProducts.map((product) => (
+                          <img
+                            key={product.id}
+                            src={product.image_variants?.[0]?.thumbnail || product.images[0]}
+                            alt=""
+                          />
+                        ))}
+                        {uniqueProducts.length > previewProducts.length && (
+                          <span>+{uniqueProducts.length - previewProducts.length}</span>
+                        )}
+                      </span>
+                    )}
                     <span className="gacha-portal-enter">
-                      <span>{copy.enterGacha}</span>
-                      <span aria-hidden="true">›</span>
+                      <span>{isHsr ? copy.enterWarp : copy.enterWish}</span>
+                      <ArrowRight size={18} aria-hidden="true" />
                     </span>
                   </span>
                 </Link>

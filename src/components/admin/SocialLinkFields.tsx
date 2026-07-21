@@ -1,6 +1,6 @@
 import type { BoothSettings } from "../../types/catalog";
-import { SOCIAL_PLATFORMS } from "../../lib/social";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { SOCIAL_PLATFORMS } from "../../utils/social";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { SocialBrandIcon } from "../ui/SocialBrandIcon";
 import { TextInput } from "../ui/Field";
 

@@ -12,7 +12,7 @@ import { Alert } from "../components/ui/Alert";
 import { Field, TextInput } from "../components/ui/Field";
 import { getErrorMessage } from "../lib/errors";
 import "../styles/admin.css";
-import { usePlatformI18n } from "../lib/platformI18n";
+import { usePlatformI18n } from "../lib/i18n/platformI18n";
 import {
   MAX_OWNED_SHOPS,
   SHOP_NAME_MAX_LENGTH,

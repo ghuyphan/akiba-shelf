@@ -38,6 +38,7 @@ test("offers an eligible staff browser a compact install banner", async ({
   const installBanner = page.getByLabel("Install Matsuri staff app");
   await expect(installBanner).toBeVisible();
   await expect(installBanner).toContainText("Keep Matsuri close");
+  await expect(page.locator("body > .staff-install-banner")).toHaveCount(1);
   await installBanner
     .getByRole("button", { name: "Install", exact: true })
     .click();
@@ -112,6 +113,39 @@ test("highlights the default Orders navigation tab", async ({ page }) => {
     .toBeGreaterThan(0);
 });
 
+test("admin header stays contained across responsive viewports", async ({
+  page,
+}) => {
+  await mockSupabase(page, { staffRole: "owner" });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+
+  const header = page.locator(".app-header");
+  const surface = page.locator(".app-header-surface");
+  const navigation = page.locator(".app-header-navigation");
+  await expect(header).toBeVisible();
+  await expect(surface).toBeVisible();
+  await expect(navigation).toBeVisible();
+
+  const [surfaceBox, navigationBox] = await Promise.all([
+    surface.boundingBox(),
+    navigation.boundingBox(),
+  ]);
+  expect(surfaceBox).not.toBeNull();
+  expect(navigationBox).not.toBeNull();
+  expect(navigationBox!.x).toBeGreaterThanOrEqual(surfaceBox!.x);
+  expect(navigationBox!.x + navigationBox!.width).toBeLessThanOrEqual(
+    surfaceBox!.x + surfaceBox!.width + 1,
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+});
+
 for (const role of ["owner", "admin"] as const) {
   test(`${role} sees every permitted workspace`, async ({ page }) => {
     await mockSupabase(page, { staffRole: role });
@@ -133,6 +167,80 @@ for (const role of ["owner", "admin"] as const) {
       ).toBeVisible();
   });
 }
+
+test("admin edit controls share one action grammar", async ({ page }) => {
+  await mockSupabase(page, { staffRole: "owner", teamMembers: true });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+
+  await page.getByRole("button", { name: /Products/ }).click();
+  await page.getByRole("button", { name: /Moon Stand/ }).click();
+  const productFormColumn = page.locator(".admin-grid-col-form");
+  await productFormColumn
+    .getByRole("button", { name: "Edit", exact: true })
+    .click();
+
+  const productEditBar = productFormColumn.locator(".admin-edit-bar");
+  await expect(productEditBar).toContainText("No changes");
+  const cancelButton = productEditBar.getByRole("button", {
+    name: "Cancel",
+    exact: true,
+  });
+  const saveButton = productEditBar.getByRole("button", {
+    name: "Save changes",
+    exact: true,
+  });
+  await expect(cancelButton).toHaveCSS("border-radius", "11px");
+  await expect(saveButton).toHaveCSS("border-radius", "11px");
+  expect((await cancelButton.boundingBox())!.x).toBeLessThan(
+    (await saveButton.boundingBox())!.x,
+  );
+  await expect(saveButton).toBeDisabled();
+
+  await productFormColumn
+    .getByLabel("Product name · Required")
+    .fill("Moon Stand updated");
+  await expect(productEditBar).toContainText("Unsaved changes");
+  await expect(saveButton).toBeEnabled();
+  await cancelButton.click();
+
+  await page.getByRole("button", { name: "Team", exact: true }).click();
+  const invitePanel = page.locator(".staff-invite-panel");
+  await expect(invitePanel).toBeVisible();
+  const inviteLabelStyles = await invitePanel.evaluate((element) =>
+    [...element.querySelectorAll<HTMLElement>(".field-label")].map((label) => ({
+      text: label.textContent,
+      fontSize: getComputedStyle(label).fontSize,
+      textTransform: getComputedStyle(label).textTransform,
+    })),
+  );
+  expect(inviteLabelStyles).toEqual([
+    { text: "Email", fontSize: "12px", textTransform: "uppercase" },
+    { text: "Role", fontSize: "12px", textTransform: "uppercase" },
+  ]);
+
+  await page.getByRole("button", { name: "Gacha", exact: true }).click();
+  const gachaEditBar = page.locator(".gacha-sticky-actions");
+  await expect(gachaEditBar).toBeVisible();
+  await expect(gachaEditBar.locator(".admin-edit-status")).toContainText(
+    "Draft saved",
+  );
+  const discardButton = gachaEditBar.getByRole("button", {
+    name: "Discard changes",
+    exact: true,
+  });
+  const publishButton = gachaEditBar.getByRole("button", {
+    name: "Publish",
+    exact: true,
+  });
+  await expect(discardButton).toHaveCSS("border-radius", "11px");
+  await expect(publishButton).toHaveCSS("border-radius", "11px");
+  expect((await discardButton.boundingBox())!.x).toBeLessThan(
+    (await publishButton.boundingBox())!.x,
+  );
+});
 
 test("rejects inactive staff", async ({ page }) => {
   await mockSupabase(page, { staffRole: "staff", staffActive: false });

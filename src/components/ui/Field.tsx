@@ -8,10 +8,19 @@ type FieldProps = {
   children: ReactNode;
 };
 
+type FieldLabelProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+export function FieldLabel({ children, className = "" }: FieldLabelProps) {
+  return <span className={`field-label ${className}`}>{children}</span>;
+}
+
 export function Field({ label, hint, error, className = "", children }: FieldProps) {
   return (
     <label className={`field ${className}`}>
-      <span className="field-label">{label}</span>
+      <FieldLabel>{label}</FieldLabel>
       {children}
       {error ? (
         <span className="field-error-msg" role="alert">{error}</span>

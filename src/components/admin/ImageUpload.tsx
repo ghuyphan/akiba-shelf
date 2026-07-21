@@ -1,9 +1,9 @@
 import { ImageUp, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { uploadImage, uploadProductImages } from "../../lib/api";
-import { compressImage, createProductImageVariants } from "../../lib/image";
+import { compressImage, createProductImageVariants } from "../../utils/image";
 import { useToast } from "../ui/ToastProvider";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 
 type ImageUploadProps = {
   shopId: string;

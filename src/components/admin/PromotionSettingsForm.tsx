@@ -1,13 +1,14 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Edit3, Gift, X } from "lucide-react";
 import type { Product, PromotionSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
 import { Field, TextInput } from "../ui/Field";
 import { Modal } from "../ui/Modal";
 import { AdminCard } from "./AdminCard";
+import { AdminEditBar } from "./AdminEditBar";
 
 type PromotionSettingsFormProps = {
   promotion: PromotionSettings;
@@ -90,6 +91,14 @@ export function PromotionSettingsForm({
   }
 
   const canEnable = draft.qualifying_product_ids.length > 0 && draft.reward_product_ids.length > 0;
+  const hasChanges = useMemo(() => {
+    const normalizedDraft = {
+      ...draft,
+      buy_quantity: boundedQuantity(buyQuantityInput),
+      free_quantity: boundedQuantity(freeQuantityInput),
+    };
+    return JSON.stringify(normalizedDraft) !== JSON.stringify(promotion);
+  }, [buyQuantityInput, draft, freeQuantityInput, promotion]);
 
   return (
     <>
@@ -276,10 +285,10 @@ export function PromotionSettingsForm({
 
         {draft.enabled && !canEnable && <p className="admin-promotion-warning">{t("Select at least one buy product and one reward product before publishing this offer.")}</p>}
 
-          <div className="admin-sticky-actions">
-            <Button type="submit" loading={busy} loadingText={t("Saving…")} disabled={draft.enabled && !canEnable}>{t("Save promotion")}</Button>
+          <AdminEditBar status={t(hasChanges ? "Unsaved changes" : "No changes")} statusTone={hasChanges ? "dirty" : "saved"}>
             <Button type="button" variant="secondary" icon={<X size={17} />} disabled={busy} onClick={reset}>{t("Cancel")}</Button>
-          </div>
+            <Button type="submit" loading={busy} loadingText={t("Saving…")} disabled={!hasChanges || (draft.enabled && !canEnable)}>{t("Save promotion")}</Button>
+          </AdminEditBar>
         </form>
       </Modal>
     </>

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { BadgeDollarSign, Building2, CreditCard, Edit3, MessageSquareText, QrCode, X } from "lucide-react";
 import type { PaymentSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
@@ -6,9 +6,10 @@ import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
 import { Field, SelectInput, TextArea, TextInput } from "../ui/Field";
 import { AdminCard } from "./AdminCard";
+import { AdminEditBar } from "./AdminEditBar";
 import { ImageUpload } from "./ImageUpload";
-import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../lib/banks";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../utils/banks";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 
 type QrManagerProps = { shopId: string; settings: PaymentSettings; onSave: (settings: PaymentSettings) => Promise<void> };
 
@@ -18,6 +19,7 @@ export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
   const { busy, error, run, setError } = useAsyncAction();
   const toast = useToast();
   const { t } = usePlatformI18n();
+  const hasChanges = useMemo(() => JSON.stringify(draft) !== JSON.stringify(settings), [draft, settings]);
   useEffect(() => { if (error) { toast.error(t(error), t("Could not save payment settings")); setError(""); } }, [error, setError, t, toast]);
   const banks = getVietQrBanks();
   const selectedBank = getPaymentBank(draft.bank_code, draft.bank_acq_id);
@@ -47,7 +49,7 @@ export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
           <div className="admin-fallback-qr"><div>{draft.bank_qr_url ? <img src={draft.bank_qr_url} alt={t("Fallback payment QR")} /> : <QrCode size={32} />}</div><div><Field label={t("Fallback QR URL")}><TextInput value={draft.bank_qr_url} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, bank_qr_url: event.target.value })} /></Field>{isEditing && <ImageUpload shopId={shopId} bucket="payment-qr" label={t("Upload fallback QR")} onUploaded={(url) => setDraft({ ...draft, bank_qr_url: url })} />}</div></div>
         </section>
 
-        {isEditing && <div className="admin-sticky-actions"><Button type="submit" loading={busy} loadingText={t("Saving…")}>{t("Save payment settings")}</Button><Button type="button" variant="secondary" icon={<X size={17} />} disabled={busy} onClick={resetDraft}>{t("Cancel")}</Button></div>}
+        {isEditing && <AdminEditBar status={t(hasChanges ? "Unsaved changes" : "No changes")} statusTone={hasChanges ? "dirty" : "saved"}><Button type="button" variant="secondary" icon={<X size={17} />} disabled={busy} onClick={resetDraft}>{t("Cancel")}</Button><Button type="submit" loading={busy} loadingText={t("Saving…")} disabled={!hasChanges}>{t("Save payment settings")}</Button></AdminEditBar>}
       </form>
     </AdminCard>
   );

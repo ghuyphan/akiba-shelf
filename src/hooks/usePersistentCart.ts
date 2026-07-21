@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CartItem, Product } from "../types/catalog";
-import { loadCart, saveCart } from "../lib/offline";
+import { loadCart, saveCart } from "../lib/offline/offline";
 
 export function usePersistentCart(shopKey?: string) {
   const [cart, setCart] = useState<CartItem[]>(() => loadCart(shopKey));

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Minus, Plus } from "lucide-react";
-import { formatNumber } from "../../lib/format";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { formatNumber } from "../../utils/format";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { TextInput } from "../ui/Field";
 
 type QuantityInputProps = {

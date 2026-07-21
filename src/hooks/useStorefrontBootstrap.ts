@@ -33,10 +33,15 @@ export function useStorefrontBootstrap(
   const [error, setError] = useState("");
   const shopIdentityRef = useRef(0);
   const paymentRequestRef = useRef<Promise<PaymentSettings> | null>(null);
+  const paymentLoadedRef = useRef(false);
+  const paymentRef = useRef(initialPayment);
+
+  paymentRef.current = payment;
 
   useEffect(() => {
     shopIdentityRef.current += 1;
     paymentRequestRef.current = null;
+    paymentLoadedRef.current = false;
     setBooth(initialBooth);
     setFeaturedProducts(
       initialProducts.filter((product) => product.featured),
@@ -118,17 +123,24 @@ export function useStorefrontBootstrap(
   const ensurePayment = useCallback(() => {
     if (!paymentEnabled) return Promise.resolve(defaultPayment);
     if (paymentRequestRef.current) return paymentRequestRef.current;
+    if (paymentLoadedRef.current) return Promise.resolve(paymentRef.current);
     if (!shopId) return Promise.reject(new Error("Shop is not loaded."));
     if (!navigator.onLine && initialPayment !== defaultPayment)
       return Promise.resolve(initialPayment);
     const identity = shopIdentityRef.current;
     const request = getPublicPaymentSettings(shopId)
       .then((nextPayment) => {
-        if (identity === shopIdentityRef.current) setPayment(nextPayment);
+        if (identity === shopIdentityRef.current) {
+          paymentLoadedRef.current = true;
+          paymentRef.current = nextPayment;
+          setPayment(nextPayment);
+        }
         return nextPayment;
       })
       .catch((err) => {
         if (identity === shopIdentityRef.current && initialPayment !== defaultPayment) {
+          paymentLoadedRef.current = true;
+          paymentRef.current = initialPayment;
           setPayment(initialPayment);
           return initialPayment;
         }
@@ -174,6 +186,7 @@ export function useStorefrontBootstrap(
   }, [loadBooth, settleRequests]);
 
   const refreshPayment = useCallback(async () => {
+    paymentLoadedRef.current = false;
     await settleRequests([ensurePayment()]);
   }, [ensurePayment, settleRequests]);
 

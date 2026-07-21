@@ -18,6 +18,33 @@ test("landing locale control matches the other header actions", async ({
   expect(localeBackground).toBe(signInBackground);
 });
 
+test("landing header keeps stable geometry without horizontal overflow", async ({
+  page,
+}) => {
+  await page.goto("./");
+
+  const header = page.locator(".app-header");
+  const surface = page.locator(".app-header-surface");
+  await expect(header).toBeVisible();
+  await expect(surface).toBeVisible();
+
+  const [headerBox, surfaceBox] = await Promise.all([
+    header.boundingBox(),
+    surface.boundingBox(),
+  ]);
+  expect(headerBox).not.toBeNull();
+  expect(surfaceBox).not.toBeNull();
+  expect(surfaceBox!.height).toBeCloseTo(66, 2);
+  expect(surfaceBox!.width).toBeLessThanOrEqual(
+    page.viewportSize()!.width - 16,
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+});
+
 async function expectStableLandingHero(page: import("@playwright/test").Page) {
   const title = page.locator(".platform-landing-hero h1");
   const underline = page.locator(".platform-landing-title-underline");

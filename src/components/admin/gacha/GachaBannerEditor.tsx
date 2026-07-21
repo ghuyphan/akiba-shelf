@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Clock3, Sparkles, Sword, UserRound } from "lucide-react";
-import type { GachaGameDescriptor } from "../../../lib/gachaGames";
-import { usePlatformI18n } from "../../../lib/platformI18n";
+import type { GachaGameDescriptor } from "../../../lib/gacha/gachaGames";
+import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaBanner, GachaElement, GachaItemKind } from "../../../types/gacha";
 import { Field, TextArea, TextInput } from "../../ui/Field";
 import type { SelectMenuOption } from "../../ui/SelectMenu";

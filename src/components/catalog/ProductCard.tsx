@@ -2,7 +2,7 @@ import { memo } from "react";
 import { ShoppingCart } from "lucide-react";
 import type { Product } from "../../types/catalog";
 import { getStockTone } from "../../lib/product";
-import { useCatalogCopy } from "../../lib/catalogI18n";
+import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
 import { ProductPrice } from "./ProductPrice";
 
 type ProductCardProps = {

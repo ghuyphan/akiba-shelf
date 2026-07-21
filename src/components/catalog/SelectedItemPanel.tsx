@@ -1,10 +1,10 @@
 import { Banknote, ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
 import type { CartItem, Product, PromotionSettings } from "../../types/catalog";
-import { formatVnd } from "../../lib/format";
-import { calculateCartPricing, getPricingLine } from "../../lib/pricing";
+import { formatVnd } from "../../utils/format";
+import { calculateCartPricing, getPricingLine } from "../../utils/pricing";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
-import { useCatalogCopy } from "../../lib/catalogI18n";
+import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
 import { MobileSheetShell, SheetHandle } from "../ui/MobileSheetShell";
 import { useOverlayHistory } from "../../hooks/useOverlayHistory";
 
@@ -55,6 +55,9 @@ export function SelectedItemPanel({
       onDismiss={requestCollapse}
       mode="expandable"
       className={`selected-panel ${isExpanded ? "mobile-expanded" : "mobile-collapsed"}`}
+      role={isExpanded ? "dialog" : undefined}
+      ariaModal={isExpanded || undefined}
+      ariaLabel={isExpanded ? copy.cart : undefined}
     >
       <div className="mobile-drag-handle">
         <SheetHandle onClick={requestCollapse} label={copy.collapseCart} />
@@ -92,13 +95,16 @@ export function SelectedItemPanel({
       {/* Full cart content */}
       <div className="cart-full-content">
         <div className="selected-header">
-          <h2>{copy.cart} ({totalItems})</h2>
+          <div className="selected-header-copy">
+            <h2>{copy.cart} ({totalItems})</h2>
+            {cart.length > 4 && <span>{copy.scrollCartItems}</span>}
+          </div>
           <Button variant="ghost" className="clear-button" onClick={onClearCart}>
             {copy.clearAll}
           </Button>
         </div>
 
-        <div className="cart-items-container">
+        <div className="cart-items-container" role="list" aria-label={copy.cartItems} tabIndex={cart.length > 4 ? 0 : undefined}>
           {cart.map((item) => {
             const pricingLine = getPricingLine(pricing, item.product.id);
             // Cart state can briefly lag the pricing snapshot during
@@ -110,7 +116,7 @@ export function SelectedItemPanel({
             const canIncrease = pricingLine.quantity < maxQuantity;
 
             return (
-              <div key={item.product.id} className="cart-item-row">
+              <div key={item.product.id} className="cart-item-row" role="listitem">
                 {primaryImage ? (
                   <img className="cart-item-thumb" src={primaryImage} alt={item.product.name} />
                 ) : (
@@ -165,7 +171,7 @@ export function SelectedItemPanel({
             </div>
           )}
           {pricing.discountAmount > 0 && <div className="cart-discount-row"><span>{copy.discount}</span><strong>−{formatVnd(pricing.discountAmount)}</strong></div>}
-          <div className="cart-total-row">
+          <div className="cart-total-row" aria-live="polite">
             <span>{copy.totalPrice}</span>
             <strong>{formatVnd(totalAmount)}</strong>
           </div>

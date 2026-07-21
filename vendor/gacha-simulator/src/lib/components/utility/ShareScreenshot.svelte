@@ -10,6 +10,7 @@
 	import { firstShare, localBalance } from '$lib/store/localstore';
 	import { copy } from '$lib/helpers/nameText';
 	import { playSfx } from '$lib/helpers/audio/audio.svelte';
+	import { base } from '$app/paths';
 	import Icon from './Icon.svelte';
 	import ButtonGeneral from './ButtonGeneral.svelte';
 
@@ -29,13 +30,22 @@
 	let blob;
 	let screenshotObjectUrl = '';
 	let toastTimer;
+	let mounted = false;
 	const featuredItem = item ? `I got ${item}` : "Wow! I'm so lucky ";
 	const shareText = `${featuredItem} when pulling on Wish Simulator, how lovely!`;
 	let url = '/images/meta-picture.jpg';
-	$: shareLink = `${HOST}/screen/${page}?a=${encodedData}`;
+	let shareLink = '';
+	$: if (mounted) {
+		const resultUrl = new URL(`${base}/screen/${page}`, HOST || window.location.origin);
+		resultUrl.searchParams.set('a', encodedData);
+		const shop = new URLSearchParams(window.location.search).get('shop');
+		if (shop) resultUrl.searchParams.set('shop', shop);
+		shareLink = resultUrl.toString();
+	}
 
 	onMount(() => {
 		isFirstShare = firstShare.check();
+		mounted = true;
 	});
 
 	const addFunds = () => {

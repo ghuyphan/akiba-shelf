@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import type { Product } from "../../types/catalog";
-import { formatVnd } from "../../lib/format";
-import { getProductPrice, isProductOnSale } from "../../lib/pricing";
+import { formatVnd } from "../../utils/format";
+import { getProductPrice, isProductOnSale } from "../../utils/pricing";
 import { AdminCard } from "./AdminCard";
 import { Boxes, ImageIcon, LoaderCircle, PackageSearch, Plus, RotateCcw, Search } from "lucide-react";
 import { EmptyState } from "../ui/EmptyState";
 import { Button } from "../ui/Button";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 
 type ProductListProps = {
   products: Product[];

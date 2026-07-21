@@ -1,7 +1,7 @@
 import { ArrowRight, LogIn, RotateCw, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppHeader } from "../components/ui/AppHeader";
-import { PlatformMark } from "../components/ui/PlatformMark";
+import { PlatformHeaderBrand } from "../components/ui/PlatformHeaderBrand";
 import { PLATFORM_BRAND } from "../lib/branding";
 import "../styles/admin.css";
 
@@ -20,18 +20,19 @@ export function ShopUnavailablePage({
     <div className="admin-shell platform-home-shell platform-not-found-shell">
       <AppHeader
         brand={
-          <Link className="platform-not-found-brand" to="/" aria-label={`${PLATFORM_BRAND.name} home`}>
-            <span className="admin-header-mark">
-              <PlatformMark />
-            </span>
-            <span className="admin-header-title">
-              <strong>{PLATFORM_BRAND.name}</strong>
-              <small>{PLATFORM_BRAND.descriptor}</small>
-            </span>
+          <Link
+            className="platform-not-found-brand"
+            to="/"
+            aria-label={`${PLATFORM_BRAND.name} home`}
+          >
+            <PlatformHeaderBrand subtitle={PLATFORM_BRAND.descriptor} />
           </Link>
         }
         actions={
-          <Link to="/admin" className="admin-header-button platform-home-signin-btn">
+          <Link
+            to="/admin"
+            className="app-header-button platform-home-signin-btn"
+          >
             <LogIn size={16} />
             <span>Staff sign in</span>
           </Link>
@@ -39,14 +40,23 @@ export function ShopUnavailablePage({
       />
 
       <main className="admin-container platform-home-container">
-        <section className="platform-landing-hero platform-not-found-hero" role={hasLoadError ? "alert" : undefined}>
+        <section
+          className="platform-landing-hero platform-not-found-hero"
+          role={hasLoadError ? "alert" : undefined}
+        >
           <div className="platform-landing-hero-copy">
             <span className="platform-landing-kicker">
               <span aria-hidden="true">✦</span> 404 · Storefront unavailable
             </span>
             <h1>
-              This booth <span className="platform-landing-title-accent">isn’t on the shelf.</span>
-              <i className="platform-landing-title-underline" aria-hidden="true" />
+              This booth{" "}
+              <span className="platform-landing-title-accent">
+                isn’t on the shelf.
+              </span>
+              <i
+                className="platform-landing-title-underline"
+                aria-hidden="true"
+              />
             </h1>
             <p>
               {hasLoadError
@@ -57,13 +67,20 @@ export function ShopUnavailablePage({
               <Link to="/" className="button button-primary platform-home-cta">
                 Back to Matsuri <ArrowRight size={17} />
               </Link>
-              <button type="button" className="button platform-home-demo" onClick={onRetry}>
+              <button
+                type="button"
+                className="button platform-home-demo"
+                onClick={onRetry}
+              >
                 <RotateCw size={17} /> Try again
               </button>
             </div>
             {showDemoLink && (
               <small className="platform-landing-note">
-                Looking for an example? <Link to="/s/demo-booth"><strong>Visit the demo booth.</strong></Link>
+                Looking for an example?{" "}
+                <Link to="/s/demo-booth">
+                  <strong>Visit the demo booth.</strong>
+                </Link>
               </small>
             )}
           </div>
@@ -88,18 +105,27 @@ export function ShopUnavailablePage({
                 <div className="platform-landing-product-stack">
                   <article>
                     <div className="pink">EMPTY DISPLAY</div>
-                    <footer><b>Try another aisle</b><span>→</span></footer>
+                    <footer>
+                      <b>Try another aisle</b>
+                      <span>→</span>
+                    </footer>
                   </article>
                   <article>
                     <div className="mint">404 BOOTH</div>
-                    <footer><b>Link not found</b><span>♡</span></footer>
+                    <footer>
+                      <b>Link not found</b>
+                      <span>♡</span>
+                    </footer>
                   </article>
                 </div>
               </div>
             </div>
             <div className="platform-landing-phone platform-not-found-phone">
               <div className="platform-landing-phone-notch" />
-              <div className="platform-landing-phone-head"><span>Booth directory</span><span>♡</span></div>
+              <div className="platform-landing-phone-head">
+                <span>Booth directory</span>
+                <span>♡</span>
+              </div>
               <div className="platform-not-found-phone-empty">
                 <Store size={34} />
                 <strong>No booth found</strong>
@@ -108,15 +134,21 @@ export function ShopUnavailablePage({
             </div>
             <span className="platform-landing-sticker star">404</span>
             <span className="platform-landing-sticker heart">♡</span>
-            <span className="platform-landing-sticker pencil">KEEP LOOKING</span>
+            <span className="platform-landing-sticker pencil">
+              KEEP LOOKING
+            </span>
           </div>
         </section>
       </main>
 
       <footer className="platform-home-footer">
         <strong>{PLATFORM_BRAND.name}</strong>
-        <span>Made for independent artists, conventions, and pop-up booths.</span>
-        <small>&copy; {new Date().getFullYear()} {PLATFORM_BRAND.name}</small>
+        <span>
+          Made for independent artists, conventions, and pop-up booths.
+        </span>
+        <small>
+          &copy; {new Date().getFullYear()} {PLATFORM_BRAND.name}
+        </small>
       </footer>
     </div>
   );

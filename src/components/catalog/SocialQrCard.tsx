@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { useCatalogCopy } from "../../lib/catalogI18n";
-import { SOCIAL_QR_COLORS } from "../../lib/social";
+import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
+import { SOCIAL_QR_COLORS } from "../../utils/social";
 import { Modal } from "../ui/Modal";
 
 type SocialQrCardProps = {

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Download, Share2, Smartphone, X } from "lucide-react";
 import {
   getPwaInstallState,
   promptPwaInstall,
   subscribeToPwaInstallState,
   type PwaInstallState,
-} from "../../lib/pwa";
-import { usePlatformI18n } from "../../lib/platformI18n";
+} from "../../lib/offline/pwa";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 
 const DISMISS_KEY = "matsuri-pwa-install-dismissed-at";
 const DISMISS_FOR_MS = 14 * 24 * 60 * 60 * 1000;
@@ -67,7 +68,7 @@ export function PwaInstallBanner() {
     }
   }
 
-  return (
+  const banner = (
     <aside className="staff-install-banner" aria-label={t("Install Matsuri staff app")}>
       <span className="staff-install-banner-icon" aria-hidden="true">
         <Smartphone size={19} />
@@ -101,4 +102,8 @@ export function PwaInstallBanner() {
       </button>
     </aside>
   );
+
+  return typeof document === "undefined"
+    ? banner
+    : createPortal(banner, document.body);
 }

@@ -7,16 +7,17 @@ import {
   useRef,
   useState,
 } from "react";
+import { CloudOff } from "lucide-react";
 import "../styles/catalog.css";
 import {
   applyPageTheme,
   getStorefrontSectionStyleClass,
   getThemeStyle,
   resetPageTheme,
-} from "../lib/theme";
+} from "../utils/theme";
 import { getShopBranding, useDocumentBranding } from "../lib/branding";
 import type { Order, Product, StorefrontSection } from "../types/catalog";
-import { CatalogLocaleProvider, translations } from "../lib/catalogI18n";
+import { CatalogLocaleProvider, translations } from "../lib/i18n/catalogI18n";
 import { PromotionProvider } from "../lib/promotionContext";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
@@ -27,13 +28,14 @@ import { ProductDetailModal } from "../components/catalog/ProductDetailModal";
 import { SelectedItemPanel } from "../components/catalog/SelectedItemPanel";
 import { StackedFeatured } from "../components/catalog/StackedFeatured";
 import { useToast } from "../components/ui/ToastProvider";
-import { loadOrderRecovery, saveOrderRecovery } from "../lib/orderRecovery";
-import { loadShopSnapshot, saveShopSnapshot, loadCatalogSnapshot } from "../lib/offline";
+import { loadCheckoutSession } from "../lib/offline/checkoutSession";
+import { loadShopSnapshot, saveShopSnapshot, loadCatalogSnapshot } from "../lib/offline/offline";
 import { usePersistentCart } from "../hooks/usePersistentCart";
 import { useCatalogData } from "../hooks/useCatalogData";
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
 import {
   BoothDetailsModal,
+  FloatingCartBar,
   FlyingItemsLayer,
   PendingOrderBar,
 } from "../components/catalog/CatalogOverlays";
@@ -41,20 +43,18 @@ import { layoutOrderSchema } from "../lib/schemas";
 import { PageLoading } from "../components/ui/PageLoading";
 import { useParams } from "react-router-dom";
 import {
-  getPublicGachaEnabled,
   getPublicShop,
-  createOrder,
   type PublicProductSort,
 } from "../lib/api";
 import type { Shop } from "../types/catalog";
 import {
   calculateCartPricing,
   normalizePromotionRewards,
-} from "../lib/pricing";
+} from "../utils/pricing";
 import { prefersLightweightCatalog } from "../lib/network";
 import { ErrorBoundary } from "../components/ui/ErrorBoundary";
-import { lazyWithRetry } from "../lib/lazyWithRetry";
-import { isStorefrontOfflineReady, prepareStorefrontOffline } from "../lib/storefrontOffline";
+import { lazyWithRetry } from "../utils/lazyWithRetry";
+import { isStorefrontOfflineReady, prepareStorefrontOffline } from "../lib/offline/storefrontOffline";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -75,7 +75,6 @@ export function CatalogPage() {
     loadShopSnapshot(shopSlug),
   );
   const [shopLoadError, setShopLoadError] = useState("");
-  const [showGacha, setShowGacha] = useState(false);
   const [lightweightMode] = useState(prefersLightweightCatalog);
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,6 +115,7 @@ export function CatalogPage() {
     loadMore,
     reloadAll: loadCatalog,
     ensurePayment,
+    gachaEnabled,
   } = useCatalogData(
     catalogShopId,
     catalogQuery,
@@ -123,6 +123,12 @@ export function CatalogPage() {
     reconcileCart,
     orderingEnabled,
   );
+  useEffect(() => {
+    if (cart.length === 0 || !orderingEnabled) return;
+    void ensurePayment().catch(() => {
+      // Checkout surfaces the actionable error if the warm-up request fails.
+    });
+  }, [cart.length, ensurePayment, orderingEnabled]);
   const booth = useMemo(
     () =>
       shop?.catalog_source_shop_id
@@ -139,9 +145,12 @@ export function CatalogPage() {
     catalogCopyRef.current = catalogCopy;
   }, [catalogCopy]);
   const { flyingItems, animateAdd } = useAddToCartFeedback(lightweightMode);
+  const initialCheckoutRef = useRef(loadCheckoutSession(shopSlug));
   const [online, setOnline] = useState(navigator.onLine);
-  const [isQrOpen, setIsQrOpen] = useState(false);
-  const [paymentModalRequested, setPaymentModalRequested] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(Boolean(initialCheckoutRef.current));
+  const [paymentModalRequested, setPaymentModalRequested] = useState(
+    Boolean(initialCheckoutRef.current),
+  );
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [offlineState, setOfflineState] = useState<"idle" | "saving" | "ready">(
     () => (isStorefrontOfflineReady(shopSlug) ? "ready" : "idle"),
@@ -152,7 +161,9 @@ export function CatalogPage() {
   const selectedFeedbackTimerRef = useRef<number | undefined>(undefined);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
   const [isCartExpanded, setIsCartExpanded] = useState(false);
-  const initialOrder = loadOrderRecovery(shopSlug)?.order ?? null;
+  const [isFloatingCartVisible, setIsFloatingCartVisible] = useState(false);
+  const cartModuleRef = useRef<HTMLDivElement>(null);
+  const initialOrder = initialCheckoutRef.current?.order ?? null;
   const [activeOrder, setActiveOrder] = useState<Order | null>(initialOrder);
   const activeOrderRef = useRef<Order | null>(initialOrder);
   const verifiedBranding =
@@ -171,7 +182,7 @@ export function CatalogPage() {
   useDocumentBranding(verifiedBranding);
 
   useEffect(() => {
-    const next = loadOrderRecovery(shopSlug)?.order ?? null;
+    const next = loadCheckoutSession(shopSlug)?.order ?? null;
     setActiveOrder(next);
     activeOrderRef.current = next;
   }, [shopSlug]);
@@ -190,6 +201,7 @@ export function CatalogPage() {
     setShopLoadError("");
     try {
       const freshShop = await getPublicShop(shopSlug);
+      setOnline(true);
       setShop(freshShop);
       if (freshShop) {
         saveShopSnapshot(freshShop, shopSlug);
@@ -210,32 +222,12 @@ export function CatalogPage() {
     void loadShop();
   }, [loadShop]);
 
-  useEffect(() => {
-    let active = true;
-    setShowGacha(false);
-    if (!catalogShopId)
-      return () => {
-        active = false;
-      };
-    void getPublicGachaEnabled(catalogShopId)
-      .then((enabled) => {
-        if (active) setShowGacha(enabled);
-      })
-      .catch(() => {
-        if (active) {
-          const snapshot = loadCatalogSnapshot(catalogShopId);
-          setShowGacha(snapshot?.gachaEnabled ?? false);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [catalogShopId]);
+
 
   const prepareGacha = useCallback(() => {
     if (!shop || !catalogShopId) return;
     void import("./GachaPage");
-    void import("../lib/gachaLaunch")
+    void import("../lib/gacha/gachaLaunch")
       .then(({ prepareGachaLaunch }) => {
         void prepareGachaLaunch(
           shopSlug,
@@ -248,54 +240,48 @@ export function CatalogPage() {
       });
   }, [catalogBooth, catalogShopId, lightweightMode, shop, shopSlug]);
 
-  const syncOfflineOrder = useCallback(async (recoveryData: any) => {
-    if (!recoveryData.offline || !recoveryData.order || !catalogShopId) return;
-    try {
-      const syncCustomerName = `${recoveryData.customerName} (${recoveryData.order.order_code})`;
-      const created = await createOrder(
-        shopSlug,
-        syncCustomerName,
-        recoveryData.cart,
-        recoveryData.clientRequestId,
-        recoveryData.recoveryToken
-      );
-
-      const saved = {
-        ...recoveryData,
-        order: created,
-        offline: false,
-      };
-      saveOrderRecovery(saved, shopSlug);
-      setActiveOrder(created);
-      activeOrderRef.current = created;
-      toast.success(catalogCopy.offlineSyncSuccess || "Order synced with server.");
-    } catch (error) {
-      console.error("Failed to sync offline order:", error);
-    }
-  }, [shopSlug, catalogShopId, toast, catalogCopy]);
-
-  useEffect(() => {
-    if (online && catalogShopId) {
-      const recoveryData = loadOrderRecovery(shopSlug);
-      if (recoveryData?.offline && recoveryData.order) {
-        void syncOfflineOrder(recoveryData);
-      }
-    }
-  }, [online, shopSlug, catalogShopId, syncOfflineOrder]);
-
   useEffect(() => {
     const handleOnline = () => {
       setOnline(true);
       void loadCatalog();
     };
     const handleOffline = () => setOnline(false);
+    const handleFocus = () => setOnline(navigator.onLine);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+    window.addEventListener("focus", handleFocus);
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [loadCatalog]);
+
+  useEffect(() => {
+    const cartModule = cartModuleRef.current;
+    const mobile = window.matchMedia("(max-width: 760px)");
+    if (!cartModule || cart.length === 0 || mobile.matches) {
+      setIsFloatingCartVisible(false);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsFloatingCartVisible(!entry.isIntersecting),
+      { rootMargin: "-84px 0px -18px", threshold: 0.08 },
+    );
+    observer.observe(cartModule);
+    const handleBreakpoint = () => {
+      if (mobile.matches) setIsFloatingCartVisible(false);
+      else {
+        observer.unobserve(cartModule);
+        observer.observe(cartModule);
+      }
+    };
+    mobile.addEventListener("change", handleBreakpoint);
+    return () => {
+      mobile.removeEventListener("change", handleBreakpoint);
+      observer.disconnect();
+    };
+  }, [cart.length]);
 
   useEffect(() => {
     if (!verifiedBranding) return;
@@ -508,6 +494,19 @@ export function CatalogPage() {
     setIsCartExpanded((current) => !current);
   }, []);
 
+  const handleRevealCart = useCallback(() => {
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      setIsCartExpanded(true);
+      return;
+    }
+    cartModuleRef.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "center",
+    });
+  }, []);
+
   const handleOpenPayment = useCallback(() => {
     if (!orderingEnabled) {
       toast.info(
@@ -680,6 +679,14 @@ export function CatalogPage() {
       viewMode,
     ],
   );
+  const cartPricing = useMemo(
+    () => calculateCartPricing(cart, promotion),
+    [cart, promotion],
+  );
+  const cartItemCount = cartPricing.lines.reduce(
+    (sum, line) => sum + line.quantity,
+    0,
+  );
   const handleOrderChange = useCallback(
     (nextOrder: Order | null) => {
       if (!activeOrderRef.current && nextOrder?.status === "pending")
@@ -733,6 +740,7 @@ export function CatalogPage() {
             <div
               className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
               key={section}
+              ref={cartModuleRef}
             >
               {storefrontBlocks[section]}
             </div>
@@ -784,10 +792,18 @@ export function CatalogPage() {
           >
             <CatalogHeader
               booth={booth}
-              showGacha={showGacha}
+              showGacha={gachaEnabled}
               onPrepareGacha={prepareGacha}
               onOpenInfo={() => setIsInfoOpen(true)}
             />
+            {!online && (
+              <div className="offline-status-banner" role="alert">
+                <CloudOff size={15} />
+                <span>
+                  <strong>{catalogCopy.offlineTitle}</strong> {catalogCopy.offlineHint}
+                </span>
+              </div>
+            )}
             <div className="catalog-layout storefront-layout-grid">
               <div className="storefront-hero-grid">
                 {heroStorefrontSections.map((section) => (
@@ -811,10 +827,19 @@ export function CatalogPage() {
             {orderingEnabled && activeOrder?.status === "pending" && (
               <PendingOrderBar
                 order={activeOrder}
+                style={getThemeStyle(booth)}
                 onOpen={() => {
                   setPaymentModalRequested(true);
                   setIsQrOpen(true);
                 }}
+              />
+            )}
+            {isFloatingCartVisible && cart.length > 0 && !activeOrder && (
+              <FloatingCartBar
+                itemCount={cartItemCount}
+                total={cartPricing.total}
+                style={getThemeStyle(booth)}
+                onOpen={handleRevealCart}
               />
             )}
             {orderingEnabled && paymentModalRequested && (
@@ -825,6 +850,7 @@ export function CatalogPage() {
                   payment={payment}
                   cart={cart}
                   promotion={promotion}
+                  booth={booth}
                   onClose={() => setIsQrOpen(false)}
                   onSuccess={() => void loadCatalog()}
                   onOrderChange={handleOrderChange}

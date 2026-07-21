@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { PlatformI18nProvider } from "../lib/platformI18n";
+import { PlatformI18nProvider } from "../lib/i18n/platformI18n";
 import { StrictMode } from "react";
 
 const auth = vi.hoisted(() => ({
@@ -9,6 +9,7 @@ const auth = vi.hoisted(() => ({
 }));
 
 const api = vi.hoisted(() => ({
+  getAuthSession: vi.fn(),
   getShopMemberships: vi.fn(),
 }));
 
@@ -24,10 +25,11 @@ vi.mock("../lib/supabase", () => ({
 }));
 
 vi.mock("../lib/api", () => ({
+  getAuthSession: api.getAuthSession,
   getShopMemberships: api.getShopMemberships,
 }));
 
-vi.mock("../lib/authRouting", () => ({
+vi.mock("../lib/auth/authRouting", () => ({
   storePasswordFlow: authRouting.storePasswordFlow,
   storePendingInvitation: authRouting.storePendingInvitation,
   routeAfterAuthentication: authRouting.routeAfterAuthentication,
@@ -92,6 +94,10 @@ describe("AuthCallbackPage regression tests", () => {
 
   beforeEach(() => {
     auth.getSession.mockReset();
+    api.getAuthSession.mockReset().mockImplementation(async () => {
+      const result = await auth.getSession();
+      return { session: result.data.session, error: result.error };
+    });
     api.getShopMemberships.mockReset().mockResolvedValue([]);
     authRouting.storePasswordFlow.mockReset();
     authRouting.storePendingInvitation.mockReset().mockReturnValue(true);

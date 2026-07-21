@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { getGachaElementMeta } from "../../../lib/gachaGames";
+import { getGachaElementMeta } from "../../../lib/gacha/gachaGames";
 import type { GachaGameType } from "../../../types/gacha";
 
 export function GachaElementIcon({

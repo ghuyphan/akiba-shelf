@@ -2,15 +2,13 @@ import {
   Eye,
   Gamepad2,
   Layers3,
-  Redo2,
   Rocket,
-  Save,
-  Undo2,
   X,
 } from "lucide-react";
-import { usePlatformI18n } from "../../../lib/platformI18n";
+import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaGameType, GachaLiveStatus } from "../../../types/gacha";
 import { Button } from "../../ui/Button";
+import { AdminEditBar } from "../AdminEditBar";
 
 export type GachaStatusGame = {
   gameType: GachaGameType;
@@ -33,14 +31,9 @@ type Props = {
 
 type EditBarProps = {
   dirty: boolean;
-  canUndo: boolean;
-  canRedo: boolean;
   saving: boolean;
   publishing: boolean;
-  onUndo: () => void;
-  onRedo: () => void;
   onReset: () => void;
-  onSaveDraft: () => void;
   onPublish: () => void;
 };
 
@@ -62,13 +55,6 @@ export function GachaStatusBar({
         aria-label={t("Game editor")}
       >
         {games.map((game) => {
-          const statusLine =
-            [
-              game.isLive ? t("Live now") : "",
-              game.dirty ? t("Unsaved") : "",
-            ]
-              .filter(Boolean)
-              .join(" · ") || t("Draft");
           return (
             <button
               type="button"
@@ -78,7 +64,12 @@ export function GachaStatusBar({
               onClick={() => onSwitchGame(game.gameType)}
             >
               <strong>{game.label}</strong>
-              <small>{statusLine}</small>
+              {(game.isLive || game.dirty) && (
+                <i
+                  className={game.dirty ? "is-dirty" : "is-live"}
+                  aria-label={t(game.dirty ? "Unsaved" : "Live now")}
+                />
+              )}
             </button>
           );
         })}
@@ -123,64 +114,31 @@ export function GachaStatusBar({
 
 export function GachaEditBar({
   dirty,
-  canUndo,
-  canRedo,
   saving,
   publishing,
-  onUndo,
-  onRedo,
   onReset,
-  onSaveDraft,
   onPublish,
 }: EditBarProps) {
   const { t } = usePlatformI18n();
   const busy = saving || publishing;
 
   return (
-    <div className="admin-sticky-actions gacha-sticky-actions">
-      {dirty && (
-        <span className="admin-unsaved-badge">{t("Unsaved changes")}</span>
-      )}
-      <button
+    <AdminEditBar
+      className="gacha-sticky-actions"
+      status={t(saving ? "Saving draft…" : dirty ? "Unsaved changes" : "Draft saved")}
+      statusTone={saving ? "saving" : dirty ? "dirty" : "saved"}
+    >
+      <Button
         type="button"
-        className="icon-button gacha-undo-button"
-        disabled={!canUndo || busy}
-        onClick={onUndo}
-        title={t("Undo")}
-        aria-label={t("Undo")}
-      >
-        <Undo2 size={16} />
-      </button>
-      <button
-        type="button"
-        className="icon-button gacha-redo-button"
-        disabled={!canRedo || busy}
-        onClick={onRedo}
-        title={t("Redo")}
-        aria-label={t("Redo")}
-      >
-        <Redo2 size={16} />
-      </button>
-      <button
-        type="button"
-        className="button button-secondary gacha-reset-button"
+        variant="secondary"
+        className="gacha-reset-button admin-edit-secondary-danger"
+        icon={<X size={17} />}
         disabled={!dirty || busy}
         onClick={onReset}
-        title={t("Reset changes")}
-        aria-label={t("Reset changes")}
+        title={t("Discard changes")}
+        aria-label={t("Discard changes")}
       >
-        <X size={17} /> <span>{t("Reset changes")}</span>
-      </button>
-      <Button
-        className="gacha-save-button"
-        variant="secondary"
-        icon={<Save size={16} />}
-        loading={saving}
-        loadingText={t("Saving…")}
-        disabled={!dirty || busy}
-        onClick={onSaveDraft}
-      >
-        {t("Save draft")}
+        {t("Discard changes")}
       </Button>
       <Button
         className="gacha-publish-button"
@@ -192,6 +150,6 @@ export function GachaEditBar({
       >
         {t("Publish")}
       </Button>
-    </div>
+    </AdminEditBar>
   );
 }

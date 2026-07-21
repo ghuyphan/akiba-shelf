@@ -14,15 +14,19 @@ export function AppHeader({
   className = "",
 }: AppHeaderProps) {
   return (
-    <header className={["admin-header", className].filter(Boolean).join(" ")}>
+    <header className={["app-header", className].filter(Boolean).join(" ")}>
       <div
-        className={`admin-header-pill ${
-          navigation ? "admin-header-pill-with-nav" : "admin-header-pill-simple"
+        className={`app-header-surface ${
+          navigation
+            ? "app-header-surface-with-nav"
+            : "app-header-surface-simple"
         }`}
       >
-        <div className="admin-header-brand">{brand}</div>
-        {navigation}
-        <div className="admin-header-actions">{actions}</div>
+        <div className="app-header-brand">{brand}</div>
+        {navigation && (
+          <div className="app-header-navigation">{navigation}</div>
+        )}
+        <div className="app-header-actions">{actions}</div>
       </div>
     </header>
   );

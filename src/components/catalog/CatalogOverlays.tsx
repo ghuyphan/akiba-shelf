@@ -1,4 +1,6 @@
 import { createPortal } from "react-dom";
+import type { CSSProperties, ReactNode } from "react";
+import { Link } from "react-router-dom";
 import {
   Check,
   Clock,
@@ -11,9 +13,9 @@ import {
 import { Modal } from "../ui/Modal";
 import { SocialBrandIcon } from "../ui/SocialBrandIcon";
 import { SocialQrCard } from "./SocialQrCard";
-import { configuredSocialPlatforms } from "../../lib/social";
-import { formatVnd } from "../../lib/format";
-import { useCatalogCopy } from "../../lib/catalogI18n";
+import { configuredSocialPlatforms } from "../../utils/social";
+import { formatVnd } from "../../utils/format";
+import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
 import type {
   BoothSettings,
   Order,
@@ -95,20 +97,7 @@ export function BoothDetailsModal({
             </div>
           </div>
         )}
-        <button
-          type="button"
-          className="button button-secondary booth-save-offline"
-          onClick={onSaveOffline}
-          disabled={offlineState === "saving"}
-        >
-          {offlineState === "saving" ? (
-            <><Loader2 size={17} className="spin-icon" /> {copy.savingOffline}</>
-          ) : offlineState === "ready" ? (
-            <><Check size={17} /> {copy.offlineReady}</>
-          ) : (
-            <><Download size={17} /> {copy.saveOffline}</>
-          )}
-        </button>
+
         {socialLinks.length > 0 && (
           <div className="booth-modal-social-section">
             <div className="booth-modal-section-heading">
@@ -132,6 +121,25 @@ export function BoothDetailsModal({
             </div>
           </div>
         )}
+        <div className="booth-modal-utility-row">
+          <button
+            type="button"
+            className="button button-secondary booth-save-offline"
+            onClick={onSaveOffline}
+            disabled={offlineState === "saving"}
+          >
+            {offlineState === "saving" ? (
+              <><Loader2 size={17} className="spin-icon" /> {copy.savingOffline}</>
+            ) : offlineState === "ready" ? (
+              <><Check size={17} /> {copy.offlineReady}</>
+            ) : (
+              <><Download size={17} /> {copy.saveOffline}</>
+            )}
+          </button>
+          <Link to="/admin" className="booth-staff-link">
+            {copy.staffAccess} →
+          </Link>
+        </div>
       </div>
     </Modal>
   );
@@ -140,27 +148,102 @@ export function BoothDetailsModal({
 export function PendingOrderBar({
   order,
   onOpen,
+  style,
 }: {
   order: Order;
   onOpen: () => void;
+  style?: CSSProperties;
 }) {
   const copy = useCatalogCopy();
   return (
-    <aside className="pending-order-bar" role="status">
-      <span className="pending-order-bar-icon">
-        <Clock size={18} />
+    <StorefrontDock
+      variant="order"
+      icon={<Clock size={18} />}
+      title={`${copy.pendingOrder} · ${order.order_code}`}
+      hint={copy.pendingOrderHint}
+      total={order.total_amount}
+      actionLabel={copy.viewPayment}
+      onAction={onOpen}
+      style={style}
+    />
+  );
+}
+
+export function FloatingCartBar({
+  itemCount,
+  total,
+  onOpen,
+  style,
+}: {
+  itemCount: number;
+  total: number;
+  onOpen: () => void;
+  style?: CSSProperties;
+}) {
+  const copy = useCatalogCopy();
+  return (
+    <StorefrontDock
+      variant="cart"
+      icon={<ShoppingBag size={20} />}
+      badge={itemCount}
+      title={copy.cartDockTitle(itemCount)}
+      hint={copy.cartDockHint}
+      total={total}
+      actionLabel={copy.viewCart}
+      onAction={onOpen}
+      style={style}
+    />
+  );
+}
+
+type StorefrontDockProps = {
+  variant: "order" | "cart";
+  icon: ReactNode;
+  badge?: number;
+  title: ReactNode;
+  hint: ReactNode;
+  total: number;
+  actionLabel: ReactNode;
+  onAction: () => void;
+  style?: CSSProperties;
+};
+
+function StorefrontDock({
+  variant,
+  icon,
+  badge,
+  title,
+  hint,
+  total,
+  actionLabel,
+  onAction,
+  style,
+}: StorefrontDockProps) {
+  const compatibilityClass =
+    variant === "order" ? "pending-order-bar" : "floating-cart-bar";
+
+  return createPortal(
+    <aside
+      className={`storefront-dock storefront-dock-${variant} ${compatibilityClass}`}
+      role="status"
+      style={style}
+    >
+      <span className="storefront-dock-icon">
+        {icon}
+        {badge !== undefined && (
+          <b className="storefront-dock-badge">{badge}</b>
+        )}
       </span>
-      <span>
-        <strong>
-          {copy.pendingOrder} · {order.order_code}
-        </strong>
-        <small>{copy.pendingOrderHint}</small>
+      <span className="storefront-dock-copy">
+        <strong>{title}</strong>
+        <small>{hint}</small>
       </span>
-      <b>{formatVnd(order.total_amount)}</b>
-      <button type="button" onClick={onOpen}>
-        {copy.viewPayment}
+      <strong className="storefront-dock-total">{formatVnd(total)}</strong>
+      <button type="button" onClick={onAction}>
+        {actionLabel}
       </button>
-    </aside>
+    </aside>,
+    document.body,
   );
 }
 

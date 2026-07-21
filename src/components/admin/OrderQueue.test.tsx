@@ -3,8 +3,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import type { Order } from "../../types/catalog";
-import { formatVnd } from "../../lib/format";
-import { PlatformI18nProvider } from "../../lib/platformI18n";
+import { formatVnd } from "../../utils/format";
+import { PlatformI18nProvider } from "../../lib/i18n/platformI18n";
 import { ToastProvider } from "../ui/ToastProvider";
 
 const apiMocks = vi.hoisted(() => ({
@@ -160,6 +160,8 @@ describe("OrderQueue", () => {
       expect(apiMocks.confirmOrderPayment).toHaveBeenCalledWith("order-1"),
     );
     await waitFor(() => expect(props.onOrderUpdated).toHaveBeenCalled());
+    expect(await screen.findByText("Payment confirmed")).toBeInTheDocument();
+    expect(screen.getByText("Stock updated")).toBeInTheDocument();
     expect(await screen.findByText("Payment confirmed.")).toBeInTheDocument();
   });
 

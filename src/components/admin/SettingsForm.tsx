@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Clock3, Edit3, Link2, MapPin, Store, Type, X } from "lucide-react";
 import type { BoothSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
@@ -6,8 +6,9 @@ import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
 import { Field, TextInput } from "../ui/Field";
 import { AdminCard } from "./AdminCard";
+import { AdminEditBar } from "./AdminEditBar";
 import { ImageUpload } from "./ImageUpload";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { SocialLinkFields } from "./SocialLinkFields";
 import { SocialBrandIcon } from "../ui/SocialBrandIcon";
 
@@ -19,6 +20,7 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
   const { busy, error, run, setError } = useAsyncAction();
   const toast = useToast();
   const { t } = usePlatformI18n();
+  const hasChanges = useMemo(() => JSON.stringify(draft) !== JSON.stringify(settings), [draft, settings]);
   useEffect(() => { if (error) { toast.error(t(error), t("Could not save booth settings")); setError(""); } }, [error, setError, t, toast]);
   useEffect(() => { setDraft(settings); setIsEditing(false); setError(""); }, [settings, setError]);
   function resetDraft() { setDraft(settings); setIsEditing(false); setError(""); }
@@ -47,7 +49,7 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
           <div className="admin-social-preview"><span>{draft.social_qr_logo_url ? <img src={draft.social_qr_logo_url} alt={t("Social QR logo")} /> : <><SocialBrandIcon platform="Instagram" size={17} /><SocialBrandIcon platform="Threads" size={17} /><SocialBrandIcon platform="YouTube" size={17} /></>}</span><div><strong>{t("Shared QR logo")}</strong><small>{t("Used in the center of every social QR code.")}</small></div>{isEditing && <ImageUpload shopId={shopId} bucket="payment-qr" label={t("Upload QR logo")} onUploaded={(url, path) => setDraft({ ...draft, social_qr_logo_url: url, social_qr_logo_path: path })} />}</div>
         </section>
 
-        {isEditing && <div className="admin-sticky-actions"><Button type="submit" loading={busy} loadingText={t("Saving…")}>{t("Save booth settings")}</Button><Button type="button" variant="secondary" icon={<X size={17} />} disabled={busy} onClick={resetDraft}>{t("Cancel")}</Button></div>}
+        {isEditing && <AdminEditBar status={t(hasChanges ? "Unsaved changes" : "No changes")} statusTone={hasChanges ? "dirty" : "saved"}><Button type="button" variant="secondary" icon={<X size={17} />} disabled={busy} onClick={resetDraft}>{t("Cancel")}</Button><Button type="submit" loading={busy} loadingText={t("Saving…")} disabled={!hasChanges}>{t("Save booth settings")}</Button></AdminEditBar>}
       </form>
     </AdminCard>
   );

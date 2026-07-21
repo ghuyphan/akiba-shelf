@@ -2,16 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/admin.css";
 import { PageLoading } from "../components/ui/PageLoading";
-import { supabase } from "../lib/supabase";
-import { getShopMemberships } from "../lib/api";
+import { getAuthSession, getShopMemberships } from "../lib/api";
 import {
   routeAfterAuthentication,
   storePasswordFlow,
   storePendingInvitation,
-} from "../lib/authRouting";
-import { getAuthErrorNotice } from "../lib/authErrors";
+} from "../lib/auth/authRouting";
+import { getAuthErrorNotice } from "../lib/auth/authErrors";
 import { AuthSecurityNote, AuthShell } from "../components/ui/AuthShell";
-import { usePlatformI18n } from "../lib/platformI18n";
+import { usePlatformI18n } from "../lib/i18n/platformI18n";
 
 export function AuthCallbackPage() {
   const { t } = usePlatformI18n();
@@ -26,7 +25,6 @@ export function AuthCallbackPage() {
     if (started.current) return;
     started.current = true;
     void (async () => {
-      if (!supabase) throw new Error("Authentication is not configured.");
       const callbackParams = new URLSearchParams(window.location.search);
       const hash = new URLSearchParams(window.location.hash.slice(1));
       const callbackError =
@@ -46,10 +44,7 @@ export function AuthCallbackPage() {
         throw new Error(callbackError);
       }
 
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+      const { session, error } = await getAuthSession();
 
       // Do not move this above getSession().
       // Supabase initialization must read the original callback URL first.

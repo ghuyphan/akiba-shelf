@@ -3,7 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ToastProvider } from "../ui/ToastProvider";
-import { PlatformI18nProvider } from "../../lib/platformI18n";
+import { PlatformI18nProvider } from "../../lib/i18n/platformI18n";
 
 const signInWithGoogle = vi.hoisted(() => vi.fn());
 

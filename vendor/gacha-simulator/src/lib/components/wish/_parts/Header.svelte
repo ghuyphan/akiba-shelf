@@ -30,10 +30,7 @@
 	} from '$lib/store/stores';
 
 	$: headerHeightstyle = $mobileMode ? `height: ${$viewportHeight}px` : '';
-	$: simulatorTitle =
-		parseLocalizedText($bannerList[$bannerActive]?.character?.title, $locale) ||
-		parseLocalizedText(getMerchConfig().settings?.title, $locale) ||
-		'Matsuri Wish Simulator';
+	$: simulatorTitle = $t('wish.wishTitle');
 
 	const inTransition = (node, args) => {
 		return args.mobile
@@ -79,6 +76,7 @@
 <div id="header" style={headerHeightstyle}>
 	<div class="top" in:fly={{ y: -20, duration: 800 }}>
 		<h1 class="wish-title">
+			<img src={$assets['brand.png']} alt="Wish" crossorigin="anonymous" />
 			<span>{simulatorTitle}</span>
 			<button class="help" on:click={handleMenu} title="Setting" aria-label="Setting">
 				<i class="gi-help" />
@@ -178,8 +176,10 @@
 	}
 
 	.wish-title img {
-		width: 30px;
-		margin-right: 15px;
+		width: 32px;
+		height: auto;
+		margin-right: 12px;
+		filter: drop-shadow(0 0 6px rgba(247, 197, 98, 0.45));
 	}
 
 	.budget {
@@ -246,7 +246,7 @@
 		margin-top: 3px;
 	}
 
-	@media screen and (min-width: 975px) {
+	@media screen and (min-width: 700px) {
 		:global(main):not(.mobile) .banner-button {
 			position: absolute;
 			max-width: 50%;

@@ -13,10 +13,10 @@ import { ToastProvider } from "./components/ui/ToastProvider";
 import { PageLoading } from "./components/ui/PageLoading";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { PLATFORM_BRAND, resetDocumentBranding } from "./lib/branding";
-import { resetPageTheme } from "./lib/theme";
-import { PlatformI18nProvider, usePlatformI18n } from "./lib/platformI18n";
-import { configurePwaForPath } from "./lib/pwa";
-import { lazyWithRetry } from "./lib/lazyWithRetry";
+import { resetPageTheme } from "./utils/theme";
+import { PlatformI18nProvider, usePlatformI18n } from "./lib/i18n/platformI18n";
+import { configurePwa } from "./lib/offline/pwa";
+import { lazyWithRetry } from "./utils/lazyWithRetry";
 
 const HomePage = lazyWithRetry("home", () =>
   import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
@@ -86,10 +86,9 @@ function RouteAwareToastProvider({ children }: { children: ReactNode }) {
 }
 
 function RouteAwarePwa() {
-  const { pathname } = useLocation();
   useEffect(() => {
-    configurePwaForPath(pathname);
-  }, [pathname]);
+    configurePwa();
+  }, []);
   return null;
 }
 

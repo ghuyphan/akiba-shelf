@@ -1,5 +1,5 @@
 import { useCallback, useReducer, useRef } from "react";
-import { GACHA_GAME_TYPES } from "../../../lib/gachaGames";
+import { GACHA_GAME_TYPES } from "../../../lib/gacha/gachaGames";
 import type { GachaGameType } from "../../../types/gacha";
 import type { GachaState, GachaStatesByGame } from "./gachaState";
 

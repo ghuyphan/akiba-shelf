@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 
 type SwipeConfirmButtonProps = {
   onConfirm: () => boolean | Promise<boolean>;
@@ -33,15 +33,24 @@ export function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButt
     if (progressRef.current >= 0.88 || (progressRef.current >= 0.68 && velocity > 0.55)) void commit();
     else { updateProgress(0); updatePhase("idle"); }
   };
+  const isLocked = isConfirming || phase === "committing" || phase === "success";
+  const label = phase === "committing" || isConfirming
+    ? "Confirming payment…"
+    : phase === "success"
+      ? "Payment confirmed"
+      : phase === "error"
+        ? "Could not confirm — try again"
+        : "Swipe to confirm payment";
 
   return (
     <div
       className={`swipe-track phase-${phase}`}
       ref={trackRef}
       role="button"
-      tabIndex={isConfirming ? -1 : 0}
+      tabIndex={isLocked ? -1 : 0}
       aria-label={t("Swipe right or press Enter to confirm payment and update stock")}
-      aria-disabled={isConfirming || phase === "committing"}
+      aria-disabled={isLocked}
+      aria-busy={phase === "committing" || isConfirming}
       onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); void commit(); } }}
       onPointerDown={(event) => {
         if (isConfirming || phaseRef.current !== "idle") return;
@@ -66,8 +75,11 @@ export function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButt
       style={{ "--swipe-progress": progress } as React.CSSProperties}
     >
       <div className="swipe-bg" />
-      <span className="swipe-text">{t(phase === "committing" || isConfirming ? "Confirming payment…" : phase === "success" ? "Payment confirmed" : phase === "error" ? "Could not confirm — try again" : "Swipe to confirm payment")}</span>
-      <div className="swipe-handle">{phase === "success" ? <Check size={19} /> : phase === "committing" ? <Loader2 size={18} className="spin-icon" /> : <span>›</span>}</div>
+      <span className="swipe-copy">
+        <span className="swipe-copy-main">{t(label)}</span>
+        {phase === "success" && <small>{t("Stock updated")}</small>}
+      </span>
+      <div className="swipe-handle" aria-hidden="true">{phase === "success" ? <Check size={19} strokeWidth={3} /> : phase === "committing" ? <Loader2 size={18} className="state-spinner" /> : <span>›</span>}</div>
       <span className="sr-only" aria-live="polite">{phase === "success" ? t("Payment confirmed and stock updated") : phase === "error" ? t("Confirmation failed. Try again.") : ""}</span>
     </div>
   );

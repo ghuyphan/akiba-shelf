@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
-import { safeUuid } from "../../lib/id";
+import { safeUuid } from "../../utils/id";
 
 export type ToastVariant = "info" | "success" | "error";
 type ToastInput = { title?: string; message: string; variant?: ToastVariant; duration?: number };

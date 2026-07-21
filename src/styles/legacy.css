@@ -95,8 +95,7 @@
   background: var(--surface-soft);
 }
 
-.admin-product span,
-.field {
+.admin-product span {
   display: grid;
   gap: 5px;
 }
@@ -115,17 +114,6 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-}
-
-.field-label {
-  color: #324359;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.field-hint {
-  color: var(--muted);
-  font-size: 13px;
 }
 
 .field-error-msg {
@@ -2020,12 +2008,6 @@
   margin-top: 2px;
 }
 
-.field-label {
-  color: #314159;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-
 .input {
   min-height: 44px;
   border-color: var(--soft-line);
@@ -2071,12 +2053,6 @@ select.input {
   background-position: right 16px center;
   background-size: 16px 16px;
   background-color: #fbfcfe;
-}
-
-.field-hint {
-  color: #627089;
-  font-size: 12px;
-  font-weight: 700;
 }
 
 .textarea {

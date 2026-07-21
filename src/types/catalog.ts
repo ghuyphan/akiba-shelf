@@ -119,6 +119,29 @@ export type CartItem = {
   reward_quantity?: number;
 };
 
+export type CheckoutSessionState =
+  | "queued"
+  | "needs_review"
+  | "reserved"
+  | "confirmed"
+  | "cancelled"
+  | "expired";
+
+export type CheckoutSession = {
+  version: 2;
+  shopSlug: string;
+  clientRequestId: string;
+  recoveryToken: string;
+  order: Order | null;
+  cart: CartItem[];
+  customerName: string;
+  state: CheckoutSessionState;
+  createdAt: string;
+  updatedAt: string;
+  lastAttemptAt?: string;
+  lastError?: string;
+};
+
 export type OrderStatus = "pending" | "confirmed" | "cancelled" | "expired";
 
 export type Order = {

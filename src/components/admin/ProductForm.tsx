@@ -1,19 +1,20 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Boxes, Edit3, Eye, ImageIcon, PackagePlus, Redo2, RotateCcw, Sparkles, Tags, Trash2, Undo2, X } from "lucide-react";
 import type { Product, StockStatus } from "../../types/catalog";
-import { formatNumber, formatVnd, normalizeSlug } from "../../lib/format";
+import { formatNumber, formatVnd, normalizeSlug } from "../../utils/format";
 import { LIMITED_STOCK_THRESHOLD, productBadges } from "../../lib/constants";
-import { validateProduct } from "../../lib/validation";
+import { validateProduct } from "../../utils/validation";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
 import { Field, TextArea, TextInput } from "../ui/Field";
 import { SelectMenu } from "../ui/SelectMenu";
 import { AdminCard } from "./AdminCard";
+import { AdminEditBar } from "./AdminEditBar";
 import { ImageUpload } from "./ImageUpload";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { QuantityInput } from "./QuantityInput";
-import { getProductDiscountPercent, getProductPrice, isProductOnSale } from "../../lib/pricing";
+import { getProductDiscountPercent, getProductPrice, isProductOnSale } from "../../utils/pricing";
 
 function formatDisplayPrice(value: number | string): string {
   const digits = String(value ?? "").replace(/\D/g, "");
@@ -258,8 +259,10 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
         </section>
 
         {isEditing && (
-          <div className="admin-sticky-actions">
-            {hasChanges && <span className="admin-unsaved-badge">{t("Unsaved changes")}</span>}
+          <AdminEditBar
+            status={t(hasChanges ? "Unsaved changes" : "No changes")}
+            statusTone={hasChanges ? "dirty" : "saved"}
+          >
             <button
               type="button"
               className="icon-button"
@@ -279,14 +282,6 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
               <Redo2 size={16} />
             </button>
             <Button
-              type="submit"
-              loading={isSaving}
-              loadingText={t("Saving…")}
-              disabled={busy || (!isNewProduct && !hasChanges)}
-            >
-              {isNewProduct ? t("Create product") : t("Save changes")}
-            </Button>
-            <Button
               type="button"
               variant="secondary"
               icon={isNewProduct ? <RotateCcw size={17} /> : <X size={17} />}
@@ -295,7 +290,15 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
             >
               {isNewProduct ? t("Clear") : t("Cancel")}
             </Button>
-          </div>
+            <Button
+              type="submit"
+              loading={isSaving}
+              loadingText={t("Saving…")}
+              disabled={busy || (!isNewProduct && !hasChanges)}
+            >
+              {isNewProduct ? t("Create product") : t("Save changes")}
+            </Button>
+          </AdminEditBar>
         )}
       </form>
     </AdminCard>

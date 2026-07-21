@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultBooth } from "../lib/constants";
-import { getPublicProductsByIds } from "../lib/api";
+import { getPublicGachaEnabled, getPublicProductsByIds } from "../lib/api";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
-import { loadCatalogSnapshot, saveCatalogSnapshot } from "../lib/offline";
+import { loadCatalogSnapshot, saveCatalogSnapshot } from "../lib/offline/offline";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import type { Product } from "../types/catalog";
 import {
@@ -30,6 +30,25 @@ export function useCatalogData(
   const initialBooth = cached?.booth ?? defaultBooth;
   const [cartError, setCartError] = useState("");
   const [rewardProducts, setRewardProducts] = useState<Product[]>([]);
+  const [gachaEnabled, setGachaEnabled] = useState<boolean>(cached?.gachaEnabled ?? false);
+
+  useEffect(() => {
+    let active = true;
+    if (!shopId) return;
+    void getPublicGachaEnabled(shopId)
+      .then((enabled) => {
+        if (active) setGachaEnabled(enabled);
+      })
+      .catch(() => {
+        if (active) {
+          const snapshot = loadCatalogSnapshot(shopId);
+          setGachaEnabled(snapshot?.gachaEnabled ?? false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [shopId]);
 
   const productCatalog = useCatalogProducts(
     shopId,
@@ -229,5 +248,6 @@ export function useCatalogData(
     loadMore: productCatalog.loadMore,
     reloadAll,
     ensurePayment: storefront.ensurePayment,
+    gachaEnabled,
   };
 }

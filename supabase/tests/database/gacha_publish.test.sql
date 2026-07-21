@@ -1,13 +1,13 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(13);
 
 insert into auth.users(
   id,instance_id,aud,role,email,encrypted_password,
   email_confirmed_at,created_at,updated_at
 ) values (
   '50000000-0000-4000-8000-000000000001',
-  '00000000-0000-0000-0000-000000000000',
+  '00000000-0000-4000-8000-000000000000',
   'authenticated','authenticated','gacha-owner@test.local','',
   now(),now(),now()
 );
@@ -96,6 +96,28 @@ select is(
   (select starts_at::text from public.gacha_banners where id='52000000-0000-4000-8000-000000000001'),
   '2026-07-18 10:00:00+00',
   'published banner schedule is stored'
+);
+
+select lives_ok(
+  $$select public.publish_gacha_configuration_v5(
+    '51000000-0000-4000-8000-000000000001',
+    'genshin',
+    '{
+      "settings":{"enabled":true,"title":"Test Wish","description":"","rare_base_rate":6.5,"legendary_base_rate":1.25,"lightcone_legendary_base_rate":0.8,"rare_soft_pity":8,"legendary_soft_pity":30,"lightcone_legendary_soft_pity":40,"featured_item_rate":60,"featured_guaranteed_after_loss":true,"rare_pity":10,"legendary_pity":40,"lightcone_legendary_pity":50},
+      "banners":[{"id":"52000000-0000-4000-8000-000000000001","name":"Test Banner","description":"","kind":"character","theme":"anemo","display_limit":1,"active":true,"starts_at":"2026-07-18T10:00:00Z","ends_at":"2026-07-19T10:00:00Z"}],
+      "entries":[
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-3","kind":"character","element":"anemo","weapon_type":"sword","rarity":3,"weight":100,"featured":false,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-4","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":false,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-5","kind":"character","element":"anemo","weapon_type":"sword","rarity":5,"weight":100,"featured":true,"active":true}
+      ]
+    }'::jsonb
+  )$$,
+  'owner can republish with hard pity lower than previously saved soft pity'
+);
+select is(
+  (select lightcone_legendary_pity::text || '/' || lightcone_legendary_soft_pity::text from public.gacha_settings where shop_id='51000000-0000-4000-8000-000000000001'),
+  '50/40',
+  'updated hard and soft pities are stored'
 );
 
 set local role postgres;

@@ -22,12 +22,12 @@ import {
 import { getErrorMessage } from "../../lib/errors";
 import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
-import { Field, TextInput } from "../ui/Field";
+import { Field, FieldLabel, TextInput } from "../ui/Field";
 import { Modal } from "../ui/Modal";
 import { SelectMenu } from "../ui/SelectMenu";
 import { AdminCard } from "./AdminCard";
 import { EmptyState } from "../ui/EmptyState";
-import { usePlatformI18n } from "../../lib/platformI18n";
+import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { MAX_SHOP_TEAM_SIZE } from "../../lib/constants";
 
 const inviteRoles = [
@@ -200,7 +200,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
               />
             </Field>
             <div className="staff-role-field">
-              <span>{t("Role")}</span>
+              <FieldLabel>{t("Role")}</FieldLabel>
               <div className="staff-role-options" role="radiogroup" aria-label={t("Invitation role")}>
                 {localizedInviteRoles.map((option) => (
                   <button key={option.value} type="button" role="radio" aria-checked={role === option.value} className={role === option.value ? "active" : ""} onClick={() => setRole(option.value as StaffRole)}>
