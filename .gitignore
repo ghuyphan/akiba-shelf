@@ -12,6 +12,7 @@ skills-lock.json
 *.tsbuildinfo
 .DS_Store
 supabase/.temp/
+supabase/.branches/
 coverage/
 playwright-report/
 test-results/
