@@ -342,13 +342,21 @@ export async function closeLocalOfflineEvent(session: OfflineEventSession) {
   });
 }
 
-export function offlineEventOrderAsOrder(order: OfflineEventOrder): Order {
+export function offlineEventOrderAsOrder(
+  order: OfflineEventOrder,
+  session?: OfflineEventSession,
+): Order {
+  const discountAmount = order.items.reduce(
+    (total, item) => total + item.discount_amount,
+    0,
+  );
   return {
     id: order.id,
     shop_id: order.shopId,
     order_code: order.orderCode,
     customer_name: order.customerName || null,
     total_amount: order.totalAmount,
+    discount_amount: discountAmount,
     status: order.status,
     created_at: order.createdAt,
     updated_at: order.updatedAt,
@@ -358,7 +366,29 @@ export function offlineEventOrderAsOrder(order: OfflineEventOrder): Order {
     expired_at: null,
     source: "offline_event",
     offline_event_session_id: order.sessionId,
+    offline_event_name: session?.name,
     payment_method: order.paymentMethod,
     payment_state: order.paymentState,
+    order_items: order.items.map((item) => {
+      const product = session?.allocations.find(
+        (allocation) => allocation.product.id === item.product_id,
+      )?.product;
+      return {
+        id: `${order.id}:${item.product_id}`,
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        discount_amount: item.discount_amount,
+        product: product
+          ? {
+              id: product.id,
+              name: product.name,
+              item_code: product.item_code,
+              images: product.images,
+            }
+          : undefined,
+      };
+    }),
   };
 }

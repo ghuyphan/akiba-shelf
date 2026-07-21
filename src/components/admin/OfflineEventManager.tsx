@@ -16,7 +16,12 @@ import {
 import { getErrorMessage } from "../../lib/errors";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { saveCatalogSnapshot } from "../../lib/offline/offline";
+import {
+  downloadGachaOfflinePacks,
+  gachaCatalogOfflineUrls,
+} from "../../lib/offline/offlinePack";
 import { prepareStorefrontOffline } from "../../lib/offline/storefrontOffline";
+import { refreshGachaLaunch } from "../../lib/gacha/gachaLaunch";
 import {
   closeLocalOfflineEvent,
   getOfflineEventDeviceId,
@@ -68,6 +73,7 @@ export function OfflineEventManager({
   const [busy, setBusy] = useState<"start" | "sync" | "close" | string>();
   const [online, setOnline] = useState(navigator.onLine);
   const [isOpen, setIsOpen] = useState(false);
+  const [gachaPreparationProgress, setGachaPreparationProgress] = useState<number | null>(null);
 
   const reloadLocal = useCallback(async () => {
     const stored = await loadOfflineEventSession(shopId);
@@ -133,6 +139,23 @@ export function OfflineEventManager({
         active: true,
         accepting_orders: true,
       });
+      const gachaLaunch = await refreshGachaLaunch(shopSlug, { booth });
+      const enabledGames = (["genshin", "hsr"] as const).filter(
+        (gameType) => gachaLaunch.catalogs[gameType]?.settings?.enabled,
+      );
+      if (enabledGames.length) {
+        setGachaPreparationProgress(0);
+        await downloadGachaOfflinePacks(
+          enabledGames,
+          Object.fromEntries(
+            enabledGames.map((gameType) => [
+              gameType,
+              gachaCatalogOfflineUrls(gachaLaunch.catalogs[gameType]),
+            ]),
+          ),
+          ({ percent }) => setGachaPreparationProgress(percent),
+        );
+      }
       const created = await startOfflineEventSession({
         shopId,
         shopSlug,
@@ -170,6 +193,7 @@ export function OfflineEventManager({
         t("Event mode unavailable"),
       );
     } finally {
+      setGachaPreparationProgress(null);
       setBusy(undefined);
     }
   }
@@ -262,43 +286,23 @@ export function OfflineEventManager({
 
   return (
     <>
-      <section className={`offline-event-launcher ${eventActive ? "is-active" : ""}`}>
-        <div className="offline-event-launcher-copy">
-          <span className="offline-event-icon"><CloudOff size={18} /></span>
-          <div>
-            <span className="offline-event-eyebrow">{t("Offline selling")}</span>
-            <h2>{activeSession ? activeSession.name : t("Event sales")}</h2>
-          </div>
-        </div>
-        <div className="offline-event-launcher-metrics" aria-label={t("Event mode status")}>
-          {eventActive ? (
-            <>
-              <span><b>{allocationTotal - soldTotal}</b> {t("left")}</span>
-              <span><b>{pendingCount}</b> {t("pending")}</span>
-              <span className={`status-pill ${online ? "status-confirmed" : "status-pending"}`}>
-                {online ? t("Online") : t("Offline ready")}
-              </span>
-            </>
-          ) : (
-            <span className="status-pill status-neutral">{t("Not prepared")}</span>
-          )}
-        </div>
-        <Button
-          variant={eventActive ? "secondary" : "primary"}
-          icon={eventActive ? <ShieldCheck size={17} /> : <CloudOff size={17} />}
-          onClick={() => setIsOpen(true)}
-        >
-          {eventActive ? t("Manage") : t("Set up")}
-        </Button>
-      </section>
+      <button
+        type="button"
+        className={`admin-toolbar-control offline-event-launcher ${eventActive ? "is-active" : ""}`}
+        aria-label={eventActive ? `${t("Event mode")}: ${activeSession?.name}` : `${t("Event mode")}: ${t("Set up")}`}
+        onClick={() => setIsOpen(true)}
+      >
+        {eventActive ? <ShieldCheck size={15} /> : <CloudOff size={15} />}
+        <span>{t("Event mode")}</span>
+        {eventActive && <i aria-hidden="true" />}
+      </button>
 
       <Modal
         title={t("Offline event mode")}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        className="offline-event-modal"
+        className={`offline-event-modal ${eventActive ? "is-active-session" : "is-setup"}`}
         closeLabel={t("Close modal")}
-        wide
         mobileSheet
       >
         {!eventActive ? (
@@ -311,25 +315,33 @@ export function OfflineEventManager({
               </div>
             </div>
             <Alert variant="info" className="offline-event-warning">
-              {t("Use one designated staff device while offline. Other devices cannot spend this allocation.")}
+              {t("Use one designated staff device while offline. The storefront and enabled gacha games are saved before stock is reserved.")}
             </Alert>
-            <Field label={t("Event name")} className="offline-event-name">
-              <TextInput
-                value={name}
-                maxLength={80}
-                placeholder={t("Convention day or booth session")}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </Field>
-            <div className="offline-event-preview">
-              <strong>{t("Stock to reserve")}</strong>
-              <span>{availableProducts.length} {t("products")}</span>
-              <span>{availableProducts.reduce((sum, product) => sum + product.quantity_available, 0)} {t("items")}</span>
+            <div className="offline-event-setup-card">
+              <Field label={t("Event name")} className="offline-event-name">
+                <TextInput
+                  value={name}
+                  maxLength={80}
+                  placeholder={t("Convention day or booth session")}
+                  onChange={(event) => setName(event.target.value)}
+                />
+              </Field>
+              <div className="offline-event-stock-summary">
+                <strong>{t("Stock to reserve")}</strong>
+                <div className="offline-event-preview">
+                  <span><b>{availableProducts.length}</b>{t("products")}</span>
+                  <span><b>{availableProducts.reduce((sum, product) => sum + product.quantity_available, 0)}</b>{t("items")}</span>
+                </div>
+              </div>
             </div>
             <Button
               className="offline-event-primary-action"
               loading={busy === "start"}
-              loadingText={t("Preparing device…")}
+              loadingText={gachaPreparationProgress === null
+                ? t("Preparing device…")
+                : t("Preparing games… {{progress}}%", {
+                    progress: gachaPreparationProgress,
+                  })}
               disabled={!online || !name.trim() || !availableProducts.length}
               icon={<ShieldCheck size={17} />}
               onClick={() => void startEvent()}

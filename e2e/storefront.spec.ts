@@ -21,12 +21,9 @@ test("reloads the storefront while completely offline", async ({
   ).toBeVisible();
   await page.getByRole("button", { name: /Booth info/i }).click();
   const boothDialog = page.getByRole("dialog", { name: "Booth details" });
-  await boothDialog
-    .getByRole("button", { name: "Download for offline browsing" })
-    .click();
   await expect(
-    boothDialog.getByRole("button", { name: "Offline browsing ready" }),
-  ).toBeVisible();
+    boothDialog.getByRole("button", { name: "Download for offline browsing" }),
+  ).toHaveCount(0);
   await expect
     .poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)))
     .toBe(true);

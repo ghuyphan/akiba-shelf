@@ -40,6 +40,26 @@ const STATIC_CACHE_NAME = "gacha-static-cache-v1";
 const STORAGE_CACHE_NAME = "supabase-storage-cache-v2";
 const PRODUCT_IMAGE_CACHE_NAME = "product-image-cache-v2";
 
+export function gachaCatalogOfflineUrls(catalog?: {
+  entries: Array<{
+    product: {
+      images?: string[];
+      image_variants?: Array<{ thumbnail: string; detail: string }>;
+    };
+  }>;
+}) {
+  if (!catalog) return [];
+  return [...new Set(
+    catalog.entries.flatMap((entry) => [
+      ...(entry.product.images ?? []),
+      ...(entry.product.image_variants ?? []).flatMap((image) => [
+        image.thumbnail,
+        image.detail,
+      ]),
+    ]).filter(Boolean),
+  )];
+}
+
 function markerKey(gameType: GachaGameType) {
   return `${OFFLINE_PACK_MARKER_PREFIX}:${gameType}`;
 }

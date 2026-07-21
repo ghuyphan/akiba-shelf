@@ -254,6 +254,18 @@ export async function mockSupabase(
         logo_url: booth.logo_url,
         theme_background: booth.theme_background,
       });
+    if (url.pathname.includes("/rest/v1/rpc/get_offline_event_orders"))
+      return json(route, {
+        orders: [],
+        total: 0,
+        counts: {
+          pending: 0,
+          confirmed: 0,
+          cancelled: 0,
+          expired: 0,
+          all: 0,
+        },
+      });
     if (url.pathname.includes("/rest/v1/rpc/get_active_offline_event_session"))
       return json(route, null);
     if (url.pathname.includes("/rest/v1/rpc/start_offline_event_session"))

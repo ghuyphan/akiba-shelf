@@ -54,10 +54,6 @@ import {
 import { prefersLightweightCatalog } from "../lib/network";
 import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
-import {
-  prepareStorefrontOffline,
-  verifyStorefrontOfflineReady,
-} from "../lib/offline/storefrontOffline";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -169,7 +165,6 @@ export function CatalogPage() {
     Boolean(initialCheckoutRef.current),
   );
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-  const [offlineState, setOfflineState] = useState<"idle" | "saving" | "ready">("idle");
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null,
   );
@@ -195,17 +190,6 @@ export function CatalogPage() {
         )
       : null;
   useDocumentBranding(verifiedBranding);
-
-  useEffect(() => {
-    let active = true;
-    setOfflineState("idle");
-    void verifyStorefrontOfflineReady(shopSlug).then((ready) => {
-      if (active && ready) setOfflineState("ready");
-    });
-    return () => {
-      active = false;
-    };
-  }, [shopSlug]);
 
   useEffect(() => {
     const next = loadCheckoutSession(shopSlug)?.order ?? null;
@@ -579,17 +563,6 @@ export function CatalogPage() {
     toast,
   ]);
 
-  const handleSaveOffline = useCallback(() => {
-    if (!shop || offlineState === "saving") return;
-    setOfflineState("saving");
-    void prepareStorefrontOffline(shop)
-      .then(() => setOfflineState("ready"))
-      .catch(() => {
-        setOfflineState("idle");
-        toast.error(catalogCopy.offlineSaveFailed);
-      });
-  }, [catalogCopy.offlineSaveFailed, offlineState, shop, toast]);
-
   const categories = useMemo(
     () => ["All", ...catalogCategories],
     [catalogCategories],
@@ -900,8 +873,6 @@ export function CatalogPage() {
               payment={payment}
               open={isInfoOpen}
         onClose={() => setIsInfoOpen(false)}
-        offlineState={offlineState}
-        onSaveOffline={handleSaveOffline}
             />
             <FlyingItemsLayer items={flyingItems} />
           </main>

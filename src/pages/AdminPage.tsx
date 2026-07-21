@@ -4,6 +4,7 @@ import { Navigate } from "react-router-dom";
 import {
   deleteProduct,
   getAdminCatalogData,
+  getOfflineEventOrders,
   getShopWorkspaceSummary,
   getOrderStatusCounts,
   getOrders,
@@ -14,7 +15,7 @@ import {
   signInAdmin,
   signOutAdmin,
 } from "../lib/api";
-import type { OrderFilter, OrderStatusCounts } from "../lib/api";
+import type { OrderStatusCounts } from "../lib/api";
 import {
   defaultBooth,
   defaultPayment,
@@ -50,7 +51,7 @@ import { useAdminOrderRealtime } from "../hooks/useAdminOrderRealtime";
 import { AdminWorkspaceHeader } from "../components/admin/AdminWorkspaceHeader";
 import { AdminViewHero } from "../components/admin/AdminViewHero";
 import { AdminWorkspaceContent } from "../components/admin/AdminWorkspaceContent";
-import { OfflineEventManager } from "../components/admin/OfflineEventManager";
+import type { OrderViewFilter } from "../components/admin/OrderQueue";
 import type { AdminViewTab } from "../components/admin/adminWorkspaceTypes";
 import { SignOutDialog } from "../components/ui/SignOutDialog";
 import {
@@ -61,6 +62,12 @@ import {
   loadCatalogSnapshot,
   saveCatalogSnapshot,
 } from "../lib/offline/offline";
+import {
+  listOfflineEventOrders,
+  loadOfflineEventSession,
+  offlineEventOrderAsOrder,
+  OFFLINE_EVENT_UPDATED,
+} from "../lib/offline/offlineEvents";
 
 const orderPageSize = 12;
 // Realtime events caused by this tab's own writes are ignored inside this
@@ -85,7 +92,8 @@ export function AdminPage() {
   const canManageCatalog = isAuthed && adminSession.access.role !== "staff";
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [orderFilter, setOrderFilter] = useState<OrderFilter>("pending");
+  const [orderFilter, setOrderFilter] = useState<OrderViewFilter>("pending");
+  const [eventOrderCount, setEventOrderCount] = useState(0);
   const [ordersTodayOnly, setOrdersTodayOnly] = useState(true);
   const [orderPage, setOrderPage] = useState(1);
   const [orderTotal, setOrderTotal] = useState(0);
@@ -156,6 +164,7 @@ export function AdminPage() {
     setProducts([]);
     setOrders([]);
     setOrderCounts(emptyOrderCounts);
+    setEventOrderCount(0);
     setOrderTotal(0);
     setSelectedProduct(undefined);
     setBooth(shopId ? getStoredBoothTheme(`id:${shopId}`) : defaultBooth);
@@ -260,20 +269,48 @@ export function AdminPage() {
           createdAfter = startOfToday.toISOString();
           createdBefore = startOfTomorrow.toISOString();
         }
-        const [result, counts] = await Promise.all([
-          getOrders(shopId, {
-            page,
-            pageSize: orderPageSize,
-            status: orderFilterRef.current,
-            createdAfter,
-            createdBefore,
-          }),
-          refreshCounts
-            ? getOrderStatusCounts(shopId, { createdAfter, createdBefore })
-            : Promise.resolve(null),
-        ]);
+        const filter = orderFilterRef.current;
+        const dateScope = { createdAfter, createdBefore };
+        const [result, countResult] = filter === "event"
+          ? await Promise.all([
+              getOfflineEventOrders(shopId, {
+                page,
+                pageSize: orderPageSize,
+                ...dateScope,
+              }),
+              refreshCounts
+                ? getOrderStatusCounts(shopId, dateScope)
+                : Promise.resolve(null),
+            ]).then(([eventResult, counts]) => [
+              eventResult,
+              counts ? [counts, eventResult.total] as const : null,
+            ] as const)
+          : await Promise.all([
+              getOrders(shopId, {
+                page,
+                pageSize: orderPageSize,
+                status: filter,
+                ...dateScope,
+              }),
+              refreshCounts
+                ? Promise.all([
+                    getOrderStatusCounts(shopId, dateScope),
+                    getOfflineEventOrders(shopId, {
+                      page: 1,
+                      pageSize: 1,
+                      ...dateScope,
+                    })
+                      .then((eventResult) => eventResult.total)
+                      .catch(() => null),
+                  ])
+                : Promise.resolve(null),
+            ]);
         if (requestId !== orderRequestRef.current) return;
-        saveAdminOrdersSnapshot(shopId, result.orders);
+        saveAdminOrdersSnapshot(
+          shopId,
+          result.orders,
+          filter === "event" ? "event" : "online",
+        );
         const lastPage = Math.max(1, Math.ceil(result.total / orderPageSize));
         if (page > lastPage) {
           setOrderPage(lastPage);
@@ -287,26 +324,45 @@ export function AdminPage() {
           orderFilterRef.current,
           ordersTodayOnlyRef.current,
         ].join(":");
-        if (counts) {
-          setOrderCounts(counts);
+        if (filter === "event") setEventOrderCount(result.total);
+        if (countResult) {
+          setOrderCounts(countResult[0]);
+          if (countResult[1] !== null) setEventOrderCount(countResult[1]);
           loadedOrderCountScopeRef.current = [
             shopId,
             ordersTodayOnlyRef.current,
           ].join(":");
         }
       })()
-        .catch((error) => {
+        .catch(async (error) => {
           if (navigator.onLine && !isTransportError(error)) throw error;
-          const cached = loadAdminOrdersSnapshot(shopId);
-          if (!cached.length) throw error;
+          const filter = orderFilterRef.current;
+          const source = filter === "event" ? "event" : "online";
+          const cached = loadAdminOrdersSnapshot(shopId, source);
+          let available = cached;
+          if (filter === "event") {
+            const session = await loadOfflineEventSession(shopId);
+            const localOrders = session
+              ? (await listOfflineEventOrders(session.id)).map((order) =>
+                  offlineEventOrderAsOrder(order, session),
+                )
+              : [];
+            const merged = new Map(cached.map((order) => [order.id, order]));
+            localOrders.forEach((order) => merged.set(order.id, order));
+            available = [...merged.values()].sort((a, b) =>
+              b.created_at.localeCompare(a.created_at),
+            );
+          }
+          if (!available.length && filter !== "event") throw error;
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const tomorrow = new Date(today);
           tomorrow.setDate(tomorrow.getDate() + 1);
-          const scoped = cached.filter((order) => {
+          const scoped = available.filter((order) => {
             if (
-              orderFilterRef.current !== "all" &&
-              order.status !== orderFilterRef.current
+              filter !== "event" &&
+              filter !== "all" &&
+              order.status !== filter
             ) return false;
             const created = new Date(order.created_at);
             return !ordersTodayOnlyRef.current ||
@@ -321,7 +377,9 @@ export function AdminPage() {
             orderFilterRef.current,
             ordersTodayOnlyRef.current,
           ].join(":");
-          const counts = cached.reduce<OrderStatusCounts>(
+          if (filter === "event") setEventOrderCount(scoped.length);
+          const onlineCached = loadAdminOrdersSnapshot(shopId, "online");
+          const counts = onlineCached.reduce<OrderStatusCounts>(
             (result, order) => {
               const created = new Date(order.created_at);
               if (
@@ -472,27 +530,100 @@ export function AdminPage() {
     const startOfTomorrow = new Date(startOfToday);
     startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
 
-    getOrderStatusCounts(
-      shopId,
-      ordersTodayOnly
-        ? {
-            createdAfter: startOfToday.toISOString(),
-            createdBefore: startOfTomorrow.toISOString(),
-          }
-        : {},
-    )
-      .then((counts) => {
+    const dateScope = ordersTodayOnly
+      ? {
+          createdAfter: startOfToday.toISOString(),
+          createdBefore: startOfTomorrow.toISOString(),
+        }
+      : {};
+
+    Promise.all([
+      getOrderStatusCounts(shopId, dateScope),
+      getOfflineEventOrders(shopId, {
+        page: 1,
+        pageSize: 1,
+        ...dateScope,
+      }),
+    ])
+      .then(([counts, eventResult]) => {
         setOrderCounts(counts);
+        setEventOrderCount(eventResult.total);
         loadedOrderCountScopeRef.current = countScope;
       })
-      .catch((error) => {
+      .catch(async (error) => {
         if (isSessionNoise(error)) return;
+        if (!navigator.onLine || isTransportError(error)) {
+          const onlineCached = loadAdminOrdersSnapshot(shopId, "online");
+          const eventCached = loadAdminOrdersSnapshot(shopId, "event");
+          const session = await loadOfflineEventSession(shopId);
+          const localOrders = session
+            ? (await listOfflineEventOrders(session.id)).map((order) =>
+                offlineEventOrderAsOrder(order, session),
+              )
+            : [];
+          const eventOrders = new Map(
+            eventCached.map((order) => [order.id, order]),
+          );
+          localOrders.forEach((order) => eventOrders.set(order.id, order));
+          const inScope = (order: Order) => {
+            if (!ordersTodayOnly) return true;
+            const created = new Date(order.created_at);
+            return created >= startOfToday && created < startOfTomorrow;
+          };
+          setOrderCounts(
+            onlineCached.reduce<OrderStatusCounts>((counts, order) => {
+              if (!inScope(order)) return counts;
+              counts[order.status] += 1;
+              counts.all += 1;
+              return counts;
+            }, { ...emptyOrderCounts }),
+          );
+          setEventOrderCount(
+            [...eventOrders.values()].filter(inScope).length,
+          );
+          loadedOrderCountScopeRef.current = countScope;
+          return;
+        }
         toast.error(
           t("Could not load the admin workspace."),
           t("Admin unavailable"),
         );
       });
   }, [isAuthed, shopId, ordersTodayOnly, isInitialLoading, t, toast]);
+
+  useEffect(() => {
+    if (!isAuthed || isInitialLoading || orderFilter !== "event") return;
+    let timer: number | undefined;
+    const refresh = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        reloadOrders(true).catch((error) => {
+          if (isSessionNoise(error)) return;
+          toast.error(
+            tRef.current(getErrorMessage(error, "Could not refresh orders.")),
+            tRef.current("Refresh failed"),
+          );
+        });
+      }, 200);
+    };
+    const handleEventUpdate = (event: Event) => {
+      const detail = (event as CustomEvent<{ shopId?: string }>).detail;
+      if (!detail?.shopId || detail.shopId === shopId) refresh();
+    };
+    window.addEventListener(OFFLINE_EVENT_UPDATED, handleEventUpdate);
+    window.addEventListener("online", refresh);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("storage", refresh);
+    const interval = window.setInterval(refresh, 15_000);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearInterval(interval);
+      window.removeEventListener(OFFLINE_EVENT_UPDATED, handleEventUpdate);
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, [isAuthed, isInitialLoading, orderFilter, reloadOrders, shopId, toast]);
 
   // Real-time catalog subscription
   useEffect(() => {
@@ -658,18 +789,6 @@ export function AdminPage() {
           hiddenCount={hiddenCount}
           pendingOrderCount={orderCounts.pending}
           matchingOrderCount={orderTotal}
-          ordersAction={
-            canManageCatalog ? (
-              <OfflineEventManager
-                shopId={shopId}
-                shopSlug={adminSession.access.shop_slug}
-                products={products}
-                booth={booth}
-                payment={payment}
-                promotion={promotion}
-              />
-            ) : undefined
-          }
         />
         <AdminWorkspaceContent
           viewTab={viewTab}
@@ -686,6 +805,7 @@ export function AdminPage() {
           promotion={promotion}
           orders={orders}
           orderFilter={orderFilter}
+          eventOrderCount={eventOrderCount}
           ordersTodayOnly={ordersTodayOnly}
           orderCounts={orderCounts}
           orderPage={orderPage}

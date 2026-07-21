@@ -162,6 +162,7 @@ export type Order = {
   order_items?: OrderItem[];
   source?: "online" | "offline_event";
   offline_event_session_id?: string;
+  offline_event_name?: string;
   payment_method?: OfflineEventPaymentMethod;
   payment_state?: OfflineEventPaymentState;
 };

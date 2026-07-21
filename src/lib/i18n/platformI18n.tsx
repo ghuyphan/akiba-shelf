@@ -591,7 +591,6 @@ const vi: Record<string, string> = {
   confirmed: "đã xác nhận",
   cancelled: "đã hủy",
   expired: "đã hết hạn",
-  "Live queue": "Hàng đợi trực tiếp",
   "Orders shown": "Số đơn hiển thị",
   "{{count}} matching orders": "{{count}} đơn phù hợp",
   "Order value": "Giá trị đơn",
@@ -1319,6 +1318,16 @@ const vi: Record<string, string> = {
   "Close modal": "Đóng hộp thoại",
   "Admin sections": "Các mục quản trị",
   "Offline event mode": "Chế độ sự kiện ngoại tuyến",
+  "Event mode": "Chế độ sự kiện",
+  event: "sự kiện",
+  "Event orders": "Đơn hàng sự kiện",
+  "No event orders today": "Hôm nay chưa có đơn hàng sự kiện",
+  "No event orders yet": "Chưa có đơn hàng sự kiện",
+  "Event sale": "Đơn tại sự kiện",
+  "Resolve this order on the designated Event Mode device.":
+    "Xử lý đơn này trên thiết bị Chế độ sự kiện được chỉ định.",
+  "Event orders appear here after they sync, or directly from this device while offline.":
+    "Đơn hàng sự kiện sẽ xuất hiện tại đây sau khi đồng bộ, hoặc trực tiếp từ thiết bị này khi ngoại tuyến.",
   "Offline selling": "Bán hàng ngoại tuyến",
   "Event sales": "Bán hàng tại sự kiện",
   "Event mode status": "Trạng thái chế độ sự kiện",
@@ -1339,8 +1348,9 @@ const vi: Record<string, string> = {
     "Chuẩn bị thiết bị này cho sự kiện ngoại tuyến",
   "Current active stock will be assigned to this device, removed from online availability, and safely returned when the event closes.":
     "Tồn kho đang hoạt động sẽ được giao cho thiết bị này, gỡ khỏi lượng hàng trực tuyến và hoàn lại an toàn khi đóng sự kiện.",
-  "Use one designated staff device while offline. Other devices cannot spend this allocation.":
-    "Chỉ dùng một thiết bị staff được chỉ định khi ngoại tuyến. Thiết bị khác không thể sử dụng phần tồn kho này.",
+  "Use one designated staff device while offline. The storefront and enabled gacha games are saved before stock is reserved.":
+    "Chỉ dùng một thiết bị staff được chỉ định khi ngoại tuyến. Cửa hàng và các game gacha đang bật sẽ được lưu trước khi giữ tồn kho.",
+  "Preparing games… {{progress}}%": "Đang chuẩn bị game… {{progress}}%",
   "Event name": "Tên sự kiện",
   "Convention day or booth session": "Ngày hội chợ hoặc ca trực gian hàng",
   "Stock to reserve": "Tồn kho cần giữ",

@@ -1,4 +1,4 @@
-import type { OrderFilter, OrderStatusCounts } from "../../lib/api";
+import type { OrderStatusCounts } from "../../lib/api";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import type {
   BoothSettings,
@@ -17,6 +17,8 @@ import { StaffManager } from "./StaffManager";
 import { StorefrontDesigner } from "./StorefrontDesigner";
 import { AdminProductsWorkspace } from "./AdminProductsWorkspace";
 import type { AdminViewTab } from "./adminWorkspaceTypes";
+import { OfflineEventManager } from "./OfflineEventManager";
+import type { OrderViewFilter } from "./OrderQueue";
 
 type AdminWorkspaceContentProps = {
   viewTab: AdminViewTab;
@@ -32,7 +34,8 @@ type AdminWorkspaceContentProps = {
   payment: PaymentSettings;
   promotion: PromotionSettings;
   orders: Order[];
-  orderFilter: OrderFilter;
+  orderFilter: OrderViewFilter;
+  eventOrderCount: number;
   ordersTodayOnly: boolean;
   orderCounts: OrderStatusCounts;
   orderPage: number;
@@ -40,7 +43,7 @@ type AdminWorkspaceContentProps = {
   orderTotal: number;
   ordersLoading: boolean;
   onRetry: () => void;
-  onOrderFilterChange: (filter: OrderFilter) => void;
+  onOrderFilterChange: (filter: OrderViewFilter) => void;
   onOrdersTodayOnlyChange: (todayOnly: boolean) => void;
   onOrderPageChange: (page: number) => void;
   onOrderUpdated: () => void;
@@ -67,6 +70,7 @@ export function AdminWorkspaceContent({
   promotion,
   orders,
   orderFilter,
+  eventOrderCount,
   ordersTodayOnly,
   orderCounts,
   orderPage,
@@ -107,6 +111,19 @@ export function AdminWorkspaceContent({
         filter={orderFilter}
         todayOnly={ordersTodayOnly}
         counts={orderCounts}
+        eventCount={eventOrderCount}
+        eventControl={
+          canManageCatalog ? (
+            <OfflineEventManager
+              shopId={shopId}
+              shopSlug={shopSlug}
+              products={products}
+              booth={booth}
+              payment={payment}
+              promotion={promotion}
+            />
+          ) : undefined
+        }
         page={orderPage}
         pageSize={orderPageSize}
         total={orderTotal}

@@ -4,6 +4,7 @@ import {
   createOfflineEventOrder,
   listOfflineEventOrders,
   loadOfflineEventSession,
+  offlineEventOrderAsOrder,
   saveOfflineEventSession,
   updateOfflineEventOrder,
 } from "../offlineEvents";
@@ -77,6 +78,19 @@ describe("offline event ledger", () => {
     expect(await listOfflineEventOrders(active.id)).toHaveLength(1);
     expect((await loadOfflineEventSession(active.shopId))?.allocations[0])
       .toMatchObject({ quantityAllocated: 3, quantitySold: 2 });
+    expect(offlineEventOrderAsOrder(order, active)).toMatchObject({
+      source: "offline_event",
+      offline_event_name: "Convention day",
+      discount_amount: 0,
+      order_items: [{
+        product_id: product.id,
+        quantity: 2,
+        product: {
+          name: "Event Print",
+          item_code: "EVT-PRINT",
+        },
+      }],
+    });
   });
 
   it("rejects overselling without mutating the allocation", async () => {

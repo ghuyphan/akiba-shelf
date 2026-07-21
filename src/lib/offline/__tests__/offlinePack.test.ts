@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   downloadGachaOfflinePack,
   downloadGachaOfflinePacks,
+  gachaCatalogOfflineUrls,
   hasGachaOfflinePack,
   offlinePackPercent,
 } from "../offlinePack";
@@ -106,6 +107,23 @@ describe("offline gacha pack readiness", () => {
     expect(offlinePackPercent({ completed: 0, total: 1_072 })).toBe(0);
     expect(offlinePackPercent({ completed: 1, total: 1_072 })).toBe(1);
     expect(offlinePackPercent({ completed: 1_072, total: 1_072 })).toBe(100);
+  });
+
+  it("deduplicates every product image needed by an offline catalog", () => {
+    expect(gachaCatalogOfflineUrls({
+      entries: [{
+        product: {
+          images: ["https://example.test/item.webp"],
+          image_variants: [{
+            thumbnail: "https://example.test/thumb.webp",
+            detail: "https://example.test/item.webp",
+          }],
+        },
+      }],
+    })).toEqual([
+      "https://example.test/item.webp",
+      "https://example.test/thumb.webp",
+    ]);
   });
 
   it("accepts a matching marker only when every required asset is cached", async () => {

@@ -1,5 +1,10 @@
 # Honkai: Star Rail Warp Simulator
 
+> Matsuri integration note: this is a vendored upstream application. Preserve
+> its attribution and standalone documentation. Matsuri-specific build,
+> configuration, featured-limit, and verification rules live in the root
+> `AGENTS.md`, `CODEBASE.md`, and `docs/operations.md`.
+
 ![License](https://badgen.net/github/license/Mantan21/HSR-Warp-Simulator?icon:github) ![Repo Size](https://img.shields.io/github/repo-size/Mantan21/HSR-Warp-Simulator?color=fa0) [![CodeFactor](https://www.codefactor.io/repository/github/mantan21/hsr-warp-simulator/badge)](https://www.codefactor.io/repository/github/mantan21/hsr-warp-simulator) ![Status](https://badgen.net/github/checks/Mantan21/HSR-Warp-Simulator) ![Code Standard](https://badgen.net/badge/code%20style/standard/f2a) [![Trakteer](https://badgen.net/badge/Trakteer/Mantan21/BE1E2D)](https://trakteer.id/mantan21)
 
 This project is similar to the [Genshin Impact Wish Simulator](https://github.com/Mantan21/Genshin-Impact-Wish-Simulator), I use the same algorithm and most of the code here I copy from there.

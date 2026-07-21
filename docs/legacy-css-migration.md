@@ -1,88 +1,60 @@
-# Legacy CSS migration plan
+# Legacy CSS migration
 
-`src/styles/legacy.css` is a compatibility layer, not a destination for new
-work. At the 2026-07-14 baseline it contains 3,533 lines, including overlapping
-generations of catalog, admin, and shared component styling. Removing it in one
-rewrite would make cascade regressions hard to isolate, so migration is staged
-by ownership and verified after every slice.
+`src/styles/legacy.css` is a compatibility layer, not an ownership target. Do
+not add new rules. Remove it gradually so cascade regressions stay attributable
+to one surface.
 
-## Target ownership
+## Destination ownership
 
-- `global.css`: tokens, resets, typography, buttons, fields, modal, alert, toast,
-  and other genuinely cross-screen primitives.
-- `catalog.css`: storefront layout, cards, featured deck, category controls,
-  booth information, cart, checkout, and payment surfaces.
-- `admin.css`: platform/auth/dashboard, admin workspace, editors, order queue,
-  settings, and storefront designer.
-- `legacy.css`: temporary compatibility rules only; zero lines is the exit goal.
+- `global.css`: tokens, reset, typography, shared buttons/fields/modal/alert/
+  toast, accessibility states.
+- `catalog.css`: storefront, featured deck, products, booth, cart, checkout,
+  and payment.
+- `admin.css`: platform, auth, dashboard, admin navigation/workspaces, settings,
+  and designer.
+- `gacha-*.css`: named gacha admin, entry, and host surfaces.
 
-## Migration sequence
+## Process for one slice
 
-### 1. Freeze and map
+1. Choose one primitive family or screen surface.
+2. Search every selector in TSX and all destination stylesheets.
+3. Record current desktop/phone behavior and relevant states.
+4. Move the final rule to its owner; consolidate with existing variables.
+5. Remove only the superseded legacy declarations.
+6. Verify behavior before selecting another slice.
 
-- Do not add selectors to `legacy.css`.
-- Record selector ownership before moving a block. Search every selector in TSX
-  and in the three destination stylesheets.
-- Capture desktop and phone screenshots for the affected surface, including its
-  empty, loading, error, and long/localized-content states where applicable.
-- Keep the current import in `src/main.tsx` until the final stage.
+Do not combine selector movement with a redesign. Reduce specificity or
+`!important` only when coverage proves the cascade remains correct.
 
-Exit gate: every chosen block has one screen owner and a reproducible visual or
-end-to-end check.
+## Suggested order
 
-### 2. Shared primitives
+1. Shared primitives and accessibility states.
+2. Platform/auth/dashboard.
+3. Storefront shell, header, and booth information.
+4. Featured deck and browsing controls.
+5. Product grid and list cards.
+6. Cart, product detail, checkout, payment, and sheets.
+7. Admin header/orders/products/settings/team.
+8. Storefront designer and preview.
 
-Move only rules used across multiple route families: base typography, form and
-button primitives, modal/backdrop behavior, alerts, toasts, and accessibility
-states. Consolidate duplicate declarations around existing variables rather
-than copying old hard-coded colors. Preserve keyboard focus and reduced-motion
-behavior.
+Keep the `legacy.css` import in `src/main.tsx` until no route depends on it.
 
-Exit gate: auth, dashboard, admin, and storefront smoke checks pass at desktop
-and phone widths; no moved selector remains duplicated in `legacy.css`.
+## Verification per slice
 
-### 3. Storefront slices
+- Desktop and phone for the affected route.
+- English and Vietnamese when copy can wrap.
+- Loading, empty, error, success, sold-out, and long-content states as relevant.
+- Product grid and list modes for product/card work.
+- Sheet entrance/exit, backdrop cleanup, body interaction, focus, and reduced
+  motion for overlay work.
+- Focused tests, then `npm run check` and `git diff --check`.
 
-Migrate in bounded groups:
+Report the selectors moved, legacy declarations removed, and surfaces checked.
 
-1. shell/header and booth information;
-2. featured deck;
-3. browse controls and overflowing categories;
-4. product grid and list cards;
-5. cart, product detail, checkout, payment, and success sheets.
+## Final removal
 
-For every group, verify English and Vietnamese, grid and list modes, sold-out
-and long-text products, sheet entrance/exit, and `prefers-reduced-motion`.
+When searches and visual coverage show no dependency:
 
-Exit gate: the storefront has no selector dependency on `legacy.css`.
-
-### 4. Platform and admin slices
-
-Migrate platform/auth/dashboard first, then the admin header/navigation, orders,
-products, settings/staff, and finally the designer preview. Admin work should be
-split around roughly 1,100 px as well as the phone breakpoint because its
-two-column layouts collapse earlier than the storefront.
-
-Exit gate: all platform and admin routes render correctly without legacy rules,
-including the designer's desktop/phone previews.
-
-### 5. Remove the layer
-
-- Confirm that every remaining legacy selector is unused or has an owned
-  replacement.
-- Remove the `legacy.css` import and file in the same focused change.
-- Run the full verification matrix, production build, and CSS/search checks.
-- Add a CI guard preventing recreation of the file or import.
-
-Exit gate: `legacy.css` is absent, no compatibility import remains, and the full
-test/visual checklist passes.
-
-## Rules for each migration pull request
-
-- One coherent surface or primitive family per change.
-- No unrelated redesign mixed into selector relocation.
-- Destination rules should be readable and grouped; do not preserve compressed
-  or duplicated historical formatting.
-- Prefer removing specificity and `!important` only when visual tests prove the
-  cascade remains stable.
-- Report the legacy line-count change and the surfaces verified.
+1. remove the import and file in one focused change;
+2. run the full test and visual matrix;
+3. add a CI guard preventing recreation of the file/import.

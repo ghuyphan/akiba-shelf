@@ -92,7 +92,7 @@ test("allows authorized staff into orders without restricted settings", async ({
   await expect(page.locator(".offline-event-launcher")).toHaveCount(0);
 });
 
-test("integrates offline event controls into the Orders hero", async ({
+test("integrates event controls and filtering into the Orders toolbar", async ({
   page,
 }) => {
   await mockSupabase(page, { staffRole: "owner" });
@@ -107,14 +107,33 @@ test("integrates offline event controls into the Orders hero", async ({
   ).toHaveCount(0);
 
   const hero = page.locator(".admin-view-hero-orders");
-  const eventControl = hero.locator(".offline-event-launcher");
-  await expect(eventControl).toBeVisible();
-  await expect(eventControl).toContainText("Event sales");
-  await expect(eventControl).toContainText("Not prepared");
+  await expect(hero.locator(".offline-event-launcher")).toHaveCount(0);
+  await expect(hero).toHaveCSS("background-image", "none");
+  await expect(hero).toHaveCSS("border-top-style", "none");
 
-  await eventControl.getByRole("button", { name: "Set up" }).click();
+  const toolbar = page.locator(".admin-filter-bar");
+  const eventControl = toolbar.locator(".offline-event-launcher");
+  await expect(eventControl).toBeVisible();
+  await expect(eventControl).toContainText("Event mode");
+  await expect(toolbar.getByText("Live queue", { exact: true })).toHaveCount(0);
+  const eventFilter = toolbar.getByRole("tab", { name: /event 0/i });
+  await expect(eventFilter).toBeVisible();
+
+  await eventFilter.click();
+  await expect(
+    page.getByRole("heading", { name: "Event orders", exact: true }),
+  ).toBeVisible();
+
+  await eventControl.click();
   const dialog = page.getByRole("dialog", { name: "Offline event mode" });
   await expect(dialog).toBeVisible();
+  await expect(dialog).not.toHaveClass(/modal-wide/);
+  const dialogShape = await dialog.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return { width: bounds.width, ratio: bounds.width / bounds.height };
+  });
+  expect(dialogShape.width).toBeLessThanOrEqual(640);
+  expect(dialogShape.ratio).toBeLessThanOrEqual(1.35);
   const eventName = dialog.getByLabel("Event name");
   await expect(eventName).toHaveClass(/input/);
   await expect(eventName).toHaveCSS("min-height", "44px");
@@ -134,6 +153,7 @@ test("loads the initial owner workspace without duplicate requests", async ({
     catalog: 0,
     orders: 0,
     counts: 0,
+    eventOrders: 0,
   };
   page.on("request", (request) => {
     const url = new URL(request.url());
@@ -143,6 +163,8 @@ test("loads the initial owner workspace without duplicate requests", async ({
       requestCounts.orders += 1;
     else if (url.pathname.endsWith("/rpc/get_order_status_counts"))
       requestCounts.counts += 1;
+    else if (url.pathname.endsWith("/rpc/get_offline_event_orders"))
+      requestCounts.eventOrders += 1;
   });
 
   await mockSupabase(page, { staffRole: "owner" });
@@ -160,6 +182,7 @@ test("loads the initial owner workspace without duplicate requests", async ({
       catalog: 1,
       orders: 1,
       counts: 1,
+      eventOrders: 1,
     });
 });
 

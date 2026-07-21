@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import type { BoothSettings } from "../../types/catalog";
 import type { AdminViewTab } from "./adminWorkspaceTypes";
@@ -11,7 +10,6 @@ type AdminViewHeroProps = {
   hiddenCount: number;
   pendingOrderCount: number;
   matchingOrderCount: number;
-  ordersAction?: ReactNode;
 };
 
 const viewCopy: Record<
@@ -59,7 +57,6 @@ export function AdminViewHero({
   hiddenCount,
   pendingOrderCount,
   matchingOrderCount,
-  ordersAction,
 }: AdminViewHeroProps) {
   const { t } = usePlatformI18n();
   const copy = viewCopy[viewTab];
@@ -108,7 +105,6 @@ export function AdminViewHero({
             </>
           )}
         </div>
-        {viewTab === "orders" && ordersAction}
       </div>
     </section>
   );

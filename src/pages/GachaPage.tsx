@@ -32,6 +32,7 @@ import type { GachaLaunchData } from "../lib/gacha/gachaLaunch";
 import {
   downloadGachaOfflinePack,
   downloadGachaOfflinePacks,
+  gachaCatalogOfflineUrls,
   hasGachaOfflinePack,
   offlinePackPercent,
 } from "../lib/offline/offlinePack";
@@ -270,13 +271,7 @@ export function GachaPage() {
             sendOfflineProgress("ready", 100);
             return;
           }
-          const productImages = activeCatalog.entries.flatMap((entry) => [
-            ...(entry.product.images ?? []),
-            ...(entry.product.image_variants ?? []).flatMap((image) => [
-              image.thumbnail,
-              image.detail,
-            ]),
-          ]);
+          const productImages = gachaCatalogOfflineUrls(activeCatalog);
           sendOfflineProgress("downloading", 0);
           await downloadGachaOfflinePack(gameType, productImages, (progress) => {
             sendOfflineProgress(
@@ -366,13 +361,7 @@ export function GachaPage() {
     const imagesByGame = Object.fromEntries(
       availableGames.map((gameType) => [
         gameType,
-        (state.catalogs[gameType]?.entries ?? []).flatMap((entry) => [
-          ...(entry.product.images ?? []),
-          ...(entry.product.image_variants ?? []).flatMap((image) => [
-            image.thumbnail,
-            image.detail,
-          ]),
-        ]),
+        gachaCatalogOfflineUrls(state.catalogs[gameType]),
       ]),
     );
     setPackDownload({ status: "downloading", progress: 1 });

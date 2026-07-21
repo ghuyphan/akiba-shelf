@@ -1,5 +1,10 @@
 # Genshin Impact Wish Simulator
 
+> Matsuri integration note: this is a vendored upstream application. Preserve
+> its attribution and standalone documentation. Matsuri-specific build,
+> configuration, featured-limit, and verification rules live in the root
+> `AGENTS.md`, `CODEBASE.md`, and `docs/operations.md`.
+
 This is a modified version of the [Genshin Impact Wish Simulator](https://github.com/AguzzTN54/Genshin-Impact-Wish-Simulator) by [AguzzTN54](https://github.com/AguzzTN54).
 
 1. Fix Wish not working in Firefox Private Browsing

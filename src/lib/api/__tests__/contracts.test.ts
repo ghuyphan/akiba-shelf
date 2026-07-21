@@ -7,6 +7,7 @@ import {
   CheckoutOutcomeUnknownError,
   createOrder,
   getCustomerOrder,
+  getOfflineEventOrders,
   getOrderStatusCounts,
   normalizeProduct,
   publishGachaConfiguration,
@@ -199,6 +200,67 @@ describe("order API contracts", () => {
       p_created_before: "2026-08-01T00:00:00.000Z",
     });
   });
+
+  it("normalizes the guarded Event order list response", async () => {
+    mocks.rpc.mockResolvedValueOnce({
+      data: {
+        orders: [{
+          ...orderResponse,
+          source: "offline_event",
+          offline_event_session_id: "71000000-0000-4000-8000-000000000001",
+          offline_event_name: "Convention day",
+          payment_method: "vietqr",
+          payment_state: "bank_verification_pending",
+          order_items: [{
+            id: `${orderId}:moon-stand`,
+            order_id: orderId,
+            product_id: "moon-stand",
+            quantity: "2",
+            unit_price: "60000",
+            discount_amount: "0",
+            product: {
+              id: "moon-stand",
+              name: "Moon Stand",
+              item_code: "MOON-1",
+              images: [],
+            },
+          }],
+        }],
+        total: "1",
+        counts: {
+          pending: "1",
+          confirmed: "0",
+          cancelled: "0",
+          expired: "0",
+          all: "1",
+        },
+      },
+      error: null,
+    });
+
+    await expect(
+      getOfflineEventOrders(shopId, {
+        page: 2,
+        pageSize: 8,
+        createdAfter: "2026-07-01T00:00:00.000Z",
+      }),
+    ).resolves.toMatchObject({
+      total: 1,
+      orders: [{
+        source: "offline_event",
+        offline_event_name: "Convention day",
+        order_items: [{ quantity: 2, unit_price: 60000 }],
+      }],
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith("get_offline_event_orders", {
+      p_shop_id: shopId,
+      p_page: 2,
+      p_page_size: 8,
+      p_status: "all",
+      p_created_after: "2026-07-01T00:00:00.000Z",
+      p_created_before: null,
+    });
+  });
 });
 
 describe("gacha publish contract", () => {
@@ -372,6 +434,7 @@ describe("Playwright Supabase request inventory", () => {
       "/rest/v1/rpc/get_admin_products",
       "/rest/v1/rpc/get_customer_order",
       "/rest/v1/rpc/get_my_shop_memberships",
+      "/rest/v1/rpc/get_offline_event_orders",
       "/rest/v1/rpc/get_order_status_counts",
       "/rest/v1/rpc/get_public_product_categories",
       "/rest/v1/rpc/get_shop_members",

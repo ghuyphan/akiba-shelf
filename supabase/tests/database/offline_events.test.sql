@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(18);
 
 insert into auth.users(
   id, instance_id, aud, role, email, encrypted_password,
@@ -88,6 +88,70 @@ select lives_ok(
 set local role postgres;
 select is((select count(*) from public.offline_event_orders), 1::bigint, 'one offline order is stored');
 select is((select quantity_sold from public.offline_event_allocations), 2, 'synced order consumes allocated stock');
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.get_offline_event_orders(uuid,integer,integer,text,timestamptz,timestamptz)',
+    'execute'
+  ),
+  'anonymous users cannot list event orders'
+);
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.get_offline_event_orders(uuid,integer,integer,text,timestamptz,timestamptz)',
+    'execute'
+  ),
+  'authenticated staff can call the guarded event order list'
+);
+
+set local role authenticated;
+set local request.jwt.claim.sub = '73000000-0000-4000-8000-000000000001';
+create temporary table event_orders_result as
+select public.get_offline_event_orders(
+  '74000000-0000-4000-8000-000000000001',
+  1,
+  12,
+  'all',
+  null,
+  null
+) as payload;
+select is(
+  (select (payload ->> 'total')::integer from event_orders_result),
+  1,
+  'event order list returns the matching total'
+);
+select is(
+  (select payload #>> '{orders,0,offline_event_name}' from event_orders_result),
+  'Convention day',
+  'event order list includes the session name'
+);
+select is(
+  (select payload #>> '{orders,0,order_items,0,product,name}' from event_orders_result),
+  'Event Product',
+  'event order list includes the product snapshot'
+);
+select is(
+  (
+    public.get_offline_event_orders(
+      '74000000-0000-4000-8000-000000000001',
+      1,
+      12,
+      'all',
+      '2026-07-22T00:00:00Z',
+      null
+    ) ->> 'total'
+  )::integer,
+  0,
+  'event order list applies the requested date scope'
+);
+set local request.jwt.claim.sub = '73000000-0000-4000-8000-000000000099';
+select throws_ok(
+  $$select public.get_offline_event_orders('74000000-0000-4000-8000-000000000001',1,12,'all',null,null)$$,
+  '42501',
+  'Active shop access required',
+  'non-members cannot list event orders'
+);
 
 set local role authenticated;
 set local request.jwt.claim.sub = '73000000-0000-4000-8000-000000000001';

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type {
+  Order,
   OfflineEventOrder,
   OfflineEventSession,
   PaymentSettings,
@@ -7,6 +8,9 @@ import type {
   PromotionSettings,
 } from "../../types/catalog";
 import {
+  orderItemProductSchema,
+  orderSchema,
+  orderStatusCountsSchema,
   paymentSettingsSchema,
   productRowSchema,
   promotionSettingsSchema,
@@ -35,6 +39,37 @@ const serverAllocationSchema = z.object({
 const eventBundleSchema = z.object({
   session: serverSessionSchema,
   allocations: z.array(serverAllocationSchema),
+});
+
+const eventOrderItemSchema = z.object({
+  id: z.string(),
+  order_id: z.string().uuid(),
+  product_id: z.string(),
+  quantity: z.coerce.number().int().positive(),
+  unit_price: z.coerce.number().int().nonnegative(),
+  free_quantity: z.coerce.number().int().nonnegative().optional(),
+  discount_amount: z.coerce.number().int().nonnegative().optional(),
+  product: orderItemProductSchema.optional(),
+});
+
+const eventOrderSchema = orderSchema.extend({
+  source: z.literal("offline_event"),
+  offline_event_session_id: z.string().uuid(),
+  offline_event_name: z.string(),
+  payment_method: z.enum(["cash", "vietqr"]),
+  payment_state: z.enum([
+    "awaiting_payment",
+    "cash_confirmed",
+    "bank_verification_pending",
+    "bank_confirmed",
+  ]),
+  order_items: z.array(eventOrderItemSchema),
+});
+
+const eventOrderResultSchema = z.object({
+  orders: z.array(eventOrderSchema),
+  total: z.coerce.number().int().nonnegative(),
+  counts: orderStatusCountsSchema,
 });
 
 function normalizeBundle(value: unknown, shopSlug: string): OfflineEventSession {
@@ -138,4 +173,43 @@ export async function closeOfflineEventSession(
     { p_session_id: session.id, p_device_id: session.deviceId },
   );
   if (error) throw error;
+}
+
+export async function getOfflineEventOrders(
+  shopId: string,
+  {
+    page = 1,
+    pageSize = 12,
+    status = "all",
+    createdAfter,
+    createdBefore,
+  }: {
+    page?: number;
+    pageSize?: number;
+    status?: "pending" | "confirmed" | "cancelled" | "expired" | "all";
+    createdAfter?: string;
+    createdBefore?: string;
+  } = {},
+): Promise<{
+  orders: Order[];
+  total: number;
+  counts: z.infer<typeof orderStatusCountsSchema>;
+}> {
+  const { data, error } = await requireSupabase().rpc(
+    "get_offline_event_orders",
+    {
+      p_shop_id: shopId,
+      p_page: page,
+      p_page_size: pageSize,
+      p_status: status,
+      p_created_after: createdAfter ?? null,
+      p_created_before: createdBefore ?? null,
+    },
+  );
+  if (error) throw error;
+  return eventOrderResultSchema.parse(data) as {
+    orders: Order[];
+    total: number;
+    counts: z.infer<typeof orderStatusCountsSchema>;
+  };
 }

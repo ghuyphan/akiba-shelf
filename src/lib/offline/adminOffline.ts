@@ -4,6 +4,7 @@ const ACCESS_KEY = "matsuri-admin-access-v1";
 const ORDERS_KEY = "matsuri-admin-orders-v1";
 const MAX_ACCESS_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_ORDER_SNAPSHOT = 200;
+export type AdminOrderSource = "online" | "event";
 
 type CachedAccess = {
   version: 1;
@@ -16,6 +17,7 @@ type CachedAccess = {
 type CachedOrders = {
   version: 1;
   shopId: string;
+  source?: AdminOrderSource;
   orders: Order[];
   savedAt: string;
 };
@@ -50,15 +52,20 @@ export function clearAdminAccessSnapshot() {
   localStorage.removeItem(ACCESS_KEY);
 }
 
-export function saveAdminOrdersSnapshot(shopId: string, orders: Order[]) {
-  const previous = loadAdminOrdersSnapshot(shopId);
+export function saveAdminOrdersSnapshot(
+  shopId: string,
+  orders: Order[],
+  source: AdminOrderSource = "online",
+) {
+  const previous = loadAdminOrdersSnapshot(shopId, source);
   const merged = new Map(previous.map((order) => [order.id, order]));
   orders.forEach((order) => merged.set(order.id, order));
   localStorage.setItem(
-    `${ORDERS_KEY}:${shopId}`,
+    `${ORDERS_KEY}:${shopId}:${source}`,
     JSON.stringify({
       version: 1,
       shopId,
+      source,
       orders: [...merged.values()]
         .sort((a, b) => b.created_at.localeCompare(a.created_at))
         .slice(0, MAX_ORDER_SNAPSHOT),
@@ -67,12 +74,22 @@ export function saveAdminOrdersSnapshot(shopId: string, orders: Order[]) {
   );
 }
 
-export function loadAdminOrdersSnapshot(shopId: string): Order[] {
+export function loadAdminOrdersSnapshot(
+  shopId: string,
+  source: AdminOrderSource = "online",
+): Order[] {
   try {
     const value = JSON.parse(
-      localStorage.getItem(`${ORDERS_KEY}:${shopId}`) || "null",
+      localStorage.getItem(`${ORDERS_KEY}:${shopId}:${source}`) ||
+        (source === "online"
+          ? localStorage.getItem(`${ORDERS_KEY}:${shopId}`)
+          : null) ||
+        "null",
     ) as CachedOrders | null;
-    return value?.version === 1 && value.shopId === shopId && Array.isArray(value.orders)
+    return value?.version === 1 &&
+      value.shopId === shopId &&
+      (value.source === source || (source === "online" && !value.source)) &&
+      Array.isArray(value.orders)
       ? value.orders
       : [];
   } catch {

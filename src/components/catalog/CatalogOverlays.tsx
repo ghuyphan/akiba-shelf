@@ -7,8 +7,6 @@ import {
   MapPin,
   ShoppingBag,
   Sparkles,
-  Download,
-  Loader2,
 } from "lucide-react";
 import { Modal } from "../ui/Modal";
 import { SocialBrandIcon } from "../ui/SocialBrandIcon";
@@ -29,15 +27,11 @@ export function BoothDetailsModal({
   payment,
   open,
   onClose,
-  offlineState,
-  onSaveOffline,
 }: {
   booth: BoothSettings;
   payment: PaymentSettings;
   open: boolean;
   onClose: () => void;
-  offlineState: "idle" | "saving" | "ready";
-  onSaveOffline: () => void;
 }) {
   const copy = useCatalogCopy();
   const socialLinks = configuredSocialPlatforms(booth)
@@ -123,23 +117,6 @@ export function BoothDetailsModal({
           </div>
         )}
         <div className="booth-modal-utility-row">
-          <div className="booth-modal-offline-action">
-            <button
-              type="button"
-              className="button button-secondary booth-save-offline"
-              onClick={onSaveOffline}
-              disabled={offlineState === "saving"}
-            >
-              {offlineState === "saving" ? (
-                <><Loader2 size={17} className="spin-icon" /> {copy.savingOffline}</>
-              ) : offlineState === "ready" ? (
-                <><Check size={17} /> {copy.offlineReady}</>
-              ) : (
-                <><Download size={17} /> {copy.saveOffline}</>
-              )}
-            </button>
-            <small>{copy.offlineBrowseHint}</small>
-          </div>
           <Link to="/admin" className="booth-staff-link">
             {copy.staffAccess} →
           </Link>

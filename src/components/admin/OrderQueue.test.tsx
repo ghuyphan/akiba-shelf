@@ -93,6 +93,7 @@ function renderQueue(overrides: Partial<QueueProps> = {}) {
     filter: "pending",
     todayOnly: false,
     counts: { pending: 1, confirmed: 0, cancelled: 0, expired: 0, all: 1 },
+    eventCount: 0,
     page: 1,
     pageSize: 10,
     total: 1,
@@ -229,6 +230,36 @@ describe("OrderQueue", () => {
     await user.click(toggle);
 
     expect(props.onTodayOnlyChange).toHaveBeenCalledWith(true);
+  });
+
+  it("opens the Event source view from the order filters", async () => {
+    const props = renderQueue({ eventCount: 3 });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: /event 3/i }));
+
+    expect(props.onFilterChange).toHaveBeenCalledWith("event");
+  });
+
+  it("renders event orders as read-only queue records", () => {
+    renderQueue({
+      filter: "event",
+      eventCount: 1,
+      orders: [{
+        ...pendingOrder,
+        source: "offline_event",
+        offline_event_session_id: "71000000-0000-4000-8000-000000000001",
+        offline_event_name: "Convention day",
+        payment_method: "vietqr",
+        payment_state: "bank_verification_pending",
+      }],
+    });
+
+    const card = within(getOrderCard());
+    expect(card.getByText("Convention day")).toBeInTheDocument();
+    expect(card.getByText(/designated Event Mode device/i)).toBeInTheDocument();
+    expect(card.queryByRole("button", { name: /swipe right/i })).not.toBeInTheDocument();
+    expect(card.queryByRole("button", { name: /cancel and release stock/i })).not.toBeInTheDocument();
   });
 
   it("shows a today-specific empty state that can reset both filters", async () => {
