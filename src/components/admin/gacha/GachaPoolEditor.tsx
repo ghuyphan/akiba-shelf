@@ -170,7 +170,7 @@ export function GachaPoolEditor({
                 ? banner.kind === "character"
                   ? "Character wishes go live with exactly 1 featured 5★ character and 3 featured 4★ characters."
                   : "Weapon wishes go live with exactly 2 featured 5★ weapons and 5 featured 4★ weapons."
-                : "HSR banners support 1 featured 5★ primary and up to 3 featured 4★ rate-ups. 3★ pulls use the shared souvenir pool.",
+                : "HSR event banners go live with exactly 1 featured 5★ primary and 3 featured 4★ rate-ups. Leave all featured slots empty for a standard warp; 3★ pulls use the shared souvenir pool.",
             )}
           </p>
         </header>

@@ -145,8 +145,8 @@ begin
       -- configured, the banner requires its single matching 5-star primary.
       if p_game_type = 'hsr'
         and v_featured_count > 0
-        and v_five_count <> v_five_limit then
-        raise exception 'Active HSR banner "%" needs exactly one featured 5-star item',
+        and (v_five_count <> v_five_limit or v_four_count <> v_four_limit) then
+        raise exception 'Active HSR event banner "%" needs exactly one featured 5-star and three featured 4-star items',
           v_banner.name;
       end if;
     end if;
@@ -357,9 +357,12 @@ begin
       and (
         v_five_count > v_five_limit
         or v_four_count > v_four_limit
-        or (v_featured_count > 0 and v_five_count <> 1)
+        or (
+          v_featured_count > 0
+          and (v_five_count <> v_five_limit or v_four_count <> v_four_limit)
+        )
       ) then
-      raise exception 'Active HSR banner "%" supports one featured 5-star and up to three featured 4-star items',
+      raise exception 'Active HSR event banner "%" needs exactly one featured 5-star and three featured 4-star items',
         v_banner.name;
     end if;
   end loop;

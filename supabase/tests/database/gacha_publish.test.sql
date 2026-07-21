@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(20);
 
 insert into auth.users(
   id,instance_id,aud,role,email,encrypted_password,
@@ -171,6 +171,61 @@ select throws_ok(
   'P0001',
   'Active Genshin banner "Incomplete Weapon Banner" needs exactly 2 featured 5-star and 5 featured 4-star items',
   'enabled weapon banners require the complete official composition'
+);
+
+select lives_ok(
+  $$select public.publish_gacha_configuration_v6(
+    '51000000-0000-4000-8000-000000000001',
+    'hsr',
+    '{
+      "settings":{"enabled":true,"title":"Character Event Warp","description":""},
+      "banners":[{"id":"52000000-0000-4000-8000-000000000003","name":"Character Event Warp","description":"","kind":"character","theme":"physical","display_limit":4,"active":true}],
+      "entries":[
+        {"banner_id":"52000000-0000-4000-8000-000000000003","product_id":"gacha-product-1","kind":"character","element":"physical","weapon_type":"destruction","rarity":5,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000003","product_id":"gacha-product-2","kind":"character","element":"physical","weapon_type":"destruction","rarity":4,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000003","product_id":"gacha-product-3","kind":"character","element":"physical","weapon_type":"harmony","rarity":4,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000003","product_id":"gacha-product-4","kind":"character","element":"physical","weapon_type":"erudition","rarity":4,"weight":100,"featured":true,"active":true}
+      ]
+    }'::jsonb
+  )$$,
+  'HSR character event warps publish with one 5-star and three 4-star characters'
+);
+
+select lives_ok(
+  $$select public.publish_gacha_configuration_v6(
+    '51000000-0000-4000-8000-000000000001',
+    'hsr',
+    '{
+      "settings":{"enabled":true,"title":"Light Cone Event Warp","description":""},
+      "banners":[{"id":"52000000-0000-4000-8000-000000000004","name":"Light Cone Event Warp","description":"","kind":"lightcone","theme":"physical","display_limit":4,"active":true}],
+      "entries":[
+        {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-1","kind":"lightcone","element":"physical","weapon_type":"destruction","rarity":5,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-2","kind":"lightcone","element":"physical","weapon_type":"destruction","rarity":4,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-3","kind":"lightcone","element":"physical","weapon_type":"harmony","rarity":4,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-4","kind":"lightcone","element":"physical","weapon_type":"erudition","rarity":4,"weight":100,"featured":true,"active":true}
+      ]
+    }'::jsonb
+  )$$,
+  'HSR Light Cone event warps publish with one 5-star and three 4-star Light Cones'
+);
+
+select throws_ok(
+  $$select public.publish_gacha_configuration_v6(
+    '51000000-0000-4000-8000-000000000001',
+    'hsr',
+    '{
+      "settings":{"enabled":true,"title":"Incomplete Light Cone Warp","description":""},
+      "banners":[{"id":"52000000-0000-4000-8000-000000000004","name":"Incomplete Light Cone Warp","description":"","kind":"lightcone","theme":"physical","display_limit":4,"active":true}],
+      "entries":[
+        {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-1","kind":"lightcone","element":"physical","weapon_type":"destruction","rarity":5,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-2","kind":"lightcone","element":"physical","weapon_type":"destruction","rarity":4,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-3","kind":"lightcone","element":"physical","weapon_type":"harmony","rarity":4,"weight":100,"featured":true,"active":true}
+      ]
+    }'::jsonb
+  )$$,
+  'P0001',
+  'Active HSR event banner "Incomplete Light Cone Warp" needs exactly one featured 5-star and three featured 4-star items',
+  'enabled HSR event warps require the complete official composition'
 );
 
 select throws_ok(

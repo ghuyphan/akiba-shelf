@@ -5,6 +5,7 @@ import {
   isGachaFeaturedCompositionComplete,
   normalizeGachaDisplayLimit,
 } from "../gachaLimits";
+import { getGachaBannerFeaturedRule } from "../gachaGames";
 import type {
   GachaBanner,
   GachaItemKind,
@@ -92,7 +93,7 @@ describe("gacha featured-item limits", () => {
     ).toBe(true);
   });
 
-  it("keeps HSR at one 5-star primary and up to three matching 4-star rate-ups", () => {
+  it("caps HSR event warps at one 5-star primary and three matching 4-star rate-ups", () => {
     const hsrBanner = banner("character");
     const entries = [
       entry(hsrBanner.id, "five-1", 5, "character"),
@@ -111,6 +112,37 @@ describe("gacha featured-item limits", () => {
       invalidCount: 0,
       totalCount: 4,
     });
+
+    expect(getGachaBannerFeaturedRule("hsr", "character")).toMatchObject({
+      displayLimit: 4,
+      fiveStarLimit: 1,
+      fourStarLimit: 3,
+      requireCompleteComposition: true,
+      allowEmptyComposition: true,
+    });
+  });
+
+  it("uses the same exact HSR composition for Light Cone event warps", () => {
+    const lightConeBanner = banner("lightcone");
+    const entries = [
+      entry(lightConeBanner.id, "five-1", 5, "lightcone"),
+      entry(lightConeBanner.id, "five-2", 5, "lightcone"),
+      ...Array.from({ length: 4 }, (_, index) =>
+        entry(lightConeBanner.id, `four-${index}`, 4, "lightcone"),
+      ),
+      entry(lightConeBanner.id, "wrong-kind", 4, "character"),
+    ];
+    const capped = capGachaFeaturedEntries(entries, [lightConeBanner], "hsr");
+
+    expect(getGachaFeaturedComposition(capped, lightConeBanner)).toMatchObject({
+      fiveStarCount: 1,
+      fourStarCount: 3,
+      invalidCount: 0,
+      totalCount: 4,
+    });
+    expect(
+      isGachaFeaturedCompositionComplete(capped, lightConeBanner, "hsr"),
+    ).toBe(true);
   });
 
   it("treats partial Genshin drafts as incomplete without inventing slots", () => {

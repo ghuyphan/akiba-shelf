@@ -972,8 +972,8 @@ const vi: Record<string, string> = {
   "1 primary + {{count}} secondary": "1 chính + {{count}} phụ",
   "1 featured item": "1 vật phẩm nổi bật",
   "{{count}} featured items": "{{count}} vật phẩm nổi bật",
-  "HSR banners show one 5-star primary and up to three 4-star rate-ups.":
-    "Banner HSR hiển thị một vật phẩm 5 sao chính và tối đa ba vật phẩm 4 sao tăng tỉ lệ.",
+  "HSR event banners show exactly one 5-star primary and three 4-star rate-ups. Leave every featured slot empty for a standard warp.":
+    "Banner sự kiện HSR cần chính xác một vật phẩm 5 sao chính và ba vật phẩm 4 sao tăng tỉ lệ. Để trống toàn bộ vị trí nổi bật nếu đây là banner thường.",
   "HSR banners support one primary 5-star item.":
     "Banner HSR hỗ trợ một vật phẩm 5 sao chính.",
   "This HSR banner has filled its 4-star rate-up slots.":
@@ -1279,8 +1279,8 @@ const vi: Record<string, string> = {
     "Banner nhân vật cần chính xác 1 nhân vật 5★ và 3 nhân vật 4★ nổi bật trước khi phát hành.",
   "Weapon wishes go live with exactly 2 featured 5★ weapons and 5 featured 4★ weapons.":
     "Banner vũ khí cần chính xác 2 vũ khí 5★ và 5 vũ khí 4★ nổi bật trước khi phát hành.",
-  "HSR banners support 1 featured 5★ primary and up to 3 featured 4★ rate-ups. 3★ pulls use the shared souvenir pool.":
-    "Banner HSR hỗ trợ 1 vật phẩm 5★ chính và tối đa 3 vật phẩm 4★ tăng tỉ lệ. Lượt quay 3★ dùng kho quà lưu niệm chung.",
+  "HSR event banners go live with exactly 1 featured 5★ primary and 3 featured 4★ rate-ups. Leave all featured slots empty for a standard warp; 3★ pulls use the shared souvenir pool.":
+    "Banner sự kiện HSR cần chính xác 1 vật phẩm 5★ chính và 3 vật phẩm 4★ tăng tỉ lệ trước khi phát hành. Để trống toàn bộ vị trí nổi bật cho banner thường; lượt quay 3★ dùng kho quà lưu niệm chung.",
   "Add at least {{count}} active products to fill this banner's featured lineup.":
     "Hãy thêm ít nhất {{count}} sản phẩm đang hoạt động để điền đủ đội hình nổi bật của banner này.",
   "Banner Prizes ({{count}})": "Phần thưởng banner ({{count}})",

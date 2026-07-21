@@ -51,7 +51,16 @@
 		? [data.featuredItem]
 		: [];
 
-	$: primaryFeaturedName = featuredItems[0]?.name
+	$: isWeapon = data.kind === 'weapon';
+	$: legendaryWeaponNames = featuredItems
+		.filter((item) => item.rarity === 5)
+		.slice(0, 2)
+		.map((item) => parseLocalizedText(item.name, $locale))
+		.filter(Boolean);
+
+	$: primaryFeaturedName = isWeapon && legendaryWeaponNames.length
+		? legendaryWeaponNames.join(' / ')
+		: featuredItems[0]?.name
 		? parseLocalizedText(featuredItems[0].name, $locale)
 		: title;
 
@@ -62,8 +71,9 @@
 	$: description =
 		parseLocalizedText(data.description, $locale) || $t('wish.banner.wishDescription');
 
-	$: isWeapon = data.kind === 'weapon';
 	$: theme = data.theme || 'anemo';
+	$: featuredElement =
+		featuredItems.find((item) => item.rarity === 5)?.vision || featuredItems[0]?.vision || theme;
 	$: palette = themePalettes[theme] || themePalettes.anemo;
 	$: endTime = data.endsAt ? Date.parse(data.endsAt) : Number.NaN;
 	$: remaining = Number.isFinite(endTime) ? Math.max(0, endTime - now) : null;
@@ -124,7 +134,9 @@
 		<div class="featured-stack">
 			<div class="featured-name">
 				<span>
-					<i class="gi-{theme} {theme}-flat" />
+					{#if !isWeapon}
+						<i class="gi-{featuredElement} {featuredElement}-flat" />
+					{/if}
 					{primaryFeaturedName}
 				</span>
 
@@ -226,6 +238,10 @@
 
 	h1 span {
 		display: block;
+		color: #4f4e4b;
+	}
+
+	h1 span::first-line {
 		color: var(--theme-title);
 	}
 
@@ -352,7 +368,10 @@
 	.featured-name > span:first-child {
 		display: block;
 		min-width: 0;
+		padding: 0.18em 0.35em 0.22em;
 		overflow: hidden;
+		background: rgba(45, 42, 39, 0.82);
+		box-shadow: 0 0.18em 0.45em rgba(0, 0, 0, 0.28);
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
@@ -399,5 +418,33 @@
 
 	.weapon .content::after {
 		background: #76506e;
+	}
+
+	.weapon .featured {
+		left: 50%;
+		bottom: 18%;
+		width: 46%;
+	}
+
+	.weapon .featured-name {
+		font-size: calc(2.15 / 100 * var(--content-width));
+		line-height: 94%;
+	}
+
+	.weapon .featured-name > span:first-child {
+		max-width: calc(35 / 100 * var(--content-width));
+		overflow: visible;
+		text-overflow: clip;
+		white-space: normal;
+	}
+
+	.weapon .merch-stars {
+		margin-top: calc(0.28 / 100 * var(--content-width));
+		margin-bottom: 0;
+		font-size: calc(1.8 / 100 * var(--content-width));
+	}
+
+	.weapon .featured-title {
+		display: none;
 	}
 </style>

@@ -57,11 +57,30 @@
 			<div
 				class="merch-art merch-count-{featuredMerchItems.length} {character.kind || 'character'}"
 			>
-				{#each featuredMerchItems as item, i (item.name)}
-					<div class="featured-art merch-item merch-item-{i} rarity-{item.rarity}">
-						<img src={item.imageUrl} alt={item.name} loading="eager" decoding="async" />
+				{#if character.kind === 'weapon'}
+					{@const legendaryWeapons = featuredMerchItems.filter((item) => item.rarity === 5)}
+					{@const rateUpWeapons = featuredMerchItems.filter((item) => item.rarity === 4)}
+					<div class="weapon-legendary-lineup weapon-legendary-count-{legendaryWeapons.length}">
+						{#each legendaryWeapons as item, i (item.name)}
+							<div class="featured-art weapon-legendary weapon-legendary-{i} rarity-5">
+								<img src={item.imageUrl} alt={item.name} loading="eager" decoding="async" />
+							</div>
+						{/each}
 					</div>
-				{/each}
+					<div class="weapon-rateup-lineup weapon-rateup-count-{rateUpWeapons.length}">
+						{#each rateUpWeapons as item, i (item.name)}
+							<div class="featured-art weapon-rateup weapon-rateup-{i} rarity-4">
+								<img src={item.imageUrl} alt={item.name} loading="eager" decoding="async" />
+							</div>
+						{/each}
+					</div>
+				{:else}
+					{#each featuredMerchItems as item, i (item.name)}
+						<div class="featured-art merch-item merch-item-{i} rarity-{item.rarity}">
+							<img src={item.imageUrl} alt={item.name} loading="eager" decoding="async" />
+						</div>
+					{/each}
+				{/if}
 			</div>
 		</div>
 		<div class="frame skeleton-event merch-frame">
@@ -381,310 +400,319 @@
 	.custom-merch-banner .featured-art.rarity-4 {
 		border-color: rgba(225, 202, 255, 0.9);
 	}
-	/* Clean card deck layout on right side — strictly keeping clear of left text panel */
-	.merch-art .merch-item-0 {
-		right: 4%;
+	.custom-merch-banner .merch-art.character .merch-item-0 {
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+		clip-path: polygon(4% 0, 100% 0, 100% 100%, 0 100%);
+	}
+	.custom-merch-banner .merch-art.character .merch-item:not(.merch-item-0) {
+		border-width: calc(0.1 / 100 * var(--content-width));
+		border-color: rgba(255, 255, 255, 0.82);
+		border-radius: calc(0.45 / 100 * var(--content-width));
+		box-shadow: 0 calc(0.35 / 100 * var(--content-width)) calc(1 / 100 * var(--content-width))
+			rgba(29, 54, 55, 0.2);
+	}
+	.custom-merch-banner .merch-art.weapon .featured-art {
+		border: 0;
+		border-radius: 0;
+		clip-path: polygon(4% 0, 100% 0, 96% 100%, 0 100%);
+	}
+	.custom-merch-banner .merch-art.weapon .featured-art.rarity-5 {
+		box-shadow: inset 0 0 0 calc(0.18 / 100 * var(--content-width)) rgba(255, 220, 119, 0.95),
+			0 0 calc(1 / 100 * var(--content-width)) rgba(255, 196, 61, 0.42),
+			0 calc(0.55 / 100 * var(--content-width)) calc(1.3 / 100 * var(--content-width))
+				rgba(79, 49, 14, 0.3);
+	}
+	.custom-merch-banner .merch-art.weapon .featured-art.rarity-4 {
+		box-shadow: inset 0 0 0 calc(0.13 / 100 * var(--content-width)) rgba(225, 202, 255, 0.9),
+			0 calc(0.35 / 100 * var(--content-width)) calc(1 / 100 * var(--content-width))
+				rgba(46, 31, 66, 0.22);
+	}
+	.custom-merch-banner.weapon::after {
+		left: 55%;
 		top: 0;
-		left: auto;
-		width: 82%;
+		width: 45%;
 		height: 100%;
+		background: linear-gradient(145deg, rgba(255, 190, 92, 0.34), rgba(179, 54, 44, 0.46)),
+			repeating-linear-gradient(
+				135deg,
+				rgba(255, 255, 255, 0.08) 0 1px,
+				transparent 1px 12px
+			);
+		clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%);
+		transform: none;
+	}
+	/* Product photos use an editorial showcase rather than character-art cutouts. */
+	.merch-art .merch-item-0 {
+		left: 8%;
+		right: auto;
+		top: 2%;
+		width: 84%;
+		height: 94%;
 		z-index: 5;
-		transform: rotate(1.5deg);
+		transform: none;
 	}
 	.merch-count-2 .merch-item-0 {
-		left: 36%;
-		right: auto;
-		top: 1%;
+		left: 1%;
+		top: 2%;
 		z-index: 2;
-		width: 60%;
-		height: 96%;
-		transform: rotate(2.5deg);
+		width: 62%;
+		height: 92%;
 	}
 	.merch-count-2 .merch-item-1 {
-		left: 0;
-		right: auto;
-		top: 5%;
+		left: 65%;
+		top: 15%;
 		z-index: 1;
-		width: 54%;
-		height: 90%;
-		transform: rotate(-4deg);
+		width: 34%;
+		height: 70%;
+		transform: none;
 	}
 	.merch-count-3 .merch-item-0 {
-		left: 22%;
-		right: auto;
-		top: 1%;
+		left: 1%;
+		top: 2%;
 		z-index: 3;
-		width: 58%;
-		height: 98%;
-		transform: rotate(0.5deg);
+		width: 62%;
+		height: 92%;
 	}
 	.merch-count-3 .merch-item-1 {
-		left: 0;
-		right: auto;
-		top: 10%;
-		z-index: 1;
-		width: 44%;
-		height: 82%;
-		transform: rotate(-5deg);
+		left: 65%;
+		top: 2%;
+		z-index: 2;
+		width: 34%;
+		height: 44%;
+		transform: none;
 	}
 	.merch-count-3 .merch-item-2 {
-		right: 0;
-		left: auto;
-		top: 9%;
-		z-index: 2;
-		width: 44%;
-		height: 82%;
-		transform: rotate(5deg);
+		left: 65%;
+		right: auto;
+		top: 50%;
+		z-index: 1;
+		width: 34%;
+		height: 44%;
+		transform: none;
 	}
 	.merch-count-4 .merch-item-0 {
-		left: 0;
-		right: auto;
-		top: 3%;
+		left: 1%;
+		top: 2%;
 		z-index: 4;
-		width: 54%;
-		height: 94%;
-		transform: rotate(-2.5deg);
+		width: 62%;
+		height: 92%;
+		transform: none;
 	}
 	.merch-count-4 .merch-item:not(.merch-item-0) {
-		right: 0;
-		left: auto;
-		width: 48%;
-		height: 38%;
+		left: 65%;
+		right: auto;
+		width: 34%;
+		height: 28.5%;
+		transform: none;
 	}
 	.merch-count-4 .merch-item-1 {
-		top: 0;
+		top: 2%;
 		z-index: 3;
-		transform: rotate(3.5deg);
 	}
 	.merch-count-4 .merch-item-2 {
-		top: 31%;
+		top: 34%;
 		z-index: 2;
-		transform: rotate(-1.5deg);
 	}
 	.merch-count-4 .merch-item-3 {
-		bottom: 0;
+		top: 66%;
+		bottom: auto;
 		z-index: 1;
-		transform: rotate(3deg);
 	}
 	.merch-count-5 .merch-item-0 {
-		left: 24%;
-		right: auto;
-		top: 1%;
+		left: 3%;
+		top: 2%;
 		z-index: 5;
-		width: 48%;
-		height: 98%;
-		transform: rotate(-0.5deg);
+		width: 45%;
+		height: 58%;
+		transform: none;
 	}
 	.merch-count-5 .merch-item:not(.merch-item-0) {
-		width: 42%;
-		height: 50%;
+		transform: none;
 	}
 	.merch-count-5 .merch-item-1 {
-		left: 0;
-		top: 0;
-		z-index: 3;
-		transform: rotate(-5deg);
+		left: 52%;
+		top: 2%;
+		z-index: 4;
+		width: 45%;
+		height: 58%;
 	}
 	.merch-count-5 .merch-item-2 {
-		right: 0;
-		top: 1%;
-		z-index: 4;
-		transform: rotate(5deg);
+		left: 1%;
+		right: auto;
+		top: 64%;
+		z-index: 3;
+		width: 31%;
+		height: 27%;
 	}
 	.merch-count-5 .merch-item-3 {
-		left: 0;
-		bottom: 0;
-		z-index: 1;
-		transform: rotate(4deg);
+		left: 34.5%;
+		bottom: auto;
+		top: 64%;
+		z-index: 2;
+		width: 31%;
+		height: 27%;
 	}
 	.merch-count-5 .merch-item-4 {
-		right: 0;
-		bottom: 0;
-		z-index: 2;
-		transform: rotate(-4deg);
+		left: 68%;
+		right: auto;
+		bottom: auto;
+		top: 64%;
+		z-index: 1;
+		width: 31%;
+		height: 27%;
 	}
 
-	/* Weapon banners use a portrait-friendly fan instead of the character hero layout. */
-	.merch-art.weapon .featured-art {
+	/* Weapon wishes use a layered arsenal: large 5-star panels with a separate 4-star fan. */
+	.custom-merch-banner .merch-art.weapon {
+		inset: 2% 0 2% 48%;
+		overflow: hidden;
+	}
+	.weapon-legendary-lineup,
+	.weapon-rateup-lineup {
+		position: absolute;
+		inset: 0;
+	}
+	.custom-merch-banner .merch-art.weapon .featured-art {
 		bottom: auto;
 		transform-origin: center bottom;
 	}
-	.merch-art.weapon.merch-count-2 .merch-item {
-		top: 4%;
-		width: 58%;
-		height: 76%;
+	.custom-merch-banner .merch-art.weapon .featured-art img {
+		object-position: center;
 	}
-	.merch-art.weapon.merch-count-2 .merch-item-0 {
-		left: 4%;
-		right: auto;
-		z-index: 1;
-		transform: rotate(-3deg);
+	.custom-merch-banner .merch-art.weapon .weapon-legendary {
+		top: 14%;
+		width: 48%;
+		height: 60%;
+		clip-path: polygon(9% 0, 100% 3%, 91% 100%, 0 96%);
+		filter: drop-shadow(
+			0 calc(0.75 / 100 * var(--content-width)) calc(1 / 100 * var(--content-width))
+				rgba(79, 43, 8, 0.42)
+		);
 	}
-	.merch-art.weapon.merch-count-2 .merch-item-1 {
-		left: 38%;
-		right: auto;
-		z-index: 2;
-		transform: rotate(3deg);
-	}
-	.merch-art.weapon.merch-count-3 .merch-item {
-		width: 52%;
-		height: 70%;
-	}
-	.merch-art.weapon.merch-count-3 .merch-item-0 {
+	.weapon-legendary-count-1 .weapon-legendary-0 {
 		left: 5%;
-		top: 5%;
-		z-index: 3;
-		transform: rotate(-3deg);
-	}
-	.merch-art.weapon.merch-count-3 .merch-item-1 {
-		left: 43%;
-		top: 7%;
-		z-index: 2;
-		transform: rotate(3deg);
-	}
-	.merch-art.weapon.merch-count-3 .merch-item-2 {
-		left: 25%;
-		right: auto;
-		top: 1%;
-		z-index: 1;
-		transform: rotate(0deg);
-	}
-	.merch-art.weapon.merch-count-4 .merch-item {
-		width: 43%;
-		height: 68%;
-	}
-	.merch-art.weapon.merch-count-4 .merch-item-0 {
-		left: 8%;
-		top: 3%;
-		z-index: 4;
+		width: 58%;
+		height: 64%;
 		transform: rotate(-2.5deg);
 	}
-	.merch-art.weapon.merch-count-4 .merch-item-1 {
-		left: 49%;
-		right: auto;
-		top: 5%;
-		z-index: 3;
-		transform: rotate(2.5deg);
-	}
-	.merch-art.weapon.merch-count-4 .merch-item-2 {
-		left: 0;
-		right: auto;
-		top: 12%;
-		z-index: 1;
-		transform: rotate(-5deg);
-	}
-	.merch-art.weapon.merch-count-4 .merch-item-3 {
-		left: 57%;
-		right: auto;
-		top: 11%;
-		z-index: 2;
-		transform: rotate(5deg);
-	}
-	.merch-art.weapon.merch-count-5 .merch-item {
-		width: 40%;
-		height: 66%;
-	}
-	.merch-art.weapon.merch-count-5 .merch-item-0 {
-		left: 8%;
-		top: 4%;
+	.weapon-legendary-count-2 .weapon-legendary-0 {
+		left: 1%;
 		z-index: 5;
-		transform: rotate(-2.5deg);
+		transform: rotate(-4deg);
 	}
-	.merch-art.weapon.merch-count-5 .merch-item-1 {
-		left: 49%;
-		top: 6%;
-		z-index: 4;
+	.weapon-legendary-count-2 .weapon-legendary-1 {
+		left: 28%;
+		z-index: 6;
 		transform: rotate(2.5deg);
 	}
-	.merch-art.weapon.merch-count-5 .merch-item-2 {
-		left: 0;
-		right: auto;
-		top: 13%;
-		z-index: 1;
-		transform: rotate(-5deg);
+	.custom-merch-banner .merch-art.weapon .weapon-rateup {
+		top: 25%;
+		width: 24%;
+		height: 27%;
+		clip-path: polygon(10% 2%, 100% 0, 91% 100%, 0 96%);
+		filter: drop-shadow(
+			0 calc(0.45 / 100 * var(--content-width)) calc(0.65 / 100 * var(--content-width))
+				rgba(45, 27, 57, 0.4)
+		);
 	}
-	.merch-art.weapon.merch-count-5 .merch-item-3 {
-		left: 30%;
-		bottom: auto;
-		top: 0;
-		z-index: 2;
-		transform: rotate(0deg);
-	}
-	.merch-art.weapon.merch-count-5 .merch-item-4 {
-		left: 60%;
-		right: auto;
-		bottom: auto;
-		top: 12%;
-		z-index: 3;
-		transform: rotate(5deg);
-	}
-	.merch-art.weapon.merch-count-6 .merch-item,
-	.merch-art.weapon.merch-count-7 .merch-item {
-		bottom: auto;
-	}
-	.merch-art.weapon.merch-count-6 .merch-item-0,
-	.merch-art.weapon.merch-count-7 .merch-item-0 {
-		left: 17%;
-		right: auto;
-		top: 3%;
-		z-index: 7;
-		width: 38%;
-		height: 60%;
-		transform: rotate(-2deg);
-	}
-	.merch-art.weapon.merch-count-6 .merch-item-1,
-	.merch-art.weapon.merch-count-7 .merch-item-1 {
-		left: 48%;
-		right: auto;
-		top: 5%;
-		z-index: 6;
-		width: 38%;
-		height: 60%;
+	.weapon-rateup-count-1 .weapon-rateup-0 {
+		left: 62%;
+		top: 28%;
+		width: 35%;
+		height: 48%;
+		z-index: 8;
 		transform: rotate(2deg);
 	}
-	.merch-art.weapon.merch-count-6 .merch-item:not(.merch-item-0):not(.merch-item-1),
-	.merch-art.weapon.merch-count-7 .merch-item:not(.merch-item-0):not(.merch-item-1) {
-		width: 25%;
-		height: 31%;
+	.weapon-rateup-count-2 .weapon-rateup-0 {
+		left: 48%;
+		top: 30%;
+		width: 24%;
+		height: 42%;
+		z-index: 9;
+		transform: rotate(-2deg);
 	}
-	.merch-art.weapon.merch-count-6 .merch-item-2,
-	.merch-art.weapon.merch-count-7 .merch-item-2 {
-		left: 0;
-		right: auto;
-		top: 9%;
-		z-index: 2;
-		transform: rotate(-5deg);
+	.weapon-rateup-count-2 .weapon-rateup-1 {
+		left: 74%;
+		top: 30%;
+		width: 24%;
+		height: 42%;
+		z-index: 8;
+		transform: rotate(2deg);
 	}
-	.merch-art.weapon.merch-count-6 .merch-item-3,
-	.merch-art.weapon.merch-count-7 .merch-item-3 {
-		left: 75%;
-		right: auto;
-		top: 10%;
-		z-index: 3;
-		transform: rotate(5deg);
+	.weapon-rateup-count-3 .weapon-rateup-0 {
+		left: 48%;
+		top: 23%;
+		z-index: 10;
+		transform: rotate(-2deg);
 	}
-	.merch-art.weapon.merch-count-6 .merch-item-4,
-	.merch-art.weapon.merch-count-7 .merch-item-4 {
-		left: 2%;
-		right: auto;
-		top: 40%;
-		z-index: 1;
-		transform: rotate(3deg);
+	.weapon-rateup-count-3 .weapon-rateup-1 {
+		left: 74%;
+		top: 23%;
+		z-index: 9;
+		transform: rotate(2deg);
 	}
-	.merch-art.weapon.merch-count-6 .merch-item-5,
-	.merch-art.weapon.merch-count-7 .merch-item-6 {
-		left: 73%;
-		right: auto;
-		top: 41%;
-		z-index: 4;
-		transform: rotate(-3deg);
+	.weapon-rateup-count-3 .weapon-rateup-2 {
+		left: 61%;
+		top: 53%;
+		z-index: 8;
+		transform: none;
 	}
-	.merch-art.weapon.merch-count-7 .merch-item-5 {
-		left: 38%;
-		right: auto;
-		top: 0;
-		z-index: 1;
-		transform: rotate(0deg);
+	.weapon-rateup-count-4 .weapon-rateup,
+	.weapon-rateup-count-5 .weapon-rateup {
+		width: 22%;
+		height: 25%;
+	}
+	.weapon-rateup-count-4 .weapon-rateup-0,
+	.weapon-rateup-count-5 .weapon-rateup-0 {
+		left: 50%;
+		top: 23%;
+		z-index: 12;
+		transform: rotate(-2deg);
+	}
+	.weapon-rateup-count-4 .weapon-rateup-1,
+	.weapon-rateup-count-5 .weapon-rateup-1 {
+		left: 74%;
+		top: 23%;
+		z-index: 11;
+		transform: rotate(2deg);
+	}
+	.weapon-rateup-count-4 .weapon-rateup-2,
+	.weapon-rateup-count-5 .weapon-rateup-2 {
+		left: 50%;
+		top: 51%;
+		z-index: 10;
+		transform: rotate(-1deg);
+	}
+	.weapon-rateup-count-4 .weapon-rateup-3,
+	.weapon-rateup-count-5 .weapon-rateup-3 {
+		left: 74%;
+		top: 51%;
+		z-index: 9;
+		transform: rotate(1deg);
+	}
+	.weapon-rateup-count-5 .weapon-rateup {
+		width: 17%;
+	}
+	.weapon-rateup-count-5 .weapon-rateup-0 {
+		left: 44%;
+	}
+	.weapon-rateup-count-5 .weapon-rateup-1 {
+		left: 62.5%;
+	}
+	.weapon-rateup-count-5 .weapon-rateup-2 {
+		left: 81%;
+		top: 23%;
+	}
+	.weapon-rateup-count-5 .weapon-rateup-3 {
+		left: 53.5%;
+	}
+	.weapon-rateup-count-5 .weapon-rateup-4 {
+		left: 72%;
+		top: 51%;
+		z-index: 8;
+		transform: rotate(2deg);
 	}
 	.merch-frame {
 		z-index: 2;

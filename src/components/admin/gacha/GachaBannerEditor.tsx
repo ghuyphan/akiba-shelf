@@ -213,7 +213,7 @@ export function GachaBannerEditor({
         {gameType === "hsr" && (
           <p className="field-hint gacha-slots-hint">
             {t(
-              "HSR banners show one 5-star primary and up to three 4-star rate-ups.",
+              "HSR event banners show exactly one 5-star primary and three 4-star rate-ups. Leave every featured slot empty for a standard warp.",
             )}
           </p>
         )}

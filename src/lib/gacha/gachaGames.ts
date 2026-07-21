@@ -37,8 +37,10 @@ export type GachaBannerFeaturedRule = {
   displayLimit: number;
   fiveStarLimit: number;
   fourStarLimit: number;
-  /** Genshin banners must fill every official rate-up slot before going live. */
+  /** Event banners must fill every official rate-up slot before going live. */
   requireCompleteComposition: boolean;
+  /** HSR standard warps may intentionally publish with no featured entries. */
+  allowEmptyComposition: boolean;
 };
 
 export type GachaBannerFeaturedRules = {
@@ -180,12 +182,14 @@ export const GACHA_GAMES: Record<GachaGameType, GachaGameDescriptor> = {
         fiveStarLimit: 1,
         fourStarLimit: 3,
         requireCompleteComposition: true,
+        allowEmptyComposition: false,
       },
       gear: {
         displayLimit: 7,
         fiveStarLimit: 2,
         fourStarLimit: 5,
         requireCompleteComposition: true,
+        allowEmptyComposition: false,
       },
     },
     defaults: {
@@ -221,13 +225,15 @@ export const GACHA_GAMES: Record<GachaGameType, GachaGameDescriptor> = {
         displayLimit: 4,
         fiveStarLimit: 1,
         fourStarLimit: 3,
-        requireCompleteComposition: false,
+        requireCompleteComposition: true,
+        allowEmptyComposition: true,
       },
       gear: {
         displayLimit: 4,
         fiveStarLimit: 1,
         fourStarLimit: 3,
-        requireCompleteComposition: false,
+        requireCompleteComposition: true,
+        allowEmptyComposition: true,
       },
     },
     defaults: {

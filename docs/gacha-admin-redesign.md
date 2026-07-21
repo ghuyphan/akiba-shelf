@@ -65,7 +65,7 @@ publish). Complexity drivers:
   become explicit UI or be fixed to a banner-agnostic slot.
 - Featured selection becomes a "Promote on banner" star toggle per row with
   separate 5★ and 4★ counters and the per-game rule hint inline:
-  - HSR: "Shows one 5★ primary and up to three 4★ rate-ups."
+  - HSR: "Event warps use exactly one 5★ primary and three 4★ rate-ups; standard warps leave featured slots empty."
   - Genshin character: "Requires one 5★ and three 4★ characters."
   - Genshin weapon: "Requires two 5★ and five 4★ weapons."
 - Add disabled-reason tooltips on the promoted toggle ("The 5★ primary slot is

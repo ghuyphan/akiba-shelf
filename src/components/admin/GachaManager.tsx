@@ -341,6 +341,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
         );
         return false;
       }
+      if (composition.totalCount === 0 && rule.allowEmptyComposition) continue;
       if (rule.requireCompleteComposition) {
         if (
           !isGachaFeaturedCompositionComplete(stateEntries, banner, activeGame)
