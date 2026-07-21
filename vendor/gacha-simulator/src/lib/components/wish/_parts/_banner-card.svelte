@@ -564,7 +564,7 @@
 		height: 27%;
 	}
 
-	/* Weapon wishes use a layered arsenal: large 5-star panels with a separate 4-star fan. */
+	/* Weapon wishes use clean photo cards: large 5-star showcases with smaller rate-up cards. */
 	.custom-merch-banner .merch-art.weapon {
 		inset: 2% 0 2% 48%;
 		overflow: hidden;
@@ -576,143 +576,163 @@
 	}
 	.custom-merch-banner .merch-art.weapon .featured-art {
 		bottom: auto;
-		transform-origin: center bottom;
+		border-radius: calc(0.45 / 100 * var(--content-width));
+		clip-path: none;
+		transform: none;
 	}
 	.custom-merch-banner .merch-art.weapon .featured-art img {
 		object-position: center;
 	}
 	.custom-merch-banner .merch-art.weapon .weapon-legendary {
-		top: 14%;
-		width: 48%;
-		height: 60%;
-		clip-path: polygon(9% 0, 100% 3%, 91% 100%, 0 96%);
+		top: 9%;
+		width: 43%;
+		height: 55%;
 		filter: drop-shadow(
 			0 calc(0.75 / 100 * var(--content-width)) calc(1 / 100 * var(--content-width))
 				rgba(79, 43, 8, 0.42)
 		);
 	}
 	.weapon-legendary-count-1 .weapon-legendary-0 {
-		left: 5%;
-		width: 58%;
-		height: 64%;
-		transform: rotate(-2.5deg);
+		left: 2%;
+		top: 8%;
+		width: 43%;
+		height: 74%;
+		z-index: 12;
+	}
+	.custom-merch-banner
+		.merch-art.weapon
+		.weapon-legendary-count-1
+		.weapon-legendary {
+		width: 43%;
+		height: 74%;
 	}
 	.weapon-legendary-count-2 .weapon-legendary-0 {
-		left: 1%;
+		left: 4%;
 		z-index: 5;
-		transform: rotate(-4deg);
 	}
 	.weapon-legendary-count-2 .weapon-legendary-1 {
-		left: 28%;
+		left: 52%;
 		z-index: 6;
-		transform: rotate(2.5deg);
 	}
 	.custom-merch-banner .merch-art.weapon .weapon-rateup {
-		top: 25%;
-		width: 24%;
-		height: 27%;
-		clip-path: polygon(10% 2%, 100% 0, 91% 100%, 0 96%);
+		width: 28%;
+		height: 20%;
 		filter: drop-shadow(
 			0 calc(0.45 / 100 * var(--content-width)) calc(0.65 / 100 * var(--content-width))
 				rgba(45, 27, 57, 0.4)
 		);
 	}
 	.weapon-rateup-count-1 .weapon-rateup-0 {
-		left: 62%;
-		top: 28%;
-		width: 35%;
-		height: 48%;
+		left: 61%;
+		top: 18%;
+		width: 36%;
+		height: 60%;
 		z-index: 8;
-		transform: rotate(2deg);
+	}
+	.custom-merch-banner .merch-art.weapon .weapon-rateup-count-1 .weapon-rateup {
+		width: 36%;
+		height: 60%;
 	}
 	.weapon-rateup-count-2 .weapon-rateup-0 {
-		left: 48%;
-		top: 30%;
-		width: 24%;
-		height: 42%;
+		left: 42%;
+		top: 21%;
+		width: 27%;
+		height: 56%;
 		z-index: 9;
-		transform: rotate(-2deg);
 	}
 	.weapon-rateup-count-2 .weapon-rateup-1 {
-		left: 74%;
-		top: 30%;
-		width: 24%;
-		height: 42%;
+		left: 71%;
+		top: 21%;
+		width: 27%;
+		height: 56%;
 		z-index: 8;
-		transform: rotate(2deg);
+	}
+	.custom-merch-banner .merch-art.weapon .weapon-rateup-count-2 .weapon-rateup {
+		width: 27%;
+		height: 56%;
 	}
 	.weapon-rateup-count-3 .weapon-rateup-0 {
-		left: 48%;
-		top: 23%;
+		left: 36%;
+		top: 18%;
+		width: 25%;
+		height: 58%;
 		z-index: 10;
-		transform: rotate(-2deg);
 	}
 	.weapon-rateup-count-3 .weapon-rateup-1 {
-		left: 74%;
-		top: 23%;
+		left: 55%;
+		top: 18%;
+		width: 25%;
+		height: 58%;
 		z-index: 9;
-		transform: rotate(2deg);
 	}
 	.weapon-rateup-count-3 .weapon-rateup-2 {
-		left: 61%;
-		top: 53%;
+		left: 74%;
+		top: 18%;
+		width: 25%;
+		height: 58%;
 		z-index: 8;
-		transform: none;
 	}
-	.weapon-rateup-count-4 .weapon-rateup,
-	.weapon-rateup-count-5 .weapon-rateup {
-		width: 22%;
-		height: 25%;
+	.custom-merch-banner .merch-art.weapon .weapon-rateup-count-3 .weapon-rateup {
+		width: 25%;
+		height: 58%;
 	}
-	.weapon-rateup-count-4 .weapon-rateup-0,
-	.weapon-rateup-count-5 .weapon-rateup-0 {
-		left: 50%;
-		top: 23%;
+	.weapon-rateup-count-4 .weapon-rateup {
+		width: 13.5%;
+		height: 22%;
+	}
+	.custom-merch-banner .merch-art.weapon .weapon-rateup-count-4 .weapon-rateup {
+		width: 13.5%;
+		height: 22%;
+	}
+	.weapon-rateup-count-4 .weapon-rateup-0 {
+		left: 42%;
+		top: 66%;
 		z-index: 12;
-		transform: rotate(-2deg);
 	}
-	.weapon-rateup-count-4 .weapon-rateup-1,
-	.weapon-rateup-count-5 .weapon-rateup-1 {
-		left: 74%;
-		top: 23%;
+	.weapon-rateup-count-4 .weapon-rateup-1 {
+		left: 56.5%;
+		top: 66%;
 		z-index: 11;
-		transform: rotate(2deg);
 	}
-	.weapon-rateup-count-4 .weapon-rateup-2,
-	.weapon-rateup-count-5 .weapon-rateup-2 {
-		left: 50%;
-		top: 51%;
+	.weapon-rateup-count-4 .weapon-rateup-2 {
+		left: 71%;
+		top: 66%;
 		z-index: 10;
-		transform: rotate(-1deg);
 	}
-	.weapon-rateup-count-4 .weapon-rateup-3,
-	.weapon-rateup-count-5 .weapon-rateup-3 {
-		left: 74%;
-		top: 51%;
+	.weapon-rateup-count-4 .weapon-rateup-3 {
+		left: 85.5%;
+		top: 66%;
 		z-index: 9;
-		transform: rotate(1deg);
 	}
 	.weapon-rateup-count-5 .weapon-rateup {
-		width: 17%;
+		top: 66%;
+		width: 22%;
+		height: 22%;
+	}
+	.custom-merch-banner .merch-art.weapon .weapon-rateup-count-5 .weapon-rateup {
+		top: 66%;
+		width: 22%;
+		height: 22%;
 	}
 	.weapon-rateup-count-5 .weapon-rateup-0 {
-		left: 44%;
+		left: 1%;
+		z-index: 12;
 	}
 	.weapon-rateup-count-5 .weapon-rateup-1 {
-		left: 62.5%;
+		left: 20%;
+		z-index: 11;
 	}
 	.weapon-rateup-count-5 .weapon-rateup-2 {
-		left: 81%;
-		top: 23%;
+		left: 39%;
+		z-index: 10;
 	}
 	.weapon-rateup-count-5 .weapon-rateup-3 {
-		left: 53.5%;
+		left: 58%;
+		z-index: 9;
 	}
 	.weapon-rateup-count-5 .weapon-rateup-4 {
-		left: 72%;
-		top: 51%;
+		left: 77%;
 		z-index: 8;
-		transform: rotate(2deg);
 	}
 	.merch-frame {
 		z-index: 2;
