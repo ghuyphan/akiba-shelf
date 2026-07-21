@@ -7,6 +7,7 @@ import {
   offlineEventOrderAsOrder,
   saveOfflineEventSession,
   updateOfflineEventOrder,
+  updateOfflineEventOrderFulfillment,
 } from "../offlineEvents";
 
 const product: Product = {
@@ -74,6 +75,7 @@ describe("offline event ledger", () => {
       status: "pending",
       totalAmount: 200_000,
       paymentState: "awaiting_payment",
+      fulfillmentStatus: "unfulfilled",
     });
     expect(await listOfflineEventOrders(active.id)).toHaveLength(1);
     expect((await loadOfflineEventSession(active.shopId))?.allocations[0])
@@ -126,5 +128,24 @@ describe("offline event ledger", () => {
     expect((await loadOfflineEventSession(active.shopId))?.allocations[0].quantitySold)
       .toBe(0);
     expect((await listOfflineEventOrders(active.id))[0].status).toBe("cancelled");
+  });
+
+  it("advances confirmed fulfilment locally without allowing regressions", async () => {
+    const active = session();
+    await saveOfflineEventSession(active);
+    const order = await createOfflineEventOrder(active, [{ product, quantity: 1 }], "Customer");
+    await updateOfflineEventOrder(active, order.id, {
+      status: "confirmed",
+      paymentState: "bank_confirmed",
+    });
+    await updateOfflineEventOrderFulfillment(active, order.id, "ready");
+    await updateOfflineEventOrderFulfillment(active, order.id, "picked_up");
+
+    const fulfilled = (await listOfflineEventOrders(active.id))[0];
+    expect(fulfilled.fulfillmentStatus).toBe("picked_up");
+    expect(fulfilled).not.toHaveProperty("syncedAt");
+    await expect(
+      updateOfflineEventOrderFulfillment(active, order.id, "ready"),
+    ).rejects.toThrow(/cannot move backward/i);
   });
 });

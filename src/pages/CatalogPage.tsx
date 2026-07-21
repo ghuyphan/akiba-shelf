@@ -778,6 +778,13 @@ export function CatalogPage() {
     );
   }
 
+  const pendingOrder =
+    orderingEnabled && activeOrder?.status === "pending" ? activeOrder : null;
+  const reserveFloatingCartSpace = cart.length > 0 && !activeOrder;
+  const showFloatingCartDock =
+    isFloatingCartVisible && reserveFloatingCartSpace;
+  const storefrontDockClasses = `${pendingOrder ? " storefront-has-order-dock" : ""}${reserveFloatingCartSpace ? " storefront-has-cart-dock" : ""}`;
+
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
       <CatalogToastLocalization />
@@ -789,7 +796,7 @@ export function CatalogPage() {
           resetKey={shopSlug}
         >
           <main
-            className={`app-shell ${lightweightMode ? "catalog-lightweight" : ""}`}
+            className={`app-shell${lightweightMode ? " catalog-lightweight" : ""}${storefrontDockClasses}`}
             style={getThemeStyle(booth)}
             onClick={() => setSelectedProductId(null)}
           >
@@ -827,9 +834,9 @@ export function CatalogPage() {
                 {contentStorefrontColumns.map((column) => column.node)}
               </div>
             </div>
-            {orderingEnabled && activeOrder?.status === "pending" && (
+            {pendingOrder && (
               <PendingOrderBar
-                order={activeOrder}
+                order={pendingOrder}
                 style={getThemeStyle(booth)}
                 onOpen={() => {
                   setPaymentModalRequested(true);
@@ -837,7 +844,7 @@ export function CatalogPage() {
                 }}
               />
             )}
-            {isFloatingCartVisible && cart.length > 0 && !activeOrder && (
+            {showFloatingCartDock && (
               <FloatingCartBar
                 itemCount={cartItemCount}
                 total={cartPricing.total}

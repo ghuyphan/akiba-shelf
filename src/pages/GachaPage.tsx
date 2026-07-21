@@ -388,9 +388,10 @@ export function GachaPage() {
       return;
     }
     setLaunchingGame(gameType);
+    const launchDelay = window.matchMedia("(max-width: 760px)").matches ? 640 : 1350;
     launchTimerRef.current = window.setTimeout(() => {
       navigate(`?game=${gameType}`);
-    }, 1350);
+    }, launchDelay);
   }
 
   if (!activeGame || !activeCatalog) {

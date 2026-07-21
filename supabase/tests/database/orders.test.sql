@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(35);
+select plan(39);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values('20000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','staff-orders@test.local','',now(),now(),now());
 insert into public.shops(id,name,slug,created_by) values('21000000-0000-4000-8000-000000000001','Orders','orders-test','20000000-0000-4000-8000-000000000001');
 insert into public.shop_members(shop_id,user_id,role) values('21000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','staff');
@@ -34,6 +34,10 @@ select is((select count(*) from private.checkout_reservation_clients where clien
 
 set local role authenticated;set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000001';
 select is((public.confirm_order_payment((select id from test_order_ids where label='first'))->>'outcome'),'confirmed','staff confirms own order');
+select is((select fulfillment_status from public.orders where id=(select id from test_order_ids where label='first')),'preparing','payment confirmation starts fulfilment preparation');
+select is((public.update_order_fulfillment((select id from test_order_ids where label='first'),'ready')->>'outcome'),'updated','staff marks confirmed order ready');
+select is((public.update_order_fulfillment((select id from test_order_ids where label='first'),'picked_up')->>'outcome'),'updated','staff marks ready order picked up');
+select is((public.update_order_fulfillment((select id from test_order_ids where label='first'),'ready')->>'outcome'),'invalid_transition','fulfilment cannot move backward');
 
 set local role postgres;
 select is((select quantity_available from public.products where id='order-a'),7,'confirmation does not deduct twice');

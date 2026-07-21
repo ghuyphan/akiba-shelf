@@ -44,6 +44,8 @@ export const orderSchema = z.object({
   id: z.string().uuid(), order_code: z.string().min(1), customer_name: z.string().nullable().optional(), total_amount: z.coerce.number().int().nonnegative(), discount_amount: z.coerce.number().int().nonnegative().optional(),
   status: z.enum(["pending", "confirmed", "cancelled", "expired"]), created_at: z.string(), updated_at: z.string().optional(), expires_at: z.string().nullable().optional(),
   confirmed_at: z.string().nullable().optional(), cancelled_at: z.string().nullable().optional(), expired_at: z.string().nullable().optional(),
+  fulfillment_status: z.enum(["unfulfilled", "preparing", "ready", "picked_up"]).optional(), fulfillment_updated_at: z.string().nullable().optional(),
+  confirmed_by_email: z.string().nullable().optional(), cancelled_by_email: z.string().nullable().optional(), fulfillment_updated_by_email: z.string().nullable().optional(),
 }).passthrough();
 
 export const orderItemProductSchema = z.object({
@@ -58,6 +60,11 @@ export const orderStatusCountsSchema = z.object({
 
 export const orderMutationSchema = z.object({
   outcome: z.enum(["confirmed", "cancelled", "expired", "already_confirmed", "already_cancelled", "already_expired", "not_found", "invalid_state"]),
+  order: orderSchema.nullable(),
+});
+
+export const fulfillmentMutationSchema = z.object({
+  outcome: z.enum(["updated", "unchanged", "invalid_transition", "invalid_order_state", "not_found"]),
   order: orderSchema.nullable(),
 });
 

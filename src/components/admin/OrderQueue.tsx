@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Ban, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, CloudOff, Inbox, LoaderCircle, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
+import { Ban, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, CloudOff, Eye, Inbox, LoaderCircle, PackageCheck, ReceiptText, ShoppingBag, WalletCards } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Order } from "../../types/catalog";
 import type { OrderFilter, OrderStatusCounts } from "../../lib/api";
 import { formatRelativeTime, formatVnd } from "../../utils/format";
-import { confirmOrderPayment, cancelOrder } from "../../lib/api";
+import { confirmOrderPayment, cancelOrder, updateOrderFulfillment } from "../../lib/api";
 import { SwipeConfirmButton } from "./SwipeConfirmButton";
 import { useToast } from "../ui/ToastProvider";
 import { EmptyState } from "../ui/EmptyState";
 import { Button } from "../ui/Button";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
+import { Modal } from "../ui/Modal";
 
 type OrderQueueProps = {
   orders: Order[];
@@ -33,6 +34,8 @@ export type OrderViewFilter = OrderFilter | "event";
 export function OrderQueue({ orders, filter, todayOnly, counts, eventCount, eventControl, page, pageSize, total, loading, onFilterChange, onTodayOnlyChange, onPageChange, onOrderUpdated }: OrderQueueProps) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [fulfillmentBusyId, setFulfillmentBusyId] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const toast = useToast();
   const { t } = usePlatformI18n();
   const filters: OrderViewFilter[] = ["pending", "confirmed", "cancelled", "expired", "all", "event"];
@@ -66,6 +69,32 @@ export function OrderQueue({ orders, filter, todayOnly, counts, eventCount, even
     try { const result = await cancelOrder(orderId); onOrderUpdated(); if (result.outcome !== "cancelled") toast.info(t("This order was already handled by another staff member.")); else toast.success(t("Order cancelled and stock released.")); }
     catch (error) { toast.error(t(error instanceof Error ? error.message : "Failed to cancel order."), t("Could not cancel order")); }
     finally { setCancellingId(null); }
+  }
+
+  async function handleFulfillment(
+    order: Order,
+    status: "ready" | "picked_up",
+  ) {
+    if (order.source === "offline_event") {
+      toast.info(t("Update Event Mode fulfilment on the designated device."));
+      return;
+    }
+    setFulfillmentBusyId(order.id);
+    try {
+      const result = await updateOrderFulfillment(order.id, status);
+      if (result.outcome === "updated" || result.outcome === "unchanged") {
+        toast.success(t(status === "ready" ? "Order marked ready." : "Order marked picked up."));
+        setSelectedOrder(result.order);
+        onOrderUpdated();
+      } else {
+        toast.info(t("This fulfilment update is no longer available."));
+        onOrderUpdated();
+      }
+    } catch (error) {
+      toast.error(t(error instanceof Error ? error.message : "Could not update fulfilment."));
+    } finally {
+      setFulfillmentBusyId(null);
+    }
   }
 
   const emptyTitle = loading
@@ -119,13 +148,14 @@ export function OrderQueue({ orders, filter, todayOnly, counts, eventCount, even
           meta={loading ? [] : [...(todayOnly ? [t("Today")] : []), filter === "event" ? t("Event sales") : filter === "all" ? t("All statuses") : t(filter), t("Live updates on")]}
           action={!loading && (filter !== "all" || todayOnly) ? <Button type="button" variant="secondary" onClick={() => { onFilterChange("all"); onTodayOnlyChange(false); }}>{t("View all orders")}</Button> : undefined}
         />
-      ) : <div className={`admin-orders-grid ${loading ? "is-loading" : ""}`}>{orders.map((order) => <OrderCard key={order.id} order={order} isConfirming={confirmingId === order.id} isCancelling={cancellingId === order.id} onConfirm={() => handleConfirm(order.id)} onCancel={() => handleCancel(order.id)} />)}</div>}
+      ) : <div className={`admin-orders-grid ${loading ? "is-loading" : ""}`}>{orders.map((order) => <OrderCard key={order.id} order={order} isConfirming={confirmingId === order.id} isCancelling={cancellingId === order.id} isFulfillmentBusy={fulfillmentBusyId === order.id} onConfirm={() => handleConfirm(order.id)} onCancel={() => handleCancel(order.id)} onDetails={() => setSelectedOrder(order)} onFulfillment={(status) => handleFulfillment(order, status)} />)}</div>}
       {totalPages > 1 && <nav className="admin-orders-pagination" aria-label={t("Order pages")}><button type="button" disabled={page <= 1 || loading} onClick={() => onPageChange(page - 1)}><ChevronLeft size={16} /> {t("Previous")}</button><span>{t("Page")} <b>{page}</b> {t("of")} {totalPages}</span><button type="button" disabled={page >= totalPages || loading} onClick={() => onPageChange(page + 1)}>{t("Next")} <ChevronRight size={16} /></button></nav>}
+      <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
     </section>
   );
 }
 
-type OrderCardProps = { order: Order; isConfirming: boolean; isCancelling: boolean; onConfirm: () => Promise<boolean>; onCancel: () => void };
+type OrderCardProps = { order: Order; isConfirming: boolean; isCancelling: boolean; isFulfillmentBusy: boolean; onConfirm: () => Promise<boolean>; onCancel: () => void; onDetails: () => void; onFulfillment: (status: "ready" | "picked_up") => void };
 
 function formatAdminRelativeTime(value: string | Date, locale: "en" | "vi") {
   if (locale === "en") return formatRelativeTime(value);
@@ -138,29 +168,83 @@ function formatAdminRelativeTime(value: string | Date, locale: "en" | "vi") {
   return `${Math.floor(hours / 24)} ngày trước`;
 }
 
-function OrderCard({ order, isConfirming, isCancelling, onConfirm, onCancel }: OrderCardProps) {
+function formatExpiry(value: string, locale: "en" | "vi") {
+  const seconds = Math.ceil((new Date(value).getTime() - Date.now()) / 1000);
+  if (seconds <= 0) return { text: locale === "vi" ? "Đang cập nhật hết hạn" : "Expiry updating", urgent: true };
+  const minutes = Math.ceil(seconds / 60);
+  return {
+    text: locale === "vi" ? `Còn ${minutes} phút` : `Expires in ${minutes}m`,
+    urgent: minutes <= 2,
+  };
+}
+
+function OrderCard({ order, isConfirming, isCancelling, isFulfillmentBusy, onConfirm, onCancel, onDetails, onFulfillment }: OrderCardProps) {
   const [elapsedTime, setElapsedTime] = useState("");
+  const [expiry, setExpiry] = useState<{ text: string; urgent: boolean } | null>(null);
   const { locale, t } = usePlatformI18n();
+  const hasScrollableItems = (order.order_items?.length ?? 0) > 3;
   useEffect(() => {
-    function updateTime() { setElapsedTime(formatAdminRelativeTime(order.created_at, locale)); }
+    function updateTime() {
+      setElapsedTime(formatAdminRelativeTime(order.created_at, locale));
+      setExpiry(order.status === "pending" && order.expires_at ? formatExpiry(order.expires_at, locale) : null);
+    }
     updateTime(); const interval = window.setInterval(updateTime, 15000); return () => window.clearInterval(interval);
-  }, [locale, order.created_at]);
+  }, [locale, order.created_at, order.expires_at, order.status]);
 
   const statusIcon = order.status === "confirmed" ? <CheckCircle2 size={14} /> : order.status === "cancelled" || order.status === "expired" ? <Ban size={14} /> : <Clock3 size={14} />;
+  const unitCount = order.order_items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+  const fulfillmentStatus = order.fulfillment_status ?? (order.status === "confirmed" ? "preparing" : "unfulfilled");
+  const nextFulfillment = fulfillmentStatus === "preparing" ? "ready" : fulfillmentStatus === "ready" ? "picked_up" : null;
   return (
     <article className={`admin-order-card status-${order.status}`}>
-      <header><div><span className="admin-order-code">{order.order_code}</span><span className="admin-order-time"><Clock3 size={13} /> {elapsedTime}</span></div><span className={`admin-order-status ${order.status}`}>{statusIcon}{t(order.status)}</span></header>
+      <header><div><span className="admin-order-code">{order.order_code}</span><span className="admin-order-time"><Clock3 size={13} /> {elapsedTime}</span>{expiry && <span className={`admin-order-expiry ${expiry.urgent ? "urgent" : ""}`}>{expiry.text}</span>}</div><span className={`admin-order-status ${order.status}`}>{statusIcon}{t(order.status)}</span></header>
       {order.customer_name && <div className="admin-order-customer"><span>{t("Pickup name")}</span><strong>{order.customer_name}</strong></div>}
-      <div className="admin-order-items">
+      <div
+        className={`admin-order-items ${hasScrollableItems ? "is-scrollable" : ""}`}
+        tabIndex={hasScrollableItems ? 0 : undefined}
+        aria-label={hasScrollableItems ? t("Order items") : undefined}
+      >
         {order.order_items?.map((item) => { const image = item.product?.images?.find(Boolean); return <div key={item.id} className="admin-order-item">{image ? <img src={image} alt="" /> : <span className="admin-order-item-placeholder"><ShoppingBag size={15} /></span>}<div><strong>{item.product?.name || t("Unknown product")}</strong><small>{item.product?.item_code || t("No code")}</small></div><b>{item.quantity}×</b></div>; })}
       </div>
-      <footer>{Boolean(order.discount_amount) && <span className="admin-order-discount">{t("Promotion savings")} · −{formatVnd(order.discount_amount ?? 0)}</span>}<span>{t("Total")}</span><strong>{formatVnd(order.total_amount)}</strong></footer>
+      <footer><div>{Boolean(order.discount_amount) && <span className="admin-order-discount">{t("Promotion savings")} · −{formatVnd(order.discount_amount ?? 0)}</span>}<span>{t("Total")} · {t("{{count}} units", { count: unitCount })}</span></div><strong>{formatVnd(order.total_amount)}</strong></footer>
       {order.source === "offline_event" && <div className="admin-order-event-source"><CloudOff size={13} /><span>{order.offline_event_name || t("Event sale")}</span></div>}
       {order.status === "pending" && order.source === "offline_event" ? (
         <div className="admin-order-event-note">{t("Resolve this order on the designated Event Mode device.")}</div>
       ) : order.status === "pending" ? (
         <div className="admin-order-actions"><SwipeConfirmButton onConfirm={onConfirm} isConfirming={isConfirming} /><button type="button" className="admin-cancel-order" onClick={onCancel} disabled={isConfirming || isCancelling}><Ban size={15} />{isCancelling ? t("Cancelling…") : t("Cancel and release stock")}</button></div>
+      ) : order.status === "confirmed" ? (
+        <div className="admin-order-fulfillment">
+          <span className={`admin-fulfillment-status ${fulfillmentStatus}`}>{t(fulfillmentStatus)}</span>
+          {nextFulfillment && <button type="button" disabled={isFulfillmentBusy} onClick={() => onFulfillment(nextFulfillment)}>{t(nextFulfillment === "ready" ? "Mark ready" : "Mark picked up")}</button>}
+        </div>
       ) : null}
+      <button type="button" className="admin-order-details-trigger" onClick={onDetails}><Eye size={14} />{t("Order details")}</button>
     </article>
   );
+}
+
+function OrderDetailsModal({ order, onClose }: { order: Order | null; onClose: () => void }) {
+  const { locale, t } = usePlatformI18n();
+  if (!order) return null;
+  const date = (value?: string | null) => value ? new Date(value).toLocaleString(locale === "vi" ? "vi-VN" : "en-US") : t("Not recorded");
+  const payment = order.source === "offline_event"
+    ? t(order.payment_method === "cash" ? "Cash" : "VietQR")
+    : t("Online QR checkout");
+  const actor = order.status === "confirmed" ? order.confirmed_by_email : order.status === "cancelled" ? order.cancelled_by_email : null;
+  return <Modal title={`${t("Order details")} · ${order.order_code}`} isOpen onClose={onClose} wide mobileSheet closeLabel={t("Close modal")}>
+    <div className="admin-order-details">
+      <div className="admin-order-details-grid">
+        <div><span>{t("Pickup name")}</span><strong>{order.customer_name || t("Walk-in customer")}</strong></div>
+        <div><span>{t("Payment")}</span><strong>{payment}</strong></div>
+        <div><span>{t("Created")}</span><strong>{date(order.created_at)}</strong></div>
+        <div><span>{t("Handled by")}</span><strong>{actor || t(order.status === "expired" ? "System expiry" : "Not recorded")}</strong></div>
+        <div><span>{t("Payment updated")}</span><strong>{date(order.confirmed_at || order.cancelled_at || order.expired_at)}</strong></div>
+        <div><span>{t("Fulfilment updated")}</span><strong>{date(order.fulfillment_updated_at)}</strong></div>
+      </div>
+      <div className="admin-order-details-items">
+        {order.order_items?.map((item) => <div key={item.id}><div><strong>{item.product?.name || t("Unknown product")}</strong><small>{item.product?.item_code || t("No code")}</small></div><span>{item.quantity} × {formatVnd(item.unit_price)}</span><b>{formatVnd(item.quantity * item.unit_price - (item.discount_amount ?? 0))}</b></div>)}
+      </div>
+      <div className="admin-order-details-total"><span>{t("Total")}</span><strong>{formatVnd(order.total_amount)}</strong></div>
+    </div>
+  </Modal>;
 }

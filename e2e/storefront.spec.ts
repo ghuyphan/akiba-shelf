@@ -265,10 +265,19 @@ test("keeps a long cart reachable while the customer continues browsing", async 
     .toBe(true);
 
   if (!isPhone) {
-    await page.evaluate(() => window.scrollTo(0, 1200));
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     const floatingCart = page.locator(".floating-cart-bar");
     await expect(floatingCart).toBeVisible();
     await expect(floatingCart).toContainText("8 items ready in your cart");
+    await expect(page.locator(".app-shell")).toHaveClass(/storefront-has-cart-dock/);
+    const cartDockOverlap = await page.evaluate(() => {
+      const dock = document.querySelector(".floating-cart-bar");
+      const cards = document.querySelectorAll(".product-card");
+      const finalCard = cards.item(cards.length - 1);
+      if (!dock || !finalCard) return Number.POSITIVE_INFINITY;
+      return finalCard.getBoundingClientRect().bottom - dock.getBoundingClientRect().top;
+    });
+    expect(cartDockOverlap).toBeLessThanOrEqual(0);
     const revealCart = floatingCart.getByRole("button", { name: "View cart" });
     await expect(revealCart).toBeVisible();
     await revealCart.click();
@@ -277,6 +286,33 @@ test("keeps a long cart reachable while the customer continues browsing", async 
       .poll(async () => (await cart.boundingBox())?.y ?? -1)
       .toBeGreaterThanOrEqual(0);
   }
+});
+
+test("keeps products clear of the pending payment dock", async ({ page }) => {
+  await page.unrouteAll({ behavior: "wait" });
+  await mockSupabase(page, { manyProducts: true });
+  await page.reload();
+
+  await page.getByRole("button", { name: /Add Product 01 to cart/i }).click();
+  const viewCart = page.getByRole("button", { name: /View cart/i });
+  if (await viewCart.isVisible()) await viewCart.click();
+  await page.getByRole("button", { name: /Pay now/i }).click();
+  await page.getByLabel(/Pickup name/i).fill("Customer");
+  await page.getByRole("button", { name: /Create order & pay/i }).click();
+  await page.getByRole("button", { name: "Hide payment details" }).click();
+
+  const pendingDock = page.locator(".pending-order-bar");
+  await expect(pendingDock).toBeVisible();
+  await expect(page.locator(".app-shell")).toHaveClass(/storefront-has-order-dock/);
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const pendingDockOverlap = await page.evaluate(() => {
+    const dock = document.querySelector(".pending-order-bar");
+    const cards = document.querySelectorAll(".product-card");
+    const finalCard = cards.item(cards.length - 1);
+    if (!dock || !finalCard) return Number.POSITIVE_INFINITY;
+    return finalCard.getBoundingClientRect().bottom - dock.getBoundingClientRect().top;
+  });
+  expect(pendingDockOverlap).toBeLessThanOrEqual(0);
 });
 
 test("keeps the view toggle aligned and animates results as one grid", async ({
@@ -459,14 +495,17 @@ test("isolates storefront state when navigating between shops", async ({
 
 test("offers native game portals when both gacha games are active", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.unrouteAll({ behavior: "wait" });
   await mockSupabase(page, { dualGacha: true });
   await page.goto("./s/akiba-shelf/play");
 
-  await expect(
-    page.getByRole("heading", { name: "Choose your universe" }),
-  ).toBeVisible();
+  const heading = page.getByRole("heading", { name: "Choose your universe" });
+  if (testInfo.project.name === "phone-chromium") {
+    await expect(heading).toBeHidden();
+    await expect(page.getByText("Wish simulator", { exact: true })).toBeVisible();
+    await expect(page.getByText("Warp simulator", { exact: true })).toBeVisible();
+  } else await expect(heading).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Enter: Wish simulator" }),
   ).toBeVisible();
@@ -476,4 +515,53 @@ test("offers native game portals when both gacha games are active", async ({
   await expect(
     page.getByRole("button", { name: "Save offline" }),
   ).toBeVisible();
+});
+
+test("keeps the phone game selector full-screen during launch", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "phone-chromium");
+  await page.unrouteAll({ behavior: "wait" });
+  await mockSupabase(page, { catalogLocale: "vi", dualGacha: true });
+  await page.goto("./s/akiba-shelf/play");
+
+  await expect(
+    page.getByRole("heading", { name: "Chọn vũ trụ của bạn" }),
+  ).toBeHidden();
+  await expect(page.getByText("Cầu Nguyện", { exact: true })).toBeVisible();
+  await expect(page.getByText("Bước Nhảy", { exact: true })).toBeVisible();
+  const hiddenDetails = await page.evaluate(() =>
+    Array.from(document.querySelectorAll(
+      ".gacha-portal-meta, .gacha-portal-prizes, .gacha-portal-enter",
+    )).every((element) => getComputedStyle(element).display === "none"),
+  );
+  expect(hiddenDetails).toBe(true);
+  await expect(
+    page.getByRole("link", { name: "Vào game: Cầu Nguyện" }),
+  ).toBeVisible();
+  const layout = await page.evaluate(() => ({
+    cardRects: Array.from(document.querySelectorAll<HTMLElement>(".gacha-game-portal"))
+      .map((card) => {
+        const rect = card.getBoundingClientRect();
+        return { bottom: rect.bottom, height: rect.height, top: rect.top };
+      }),
+    pageHeight: document.documentElement.scrollHeight,
+    pageWidth: document.documentElement.scrollWidth,
+    viewportHeight: window.innerHeight,
+    viewportWidth: window.innerWidth,
+  }));
+  expect(layout.pageWidth).toBeLessThanOrEqual(layout.viewportWidth);
+  expect(layout.pageHeight).toBeLessThanOrEqual(layout.viewportHeight);
+  expect(layout.cardRects).toHaveLength(2);
+  expect(layout.cardRects[0].height).toBeGreaterThan(layout.viewportHeight * 0.56);
+  expect(layout.cardRects[0].height).toBeLessThan(layout.viewportHeight * 0.6);
+  expect(layout.cardRects[1].height).toBeGreaterThan(layout.viewportHeight * 0.56);
+  expect(layout.cardRects[1].height).toBeLessThan(layout.viewportHeight * 0.6);
+  expect(layout.cardRects[0].bottom).toBeGreaterThan(layout.cardRects[1].top);
+
+  await page.getByRole("link", { name: "Vào game: Cầu Nguyện" }).click();
+  await page.waitForTimeout(120);
+  const launchWidth = await page.locator(".gacha-game-portal.is-genshin").evaluate(
+    (portal) => portal.getBoundingClientRect().width,
+  );
+  expect(launchWidth).toBeGreaterThan(layout.viewportWidth * 0.98);
+  await expect(page).toHaveURL(/\?game=genshin$/);
 });

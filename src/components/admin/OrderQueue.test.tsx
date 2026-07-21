@@ -10,6 +10,7 @@ import { ToastProvider } from "../ui/ToastProvider";
 const apiMocks = vi.hoisted(() => ({
   confirmOrderPayment: vi.fn(),
   cancelOrder: vi.fn(),
+  updateOrderFulfillment: vi.fn(),
 }));
 
 vi.mock("../../lib/api", () => apiMocks);
@@ -128,6 +129,7 @@ describe("OrderQueue", () => {
   beforeEach(() => {
     apiMocks.confirmOrderPayment.mockReset();
     apiMocks.cancelOrder.mockReset();
+    apiMocks.updateOrderFulfillment.mockReset();
   });
 
   it("renders a pending order with customer, code, items, and total", () => {
@@ -141,6 +143,29 @@ describe("OrderQueue", () => {
     expect(card.getByText("2×")).toBeInTheDocument();
     expect(card.getByText("1×")).toBeInTheDocument();
     expect(card.getByText(vnd(330000))).toBeInTheDocument();
+  });
+
+  it("makes long order item lists independently scrollable", () => {
+    const longOrder = {
+      ...pendingOrder,
+      order_items: Array.from({ length: 4 }, (_, index) => ({
+        ...pendingOrder.order_items![0],
+        id: `oi-${index + 1}`,
+        product_id: `prod-${index + 1}`,
+        product: {
+          ...pendingOrder.order_items![0].product!,
+          id: `prod-${index + 1}`,
+          name: `Product ${index + 1}`,
+        },
+      })),
+    } satisfies Order;
+
+    renderQueue({ orders: [longOrder] });
+
+    const items = screen.getByLabelText("Order items");
+    expect(items).toHaveClass("is-scrollable");
+    expect(items).toHaveAttribute("tabindex", "0");
+    expect(within(items).getAllByText(/Product \d/)).toHaveLength(4);
   });
 
   it("confirms a pending order through the swipe gesture", async () => {
@@ -260,6 +285,26 @@ describe("OrderQueue", () => {
     expect(card.getByText(/designated Event Mode device/i)).toBeInTheDocument();
     expect(card.queryByRole("button", { name: /swipe right/i })).not.toBeInTheDocument();
     expect(card.queryByRole("button", { name: /cancel and release stock/i })).not.toBeInTheDocument();
+  });
+
+  it("advances a confirmed online order to ready", async () => {
+    const confirmed = {
+      ...pendingOrder,
+      status: "confirmed" as const,
+      fulfillment_status: "preparing" as const,
+      confirmed_at: new Date().toISOString(),
+    };
+    apiMocks.updateOrderFulfillment.mockResolvedValue({
+      outcome: "updated",
+      order: { ...confirmed, fulfillment_status: "ready" },
+    });
+    const props = renderQueue({ orders: [confirmed], filter: "confirmed" });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Mark ready" }));
+
+    expect(apiMocks.updateOrderFulfillment).toHaveBeenCalledWith("order-1", "ready");
+    expect(props.onOrderUpdated).toHaveBeenCalled();
   });
 
   it("shows a today-specific empty state that can reset both filters", async () => {

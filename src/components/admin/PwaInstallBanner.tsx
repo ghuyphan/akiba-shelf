@@ -22,6 +22,9 @@ function wasRecentlyDismissed() {
 }
 
 export function PwaInstallBanner() {
+  const [isPhoneLayout, setIsPhoneLayout] = useState(() =>
+    window.matchMedia("(max-width: 760px)").matches,
+  );
   const [installState, setInstallState] = useState<PwaInstallState>(() =>
     getPwaInstallState(),
   );
@@ -29,6 +32,14 @@ export function PwaInstallBanner() {
   const [showIosHelp, setShowIosHelp] = useState(false);
   const [busy, setBusy] = useState(false);
   const { t } = usePlatformI18n();
+
+  useEffect(() => {
+    const phoneLayout = window.matchMedia("(max-width: 760px)");
+    const handleChange = (event: MediaQueryListEvent) =>
+      setIsPhoneLayout(event.matches);
+    phoneLayout.addEventListener("change", handleChange);
+    return () => phoneLayout.removeEventListener("change", handleChange);
+  }, []);
 
   useEffect(
     () =>
@@ -39,6 +50,7 @@ export function PwaInstallBanner() {
   );
 
   if (
+    !isPhoneLayout ||
     dismissed ||
     installState === "installed" ||
     installState === "unavailable"

@@ -63,6 +63,11 @@ const eventOrderSchema = orderSchema.extend({
     "bank_verification_pending",
     "bank_confirmed",
   ]),
+  fulfillment_status: z.enum(["unfulfilled", "preparing", "ready", "picked_up"]),
+  fulfillment_updated_at: z.string().nullable().optional(),
+  confirmed_by_email: z.string().nullable().optional(),
+  cancelled_by_email: z.string().nullable().optional(),
+  fulfillment_updated_by_email: z.string().nullable().optional(),
   order_items: z.array(eventOrderItemSchema),
 });
 
@@ -157,6 +162,11 @@ export async function syncOfflineEventOrders(
       status: order.status,
       payment_method: order.paymentMethod,
       payment_state: order.paymentState,
+      fulfillment_status: order.fulfillmentStatus,
+      fulfillment_updated_at: order.fulfillmentUpdatedAt ?? null,
+      confirmed_by_label: order.confirmedByLabel ?? null,
+      cancelled_by_label: order.cancelledByLabel ?? null,
+      fulfillment_updated_by_label: order.fulfillmentUpdatedByLabel ?? null,
       created_at: order.createdAt,
       updated_at: order.updatedAt,
       items: order.items,

@@ -5,12 +5,15 @@ import {
 import { safePublicUrl } from "../branding";
 import {
   orderItemProductSchema,
+  fulfillmentMutationSchema,
   orderMutationSchema,
   orderSchema,
   orderStatusCountsSchema,
 } from "../schemas";
 import type {
   CartItem,
+  FulfillmentMutationResult,
+  FulfillmentStatus,
   Order,
   OrderItemProduct,
   OrderMutationResult,
@@ -129,7 +132,7 @@ export async function getOrders(
   let query = client
     .from("orders")
     .select(
-      `id,shop_id,order_code,customer_name,total_amount,discount_amount,status,created_at,updated_at,expires_at,confirmed_at,cancelled_at,expired_at,order_items(id,order_id,product_id,quantity,unit_price,free_quantity,discount_amount,product:products(${ORDER_ITEM_PRODUCT_COLUMNS}))`,
+      `id,shop_id,order_code,customer_name,total_amount,discount_amount,status,created_at,updated_at,expires_at,confirmed_at,cancelled_at,expired_at,fulfillment_status,fulfillment_updated_at,confirmed_by_email,cancelled_by_email,fulfillment_updated_by_email,order_items(id,order_id,product_id,quantity,unit_price,free_quantity,discount_amount,product:products(${ORDER_ITEM_PRODUCT_COLUMNS}))`,
       { count: "exact" },
     )
     .eq("shop_id", shopId);
@@ -192,6 +195,18 @@ export async function cancelOrder(
   });
   if (error) throw error;
   return orderMutationSchema.parse(data) as unknown as OrderMutationResult;
+}
+
+export async function updateOrderFulfillment(
+  orderId: string,
+  status: Exclude<FulfillmentStatus, "unfulfilled">,
+): Promise<FulfillmentMutationResult> {
+  const { data, error } = await requireSupabase().rpc(
+    "update_order_fulfillment",
+    { target_order_id: orderId, next_status: status },
+  );
+  if (error) throw error;
+  return fulfillmentMutationSchema.parse(data) as FulfillmentMutationResult;
 }
 
 export async function cancelCustomerOrder(

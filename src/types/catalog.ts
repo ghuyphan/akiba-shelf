@@ -143,6 +143,11 @@ export type CheckoutSession = {
 };
 
 export type OrderStatus = "pending" | "confirmed" | "cancelled" | "expired";
+export type FulfillmentStatus =
+  | "unfulfilled"
+  | "preparing"
+  | "ready"
+  | "picked_up";
 
 export type Order = {
   shop_id?: string;
@@ -159,6 +164,11 @@ export type Order = {
   confirmed_at: string | null;
   cancelled_at: string | null;
   expired_at: string | null;
+  fulfillment_status?: FulfillmentStatus;
+  fulfillment_updated_at?: string | null;
+  confirmed_by_email?: string | null;
+  cancelled_by_email?: string | null;
+  fulfillment_updated_by_email?: string | null;
   order_items?: OrderItem[];
   source?: "online" | "offline_event";
   offline_event_session_id?: string;
@@ -169,6 +179,16 @@ export type Order = {
 
 export type OrderMutationOutcome = "confirmed" | "cancelled" | "expired" | "already_confirmed" | "already_cancelled" | "already_expired" | "not_found" | "invalid_state";
 export type OrderMutationResult = { outcome: OrderMutationOutcome; order: Order | null };
+export type FulfillmentMutationOutcome =
+  | "updated"
+  | "unchanged"
+  | "invalid_transition"
+  | "invalid_order_state"
+  | "not_found";
+export type FulfillmentMutationResult = {
+  outcome: FulfillmentMutationOutcome;
+  order: Order | null;
+};
 
 export type OrderItemProduct = Pick<Product, "id" | "name" | "item_code" | "images">;
 
@@ -213,6 +233,11 @@ export type OfflineEventOrder = {
   status: "pending" | "confirmed" | "cancelled";
   paymentMethod: OfflineEventPaymentMethod;
   paymentState: OfflineEventPaymentState;
+  fulfillmentStatus: FulfillmentStatus;
+  fulfillmentUpdatedAt?: string;
+  confirmedByLabel?: string;
+  cancelledByLabel?: string;
+  fulfillmentUpdatedByLabel?: string;
   items: OfflineEventOrderItem[];
   createdAt: string;
   updatedAt: string;

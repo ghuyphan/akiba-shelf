@@ -32,6 +32,7 @@ import {
   requestDurableOfflineStorage,
   saveOfflineEventSession,
   updateOfflineEventOrder,
+  updateOfflineEventOrderFulfillment,
 } from "../../lib/offline/offlineEvents";
 import type {
   BoothSettings,
@@ -247,6 +248,23 @@ export function OfflineEventManager({
     }
   }
 
+  async function resolveFulfillment(
+    order: OfflineEventOrder,
+    status: "ready" | "picked_up",
+  ) {
+    if (!session) return;
+    setBusy(order.id);
+    try {
+      await updateOfflineEventOrderFulfillment(session, order.id, status);
+      await reloadLocal();
+      toast.success(t(status === "ready" ? "Order marked ready." : "Order marked picked up."));
+    } catch (error) {
+      toast.error(t(getErrorMessage(error, "Could not update fulfilment.")));
+    } finally {
+      setBusy(undefined);
+    }
+  }
+
   async function closeEvent() {
     if (!session || !online || pendingCount > 0) return;
     setBusy("close");
@@ -404,6 +422,13 @@ export function OfflineEventManager({
                       <div className="offline-event-order-actions">
                         <Button loading={busy === order.id} onClick={() => void resolveOrder(order, "confirmed")}>{t(order.paymentMethod === "cash" ? "Confirm cash" : "Verify payment")}</Button>
                         <Button variant="secondary" disabled={busy === order.id} onClick={() => void resolveOrder(order, "cancelled")}>{t("Cancel")}</Button>
+                      </div>
+                    )}
+                    {order.status === "confirmed" && (
+                      <div className="offline-event-fulfillment-actions">
+                        <span>{t(order.fulfillmentStatus ?? "preparing")}</span>
+                        {(order.fulfillmentStatus ?? "preparing") === "preparing" && <Button loading={busy === order.id} onClick={() => void resolveFulfillment(order, "ready")}>{t("Mark ready")}</Button>}
+                        {(order.fulfillmentStatus ?? "preparing") === "ready" && <Button loading={busy === order.id} onClick={() => void resolveFulfillment(order, "picked_up")}>{t("Mark picked up")}</Button>}
                       </div>
                     )}
                   </div>

@@ -137,6 +137,7 @@ export async function mockSupabase(
     socialLinks?: boolean;
     catalogLocale?: "en" | "vi";
     dualGacha?: boolean;
+    orderQueue?: boolean;
   } = {},
 ) {
   await page.route("https://example.test/*.jpg", (route) =>
@@ -172,6 +173,37 @@ export async function mockSupabase(
           ),
         ]
       : products;
+  let fixtureFulfillmentStatus: "preparing" | "ready" | "picked_up" = "preparing";
+  const fixtureOrder = () => ({
+    id: "40000000-0000-4000-8000-000000000001",
+    shop_id: "main",
+    order_code: "AK-0042",
+    customer_name: "Fixture customer",
+    total_amount: 240000,
+    discount_amount: 0,
+    status: "confirmed",
+    created_at: "2026-07-21T10:00:00.000Z",
+    updated_at: "2026-07-21T10:05:00.000Z",
+    expires_at: "2026-07-21T10:10:00.000Z",
+    confirmed_at: "2026-07-21T10:05:00.000Z",
+    cancelled_at: null,
+    expired_at: null,
+    fulfillment_status: fixtureFulfillmentStatus,
+    fulfillment_updated_at: "2026-07-21T10:05:00.000Z",
+    confirmed_by_email: "staff@test.local",
+    cancelled_by_email: null,
+    fulfillment_updated_by_email: "staff@test.local",
+    order_items: catalogProducts.slice(0, 4).map((product, index) => ({
+      id: `41000000-0000-4000-8000-00000000000${index + 1}`,
+      order_id: "40000000-0000-4000-8000-000000000001",
+      product_id: product.id,
+      quantity: 1,
+      unit_price: product.price_vnd,
+      free_quantity: 0,
+      discount_amount: 0,
+      product,
+    })),
+  });
 
   await page.route("**/mock-supabase/**", async (route) => {
     const request = route.request();
@@ -325,11 +357,16 @@ export async function mockSupabase(
     if (url.pathname.includes("/rest/v1/rpc/get_order_status_counts"))
       return json(route, {
         pending: 0,
-        confirmed: 0,
+        confirmed: options.orderQueue ? 1 : 0,
         cancelled: 0,
         expired: 0,
-        all: 0,
+        all: options.orderQueue ? 1 : 0,
       });
+    if (url.pathname.includes("/rest/v1/rpc/update_order_fulfillment")) {
+      const payload = JSON.parse(request.postData() || "{}");
+      fixtureFulfillmentStatus = payload.next_status;
+      return json(route, { outcome: "updated", order: fixtureOrder() });
+    }
     if (url.pathname.includes("/rest/v1/rpc/get_public_product_categories"))
       return json(
         route,
@@ -558,7 +595,9 @@ export async function mockSupabase(
       );
     }
     if (url.pathname.includes("/rest/v1/orders"))
-      return json(route, [], 200, { "content-range": "0-0/0" });
+      return json(route, options.orderQueue ? [fixtureOrder()] : [], 200, {
+        "content-range": options.orderQueue ? "0-0/1" : "0-0/0",
+      });
     if (url.pathname.includes("/rest/v1/staff_members")) return json(route, []);
     return json(route, []);
   });

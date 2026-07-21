@@ -39,19 +39,32 @@ export function useCatalogData(
   const initialBooth = cached?.booth ?? defaultBooth;
   const [cartError, setCartError] = useState("");
   const [rewardProducts, setRewardProducts] = useState<Product[]>([]);
-  const [gachaEnabled, setGachaEnabled] = useState<boolean>(cached?.gachaEnabled ?? false);
+  const [gachaAvailability, setGachaAvailability] = useState<{
+    shopId: string;
+    enabled: boolean;
+  } | null>(null);
+  const resolvedGachaAvailability =
+    gachaAvailability?.shopId === shopId ? gachaAvailability : null;
+  const gachaEnabled =
+    resolvedGachaAvailability?.enabled ?? cached?.gachaEnabled ?? false;
+  const isGachaInitialLoading = Boolean(
+    shopId && !resolvedGachaAvailability,
+  );
 
   useEffect(() => {
     let active = true;
     if (!shopId) return;
     void getPublicGachaEnabled(shopId)
       .then((enabled) => {
-        if (active) setGachaEnabled(enabled);
+        if (active) setGachaAvailability({ shopId, enabled });
       })
       .catch(() => {
         if (active) {
           const snapshot = loadCatalogSnapshot(shopId);
-          setGachaEnabled(snapshot?.gachaEnabled ?? false);
+          setGachaAvailability({
+            shopId,
+            enabled: snapshot?.gachaEnabled ?? false,
+          });
         }
       });
     return () => {
@@ -202,6 +215,7 @@ export function useCatalogData(
         payment: storefront.payment,
         promotion: storefront.promotion,
         categories: storefront.categories,
+        gachaEnabled: resolvedGachaAvailability?.enabled,
       },
       shopId,
     );
@@ -210,6 +224,7 @@ export function useCatalogData(
     productCatalog.isLoading,
     productCatalog.products,
     shopId,
+    resolvedGachaAvailability,
     storefront.booth,
     storefront.categories,
     storefront.isInitialLoading,
@@ -280,7 +295,9 @@ export function useCatalogData(
     loadError: productCatalog.error || storefront.error || cartError,
     isLoading: productCatalog.isLoading,
     isInitialLoading:
-      (productCatalog.isInitialLoading || storefront.isInitialLoading) && !cached,
+      ((productCatalog.isInitialLoading || storefront.isInitialLoading) &&
+        !cached) ||
+      isGachaInitialLoading,
     isLoadingMore: productCatalog.isLoadingMore,
     loadMore: productCatalog.loadMore,
     reloadAll,

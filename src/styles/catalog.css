@@ -632,19 +632,16 @@
   .featured-banner-copy h2 { max-width: none; margin-top: 10px; font-size: clamp(27px, 8vw, 36px); }
   .featured-banner-copy>p { margin-top: 9px; font-size: 10px; line-clamp: 2; -webkit-line-clamp: 2; }
   .featured-banner-meta { margin-top: 13px; }
-  .featured-banner-actions { margin-top: 16px; }
-  .featured-banner-add { flex: 1; }
+  .featured-banner-actions { align-items: stretch; flex-direction: column; margin-top: 16px; }
+  .featured-banner-add { width: 100%; }
+  .featured-banner-add span { white-space: nowrap; }
+  .featured-banner-nav { justify-content: space-between; width: 100%; }
+  .featured-banner-nav>div { order: 2; }
+  .featured-banner-nav>button:last-child { order: 3; }
   .featured-banner-orbit { width: 210px; }
   .featured-banner-image-main { width: 180px; border-width: 6px; border-radius: 22px; }
   .featured-banner-image-secondary { right: calc(50% - 130px); bottom: 14px; width: 68px; border-width: 4px; border-radius: 15px; }
   .featured-banner-swipe-hint { bottom: 8px; }
-}
-
-@media (max-width: 420px) {
-  .featured-banner-actions { align-items: stretch; flex-direction: column; }
-  .featured-banner-nav { justify-content: space-between; width: 100%; }
-  .featured-banner-nav>div { order: 2; }
-  .featured-banner-nav>button:last-child { order: 3; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1050,6 +1047,11 @@
   backdrop-filter: blur(18px);
   animation: storefront-dock-enter 320ms cubic-bezier(.22, 1, .36, 1) both;
 }
+@media (min-width: 761px) {
+  .app-shell:is(.storefront-has-cart-dock, .storefront-has-order-dock) {
+    padding-bottom: 132px;
+  }
+}
 .storefront-dock-icon { position: relative; display: grid; place-items: center; width: 52px; height: 52px; flex: 0 0 auto; border-radius: 50%; color: color-mix(in srgb, var(--green) 88%, #17311c); background: color-mix(in srgb, var(--green) 13%, #fff); }
 .storefront-dock-badge { position: absolute; top: -4px; right: -4px; display: grid; place-items: center; min-width: 21px; height: 21px; padding-inline: 4px; border: 2px solid #fff; border-radius: 999px; color: #fff; background: var(--coral); font-size: 10px; }
 .storefront-dock-copy { display: grid; min-width: 0; gap: 3px; }
@@ -1077,6 +1079,9 @@
 
 @media (max-width: 760px) {
   .storefront-dock-cart { display: none; }
+  .app-shell.storefront-has-order-dock {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1761,7 +1766,9 @@
   .catalog-screen .chip { padding-inline: 16px; }
   .featured-banner-add { min-height: 48px; font-size: 13px; }
   .featured-banner-nav>button { width: 44px; height: 44px; }
-  .featured-banner-nav>div>button { position: relative; width: 28px; min-width: 28px; height: 44px; background: transparent; }
+  .featured-banner-nav>div { flex: 1; justify-content: center; min-width: 0; gap: clamp(0px, 1vw, 5px); }
+  .featured-banner-nav>div>button { position: relative; width: clamp(20px, 6vw, 28px); min-width: clamp(20px, 6vw, 28px); height: 44px; background: transparent; }
+  .featured-banner-nav>div>button.active { width: clamp(20px, 6vw, 28px); background: transparent; }
   .featured-banner-nav>div>button::after { content: ""; position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; border-radius: 999px; background: var(--line); transform: translate(-50%, -50%); transition: width 220ms ease, background 220ms ease; }
   .featured-banner-nav>div>button.active::after { width: 16px; background: var(--coral); }
   .selected-header .clear-button { min-height: 44px; }

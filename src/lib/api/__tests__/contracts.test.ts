@@ -11,6 +11,7 @@ import {
   getOrderStatusCounts,
   normalizeProduct,
   publishGachaConfiguration,
+  updateOrderFulfillment,
 } from "../../api";
 import {
   loadCatalogSnapshot,
@@ -211,6 +212,7 @@ describe("order API contracts", () => {
           offline_event_name: "Convention day",
           payment_method: "vietqr",
           payment_state: "bank_verification_pending",
+          fulfillment_status: "preparing",
           order_items: [{
             id: `${orderId}:moon-stand`,
             order_id: orderId,
@@ -259,6 +261,25 @@ describe("order API contracts", () => {
       p_status: "all",
       p_created_after: "2026-07-01T00:00:00.000Z",
       p_created_before: null,
+    });
+  });
+
+  it("updates fulfilment through the guarded order RPC", async () => {
+    mocks.rpc.mockResolvedValueOnce({
+      data: {
+        outcome: "updated",
+        order: { ...orderResponse, status: "confirmed", fulfillment_status: "ready" },
+      },
+      error: null,
+    });
+
+    await expect(updateOrderFulfillment(orderId, "ready")).resolves.toMatchObject({
+      outcome: "updated",
+      order: { fulfillment_status: "ready" },
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith("update_order_fulfillment", {
+      target_order_id: orderId,
+      next_status: "ready",
     });
   });
 });
@@ -442,6 +463,7 @@ describe("Playwright Supabase request inventory", () => {
       "/rest/v1/rpc/publish_gacha_configuration_v6",
       "/rest/v1/rpc/start_offline_event_session",
       "/rest/v1/rpc/sync_offline_event_orders",
+      "/rest/v1/rpc/update_order_fulfillment",
       "/rest/v1/shops",
       "/rest/v1/staff_members",
     ]);

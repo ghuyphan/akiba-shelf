@@ -17,7 +17,7 @@ test("advertises the PWA on staff and storefront routes", async ({ page }) => {
   await expect(page.locator("link[rel='manifest']")).toHaveCount(1);
 });
 
-test("offers an eligible staff browser a compact install banner", async ({
+test("offers the install banner only on phone staff layouts", async ({
   page,
 }) => {
   await mockSupabase(page, { staffRole: "owner" });
@@ -36,6 +36,10 @@ test("offers an eligible staff browser a compact install banner", async ({
   });
 
   const installBanner = page.getByLabel("Install Matsuri staff app");
+  if (page.viewportSize()!.width > 760) {
+    await expect(installBanner).toHaveCount(0);
+    return;
+  }
   await expect(installBanner).toBeVisible();
   await expect(installBanner).toContainText("Keep Matsuri close");
   await expect(page.locator("body > .staff-install-banner")).toHaveCount(1);
@@ -43,6 +47,26 @@ test("offers an eligible staff browser a compact install banner", async ({
     .getByRole("button", { name: "Install", exact: true })
     .click();
   await expect(installBanner).toHaveCount(0);
+});
+
+test("shows order details and advances online fulfilment", async ({ page }) => {
+  await mockSupabase(page, { staffRole: "owner", orderQueue: true });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+
+  await expect(page.getByText("AK-0042", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Order details" }).click();
+  const details = page.getByRole("dialog", { name: "Order details · AK-0042" });
+  await expect(details).toBeVisible();
+  await expect(details).toContainText("staff@test.local");
+  await details.getByRole("button", { name: "Close modal" }).click();
+
+  await page.getByRole("button", { name: "Mark ready" }).click();
+  await expect(
+    page.getByRole("button", { name: "Mark picked up" }),
+  ).toBeVisible();
 });
 
 test("routes an authenticated non-staff user to the dashboard", async ({

@@ -221,6 +221,7 @@ export async function createOfflineEventOrder(
     status: "pending",
     paymentMethod,
     paymentState: "awaiting_payment",
+    fulfillmentStatus: "unfulfilled",
     items: cart.map((item) => {
       const line = getPricingLine(pricing, item.product.id);
       const quantity = item.quantity + (item.reward_quantity ?? 0);
@@ -275,6 +276,24 @@ export async function updateOfflineEventOrder(
     ...current,
     status: next.status,
     paymentState: next.paymentState,
+    fulfillmentStatus:
+      next.status === "confirmed"
+        ? current.fulfillmentStatus === "unfulfilled"
+          ? "preparing"
+          : current.fulfillmentStatus
+        : "unfulfilled",
+    fulfillmentUpdatedAt:
+      next.status === "confirmed" && current.fulfillmentStatus === "unfulfilled"
+        ? new Date().toISOString()
+        : current.fulfillmentUpdatedAt,
+    confirmedByLabel:
+      next.status === "confirmed"
+        ? `Event device ${session.deviceId.slice(0, 8)}`
+        : current.confirmedByLabel,
+    cancelledByLabel:
+      next.status === "cancelled"
+        ? `Event device ${session.deviceId.slice(0, 8)}`
+        : current.cancelledByLabel,
     updatedAt: new Date().toISOString(),
     syncedAt: undefined,
   };
@@ -315,6 +334,46 @@ export async function updateOfflineEventOrder(
   }
   notifyUpdated(session.shopId);
   return { session: nextSession, order: updated };
+}
+
+export async function updateOfflineEventOrderFulfillment(
+  session: OfflineEventSession,
+  orderId: string,
+  nextStatus: "ready" | "picked_up",
+) {
+  const orders = await listOfflineEventOrders(session.id);
+  const current = orders.find((order) => order.id === orderId);
+  if (!current) throw new Error("Offline order not found.");
+  if (current.status !== "confirmed")
+    throw new Error("Confirm payment before updating fulfilment.");
+  const currentRank = { unfulfilled: 0, preparing: 1, ready: 2, picked_up: 3 }[
+    current.fulfillmentStatus ?? "preparing"
+  ];
+  const nextRank = { ready: 2, picked_up: 3 }[nextStatus];
+  if (nextRank < currentRank)
+    throw new Error("Fulfilment cannot move backward.");
+  const now = new Date().toISOString();
+  const updated: OfflineEventOrder = {
+    ...current,
+    fulfillmentStatus: nextStatus,
+    fulfillmentUpdatedAt: now,
+    fulfillmentUpdatedByLabel: `Event device ${session.deviceId.slice(0, 8)}`,
+    updatedAt: now,
+    syncedAt: undefined,
+  };
+  const database = await openDatabase();
+  if (database) {
+    const transaction = database.transaction(ORDER_STORE, "readwrite");
+    transaction.objectStore(ORDER_STORE).put(updated);
+    await transactionDone(transaction);
+  } else {
+    localStorage.setItem(
+      fallbackOrdersKey(session.id),
+      JSON.stringify(orders.map((order) => (order.id === orderId ? updated : order))),
+    );
+  }
+  notifyUpdated(session.shopId);
+  return updated;
 }
 
 export async function markOfflineEventOrdersSynced(
@@ -364,6 +423,14 @@ export function offlineEventOrderAsOrder(
     confirmed_at: order.status === "confirmed" ? order.updatedAt : null,
     cancelled_at: order.status === "cancelled" ? order.updatedAt : null,
     expired_at: null,
+    fulfillment_status:
+      order.status === "confirmed"
+        ? order.fulfillmentStatus ?? "preparing"
+        : "unfulfilled",
+    fulfillment_updated_at: order.fulfillmentUpdatedAt ?? null,
+    confirmed_by_email: order.confirmedByLabel ?? null,
+    cancelled_by_email: order.cancelledByLabel ?? null,
+    fulfillment_updated_by_email: order.fulfillmentUpdatedByLabel ?? null,
     source: "offline_event",
     offline_event_session_id: order.sessionId,
     offline_event_name: session?.name,
