@@ -5,12 +5,12 @@
 --   Genshin character: 1 featured 5-star + 3 featured 4-star
 --   Genshin weapon:    2 featured 5-star + 5 featured 4-star
 --   HSR event:         1 featured 5-star + 3 featured 4-star
---   HSR standard:      no featured items, with 4-star/5-star loss candidates
 --
 -- This script keeps the current admin-selected rates, pity, products, weights,
--- and featured flags. It normalizes banner limits, removes expired schedules
--- so every active banner is immediately visible, and publishes both games
--- through the validated v6 RPC.
+-- and the first two banners' featured lineups. It removes the third banner in
+-- each game, moves those products into the character banner as non-featured
+-- loss candidates, normalizes banner limits, removes expired schedules, and
+-- publishes both games through the validated v6 RPC.
 
 begin;
 
@@ -22,6 +22,8 @@ declare
   v_config jsonb;
   v_banners jsonb;
   v_entries jsonb;
+  v_character_banner_id text;
+  v_removed_banner_id text;
 begin
   select shop.id
   into strict v_shop_id
@@ -59,6 +61,28 @@ begin
       and draft.game_type = v_game_type
     for update;
 
+    -- Keep the first character banner and the gear banner. Products from the
+    -- third banner stay rollable, but no longer compete as featured prizes.
+    select banner.value ->> 'id'
+    into v_character_banner_id
+    from jsonb_array_elements(coalesce(v_config -> 'banners', '[]'::jsonb))
+      with ordinality as banner(value, ordinality)
+    where banner.ordinality <= 2
+      and banner.value ->> 'kind' = 'character'
+    order by banner.ordinality
+    limit 1;
+
+    if v_character_banner_id is null then
+      raise exception '% configuration has no character banner to keep',
+        v_game_type;
+    end if;
+
+    select banner.value ->> 'id'
+    into v_removed_banner_id
+    from jsonb_array_elements(coalesce(v_config -> 'banners', '[]'::jsonb))
+      with ordinality as banner(value, ordinality)
+    where banner.ordinality = 3;
+
     select coalesce(
       jsonb_agg(
         (banner.value - 'shop_id' - 'updated_at')
@@ -69,6 +93,7 @@ begin
               and banner.value ->> 'kind' = 'weapon' then 7
             else 4
           end,
+          'sort_order', banner.ordinality - 1,
           'starts_at', null,
           'ends_at', null
         )
@@ -78,11 +103,20 @@ begin
     )
     into v_banners
     from jsonb_array_elements(coalesce(v_config -> 'banners', '[]'::jsonb))
-      with ordinality as banner(value, ordinality);
+      with ordinality as banner(value, ordinality)
+    where banner.ordinality <= 2;
 
     select coalesce(
       jsonb_agg(
-        entry.value - 'shop_id' - 'updated_at'
+        case
+          when entry.value ->> 'banner_id' = v_removed_banner_id then
+            (entry.value - 'shop_id' - 'updated_at')
+            || jsonb_build_object(
+              'banner_id', v_character_banner_id,
+              'featured', false
+            )
+          else entry.value - 'shop_id' - 'updated_at'
+        end
         order by entry.ordinality
       ),
       '[]'::jsonb
@@ -120,8 +154,9 @@ commit;
 
 -- Expected after the commit:
 --   - draft_matches_live = true for both games
---   - Genshin limits = 4, 7, 4
---   - HSR limits = 4, 4, 4
+--   - Genshin limits = 4, 7
+--   - HSR limits = 4, 4
+--   - no entries point to a removed banner
 --   - every active banner has running_now = true
 select
   draft.game_type,
@@ -132,6 +167,15 @@ select
     (banner.value ->> 'display_limit')::integer
     order by (banner.value ->> 'sort_order')::integer
   ) as display_limits,
+  (
+    select count(*)
+    from jsonb_array_elements(draft.config -> 'entries') entry(value)
+    where not exists (
+      select 1
+      from jsonb_array_elements(draft.config -> 'banners') kept(value)
+      where kept.value ->> 'id' = entry.value ->> 'banner_id'
+    )
+  ) as orphaned_entries,
   bool_and(
     not coalesce((banner.value ->> 'active')::boolean, true)
     or (

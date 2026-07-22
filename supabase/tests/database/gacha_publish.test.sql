@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(31);
 
 insert into auth.users(
   id,instance_id,aud,role,email,encrypted_password,
@@ -67,6 +67,42 @@ select ok(
   'authenticated clients cannot write live pool rows directly'
 );
 
+insert into public.gacha_game_configs (shop_id, game_type, config)
+values (
+  '51000000-0000-4000-8000-000000000001',
+  'genshin',
+  '{
+    "settings":{"enabled":false},
+    "banners":[{
+      "id":"52000000-0000-4000-8000-000000000001",
+      "shop_id":"51000000-0000-4000-8000-000000000001",
+      "updated_at":"2026-07-22T00:00:00Z",
+      "sort_order":99
+    }],
+    "entries":[]
+  }'::jsonb
+);
+select is(
+  (
+    select config #>> '{banners,0,sort_order}'
+    from public.gacha_game_configs
+    where shop_id='51000000-0000-4000-8000-000000000001'
+      and game_type='genshin'
+  ),
+  '0',
+  'draft banner order is canonicalized from array order'
+);
+select ok(
+  (
+    select not ((config #> '{banners,0}') ? 'shop_id')
+      and not ((config #> '{banners,0}') ? 'updated_at')
+    from public.gacha_game_configs
+    where shop_id='51000000-0000-4000-8000-000000000001'
+      and game_type='genshin'
+  ),
+  'draft transport metadata is removed before storage'
+);
+
 select lives_ok(
   $$select public.publish_gacha_configuration_v6(
     '51000000-0000-4000-8000-000000000001',
@@ -105,6 +141,16 @@ select is(
   (select starts_at::text from public.gacha_banners where id='52000000-0000-4000-8000-000000000001'),
   '2026-07-18 10:00:00+00',
   'published banner schedule is stored'
+);
+select ok(
+  (
+    select draft.config = published.config
+    from public.gacha_game_configs draft
+    join public.gacha_published_configs published using (shop_id, game_type)
+    where draft.shop_id='51000000-0000-4000-8000-000000000001'
+      and draft.game_type='genshin'
+  ),
+  'successful Genshin publish stores identical draft and public JSON'
 );
 set local role postgres;
 select ok(
@@ -216,6 +262,16 @@ select lives_ok(
     }'::jsonb
   )$$,
   'HSR character event warps publish with one 5-star and three 4-star characters'
+);
+select ok(
+  (
+    select draft.config = published.config
+    from public.gacha_game_configs draft
+    join public.gacha_published_configs published using (shop_id, game_type)
+    where draft.shop_id='51000000-0000-4000-8000-000000000001'
+      and draft.game_type='hsr'
+  ),
+  'successful HSR publish stores identical draft and public JSON'
 );
 
 select lives_ok(
