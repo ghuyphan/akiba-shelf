@@ -12,6 +12,7 @@ import {
 import { ensureOfflineNavigationReady } from "./pwa";
 import { prepareGachaLaunch } from "../gacha/gachaLaunch";
 import type { Shop } from "../../types/catalog";
+import { prepareResponseForCache } from "./cacheResponse";
 
 const STOREFRONT_OFFLINE_MARKER_PREFIX = "matsuri-storefront-offline-v2";
 const OFFLINE_DOWNLOAD_CONCURRENCY = 6;
@@ -75,7 +76,7 @@ async function cacheStorefrontAssets(urls: string[]) {
       const cache = cacheNameForStorefrontUrl(url) === "supabase-storage-cache-v2"
         ? storageCache
         : productImageCache;
-      await cache.put(request, response);
+      await cache.put(request, prepareResponseForCache(response));
     }
   }
 

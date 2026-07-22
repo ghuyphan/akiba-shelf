@@ -1,10 +1,4 @@
-import {
-  Eye,
-  Gamepad2,
-  Layers3,
-  Rocket,
-  X,
-} from "lucide-react";
+import { Eye, Gamepad2, Layers3, Rocket, X } from "lucide-react";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaGameType, GachaLiveStatus } from "../../../types/gacha";
 import { Button } from "../../ui/Button";
@@ -55,13 +49,42 @@ export function GachaStatusBar({
         aria-label={t("Game editor")}
       >
         {games.map((game) => {
+          const isActive = game.gameType === activeGame;
           return (
             <button
               type="button"
               key={game.gameType}
-              className={game.gameType === activeGame ? "active" : ""}
-              aria-pressed={game.gameType === activeGame}
+              className={isActive ? "active" : ""}
+              aria-pressed={isActive}
+              tabIndex={isActive ? 0 : -1}
               onClick={() => onSwitchGame(game.gameType)}
+              onKeyDown={(event) => {
+                if (
+                  !["ArrowLeft", "ArrowRight", "Home", "End"].includes(
+                    event.key,
+                  )
+                ) {
+                  return;
+                }
+                event.preventDefault();
+                const buttons = Array.from(
+                  event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
+                    "button",
+                  ) ?? [],
+                );
+                const currentIndex = buttons.indexOf(event.currentTarget);
+                const nextIndex =
+                  event.key === "Home"
+                    ? 0
+                    : event.key === "End"
+                      ? buttons.length - 1
+                      : (currentIndex +
+                          (event.key === "ArrowLeft" ? -1 : 1) +
+                          buttons.length) %
+                        buttons.length;
+                buttons[nextIndex]?.focus();
+                buttons[nextIndex]?.click();
+              }}
             >
               <strong>{game.label}</strong>
               {(game.isLive || game.dirty) && (
@@ -125,7 +148,9 @@ export function GachaEditBar({
   return (
     <AdminEditBar
       className="gacha-sticky-actions"
-      status={t(saving ? "Saving draft…" : dirty ? "Unsaved changes" : "Draft saved")}
+      status={t(
+        saving ? "Saving draft…" : dirty ? "Unsaved changes" : "Draft saved",
+      )}
       statusTone={saving ? "saving" : dirty ? "dirty" : "saved"}
     >
       <Button

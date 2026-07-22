@@ -57,94 +57,56 @@ export function GachaShared3StarEditor({
         <h3>{t("3★ filler prizes")}</h3>
         <p>{t("These prizes are shared by every banner in this game.")}</p>
       </header>
-        <div className="gacha-pool-toolbar">
-          <div className="gacha-segmented" role="group">
-            <button
-              type="button"
-              className={activeTab === "included" ? "active" : ""}
-              onClick={() => setActiveTab("included")}
-            >
-              {t("Included ({{count}})", {
-                count: custom3StarProducts.length,
-              })}
-            </button>
-            <button
-              type="button"
-              className={activeTab === "available" ? "active" : ""}
-              onClick={() => setActiveTab("available")}
-            >
-              {t("Add merch ({{count}})", {
-                count: availableProducts.length,
-              })}
-            </button>
-          </div>
-
-          {activeTab === "available" && (
-            <label className="gacha-search">
-              <Search size={16} />
-              <input
-                value={query}
-                placeholder={t("Search merch to add…")}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </label>
-          )}
+      <div className="gacha-pool-toolbar">
+        <div
+          className="gacha-segmented gacha-shared-filters"
+          role="group"
+          aria-label={t("Filter 3★ filler prizes")}
+        >
+          <button
+            type="button"
+            className={activeTab === "included" ? "active" : ""}
+            aria-pressed={activeTab === "included"}
+            onClick={() => setActiveTab("included")}
+          >
+            {t("Included ({{count}})", {
+              count: custom3StarProducts.length,
+            })}
+          </button>
+          <button
+            type="button"
+            className={activeTab === "available" ? "active" : ""}
+            aria-pressed={activeTab === "available"}
+            onClick={() => setActiveTab("available")}
+          >
+            {t("Add merch ({{count}})", {
+              count: availableProducts.length,
+            })}
+          </button>
         </div>
 
-        <div className="gacha-shared-3star-list">
-          {activeTab === "included" ? (
-            custom3StarProducts.length ? (
-              custom3StarProducts.map((product) => {
-                const image = productImage(product);
-                return (
-                  <div
-                    key={product.id}
-                    className="gacha-item is-included gacha-shared-item"
-                  >
-                    <span className="gacha-item-id">
-                      <span className="gacha-item-img">
-                        {image ? (
-                          <img
-                            src={image}
-                            alt=""
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        ) : (
-                          <Sparkles size={20} />
-                        )}
-                      </span>
-                      <span className="gacha-item-name">
-                        <strong>{product.name}</strong>
-                        <small>{product.item_code || product.category}</small>
-                      </span>
-                    </span>
-                    <span className="gacha-item-tags">
-                      <span className="rarity-3">3★</span>
-                      <button
-                        type="button"
-                        className="gacha-item-remove-btn"
-                        title={t("Remove from 3★ shared pool")}
-                        onClick={() => onToggleProduct(product.id)}
-                      >
-                        <Trash2 size={14} /> {t("Remove")}
-                      </button>
-                    </span>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="gacha-empty-note">
-                {t(
-                  "No custom 3★ merch items added. Default souvenirs will be awarded automatically.",
-                )}
-              </p>
-            )
-          ) : availableProducts.length ? (
-            availableProducts.map((product) => {
+        {activeTab === "available" && (
+          <label className="gacha-search">
+            <Search size={16} />
+            <input
+              value={query}
+              placeholder={t("Search merch to add…")}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+        )}
+      </div>
+
+      <div className="gacha-shared-3star-list">
+        {activeTab === "included" ? (
+          custom3StarProducts.length ? (
+            custom3StarProducts.map((product) => {
               const image = productImage(product);
               return (
-                <div key={product.id} className="gacha-item is-available">
+                <div
+                  key={product.id}
+                  className="gacha-item is-included gacha-shared-item"
+                >
                   <span className="gacha-item-id">
                     <span className="gacha-item-img">
                       {image ? (
@@ -163,23 +125,69 @@ export function GachaShared3StarEditor({
                       <small>{product.item_code || product.category}</small>
                     </span>
                   </span>
-                  <button
-                    type="button"
-                    className="gacha-item-add"
-                    disabled={!product.active}
-                    onClick={() => onToggleProduct(product.id)}
-                  >
-                    <Plus size={15} /> {t("Add as 3★ item")}
-                  </button>
+                  <span className="gacha-item-tags">
+                    <span className="rarity-3">3★</span>
+                    <button
+                      type="button"
+                      className="gacha-item-remove-btn"
+                      title={t("Remove from 3★ shared pool")}
+                      onClick={() => onToggleProduct(product.id)}
+                    >
+                      <Trash2 size={14} /> {t("Remove")}
+                    </button>
+                  </span>
                 </div>
               );
             })
           ) : (
             <p className="gacha-empty-note">
-              {t("No available merch products to add as 3★ items.")}
+              {t(
+                "No custom 3★ merch items added. Default souvenirs will be awarded automatically.",
+              )}
             </p>
-          )}
-        </div>
+          )
+        ) : availableProducts.length ? (
+          availableProducts.map((product) => {
+            const image = productImage(product);
+            return (
+              <div key={product.id} className="gacha-item is-available">
+                <span className="gacha-item-id">
+                  <span className="gacha-item-img">
+                    {image ? (
+                      <img src={image} alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <Sparkles size={20} />
+                    )}
+                  </span>
+                  <span className="gacha-item-name">
+                    <strong>{product.name}</strong>
+                    <small>{product.item_code || product.category}</small>
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  className="gacha-item-add"
+                  disabled={!product.active}
+                  title={
+                    !product.active
+                      ? t(
+                          "Hidden merch cannot be added until it is active in the catalog.",
+                        )
+                      : undefined
+                  }
+                  onClick={() => onToggleProduct(product.id)}
+                >
+                  <Plus size={15} /> {t("Add as 3★ item")}
+                </button>
+              </div>
+            );
+          })
+        ) : (
+          <p className="gacha-empty-note">
+            {t("No available merch products to add as 3★ items.")}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

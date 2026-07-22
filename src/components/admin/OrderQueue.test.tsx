@@ -26,6 +26,7 @@ const apiMocks = vi.hoisted(() => ({
   confirmOrderPayment: vi.fn(),
   cancelOrder: vi.fn(),
   updateOrderFulfillment: vi.fn(),
+  listOfflineEvents: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("../../lib/api", () => apiMocks);
@@ -105,8 +106,10 @@ type QueueProps = ComponentProps<typeof OrderQueue>;
 
 function renderQueue(overrides: Partial<QueueProps> = {}) {
   const props: QueueProps = {
+    shopId: "shop-1",
     orders: [pendingOrder],
     filter: "pending",
+    selectedEventId: "",
     todayOnly: false,
     counts: { pending: 1, confirmed: 0, cancelled: 0, expired: 0, all: 1 },
     eventCount: 0,
@@ -115,6 +118,7 @@ function renderQueue(overrides: Partial<QueueProps> = {}) {
     total: 1,
     loading: false,
     onFilterChange: vi.fn(),
+    onSelectedEventChange: vi.fn(),
     onTodayOnlyChange: vi.fn(),
     onPageChange: vi.fn(),
     onOrderUpdated: vi.fn(),
@@ -145,6 +149,7 @@ describe("OrderQueue", () => {
     apiMocks.confirmOrderPayment.mockReset();
     apiMocks.cancelOrder.mockReset();
     apiMocks.updateOrderFulfillment.mockReset();
+    apiMocks.listOfflineEvents.mockReset().mockResolvedValue([]);
   });
 
   it("renders a pending order with customer, code, items, and total", () => {
@@ -161,6 +166,35 @@ describe("OrderQueue", () => {
     expect(
       screen.queryByRole("heading", { name: "What needs to be packed" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders expired orders with the shared warning status", () => {
+    renderQueue({
+      orders: [
+        {
+          ...pendingOrder,
+          status: "expired",
+          expires_at: null,
+          expired_at: new Date().toISOString(),
+        },
+      ],
+      filter: "expired",
+    });
+
+    expect(
+      within(getOrderCard()).getByText("expired").closest(".status-pill"),
+    ).toHaveClass("status-pill-warning");
+  });
+
+  it("marks the queue busy and locks filter changes while refreshing", () => {
+    renderQueue({ loading: true });
+
+    expect(document.querySelector(".admin-orders-view")).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: /pending 1/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^today$/i })).toBeDisabled();
   });
 
   it("summarizes only confirmed orders that have not been picked up", () => {
@@ -277,7 +311,6 @@ describe("OrderQueue", () => {
   });
 
   it("cancels a pending order after the staff confirms the prompt", async () => {
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     apiMocks.cancelOrder.mockResolvedValue({
       outcome: "cancelled",
       order: { ...pendingOrder, status: "cancelled" },
@@ -288,8 +321,15 @@ describe("OrderQueue", () => {
     await user.click(
       screen.getByRole("button", { name: /cancel and release stock/i }),
     );
-
-    expect(confirmSpy).toHaveBeenCalled();
+    expect(
+      screen.getByRole("dialog", { name: "Cancel order" }),
+    ).toBeInTheDocument();
+    await user.click(
+      within(screen.getByRole("dialog", { name: "Cancel order" })).getByRole(
+        "button",
+        { name: /cancel and release stock/i },
+      ),
+    );
     await waitFor(() =>
       expect(apiMocks.cancelOrder).toHaveBeenCalledWith("order-1"),
     );
@@ -300,12 +340,17 @@ describe("OrderQueue", () => {
   });
 
   it("leaves the order alone when the cancel prompt is dismissed", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(false);
     const props = renderQueue();
     const user = userEvent.setup();
 
     await user.click(
       screen.getByRole("button", { name: /cancel and release stock/i }),
+    );
+    const cancelDialog = screen.getByRole("dialog", { name: "Cancel order" });
+    await user.click(
+      cancelDialog.querySelector<HTMLButtonElement>(
+        ".confirmation-dialog-actions .button-secondary",
+      )!,
     );
 
     expect(apiMocks.cancelOrder).not.toHaveBeenCalled();
@@ -328,9 +373,44 @@ describe("OrderQueue", () => {
     const props = renderQueue({ eventCount: 3 });
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole("tab", { name: /event 3/i }));
+    const eventFilter = screen.getByRole("button", { name: /event 3/i });
+    expect(eventFilter).toHaveAttribute("aria-pressed", "false");
+    await user.click(eventFilter);
 
     expect(props.onFilterChange).toHaveBeenCalledWith("event");
+  });
+
+  it("filters Event orders by a saved event", async () => {
+    apiMocks.listOfflineEvents.mockResolvedValue([
+      {
+        id: "71000000-0000-4000-8000-000000000001",
+        shopId: "shop-1",
+        name: "Artist alley",
+        status: "closed",
+        scheduledStartAt: "2026-08-01T01:00:00.000Z",
+        scheduledEndAt: "2026-08-01T09:00:00.000Z",
+        startedAt: "2026-08-01T01:00:00.000Z",
+        closedAt: "2026-08-01T09:00:00.000Z",
+        createdAt: "2026-07-22T00:00:00.000Z",
+        updatedAt: "2026-08-01T09:00:00.000Z",
+        productCount: 1,
+        quantityAllocated: 3,
+        quantitySold: 2,
+        orderCount: 2,
+        orderTotal: 200000,
+      },
+    ]);
+    const props = renderQueue({ filter: "event" });
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Event: All events" }),
+    );
+    await user.click(screen.getByRole("option", { name: /Artist alley/ }));
+
+    expect(props.onSelectedEventChange).toHaveBeenCalledWith(
+      "71000000-0000-4000-8000-000000000001",
+    );
   });
 
   it("renders event orders as read-only queue records", () => {

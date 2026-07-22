@@ -16,8 +16,9 @@ import {
   WalletCards,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import type { Order } from "../../types/catalog";
+import type { OfflineEventSummary, Order } from "../../types/catalog";
 import type { OrderFilter, OrderStatusCounts } from "../../lib/api";
+import { listOfflineEvents } from "../../lib/api";
 import { formatRelativeTime, formatVnd } from "../../utils/format";
 import {
   confirmOrderPayment,
@@ -30,10 +31,16 @@ import { EmptyState } from "../ui/EmptyState";
 import { Button } from "../ui/Button";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { Modal } from "../ui/Modal";
+import { SelectMenu } from "../ui/SelectMenu";
+import { ConfirmationDialog } from "../ui/ConfirmationDialog";
+import { StatusPill, type StatusPillTone } from "../ui/StatusPill";
+import { OFFLINE_EVENT_UPDATED } from "../../lib/offline/offlineEvents";
 
 type OrderQueueProps = {
+  shopId: string;
   orders: Order[];
   filter: OrderViewFilter;
+  selectedEventId: string;
   todayOnly: boolean;
   counts: OrderStatusCounts;
   eventCount: number;
@@ -43,6 +50,7 @@ type OrderQueueProps = {
   total: number;
   loading: boolean;
   onFilterChange: (filter: OrderViewFilter) => void;
+  onSelectedEventChange: (eventId: string) => void;
   onTodayOnlyChange: (todayOnly: boolean) => void;
   onPageChange: (page: number) => void;
   onOrderUpdated: () => void;
@@ -51,8 +59,10 @@ type OrderQueueProps = {
 export type OrderViewFilter = OrderFilter | "event";
 
 export function OrderQueue({
+  shopId,
   orders,
   filter,
+  selectedEventId,
   todayOnly,
   counts,
   eventCount,
@@ -62,6 +72,7 @@ export function OrderQueue({
   total,
   loading,
   onFilterChange,
+  onSelectedEventChange,
   onTodayOnlyChange,
   onPageChange,
   onOrderUpdated,
@@ -72,8 +83,11 @@ export function OrderQueue({
     null,
   );
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [eventOptions, setEventOptions] = useState<OfflineEventSummary[]>([]);
   const toast = useToast();
-  const { t } = usePlatformI18n();
+  const { locale, t } = usePlatformI18n();
+  const dateLocale = locale === "vi" ? "vi-VN" : "en-US";
   const filters: OrderViewFilter[] = [
     "pending",
     "confirmed",
@@ -82,10 +96,42 @@ export function OrderQueue({
     "all",
     "event",
   ];
+
+  useEffect(() => {
+    let active = true;
+    const load = () =>
+      listOfflineEvents(shopId)
+        .then((events) => {
+          if (active)
+            setEventOptions(events.filter((event) => event.status !== "draft"));
+        })
+        .catch(() => undefined);
+    void load();
+    const handleEventUpdate = () => void load();
+    window.addEventListener(OFFLINE_EVENT_UPDATED, handleEventUpdate);
+    return () => {
+      active = false;
+      window.removeEventListener(OFFLINE_EVENT_UPDATED, handleEventUpdate);
+    };
+  }, [shopId]);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const firstOrder = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const lastOrder = Math.min(page * pageSize, total);
   const totalMoney = orders.reduce((sum, order) => sum + order.total_amount, 0);
+  const eventFilterOptions = useMemo(
+    () => [
+      { value: "", label: t("All events") },
+      ...eventOptions.map((event) => ({
+        value: event.id,
+        label: `${event.name}${
+          event.scheduledStartAt
+            ? ` · ${new Date(event.scheduledStartAt).toLocaleDateString(dateLocale)}`
+            : ""
+        }`,
+      })),
+    ],
+    [dateLocale, eventOptions, t],
+  );
   const totalUnits = orders.reduce(
     (sum, order) =>
       sum +
@@ -170,7 +216,6 @@ export function OrderQueue({
   }
 
   async function handleCancel(orderId: string) {
-    if (!window.confirm(t("Cancel this order? This cannot be undone."))) return;
     setCancellingId(orderId);
     try {
       const result = await cancelOrder(orderId);
@@ -187,6 +232,7 @@ export function OrderQueue({
       );
     } finally {
       setCancellingId(null);
+      setOrderToCancel(null);
     }
   }
 
@@ -251,19 +297,19 @@ export function OrderQueue({
           : t("No {{status}} orders", { status: t(filter) });
 
   return (
-    <section className="admin-orders-view">
+    <section className="admin-orders-view" aria-busy={loading}>
       <div className="admin-filter-bar">
         <div
           className="admin-filter-tabs"
-          role="tablist"
+          role="group"
           aria-label={t("Order status")}
         >
           {filters.map((item) => (
             <button
               key={item}
               type="button"
-              role="tab"
-              aria-selected={filter === item}
+              aria-pressed={filter === item}
+              disabled={loading}
               className={`${filter === item ? "active" : ""} ${item === "event" ? "admin-event-filter" : ""}`}
               onClick={() => onFilterChange(item)}
             >
@@ -274,11 +320,21 @@ export function OrderQueue({
           ))}
         </div>
         <div className="admin-queue-utilities">
+          {filter === "event" && (
+            <SelectMenu
+              className="admin-event-select"
+              value={selectedEventId}
+              label={t("Event")}
+              onChange={onSelectedEventChange}
+              options={eventFilterOptions}
+            />
+          )}
           {eventControl}
           <button
             type="button"
             className={`admin-toolbar-control admin-today-toggle ${todayOnly ? "active" : ""}`}
             aria-pressed={todayOnly}
+            disabled={loading}
             onClick={() => onTodayOnlyChange(!todayOnly)}
           >
             <CalendarDays size={14} />
@@ -363,7 +419,7 @@ export function OrderQueue({
                 : t("{{status}} orders", { status: t(filter) })}
           </h2>
         </div>
-        <small>
+        <small aria-live="polite">
           {loading
             ? t("Refreshing…")
             : t("{{first}}–{{last}} of {{total}} · newest first", {
@@ -431,11 +487,11 @@ export function OrderQueue({
             <OrderCard
               key={order.id}
               order={order}
-              isConfirming={confirmingId === order.id}
-              isCancelling={cancellingId === order.id}
-              isFulfillmentBusy={fulfillmentBusyId === order.id}
+              isConfirming={loading || confirmingId === order.id}
+              isCancelling={loading || cancellingId === order.id}
+              isFulfillmentBusy={loading || fulfillmentBusyId === order.id}
               onConfirm={() => handleConfirm(order.id)}
-              onCancel={() => handleCancel(order.id)}
+              onCancel={() => setOrderToCancel(order)}
               onDetails={() => setSelectedOrder(order)}
               onFulfillment={(status) => handleFulfillment(order, status)}
             />
@@ -466,6 +522,25 @@ export function OrderQueue({
       <OrderDetailsModal
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
+      />
+      <ConfirmationDialog
+        isOpen={Boolean(orderToCancel)}
+        title={t("Cancel order")}
+        message={
+          <>
+            <strong>{orderToCancel?.order_code}</strong>
+            {" — "}
+            {t("Cancel this order? This cannot be undone.")}
+          </>
+        }
+        cancelLabel={t("Keep order")}
+        confirmLabel={t("Cancel and release stock")}
+        loadingLabel={t("Cancelling…")}
+        busy={Boolean(orderToCancel && cancellingId === orderToCancel.id)}
+        onClose={() => setOrderToCancel(null)}
+        onConfirm={() => {
+          if (orderToCancel) void handleCancel(orderToCancel.id);
+        }}
       />
     </section>
   );
@@ -549,6 +624,14 @@ function OrderCard({
     ) : (
       <Clock3 size={14} />
     );
+  const statusTone: StatusPillTone =
+    order.status === "confirmed"
+      ? "success"
+      : order.status === "cancelled"
+        ? "danger"
+        : order.status === "expired"
+          ? "warning"
+          : "pending";
   const unitCount =
     order.order_items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
   const fulfillmentStatus =
@@ -560,6 +643,14 @@ function OrderCard({
       : fulfillmentStatus === "ready"
         ? "picked_up"
         : null;
+  const fulfillmentTone: StatusPillTone =
+    fulfillmentStatus === "ready"
+      ? "success"
+      : fulfillmentStatus === "picked_up"
+        ? "info"
+        : fulfillmentStatus === "preparing"
+          ? "pending"
+          : "neutral";
   return (
     <article className={`admin-order-card status-${order.status}`}>
       <header>
@@ -576,10 +667,13 @@ function OrderCard({
             </span>
           )}
         </div>
-        <span className={`admin-order-status ${order.status}`}>
-          {statusIcon}
+        <StatusPill
+          className={`admin-order-status ${order.status}`}
+          tone={statusTone}
+          icon={statusIcon}
+        >
           {t(order.status)}
-        </span>
+        </StatusPill>
       </header>
       {order.customer_name && (
         <div className="admin-order-customer">
@@ -654,9 +748,12 @@ function OrderCard({
         </div>
       ) : order.status === "confirmed" ? (
         <div className="admin-order-fulfillment">
-          <span className={`admin-fulfillment-status ${fulfillmentStatus}`}>
+          <StatusPill
+            className={`admin-fulfillment-status ${fulfillmentStatus}`}
+            tone={fulfillmentTone}
+          >
             {t(fulfillmentStatus)}
-          </span>
+          </StatusPill>
           {order.source !== "offline_event" && nextFulfillment && (
             <button
               type="button"
@@ -711,6 +808,7 @@ function OrderDetailsModal({
       wide
       mobileSheet
       closeLabel={t("Close modal")}
+      appearance="admin"
     >
       <div className="admin-order-details">
         <div className="admin-order-details-grid">

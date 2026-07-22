@@ -6,6 +6,7 @@ import { AdminCard } from "../AdminCard";
 
 type Props = {
   settings: GachaSettings;
+  titleError?: string;
   onUpdateSettings: (
     changes: Partial<GachaSettings>,
     asTextEdit?: boolean,
@@ -15,6 +16,7 @@ type Props = {
 
 export function GachaGeneralSection({
   settings,
+  titleError = "",
   onUpdateSettings,
   onTextFocus,
 }: Props) {
@@ -75,10 +77,11 @@ export function GachaGeneralSection({
             </p>
           </header>
           <div className="gacha-copy-fields">
-            <Field label={t("Minigame title")}>
+            <Field label={t("Minigame title")} error={titleError}>
               <TextInput
                 maxLength={80}
                 value={settings.title}
+                aria-invalid={Boolean(titleError)}
                 onFocus={onTextFocus}
                 onChange={(event) =>
                   onUpdateSettings({ title: event.target.value }, true)

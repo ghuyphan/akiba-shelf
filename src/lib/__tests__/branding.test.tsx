@@ -18,6 +18,7 @@ describe("branding", () => {
   it("builds shop and admin titles with safe fallbacks", () => {
     expect(getShopBranding("Record Shop", "Booth Name").title).toBe("Booth Name · Matsuri");
     expect(getAdminBranding("Record Shop").title).toBe("Record Shop Admin · Matsuri");
+    expect(getAdminBranding("Record Shop", undefined, undefined, "#123456").themeColor).toBe("#123456");
     expect(getShopBranding().title).toBe("Shop · Matsuri");
     expect(getShopBranding("Shop", "", "javascript:x").faviconUrl).toBe(PLATFORM_FAVICON);
   });

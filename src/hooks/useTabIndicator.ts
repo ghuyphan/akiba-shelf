@@ -26,6 +26,11 @@ export function useTabIndicator<TValue, TElement extends HTMLElement = HTMLEleme
       const a = activeElement;
       if (!c || !a) return;
       requestAnimationFrame(() => {
+        const itemLeft = a.offsetLeft;
+        const itemRight = itemLeft + a.offsetWidth;
+        if (itemLeft < c.scrollLeft) c.scrollLeft = itemLeft;
+        else if (itemRight > c.scrollLeft + c.clientWidth)
+          c.scrollLeft = itemRight - c.clientWidth;
         const containerRect = c.getBoundingClientRect();
         const activeRect = a.getBoundingClientRect();
         if (containerRect.width === 0 || activeRect.width === 0) return;

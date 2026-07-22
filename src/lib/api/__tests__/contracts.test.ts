@@ -7,14 +7,18 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBooth } from "../../constants";
 import {
+  activateOfflineEventSession,
   CheckoutOutcomeUnknownError,
   createOrder,
   finalizeOfflineEventSession,
   getCustomerOrder,
+  getOfflineEventDraft,
   getOfflineEventOrders,
   getOrderStatusCounts,
+  listOfflineEvents,
   normalizeProduct,
   publishGachaConfiguration,
+  saveOfflineEventDraft,
   syncOfflineEventOrders,
   updateOrderFulfillment,
 } from "../../api";
@@ -354,6 +358,107 @@ describe("order API contracts", () => {
       p_status: "all",
       p_created_after: "2026-07-01T00:00:00.000Z",
       p_created_before: null,
+      p_session_id: null,
+    });
+  });
+
+  it("persists, lists, and activates scheduled Event drafts", async () => {
+    const draftBundle = {
+      session: {
+        id: eventSession.id,
+        shop_id: shopId,
+        device_id: null,
+        name: "Convention day",
+        status: "draft",
+        scheduled_start_at: "2026-08-01T01:00:00.000Z",
+        scheduled_end_at: "2026-08-01T09:00:00.000Z",
+        started_at: null,
+        closed_at: null,
+        payment_snapshot: {},
+        promotion_snapshot: {},
+        created_at: "2026-07-22T00:00:00.000Z",
+        updated_at: "2026-07-22T00:00:00.000Z",
+      },
+      allocations: [
+        {
+          product_id: product.id,
+          quantity_allocated: 2,
+          quantity_sold: 0,
+          product_snapshot: product,
+        },
+      ],
+    };
+    const activeBundle = {
+      ...draftBundle,
+      session: {
+        ...draftBundle.session,
+        device_id: eventSession.deviceId,
+        status: "active",
+        started_at: "2026-08-01T00:55:00.000Z",
+        payment_snapshot: eventSession.payment,
+        promotion_snapshot: eventSession.promotion,
+      },
+    };
+    mocks.rpc
+      .mockResolvedValueOnce({ data: draftBundle, error: null })
+      .mockResolvedValueOnce({ data: draftBundle, error: null })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            id: eventSession.id,
+            shop_id: shopId,
+            name: "Convention day",
+            status: "draft",
+            scheduled_start_at: draftBundle.session.scheduled_start_at,
+            scheduled_end_at: draftBundle.session.scheduled_end_at,
+            started_at: null,
+            closed_at: null,
+            created_at: draftBundle.session.created_at,
+            updated_at: draftBundle.session.updated_at,
+            product_count: "1",
+            quantity_allocated: "2",
+            quantity_sold: "0",
+            order_count: "0",
+            order_total: "0",
+          },
+        ],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: activeBundle, error: null });
+
+    const saved = await saveOfflineEventDraft({
+      shopId,
+      shopSlug: "event-shop",
+      name: "Convention day",
+      scheduledStartAt: draftBundle.session.scheduled_start_at,
+      scheduledEndAt: draftBundle.session.scheduled_end_at,
+      products: [{ id: product.id, quantity: 2 }],
+    });
+    await expect(
+      getOfflineEventDraft(shopId, "event-shop", saved.id),
+    ).resolves.toMatchObject({ status: "draft", allocations: [{ quantityAllocated: 2 }] });
+    await expect(listOfflineEvents(shopId)).resolves.toMatchObject([
+      { id: eventSession.id, status: "draft", quantityAllocated: 2 },
+    ]);
+    await expect(
+      activateOfflineEventSession(saved.id, eventSession.deviceId, "event-shop"),
+    ).resolves.toMatchObject({ status: "active", scheduledStartAt: draftBundle.session.scheduled_start_at });
+
+    expect(mocks.rpc).toHaveBeenNthCalledWith(1, "save_offline_event_draft", {
+      p_shop_id: shopId,
+      p_session_id: null,
+      p_name: "Convention day",
+      p_scheduled_start_at: draftBundle.session.scheduled_start_at,
+      p_scheduled_end_at: draftBundle.session.scheduled_end_at,
+      p_allocations: [{ product_id: product.id, quantity: 2 }],
+    });
+    expect(mocks.rpc).toHaveBeenNthCalledWith(2, "get_offline_event_draft", {
+      p_shop_id: shopId,
+      p_session_id: eventSession.id,
+    });
+    expect(mocks.rpc).toHaveBeenNthCalledWith(3, "list_offline_events", {
+      p_shop_id: shopId,
+      p_limit: 50,
     });
   });
 
@@ -637,18 +742,22 @@ describe("Playwright Supabase request inventory", () => {
       "/rest/v1/products",
       "/rest/v1/promotion_products",
       "/rest/v1/promotions",
+      "/rest/v1/rpc/activate_offline_event_session",
       "/rest/v1/rpc/finalize_offline_event_session",
       "/rest/v1/rpc/get_active_offline_event_session",
       "/rest/v1/rpc/get_admin_booth_settings",
       "/rest/v1/rpc/get_admin_products",
       "/rest/v1/rpc/get_customer_order",
       "/rest/v1/rpc/get_my_shop_memberships",
+      "/rest/v1/rpc/get_offline_event_draft",
       "/rest/v1/rpc/get_offline_event_orders",
       "/rest/v1/rpc/get_order_status_counts",
       "/rest/v1/rpc/get_public_product_categories",
       "/rest/v1/rpc/get_shop_members",
       "/rest/v1/rpc/get_shop_workspace_summary",
+      "/rest/v1/rpc/list_offline_events",
       "/rest/v1/rpc/publish_gacha_configuration_v6",
+      "/rest/v1/rpc/save_offline_event_draft",
       "/rest/v1/rpc/start_offline_event_session",
       "/rest/v1/rpc/sync_offline_event_orders",
       "/rest/v1/rpc/update_order_fulfillment",

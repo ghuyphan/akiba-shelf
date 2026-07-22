@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { prepareResponseForCache } from "./cacheResponse";
 
 const MANIFEST_MARKER = "data-matsuri-staff-pwa";
 let registrationPromise: Promise<ServiceWorkerRegistration | undefined> | null =
@@ -202,7 +203,8 @@ export async function ensureOfflineNavigationReady() {
       [...urls].map(async (url) => {
         const request = new Request(url);
         const response = await fetch(request);
-        if (response.ok) await cache.put(request, response);
+        if (response.ok)
+          await cache.put(request, prepareResponseForCache(response));
       }),
     );
   }

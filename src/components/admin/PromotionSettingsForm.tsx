@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Edit3, Gift, X } from "lucide-react";
+import { Edit3, Gift, Package, X } from "lucide-react";
 import type { Product, PromotionSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
@@ -9,6 +9,7 @@ import { Field, TextInput } from "../ui/Field";
 import { Modal } from "../ui/Modal";
 import { AdminCard } from "./AdminCard";
 import { AdminEditBar } from "./AdminEditBar";
+import { EmptyState } from "../ui/EmptyState";
 
 type PromotionSettingsFormProps = {
   promotion: PromotionSettings;
@@ -136,7 +137,7 @@ export function PromotionSettingsForm({
         </div>
       </AdminCard>
 
-      <Modal title={t("Quantity promotion")} isOpen={isEditing} onClose={reset} wide mobileSheet className="admin-promotion-modal" closeLabel={t("Close modal")}>
+      <Modal title={t("Quantity promotion")} isOpen={isEditing} onClose={reset} wide mobileSheet appearance="admin" dismissible={!busy} className="admin-promotion-modal" closeLabel={t("Close modal")}>
         <form className="admin-form admin-promotion-form" onSubmit={handleSubmit}>
           <div className="admin-promotion-editor">
             <div className="admin-promotion-setup-grid">
@@ -148,6 +149,7 @@ export function PromotionSettingsForm({
                     pattern="[0-9]*"
                     maxLength={2}
                     value={buyQuantityInput}
+                    disabled={busy}
                     onFocus={(event) => event.currentTarget.select()}
                     onChange={(event) => {
                       const value = quantityDigits(event.target.value);
@@ -177,6 +179,7 @@ export function PromotionSettingsForm({
                     pattern="[0-9]*"
                     maxLength={2}
                     value={freeQuantityInput}
+                    disabled={busy}
                     onFocus={(event) => event.currentTarget.select()}
                     onChange={(event) => {
                       const value = quantityDigits(event.target.value);
@@ -203,14 +206,14 @@ export function PromotionSettingsForm({
 
               <div className="admin-promotion-switches-group">
                 <label className="compact-switch-label">
-                  <input type="checkbox" checked={draft.enabled} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} />
+                  <input type="checkbox" checked={draft.enabled} disabled={busy} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} />
                   <span className="switch-text">
                     <strong>{t("Promotion active")}</strong>
                     <small>{t("Apply this offer in the storefront and checkout.")}</small>
                   </span>
                 </label>
                 <label className="compact-switch-label">
-                  <input type="checkbox" checked={draft.repeatable} onChange={(event) => setDraft({ ...draft, repeatable: event.target.checked })} />
+                  <input type="checkbox" checked={draft.repeatable} disabled={busy} onChange={(event) => setDraft({ ...draft, repeatable: event.target.checked })} />
                   <span className="switch-text">
                     <strong>{t("Repeat offer")}</strong>
                     <small>{t("Apply the reward again for each complete group.")}</small>
@@ -229,7 +232,16 @@ export function PromotionSettingsForm({
               })}</strong>
             </div>
 
-            <div className="promotion-products-selection">
+            <div className={`promotion-products-selection ${products.length === 0 ? "is-empty" : ""}`}>
+              {products.length === 0 ? (
+                <EmptyState
+                  variant="compact"
+                  icon={<Package size={24} />}
+                  title={t("No products available")}
+                  message={t("Add products before choosing which items qualify for this promotion.")}
+                />
+              ) : (
+                <>
               <div className="promotion-products-header">
                 <span className="col-product-info">{t("Product")}</span>
                 <span className="col-action col-buy-action">
@@ -263,6 +275,7 @@ export function PromotionSettingsForm({
                           <input
                             type="checkbox"
                             checked={isBuySelected}
+                            disabled={busy}
                             onChange={() => toggleProduct("qualifying_product_ids", product.id)}
                           />
                           <span className="checkbox-label-text">{t("Customer buys")}</span>
@@ -271,6 +284,7 @@ export function PromotionSettingsForm({
                           <input
                             type="checkbox"
                             checked={isFreeSelected}
+                            disabled={busy}
                             onChange={() => toggleProduct("reward_product_ids", product.id)}
                           />
                           <span className="checkbox-label-text">{t("Customer gets free")}</span>
@@ -280,6 +294,8 @@ export function PromotionSettingsForm({
                   );
                 })}
               </div>
+                </>
+              )}
             </div>
           </div>
 

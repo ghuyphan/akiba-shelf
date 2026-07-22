@@ -922,13 +922,13 @@
   }
 
   /* ── Modal mobile fixes ── */
-  .modal-backdrop {
+  .modal-backdrop:not(.mobile-sheet-backdrop) {
     padding: 12px;
     align-items: center;
     justify-items: center;
   }
 
-  .modal {
+  .modal:not(.mobile-sheet-modal) {
     width: min(100% - 16px, 620px) !important;
     max-height: 88vh;
     padding: 14px;
@@ -936,15 +936,15 @@
     margin: 0 auto;
   }
 
-  .payment-modal {
+  .payment-modal:not(.mobile-sheet-modal) {
     width: min(100% - 16px, 860px) !important;
   }
 
-  .booth-info-modal-container {
+  .booth-info-modal-container:not(.mobile-sheet-modal) {
     width: min(100% - 16px, 780px) !important;
   }
 
-  .social-qr-zoom-modal {
+  .social-qr-zoom-modal:not(.mobile-sheet-modal) {
     width: min(100% - 16px, 420px) !important;
   }
 

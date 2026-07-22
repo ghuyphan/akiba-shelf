@@ -1,4 +1,5 @@
 import type { GachaGameType } from "../../types/gacha";
+import { prepareResponseForCache } from "./cacheResponse";
 import { ensureOfflineNavigationReady } from "./pwa";
 
 type OfflineAsset = { path: string; size: number };
@@ -315,7 +316,7 @@ export async function downloadGachaOfflinePack(
       const response = await fetch(request);
       if (!response.ok) throw new Error(`Could not download ${pathname}.`);
       try {
-        await targetCache.put(request, response);
+        await targetCache.put(request, prepareResponseForCache(response));
       } catch (error) {
         if (isQuotaError(error))
           throw new Error("The offline download ran out of browser storage.");

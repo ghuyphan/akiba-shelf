@@ -1,7 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import {
   BrowserRouter,
-  Navigate,
   Outlet,
   Route,
   Routes,
@@ -20,6 +19,7 @@ import { resetPageTheme } from "./utils/theme";
 import { PlatformI18nProvider, usePlatformI18n } from "./lib/i18n/platformI18n";
 import { configurePwa } from "./lib/offline/pwa";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
+import { applyDocumentSeo } from "./lib/seo";
 
 const HomePage = lazyWithRetry("home", () =>
   import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
@@ -52,6 +52,9 @@ const SetPasswordPage = lazyWithRetry("set-password", () =>
     default: m.SetPasswordPage,
   })),
 );
+const NotFoundPage = lazyWithRetry("not-found", () =>
+  import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
+);
 
 function PlatformRouteBranding() {
   const { pathname, search } = useLocation();
@@ -59,12 +62,26 @@ function PlatformRouteBranding() {
   useEffect(() => {
     if (pathname.startsWith("/s/")) return;
     document.documentElement.lang = locale;
-    if (pathname === "/admin") return;
+    if (pathname === "/admin") {
+      applyDocumentSeo({
+        description: t("Secure workspace for managing a Matsuri shop."),
+        canonicalPath: pathname,
+        robots: "noindex, nofollow",
+      });
+      return;
+    }
     resetPageTheme();
     let title: string = PLATFORM_BRAND.name;
+    let description = t(
+      "Matsuri helps independent artists run a branded merch storefront with reliable stock reservation and a live order queue for event teams.",
+    );
+    let robots: "index, follow" | "noindex, nofollow" = "noindex, nofollow";
     if (pathname === "/auth") {
       const mode = new URLSearchParams(search).get("mode");
       title = `${mode === "signup" ? t("Create account") : mode === "forgot" ? t("Reset password") : t("Sign in")} · ${PLATFORM_BRAND.name}`;
+    } else if (pathname === "/") {
+      title = `${PLATFORM_BRAND.name} · ${t("Artist booth storefront and live orders")}`;
+      robots = "index, follow";
     } else if (pathname === "/dashboard")
       title = `${t("Your shops")} · ${PLATFORM_BRAND.name}`;
     else if (pathname === "/dashboard/shops/new")
@@ -73,7 +90,18 @@ function PlatformRouteBranding() {
       title = `${t("Set password")} · ${PLATFORM_BRAND.name}`;
     else if (pathname === "/auth/callback")
       title = `${t("Finishing sign in")} · ${PLATFORM_BRAND.name}`;
+    else {
+      title = `${t("Page not found")} · ${PLATFORM_BRAND.name}`;
+      description = t(
+        "This Matsuri page could not be found. Return home or visit the demo artist booth.",
+      );
+    }
     resetDocumentBranding(title);
+    applyDocumentSeo({
+      description,
+      canonicalPath: pathname === "/" ? "/" : pathname,
+      robots,
+    });
   }, [locale, pathname, search, t]);
   return null;
 }
@@ -172,7 +200,7 @@ export function App() {
                     </ErrorBoundary>
                   }
                 />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>
           </Suspense>

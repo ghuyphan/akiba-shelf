@@ -57,6 +57,75 @@ const gachaProducts = Array.from({ length: 7 }, (_, index) => ({
   sort_order: index + 20,
 }));
 
+function gachaConfiguration(
+  gameType: "genshin" | "hsr",
+  withUnfeaturedEntry = false,
+  adminProducts = products,
+) {
+  const configurationProducts = withUnfeaturedEntry
+    ? adminProducts
+    : gachaProducts;
+  const bannerId = `${gameType}-banner`;
+  return {
+    settings: {
+      shop_id: "main",
+      game_type: gameType,
+      enabled: true,
+      title: gameType === "hsr" ? "Stellar Warp" : "Event Wish",
+      description: "Fixture minigame",
+    },
+    banners: [
+      {
+        id: bannerId,
+        shop_id: "main",
+        name: gameType === "hsr" ? "Departure Warp" : "Epitome Invocation",
+        description: "Fixture banner",
+        kind: gameType === "hsr" ? "character" : "weapon",
+        theme: gameType === "hsr" ? "physical" : "anemo",
+        display_limit: gameType === "hsr" ? 4 : 7,
+        sort_order: 0,
+        active: true,
+        starts_at: null,
+        ends_at: null,
+      },
+      ...(withUnfeaturedEntry
+        ? [
+            {
+              id: `${gameType}-banner-secondary`,
+              shop_id: "main",
+              name: "Sunset Reverie",
+              description: "Secondary fixture banner",
+              kind: gameType === "hsr" ? "character" : "weapon",
+              theme: gameType === "hsr" ? "physical" : "anemo",
+              display_limit: gameType === "hsr" ? 4 : 7,
+              sort_order: 1,
+              active: true,
+              starts_at: null,
+              ends_at: null,
+            },
+          ]
+        : []),
+    ],
+    entries: configurationProducts
+      .slice(0, withUnfeaturedEntry ? 3 : gameType === "hsr" ? 4 : 7)
+      .map((product, index) => ({
+        shop_id: "main",
+        banner_id:
+          withUnfeaturedEntry && index === 2
+            ? `${gameType}-banner-secondary`
+            : bannerId,
+        product_id: product.id,
+        kind: gameType === "hsr" ? "character" : "weapon",
+        element: gameType === "hsr" ? "physical" : "anemo",
+        weapon_type: gameType === "hsr" ? "destruction" : "sword",
+        rarity: index < (gameType === "hsr" ? 1 : 2) ? 5 : 4,
+        weight: 100,
+        featured: withUnfeaturedEntry ? index !== 1 : true,
+        active: true,
+      })),
+  };
+}
+
 const booth = {
   id: "main",
   shop_id: "main",
@@ -138,6 +207,7 @@ export async function mockSupabase(
     catalogLocale?: "en" | "vi";
     dualGacha?: boolean;
     orderQueue?: boolean;
+    orderStatus?: "pending" | "confirmed" | "cancelled" | "expired";
   } = {},
 ) {
   await page.route("https://example.test/*.jpg", (route) =>
@@ -173,6 +243,7 @@ export async function mockSupabase(
           ),
         ]
       : products;
+  const fixtureOrderStatus = options.orderStatus ?? "confirmed";
   let fixtureFulfillmentStatus: "preparing" | "ready" | "picked_up" =
     "preparing";
   const fixtureOrder = () => ({
@@ -182,13 +253,16 @@ export async function mockSupabase(
     customer_name: "Fixture customer",
     total_amount: 240000,
     discount_amount: 0,
-    status: "confirmed",
+    status: fixtureOrderStatus,
     created_at: "2026-07-21T10:00:00.000Z",
     updated_at: "2026-07-21T10:05:00.000Z",
     expires_at: "2026-07-21T10:10:00.000Z",
-    confirmed_at: "2026-07-21T10:05:00.000Z",
-    cancelled_at: null,
-    expired_at: null,
+    confirmed_at:
+      fixtureOrderStatus === "confirmed" ? "2026-07-21T10:05:00.000Z" : null,
+    cancelled_at:
+      fixtureOrderStatus === "cancelled" ? "2026-07-21T10:05:00.000Z" : null,
+    expired_at:
+      fixtureOrderStatus === "expired" ? "2026-07-21T10:05:00.000Z" : null,
     fulfillment_status: fixtureFulfillmentStatus,
     fulfillment_updated_at: "2026-07-21T10:05:00.000Z",
     confirmed_by_email: "staff@test.local",
@@ -287,6 +361,10 @@ export async function mockSupabase(
         logo_url: booth.logo_url,
         theme_background: booth.theme_background,
       });
+    if (url.pathname.includes("/rest/v1/rpc/list_offline_events"))
+      return json(route, []);
+    if (url.pathname.includes("/rest/v1/rpc/get_offline_event_draft"))
+      return json(route, null);
     if (url.pathname.includes("/rest/v1/rpc/get_offline_event_orders"))
       return json(route, {
         orders: [],
@@ -317,6 +395,58 @@ export async function mockSupabase(
         allocations: catalogProducts.slice(0, 1).map((product) => ({
           product_id: product.id,
           quantity_allocated: Math.max(1, product.quantity_available),
+          quantity_sold: 0,
+          product_snapshot: product,
+        })),
+      });
+    if (url.pathname.includes("/rest/v1/rpc/save_offline_event_draft"))
+      return json(route, {
+        session: {
+          id: "71000000-0000-4000-8000-000000000001",
+          shop_id: "00000000-0000-4000-8000-000000000001",
+          device_id: null,
+          name: "Fixture Event",
+          status: "draft",
+          scheduled_start_at: new Date().toISOString(),
+          scheduled_end_at: new Date(
+            Date.now() + 8 * 60 * 60 * 1000,
+          ).toISOString(),
+          started_at: null,
+          closed_at: null,
+          payment_snapshot: {},
+          promotion_snapshot: {},
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        allocations: catalogProducts.slice(0, 1).map((product) => ({
+          product_id: product.id,
+          quantity_allocated: 1,
+          quantity_sold: 0,
+          product_snapshot: product,
+        })),
+      });
+    if (url.pathname.includes("/rest/v1/rpc/activate_offline_event_session"))
+      return json(route, {
+        session: {
+          id: "71000000-0000-4000-8000-000000000001",
+          shop_id: "00000000-0000-4000-8000-000000000001",
+          device_id: "72000000-0000-4000-8000-000000000001",
+          name: "Fixture Event",
+          status: "active",
+          scheduled_start_at: new Date().toISOString(),
+          scheduled_end_at: new Date(
+            Date.now() + 8 * 60 * 60 * 1000,
+          ).toISOString(),
+          started_at: new Date().toISOString(),
+          closed_at: null,
+          payment_snapshot: payment,
+          promotion_snapshot: promotion,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        allocations: catalogProducts.slice(0, 1).map((product) => ({
+          product_id: product.id,
+          quantity_allocated: 1,
           quantity_sold: 0,
           product_snapshot: product,
         })),
@@ -370,10 +500,12 @@ export async function mockSupabase(
       );
     if (url.pathname.includes("/rest/v1/rpc/get_order_status_counts"))
       return json(route, {
-        pending: 0,
-        confirmed: options.orderQueue ? 1 : 0,
-        cancelled: 0,
-        expired: 0,
+        pending: options.orderQueue && fixtureOrderStatus === "pending" ? 1 : 0,
+        confirmed:
+          options.orderQueue && fixtureOrderStatus === "confirmed" ? 1 : 0,
+        cancelled:
+          options.orderQueue && fixtureOrderStatus === "cancelled" ? 1 : 0,
+        expired: options.orderQueue && fixtureOrderStatus === "expired" ? 1 : 0,
         all: options.orderQueue ? 1 : 0,
       });
     if (url.pathname.includes("/rest/v1/rpc/update_order_fulfillment")) {
@@ -395,54 +527,22 @@ export async function mockSupabase(
       const rows = options.dualGacha
         ? (["genshin", "hsr"] as const).map((gameType) => ({
             game_type: gameType,
-            config: {
-              settings: {
-                shop_id: "main",
-                game_type: gameType,
-                enabled: true,
-                title: gameType === "hsr" ? "Stellar Warp" : "Event Wish",
-                description: "Fixture minigame",
-              },
-              banners: [
-                {
-                  id: `${gameType}-banner`,
-                  shop_id: "main",
-                  name:
-                    gameType === "hsr"
-                      ? "Departure Warp"
-                      : "Epitome Invocation",
-                  description: "Fixture banner",
-                  kind: gameType === "hsr" ? "character" : "weapon",
-                  theme: gameType === "hsr" ? "physical" : "anemo",
-                  display_limit: gameType === "hsr" ? 4 : 7,
-                  sort_order: 0,
-                  active: true,
-                  starts_at: null,
-                  ends_at: null,
-                },
-              ],
-              entries: gachaProducts
-                .slice(0, gameType === "hsr" ? 4 : 7)
-                .map((product, index) => ({
-                  shop_id: "main",
-                  banner_id: `${gameType}-banner`,
-                  product_id: product.id,
-                  kind: gameType === "hsr" ? "character" : "weapon",
-                  element: gameType === "hsr" ? "physical" : "anemo",
-                  weapon_type: gameType === "hsr" ? "destruction" : "sword",
-                  rarity: index < (gameType === "hsr" ? 1 : 2) ? 5 : 4,
-                  weight: 100,
-                  featured: true,
-                  active: true,
-                })),
-            },
+            config: gachaConfiguration(gameType),
           }))
         : [];
       const limit = Number(url.searchParams.get("limit") ?? rows.length);
       return json(route, rows.slice(0, limit));
     }
     if (url.pathname.includes("/rest/v1/gacha_game_configs"))
-      return json(route, []);
+      return json(
+        route,
+        options.dualGacha
+          ? (["genshin", "hsr"] as const).map((gameType) => ({
+              game_type: gameType,
+              config: gachaConfiguration(gameType, true, catalogProducts),
+            }))
+          : [],
+      );
     if (url.pathname.includes("/rest/v1/shops")) {
       const requestedSlug =
         url.searchParams.get("slug")?.replace(/^eq\./, "") ?? "akiba-shelf";

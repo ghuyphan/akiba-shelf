@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Boxes, Edit3, Eye, ImageIcon, PackagePlus, Redo2, RotateCcw, Sparkles, Tags, Trash2, Undo2, X } from "lucide-react";
 import type { Product, StockStatus } from "../../types/catalog";
 import { formatNumber, formatVnd, normalizeSlug } from "../../utils/format";
@@ -15,6 +15,9 @@ import { ImageUpload } from "./ImageUpload";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { QuantityInput } from "./QuantityInput";
 import { getProductDiscountPercent, getProductPrice, isProductOnSale } from "../../utils/pricing";
+import { ConfirmationDialog } from "../ui/ConfirmationDialog";
+import { Alert } from "../ui/Alert";
+import { useAdminUnsavedChanges } from "./AdminUnsavedChanges";
 
 function formatDisplayPrice(value: number | string): string {
   const digits = String(value ?? "").replace(/\D/g, "");
@@ -29,6 +32,8 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
   const [errors, setErrors] = useState<string[]>([]);
   const [history, setHistory] = useState<Product[]>([]);
   const [future, setFuture] = useState<Product[]>([]);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const hasChanges = useMemo(() => {
     return JSON.stringify(draft) !== JSON.stringify(product);
@@ -89,7 +94,7 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
     return errors.find((error) => error.toLowerCase().includes(key));
   }
 
-  function resetDraft() {
+  const resetDraft = useCallback(() => {
     setDraft(product);
     setErrors([]);
     setSaveError("");
@@ -97,7 +102,13 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
     setIsEditing(isNewProduct);
     setHistory([]);
     setFuture([]);
-  }
+  }, [isNewProduct, product, setDeleteError, setSaveError]);
+
+  useAdminUnsavedChanges(
+    `product:${shopId}:${product.id}`,
+    isEditing && hasChanges,
+    resetDraft,
+  );
 
   function setQuantity(quantity: number) {
     const status: StockStatus = quantity === 0 ? "sold_out" : quantity <= LIMITED_STOCK_THRESHOLD ? "limited" : "in_stock";
@@ -190,7 +201,16 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
     };
     const nextErrors = validateProduct(normalizedDraft);
     setErrors(nextErrors);
-    if (nextErrors.length) return;
+    if (nextErrors.length) {
+      window.requestAnimationFrame(() => {
+        const firstInvalid = formRef.current?.querySelector<HTMLElement>(
+          '[aria-invalid="true"]',
+        );
+        firstInvalid?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+        firstInvalid?.focus({ preventScroll: true });
+      });
+      return;
+    }
     let didSave = false;
     setDeleteError("");
     await runSave(async () => { await onSave({ ...normalizedDraft, id: normalizedDraft.id || normalizeSlug(`${normalizedDraft.item_code}-${normalizedDraft.name}`) }); didSave = true; }).catch(() => undefined);
@@ -198,14 +218,28 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
   }
 
   async function handleDelete() {
-    if (!draft.id || !window.confirm(t("Delete “{{name}}”? This cannot be undone.", { name: draft.name }))) return;
+    if (!draft.id) return;
     setSaveError("");
-    await runDelete(() => onDelete(draft.id)).catch(() => undefined);
+    let deleted = false;
+    await runDelete(async () => {
+      await onDelete(draft.id);
+      deleted = true;
+    }).catch(() => undefined);
+    if (deleted) setDeleteConfirmationOpen(false);
   }
 
   return (
-    <AdminCard title={isNewProduct ? t("Create product") : draft.name || t("Product details")} description={isNewProduct ? t("Add the essentials first. You can refine the listing later.") : `${draft.item_code} · ${draft.category}`} icon={isNewProduct ? <PackagePlus size={18} /> : <Tags size={18} />} action={!isNewProduct && !isEditing ? <div className="admin-card-actions"><Button type="button" variant="secondary" icon={<Edit3 size={17} />} disabled={busy} onClick={() => setIsEditing(true)}>{t("Edit")}</Button><Button type="button" variant="danger" icon={<Trash2 size={17} />} loading={isDeleting} loadingText={t("Deleting…")} disabled={busy} onClick={handleDelete}>{t("Delete")}</Button></div> : undefined}>
-      <form className={`admin-form admin-product-form ${isEditing ? "is-editing" : "is-readonly"}`} onSubmit={handleSubmit}>
+    <AdminCard title={isNewProduct ? t("Create product") : draft.name || t("Product details")} description={isNewProduct ? t("Add the essentials first. You can refine the listing later.") : `${draft.item_code} · ${draft.category}`} icon={isNewProduct ? <PackagePlus size={18} /> : <Tags size={18} />} action={!isNewProduct && !isEditing ? <div className="admin-card-actions"><Button type="button" variant="secondary" icon={<Edit3 size={17} />} disabled={busy} onClick={() => setIsEditing(true)}>{t("Edit")}</Button><Button type="button" variant="danger" icon={<Trash2 size={17} />} disabled={busy} onClick={() => setDeleteConfirmationOpen(true)}>{t("Delete")}</Button></div> : undefined}>
+      <form ref={formRef} className={`admin-form admin-product-form ${isEditing ? "is-editing" : "is-readonly"}`} onSubmit={handleSubmit}>
+        {errors.length > 0 && (
+          <Alert
+            variant="error"
+            title={t("Fix the highlighted fields")}
+            className="admin-validation-summary"
+          >
+            {t("Review the fields marked below, then save again.")}
+          </Alert>
+        )}
         {!isEditing && <div className="admin-readout"><span><Tags size={16} /><small>{t("Price")}</small><strong>{formatVnd(getProductPrice(draft))}</strong>{isProductOnSale(draft) && <del>{formatVnd(draft.price_vnd)}</del>}</span><span><Boxes size={16} /><small>{t("Stock")}</small><strong>{formatNumber(draft.quantity_available)}</strong></span><span><Eye size={16} /><small>{t("Visibility")}</small><strong>{t(draft.active ? "Live" : "Hidden")}</strong></span></div>}
 
         <section className="admin-form-section">
@@ -301,6 +335,19 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
           </AdminEditBar>
         )}
       </form>
+      <ConfirmationDialog
+        isOpen={deleteConfirmationOpen}
+        title={t("Delete product?")}
+        message={t("Delete “{{name}}”? This cannot be undone.", {
+          name: draft.name,
+        })}
+        cancelLabel={t("Cancel")}
+        confirmLabel={t("Delete product")}
+        loadingLabel={t("Deleting…")}
+        busy={isDeleting}
+        onClose={() => setDeleteConfirmationOpen(false)}
+        onConfirm={() => void handleDelete()}
+      />
     </AdminCard>
   );
 }

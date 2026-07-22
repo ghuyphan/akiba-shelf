@@ -73,6 +73,9 @@ export function DashboardEditShopDialog({
       title={t("Edit shop details")}
       isOpen={shop !== null}
       onClose={onClose}
+      appearance="admin"
+      dismissible={!busy}
+      mobileSheet
       className="edit-shop-modal"
       closeLabel={t("Close modal")}
     >

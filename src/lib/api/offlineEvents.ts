@@ -1,8 +1,10 @@
 import { z } from "zod";
 import type {
   Order,
+  OfflineEventDraft,
   OfflineEventOrder,
   OfflineEventSession,
+  OfflineEventSummary,
   OfflineEventSyncAcknowledgement,
   PaymentSettings,
   Product,
@@ -21,11 +23,15 @@ import { requireSupabase } from "./shared";
 const serverSessionSchema = z.object({
   id: z.string().uuid(),
   shop_id: z.string().uuid(),
-  device_id: z.string().uuid(),
+  device_id: z.string().uuid().nullable(),
   name: z.string(),
-  status: z.enum(["active", "closed"]),
-  payment_snapshot: paymentSettingsSchema,
-  promotion_snapshot: promotionSettingsSchema,
+  status: z.enum(["draft", "active", "closed"]),
+  scheduled_start_at: z.string().nullable().optional(),
+  scheduled_end_at: z.string().nullable().optional(),
+  started_at: z.string().nullable().optional(),
+  closed_at: z.string().nullable().optional(),
+  payment_snapshot: z.unknown(),
+  promotion_snapshot: z.unknown(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -40,6 +46,24 @@ const serverAllocationSchema = z.object({
 const eventBundleSchema = z.object({
   session: serverSessionSchema,
   allocations: z.array(serverAllocationSchema),
+});
+
+const eventSummarySchema = z.object({
+  id: z.string().uuid(),
+  shop_id: z.string().uuid(),
+  name: z.string(),
+  status: z.enum(["draft", "active", "closed"]),
+  scheduled_start_at: z.string().nullable(),
+  scheduled_end_at: z.string().nullable(),
+  started_at: z.string().nullable(),
+  closed_at: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  product_count: z.coerce.number().int().nonnegative(),
+  quantity_allocated: z.coerce.number().int().nonnegative(),
+  quantity_sold: z.coerce.number().int().nonnegative(),
+  order_count: z.coerce.number().int().nonnegative(),
+  order_total: z.coerce.number().int().nonnegative(),
 });
 
 const eventOrderItemSchema = z.object({
@@ -155,6 +179,8 @@ function normalizeBundle(
   shopSlug: string,
 ): OfflineEventSession {
   const bundle = eventBundleSchema.parse(value);
+  if (bundle.session.status === "draft" || !bundle.session.device_id)
+    throw new Error("Offline event has not been activated on this device.");
   return {
     version: 1,
     id: bundle.session.id,
@@ -163,8 +189,16 @@ function normalizeBundle(
     deviceId: bundle.session.device_id,
     name: bundle.session.name,
     status: bundle.session.status,
-    payment: bundle.session.payment_snapshot as PaymentSettings,
-    promotion: bundle.session.promotion_snapshot as PromotionSettings,
+    scheduledStartAt: bundle.session.scheduled_start_at ?? undefined,
+    scheduledEndAt: bundle.session.scheduled_end_at ?? undefined,
+    startedAt: bundle.session.started_at ?? undefined,
+    closedAt: bundle.session.closed_at ?? undefined,
+    payment: paymentSettingsSchema.parse(
+      bundle.session.payment_snapshot,
+    ) as PaymentSettings,
+    promotion: promotionSettingsSchema.parse(
+      bundle.session.promotion_snapshot,
+    ) as PromotionSettings,
     allocations: bundle.allocations.map((allocation) => ({
       product: allocation.product_snapshot as Product,
       quantityAllocated: allocation.quantity_allocated,
@@ -173,6 +207,126 @@ function normalizeBundle(
     createdAt: bundle.session.created_at,
     updatedAt: bundle.session.updated_at,
   };
+}
+
+function normalizeDraftBundle(
+  value: unknown,
+  shopSlug: string,
+): OfflineEventDraft {
+  const bundle = eventBundleSchema.parse(value);
+  if (
+    bundle.session.status !== "draft" ||
+    !bundle.session.scheduled_start_at ||
+    !bundle.session.scheduled_end_at
+  ) {
+    throw new Error("Offline event draft is invalid.");
+  }
+  return {
+    version: 1,
+    id: bundle.session.id,
+    shopId: bundle.session.shop_id,
+    shopSlug,
+    name: bundle.session.name,
+    status: "draft",
+    scheduledStartAt: bundle.session.scheduled_start_at,
+    scheduledEndAt: bundle.session.scheduled_end_at,
+    allocations: bundle.allocations.map((allocation) => ({
+      product: allocation.product_snapshot as Product,
+      quantityAllocated: allocation.quantity_allocated,
+      quantitySold: allocation.quantity_sold,
+    })),
+    createdAt: bundle.session.created_at,
+    updatedAt: bundle.session.updated_at,
+  };
+}
+
+export async function saveOfflineEventDraft({
+  shopId,
+  shopSlug,
+  draftId,
+  name,
+  scheduledStartAt,
+  scheduledEndAt,
+  products,
+}: {
+  shopId: string;
+  shopSlug: string;
+  draftId?: string;
+  name: string;
+  scheduledStartAt: string;
+  scheduledEndAt: string;
+  products: Array<{ id: string; quantity: number }>;
+}): Promise<OfflineEventDraft> {
+  const { data, error } = await requireSupabase().rpc(
+    "save_offline_event_draft",
+    {
+      p_shop_id: shopId,
+      p_session_id: draftId ?? null,
+      p_name: name,
+      p_scheduled_start_at: scheduledStartAt,
+      p_scheduled_end_at: scheduledEndAt,
+      p_allocations: products.map((product) => ({
+        product_id: product.id,
+        quantity: product.quantity,
+      })),
+    },
+  );
+  if (error) throw error;
+  return normalizeDraftBundle(data, shopSlug);
+}
+
+export async function activateOfflineEventSession(
+  draftId: string,
+  deviceId: string,
+  shopSlug: string,
+): Promise<OfflineEventSession> {
+  const { data, error } = await requireSupabase().rpc(
+    "activate_offline_event_session",
+    { p_session_id: draftId, p_device_id: deviceId },
+  );
+  if (error) throw error;
+  return normalizeBundle(data, shopSlug);
+}
+
+export async function listOfflineEvents(
+  shopId: string,
+  limit = 50,
+): Promise<OfflineEventSummary[]> {
+  const { data, error } = await requireSupabase().rpc("list_offline_events", {
+    p_shop_id: shopId,
+    p_limit: limit,
+  });
+  if (error) throw error;
+  return z.array(eventSummarySchema).parse(data).map((event) => ({
+    id: event.id,
+    shopId: event.shop_id,
+    name: event.name,
+    status: event.status,
+    scheduledStartAt: event.scheduled_start_at,
+    scheduledEndAt: event.scheduled_end_at,
+    startedAt: event.started_at,
+    closedAt: event.closed_at,
+    createdAt: event.created_at,
+    updatedAt: event.updated_at,
+    productCount: event.product_count,
+    quantityAllocated: event.quantity_allocated,
+    quantitySold: event.quantity_sold,
+    orderCount: event.order_count,
+    orderTotal: event.order_total,
+  }));
+}
+
+export async function getOfflineEventDraft(
+  shopId: string,
+  shopSlug: string,
+  draftId: string,
+): Promise<OfflineEventDraft> {
+  const { data, error } = await requireSupabase().rpc(
+    "get_offline_event_draft",
+    { p_shop_id: shopId, p_session_id: draftId },
+  );
+  if (error) throw error;
+  return normalizeDraftBundle(data, shopSlug);
 }
 
 export async function startOfflineEventSession({
@@ -271,12 +425,14 @@ export async function getOfflineEventOrders(
     status = "all",
     createdAfter,
     createdBefore,
+    sessionId,
   }: {
     page?: number;
     pageSize?: number;
     status?: "pending" | "confirmed" | "cancelled" | "expired" | "all";
     createdAfter?: string;
     createdBefore?: string;
+    sessionId?: string;
   } = {},
 ): Promise<{
   orders: Order[];
@@ -292,6 +448,7 @@ export async function getOfflineEventOrders(
       p_status: status,
       p_created_after: createdAfter ?? null,
       p_created_before: createdBefore ?? null,
+      p_session_id: sessionId ?? null,
     },
   );
   if (error) throw error;

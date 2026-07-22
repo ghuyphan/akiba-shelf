@@ -18,6 +18,8 @@ type MobileSheetShellProps = {
 
 let scrollLocks = 0;
 
+export const SHEET_EXIT_DURATION_MS = 240;
+
 function lockBodyScroll() {
   if (scrollLocks === 0) {
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
@@ -87,7 +89,10 @@ export function MobileSheetShell({
       setBackdropMounted(true);
       return;
     }
-    const timer = window.setTimeout(() => setBackdropMounted(false), 240);
+    const timer = window.setTimeout(
+      () => setBackdropMounted(false),
+      SHEET_EXIT_DURATION_MS,
+    );
     return () => window.clearTimeout(timer);
   }, [open]);
 

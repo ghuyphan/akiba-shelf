@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { Star, Sword, Trash2, UserRound } from "lucide-react";
 import {
   getGachaBannerFeaturedRule,
@@ -54,6 +54,7 @@ export function GachaEntryEditor({
 }: Props) {
   const { t } = usePlatformI18n();
   const gameType = descriptor.gameType;
+  const featuredReasonId = useId();
 
   const kindOptions = useMemo<SelectMenuOption[]>(
     () => [
@@ -104,6 +105,19 @@ export function GachaEntryEditor({
   const featuredSelectionDisabled =
     !productActive ||
     (!entry.featured && (featuredCount >= banner.display_limit || roleFull));
+  const featuredDisabledReason = !featuredSelectionDisabled
+    ? ""
+    : !productActive
+      ? t("Hidden merch cannot be promoted until it is active in the catalog.")
+      : !matchesGachaBannerKind(entry, banner)
+        ? t("This prize role does not match the selected banner type.")
+        : entry.rarity === 3
+          ? t("Only 4★ and 5★ prizes can be promoted.")
+          : entry.rarity === 5 && primaryFeaturedCount >= rule.fiveStarLimit
+            ? t("This banner already has all of its promoted 5★ prizes.")
+            : entry.rarity === 4 && secondaryFeaturedCount >= rule.fourStarLimit
+              ? t("This banner already has all of its promoted 4★ prizes.")
+              : t("This banner has filled every promoted-prize slot.");
 
   return (
     <div className={`gacha-item-editor ${!productActive ? "is-disabled" : ""}`}>
@@ -171,24 +185,35 @@ export function GachaEntryEditor({
           }
         />
       </Field>
-      <label
-        className={`gacha-mini-check ${featuredSelectionDisabled ? "is-disabled" : ""}`}
-      >
-        <input
-          type="checkbox"
-          checked={entry.featured}
-          disabled={featuredSelectionDisabled}
-          onChange={(event) => onToggleFeatured(event.target.checked)}
-        />
-        <Star size={15} />
-        {t(
-          entry.rarity === 5
-            ? "5★ featured"
-            : entry.rarity === 4
-              ? "4★ rate-up"
-              : "Featured",
+      <div className="gacha-featured-control">
+        <label
+          className={`gacha-mini-check ${featuredSelectionDisabled ? "is-disabled" : ""}`}
+          title={featuredDisabledReason || undefined}
+        >
+          <input
+            type="checkbox"
+            checked={entry.featured}
+            disabled={featuredSelectionDisabled}
+            aria-describedby={
+              featuredDisabledReason ? featuredReasonId : undefined
+            }
+            onChange={(event) => onToggleFeatured(event.target.checked)}
+          />
+          <Star size={15} />
+          {t(
+            entry.rarity === 5
+              ? "5★ featured"
+              : entry.rarity === 4
+                ? "4★ rate-up"
+                : "Featured",
+          )}
+        </label>
+        {featuredDisabledReason && (
+          <small id={featuredReasonId} className="gacha-control-explanation">
+            {featuredDisabledReason}
+          </small>
         )}
-      </label>
+      </div>
       <label
         className={`gacha-mini-check ${!productActive ? "is-disabled" : ""}`}
       >

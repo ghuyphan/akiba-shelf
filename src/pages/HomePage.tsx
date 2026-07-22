@@ -4,10 +4,10 @@ import {
   ClipboardCheck,
   LogIn,
   Palette,
+  PackageCheck,
   ScanLine,
   ShoppingBag,
   Store,
-  Users,
 } from "lucide-react";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { AppHeader } from "../components/ui/AppHeader";
@@ -41,12 +41,12 @@ export function HomePage() {
           <div className="platform-landing-hero-copy">
             <span className="platform-landing-kicker">
               <span aria-hidden="true">✦</span>{" "}
-              {t("Made for artists, not spreadsheets")}
+              {t("Storefront and order desk for artist booths")}
             </span>
             <h1>
-              {t("Your art. Your booth.")}{" "}
+              {t("Run your merch booth.")}{" "}
               <span className="platform-landing-title-accent">
-                {t("Your little corner of the con.")}
+                {t("Stay in sync.")}
               </span>
               <i
                 className="platform-landing-title-underline"
@@ -55,7 +55,7 @@ export function HomePage() {
             </h1>
             <p>
               {t(
-                "Matsuri turns your merch table into a friendly digital storefront, with live orders and accurate stock while you focus on meeting fans.",
+                "Fans browse and order from their phones. Matsuri reserves the stock and gives your team one live queue to fulfil from behind the booth.",
               )}
             </p>
             <div className="platform-landing-actions">
@@ -63,15 +63,15 @@ export function HomePage() {
                 to="/auth"
                 className="button button-primary platform-home-cta"
               >
-                {t("Open your booth")} <ArrowRight size={17} />
+                {t("Create your storefront")} <ArrowRight size={17} />
               </Link>
               <Link to="/s/demo-booth" className="button platform-home-demo">
                 <Store size={17} /> {t("See the demo booth")}
               </Link>
             </div>
             <small className="platform-landing-note">
-              <strong>{t("No generic marketplace vibe.")}</strong>{" "}
-              {t("Your colors, your sections, your merch.")}
+              <strong>{t("Made for Artist Alley.")}</strong>{" "}
+              {t("Your brand stays in front; the busywork stays behind it.")}
             </small>
           </div>
 
@@ -82,15 +82,15 @@ export function HomePage() {
             <div className="platform-landing-sketchbook">
               <div className="platform-landing-sketch-title">
                 <span>
-                  <strong>Arigato-san booth</strong>
+                  <strong>{t("Matsuri booth desk")}</strong>
                   <small>{t("Artist Alley · Table B12")}</small>
                 </span>
-                <b>{t("live today!")}</b>
+                <b>{t("7 open orders")}</b>
               </div>
               <div className="platform-landing-mini-shop">
                 <div className="platform-landing-poster">
-                  <small>{t("New festival drop")}</small>
-                  <strong>{t("tiny things, big feelings")}</strong>
+                  <small>{t("Your storefront")}</small>
+                  <strong>{t("your art takes the spotlight")}</strong>
                 </div>
                 <div className="platform-landing-product-stack">
                   <article>
@@ -113,7 +113,7 @@ export function HomePage() {
             <div className="platform-landing-phone">
               <div className="platform-landing-phone-notch" />
               <div className="platform-landing-phone-head">
-                <span>{t("Your order")}</span>
+                <span>{t("Order ready")}</span>
                 <span>♡</span>
               </div>
               <div className="platform-landing-phone-list">
@@ -162,30 +162,30 @@ export function HomePage() {
           aria-label={t("Who Matsuri helps")}
         >
           <span>
-            <b>{t("For fans")}</b>
-            {t("Browse and order from their phone")}
+            <b>{t("Scan to shop")}</b>
+            {t("A quick storefront on every phone")}
           </span>
           <span>
-            <b>{t("For artists")}</b>
-            {t("Keep stock and payments together")}
+            <b>{t("Stock stays honest")}</b>
+            {t("Items are reserved when an order is placed")}
           </span>
           <span>
-            <b>{t("For helpers")}</b>
-            {t("Share one clear live order queue")}
+            <b>{t("One live queue")}</b>
+            {t("Everyone sees what needs packing next")}
           </span>
           <span>
-            <b>{t("For your brand")}</b>
-            {t("Make the storefront feel like you")}
+            <b>{t("Still your booth")}</b>
+            {t("Use your colors, artwork, and sections")}
           </span>
         </section>
 
         <section className="platform-landing-section" id="how">
           <div className="platform-landing-section-head">
-            <small>{t("How the booth flows")}</small>
-            <h2>{t("Less table chaos. More time talking about your art.")}</h2>
+            <small>{t("A calmer booth flow")}</small>
+            <h2>{t("From QR scan to handover, without the paper trail.")}</h2>
             <p>
               {t(
-                "A simple three-step flow that feels natural for customers and helpers.",
+                "A short customer flow in front, with the order detail your team needs behind the table.",
               )}
             </p>
           </div>
@@ -195,10 +195,10 @@ export function HomePage() {
               <div>
                 <ScanLine size={27} />
               </div>
-              <h3>{t("Fans browse")}</h3>
+              <h3>{t("Fans scan and browse")}</h3>
               <p>
                 {t(
-                  "They scan your booth QR, explore your collections, and add merch without blocking the table.",
+                  "Your storefront opens on their phone with your collections, product details, and booth identity.",
                 )}
               </p>
             </article>
@@ -207,10 +207,10 @@ export function HomePage() {
               <div>
                 <ShoppingBag size={27} />
               </div>
-              <h3>{t("They order and pay")}</h3>
+              <h3>{t("Stock is reserved")}</h3>
               <p>
                 {t(
-                  "Matsuri reserves the items, calculates the total, and shows your VietQR payment details.",
+                  "Matsuri checks the current price and availability, reserves the items, and shows the order total with VietQR.",
                 )}
               </p>
             </article>
@@ -219,10 +219,10 @@ export function HomePage() {
               <div>
                 <ClipboardCheck size={27} />
               </div>
-              <h3>{t("You hand it over")}</h3>
+              <h3>{t("Your team fulfils it")}</h3>
               <p>
                 {t(
-                  "The order appears live for your team, ready to confirm, pack, and give to the customer.",
+                  "The order appears in one live queue, ready to verify, pack, and hand to the right customer.",
                 )}
               </p>
             </article>
@@ -234,26 +234,21 @@ export function HomePage() {
           id="tools"
         >
           <div className="platform-landing-toolkit-copy">
-            <span>{t("Your booth toolkit")}</span>
+            <span>{t("Two sides, one booth")}</span>
             <h2>
-              {t(
-                "Designed like an artist’s workspace, not an enterprise dashboard.",
-              )}
+              {t("A storefront for fans. A clear order desk for your team.")}
             </h2>
             <p>
               {t(
-                "Use a live storefront designer, keep a simple order queue, and invite helpers without giving everyone full control.",
+                "Shape the public booth around your art, then run orders from a focused workspace that keeps payment, stock, and fulfilment status together.",
               )}
             </p>
             <ul>
+              <li>{t("Design the storefront with your own visual identity")}</li>
               <li>
-                {t("Arrange banners, collections, and booth information")}
+                {t("Keep the current order status visible to the whole team")}
               </li>
-              <li>{t("Use your own colors, logo, and visual style")}</li>
-              <li>
-                {t("See pending, paid, and completed orders in one place")}
-              </li>
-              <li>{t("Give helpers only the access they need")}</li>
+              <li>{t("Protect stock from being sold twice during a rush")}</li>
             </ul>
           </div>
           <div
@@ -282,9 +277,9 @@ export function HomePage() {
             </article>
             <article className="palette-note">
               <small>
-                <Palette size={13} /> {t("Palette")}
+                <PackageCheck size={13} /> {t("Inventory")}
               </small>
-              <strong>{t("Match your art")}</strong>
+              <strong>{t("Reserved as orders arrive")}</strong>
               <div>
                 <i />
                 <i />
@@ -294,10 +289,10 @@ export function HomePage() {
             </article>
             <article className="sections-note">
               <small>
-                <Users size={13} /> {t("Storefront sections")}
+                <Palette size={13} /> {t("Storefront design")}
               </small>
               <strong>
-                {t("Featured drop · Products · About the artist · Booth info")}
+                {t("Your colors · Your products · Your booth information")}
               </strong>
             </article>
           </div>
@@ -306,7 +301,7 @@ export function HomePage() {
         <section className="platform-landing-final">
           <div>
             <small>{t("Ready for your next event?")}</small>
-            <h2>{t("Make a booth your fans will remember.")}</h2>
+            <h2>{t("Give your booth one place to sell and stay organized.")}</h2>
           </div>
           <Link to="/auth" className="button button-primary platform-home-cta">
             {t("Create your shop")} <ArrowRight size={17} />

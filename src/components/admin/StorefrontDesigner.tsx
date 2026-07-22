@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../styles/catalog.css";
 import { createPortal, flushSync } from "react-dom";
 import {
@@ -47,6 +47,8 @@ import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../utils/bank
 import { DEFAULT_STOREFRONT_PALETTE, STOREFRONT_PALETTES } from "../../lib/constants";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { SocialLinkFields } from "./SocialLinkFields";
+import { Alert } from "../ui/Alert";
+import { useAdminUnsavedChanges } from "./AdminUnsavedChanges";
 
 type StorefrontDesignerProps = {
   shopId: string;
@@ -127,6 +129,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewSort, setPreviewSort] = useState<PublicProductSort>("recommended");
   const [previewView, setPreviewView] = useState<"grid" | "list">("grid");
+  const [publishNotice, setPublishNotice] = useState("");
   const { busy, error, run, setError } = useAsyncAction();
   const toast = useToast();
   const { t } = usePlatformI18n();
@@ -150,7 +153,17 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
     buttons?.[nextIndex]?.focus();
   }
 
-  useEffect(() => { draftRef.current = settings; paymentDraftRef.current = payment; setDraft(settings); setPaymentDraft(payment); setHistory([]); setFuture([]); setError(""); }, [settings, payment, setError]);
+  useEffect(() => {
+    draftRef.current = settings;
+    setDraft(settings);
+    setError("");
+  }, [settings, setError]);
+
+  useEffect(() => {
+    paymentDraftRef.current = payment;
+    setPaymentDraft(payment);
+    setError("");
+  }, [payment, setError]);
 
   useEffect(() => {
     const stage = previewStageRef.current;
@@ -223,6 +236,19 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
       paymentDraft.bank_account_name?.trim(),
   );
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(settings) || JSON.stringify(paymentDraft) !== JSON.stringify(payment);
+
+  const discardChanges = useCallback(() => {
+    draftRef.current = settings;
+    paymentDraftRef.current = payment;
+    setDraft(settings);
+    setPaymentDraft(payment);
+    setHistory([]);
+    setFuture([]);
+    setPublishNotice("");
+    setError("");
+  }, [payment, setError, settings]);
+
+  useAdminUnsavedChanges(`designer:${shopId}`, hasChanges, discardChanges);
 
   function commitSnapshot(next: DesignerSnapshot) {
     const current = { booth: draftRef.current, payment: paymentDraftRef.current };
@@ -423,11 +449,44 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   }
 
   async function save() {
+    setPublishNotice("");
     await run(async () => {
-      const tasks: Promise<void>[] = [];
-      if (JSON.stringify(draft) !== JSON.stringify(settings)) tasks.push(onSave({ ...draft, layout_order: order }));
-      if (JSON.stringify(paymentDraft) !== JSON.stringify(payment)) tasks.push(onSavePayment(paymentDraft));
-      await Promise.all(tasks);
+      const boothChanged = JSON.stringify(draft) !== JSON.stringify(settings);
+      const paymentChanged = JSON.stringify(paymentDraft) !== JSON.stringify(payment);
+      const [boothResult, paymentResult] = await Promise.all([
+        boothChanged
+          ? onSave({ ...draft, layout_order: order }).then(
+              () => ({ status: "fulfilled" as const }),
+              (reason) => ({ status: "rejected" as const, reason }),
+            )
+          : Promise.resolve({ status: "skipped" as const }),
+        paymentChanged
+          ? onSavePayment(paymentDraft).then(
+              () => ({ status: "fulfilled" as const }),
+              (reason) => ({ status: "rejected" as const, reason }),
+            )
+          : Promise.resolve({ status: "skipped" as const }),
+      ]);
+
+      const boothFailed = boothResult.status === "rejected";
+      const paymentFailed = paymentResult.status === "rejected";
+      if (boothFailed || paymentFailed) {
+        setPublishNotice(
+          boothFailed && paymentFailed
+            ? t("Storefront and payment settings were not published. Your edits are still here.")
+            : boothFailed
+              ? t("Storefront settings were not published. Payment changes were saved, and your storefront edits are still here.")
+              : t("Payment settings were not published. Storefront changes were saved, and your payment edits are still here."),
+        );
+        const failure = boothResult.status === "rejected"
+          ? boothResult.reason
+          : paymentResult.status === "rejected"
+            ? paymentResult.reason
+            : new Error("Could not publish all changes");
+        throw failure;
+      }
+      setHistory([]);
+      setFuture([]);
     }).catch(() => undefined);
   }
 
@@ -448,8 +507,16 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
       className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, draft)} designer-live-module ${section === "featured" || section === "booth" ? "drop-axis-horizontal" : "drop-axis-vertical"} ${selected === section ? "is-selected" : ""} ${dragged === section ? "is-dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `is-drag-over drop-${dropTarget.edge}` : ""}`}
       style={{ viewTransitionName: `designer-${section}` } as React.CSSProperties}
       onClick={(event) => { event.stopPropagation(); selectModule(section); }}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        selectModule(section);
+      }}
       onDragOver={(event) => markDropTarget(event, section, section === "featured" || section === "booth" ? "horizontal" : "vertical")}
       onDrop={(event) => dropOn(event, section)}
+      role="button"
+      tabIndex={0}
+      aria-label={t("Edit {{section}}", { section: t(sectionMeta[section].title) })}
     >
       <button type="button" className="designer-module-handle" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} aria-label={t("Drag {{section}}", { section: t(sectionMeta[section].title) })}><GripVertical size={15} /><i>{order.indexOf(section) + 1}</i><span>{t(sectionMeta[section].title)}</span>{section === "cart" && <em><CreditCard size={11} /> {t("Payment settings")}</em>}</button>
       {previewBlocks[section]}
@@ -501,7 +568,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
             {tab === "layout" && <>
               <div className="builder-section-heading"><div><strong>{t("Page sections")}</strong><small>{t("Drag to reorder the public page.")}</small></div></div>
               <div className="designer-block-list">
-                {order.map((section, index) => <article key={section} data-designer-section={section} style={{ viewTransitionName: `designer-list-${section}` } as React.CSSProperties} onClick={() => selectModule(section)} onDragOver={(event) => markDropTarget(event, section, "vertical")} onDrop={(event) => dropOn(event, section)} className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""}`}><button type="button" className="designer-list-grip" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} onClick={(event) => event.stopPropagation()} aria-label={t("Drag {{section}}", { section: t(sectionMeta[section].title) })}><GripVertical size={17} /></button><span><strong>{index + 1}. {t(sectionMeta[section].title)}</strong><small>{t(sectionMeta[section].description)}</small></span><em>{t(sectionMeta[section].size)}</em><div><button type="button" disabled={index === 0} onClick={(event) => { event.stopPropagation(); nudge(section, -1); }} aria-label={t("Move {{section}} up", { section: t(sectionMeta[section].title) })}><ArrowUp size={14} /></button><button type="button" disabled={index === order.length - 1} onClick={(event) => { event.stopPropagation(); nudge(section, 1); }} aria-label={t("Move {{section}} down", { section: t(sectionMeta[section].title) })}><ArrowDown size={14} /></button></div></article>)}
+                {order.map((section, index) => <article key={section} data-designer-section={section} style={{ viewTransitionName: `designer-list-${section}` } as React.CSSProperties} onClick={() => selectModule(section)} onKeyDown={(event) => { if (event.key !== "Enter" && event.key !== " ") return; event.preventDefault(); selectModule(section); }} onDragOver={(event) => markDropTarget(event, section, "vertical")} onDrop={(event) => dropOn(event, section)} className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""}`} role="button" tabIndex={0} aria-label={t("Edit {{section}}", { section: t(sectionMeta[section].title) })}><button type="button" className="designer-list-grip" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} onClick={(event) => event.stopPropagation()} aria-label={t("Drag {{section}}", { section: t(sectionMeta[section].title) })}><GripVertical size={17} /></button><span><strong>{index + 1}. {t(sectionMeta[section].title)}</strong><small>{t(sectionMeta[section].description)}</small></span><em>{t(sectionMeta[section].size)}</em><div><button type="button" disabled={index === 0} onClick={(event) => { event.stopPropagation(); nudge(section, -1); }} aria-label={t("Move {{section}} up", { section: t(sectionMeta[section].title) })}><ArrowUp size={14} /></button><button type="button" disabled={index === order.length - 1} onClick={(event) => { event.stopPropagation(); nudge(section, 1); }} aria-label={t("Move {{section}} down", { section: t(sectionMeta[section].title) })}><ArrowDown size={14} /></button></div></article>)}
               </div>
               <p className="builder-help">{t("Wide and side modules keep safe column widths. Dragging changes their order within those responsive lanes.")}</p>
             </>}
@@ -626,7 +693,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
               </div>
               <div className="designer-style-section-heading designer-custom-colors-heading"><strong>{t("Custom colors")}</strong><small>{t("Make this palette completely yours.")}</small></div>
               <div className="designer-color-grid">{([['theme_primary','Primary',DEFAULT_STOREFRONT_PALETTE.primary],['theme_secondary','Dark',DEFAULT_STOREFRONT_PALETTE.secondary],['theme_accent','Accent',DEFAULT_STOREFRONT_PALETTE.accent],['theme_background','Page',DEFAULT_STOREFRONT_PALETTE.background]] as const).map(([key,label,fallback]) => <label key={key}><span>{t(label)}</span><div><input type="color" value={draft[key] ?? fallback} onChange={(event) => update(key, event.target.value)} /><code>{draft[key] ?? fallback}</code></div></label>)}</div>
-              <div className="designer-setting-group"><div><Palette size={16} /><span><strong>{t("Corner radius")}</strong><small>{t("{{radius}}px across storefront cards", { radius: draft.corner_radius ?? 16 })}</small></span></div><input type="range" min="0" max="32" step="1" value={draft.corner_radius ?? 16} onChange={(event) => update("corner_radius", Number(event.target.value))} /></div>
+              <div className="designer-setting-group"><div><Palette size={16} /><span><strong>{t("Corner radius")}</strong><small>{t("{{radius}}px across storefront cards", { radius: draft.corner_radius ?? 16 })}</small></span></div><input type="range" aria-label={t("Corner radius")} min="0" max="32" step="1" value={draft.corner_radius ?? 16} onChange={(event) => update("corner_radius", Number(event.target.value))} /></div>
               <div className="designer-locale"><Languages size={17} /><span><strong>{t("Storefront language")}</strong><small>{t("Customer-facing interface copy.")}</small></span><div><button type="button" className={(draft.catalog_locale ?? "en") === "en" ? "active" : ""} aria-pressed={(draft.catalog_locale ?? "en") === "en"} onClick={() => update("catalog_locale", "en")}>EN</button><button type="button" className={draft.catalog_locale === "vi" ? "active" : ""} aria-pressed={draft.catalog_locale === "vi"} onClick={() => update("catalog_locale", "vi")}>VI</button></div></div>
             </>}
 
@@ -636,6 +703,16 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
       </aside>
 
       <div className="builder-canvas admin-surface">
+        {publishNotice && (
+          <Alert
+            variant="error"
+            title={t("Could not publish all changes")}
+            className="builder-publish-alert"
+            onClose={() => setPublishNotice("")}
+          >
+            {publishNotice}
+          </Alert>
+        )}
         <div className="builder-toolbar">
           <div><strong>{t(sectionMeta[selected].title)}</strong><small>{t(hasChanges ? "Unpublished changes" : "Published storefront")}</small></div>
           <div className="builder-toolbar-controls">

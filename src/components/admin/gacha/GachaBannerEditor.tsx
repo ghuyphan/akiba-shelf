@@ -11,6 +11,7 @@ import type {
   GachaItemKind,
 } from "../../../types/gacha";
 import { Field, TextArea, TextInput } from "../../ui/Field";
+import { Alert } from "../../ui/Alert";
 import type { SelectMenuOption } from "../../ui/SelectMenu";
 import { DropdownField } from "./DropdownField";
 import { GachaElementIcon } from "./GachaElementIcon";
@@ -18,6 +19,8 @@ import { GachaElementIcon } from "./GachaElementIcon";
 type Props = {
   banner: GachaBanner;
   descriptor: GachaGameDescriptor;
+  error?: string;
+  errorField?: "title" | "schedule";
   onUpdateBanner: (changes: Partial<GachaBanner>) => void;
   onUpdateDisplayLimit: (displayLimit: number) => void;
   onTextFocus: () => void;
@@ -41,6 +44,8 @@ function fromLocalDateTime(value: string) {
 export function GachaBannerEditor({
   banner,
   descriptor,
+  error = "",
+  errorField,
   onUpdateBanner,
   onUpdateDisplayLimit,
   onTextFocus,
@@ -122,9 +127,15 @@ export function GachaBannerEditor({
       </header>
 
       <div className="gacha-banner-fields">
+        {error && !errorField && (
+          <Alert className="gacha-section-error" variant="error">
+            {error}
+          </Alert>
+        )}
         <Field
           className="gacha-field-title"
           label={t("Banner title")}
+          error={errorField === "title" ? error : undefined}
           hint={t(
             "Bilingual: English | Tiếng Việt or [en]English[vi]Tiếng Việt",
           )}
@@ -132,6 +143,7 @@ export function GachaBannerEditor({
           <TextInput
             maxLength={80}
             value={banner.name}
+            aria-invalid={errorField === "title"}
             onFocus={onTextFocus}
             onChange={(event) => onUpdateBanner({ name: event.target.value })}
           />
@@ -192,11 +204,13 @@ export function GachaBannerEditor({
         <Field
           label={t("Banner ends")}
           hint={t("Leave empty to keep it running until you close it.")}
+          error={errorField === "schedule" ? error : undefined}
         >
           <TextInput
             type="datetime-local"
             min={toLocalDateTime(banner.starts_at)}
             value={toLocalDateTime(banner.ends_at)}
+            aria-invalid={errorField === "schedule"}
             onChange={(event) =>
               onUpdateBanner({
                 ends_at: fromLocalDateTime(event.target.value),

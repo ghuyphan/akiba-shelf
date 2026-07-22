@@ -5,7 +5,7 @@ const ORDERS_KEY = "matsuri-admin-orders-v1";
 const MAX_ACCESS_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_ORDER_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_ORDER_SNAPSHOT = 200;
-export type AdminOrderSource = "online" | "event";
+export type AdminOrderSource = "online" | "event" | `event:${string}`;
 
 type CachedAccess = {
   version: 1;

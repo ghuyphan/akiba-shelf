@@ -17,6 +17,7 @@ import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { Product } from "../../../types/catalog";
 import type { GachaBanner, GachaPoolEntry } from "../../../types/gacha";
 import { EmptyState } from "../../ui/EmptyState";
+import { Alert } from "../../ui/Alert";
 import { GachaElementIcon } from "./GachaElementIcon";
 import { GachaEntryEditor } from "./GachaEntryEditor";
 import { productImage } from "./gachaState";
@@ -27,6 +28,7 @@ type Props = {
   banners: GachaBanner[];
   entries: GachaPoolEntry[];
   descriptor: GachaGameDescriptor;
+  error?: string;
   onToggleProduct: (productId: string) => void;
   onUpdateEntry: (productId: string, changes: Partial<GachaPoolEntry>) => void;
   onToggleFeatured: (productId: string, featured: boolean) => void;
@@ -41,6 +43,7 @@ export function GachaPoolEditor({
   banners,
   entries,
   descriptor,
+  error = "",
   onToggleProduct,
   onUpdateEntry,
   onToggleFeatured,
@@ -155,6 +158,11 @@ export function GachaPoolEditor({
 
   return (
     <div className="gacha-pool-section">
+      {error && (
+        <Alert className="gacha-section-error" variant="error">
+          {error}
+        </Alert>
+      )}
       <div className="gacha-pool-head">
         <header className="gacha-panel-heading">
           <h3>
@@ -188,7 +196,7 @@ export function GachaPoolEditor({
 
       <div className="gacha-pool-toolbar">
         <div
-          className="gacha-segmented"
+          className="gacha-segmented gacha-pool-filters"
           role="group"
           aria-label={t("Filter pool items")}
         >
@@ -256,6 +264,16 @@ export function GachaPoolEditor({
 
               if (!entry) {
                 const owner = assignedBannerByProduct.get(product.id);
+                const addDisabledReason = owner
+                  ? t(
+                      "This item is already in “{{banner}}”. Remove it there first.",
+                      { banner: owner.name },
+                    )
+                  : !product.active
+                    ? t(
+                        "Hidden merch cannot be added until it is active in the catalog.",
+                      )
+                    : "";
                 return (
                   <article
                     key={product.id}
@@ -280,12 +298,10 @@ export function GachaPoolEditor({
                       type="button"
                       className="gacha-item-add"
                       disabled={!product.active || Boolean(owner)}
-                      title={
-                        owner
-                          ? t(
-                              "This item is already in “{{banner}}”. Remove it there first.",
-                              { banner: owner.name },
-                            )
+                      title={addDisabledReason || undefined}
+                      aria-label={
+                        addDisabledReason
+                          ? `${t("Add to banner")}: ${addDisabledReason}`
                           : undefined
                       }
                       onClick={() => onToggleProduct(product.id)}

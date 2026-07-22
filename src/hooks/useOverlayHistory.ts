@@ -15,12 +15,19 @@ function getOverlayState(): OverlayHistoryState | undefined {
   return typeof token === "string" ? { token } : undefined;
 }
 
-export function useOverlayHistory(open: boolean, onClose: () => void, enabled = true) {
+export function useOverlayHistory(
+  open: boolean,
+  onClose: () => void,
+  enabled = true,
+  canClose = true,
+) {
   const tokenRef = useRef(`overlay-${++nextOverlayId}`);
   const entryActiveRef = useRef(false);
   const previousOpenRef = useRef(false);
   const onCloseRef = useRef(onClose);
+  const canCloseRef = useRef(canClose);
   onCloseRef.current = onClose;
+  canCloseRef.current = canClose;
 
   useEffect(() => {
     if (!enabled) return;
@@ -28,6 +35,21 @@ export function useOverlayHistory(open: boolean, onClose: () => void, enabled = 
     const handlePopState = () => {
       if (!entryActiveRef.current) return;
       if (getOverlayState()?.token === tokenRef.current) return;
+      if (!canCloseRef.current) {
+        const currentState =
+          window.history.state && typeof window.history.state === "object"
+            ? (window.history.state as Record<string, unknown>)
+            : {};
+        window.history.pushState(
+          {
+            ...currentState,
+            [OVERLAY_STATE_KEY]: { token: tokenRef.current },
+          },
+          "",
+          window.location.href,
+        );
+        return;
+      }
       entryActiveRef.current = false;
       onCloseRef.current();
     };
@@ -66,6 +88,7 @@ export function useOverlayHistory(open: boolean, onClose: () => void, enabled = 
   }, [enabled, open]);
 
   return useCallback(() => {
+    if (!canCloseRef.current) return;
     if (!enabled || !entryActiveRef.current || getOverlayState()?.token !== tokenRef.current) {
       onCloseRef.current();
       return;

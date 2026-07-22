@@ -298,9 +298,45 @@ export type OfflineEventSession = {
   deviceId: string;
   name: string;
   status: "active" | "closing" | "closed";
+  scheduledStartAt?: string;
+  scheduledEndAt?: string;
+  startedAt?: string;
+  closedAt?: string;
   allocations: OfflineEventAllocation[];
   payment: PaymentSettings;
   promotion: PromotionSettings;
   createdAt: string;
   updatedAt: string;
+};
+
+export type OfflineEventDraft = {
+  version: 1;
+  id: string;
+  shopId: string;
+  shopSlug: string;
+  name: string;
+  status: "draft";
+  scheduledStartAt: string;
+  scheduledEndAt: string;
+  allocations: OfflineEventAllocation[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type OfflineEventSummary = {
+  id: string;
+  shopId: string;
+  name: string;
+  status: "draft" | "active" | "closed";
+  scheduledStartAt: string | null;
+  scheduledEndAt: string | null;
+  startedAt: string | null;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  productCount: number;
+  quantityAllocated: number;
+  quantitySold: number;
+  orderCount: number;
+  orderTotal: number;
 };

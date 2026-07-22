@@ -16,6 +16,7 @@ import {
   resetPageTheme,
 } from "../utils/theme";
 import { getShopBranding, useDocumentBranding } from "../lib/branding";
+import { applyDocumentSeo } from "../lib/seo";
 import type { Order, Product, StorefrontSection } from "../types/catalog";
 import { CatalogLocaleProvider, translations, useCatalogCopy } from "../lib/i18n/catalogI18n";
 import { PromotionProvider } from "../lib/promotionContext";
@@ -190,6 +191,17 @@ export function CatalogPage() {
         )
       : null;
   useDocumentBranding(verifiedBranding);
+  useEffect(() => {
+    const shopName = booth.booth_name.trim() || shop?.name.trim() || "Shop";
+    applyDocumentSeo({
+      description:
+        booth.subtitle.trim() ||
+        `Browse products and place an order from ${shopName} on Matsuri.`,
+      canonicalPath: `/s/${encodeURIComponent(shopSlug)}`,
+      robots: verifiedBranding ? "index, follow" : "noindex, nofollow",
+      type: "profile",
+    });
+  }, [booth.booth_name, booth.subtitle, shop?.name, shopSlug, verifiedBranding]);
 
   useEffect(() => {
     const next = loadCheckoutSession(shopSlug)?.order ?? null;

@@ -23,12 +23,12 @@ import { getErrorMessage } from "../../lib/errors";
 import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
 import { Field, FieldLabel, TextInput } from "../ui/Field";
-import { Modal } from "../ui/Modal";
 import { SelectMenu } from "../ui/SelectMenu";
 import { AdminCard } from "./AdminCard";
 import { EmptyState } from "../ui/EmptyState";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { MAX_SHOP_TEAM_SIZE } from "../../lib/constants";
+import { ConfirmationDialog } from "../ui/ConfirmationDialog";
 
 const inviteRoles = [
   { value: "staff", label: "Staff", description: "Process and fulfil orders" },
@@ -57,6 +57,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [ownershipBusy, setOwnershipBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [removing, setRemoving] = useState<StaffAccess | null>(null);
   const [ownerChange, setOwnerChange] = useState<{
     member: StaffAccess;
@@ -84,12 +85,29 @@ export function StaffManager({ shopId }: { shopId: string }) {
   }, [shopId]);
   useEffect(() => {
     setLoading(true);
+    setLoadError("");
+    setMembers([]);
+    setInvitations([]);
     void reload()
-      .catch((caught) =>
-        toast.error(t(getErrorMessage(caught)), t("Could not load staff")),
-      )
+      .catch((caught) => {
+        const message = getErrorMessage(caught);
+        setLoadError(message);
+        toast.error(t(message), t("Could not load staff"));
+      })
       .finally(() => setLoading(false));
   }, [reload, t, toast]);
+
+  async function retryLoad() {
+    setLoading(true);
+    setLoadError("");
+    try {
+      await reload();
+    } catch (caught) {
+      setLoadError(getErrorMessage(caught));
+    } finally {
+      setLoading(false);
+    }
+  }
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
@@ -120,10 +138,10 @@ export function StaffManager({ shopId }: { shopId: string }) {
     changes: Partial<Pick<StaffAccess, "role" | "active">>,
     confirmed = false,
   ) {
-    if (!member.user_id) return;
+    if (!member.user_id) return false;
     if (!confirmed && (member.role === "owner" || changes.role === "owner")) {
       setOwnerChange({ member, changes });
-      return;
+      return false;
     }
     setUpdatingId(member.user_id);
     try {
@@ -134,8 +152,10 @@ export function StaffManager({ shopId }: { shopId: string }) {
       });
       await reload();
       toast.success(t("Staff access updated."));
+      return true;
     } catch (caught) {
       toast.error(t(getErrorMessage(caught)), t("Could not update staff"));
+      return false;
     } finally {
       setUpdatingId(null);
     }
@@ -173,10 +193,10 @@ export function StaffManager({ shopId }: { shopId: string }) {
       icon={<ShieldCheck size={18} />}
       className="admin-team-card"
     >
-      <section className="staff-overview" aria-label={t("Team overview")}>
-        <div><strong>{activeMemberCount}</strong><span>{t("Active members")}</span></div>
-        <div><strong>{pendingInvitationCount}</strong><span>{t("Pending invites")}</span></div>
-        <div className={teamLimitReached ? "is-full" : ""}><strong>{teamPlacesUsed}/{MAX_SHOP_TEAM_SIZE}</strong><span>{t("Team places used")}</span></div>
+      <section className="staff-overview" aria-label={t("Team overview")} aria-busy={loading || undefined}>
+        <div><strong>{loading || loadError ? "—" : activeMemberCount}</strong><span>{t("Active members")}</span></div>
+        <div><strong>{loading || loadError ? "—" : pendingInvitationCount}</strong><span>{t("Pending invites")}</span></div>
+        <div className={teamLimitReached ? "is-full" : ""}><strong>{loading || loadError ? "—" : `${teamPlacesUsed}/${MAX_SHOP_TEAM_SIZE}`}</strong><span>{t("Team places used")}</span></div>
       </section>
       <div className="staff-manager-layout">
         <form onSubmit={submit} className="staff-invite-panel">
@@ -196,6 +216,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
                 autoComplete="email"
                 value={email}
                 placeholder="staff@example.com"
+                disabled={loading || Boolean(loadError)}
                 onChange={(event) => setEmail(event.target.value)}
               />
             </Field>
@@ -203,7 +224,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
               <FieldLabel>{t("Role")}</FieldLabel>
               <div className="staff-role-options" role="radiogroup" aria-label={t("Invitation role")}>
                 {localizedInviteRoles.map((option) => (
-                  <button key={option.value} type="button" role="radio" aria-checked={role === option.value} className={role === option.value ? "active" : ""} onClick={() => setRole(option.value as StaffRole)}>
+                  <button key={option.value} type="button" role="radio" aria-checked={role === option.value} className={role === option.value ? "active" : ""} disabled={loading || Boolean(loadError)} onClick={() => setRole(option.value as StaffRole)}>
                     <span>{option.value === "admin" ? <ShieldCheck size={16} /> : <Users size={16} />}</span>
                     <span><strong>{option.label}</strong><small>{option.description}</small></span>
                   </button>
@@ -215,7 +236,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
             type="submit"
             icon={<UserPlus size={16} />}
             loading={inviteBusy}
-            disabled={teamLimitReached}
+            disabled={teamLimitReached || loading || Boolean(loadError)}
             className="staff-invite-button"
           >
             {t("Send invitation")}
@@ -242,7 +263,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
             {!members.length ? (
               <EmptyState
                 variant="compact"
-                tone={loading ? "loading" : "neutral"}
+                tone={loading ? "loading" : loadError ? "error" : "neutral"}
                 icon={
                   loading ? (
                     <LoaderCircle className="state-spinner" size={24} />
@@ -250,8 +271,9 @@ export function StaffManager({ shopId }: { shopId: string }) {
                     <Users size={24} />
                   )
                 }
-                title={loading ? t("Loading staff…") : t("No members yet")}
-                message={t("Invite a staff member above.")}
+                title={loading ? t("Loading staff…") : loadError ? t("Could not load staff") : t("No members yet")}
+                message={loadError ? t(loadError) : t("Invite a staff member above.")}
+                action={loadError ? <Button type="button" variant="secondary" onClick={() => void retryLoad()}>{t("Retry")}</Button> : undefined}
               />
             ) : (
               members.map((member) => (
@@ -348,63 +370,36 @@ export function StaffManager({ shopId }: { shopId: string }) {
           ))}
         </section>
       )}
-      <Modal
-        title={t("Confirm ownership change")}
+      <ConfirmationDialog
         isOpen={Boolean(ownerChange)}
+        title={t("Confirm ownership change")}
+        message={t("Ownership changes affect full shop and team access. The shop must always retain at least one active owner.")}
+        cancelLabel={t("Cancel")}
+        confirmLabel={t("Confirm change")}
+        loadingLabel={t("Saving…")}
+        busy={ownershipBusy}
+        danger={false}
         onClose={() => setOwnerChange(null)}
-        closeLabel={t("Close modal")}
-      >
-        <div className="staff-remove-confirm">
-          <p>
-            {t("Ownership changes affect full shop and team access. The shop must always retain at least one active owner.")}
-          </p>
-          <div>
-            <Button variant="secondary" onClick={() => setOwnerChange(null)}>
-              {t("Cancel")}
-            </Button>
-            <Button
-              loading={ownershipBusy}
-              onClick={() => {
-                if (!ownerChange) return;
-                const pending = ownerChange;
-                setOwnershipBusy(true);
-                void update(pending.member, pending.changes, true).finally(
-                  () => {
-                    setOwnershipBusy(false);
-                    setOwnerChange(null);
-                  },
-                );
-              }}
-            >
-              {t("Confirm change")}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-      <Modal
-        title={t("Remove shop access?")}
+        onConfirm={() => {
+          if (!ownerChange) return;
+          const pending = ownerChange;
+          setOwnershipBusy(true);
+          void update(pending.member, pending.changes, true).then((saved) => {
+            if (saved) setOwnerChange(null);
+          }).finally(() => setOwnershipBusy(false));
+        }}
+      />
+      <ConfirmationDialog
         isOpen={Boolean(removing)}
+        title={t("Remove shop access?")}
+        message={<><strong>{removing?.email}</strong> {t("will immediately lose access to this shop.")}</>}
+        cancelLabel={t("Cancel")}
+        confirmLabel={t("Remove access")}
+        loadingLabel={t("Removing…")}
+        busy={removeBusy}
         onClose={() => setRemoving(null)}
-        closeLabel={t("Close modal")}
-      >
-        <div className="staff-remove-confirm">
-          <p>
-            <strong>{removing?.email}</strong> {t("will immediately lose access to this shop.")}
-          </p>
-          <div>
-            <Button variant="secondary" onClick={() => setRemoving(null)}>
-              {t("Cancel")}
-            </Button>
-            <Button
-              variant="danger"
-              loading={removeBusy}
-              onClick={() => void remove()}
-            >
-              {t("Remove access")}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        onConfirm={() => void remove()}
+      />
     </AdminCard>
   );
 }

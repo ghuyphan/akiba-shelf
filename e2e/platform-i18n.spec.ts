@@ -89,7 +89,7 @@ test("landing title accent and mobile artwork stay stable across locales", async
   await page.getByRole("option", { name: "Tiếng Việt" }).click();
   await expect(
     page.getByRole("heading", {
-      name: "Tác phẩm của bạn. Gian hàng của bạn. Góc nhỏ của bạn tại hội chợ.",
+      name: "Vận hành gian hàng merch. Luôn đồng bộ.",
     }),
   ).toBeVisible();
   await expectStableLandingHero(page);
@@ -105,7 +105,7 @@ test("platform locale menu persists without horizontal overflow", async ({
 
   await expect(
     page.getByRole("heading", {
-      name: "Tác phẩm của bạn. Gian hàng của bạn. Góc nhỏ của bạn tại hội chợ.",
+      name: "Vận hành gian hàng merch. Luôn đồng bộ.",
     }),
   ).toBeVisible();
   await expect(

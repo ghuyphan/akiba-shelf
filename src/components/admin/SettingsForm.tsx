@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Clock3, Edit3, Link2, MapPin, Store, Type, X } from "lucide-react";
 import type { BoothSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
@@ -11,6 +11,7 @@ import { ImageUpload } from "./ImageUpload";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { SocialLinkFields } from "./SocialLinkFields";
 import { SocialBrandIcon } from "../ui/SocialBrandIcon";
+import { useAdminUnsavedChanges } from "./AdminUnsavedChanges";
 
 type SettingsFormProps = { shopId: string; settings: BoothSettings; onSave: (settings: BoothSettings) => Promise<void> };
 
@@ -23,7 +24,8 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
   const hasChanges = useMemo(() => JSON.stringify(draft) !== JSON.stringify(settings), [draft, settings]);
   useEffect(() => { if (error) { toast.error(t(error), t("Could not save booth settings")); setError(""); } }, [error, setError, t, toast]);
   useEffect(() => { setDraft(settings); setIsEditing(false); setError(""); }, [settings, setError]);
-  function resetDraft() { setDraft(settings); setIsEditing(false); setError(""); }
+  const resetDraft = useCallback(() => { setDraft(settings); setIsEditing(false); setError(""); }, [settings, setError]);
+  useAdminUnsavedChanges(`settings:${shopId}`, isEditing && hasChanges, resetDraft);
   async function handleSubmit(event: FormEvent) { event.preventDefault(); let saved = false; await run(async () => { await onSave(draft); saved = true; }).catch(() => undefined); if (saved) setIsEditing(false); }
 
   return (

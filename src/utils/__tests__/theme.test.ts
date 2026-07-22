@@ -1,6 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { defaultBooth } from "../../lib/constants";
-import { getStorefrontSectionStyleClass, getThemeStyle } from "../theme";
+import {
+  getStorefrontSectionStyleClass,
+  getThemeStyle,
+  hydrateInitialPageTheme,
+  resetPageTheme,
+} from "../theme";
+
+afterEach(() => {
+  resetPageTheme();
+  localStorage.clear();
+  window.history.replaceState({}, "", "/");
+});
 
 describe("storefront card styles", () => {
   it("maps persisted card personalities to distinct safe CSS tokens", () => {
@@ -18,5 +29,20 @@ describe("storefront card styles", () => {
     expect(getStorefrontSectionStyleClass("controls", booth)).toBe("style-controls-compact");
     expect(getStorefrontSectionStyleClass("products", booth)).toBe("style-product-framed");
     expect(getStorefrontSectionStyleClass("booth", booth)).toBe("");
+  });
+
+  it("hydrates the admin from the active shop theme", () => {
+    window.history.replaceState({}, "", "/admin");
+    localStorage.setItem("akiba-active-shop", "shop-1");
+    localStorage.setItem(
+      "merch-booth-theme:id:shop-1",
+      JSON.stringify({ theme_primary: "#123456" }),
+    );
+
+    hydrateInitialPageTheme();
+
+    expect(document.documentElement.style.getPropertyValue("--coral")).toBe(
+      "#123456",
+    );
   });
 });

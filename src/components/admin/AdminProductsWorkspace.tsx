@@ -10,6 +10,7 @@ import { ProductForm } from "./ProductForm";
 import { ProductList } from "./ProductList";
 import { PromotionSettingsForm } from "./PromotionSettingsForm";
 import type { ProductWorkspaceTab } from "./adminWorkspaceTypes";
+import { useAdminNavigationGuard } from "./AdminUnsavedChanges";
 
 type AdminProductsWorkspaceProps = {
   shopId: string;
@@ -58,6 +59,7 @@ export function AdminProductsWorkspace({
   onSavePromotion,
 }: AdminProductsWorkspaceProps) {
   const { t } = usePlatformI18n();
+  const requestNavigation = useAdminNavigationGuard();
   const [activeTab, setActiveTab] = useState<ProductWorkspaceTab>("list");
   const { containerRef, registerItem } = useTabIndicator<
     ProductWorkspaceTab,
@@ -69,8 +71,10 @@ export function AdminProductsWorkspace({
   );
 
   function createProduct() {
-    onSelectProduct(createBlankProduct(nextSort));
-    setActiveTab("form");
+    requestNavigation(() => {
+      onSelectProduct(createBlankProduct(nextSort));
+      setActiveTab("form");
+    });
   }
 
   return (
@@ -85,7 +89,7 @@ export function AdminProductsWorkspace({
           type="button"
           ref={registerItem("list")}
           className={`chip ${activeTab === "list" ? "chip-active" : ""}`}
-          onClick={() => setActiveTab("list")}
+          onClick={() => requestNavigation(() => setActiveTab("list"))}
         >
           {t("Products List ({{count}})", { count: products.length })}
         </button>
@@ -106,8 +110,14 @@ export function AdminProductsWorkspace({
             products={products}
             selectedId={selectedProduct?.id}
             onSelect={(product) => {
-              onSelectProduct(product);
-              setActiveTab("form");
+              if (product.id === selectedProduct?.id) {
+                setActiveTab("form");
+                return;
+              }
+              requestNavigation(() => {
+                onSelectProduct(product);
+                setActiveTab("form");
+              });
             }}
             onCreate={createProduct}
             loading={loading}

@@ -47,6 +47,36 @@ describe("admin order snapshots", () => {
     ).toEqual(["event-1"]);
   });
 
+  it("keeps individual Event histories isolated", () => {
+    saveAdminOrdersSnapshot(
+      "user-1",
+      "shop-1",
+      [order("event-1", "offline_event")],
+      "event:session-1",
+    );
+    saveAdminOrdersSnapshot(
+      "user-1",
+      "shop-1",
+      [order("event-2", "offline_event")],
+      "event:session-2",
+    );
+
+    expect(
+      loadAdminOrdersSnapshot(
+        "user-1",
+        "shop-1",
+        "event:session-1",
+      ).map(({ id }) => id),
+    ).toEqual(["event-1"]);
+    expect(
+      loadAdminOrdersSnapshot(
+        "user-1",
+        "shop-1",
+        "event:session-2",
+      ).map(({ id }) => id),
+    ).toEqual(["event-2"]);
+  });
+
   it("isolates cached access and orders between signed-in users", () => {
     saveAdminAccessSnapshot("user-1", "one@example.test", []);
     saveAdminAccessSnapshot("user-2", "two@example.test", []);

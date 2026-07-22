@@ -116,7 +116,7 @@ select is((select unit_price from public.offline_event_order_items),10000,'serve
 select ok(
   not has_function_privilege(
     'anon',
-    'public.get_offline_event_orders(uuid,integer,integer,text,timestamptz,timestamptz)',
+    'public.get_offline_event_orders(uuid,integer,integer,text,timestamptz,timestamptz,uuid)',
     'execute'
   ),
   'anonymous users cannot list event orders'
@@ -124,7 +124,7 @@ select ok(
 select ok(
   has_function_privilege(
     'authenticated',
-    'public.get_offline_event_orders(uuid,integer,integer,text,timestamptz,timestamptz)',
+    'public.get_offline_event_orders(uuid,integer,integer,text,timestamptz,timestamptz,uuid)',
     'execute'
   ),
   'authenticated staff can call the guarded event order list'

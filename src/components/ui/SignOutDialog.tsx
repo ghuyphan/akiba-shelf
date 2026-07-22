@@ -35,6 +35,8 @@ export function SignOutDialog({
         if (!busy) onClose();
       }}
       className="signout-modal"
+      appearance="admin"
+      dismissible={!busy}
       closeLabel={cancelLabel}
     >
       <div className="signout-confirmation">

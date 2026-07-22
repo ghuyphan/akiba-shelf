@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { ChevronDown, Sparkles } from "lucide-react";
 import {
   GACHA_PRESETS,
@@ -6,11 +7,13 @@ import {
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaSettings } from "../../../types/gacha";
 import { Field, FieldLabel, TextInput } from "../../ui/Field";
+import { Alert } from "../../ui/Alert";
 import { AdminCard } from "../AdminCard";
 
 type Props = {
   settings: GachaSettings;
   descriptor: GachaGameDescriptor;
+  error?: string;
   onUpdateSettings: (
     changes: Partial<GachaSettings>,
     asTextEdit?: boolean,
@@ -18,13 +21,36 @@ type Props = {
   onTextFocus: () => void;
 };
 
+const PRESET_IDS = ["booth_fast", "official"] as const;
+
+function settingsMatchPreset(
+  settings: GachaSettings,
+  presetSettings: Partial<GachaSettings>,
+) {
+  return Object.entries(presetSettings).every(
+    ([key, value]) => settings[key as keyof GachaSettings] === value,
+  );
+}
+
 export function GachaLuckSection({
   settings,
   descriptor,
+  error = "",
   onUpdateSettings,
   onTextFocus,
 }: Props) {
   const { t } = usePlatformI18n();
+  const presets = GACHA_PRESETS[descriptor.gameType];
+  const activePresetId = PRESET_IDS.find((presetId) =>
+    settingsMatchPreset(settings, presets[presetId].settings),
+  );
+  const activePreset = activePresetId ? presets[activePresetId] : null;
+  const hasCustomOdds = activePreset === null;
+  const disclosureRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    if (error && disclosureRef.current) disclosureRef.current.open = true;
+  }, [error]);
 
   return (
     <AdminCard
@@ -35,20 +61,32 @@ export function GachaLuckSection({
         "Start with a simple preset. Advanced odds stay out of the way until needed.",
       )}
     >
-      <details className="gacha-luck-disclosure">
+      <details ref={disclosureRef} className="gacha-luck-disclosure">
         <summary>
-          <span>
-            <strong>{t("Review luck settings")}</strong>
-            <small>
-              {t("5★ guaranteed by pull #{{count}}", {
-                count: settings.legendary_pity,
-              })}
-            </small>
+          <span className="gacha-luck-summary-content">
+            <span className="gacha-luck-summary-copy">
+              <strong>{t("Review luck settings")}</strong>
+              <small>
+                {t("5★ guaranteed by pull #{{count}}", {
+                  count: settings.legendary_pity,
+                })}
+              </small>
+            </span>
+            <span
+              className={`gacha-odds-status ${hasCustomOdds ? "is-custom" : ""}`}
+            >
+              {hasCustomOdds ? t("Custom odds active") : t(activePreset.name)}
+            </span>
           </span>
           <ChevronDown size={18} aria-hidden="true" />
         </summary>
 
         <div className="gacha-luck-content">
+          {error && (
+            <Alert className="gacha-section-error" variant="error">
+              {error}
+            </Alert>
+          )}
           <div className="gacha-presets-section">
             <span className="gacha-presets-title">
               <Sparkles size={14} aria-hidden="true" />
@@ -59,19 +97,55 @@ export function GachaLuckSection({
               role="radiogroup"
               aria-label={t("Odds presets")}
             >
-              {(["booth_fast", "official"] as const).map((presetId) => {
-                const preset = GACHA_PRESETS[descriptor.gameType][presetId];
-                const isActive =
-                  settings.legendary_pity === preset.settings.legendary_pity &&
-                  settings.rare_pity === preset.settings.rare_pity;
+              {PRESET_IDS.map((presetId, index) => {
+                const preset = presets[presetId];
+                const isActive = activePresetId === presetId;
                 return (
                   <button
                     key={presetId}
                     type="button"
                     role="radio"
                     aria-checked={isActive}
+                    tabIndex={
+                      isActive || (!activePresetId && index === 0) ? 0 : -1
+                    }
                     className={`gacha-preset-card ${isActive ? "is-active" : ""}`}
                     onClick={() => onUpdateSettings(preset.settings)}
+                    onKeyDown={(event) => {
+                      if (
+                        ![
+                          "ArrowLeft",
+                          "ArrowRight",
+                          "ArrowUp",
+                          "ArrowDown",
+                          "Home",
+                          "End",
+                        ].includes(event.key)
+                      ) {
+                        return;
+                      }
+                      event.preventDefault();
+                      const buttons = Array.from(
+                        event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
+                          '[role="radio"]',
+                        ) ?? [],
+                      );
+                      const currentIndex = buttons.indexOf(event.currentTarget);
+                      const nextIndex =
+                        event.key === "Home"
+                          ? 0
+                          : event.key === "End"
+                            ? buttons.length - 1
+                            : (currentIndex +
+                                (event.key === "ArrowLeft" ||
+                                event.key === "ArrowUp"
+                                  ? -1
+                                  : 1) +
+                                buttons.length) %
+                              buttons.length;
+                      buttons[nextIndex]?.focus();
+                      buttons[nextIndex]?.click();
+                    }}
                   >
                     <strong>{t(preset.name)}</strong>
                     <small>{t(preset.description)}</small>
@@ -100,7 +174,7 @@ export function GachaLuckSection({
             </p>
           </div>
 
-          <details className="gacha-pity">
+          <details className={`gacha-pity ${hasCustomOdds ? "is-custom" : ""}`}>
             <summary>
               <div className="gacha-pity-summary-content">
                 <span className="gacha-pity-heading">
@@ -112,6 +186,9 @@ export function GachaLuckSection({
                   </small>
                 </span>
                 <span className="gacha-pity-values">
+                  {hasCustomOdds && (
+                    <span className="is-custom">{t("Custom odds active")}</span>
+                  )}
                   <span>4★ · {settings.rare_pity}</span>
                   <span>5★ · {settings.legendary_pity}</span>
                   {descriptor.hasLightconePity && (

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { BadgeDollarSign, Building2, CreditCard, Edit3, MessageSquareText, QrCode, X } from "lucide-react";
 import type { PaymentSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
@@ -10,6 +10,7 @@ import { AdminEditBar } from "./AdminEditBar";
 import { ImageUpload } from "./ImageUpload";
 import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../utils/banks";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
+import { useAdminUnsavedChanges } from "./AdminUnsavedChanges";
 
 type QrManagerProps = { shopId: string; settings: PaymentSettings; onSave: (settings: PaymentSettings) => Promise<void> };
 
@@ -24,7 +25,8 @@ export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
   const banks = getVietQrBanks();
   const selectedBank = getPaymentBank(draft.bank_code, draft.bank_acq_id);
   useEffect(() => { setDraft(settings); setIsEditing(false); setError(""); }, [settings, setError]);
-  function resetDraft() { setDraft(settings); setIsEditing(false); setError(""); }
+  const resetDraft = useCallback(() => { setDraft(settings); setIsEditing(false); setError(""); }, [settings, setError]);
+  useAdminUnsavedChanges(`payment:${shopId}`, isEditing && hasChanges, resetDraft);
   async function handleSubmit(event: FormEvent) { event.preventDefault(); let saved = false; await run(async () => { await onSave(draft); saved = true; }).catch(() => undefined); if (saved) setIsEditing(false); }
 
   return (

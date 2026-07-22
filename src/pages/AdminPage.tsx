@@ -56,6 +56,7 @@ import { useAdminOrderRealtime } from "../hooks/useAdminOrderRealtime";
 import { AdminWorkspaceHeader } from "../components/admin/AdminWorkspaceHeader";
 import { AdminViewHero } from "../components/admin/AdminViewHero";
 import { AdminWorkspaceContent } from "../components/admin/AdminWorkspaceContent";
+import { AdminUnsavedChangesProvider } from "../components/admin/AdminUnsavedChanges";
 import type { OrderViewFilter } from "../components/admin/OrderQueue";
 import type { AdminViewTab } from "../components/admin/adminWorkspaceTypes";
 import { SignOutDialog } from "../components/ui/SignOutDialog";
@@ -99,6 +100,7 @@ export function AdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderFilter, setOrderFilter] = useState<OrderViewFilter>("pending");
+  const [selectedEventId, setSelectedEventId] = useState("");
   const [eventOrderCount, setEventOrderCount] = useState(0);
   const [ordersTodayOnly, setOrdersTodayOnly] = useState(true);
   const [orderPage, setOrderPage] = useState(1);
@@ -124,6 +126,7 @@ export function AdminPage() {
     useState<PromotionSettings>(defaultPromotion);
   const toast = useToast();
   const { t } = usePlatformI18n();
+
   const verifiedBranding =
     isAuthed && booth.shop_id === shopId && !isInitialLoading && !catalogLoading
       ? getAdminBranding(
@@ -148,6 +151,7 @@ export function AdminPage() {
   const loadedCatalogShopRef = useRef("");
   const orderPageRef = useRef(orderPage);
   const orderFilterRef = useRef(orderFilter);
+  const selectedEventIdRef = useRef(selectedEventId);
   const ordersTodayOnlyRef = useRef(ordersTodayOnly);
   const loadedOrderQueryRef = useRef("");
   const loadedOrderCountScopeRef = useRef("");
@@ -171,6 +175,7 @@ export function AdminPage() {
     setOrders([]);
     setOrderCounts(emptyOrderCounts);
     setEventOrderCount(0);
+    setSelectedEventId("");
     setOrderTotal(0);
     setSelectedProduct(undefined);
     setBooth(shopId ? getStoredBoothTheme(`id:${shopId}`) : defaultBooth);
@@ -187,8 +192,9 @@ export function AdminPage() {
   useEffect(() => {
     orderPageRef.current = orderPage;
     orderFilterRef.current = orderFilter;
+    selectedEventIdRef.current = selectedEventId;
     ordersTodayOnlyRef.current = ordersTodayOnly;
-  }, [orderPage, orderFilter, ordersTodayOnly]);
+  }, [orderPage, orderFilter, ordersTodayOnly, selectedEventId]);
 
   useEffect(() => {
     tRef.current = t;
@@ -252,6 +258,7 @@ export function AdminPage() {
         shopId,
         page,
         orderFilterRef.current,
+        selectedEventIdRef.current,
         ordersTodayOnlyRef.current,
         refreshCounts,
       ].join(":");
@@ -280,6 +287,7 @@ export function AdminPage() {
                 getOfflineEventOrders(shopId, {
                   page,
                   pageSize: orderPageSize,
+                  sessionId: selectedEventIdRef.current || undefined,
                   ...dateScope,
                 }),
                 refreshCounts
@@ -313,11 +321,14 @@ export function AdminPage() {
                   : Promise.resolve(null),
               ]);
         if (requestId !== orderRequestRef.current) return;
+        const eventSource = selectedEventIdRef.current
+          ? (`event:${selectedEventIdRef.current}` as const)
+          : "event";
         saveAdminOrdersSnapshot(
           userId,
           shopId,
           result.orders,
-          filter === "event" ? "event" : "online",
+          filter === "event" ? eventSource : "online",
         );
         const lastPage = Math.max(1, Math.ceil(result.total / orderPageSize));
         if (page > lastPage) {
@@ -330,9 +341,11 @@ export function AdminPage() {
           shopId,
           page,
           orderFilterRef.current,
+          selectedEventIdRef.current,
           ordersTodayOnlyRef.current,
         ].join(":");
-        if (filter === "event") setEventOrderCount(result.total);
+        if (filter === "event" && !selectedEventIdRef.current)
+          setEventOrderCount(result.total);
         if (countResult) {
           setOrderCounts(countResult[0]);
           if (countResult[1] !== null) setEventOrderCount(countResult[1]);
@@ -345,7 +358,12 @@ export function AdminPage() {
         .catch(async (error) => {
           if (navigator.onLine && !isTransportError(error)) throw error;
           const filter = orderFilterRef.current;
-          const source = filter === "event" ? "event" : "online";
+          const source =
+            filter === "event"
+              ? selectedEventIdRef.current
+                ? (`event:${selectedEventIdRef.current}` as const)
+                : "event"
+              : "online";
           const cached = loadAdminOrdersSnapshot(userId, shopId, source);
           let available = cached;
           if (filter === "event") {
@@ -360,6 +378,11 @@ export function AdminPage() {
             available = [...merged.values()].sort((a, b) =>
               b.created_at.localeCompare(a.created_at),
             );
+            if (selectedEventIdRef.current)
+              available = available.filter(
+                (order) =>
+                  order.offline_event_session_id === selectedEventIdRef.current,
+              );
           }
           if (!available.length && filter !== "event") throw error;
           const today = new Date();
@@ -385,10 +408,12 @@ export function AdminPage() {
           loadedOrderQueryRef.current = [
             shopId,
             page,
-            orderFilterRef.current,
-            ordersTodayOnlyRef.current,
+          orderFilterRef.current,
+          selectedEventIdRef.current,
+          ordersTodayOnlyRef.current,
           ].join(":");
-          if (filter === "event") setEventOrderCount(scoped.length);
+          if (filter === "event" && !selectedEventIdRef.current)
+            setEventOrderCount(scoped.length);
           const onlineCached = loadAdminOrdersSnapshot(
             userId,
             shopId,
@@ -520,9 +545,13 @@ export function AdminPage() {
   useEffect(() => {
     if (!isAuthed) return;
     if (isInitialLoading) return;
-    const queryKey = [shopId, orderPage, orderFilter, ordersTodayOnly].join(
-      ":",
-    );
+    const queryKey = [
+      shopId,
+      orderPage,
+      orderFilter,
+      selectedEventId,
+      ordersTodayOnly,
+    ].join(":");
     if (loadedOrderQueryRef.current === queryKey) return;
 
     reloadOrders().catch((error) => {
@@ -536,6 +565,7 @@ export function AdminPage() {
     isAuthed,
     shopId,
     orderFilter,
+    selectedEventId,
     ordersTodayOnly,
     orderPage,
     isInitialLoading,
@@ -701,22 +731,6 @@ export function AdminPage() {
       setViewTab("orders");
   }, [isAuthed, adminSession, viewTab]);
 
-  useEffect(() => {
-    const matchWorkspaceToScreen = () => {
-      if (!canManageCatalog) {
-        setViewTab("orders");
-        return;
-      }
-      if (window.innerWidth <= 760)
-        setViewTab((current) => (current === "design" ? "settings" : current));
-      else
-        setViewTab((current) => (current === "settings" ? "design" : current));
-    };
-    matchWorkspaceToScreen();
-    window.addEventListener("resize", matchWorkspaceToScreen);
-    return () => window.removeEventListener("resize", matchWorkspaceToScreen);
-  }, [canManageCatalog]);
-
   async function runAdminAction(action: () => Promise<void>, message: string) {
     await action();
     toast.success(t(message));
@@ -816,7 +830,8 @@ export function AdminPage() {
     adminSession.memberships.filter((membership) => membership.role === "owner")
       .length < MAX_OWNED_SHOPS;
   return (
-    <main className="admin-shell" style={getThemeStyle(booth)}>
+    <AdminUnsavedChangesProvider>
+      <main className="admin-shell" style={getThemeStyle(booth)}>
       <AdminWorkspaceHeader
         booth={booth}
         access={adminSession.access}
@@ -858,6 +873,7 @@ export function AdminPage() {
           promotion={promotion}
           orders={orders}
           orderFilter={orderFilter}
+          selectedEventId={selectedEventId}
           eventOrderCount={eventOrderCount}
           ordersTodayOnly={ordersTodayOnly}
           orderCounts={orderCounts}
@@ -871,6 +887,12 @@ export function AdminPage() {
           }}
           onOrderFilterChange={(filter) => {
             setOrderFilter(filter);
+            if (filter !== "event") setSelectedEventId("");
+            setOrderPage(1);
+          }}
+          onSelectedEventChange={(eventId) => {
+            setOrderFilter("event");
+            setSelectedEventId(eventId);
             setOrderPage(1);
           }}
           onOrdersTodayOnlyChange={(todayOnly) => {
@@ -926,6 +948,7 @@ export function AdminPage() {
         onClose={() => setIsSignOutOpen(false)}
         onConfirm={() => void handleSignOut()}
       />
-    </main>
+      </main>
+    </AdminUnsavedChangesProvider>
   );
 }

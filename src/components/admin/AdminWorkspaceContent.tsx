@@ -35,6 +35,7 @@ type AdminWorkspaceContentProps = {
   promotion: PromotionSettings;
   orders: Order[];
   orderFilter: OrderViewFilter;
+  selectedEventId: string;
   eventOrderCount: number;
   ordersTodayOnly: boolean;
   orderCounts: OrderStatusCounts;
@@ -44,6 +45,7 @@ type AdminWorkspaceContentProps = {
   ordersLoading: boolean;
   onRetry: () => void;
   onOrderFilterChange: (filter: OrderViewFilter) => void;
+  onSelectedEventChange: (eventId: string) => void;
   onOrdersTodayOnlyChange: (todayOnly: boolean) => void;
   onOrderPageChange: (page: number) => void;
   onOrderUpdated: () => void;
@@ -70,6 +72,7 @@ export function AdminWorkspaceContent({
   promotion,
   orders,
   orderFilter,
+  selectedEventId,
   eventOrderCount,
   ordersTodayOnly,
   orderCounts,
@@ -79,6 +82,7 @@ export function AdminWorkspaceContent({
   ordersLoading,
   onRetry,
   onOrderFilterChange,
+  onSelectedEventChange,
   onOrdersTodayOnlyChange,
   onOrderPageChange,
   onOrderUpdated,
@@ -107,8 +111,10 @@ export function AdminWorkspaceContent({
   if (viewTab === "orders") {
     return (
       <OrderQueue
+        shopId={shopId}
         orders={orders}
         filter={orderFilter}
+        selectedEventId={selectedEventId}
         todayOnly={ordersTodayOnly}
         counts={orderCounts}
         eventCount={eventOrderCount}
@@ -129,6 +135,7 @@ export function AdminWorkspaceContent({
         total={orderTotal}
         loading={ordersLoading}
         onFilterChange={onOrderFilterChange}
+        onSelectedEventChange={onSelectedEventChange}
         onTodayOnlyChange={onOrdersTodayOnlyChange}
         onPageChange={onOrderPageChange}
         onOrderUpdated={onOrderUpdated}
