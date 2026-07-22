@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(32);
 
 insert into auth.users(
   id,instance_id,aud,role,email,encrypted_password,
@@ -65,6 +65,14 @@ select ok(
 select ok(
   not has_table_privilege('authenticated','public.gacha_pool_entries','insert'),
   'authenticated clients cannot write live pool rows directly'
+);
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'private.canonicalize_gacha_configuration(uuid,text,jsonb)',
+    'execute'
+  ),
+  'authenticated clients cannot execute the private canonicalizer'
 );
 
 insert into public.gacha_game_configs (shop_id, game_type, config)
