@@ -8,7 +8,6 @@ import {
   EllipsisVertical,
   Gamepad2,
   Languages,
-  LayoutDashboard,
   LayoutTemplate,
   LogOut,
   Package,
@@ -139,6 +138,7 @@ export function AdminWorkspaceHeader({
 
   return (
     <AppHeader
+      className="admin-workspace-header"
       brand={
         <>
           <Link
@@ -155,32 +155,31 @@ export function AdminWorkspaceHeader({
           <Link
             to="/dashboard"
             aria-label={t("Go to dashboard")}
-            className="app-header-icon-button admin-dashboard-button"
+            className="admin-workspace-identity"
             onClick={(event) => {
               event.preventDefault();
               requestNavigation(() => navigate("/dashboard"));
             }}
           >
-            <LayoutDashboard size={19} />
+            <span
+              className="app-header-mark"
+              style={
+                booth.logo_url
+                  ? { background: "transparent", overflow: "hidden" }
+                  : undefined
+              }
+            >
+              {safePublicUrl(booth.logo_url) ? (
+                <img src={safePublicUrl(booth.logo_url)} alt="" />
+              ) : (
+                <ShoppingBag size={18} />
+              )}
+            </span>
+            <span className="app-header-title">
+              <strong>{booth.booth_name || t("Merch desk")}</strong>
+              <small>{t("Admin workspace")}</small>
+            </span>
           </Link>
-          <span
-            className="app-header-mark"
-            style={
-              booth.logo_url
-                ? { background: "transparent", overflow: "hidden" }
-                : undefined
-            }
-          >
-            {safePublicUrl(booth.logo_url) ? (
-              <img src={safePublicUrl(booth.logo_url)} alt={booth.booth_name} />
-            ) : (
-              <ShoppingBag size={18} />
-            )}
-          </span>
-          <span className="app-header-title">
-            <strong>{booth.booth_name || t("Merch desk")}</strong>
-            <small>{t("Admin workspace")}</small>
-          </span>
         </>
       }
       navigation={
@@ -200,13 +199,16 @@ export function AdminWorkspaceHeader({
             type="button"
             ref={registerItem("orders")}
             className={`admin-nav-tab admin-nav-orders ${viewTab === "orders" ? "active" : ""}`}
+            aria-label={t("Orders Queue")}
             aria-pressed={viewTab === "orders"}
             onClick={() => requestNavigation(() => onViewTabChange("orders"))}
           >
             <ClipboardList size={15} />
-            <span>{t("Orders Queue")}</span>
+            <span>{t("Orders")}</span>
             {pendingOrderCount > 0 && (
-              <span className="admin-nav-count">{pendingOrderCount}</span>
+              <span className="admin-nav-count" aria-hidden="true">
+                {pendingOrderCount}
+              </span>
             )}
           </button>
           {canManageCatalog && (
@@ -214,11 +216,18 @@ export function AdminWorkspaceHeader({
               type="button"
               ref={registerItem("products")}
               className={`admin-nav-tab ${viewTab === "products" ? "active" : ""}`}
+              aria-label={t("Products ({{count}})", { count: productsCount })}
               aria-pressed={viewTab === "products"}
               onClick={() => requestNavigation(() => onViewTabChange("products"))}
             >
               <Package size={15} />
-              <span>{t("Products ({{count}})", { count: productsCount })}</span>
+              <span>{t("Products")}</span>
+              <span
+                className="admin-nav-count admin-nav-count-products"
+                aria-hidden="true"
+              >
+                {productsCount}
+              </span>
             </button>
           )}
           {canManageCatalog && (
@@ -332,6 +341,19 @@ export function AdminWorkspaceHeader({
                     ))}
                   </div>
                 </div>
+                {canManageCatalog && (
+                  <button
+                    type="button"
+                    className="admin-overflow-item"
+                    onClick={() => {
+                      setOverflowOpen(false);
+                      requestNavigation(() => onViewTabChange("settings"));
+                    }}
+                  >
+                    <Settings2 size={15} />
+                    <span>{t("Settings")}</span>
+                  </button>
+                )}
                 {canUsePush() && (
                   <button
                     type="button"
@@ -363,17 +385,6 @@ export function AdminWorkspaceHeader({
               </div>
             )}
           </div>
-          <button
-            type="button"
-            disabled={signOutBusy}
-            onClick={() => requestNavigation(onRequestSignOut)}
-            className="app-header-button admin-signout-button"
-            aria-label={t("Sign out")}
-            title={t("Sign out")}
-          >
-            <LogOut size={15} />
-            <span>{t("Sign out")}</span>
-          </button>
         </>
       }
     />

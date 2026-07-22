@@ -1033,7 +1033,7 @@ const vi: Record<string, string> = {
   "Alerts on": "Đã bật cảnh báo",
   "Live operations": "Vận hành trực tiếp",
   "Catalog management": "Quản lý danh mục",
-  "Mobile configuration": "Cấu hình di động",
+  "Shop configuration": "Cấu hình gian hàng",
   "Access management": "Quản lý quyền truy cập",
   "Visual storefront": "Giao diện cửa hàng",
   Orders: "Đơn hàng",

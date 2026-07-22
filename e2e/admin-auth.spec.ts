@@ -307,19 +307,85 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
   await expect(toolbar.getByText("Live queue", { exact: true })).toHaveCount(0);
   const eventFilter = toolbar.getByRole("button", { name: /event 0/i });
   await expect(eventFilter).toBeVisible();
-
-  await eventFilter.click();
-  await expect(
-    page.getByRole("heading", { name: "Event orders", exact: true }),
-  ).toBeVisible();
   const eventMenu = toolbar.locator(".admin-event-select");
   const eventSelect = eventMenu.getByRole("button", {
     name: "Event: All events",
     exact: true,
   });
   await expect(eventMenu).toHaveClass(/select-menu/);
+  await expect(eventSelect).toBeVisible();
+  const readToolbarGeometry = () =>
+    toolbar.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      const utilities = element
+        .querySelector<HTMLElement>(".admin-queue-utilities")!
+        .getBoundingClientRect();
+      const eventSelectBounds = element
+        .querySelector<HTMLElement>(".admin-event-select")!
+        .getBoundingClientRect();
+      return {
+        height: bounds.height,
+        utilitiesX: utilities.x - bounds.x,
+        utilitiesWidth: utilities.width,
+        eventSelectWidth: eventSelectBounds.width,
+      };
+    });
+  const geometryBeforeFilterChange = await readToolbarGeometry();
+
+  await eventFilter.click();
+  await expect(
+    page.getByRole("heading", { name: "Event orders", exact: true }),
+  ).toBeVisible();
+  const geometryAfterFilterChange = await readToolbarGeometry();
+  expect(geometryAfterFilterChange.height).toBeCloseTo(
+    geometryBeforeFilterChange.height,
+    1,
+  );
+  expect(geometryAfterFilterChange.utilitiesX).toBeCloseTo(
+    geometryBeforeFilterChange.utilitiesX,
+    1,
+  );
+  expect(geometryAfterFilterChange.utilitiesWidth).toBeCloseTo(
+    geometryBeforeFilterChange.utilitiesWidth,
+    1,
+  );
+  expect(geometryAfterFilterChange.eventSelectWidth).toBeCloseTo(
+    geometryBeforeFilterChange.eventSelectWidth,
+    1,
+  );
   await expect(eventSelect).toHaveCSS("min-height", "44px");
   await expect(eventSelect).toHaveCSS("background-color", "rgb(255, 255, 255)");
+
+  if (testInfo.project.name === "tablet-chromium") {
+    const [toolbarBox, tabsBox, utilitiesBox] = await Promise.all([
+      toolbar.boundingBox(),
+      toolbar.locator(".admin-filter-tabs").boundingBox(),
+      toolbar.locator(".admin-queue-utilities").boundingBox(),
+    ]);
+    expect(toolbarBox).not.toBeNull();
+    expect(tabsBox).not.toBeNull();
+    expect(utilitiesBox).not.toBeNull();
+    const activeFilterBox = await toolbar
+      .locator(".admin-filter-tabs button[aria-pressed='true']")
+      .boundingBox();
+    expect(activeFilterBox).not.toBeNull();
+    const toolbarCenter = toolbarBox!.y + toolbarBox!.height / 2;
+    expect(
+      Math.abs(tabsBox!.y + tabsBox!.height / 2 - toolbarCenter),
+    ).toBeLessThan(2);
+    expect(
+      Math.abs(utilitiesBox!.y + utilitiesBox!.height / 2 - toolbarCenter),
+    ).toBeLessThan(2);
+    expect(tabsBox!.x + tabsBox!.width).toBeLessThanOrEqual(utilitiesBox!.x);
+    expect(activeFilterBox!.x).toBeGreaterThanOrEqual(tabsBox!.x);
+    expect(activeFilterBox!.x + activeFilterBox!.width).toBeLessThanOrEqual(
+      tabsBox!.x + tabsBox!.width + 1,
+    );
+    expect(utilitiesBox!.x + utilitiesBox!.width).toBeLessThanOrEqual(
+      toolbarBox!.x + toolbarBox!.width + 1,
+    );
+  }
+
   await eventSelect.click();
   await expect(page.getByRole("listbox", { name: "Event" })).toBeVisible();
   await page.keyboard.press("Escape");
@@ -364,6 +430,17 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
       .toBeLessThanOrEqual(1);
     expect(sheetGeometry.height).toBeLessThanOrEqual(
       sheetGeometry.viewportHeight * 0.88 + 1,
+    );
+    await expect(dialog.locator(".offline-event-details-card")).toBeVisible();
+    const allocationRows = dialog.locator(".offline-event-allocation-row");
+    expect(await allocationRows.count()).toBeGreaterThan(0);
+    await expect(
+      dialog.locator(".offline-event-allocation-thumb").first(),
+    ).toBeVisible();
+    await expectTouchTargetsAtLeast(
+      dialog.locator(
+        ".offline-event-allocation-toggle, .offline-event-allocation-quantity",
+      ),
     );
   }
   const eventName = dialog.getByLabel("Event name");
@@ -530,7 +607,10 @@ test("highlights the default Orders navigation tab", async ({ page }) => {
 
 test("admin header stays contained across responsive viewports", async ({
   page,
-}) => {
+}, testInfo) => {
+  if (testInfo.project.name === "desktop-chromium") {
+    await page.setViewportSize({ width: 1024, height: 900 });
+  }
   await mockSupabase(page, { staffRole: "owner" });
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
@@ -559,6 +639,40 @@ test("admin header stays contained across responsive viewports", async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+
+  if (testInfo.project.name === "desktop-chromium") {
+    const [brandBox, actionsBox] = await Promise.all([
+      page.locator(".app-header-brand").boundingBox(),
+      page.locator(".app-header-actions").boundingBox(),
+    ]);
+    expect(brandBox).not.toBeNull();
+    expect(actionsBox).not.toBeNull();
+    const navigationCenter = navigationBox!.y + navigationBox!.height / 2;
+    expect(
+      Math.abs(brandBox!.y + brandBox!.height / 2 - navigationCenter),
+    ).toBeLessThan(2);
+    expect(
+      Math.abs(actionsBox!.y + actionsBox!.height / 2 - navigationCenter),
+    ).toBeLessThan(2);
+
+    await expect(page.locator(".admin-dashboard-button")).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "Go to dashboard" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "More actions" }).click();
+    const settingsAction = page
+      .locator(".admin-overflow-popover")
+      .getByRole("button", { name: "Settings", exact: true });
+    await expect(settingsAction).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Sign out", exact: true }),
+    ).toBeVisible();
+    await settingsAction.click();
+    await expect(
+      page.getByRole("heading", { name: "Settings", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".admin-mobile-settings-page")).toBeVisible();
+  }
 });
 
 test("inherits the shop accent across workspace and portaled admin actions", async ({
@@ -624,7 +738,9 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
   await expectTouchTargetsAtLeast(
     page.getByRole("button", { name: "More actions" }),
   );
-  await expectTouchTargetsAtLeast(page.locator(".admin-nav-tab"));
+  await expectTouchTargetsAtLeast(
+    page.locator(".admin-nav-tab:not(.admin-nav-storefront)"),
+  );
   await expectTouchTargetsAtLeast(
     page.locator(".admin-filter-tabs button, .admin-queue-utilities button"),
   );
@@ -636,8 +752,9 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
   );
   await expectNoHorizontalOverflow(page);
 
-  await page.getByRole("button", { name: /Storefront/ }).click();
-  await expect(page.locator(".storefront-builder")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Storefront/ })).toHaveCount(0);
+  await page.getByRole("button", { name: /Settings/ }).click();
+  await expect(page.locator(".admin-mobile-settings-page")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole("button", { name: /Products/ }).click();
@@ -719,7 +836,7 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
 });
 
 for (const role of ["owner", "admin"] as const) {
-  test(`${role} sees every permitted workspace`, async ({ page }) => {
+  test(`${role} sees every permitted workspace`, async ({ page }, testInfo) => {
     await mockSupabase(page, { staffRole: role });
     await page.goto("./admin");
     await page.getByLabel("Email address").fill(`${role}@test.local`);
@@ -729,13 +846,21 @@ for (const role of ["owner", "admin"] as const) {
       page.getByRole("button", { name: /Orders Queue/ }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: /Products/ })).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: /Storefront/ }),
-    ).toBeVisible();
-    if (page.viewportSize()!.width <= 760)
+    if (testInfo.project.name === "desktop-chromium") {
+      await expect(
+        page.getByRole("button", { name: /Storefront/ }),
+      ).toBeVisible();
       await expect(page.getByRole("button", { name: /Settings/ })).toHaveCount(
         0,
       );
+    } else {
+      await expect(
+        page.getByRole("button", { name: /Storefront/ }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole("button", { name: /Settings/ }),
+      ).toBeVisible();
+    }
   });
 }
 
@@ -1028,7 +1153,8 @@ test("shop switcher keeps a compact scrollable list and fixed actions", async ({
 
 test("designer phone rules apply inside the preview iframe", async ({
   page,
-}) => {
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-chromium");
   await mockSupabase(page, { staffRole: "owner" });
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");

@@ -33,7 +33,7 @@ const viewCopy: Record<
       "Turn your merch into characters and weapons for a free minigame.",
   },
   settings: {
-    eyebrow: "Mobile configuration",
+    eyebrow: "Shop configuration",
     title: "Settings",
     description: "Update booth and payment details.",
   },

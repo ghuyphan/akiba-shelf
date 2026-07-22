@@ -773,54 +773,56 @@ export function OfflineEventManager({
               </div>
             ) : (
               <div className="offline-event-setup-fields">
-                <Field label={t("Event name")} className="offline-event-name">
-                  <TextInput
-                    value={name}
-                    disabled={Boolean(busy)}
-                    maxLength={80}
-                    placeholder={t("Convention day or booth session")}
-                    onChange={(event) => {
-                      markFormEdited();
-                      setName(event.target.value);
-                    }}
-                  />
-                </Field>
-                <div className="offline-event-schedule">
-                  <Field label={t("Event starts")}>
+                <div className="offline-event-details-card">
+                  <Field label={t("Event name")} className="offline-event-name">
                     <TextInput
-                      type="datetime-local"
-                      value={scheduledStart}
+                      value={name}
                       disabled={Boolean(busy)}
+                      maxLength={80}
+                      placeholder={t("Convention day or booth session")}
                       onChange={(event) => {
                         markFormEdited();
-                        setScheduledStart(event.target.value);
+                        setName(event.target.value);
                       }}
                     />
                   </Field>
-                  <Field
-                    label={t("Event ends")}
-                    error={
-                      scheduledStart && scheduledEnd && !scheduleIsValid
-                        ? t("End time must be after start time.")
-                        : undefined
-                    }
-                  >
-                    <TextInput
-                      type="datetime-local"
-                      min={scheduledStart}
-                      value={scheduledEnd}
-                      disabled={Boolean(busy)}
-                      onChange={(event) => {
-                        markFormEdited();
-                        setScheduledEnd(event.target.value);
-                      }}
-                    />
-                  </Field>
+                  <div className="offline-event-schedule">
+                    <Field label={t("Event starts")}>
+                      <TextInput
+                        type="datetime-local"
+                        value={scheduledStart}
+                        disabled={Boolean(busy)}
+                        onChange={(event) => {
+                          markFormEdited();
+                          setScheduledStart(event.target.value);
+                        }}
+                      />
+                    </Field>
+                    <Field
+                      label={t("Event ends")}
+                      error={
+                        scheduledStart && scheduledEnd && !scheduleIsValid
+                          ? t("End time must be after start time.")
+                          : undefined
+                      }
+                    >
+                      <TextInput
+                        type="datetime-local"
+                        min={scheduledStart}
+                        value={scheduledEnd}
+                        disabled={Boolean(busy)}
+                        onChange={(event) => {
+                          markFormEdited();
+                          setScheduledEnd(event.target.value);
+                        }}
+                      />
+                    </Field>
+                  </div>
+                  <small className="offline-event-timezone-note">
+                    <CalendarDays size={14} />{" "}
+                    {t("Times use your current device timezone.")}
+                  </small>
                 </div>
-                <small className="offline-event-timezone-note">
-                  <CalendarDays size={14} />{" "}
-                  {t("Times use your current device timezone.")}
-                </small>
                 <div className="offline-event-stock-summary">
                   <strong>{t("Planned stock allocation")}</strong>
                   {!availableProducts.length ? (
@@ -837,6 +839,9 @@ export function OfflineEventManager({
                       {availableProducts.map((product) => {
                         const quantity = allocationQuantities[product.id] ?? 0;
                         const selected = quantity > 0;
+                        const image =
+                          product.image_variants?.[0]?.thumbnail ??
+                          product.images[0];
                         return (
                           <div
                             className={`offline-event-allocation-row ${selected ? "is-selected" : ""}`}
@@ -858,38 +863,51 @@ export function OfflineEventManager({
                                   }));
                                 }}
                               />
+                              <span>{t("Stock")}</span>
                             </label>
                             <div className="offline-event-allocation-copy">
-                              <strong>{product.name}</strong>
-                              <small>
-                                {t("{{count}} available", {
-                                  count: product.quantity_available,
-                                })}
-                              </small>
+                              <span className="offline-event-allocation-thumb">
+                                {image ? (
+                                  <img src={image} alt="" />
+                                ) : (
+                                  <span>{product.name.charAt(0)}</span>
+                                )}
+                              </span>
+                              <span className="offline-event-allocation-text">
+                                <strong>{product.name}</strong>
+                                <small>
+                                  {t("{{count}} available", {
+                                    count: product.quantity_available,
+                                  })}
+                                </small>
+                              </span>
                             </div>
-                            <TextInput
-                              type="number"
-                              min={1}
-                              max={product.quantity_available}
-                              disabled={!selected || Boolean(busy)}
-                              value={selected ? quantity : ""}
-                              aria-label={t("{{product}} quantity", {
-                                product: product.name,
-                              })}
-                              onChange={(event) => {
-                                markFormEdited();
-                                setAllocationQuantities((current) => ({
-                                  ...current,
-                                  [product.id]: Math.min(
-                                    product.quantity_available,
-                                    Math.max(
-                                      0,
-                                      Number(event.target.value) || 0,
+                            <label className="offline-event-allocation-quantity">
+                              <span>{t("Quantity")}</span>
+                              <TextInput
+                                type="number"
+                                min={1}
+                                max={product.quantity_available}
+                                disabled={!selected || Boolean(busy)}
+                                value={selected ? quantity : ""}
+                                aria-label={t("{{product}} quantity", {
+                                  product: product.name,
+                                })}
+                                onChange={(event) => {
+                                  markFormEdited();
+                                  setAllocationQuantities((current) => ({
+                                    ...current,
+                                    [product.id]: Math.min(
+                                      product.quantity_available,
+                                      Math.max(
+                                        0,
+                                        Number(event.target.value) || 0,
+                                      ),
                                     ),
-                                  ),
-                                }));
-                              }}
-                            />
+                                  }));
+                                }}
+                              />
+                            </label>
                           </div>
                         );
                       })}

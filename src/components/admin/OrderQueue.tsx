@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Ban,
   CalendarDays,
@@ -58,6 +58,10 @@ type OrderQueueProps = {
 
 export type OrderViewFilter = OrderFilter | "event";
 
+function compactFilterCount(count: number) {
+  return count > 99 ? "99+" : String(count);
+}
+
 export function OrderQueue({
   shopId,
   orders,
@@ -85,9 +89,25 @@ export function OrderQueue({
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [eventOptions, setEventOptions] = useState<OfflineEventSummary[]>([]);
+  const filterTabsRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
   const { locale, t } = usePlatformI18n();
   const dateLocale = locale === "vi" ? "vi-VN" : "en-US";
+
+  useEffect(() => {
+    const tabs = filterTabsRef.current;
+    if (!tabs) return;
+    const revealActiveFilter = () => {
+      tabs
+        .querySelector<HTMLButtonElement>("[aria-pressed='true']")
+        ?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    };
+    revealActiveFilter();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(revealActiveFilter);
+    observer.observe(tabs);
+    return () => observer.disconnect();
+  }, [filter, locale]);
   const filters: OrderViewFilter[] = [
     "pending",
     "confirmed",
@@ -301,6 +321,7 @@ export function OrderQueue({
       <div className="admin-filter-bar">
         <div
           className="admin-filter-tabs"
+          ref={filterTabsRef}
           role="group"
           aria-label={t("Order status")}
         >
@@ -315,20 +336,21 @@ export function OrderQueue({
             >
               {item === "event" && <CloudOff size={13} />}
               <span>{t(item)}</span>
-              <b>{item === "event" ? eventCount : counts[item]}</b>
+              <b>{compactFilterCount(item === "event" ? eventCount : counts[item])}</b>
             </button>
           ))}
         </div>
         <div className="admin-queue-utilities">
-          {filter === "event" && (
-            <SelectMenu
-              className="admin-event-select"
-              value={selectedEventId}
-              label={t("Event")}
-              onChange={onSelectedEventChange}
-              options={eventFilterOptions}
-            />
-          )}
+          <SelectMenu
+            className="admin-event-select"
+            value={selectedEventId}
+            label={t("Event")}
+            onChange={(eventId) => {
+              onSelectedEventChange(eventId);
+              if (filter !== "event") onFilterChange("event");
+            }}
+            options={eventFilterOptions}
+          />
           {eventControl}
           <button
             type="button"
