@@ -431,6 +431,9 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
     expect(sheetGeometry.height).toBeLessThanOrEqual(
       sheetGeometry.viewportHeight * 0.88 + 1,
     );
+    expect(sheetGeometry.height).toBeGreaterThanOrEqual(
+      sheetGeometry.viewportHeight * 0.86,
+    );
     const detailsCard = dialog.locator(".offline-event-details-card");
     await expect(detailsCard).toBeVisible();
     const setupGeometry = await dialog.evaluate((element) => {
@@ -661,6 +664,21 @@ test("admin header stays contained across responsive viewports", async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+
+  if (page.viewportSize()!.width <= 1100) {
+    const visualTabOrder = await navigation
+      .locator(".admin-nav-tab:visible")
+      .evaluateAll((tabs) =>
+        tabs
+          .sort(
+            (left, right) =>
+              left.getBoundingClientRect().left -
+              right.getBoundingClientRect().left,
+          )
+          .map((tab) => tab.textContent?.trim() ?? ""),
+      );
+    expect(visualTabOrder.at(-1)).toContain("Settings");
+  }
 
   if (testInfo.project.name === "desktop-chromium") {
     const [brandBox, actionsBox] = await Promise.all([

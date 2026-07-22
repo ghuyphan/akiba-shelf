@@ -422,7 +422,7 @@ a {
   --sheet-radius: 24px;
   --sheet-shadow: 0 -20px 55px rgb(15 23 42 / 20%);
   --sheet-backdrop: rgb(15 23 42 / 40%);
-  --sheet-max-height: min(88dvh, 760px);
+  --sheet-max-height: 88dvh;
   --sheet-horizontal-padding: 14px;
   --sheet-bottom-padding: max(14px, env(safe-area-inset-bottom));
   --sheet-animation-duration: 240ms;

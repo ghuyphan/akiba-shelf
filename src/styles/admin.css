@@ -810,7 +810,7 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
 @media (max-width: 1100px) {
   .admin-mobile-settings-page { grid-template-columns: minmax(0, 1fr); }
   .admin-workspace-header .admin-nav-storefront { display: none; }
-  .admin-workspace-header .admin-nav-mobile-settings { display: inline-flex; order: -1; }
+  .admin-workspace-header .admin-nav-mobile-settings { display: inline-flex; }
 }
 
 .admin-settings-workspace { display: grid; grid-template-columns: minmax(230px, 290px) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); padding: 8px; }
