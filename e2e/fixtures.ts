@@ -173,7 +173,8 @@ export async function mockSupabase(
           ),
         ]
       : products;
-  let fixtureFulfillmentStatus: "preparing" | "ready" | "picked_up" = "preparing";
+  let fixtureFulfillmentStatus: "preparing" | "ready" | "picked_up" =
+    "preparing";
   const fixtureOrder = () => ({
     id: "40000000-0000-4000-8000-000000000001",
     shop_id: "main",
@@ -321,9 +322,22 @@ export async function mockSupabase(
         })),
       });
     if (url.pathname.includes("/rest/v1/rpc/sync_offline_event_orders"))
-      return json(route, { inserted: 0, updated: 0 });
-    if (url.pathname.includes("/rest/v1/rpc/close_offline_event_session"))
-      return json(route, { status: "closed" });
+      return json(route, {
+        inserted: 0,
+        updated: 0,
+        stale: 0,
+        acknowledged_revisions: {},
+      });
+    if (url.pathname.includes("/rest/v1/rpc/finalize_offline_event_session"))
+      return json(route, {
+        sync: {
+          inserted: 0,
+          updated: 0,
+          stale: 0,
+          acknowledged_revisions: {},
+        },
+        status: "closed",
+      });
     if (url.pathname.includes("/rest/v1/rpc/get_admin_products"))
       return json(route, catalogProducts);
     if (url.pathname.includes("/rest/v1/rpc/get_admin_booth_settings"))
@@ -594,10 +608,19 @@ export async function mockSupabase(
           : payment,
       );
     }
-    if (url.pathname.includes("/rest/v1/orders"))
-      return json(route, options.orderQueue ? [fixtureOrder()] : [], 200, {
-        "content-range": options.orderQueue ? "0-0/1" : "0-0/0",
+    if (url.pathname.includes("/rest/v1/orders")) {
+      const requestedStatus = url.searchParams
+        .get("status")
+        ?.replace(/^eq\./, "");
+      const rows =
+        options.orderQueue &&
+        (!requestedStatus || requestedStatus === fixtureOrder().status)
+          ? [fixtureOrder()]
+          : [];
+      return json(route, rows, 200, {
+        "content-range": rows.length ? "0-0/1" : "0-0/0",
       });
+    }
     if (url.pathname.includes("/rest/v1/staff_members")) return json(route, []);
     return json(route, []);
   });

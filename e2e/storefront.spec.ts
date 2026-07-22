@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 test("does not advertise the staff PWA from a customer storefront", async ({
   page,
 }) => {
-  await expect(page.locator("link[rel='manifest']")).toHaveCount(1);
+  await expect(page.locator("link[rel='manifest']")).toHaveCount(0);
 });
 
 test("reloads the storefront while completely offline", async ({
@@ -25,7 +25,9 @@ test("reloads the storefront while completely offline", async ({
     boothDialog.getByRole("button", { name: "Download for offline browsing" }),
   ).toHaveCount(0);
   await expect
-    .poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)))
+    .poll(() =>
+      page.evaluate(() => Boolean(navigator.serviceWorker.controller)),
+    )
     .toBe(true);
 
   await context.setOffline(true);
@@ -43,8 +45,12 @@ test("uses a familiar featured icon and centers the collection badge", async ({
   await expect(page.locator(".featured-banner-kicker svg")).toHaveClass(
     /lucide-star/,
   );
-  await expect(featured.getByRole("heading", { name: "Moon Stand" })).toBeVisible();
-  await expect(featured.getByRole("button", { name: "Add front item: Moon Stand" })).toBeVisible();
+  await expect(
+    featured.getByRole("heading", { name: "Moon Stand" }),
+  ).toBeVisible();
+  await expect(
+    featured.getByRole("button", { name: "Add front item: Moon Stand" }),
+  ).toBeVisible();
   const collectionBadge = page.locator(".featured-banner-collection");
   await expect(collectionBadge).toHaveCSS("display", "flex");
   await expect(collectionBadge).toHaveCSS("align-items", "center");
@@ -81,28 +87,33 @@ test("renders social QR codes with gradient dots in the simple card layout", asy
   await expect
     .poll(() => cardQr.getAttribute("src"))
     .toMatch(/^data:image\/png/);
-  const sampledColors = await cardQr.evaluate(
-    (image: HTMLImageElement) => {
-      const canvas = document.createElement("canvas");
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      const context = canvas.getContext("2d")!;
-      context.drawImage(image, 0, 0);
-      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
-      const colors = new Set<string>();
-      for (let index = 0; index < pixels.length; index += 160) {
-        if (pixels[index] > 245 && pixels[index + 1] > 245 && pixels[index + 2] > 245) continue;
-        colors.add(`${pixels[index]}-${pixels[index + 1]}-${pixels[index + 2]}`);
-      }
-      return colors.size;
-    },
-  );
+  const sampledColors = await cardQr.evaluate((image: HTMLImageElement) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d")!;
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const colors = new Set<string>();
+    for (let index = 0; index < pixels.length; index += 160) {
+      if (
+        pixels[index] > 245 &&
+        pixels[index + 1] > 245 &&
+        pixels[index + 2] > 245
+      )
+        continue;
+      colors.add(`${pixels[index]}-${pixels[index + 1]}-${pixels[index + 2]}`);
+    }
+    return colors.size;
+  });
   expect(sampledColors).toBeGreaterThan(10);
   await instagramCard.click();
 
   const qrDialog = page.getByRole("dialog", { name: "Instagram Link" });
   await expect(qrDialog).toBeVisible();
-  await expect(qrDialog.locator(".social-qr-zoom-icon")).toContainText("Instagram");
+  await expect(qrDialog.locator(".social-qr-zoom-icon")).toContainText(
+    "Instagram",
+  );
   await expect(qrDialog.getByAltText("Instagram QR code")).toBeVisible();
   const socialHandle = qrDialog.getByText("@fixture.artist");
   await expect(socialHandle).toBeVisible();
@@ -145,9 +156,7 @@ test("uses the booth locale and derives its open status from local time", async 
     );
     await expect(guide.locator(".booth-card-topline i")).toHaveCount(0);
   }
-  await page
-    .getByRole("button", { name: /Thông tin gian hàng/i })
-    .click();
+  await page.getByRole("button", { name: /Thông tin gian hàng/i }).click();
   await expect(
     page.getByRole("dialog", { name: "Chi tiết gian hàng" }),
   ).toContainText("Giờ mở cửa");
@@ -265,17 +274,24 @@ test("keeps a long cart reachable while the customer continues browsing", async 
     .toBe(true);
 
   if (!isPhone) {
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.evaluate(() =>
+      window.scrollTo(0, document.documentElement.scrollHeight),
+    );
     const floatingCart = page.locator(".floating-cart-bar");
     await expect(floatingCart).toBeVisible();
     await expect(floatingCart).toContainText("8 items ready in your cart");
-    await expect(page.locator(".app-shell")).toHaveClass(/storefront-has-cart-dock/);
+    await expect(page.locator(".app-shell")).toHaveClass(
+      /storefront-has-cart-dock/,
+    );
     const cartDockOverlap = await page.evaluate(() => {
       const dock = document.querySelector(".floating-cart-bar");
       const cards = document.querySelectorAll(".product-card");
       const finalCard = cards.item(cards.length - 1);
       if (!dock || !finalCard) return Number.POSITIVE_INFINITY;
-      return finalCard.getBoundingClientRect().bottom - dock.getBoundingClientRect().top;
+      return (
+        finalCard.getBoundingClientRect().bottom -
+        dock.getBoundingClientRect().top
+      );
     });
     expect(cartDockOverlap).toBeLessThanOrEqual(0);
     const revealCart = floatingCart.getByRole("button", { name: "View cart" });
@@ -303,14 +319,21 @@ test("keeps products clear of the pending payment dock", async ({ page }) => {
 
   const pendingDock = page.locator(".pending-order-bar");
   await expect(pendingDock).toBeVisible();
-  await expect(page.locator(".app-shell")).toHaveClass(/storefront-has-order-dock/);
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect(page.locator(".app-shell")).toHaveClass(
+    /storefront-has-order-dock/,
+  );
+  await page.evaluate(() =>
+    window.scrollTo(0, document.documentElement.scrollHeight),
+  );
   const pendingDockOverlap = await page.evaluate(() => {
     const dock = document.querySelector(".pending-order-bar");
     const cards = document.querySelectorAll(".product-card");
     const finalCard = cards.item(cards.length - 1);
     if (!dock || !finalCard) return Number.POSITIVE_INFINITY;
-    return finalCard.getBoundingClientRect().bottom - dock.getBoundingClientRect().top;
+    return (
+      finalCard.getBoundingClientRect().bottom -
+      dock.getBoundingClientRect().top
+    );
   });
   expect(pendingDockOverlap).toBeLessThanOrEqual(0);
 });
@@ -392,7 +415,9 @@ test("keeps the cart available when server validation rejects checkout", async (
   ).toBeVisible();
   await expect(page.getByText(/Stock changed/i)).toBeVisible();
   const storedCart = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null"),
+    JSON.parse(
+      localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null",
+    ),
   );
   expect(storedCart?.items).toHaveLength(1);
 });
@@ -418,10 +443,16 @@ test("keeps one payment modal and shows the QR spinner while reserving", async (
     .getByRole("button", { name: /Create order & pay/i })
     .click();
 
-  await expect(paymentDialog.locator(".payment-qr-loading .spin-icon")).toBeVisible();
-  await expect(page.getByRole("dialog", { name: "Couldn’t reach checkout" })).toHaveCount(0);
+  await expect(
+    paymentDialog.locator(".payment-qr-loading .spin-icon"),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: "Couldn’t reach checkout" }),
+  ).toHaveCount(0);
   await expect(paymentDialog.getByAltText("Payment QR code")).toBeVisible();
-  await expect(page.getByRole("dialog", { name: "Scan to pay" })).toHaveCount(1);
+  await expect(page.getByRole("dialog", { name: "Scan to pay" })).toHaveCount(
+    1,
+  );
 });
 
 test("shows an order-status error without calling an online customer offline", async ({
@@ -436,7 +467,9 @@ test("shows an order-status error without calling an online customer offline", a
 
   await expect(page.getByText("Couldn’t refresh order status")).toBeVisible();
   await expect(page.getByText(/offline —/i)).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Cancel order" })).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Cancel order" }),
+  ).toBeEnabled();
 });
 
 test("queues checkout offline and reserves it safely after reconnect", async ({
@@ -460,18 +493,20 @@ test("queues checkout offline and reserves it safely after reconnect", async ({
   ).toBeVisible();
   await expect(page.getByAltText("Payment QR code")).toHaveCount(0);
   const queuedCart = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null"),
+    JSON.parse(
+      localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null",
+    ),
   );
   expect(queuedCart?.items).toHaveLength(1);
 
   await page.unroute(createOrderPattern);
   await context.setOffline(false);
-  await expect(
-    page.getByRole("dialog", { name: "Scan to pay" }),
-  ).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Scan to pay" })).toBeVisible();
   await expect(page.getByText("A100").first()).toBeVisible();
   const reservedCart = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null"),
+    JSON.parse(
+      localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null",
+    ),
   );
   expect(reservedCart?.items).toHaveLength(0);
 });
@@ -503,8 +538,12 @@ test("offers native game portals when both gacha games are active", async ({
   const heading = page.getByRole("heading", { name: "Choose your universe" });
   if (testInfo.project.name === "phone-chromium") {
     await expect(heading).toBeHidden();
-    await expect(page.getByText("Wish simulator", { exact: true })).toBeVisible();
-    await expect(page.getByText("Warp simulator", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Wish simulator", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Warp simulator", { exact: true }),
+    ).toBeVisible();
   } else await expect(heading).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Enter: Wish simulator" }),
@@ -517,7 +556,9 @@ test("offers native game portals when both gacha games are active", async ({
   ).toBeVisible();
 });
 
-test("keeps the phone game selector full-screen during launch", async ({ page }, testInfo) => {
+test("keeps the phone game selector full-screen during launch", async ({
+  page,
+}, testInfo) => {
   test.skip(testInfo.project.name !== "phone-chromium");
   await page.unrouteAll({ behavior: "wait" });
   await mockSupabase(page, { catalogLocale: "vi", dualGacha: true });
@@ -529,20 +570,23 @@ test("keeps the phone game selector full-screen during launch", async ({ page },
   await expect(page.getByText("Cầu Nguyện", { exact: true })).toBeVisible();
   await expect(page.getByText("Bước Nhảy", { exact: true })).toBeVisible();
   const hiddenDetails = await page.evaluate(() =>
-    Array.from(document.querySelectorAll(
-      ".gacha-portal-meta, .gacha-portal-prizes, .gacha-portal-enter",
-    )).every((element) => getComputedStyle(element).display === "none"),
+    Array.from(
+      document.querySelectorAll(
+        ".gacha-portal-meta, .gacha-portal-prizes, .gacha-portal-enter",
+      ),
+    ).every((element) => getComputedStyle(element).display === "none"),
   );
   expect(hiddenDetails).toBe(true);
   await expect(
     page.getByRole("link", { name: "Vào game: Cầu Nguyện" }),
   ).toBeVisible();
   const layout = await page.evaluate(() => ({
-    cardRects: Array.from(document.querySelectorAll<HTMLElement>(".gacha-game-portal"))
-      .map((card) => {
-        const rect = card.getBoundingClientRect();
-        return { bottom: rect.bottom, height: rect.height, top: rect.top };
-      }),
+    cardRects: Array.from(
+      document.querySelectorAll<HTMLElement>(".gacha-game-portal"),
+    ).map((card) => {
+      const rect = card.getBoundingClientRect();
+      return { bottom: rect.bottom, height: rect.height, top: rect.top };
+    }),
     pageHeight: document.documentElement.scrollHeight,
     pageWidth: document.documentElement.scrollWidth,
     viewportHeight: window.innerHeight,
@@ -551,17 +595,21 @@ test("keeps the phone game selector full-screen during launch", async ({ page },
   expect(layout.pageWidth).toBeLessThanOrEqual(layout.viewportWidth);
   expect(layout.pageHeight).toBeLessThanOrEqual(layout.viewportHeight);
   expect(layout.cardRects).toHaveLength(2);
-  expect(layout.cardRects[0].height).toBeGreaterThan(layout.viewportHeight * 0.56);
+  expect(layout.cardRects[0].height).toBeGreaterThan(
+    layout.viewportHeight * 0.56,
+  );
   expect(layout.cardRects[0].height).toBeLessThan(layout.viewportHeight * 0.6);
-  expect(layout.cardRects[1].height).toBeGreaterThan(layout.viewportHeight * 0.56);
+  expect(layout.cardRects[1].height).toBeGreaterThan(
+    layout.viewportHeight * 0.56,
+  );
   expect(layout.cardRects[1].height).toBeLessThan(layout.viewportHeight * 0.6);
   expect(layout.cardRects[0].bottom).toBeGreaterThan(layout.cardRects[1].top);
 
   await page.getByRole("link", { name: "Vào game: Cầu Nguyện" }).click();
   await page.waitForTimeout(120);
-  const launchWidth = await page.locator(".gacha-game-portal.is-genshin").evaluate(
-    (portal) => portal.getBoundingClientRect().width,
-  );
+  const launchWidth = await page
+    .locator(".gacha-game-portal.is-genshin")
+    .evaluate((portal) => portal.getBoundingClientRect().width);
   expect(launchWidth).toBeGreaterThan(layout.viewportWidth * 0.98);
   await expect(page).toHaveURL(/\?game=genshin$/);
 });

@@ -19,6 +19,8 @@ import {
 import {
   capGachaFeaturedEntries,
   getGachaFeaturedComposition,
+  getRecommendedGachaEntryPlan,
+  hasGachaBannerRarities,
   isGachaFeaturedCompositionComplete,
   matchesGachaBannerKind,
   normalizeGachaDisplayLimit,
@@ -341,7 +343,19 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
         );
         return false;
       }
-      if (composition.totalCount === 0 && rule.allowEmptyComposition) continue;
+      if (composition.totalCount === 0 && rule.allowEmptyComposition) {
+        if (!hasGachaBannerRarities(stateEntries, banner, false)) {
+          toast.error(
+            t(
+              'The standard banner "{{name}}" needs active non-featured 4★ and 5★ items.',
+              { name: banner.name },
+            ),
+            t("Incomplete standard pool"),
+          );
+          return false;
+        }
+        continue;
+      }
       if (rule.requireCompleteComposition) {
         if (
           !isGachaFeaturedCompositionComplete(stateEntries, banner, activeGame)
@@ -374,6 +388,19 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
             },
           ),
           t("Check warp settings"),
+        );
+        return false;
+      }
+      if (
+        stateSettings.featured_item_rate < 100 &&
+        !hasGachaBannerRarities(stateEntries, banner, false)
+      ) {
+        toast.error(
+          t(
+            'The active banner "{{name}}" needs non-featured 4★ and 5★ items for possible featured-rate losses.',
+            { name: banner.name },
+          ),
+          t("Missing loss candidates"),
         );
         return false;
       }
@@ -466,24 +493,37 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       );
       return;
     }
+    const plan = getRecommendedGachaEntryPlan(
+      availableProducts.map((product) => product.id),
+      banner,
+      activeGame,
+      settings?.featured_item_rate ?? 50,
+    );
     update(
       (state) => ({
         ...state,
-        settings: { ...state.settings, enabled: true },
+        settings: { ...state.settings, enabled: plan.canEnable },
         selectedBannerId: banner.id,
-        entries: availableProducts
-          .slice(0, rule.displayLimit)
-          .map((product, index) => ({
-            ...newEntry(shopId, banner.id, product.id, banner.kind, activeGame),
-            rarity: index < rule.fiveStarLimit ? 5 : 4,
-            featured: true,
-          })),
+        entries: plan.entries.map(({ productId, rarity, featured }) => ({
+          ...newEntry(shopId, banner.id, productId, banner.kind, activeGame),
+          rarity,
+          featured,
+        })),
       }),
       true,
     );
-    toast.success(
-      t("Recommended pool created. Review it, then publish when ready."),
-    );
+    if (plan.canEnable) {
+      toast.success(
+        t("Recommended pool created. Review it, then publish when ready."),
+      );
+    } else {
+      toast.info(
+        t(
+          "The featured lineup was created, but the minigame stays off until you add non-featured 4★ and 5★ loss candidates.",
+        ),
+        t("Loss candidates needed"),
+      );
+    }
   }
 
   const updateBanner = useCallback(

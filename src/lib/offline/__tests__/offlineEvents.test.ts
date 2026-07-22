@@ -1,13 +1,19 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { OfflineEventSession, Product } from "../../../types/catalog";
 import {
   createOfflineEventOrder,
+  freezeOfflineEventSession,
+  getOfflineEventSignOutRisk,
   listOfflineEventOrders,
   loadOfflineEventSession,
+  markOfflineEventOrdersSynced,
+  mergeRecoveredOfflineEventSession,
   offlineEventOrderAsOrder,
+  restoreOfflineEventSession,
   saveOfflineEventSession,
   updateOfflineEventOrder,
   updateOfflineEventOrderFulfillment,
+  useMemoryOfflineEventLedgerForTests,
 } from "../offlineEvents";
 
 const product: Product = {
@@ -59,7 +65,14 @@ function session(): OfflineEventSession {
 }
 
 describe("offline event ledger", () => {
-  beforeEach(() => localStorage.clear());
+  let resetLedger: () => void;
+
+  beforeEach(() => {
+    localStorage.clear();
+    resetLedger = useMemoryOfflineEventLedgerForTests();
+  });
+
+  afterEach(() => resetLedger());
 
   it("creates a durable local order and consumes only allocated stock", async () => {
     const active = session();
@@ -78,21 +91,72 @@ describe("offline event ledger", () => {
       fulfillmentStatus: "unfulfilled",
     });
     expect(await listOfflineEventOrders(active.id)).toHaveLength(1);
-    expect((await loadOfflineEventSession(active.shopId))?.allocations[0])
-      .toMatchObject({ quantityAllocated: 3, quantitySold: 2 });
+    expect(
+      (await loadOfflineEventSession(active.shopId))?.allocations[0],
+    ).toMatchObject({ quantityAllocated: 3, quantitySold: 2 });
     expect(offlineEventOrderAsOrder(order, active)).toMatchObject({
       source: "offline_event",
       offline_event_name: "Convention day",
       discount_amount: 0,
-      order_items: [{
-        product_id: product.id,
-        quantity: 2,
-        product: {
-          name: "Event Print",
-          item_code: "EVT-PRINT",
+      order_items: [
+        {
+          product_id: product.id,
+          quantity: 2,
+          product: {
+            name: "Event Print",
+            item_code: "EVT-PRINT",
+          },
         },
-      }],
+      ],
     });
+  });
+
+  it("blocks sign-out while this device owns event stock or unsynced orders", async () => {
+    const active = session();
+    await saveOfflineEventSession(active);
+    expect(await getOfflineEventSignOutRisk()).toEqual({
+      activeSessionCount: 1,
+      unsyncedOrderCount: 0,
+    });
+
+    const order = await createOfflineEventOrder(
+      active,
+      [{ product, quantity: 1 }],
+      "Customer",
+    );
+    expect(await getOfflineEventSignOutRisk()).toEqual({
+      activeSessionCount: 1,
+      unsyncedOrderCount: 1,
+    });
+
+    await markOfflineEventOrdersSynced(active, [
+      {
+        id: order.id,
+        clientRevision: order.clientRevision,
+      },
+    ]);
+    expect(await getOfflineEventSignOutRisk()).toEqual({
+      activeSessionCount: 1,
+      unsyncedOrderCount: 0,
+    });
+  });
+
+  it("does not block sign-out for a locally closed event", async () => {
+    const closed = { ...session(), status: "closed" as const };
+    await saveOfflineEventSession(closed);
+
+    expect(await getOfflineEventSignOutRisk()).toBeNull();
+  });
+
+  it("fails closed when Event Mode storage cannot be inspected", async () => {
+    resetLedger();
+    resetLedger = useMemoryOfflineEventLedgerForTests({
+      getSessionsError: new Error("IndexedDB unavailable"),
+    });
+
+    await expect(getOfflineEventSignOutRisk()).rejects.toThrow(
+      /keep this account signed in/i,
+    );
   });
 
   it("rejects overselling without mutating the allocation", async () => {
@@ -100,14 +164,54 @@ describe("offline event ledger", () => {
     await saveOfflineEventSession(active);
 
     await expect(
-      createOfflineEventOrder(
-        active,
-        [{ product, quantity: 4 }],
-        "Customer",
-      ),
+      createOfflineEventOrder(active, [{ product, quantity: 4 }], "Customer"),
     ).rejects.toThrow(/enough event stock/i);
-    expect((await loadOfflineEventSession(active.shopId))?.allocations[0].quantitySold)
-      .toBe(0);
+    expect(
+      (await loadOfflineEventSession(active.shopId))?.allocations[0]
+        .quantitySold,
+    ).toBe(0);
+  });
+
+  it("serializes concurrent sales so allocated stock cannot be oversold", async () => {
+    const active = session();
+    active.allocations[0].quantityAllocated = 1;
+    await saveOfflineEventSession(active);
+
+    const attempts = await Promise.allSettled([
+      createOfflineEventOrder(active, [{ product, quantity: 1 }], "First"),
+      createOfflineEventOrder(active, [{ product, quantity: 1 }], "Second"),
+    ]);
+
+    expect(
+      attempts.filter(({ status }) => status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(attempts.filter(({ status }) => status === "rejected")).toHaveLength(
+      1,
+    );
+    expect(await listOfflineEventOrders(active.id)).toHaveLength(1);
+    expect(
+      (await loadOfflineEventSession(active.shopId))?.allocations[0],
+    ).toMatchObject({ quantityAllocated: 1, quantitySold: 1 });
+  });
+
+  it("does not rewind local sold stock when server recovery finishes late", async () => {
+    const active = session();
+    await saveOfflineEventSession(active);
+    await createOfflineEventOrder(
+      active,
+      [{ product, quantity: 2 }],
+      "Customer",
+    );
+
+    const recovered = session();
+    recovered.updatedAt = new Date(Date.now() - 60_000).toISOString();
+    await mergeRecoveredOfflineEventSession(recovered);
+
+    expect(
+      (await loadOfflineEventSession(active.shopId))?.allocations[0]
+        .quantitySold,
+    ).toBe(2);
+    expect(await listOfflineEventOrders(active.id)).toHaveLength(1);
   });
 
   it("returns local allocation when staff cancels a pending order", async () => {
@@ -125,27 +229,81 @@ describe("offline event ledger", () => {
       paymentState: "awaiting_payment",
     });
 
-    expect((await loadOfflineEventSession(active.shopId))?.allocations[0].quantitySold)
-      .toBe(0);
-    expect((await listOfflineEventOrders(active.id))[0].status).toBe("cancelled");
+    expect(
+      (await loadOfflineEventSession(active.shopId))?.allocations[0]
+        .quantitySold,
+    ).toBe(0);
+    expect((await listOfflineEventOrders(active.id))[0].status).toBe(
+      "cancelled",
+    );
   });
 
   it("advances confirmed fulfilment locally without allowing regressions", async () => {
     const active = session();
     await saveOfflineEventSession(active);
-    const order = await createOfflineEventOrder(active, [{ product, quantity: 1 }], "Customer");
+    const order = await createOfflineEventOrder(
+      active,
+      [{ product, quantity: 1 }],
+      "Customer",
+    );
     await updateOfflineEventOrder(active, order.id, {
       status: "confirmed",
       paymentState: "bank_confirmed",
     });
+    const confirmedAt = (await listOfflineEventOrders(active.id))[0]
+      .confirmedAt;
     await updateOfflineEventOrderFulfillment(active, order.id, "ready");
     await updateOfflineEventOrderFulfillment(active, order.id, "picked_up");
 
     const fulfilled = (await listOfflineEventOrders(active.id))[0];
     expect(fulfilled.fulfillmentStatus).toBe("picked_up");
-    expect(fulfilled).not.toHaveProperty("syncedAt");
+    expect(fulfilled.confirmedAt).toBe(confirmedAt);
+    expect(offlineEventOrderAsOrder(fulfilled, active).confirmed_at).toBe(
+      confirmedAt,
+    );
+    expect(fulfilled.syncedAt).toBeUndefined();
     await expect(
       updateOfflineEventOrderFulfillment(active, order.id, "ready"),
     ).rejects.toThrow(/cannot move backward/i);
+  });
+
+  it("does not mark a newer local revision synced from a stale acknowledgement", async () => {
+    const active = session();
+    await saveOfflineEventSession(active);
+    const order = await createOfflineEventOrder(
+      active,
+      [{ product, quantity: 1 }],
+      "Customer",
+    );
+
+    await updateOfflineEventOrder(active, order.id, {
+      status: "confirmed",
+      paymentState: "cash_confirmed",
+    });
+    await markOfflineEventOrdersSynced(active, [
+      {
+        id: order.id,
+        clientRevision: order.clientRevision,
+      },
+    ]);
+
+    const current = (await listOfflineEventOrders(active.id))[0];
+    expect(current.clientRevision).toBe(order.clientRevision + 1);
+    expect(current.syncedAt).toBeUndefined();
+  });
+
+  it("freezes local sales while closing and can restore them after failure", async () => {
+    const active = session();
+    await saveOfflineEventSession(active);
+    const frozen = await freezeOfflineEventSession(active);
+
+    await expect(
+      createOfflineEventOrder(frozen, [{ product, quantity: 1 }], "Blocked"),
+    ).rejects.toThrow(/closing or closed/i);
+
+    const restored = await restoreOfflineEventSession(frozen);
+    await expect(
+      createOfflineEventOrder(restored, [{ product, quantity: 1 }], "Allowed"),
+    ).resolves.toMatchObject({ customerName: "Allowed" });
   });
 });

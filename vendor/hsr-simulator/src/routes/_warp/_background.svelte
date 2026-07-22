@@ -2,32 +2,32 @@
 	import { fade } from 'svelte/transition';
 	import { getContext } from 'svelte';
 	import { t } from 'svelte-i18n';
-	import ColorThief from 'colorthief/dist/color-thief.mjs';
+	import { getPaletteSync } from 'colorthief';
 	import { data } from '$lib/data/characters.json';
 	import { getElementPalette } from '$lib/helpers/element-palette';
 	import { warpList, assets, liteMode, activeWarp } from '$lib/stores/app-store';
 
-	let featured, activeType;
-	$: ({ featured, type: activeType } = $activeWarp);
+	let featured, displayItem, activeType;
+	$: ({ featured, displayItem, type: activeType } = $activeWarp);
+	$: visualItem = featured || displayItem;
 
 	// Fetch Colors
 	let colorList = {};
 	const setColor = getContext('setColor');
-	const colorthief = new ColorThief();
 
 	$: fetchAllColor($warpList);
-	$: changeColor(featured);
+	$: changeColor(visualItem);
 
 	const fetchAllColor = async (list) => {
 		if (!list || list.length < 1) return;
 		const charBanner = list.filter(({ type }) => type.match('character')) || [];
 		if (charBanner.length < 1) return;
 		for (let i = 0; i < charBanner.length; i++) {
-			const { featured: charName } = charBanner[i];
+			const charName = charBanner[i].featured || charBanner[i].displayItem;
 			colorList[charName] = await getColor(charName);
 		}
 
-		const activeChar = featured || charBanner[0].featured;
+		const activeChar = visualItem || charBanner[0].featured || charBanner[0].displayItem;
 		changeColor(activeChar);
 	};
 
@@ -56,7 +56,9 @@
 				img.addEventListener('load', () => {
 					const palette = manualColorPick(charName);
 					if (palette) resolve(palette);
-					const [clr1, clr2] = colorthief.getPalette(img, 2);
+					const [clr1, clr2] = (getPaletteSync(img, { colorCount: 2 }) || []).map((color) =>
+						color.array()
+					);
 					const color1 = clr2?.join(',');
 					const color2 = clr1?.join(',');
 					resolve([color1 || '0 0 0', color2 || '0 0 0']);
@@ -83,14 +85,15 @@
 	};
 </script>
 
-{#each $warpList as { type, featured: item }, i (i)}
-	{#if item === featured && type === activeType}
+{#each $warpList as { type, featured: item, displayItem: fallbackItem }, i (i)}
+	{@const activeItem = item || fallbackItem}
+	{#if activeItem === visualItem && type === activeType}
 		<!-- Character Event -->
 		{#if type === 'character-event'}
 			<div class="bg character" class:lite={$liteMode} transition:fade|global>
 				<img
-					src={$assets[`splash-art/small/${featured}`]}
-					alt={featured ? $t(featured) : ''}
+					src={$assets[`splash-art/small/${activeItem}`]}
+					alt={activeItem ? $t(activeItem) : ''}
 					crossorigin="anonymous"
 				/>
 			</div>
@@ -98,7 +101,11 @@
 			<!-- LightCone Event -->
 		{:else if type === 'lightcone-event'}
 			<div class="bg lightcone" class:lite={$liteMode} transition:fade|global>
-				<img src={$assets[`lc/small/${featured}`]} alt={featured ? $t(featured) : ''} crossorigin="anonymous" />
+				<img
+					src={$assets[`lc/small/${activeItem}`]}
+					alt={activeItem ? $t(activeItem) : ''}
+					crossorigin="anonymous"
+				/>
 			</div>
 		{:else}
 			{@const bg = type === 'starter' ? 'departure-bg.webp' : 'stellar-bg.webp'}

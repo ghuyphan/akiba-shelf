@@ -40,13 +40,13 @@ enabled = true
 file_size_limit = "10MiB"
 
 [functions.notify-new-order]
-verify_jwt = true
+verify_jwt = false
 
 [functions.invite-shop-member]
 verify_jwt = true
 
 [functions.gacha-music-proxy]
-verify_jwt = true
+verify_jwt = false
 
 [functions.create-order]
-verify_jwt = true
+verify_jwt = false

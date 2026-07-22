@@ -21,6 +21,7 @@ import { MAX_OWNED_SHOPS } from "../lib/constants";
 import { PwaInstallBanner } from "../components/admin/PwaInstallBanner";
 import { DashboardShopCard } from "../components/admin/dashboard/DashboardShopCard";
 import { DashboardEditShopDialog } from "../components/admin/dashboard/DashboardEditShopDialog";
+import { getOfflineEventSignOutRisk } from "../lib/offline/offlineEvents";
 
 export function DashboardPage() {
   const { state: adminSession, refresh: refreshAdminSession } =
@@ -41,6 +42,29 @@ export function DashboardPage() {
   async function handleSignOut() {
     setSignOutBusy(true);
     try {
+      let offlineRisk: Awaited<
+        ReturnType<typeof getOfflineEventSignOutRisk>
+      >;
+      try {
+        offlineRisk = await getOfflineEventSignOutRisk();
+      } catch {
+        toast.error(
+          t(
+            "Offline Event storage could not be checked. Keep this account signed in and retry after storage access is restored.",
+          ),
+          t("Sign-out safety check failed"),
+        );
+        return;
+      }
+      if (offlineRisk) {
+        toast.error(
+          t(
+            "This device still owns event stock or unsynced orders. Sync and close Offline Event Mode before signing out.",
+          ),
+          t("Offline Event Mode is still active"),
+        );
+        return;
+      }
       await signOutAdmin();
       setIsSignOutOpen(false);
       await refreshAdminSession();

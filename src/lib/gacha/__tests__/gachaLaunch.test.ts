@@ -107,6 +107,27 @@ describe("gacha launch preparation", () => {
     );
   });
 
+  it("keeps a shared 3-star pool available when multiple banners are running", () => {
+    const prepared = runningGachaCatalog({
+      settings: { ...catalog.settings, game_type: "genshin" },
+      banners: [
+        { id: "first", active: true, starts_at: null, ends_at: null },
+        { id: "second", active: true, starts_at: null, ends_at: null },
+      ],
+      entries: [
+        { banner_id: "first", product_id: "shared-three", rarity: 3 },
+        { banner_id: "second", product_id: "second-five", rarity: 5 },
+      ],
+    } as never);
+
+    expect(prepared.entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ product_id: "shared-three", rarity: 3 }),
+        expect.objectContaining({ product_id: "second-five", rarity: 5 }),
+      ]),
+    );
+  });
+
   it("deduplicates launch requests while navigation is in flight", async () => {
     const first = loadGachaLaunch("test-shop");
     const second = loadGachaLaunch("TEST-SHOP");

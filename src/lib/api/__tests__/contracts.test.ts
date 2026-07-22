@@ -1,16 +1,21 @@
 import fs from "node:fs";
 import path from "node:path";
-import { FunctionsFetchError, FunctionsRelayError } from "@supabase/supabase-js";
+import {
+  FunctionsFetchError,
+  FunctionsRelayError,
+} from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBooth } from "../../constants";
 import {
   CheckoutOutcomeUnknownError,
   createOrder,
+  finalizeOfflineEventSession,
   getCustomerOrder,
   getOfflineEventOrders,
   getOrderStatusCounts,
   normalizeProduct,
   publishGachaConfiguration,
+  syncOfflineEventOrders,
   updateOrderFulfillment,
 } from "../../api";
 import {
@@ -18,7 +23,12 @@ import {
   saveCatalogSnapshot,
 } from "../../offline/offline";
 import { defaultGachaSettings } from "../../../types/gacha";
-import type { CartItem, Product } from "../../../types/catalog";
+import type {
+  CartItem,
+  OfflineEventOrder,
+  OfflineEventSession,
+  Product,
+} from "../../../types/catalog";
 
 const mocks = vi.hoisted(() => ({
   from: vi.fn(),
@@ -78,6 +88,59 @@ const orderResponse = {
   expired_at: null,
 };
 
+const eventSession: OfflineEventSession = {
+  version: 1,
+  id: "71000000-0000-4000-8000-000000000001",
+  shopId,
+  shopSlug: "event-shop",
+  deviceId: "72000000-0000-4000-8000-000000000001",
+  name: "Convention day",
+  status: "active",
+  allocations: [{ product, quantityAllocated: 2, quantitySold: 1 }],
+  payment: {
+    momo_qr_url: "",
+    bank_qr_url: "",
+    momo_label: "MoMo",
+    bank_label: "Bank",
+    payment_instructions: "",
+  },
+  promotion: {
+    enabled: false,
+    buy_quantity: 3,
+    free_quantity: 1,
+    repeatable: false,
+    qualifying_product_ids: [],
+    reward_product_ids: [],
+  },
+  createdAt: "2026-07-21T00:00:00.000Z",
+  updatedAt: "2026-07-21T00:01:00.000Z",
+};
+
+const eventOfflineOrder: OfflineEventOrder = {
+  version: 1,
+  id: "73000000-0000-4000-8000-000000000001",
+  sessionId: eventSession.id,
+  shopId,
+  orderCode: "EVT-00000001",
+  customerName: "Walk-in",
+  totalAmount: 120000,
+  status: "confirmed",
+  paymentMethod: "cash",
+  paymentState: "cash_confirmed",
+  clientRevision: 3,
+  fulfillmentStatus: "preparing",
+  items: [
+    {
+      product_id: product.id,
+      quantity: 1,
+      unit_price: 120000,
+      discount_amount: 0,
+    },
+  ],
+  createdAt: "2026-07-21T00:00:00.000Z",
+  updatedAt: "2026-07-21T00:01:00.000Z",
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
@@ -105,9 +168,7 @@ describe("order API contracts", () => {
       body: {
         shopSlug: "akiba-shelf",
         customerName: "Customer",
-        items: [
-          { product_id: "moon-stand", quantity: 3, reward_quantity: 1 },
-        ],
+        items: [{ product_id: "moon-stand", quantity: 3, reward_quantity: 1 }],
         clientRequestId: "client-request-1",
         recoveryToken: "recovery-token-1",
       },
@@ -120,6 +181,32 @@ describe("order API contracts", () => {
       total_amount: 120000,
       status: "pending",
     });
+  });
+
+  it("retries a transient notification failure without retrying checkout", async () => {
+    vi.useFakeTimers();
+    try {
+      mocks.invoke
+        .mockResolvedValueOnce({ data: orderResponse, error: null })
+        .mockResolvedValueOnce({ data: null, error: new Error("temporary") })
+        .mockResolvedValueOnce({ data: { sent: 1 }, error: null });
+
+      await createOrder(
+        "akiba-shelf",
+        "Customer",
+        [{ product, quantity: 1 }],
+        "client-request-2",
+        "recovery-token-2",
+      );
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      expect(mocks.invoke).toHaveBeenCalledTimes(3);
+      expect(mocks.invoke).toHaveBeenNthCalledWith(3, "notify-new-order", {
+        body: { orderId, recoveryToken: "recovery-token-2" },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("treats an invalid success response as an unknown retryable outcome", async () => {
@@ -205,29 +292,33 @@ describe("order API contracts", () => {
   it("normalizes the guarded Event order list response", async () => {
     mocks.rpc.mockResolvedValueOnce({
       data: {
-        orders: [{
-          ...orderResponse,
-          source: "offline_event",
-          offline_event_session_id: "71000000-0000-4000-8000-000000000001",
-          offline_event_name: "Convention day",
-          payment_method: "vietqr",
-          payment_state: "bank_verification_pending",
-          fulfillment_status: "preparing",
-          order_items: [{
-            id: `${orderId}:moon-stand`,
-            order_id: orderId,
-            product_id: "moon-stand",
-            quantity: "2",
-            unit_price: "60000",
-            discount_amount: "0",
-            product: {
-              id: "moon-stand",
-              name: "Moon Stand",
-              item_code: "MOON-1",
-              images: [],
-            },
-          }],
-        }],
+        orders: [
+          {
+            ...orderResponse,
+            source: "offline_event",
+            offline_event_session_id: "71000000-0000-4000-8000-000000000001",
+            offline_event_name: "Convention day",
+            payment_method: "vietqr",
+            payment_state: "bank_verification_pending",
+            fulfillment_status: "preparing",
+            order_items: [
+              {
+                id: `${orderId}:moon-stand`,
+                order_id: orderId,
+                product_id: "moon-stand",
+                quantity: "2",
+                unit_price: "60000",
+                discount_amount: "0",
+                product: {
+                  id: "moon-stand",
+                  name: "Moon Stand",
+                  item_code: "MOON-1",
+                  images: [],
+                },
+              },
+            ],
+          },
+        ],
         total: "1",
         counts: {
           pending: "1",
@@ -248,11 +339,13 @@ describe("order API contracts", () => {
       }),
     ).resolves.toMatchObject({
       total: 1,
-      orders: [{
-        source: "offline_event",
-        offline_event_name: "Convention day",
-        order_items: [{ quantity: 2, unit_price: 60000 }],
-      }],
+      orders: [
+        {
+          source: "offline_event",
+          offline_event_name: "Convention day",
+          order_items: [{ quantity: 2, unit_price: 60000 }],
+        },
+      ],
     });
     expect(mocks.rpc).toHaveBeenCalledWith("get_offline_event_orders", {
       p_shop_id: shopId,
@@ -264,16 +357,111 @@ describe("order API contracts", () => {
     });
   });
 
-  it("updates fulfilment through the guarded order RPC", async () => {
-    mocks.rpc.mockResolvedValueOnce({
+  it("sends and acknowledges revisioned Event orders during sync and close", async () => {
+    mocks.rpc
+      .mockResolvedValueOnce({
+        data: {
+          inserted: 0,
+          updated: 1,
+          stale: 0,
+          acknowledged_revisions: { [eventOfflineOrder.id]: 3 },
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          sync: {
+            inserted: 0,
+            updated: 0,
+            stale: 1,
+            acknowledged_revisions: { [eventOfflineOrder.id]: 3 },
+          },
+          status: "closed",
+        },
+        error: null,
+      });
+
+    await expect(
+      syncOfflineEventOrders(eventSession, [eventOfflineOrder]),
+    ).resolves.toEqual([{ id: eventOfflineOrder.id, clientRevision: 3 }]);
+    await expect(
+      finalizeOfflineEventSession(eventSession, [eventOfflineOrder]),
+    ).resolves.toEqual({
+      acknowledgements: [{ id: eventOfflineOrder.id, clientRevision: 3 }],
+      status: "closed",
+    });
+
+    const expectedOrder = expect.objectContaining({
+      id: eventOfflineOrder.id,
+      client_revision: 3,
+      fulfillment_status: "preparing",
+    });
+    expect(mocks.rpc).toHaveBeenNthCalledWith(1, "sync_offline_event_orders", {
+      p_session_id: eventSession.id,
+      p_device_id: eventSession.deviceId,
+      p_orders: [expectedOrder],
+    });
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      2,
+      "finalize_offline_event_session",
+      {
+        p_session_id: eventSession.id,
+        p_device_id: eventSession.deviceId,
+        p_orders: [expectedOrder],
+      },
+    );
+  });
+
+  it("refuses to close local Event state without an exact server receipt", async () => {
+    mocks.rpc.mockResolvedValue({
       data: {
-        outcome: "updated",
-        order: { ...orderResponse, status: "confirmed", fulfillment_status: "ready" },
+        sync: {
+          acknowledged_revisions: {
+            "71000000-0000-4000-8000-000000000099": 3,
+          },
+        },
+        status: "closed",
       },
       error: null,
     });
 
-    await expect(updateOrderFulfillment(orderId, "ready")).resolves.toMatchObject({
+    await expect(
+      finalizeOfflineEventSession(eventSession, [eventOfflineOrder]),
+    ).rejects.toThrow("Offline finalization acknowledgements are incomplete.");
+  });
+
+  it("keeps Event orders dirty unless the server explicitly acknowledges them", async () => {
+    mocks.rpc
+      .mockResolvedValueOnce({
+        data: { inserted: 0, updated: 0, stale: 1 },
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: "malformed", error: null });
+
+    await expect(
+      syncOfflineEventOrders(eventSession, [eventOfflineOrder]),
+    ).resolves.toEqual([]);
+    await expect(
+      syncOfflineEventOrders(eventSession, [eventOfflineOrder]),
+    ).rejects.toThrow();
+  });
+
+  it("updates fulfilment through the guarded order RPC", async () => {
+    mocks.rpc.mockResolvedValueOnce({
+      data: {
+        outcome: "updated",
+        order: {
+          ...orderResponse,
+          status: "confirmed",
+          fulfillment_status: "ready",
+        },
+      },
+      error: null,
+    });
+
+    await expect(
+      updateOrderFulfillment(orderId, "ready"),
+    ).resolves.toMatchObject({
       outcome: "updated",
       order: { fulfillment_status: "ready" },
     });
@@ -449,7 +637,7 @@ describe("Playwright Supabase request inventory", () => {
       "/rest/v1/products",
       "/rest/v1/promotion_products",
       "/rest/v1/promotions",
-      "/rest/v1/rpc/close_offline_event_session",
+      "/rest/v1/rpc/finalize_offline_event_session",
       "/rest/v1/rpc/get_active_offline_event_session",
       "/rest/v1/rpc/get_admin_booth_settings",
       "/rest/v1/rpc/get_admin_products",

@@ -1,7 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import type { ComponentProps } from "react";
-import type { CartItem, Order, PaymentSettings, Product } from "../../types/catalog";
+import type {
+  CartItem,
+  Order,
+  PaymentSettings,
+  Product,
+} from "../../types/catalog";
 import { defaultPromotion } from "../../lib/constants";
 import { formatVnd } from "../../utils/format";
 import {
@@ -9,6 +20,7 @@ import {
   loadOfflineEventSession,
   saveOfflineEventSession,
   updateOfflineEventOrder,
+  useMemoryOfflineEventLedgerForTests,
 } from "../../lib/offline/offlineEvents";
 
 const apiMocks = vi.hoisted(() => ({
@@ -32,18 +44,20 @@ vi.mock("../../lib/offline/checkoutSession", () => ({
   clearCheckoutSession: vi.fn(() => {
     checkoutStorage.current = null;
   }),
-  createCheckoutSession: vi.fn((shopSlug: string, cart: CartItem[], customerName: string) => ({
-    version: 2,
-    shopSlug,
-    clientRequestId: "11111111-1111-4111-8111-111111111111",
-    recoveryToken: "0123456789abcdef0123456789abcdef",
-    order: null,
-    cart,
-    customerName,
-    state: "queued",
-    createdAt: "2026-07-17T10:00:00.000Z",
-    updatedAt: "2026-07-17T10:00:00.000Z",
-  })),
+  createCheckoutSession: vi.fn(
+    (shopSlug: string, cart: CartItem[], customerName: string) => ({
+      version: 2,
+      shopSlug,
+      clientRequestId: "11111111-1111-4111-8111-111111111111",
+      recoveryToken: "0123456789abcdef0123456789abcdef",
+      order: null,
+      cart,
+      customerName,
+      state: "queued",
+      createdAt: "2026-07-17T10:00:00.000Z",
+      updatedAt: "2026-07-17T10:00:00.000Z",
+    }),
+  ),
 }));
 
 import { PaymentQrModal } from "./PaymentQrModal";
@@ -132,12 +146,16 @@ function renderModal(
 }
 
 describe("PaymentQrModal", () => {
+  let resetOfflineLedger: (() => void) | undefined;
+
   afterEach(() => {
     cleanup();
+    resetOfflineLedger?.();
     vi.unstubAllGlobals();
   });
   beforeEach(() => {
     localStorage.clear();
+    resetOfflineLedger = useMemoryOfflineEventLedgerForTests();
     checkoutStorage.current = null;
     vi.stubGlobal("navigator", {
       ...navigator,
@@ -158,12 +176,8 @@ describe("PaymentQrModal", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Acrylic Stand — Miku")).toBeInTheDocument();
     expect(screen.getByText("Holo Badge — Rin")).toBeInTheDocument();
-    expect(
-      screen.getByText(`2 × ${vnd(150000)}`),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(`1 × ${vnd(30000)}`),
-    ).toBeInTheDocument();
+    expect(screen.getByText(`2 × ${vnd(150000)}`)).toBeInTheDocument();
+    expect(screen.getByText(`1 × ${vnd(30000)}`)).toBeInTheDocument();
     // Line total for the stand and the grand total of the cart.
     expect(screen.getByText(vnd(300000))).toBeInTheDocument();
     expect(screen.getByText(vnd(330000))).toBeInTheDocument();
@@ -190,8 +204,12 @@ describe("PaymentQrModal", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
 
     expect(await screen.findByText("Checking…")).toBeInTheDocument();
-    expect(document.querySelector(".payment-qr-loading .spin-icon")).toBeInTheDocument();
-    expect(screen.queryByText("Couldn’t reach checkout")).not.toBeInTheDocument();
+    expect(
+      document.querySelector(".payment-qr-loading .spin-icon"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Couldn’t reach checkout"),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Scan to pay" })).toBe(
       paymentDialog,
     );
@@ -212,7 +230,9 @@ describe("PaymentQrModal", () => {
     );
     expect(screen.getAllByText("AKB-0042").length).toBeGreaterThan(0);
     expect(screen.getByText("Huy")).toBeInTheDocument();
-    expect(screen.getByText("Waiting for staff confirmation")).toBeInTheDocument();
+    expect(
+      screen.getByText("Waiting for staff confirmation"),
+    ).toBeInTheDocument();
     const paymentQr = await screen.findByAltText("Payment QR code");
     expect(paymentQr).toHaveAttribute(
       "src",
@@ -238,16 +258,18 @@ describe("PaymentQrModal", () => {
     fireEvent.error(napasLogo);
     if (bankLogo) fireEvent.error(bankLogo);
     expect(screen.getByText("NAPAS 247")).not.toHaveAttribute("hidden");
-    expect(
-      vietQrCard?.querySelector(".vietqr-bank-name"),
-    ).toHaveTextContent("MB Bank");
+    expect(vietQrCard?.querySelector(".vietqr-bank-name")).toHaveTextContent(
+      "MB Bank",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel order" }));
     const cancelDialog = screen.getByRole("dialog", {
       name: "Cancel this reservation?",
     });
     expect(cancelDialog).toHaveClass("cancel-order-modal");
-    expect(cancelDialog.querySelector(".payment-success-eyebrow")).toHaveTextContent("AKB-0042");
+    expect(
+      cancelDialog.querySelector(".payment-success-eyebrow"),
+    ).toHaveTextContent("AKB-0042");
     expect(cancelDialog.querySelector(".button-danger")).toHaveTextContent(
       "Cancel order",
     );
@@ -336,7 +358,9 @@ describe("PaymentQrModal", () => {
   });
 
   it("keeps an ambiguous checkout identity when the customer closes the modal", async () => {
-    const unknownOutcome = new Error("The checkout result could not be verified.");
+    const unknownOutcome = new Error(
+      "The checkout result could not be verified.",
+    );
     apiMocks.isCheckoutOutcomeUnknownError.mockImplementation(
       (error: unknown) => error === unknownOutcome,
     );
@@ -372,7 +396,9 @@ describe("PaymentQrModal", () => {
     expect(
       await screen.findByRole("dialog", { name: "Reconnect to checkout" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/stock must be verified online/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/stock must be verified online/i),
+    ).toBeInTheDocument();
     expect(screen.queryByAltText("Payment QR code")).not.toBeInTheDocument();
     expect(onOrderChange).not.toHaveBeenCalledWith(
       expect.objectContaining({ status: "pending" }),

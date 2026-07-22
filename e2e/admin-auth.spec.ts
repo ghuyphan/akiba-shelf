@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mockSupabase } from "./fixtures";
 
-test("advertises the PWA on staff and storefront routes", async ({ page }) => {
+test("advertises the PWA only on staff routes", async ({ page }) => {
   await mockSupabase(page);
 
   await page.goto("./admin");
@@ -14,7 +14,7 @@ test("advertises the PWA on staff and storefront routes", async ({ page }) => {
   await expect(page.locator("link[rel='manifest']")).toHaveCount(1);
 
   await page.goto("./s/akiba-shelf");
-  await expect(page.locator("link[rel='manifest']")).toHaveCount(1);
+  await expect(page.locator("link[rel='manifest']")).toHaveCount(0);
 });
 
 test("offers the install banner only on phone staff layouts", async ({
@@ -56,6 +56,7 @@ test("shows order details and advances online fulfilment", async ({ page }) => {
   await page.getByPlaceholder("Enter your password").fill("password123");
   await page.getByRole("button", { name: "Open admin" }).click();
 
+  await page.getByRole("tab", { name: /confirmed 1/i }).click();
   await expect(page.getByText("AK-0042", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Order details" }).click();
   const details = page.getByRole("dialog", { name: "Order details · AK-0042" });

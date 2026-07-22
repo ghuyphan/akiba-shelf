@@ -41,6 +41,7 @@ export function GachaGeneralSection({
             <label className="gacha-toggle">
               <input
                 type="checkbox"
+                aria-label={t("Minigame availability")}
                 checked={settings.enabled}
                 onChange={(event) =>
                   onUpdateSettings({ enabled: event.target.checked })
@@ -96,7 +97,6 @@ export function GachaGeneralSection({
             </Field>
           </div>
         </section>
-
       </div>
     </AdminCard>
   );

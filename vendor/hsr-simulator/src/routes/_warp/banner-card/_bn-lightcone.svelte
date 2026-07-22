@@ -24,7 +24,8 @@
 		return positionToStyle({ ...bannerOffset, ...tmp });
 	};
 
-	const offset = lcOffset(item.featured, $isMobileLandscape);
+	$: visualItem = item.featured || item.displayItem;
+	$: offset = lcOffset(visualItem, $isMobileLandscape);
 </script>
 
 <BannerTpl blank {group}>
@@ -40,10 +41,10 @@
 				}}
 			>
 				<picture style={offset}>
-					<source srcset={$assets[`lc/medium/${item.featured}`]} media="(max-width: 640px)" />
+					<source srcset={$assets[`lc/medium/${visualItem}`]} media="(max-width: 640px)" />
 					<img
-						src={$assets[`lc/large/${item.featured}`]}
-						alt={$t(item.featured)}
+						src={$assets[`lc/large/${visualItem}`]}
+						alt={visualItem ? $t(visualItem) : ''}
 						crossorigin="anonymous"
 					/>
 				</picture>

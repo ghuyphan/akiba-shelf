@@ -1,12 +1,31 @@
 <script>
-	import { t, json } from 'svelte-i18n';
+	import { t, json, locale } from 'svelte-i18n';
 	import { APP_TITLE } from '$lib/env';
+	import { getMerchDisclosure } from '$lib/helpers/merch';
 
 	export let bannerType;
 	export let bannerName = '';
 	export let data = [];
 	export let merch = false;
 	export let merchDescription = '';
+	const merchDisclosure = getMerchDisclosure(false);
+	$: merchCopy = $locale?.toLowerCase().startsWith('vi')
+		? {
+			intro: 'là Cầu Nguyện Sự Kiện theo chủ đề merch.',
+			guarantee: 'Mỗi lượt dùng loại tiền mô phỏng hiển thị trên banner.',
+			featured: 'Khi độ hiếm tương ứng được chọn, merch nổi bật có tỷ lệ',
+			featuredSuffix: 'trước mọi bảo hiểm;',
+			disclaimer:
+				'đây chỉ là minigame dành cho người hâm mộ. Lượt quay, nạp tiền, kho đồ, Tinh Huy và Tinh Trần đều là ảo và không ảnh hưởng đến đơn hàng, tồn kho hay thanh toán.'
+		}
+		: {
+			intro: 'is a merch-themed Event Wish.',
+			guarantee: 'Every Wish costs the simulator currency shown on the banner.',
+			featured: 'When its rarity is selected, featured merchandise has a',
+			featuredSuffix: 'chance before any guarantee;',
+			disclaimer:
+				'this is a fan minigame only. Wishes, top-ups, inventory, Stardust, and Starglitter are entirely virtual and never affect store orders, stock, or payment.'
+		};
 
 	const item5Star = ['events', 'weapons'].includes(bannerType)
 		? data.find(({ rarity }) => rarity === 5)?.items || []
@@ -101,89 +120,92 @@
 		<h3>{$t('details.permanent')}</h3>
 	{/if}
 
-	{#if merch}
-		<p>
-			<strong>{bannerName}</strong> is a merch-themed Event Wish. {merchDescription}
-		</p>
-		<p>
-			Every Wish costs the simulator currency shown on the banner. A 4-star or higher item is
-			guaranteed at least once every 10 Wishes; the configured 5-star pity is shared with other
-			banners of the same type.
-		</p>
-		<p>
-			Featured merchandise has an increased chance when its rarity is selected. This is a fan
-			minigame only: Wishes, top-ups, inventory, Stardust, and Starglitter are entirely virtual
-			and never affect store orders, stock, or payment.
-		</p>
+		{#if merch}
+			<p>
+				<strong>{bannerName}</strong> {merchCopy.intro} {merchDescription}
+			</p>
+			<p>
+				{merchCopy.guarantee}
+				{#if $locale?.toLowerCase().startsWith('vi')}
+					Đảm bảo nhận vật phẩm 4 sao trở lên trong {merchDisclosure.maxPity4} lượt và vật phẩm 5
+					sao trong {merchDisclosure.maxPity} lượt.
+				{:else}
+					A 4-star or higher item is guaranteed within {merchDisclosure.maxPity4} Wishes, and a
+					5-star item within {merchDisclosure.maxPity} Wishes.
+				{/if}
+			</p>
+			<p>
+				{merchCopy.featured} {merchDisclosure.featuredRate.toFixed(3)}% {merchCopy.featuredSuffix}
+				{merchCopy.disclaimer}
+			</p>
 	{:else}
-
-	{#if bannerType === 'beginner'}
-		{#each data[0].items as { name, vision }, x}
-			{#each $json('details.beginner') as text}
+		{#if bannerType === 'beginner'}
+			{#each data[0].items as { name, vision }, x}
+				{#each $json('details.beginner') as text}
+					<p>
+						{@html $t(text, {
+							values: {
+								character: ` <span class="custom ${vision}-flat"> ${charNameAndTitle(
+									name,
+									vision
+								)} </span> `,
+								...valuesToToChange
+							}
+						})}
+					</p>
+				{/each}
+			{/each}
+		{:else if bannerType === 'standard'}
+			{#each $json('details.standard') as text}
+				<p>
+					{@html $t(text, {
+						values: { bannerName: highlightBannerName(bannerName, { vision: 'std' }) }
+					})}
+				</p>
+			{/each}
+		{:else if bannerType === 'events'}
+			{#each $json('details.events') as text}
 				<p>
 					{@html $t(text, {
 						values: {
-							character: ` <span class="custom ${vision}-flat"> ${charNameAndTitle(
-								name,
-								vision
-							)} </span> `,
-							...valuesToToChange
+							bannerName: highlightBannerName(bannerName, { ...item5Star[0] }),
+							featuredCharacter: getFeaturedChars({ ...item5Star[0] }),
+							rateupCharacters: getRateupChars(item4Star)
 						}
 					})}
 				</p>
 			{/each}
-		{/each}
-	{:else if bannerType === 'standard'}
-		{#each $json('details.standard') as text}
-			<p>
-				{@html $t(text, {
-					values: { bannerName: highlightBannerName(bannerName, { vision: 'std' }) }
-				})}
-			</p>
-		{/each}
-	{:else if bannerType === 'events'}
-		{#each $json('details.events') as text}
-			<p>
-				{@html $t(text, {
-					values: {
-						bannerName: highlightBannerName(bannerName, { ...item5Star[0] }),
-						featuredCharacter: getFeaturedChars({ ...item5Star[0] }),
-						rateupCharacters: getRateupChars(item4Star)
-					}
-				})}
-			</p>
-		{/each}
-	{:else if bannerType === 'weapons'}
-		{#each $json('details.weapons') as text}
-			<p>
-				{@html $t(text, {
-					values: {
-						bannerName: highlightBannerName(bannerName, { ...item5Star[0] }),
-						featuredWeapon1: getFeaturedWeapon({ ...item5Star[0] }),
-						featuredWeapon2: getFeaturedWeapon({ ...item5Star[1] }),
-						rateupWeapons: getRateupWeapons(item4Star)
-					}
-				})}
-			</p>
-		{/each}
-	{/if}
-
-	<p>
-		{#if ['weapons', 'standard'].includes(bannerType)}
-			{@html convertion('fiveStar')}
+		{:else if bannerType === 'weapons'}
+			{#each $json('details.weapons') as text}
+				<p>
+					{@html $t(text, {
+						values: {
+							bannerName: highlightBannerName(bannerName, { ...item5Star[0] }),
+							featuredWeapon1: getFeaturedWeapon({ ...item5Star[0] }),
+							featuredWeapon2: getFeaturedWeapon({ ...item5Star[1] }),
+							rateupWeapons: getRateupWeapons(item4Star)
+						}
+					})}
+				</p>
+			{/each}
 		{/if}
-		{@html convertion('fourStar')}
-		{@html convertion('threeStar')}
-	</p>
 
-	<br />
-	<p>{@html $t('details.duplicate.heading')}</p>
-	{#if bannerType !== 'weapons'} <p>{@html duplicateDetails(5)}</p> {/if}
-	<p>{@html duplicateDetails(4)}</p>
+		<p>
+			{#if ['weapons', 'standard'].includes(bannerType)}
+				{@html convertion('fiveStar')}
+			{/if}
+			{@html convertion('fourStar')}
+			{@html convertion('threeStar')}
+		</p>
 
-	{#if ['events', 'weapons'].includes(bannerType)}
-		<p>{$t('details.alert', { values: { wishName: $t(`wish.banner.${bannerType}`) } })}</p>
-	{/if}
+		<br />
+		<p>{@html $t('details.duplicate.heading')}</p>
+		{#if bannerType !== 'weapons'} <p>{@html duplicateDetails(5)}</p> {/if}
+		<p>{@html duplicateDetails(4)}</p>
+
+		{#if ['events', 'weapons'].includes(bannerType)}
+			<p>{$t('details.alert', { values: { wishName: $t(`wish.banner.${bannerType}`) } })}</p>
+		{/if}
 	{/if}
 </div>
 

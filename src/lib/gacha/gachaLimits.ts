@@ -100,6 +100,66 @@ export function isGachaFeaturedCompositionComplete(
   );
 }
 
+export function hasGachaBannerRarities(
+  entries: GachaPoolEntry[],
+  banner: GachaBanner,
+  featured: boolean | null = null,
+): boolean {
+  const rarities = new Set(
+    entries
+      .filter(
+        (entry) =>
+          entry.banner_id === banner.id &&
+          entry.active &&
+          (featured === null || entry.featured === featured),
+      )
+      .map((entry) => entry.rarity),
+  );
+  return rarities.has(4) && rarities.has(5);
+}
+
+export type RecommendedGachaEntry = {
+  productId: string;
+  rarity: 4 | 5;
+  featured: boolean;
+};
+
+export function getRecommendedGachaEntryPlan(
+  productIds: string[],
+  banner: GachaBanner,
+  gameType: GachaGameType,
+  featuredRate: number,
+): { entries: RecommendedGachaEntry[]; canEnable: boolean } {
+  const rule = getGachaBannerFeaturedRule(gameType, banner.kind);
+  if (productIds.length < rule.displayLimit) {
+    return { entries: [], canEnable: false };
+  }
+
+  const entries = productIds
+    .slice(0, rule.displayLimit)
+    .map((productId, index) => ({
+      productId,
+      rarity: (index < rule.fiveStarLimit ? 5 : 4) as 4 | 5,
+      featured: true,
+    }));
+  const needsLossCandidates = featuredRate < 100;
+  if (needsLossCandidates && productIds.length >= rule.displayLimit + 2) {
+    entries.push(
+      { productId: productIds[rule.displayLimit], rarity: 5, featured: false },
+      {
+        productId: productIds[rule.displayLimit + 1],
+        rarity: 4,
+        featured: false,
+      },
+    );
+  }
+
+  return {
+    entries,
+    canEnable: !needsLossCandidates || entries.length === rule.displayLimit + 2,
+  };
+}
+
 export function capGachaFeaturedEntries(
   entries: GachaPoolEntry[],
   banners: GachaBanner[],

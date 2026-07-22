@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(39);
+select plan(51);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values('20000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','staff-orders@test.local','',now(),now(),now());
 insert into public.shops(id,name,slug,created_by) values('21000000-0000-4000-8000-000000000001','Orders','orders-test','20000000-0000-4000-8000-000000000001');
 insert into public.shop_members(shop_id,user_id,role) values('21000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','staff');
@@ -22,19 +22,22 @@ create temporary table test_order_ids(label text primary key,id uuid not null);
 grant select on test_order_ids to anon,authenticated;
 insert into test_order_ids values('first',(select id from public.orders where client_request_id='30000000-0000-4000-8000-000000000001'));
 select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000001'),30000,'database prices determine total');
-select is((select quantity from public.order_items limit 1),3,'duplicate cart rows aggregate');
+select is((select quantity from public.order_items where order_id=(select id from test_order_ids where label='first')),3,'duplicate cart rows aggregate');
 select is((select quantity_available from public.products where id='order-a'),7,'creation reserves once');
 
 set local role service_role;
 select lives_ok($$select * from public.create_order_rate_limited('orders-test','Customer','[{"product_id":"order-a","quantity":3}]','30000000-0000-4000-8000-000000000001',repeat('f',32),repeat('1',64))$$,'rate-limited retry is idempotent');
 
 set local role postgres;
-select is((select count(*) from public.orders),1::bigint,'retry creates one order');
+select is((select count(*) from public.orders where client_request_id='30000000-0000-4000-8000-000000000001'),1::bigint,'retry creates one order');
 select is((select count(*) from private.checkout_reservation_clients where client_request_id='30000000-0000-4000-8000-000000000001'),1::bigint,'retry stores one client reservation record');
 
 set local role authenticated;set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000001';
 select is((public.confirm_order_payment((select id from test_order_ids where label='first'))->>'outcome'),'confirmed','staff confirms own order');
+set local role postgres;
 select is((select fulfillment_status from public.orders where id=(select id from test_order_ids where label='first')),'preparing','payment confirmation starts fulfilment preparation');
+select is((select fulfillment_updated_by from public.orders where id=(select id from test_order_ids where label='first')),'20000000-0000-4000-8000-000000000001'::uuid,'payment confirmation records the initial fulfilment actor');
+set local role authenticated;set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000001';
 select is((public.update_order_fulfillment((select id from test_order_ids where label='first'),'ready')->>'outcome'),'updated','staff marks confirmed order ready');
 select is((public.update_order_fulfillment((select id from test_order_ids where label='first'),'picked_up')->>'outcome'),'updated','staff marks ready order picked up');
 select is((public.update_order_fulfillment((select id from test_order_ids where label='first'),'ready')->>'outcome'),'invalid_transition','fulfilment cannot move backward');
@@ -128,4 +131,41 @@ select id,client_request_id,'21000000-0000-4000-8000-000000000001',repeat('8',64
 
 set local role service_role;
 select throws_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000010',repeat('z',32),repeat('8',64))$$,'Too many checkout attempts. Please wait a few minutes and try again.','thirty-first recent reservation for one network is rate limited');
+
+set local role postgres;
+with inserted as (
+  insert into public.orders(shop_id,customer_name,total_amount,status,client_request_id,cancelled_at)
+  select '21000000-0000-4000-8000-000000000001','old-history-' || value,0,'cancelled',gen_random_uuid(),now()
+  from generate_series(1,100) value
+  returning id,client_request_id
+)
+insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash,created_at)
+select id,client_request_id,'21000000-0000-4000-8000-000000000001',repeat('7',64),now()-interval '1 year' from inserted;
+set local role service_role;
+select lives_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000011',repeat('v',32),repeat('7',64))$$,'historical fingerprint rows do not slow or block the active reservation window');
+
+set local role postgres;
+create temporary table notification_order_id as
+with inserted as (
+  insert into public.orders(shop_id,customer_name,total_amount,status,client_request_id,expires_at)
+  values('21000000-0000-4000-8000-000000000001','notification-lease',0,'pending',gen_random_uuid(),now()+interval '10 minutes')
+  returning id
+)
+select id from inserted;
+create temporary table notification_claims(label text primary key, payload jsonb not null);
+grant select on notification_order_id to service_role;
+grant select, insert on notification_claims to service_role;
+select ok(not has_function_privilege('authenticated','public.claim_order_notification_delivery(uuid,uuid)','execute'),'browser roles cannot claim notification delivery leases');
+select ok(not has_function_privilege('service_role','public.complete_order_notification_delivery(uuid,uuid,boolean,text)','execute'),'service role cannot bypass targeted notification retry state');
+set local role service_role;
+insert into notification_claims values('first',public.claim_order_notification_delivery((select id from notification_order_id),'21000000-0000-4000-8000-000000000001'));
+select is((select payload->>'outcome' from notification_claims where label='first'),'claimed','service role claims a new notification delivery');
+select is(public.claim_order_notification_delivery((select id from notification_order_id),'21000000-0000-4000-8000-000000000001')->>'outcome','in_progress','concurrent delivery observes the active lease');
+select ok(public.complete_order_notification_delivery((select id from notification_order_id),(select (payload->>'lease_token')::uuid from notification_claims where label='first'),false,'temporary push outage',array['https://push.test/retry']),'failed notification attempts remain retryable');
+insert into notification_claims values('second',public.claim_order_notification_delivery((select id from notification_order_id),'21000000-0000-4000-8000-000000000001'));
+select is((select payload->>'outcome' from notification_claims where label='second'),'claimed','retryable notification can be claimed again');
+select is((select payload #>> '{retry_endpoints,0}' from notification_claims where label='second'),'https://push.test/retry','retry claims target only failed subscriptions');
+select is(public.complete_order_notification_delivery((select id from notification_order_id),gen_random_uuid(),true,null,'{}'),false,'an expired delivery attempt cannot complete a newer lease');
+select ok(public.complete_order_notification_delivery((select id from notification_order_id),(select (payload->>'lease_token')::uuid from notification_claims where label='second'),true,null,'{}'),'successful retry completes notification delivery');
+select is(public.claim_order_notification_delivery((select id from notification_order_id),'21000000-0000-4000-8000-000000000001')->>'outcome','delivered','delivered notifications remain deduplicated');
 select * from finish();rollback;

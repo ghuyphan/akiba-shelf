@@ -1,10 +1,27 @@
 export type StockStatus = "in_stock" | "limited" | "sold_out";
 export type CatalogLocale = "en" | "vi";
 export type StorefrontCardStyle = "soft" | "outlined" | "elevated" | "playful";
-export type StorefrontFeaturedStyle = "deck" | "editorial" | "minimal" | "poster";
-export type StorefrontControlsStyle = "panel" | "floating" | "compact" | "playful";
-export type StorefrontProductStyle = "classic" | "minimal" | "framed" | "playful";
-export type StorefrontSection = "featured" | "controls" | "products" | "booth" | "cart";
+export type StorefrontFeaturedStyle =
+  | "deck"
+  | "editorial"
+  | "minimal"
+  | "poster";
+export type StorefrontControlsStyle =
+  | "panel"
+  | "floating"
+  | "compact"
+  | "playful";
+export type StorefrontProductStyle =
+  | "classic"
+  | "minimal"
+  | "framed"
+  | "playful";
+export type StorefrontSection =
+  | "featured"
+  | "controls"
+  | "products"
+  | "booth"
+  | "cart";
 export type ShopRole = "owner" | "admin" | "staff";
 
 export type Shop = {
@@ -15,7 +32,14 @@ export type Shop = {
   accepting_orders: boolean;
   catalog_source_shop_id?: string | null;
 };
-export type ShopMembership = { shop_id: string; shop_name: string; shop_slug: string; role: ShopRole; active: boolean; shop_active: boolean };
+export type ShopMembership = {
+  shop_id: string;
+  shop_name: string;
+  shop_slug: string;
+  role: ShopRole;
+  active: boolean;
+  shop_active: boolean;
+};
 
 export type Product = {
   shop_id?: string;
@@ -177,8 +201,19 @@ export type Order = {
   payment_state?: OfflineEventPaymentState;
 };
 
-export type OrderMutationOutcome = "confirmed" | "cancelled" | "expired" | "already_confirmed" | "already_cancelled" | "already_expired" | "not_found" | "invalid_state";
-export type OrderMutationResult = { outcome: OrderMutationOutcome; order: Order | null };
+export type OrderMutationOutcome =
+  | "confirmed"
+  | "cancelled"
+  | "expired"
+  | "already_confirmed"
+  | "already_cancelled"
+  | "already_expired"
+  | "not_found"
+  | "invalid_state";
+export type OrderMutationResult = {
+  outcome: OrderMutationOutcome;
+  order: Order | null;
+};
 export type FulfillmentMutationOutcome =
   | "updated"
   | "unchanged"
@@ -190,7 +225,10 @@ export type FulfillmentMutationResult = {
   order: Order | null;
 };
 
-export type OrderItemProduct = Pick<Product, "id" | "name" | "item_code" | "images">;
+export type OrderItemProduct = Pick<
+  Product,
+  "id" | "name" | "item_code" | "images"
+>;
 
 export type OrderItem = {
   id: string;
@@ -233,8 +271,11 @@ export type OfflineEventOrder = {
   status: "pending" | "confirmed" | "cancelled";
   paymentMethod: OfflineEventPaymentMethod;
   paymentState: OfflineEventPaymentState;
+  clientRevision: number;
   fulfillmentStatus: FulfillmentStatus;
   fulfillmentUpdatedAt?: string;
+  confirmedAt?: string;
+  cancelledAt?: string;
   confirmedByLabel?: string;
   cancelledByLabel?: string;
   fulfillmentUpdatedByLabel?: string;
@@ -244,6 +285,11 @@ export type OfflineEventOrder = {
   syncedAt?: string;
 };
 
+export type OfflineEventSyncAcknowledgement = {
+  id: string;
+  clientRevision: number;
+};
+
 export type OfflineEventSession = {
   version: 1;
   id: string;
@@ -251,7 +297,7 @@ export type OfflineEventSession = {
   shopSlug: string;
   deviceId: string;
   name: string;
-  status: "active" | "closed";
+  status: "active" | "closing" | "closed";
   allocations: OfflineEventAllocation[];
   payment: PaymentSettings;
   promotion: PromotionSettings;

@@ -73,6 +73,10 @@ function ensureManifest() {
   document.head.append(manifest);
 }
 
+function removeManifest() {
+  document.head.querySelector(`link[${MANIFEST_MARKER}]`)?.remove();
+}
+
 function performRegistration() {
   if (import.meta.env.DEV) {
     return navigator.serviceWorker.ready;
@@ -128,18 +132,36 @@ export async function ensureOfflineNavigationReady() {
   if (!registration.active) {
     const worker = registration.installing || registration.waiting;
     if (worker) {
-      await new Promise<void>((resolve) => {
+      await new Promise<void>((resolve, reject) => {
+        const cleanup = () => {
+          window.clearTimeout(timeout);
+          worker.removeEventListener("statechange", stateChangeHandler);
+          worker.removeEventListener("error", errorHandler);
+        };
+        const errorHandler = () => {
+          cleanup();
+          reject(new Error("Offline navigation worker installation failed."));
+        };
+        const stateChangeHandler = () => {
+          if (worker.state === "activated") {
+            cleanup();
+            resolve();
+          } else if (worker.state === "redundant") {
+            cleanup();
+            reject(new Error("Offline navigation worker became unavailable."));
+          }
+        };
         if (worker.state === "activated") {
           resolve();
           return;
         }
-        const stateChangeHandler = () => {
-          if (worker.state === "activated") {
-            worker.removeEventListener("statechange", stateChangeHandler);
-            resolve();
-          }
-        };
+        const timeout = window.setTimeout(() => {
+          cleanup();
+          reject(new Error("Offline navigation worker activation timed out."));
+        }, 15_000);
         worker.addEventListener("statechange", stateChangeHandler);
+        worker.addEventListener("error", errorHandler);
+        stateChangeHandler();
       });
     }
   }
@@ -157,14 +179,22 @@ export async function ensureOfflineNavigationReady() {
         .map((entry) => entry.name)
         .filter((value) => {
           const url = new URL(value, location.href);
-          return url.origin === location.origin && offlineAssetPath.test(url.pathname);
+          return (
+            url.origin === location.origin &&
+            offlineAssetPath.test(url.pathname)
+          );
         }),
     );
-    document.querySelectorAll<HTMLScriptElement>("script[src]").forEach((script) => {
-      const url = new URL(script.src, location.href);
-      if (url.origin === location.origin && offlineAssetPath.test(url.pathname))
-        urls.add(url.href);
-    });
+    document
+      .querySelectorAll<HTMLScriptElement>("script[src]")
+      .forEach((script) => {
+        const url = new URL(script.src, location.href);
+        if (
+          url.origin === location.origin &&
+          offlineAssetPath.test(url.pathname)
+        )
+          urls.add(url.href);
+      });
     const cache = await caches.open(
       import.meta.env.DEV ? "vite-dev-app-shell" : "app-route-chunks-v1",
     );
@@ -179,9 +209,13 @@ export async function ensureOfflineNavigationReady() {
   return registration;
 }
 
-export function configurePwa() {
-  ensureManifest();
-  ensureInstallListeners();
+export function configurePwa(pathname = window.location.pathname) {
+  if (isStaffPwaPath(pathname)) {
+    ensureManifest();
+    ensureInstallListeners();
+  } else {
+    removeManifest();
+  }
   void registerPwa().catch(() => undefined);
 }
 

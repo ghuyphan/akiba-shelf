@@ -29,13 +29,16 @@ const WARP = {
 		return this;
 	},
 
-	getItem(rarity, banner, bannerId) {
+	getItem(rarity, banner, bannerRef) {
 		const activeBanners = getMerchBanners().filter(
 			(item) => item?.active !== false && Boolean(item?.id)
 		);
 
 		const selectedBanner =
-			activeBanners.find((item) => item.id === bannerId) ?? activeBanners[0] ?? null;
+			activeBanners.find((item) => item.id === bannerRef) ??
+			activeBanners[Number.isInteger(bannerRef) ? bannerRef : 0] ??
+			activeBanners[0] ??
+			null;
 
 		if (!selectedBanner) {
 			throw new Error('No active HSR banner is available.');

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(52);
+select plan(54);
 
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values
 ('10000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner@test.local','',now(),now(),now()),
@@ -78,6 +78,8 @@ $$;
 select is((select count(*)::integer from public.shop_invitations where shop_id='11000000-0000-4000-8000-000000000003' and status='pending'),9,'one owner plus nine invitations fills ten team places');
 select is((select created_new from public.reserve_shop_invitation('11000000-0000-4000-8000-000000000003','capacity-1@test.local','staff','10000000-0000-4000-8000-000000000001',now()+interval '1 day')),false,'resending an existing invitation does not consume another place');
 select is((select count(*)::integer from public.shop_invitations where shop_id='11000000-0000-4000-8000-000000000003' and status='pending'),9,'resending keeps the occupied-place count stable');
+select is((select created_new from public.reserve_shop_invitation('11000000-0000-4000-8000-000000000003','capacity-1@test.local','admin','10000000-0000-4000-8000-000000000001',now()+interval '7 days')),false,'resending refreshes the existing invitation');
+select is((select role from public.shop_invitations where shop_id='11000000-0000-4000-8000-000000000003' and email='capacity-1@test.local' and status='pending'),'admin','resending stores the latest requested role');
 select throws_ok($$select * from public.reserve_shop_invitation('11000000-0000-4000-8000-000000000003','capacity-10@test.local','staff','10000000-0000-4000-8000-000000000001',now()+interval '1 day')$$,null,'Shop team limit reached','a tenth invitation is rejected when the owner already occupies one place');
 
 select is(public.process_existing_shop_member('11000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002','staff','10000000-0000-4000-8000-000000000001'),'existing_member','active member is not silently reassigned');

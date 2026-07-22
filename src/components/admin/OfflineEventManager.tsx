@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   CloudOff,
@@ -8,7 +8,7 @@ import {
   XCircle,
 } from "lucide-react";
 import {
-  closeOfflineEventSession,
+  finalizeOfflineEventSession,
   recoverOfflineEventSession,
   startOfflineEventSession,
   syncOfflineEventOrders,
@@ -24,10 +24,13 @@ import { prepareStorefrontOffline } from "../../lib/offline/storefrontOffline";
 import { refreshGachaLaunch } from "../../lib/gacha/gachaLaunch";
 import {
   closeLocalOfflineEvent,
+  assertOfflineEventStorageAvailable,
+  freezeOfflineEventSession,
   getOfflineEventDeviceId,
   listOfflineEventOrders,
   loadOfflineEventSession,
   markOfflineEventOrdersSynced,
+  mergeRecoveredOfflineEventSession,
   OFFLINE_EVENT_UPDATED,
   requestDurableOfflineStorage,
   saveOfflineEventSession,
@@ -74,7 +77,11 @@ export function OfflineEventManager({
   const [busy, setBusy] = useState<"start" | "sync" | "close" | string>();
   const [online, setOnline] = useState(navigator.onLine);
   const [isOpen, setIsOpen] = useState(false);
-  const [gachaPreparationProgress, setGachaPreparationProgress] = useState<number | null>(null);
+  const [gachaPreparationProgress, setGachaPreparationProgress] = useState<
+    number | null
+  >(null);
+  const [loadedShopId, setLoadedShopId] = useState("");
+  const syncPromiseRef = useRef<Promise<boolean> | null>(null);
 
   const reloadLocal = useCallback(async () => {
     const stored = await loadOfflineEventSession(shopId);
@@ -83,37 +90,48 @@ export function OfflineEventManager({
   }, [shopId]);
 
   useEffect(() => {
-    void reloadLocal();
+    let active = true;
+    setLoadedShopId("");
+    void reloadLocal().finally(() => {
+      if (active) setLoadedShopId(shopId);
+    });
     const update = (event: Event) => {
       const detail = (event as CustomEvent<{ shopId?: string }>).detail;
       if (!detail?.shopId || detail.shopId === shopId) void reloadLocal();
     };
     const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
+    const handleFocus = () => void reloadLocal();
     window.addEventListener(OFFLINE_EVENT_UPDATED, update);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+    window.addEventListener("focus", handleFocus);
     return () => {
+      active = false;
       window.removeEventListener(OFFLINE_EVENT_UPDATED, update);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [reloadLocal, shopId]);
 
   useEffect(() => {
-    if (!online || session) return;
+    if (!online || loadedShopId !== shopId || session) return;
     const deviceId = getOfflineEventDeviceId();
     recoverOfflineEventSession(shopId, shopSlug, deviceId)
       .then(async (recovered) => {
         if (!recovered) return;
-        await saveOfflineEventSession(recovered);
+        await mergeRecoveredOfflineEventSession(recovered);
         await reloadLocal();
       })
       .catch(() => undefined);
-  }, [online, reloadLocal, session, shopId, shopSlug]);
+  }, [loadedShopId, online, reloadLocal, session, shopId, shopSlug]);
 
   const availableProducts = useMemo(
-    () => products.filter((product) => product.active && product.quantity_available > 0),
+    () =>
+      products.filter(
+        (product) => product.active && product.quantity_available > 0,
+      ),
     [products],
   );
   const allocationTotal =
@@ -126,13 +144,17 @@ export function OfflineEventManager({
       (total, allocation) => total + allocation.quantitySold,
       0,
     ) ?? 0;
+  const sessionIsActive = session?.status === "active";
   const unsyncedCount = orders.filter((order) => !order.syncedAt).length;
-  const pendingCount = orders.filter((order) => order.status === "pending").length;
+  const pendingCount = orders.filter(
+    (order) => order.status === "pending",
+  ).length;
 
   async function startEvent() {
     if (!online || !name.trim() || !availableProducts.length) return;
     setBusy("start");
     try {
+      await assertOfflineEventStorageAvailable();
       await prepareStorefrontOffline({
         id: shopId,
         name: booth.booth_name || shopSlug,
@@ -200,29 +222,47 @@ export function OfflineEventManager({
   }
 
   const syncOrders = useCallback(async () => {
-    if (!session || !online) return false;
-    setBusy("sync");
-    try {
-      await syncOfflineEventOrders(session, orders);
-      await markOfflineEventOrdersSynced(session, orders);
-      toast.success(t("Offline orders synchronized."));
-      return true;
-    } catch (error) {
-      toast.error(
-        t(getErrorMessage(error, "Could not synchronize offline orders.")),
-        t("Sync failed"),
-      );
-      return false;
-    } finally {
-      setBusy(undefined);
-    }
-  }, [online, orders, session, t, toast]);
+    if (!session || session.status !== "active" || !online) return false;
+    if (syncPromiseRef.current) return syncPromiseRef.current;
+    const request = (async () => {
+      setBusy("sync");
+      try {
+        const latestOrders = await listOfflineEventOrders(session.id);
+        const pendingSync = latestOrders.filter((order) => !order.syncedAt);
+        if (!pendingSync.length) return true;
+        const acknowledgements = await syncOfflineEventOrders(
+          session,
+          pendingSync,
+        );
+        await markOfflineEventOrdersSynced(session, acknowledgements);
+        toast.success(t("Offline orders synchronized."));
+        return true;
+      } catch (error) {
+        toast.error(
+          t(getErrorMessage(error, "Could not synchronize offline orders.")),
+          t("Sync failed"),
+        );
+        return false;
+      } finally {
+        syncPromiseRef.current = null;
+        setBusy(undefined);
+      }
+    })();
+    syncPromiseRef.current = request;
+    return request;
+  }, [online, session, t, toast]);
 
   useEffect(() => {
-    if (!online || !session || session.status !== "active" || !unsyncedCount)
+    if (
+      !online ||
+      busy ||
+      !session ||
+      session.status !== "active" ||
+      !unsyncedCount
+    )
       return;
     void syncOrders();
-  }, [online, session, syncOrders, unsyncedCount]);
+  }, [busy, online, session, syncOrders, unsyncedCount]);
 
   async function resolveOrder(
     order: OfflineEventOrder,
@@ -257,7 +297,13 @@ export function OfflineEventManager({
     try {
       await updateOfflineEventOrderFulfillment(session, order.id, status);
       await reloadLocal();
-      toast.success(t(status === "ready" ? "Order marked ready." : "Order marked picked up."));
+      toast.success(
+        t(
+          status === "ready"
+            ? "Order marked ready."
+            : "Order marked picked up.",
+        ),
+      );
     } catch (error) {
       toast.error(t(getErrorMessage(error, "Could not update fulfilment.")));
     } finally {
@@ -268,14 +314,26 @@ export function OfflineEventManager({
   async function closeEvent() {
     if (!session || !online || pendingCount > 0) return;
     setBusy("close");
+    let frozen: OfflineEventSession | null =
+      session.status === "closing" ? session : null;
     try {
-      await syncOfflineEventOrders(session, orders);
-      await markOfflineEventOrdersSynced(session, orders);
-      await closeOfflineEventSession(session);
-      await closeLocalOfflineEvent(session);
+      if (syncPromiseRef.current) await syncPromiseRef.current;
+      setBusy("close");
+      frozen ??= await freezeOfflineEventSession(session);
+      setSession(frozen);
+      const latestOrders = await listOfflineEventOrders(frozen.id);
+      if (latestOrders.some((order) => order.status === "pending"))
+        throw new Error(
+          "Resolve pending offline payments before closing the event.",
+        );
+      const finalized = await finalizeOfflineEventSession(frozen, latestOrders);
+      await markOfflineEventOrdersSynced(frozen, finalized.acknowledgements);
+      await closeLocalOfflineEvent(frozen);
+      await reloadLocal();
       setIsOpen(false);
       toast.success(t("Offline event closed and unused stock returned."));
     } catch (error) {
+      if (frozen) setSession(frozen);
       toast.error(
         t(getErrorMessage(error, "Could not close the offline event.")),
         t("Close failed"),
@@ -288,7 +346,13 @@ export function OfflineEventManager({
   function exportBackup() {
     if (!session) return;
     const blob = new Blob(
-      [JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), session, orders }, null, 2)],
+      [
+        JSON.stringify(
+          { version: 1, exportedAt: new Date().toISOString(), session, orders },
+          null,
+          2,
+        ),
+      ],
       { type: "application/json" },
     );
     const url = URL.createObjectURL(blob);
@@ -299,15 +363,20 @@ export function OfflineEventManager({
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
-  const activeSession = session?.status === "active" ? session : null;
-  const eventActive = Boolean(activeSession);
+  const currentSession = session?.status === "closed" ? null : session;
+  const eventActive = Boolean(currentSession);
+  const sessionIsClosing = currentSession?.status === "closing";
 
   return (
     <>
       <button
         type="button"
         className={`admin-toolbar-control offline-event-launcher ${eventActive ? "is-active" : ""}`}
-        aria-label={eventActive ? `${t("Event mode")}: ${activeSession?.name}` : `${t("Event mode")}: ${t("Set up")}`}
+        aria-label={
+          eventActive
+            ? `${t("Event mode")}: ${currentSession?.name}`
+            : `${t("Event mode")}: ${t("Set up")}`
+        }
         onClick={() => setIsOpen(true)}
       >
         {eventActive ? <ShieldCheck size={15} /> : <CloudOff size={15} />}
@@ -326,14 +395,22 @@ export function OfflineEventManager({
         {!eventActive ? (
           <div className="offline-event-workspace offline-event-setup">
             <div className="offline-event-intro">
-              <span className="offline-event-icon"><CloudOff size={24} /></span>
+              <span className="offline-event-icon">
+                <CloudOff size={24} />
+              </span>
               <div>
                 <h2>{t("Prepare this device for an offline event")}</h2>
-                <p>{t("Current active stock will be assigned to this device, removed from online availability, and safely returned when the event closes.")}</p>
+                <p>
+                  {t(
+                    "Current active stock will be assigned to this device, removed from online availability, and safely returned when the event closes.",
+                  )}
+                </p>
               </div>
             </div>
             <Alert variant="info" className="offline-event-warning">
-              {t("Use one designated staff device while offline. The storefront and enabled gacha games are saved before stock is reserved.")}
+              {t(
+                "Use one designated staff device while offline. The storefront and enabled gacha games are saved before stock is reserved.",
+              )}
             </Alert>
             <div className="offline-event-setup-card">
               <Field label={t("Event name")} className="offline-event-name">
@@ -347,107 +424,227 @@ export function OfflineEventManager({
               <div className="offline-event-stock-summary">
                 <strong>{t("Stock to reserve")}</strong>
                 <div className="offline-event-preview">
-                  <span><b>{availableProducts.length}</b>{t("products")}</span>
-                  <span><b>{availableProducts.reduce((sum, product) => sum + product.quantity_available, 0)}</b>{t("items")}</span>
+                  <span>
+                    <b>{availableProducts.length}</b>
+                    {t("products")}
+                  </span>
+                  <span>
+                    <b>
+                      {availableProducts.reduce(
+                        (sum, product) => sum + product.quantity_available,
+                        0,
+                      )}
+                    </b>
+                    {t("items")}
+                  </span>
                 </div>
               </div>
             </div>
             <Button
               className="offline-event-primary-action"
               loading={busy === "start"}
-              loadingText={gachaPreparationProgress === null
-                ? t("Preparing device…")
-                : t("Preparing games… {{progress}}%", {
-                    progress: gachaPreparationProgress,
-                  })}
+              loadingText={
+                gachaPreparationProgress === null
+                  ? t("Preparing device…")
+                  : t("Preparing games… {{progress}}%", {
+                      progress: gachaPreparationProgress,
+                    })
+              }
               disabled={!online || !name.trim() || !availableProducts.length}
               icon={<ShieldCheck size={17} />}
               onClick={() => void startEvent()}
             >
-              {online ? t("Reserve stock and prepare device") : t("Reconnect to prepare event mode")}
+              {online
+                ? t("Reserve stock and prepare device")
+                : t("Reconnect to prepare event mode")}
             </Button>
           </div>
         ) : (
           <div className="offline-event-workspace">
             <div className="offline-event-status-row">
               <div>
-                <span className={`status-pill ${online ? "status-confirmed" : "status-pending"}`}>{online ? t("Online") : t("Offline ready")}</span>
-                <h2>{activeSession?.name}</h2>
-                <p>{t("This device is the inventory authority for the allocated event stock.")}</p>
+                <span
+                  className={`status-pill ${online ? "status-confirmed" : "status-pending"}`}
+                >
+                  {online ? t("Online") : t("Offline ready")}
+                </span>
+                <h2>{currentSession?.name}</h2>
+                <p>
+                  {t(
+                    "This device is the inventory authority for the allocated event stock.",
+                  )}
+                </p>
               </div>
               <div className="offline-event-header-actions">
-                <Button variant="secondary" icon={<Download size={16} />} onClick={exportBackup}>
+                <Button
+                  variant="secondary"
+                  icon={<Download size={16} />}
+                  onClick={exportBackup}
+                >
                   {t("Export backup")}
                 </Button>
                 <Button
                   variant="secondary"
                   loading={busy === "sync"}
-                  disabled={!online}
+                  disabled={!online || !sessionIsActive || Boolean(busy)}
                   icon={<RefreshCw size={16} />}
                   onClick={() => void syncOrders()}
                 >
-                  {t("Sync now")}{unsyncedCount ? ` (${unsyncedCount})` : ""}
+                  {t("Sync now")}
+                  {unsyncedCount ? ` (${unsyncedCount})` : ""}
                 </Button>
               </div>
             </div>
             <div className="offline-event-metrics">
-              <span><b>{allocationTotal - soldTotal}</b>{t("remaining")}</span>
-              <span><b>{soldTotal}</b>{t("sold locally")}</span>
-              <span><b>{orders.length}</b>{t("local orders")}</span>
-              <span><b>{pendingCount}</b>{t("awaiting verification")}</span>
+              <span>
+                <b>{allocationTotal - soldTotal}</b>
+                {t("remaining")}
+              </span>
+              <span>
+                <b>{soldTotal}</b>
+                {t("sold locally")}
+              </span>
+              <span>
+                <b>{orders.length}</b>
+                {t("local orders")}
+              </span>
+              <span>
+                <b>{pendingCount}</b>
+                {t("awaiting verification")}
+              </span>
             </div>
             <div className="offline-event-orders">
               <div className="offline-event-section-heading">
-                <div><h3>{t("Local order ledger")}</h3><p>{t("Orders remain on this device until they synchronize.")}</p></div>
+                <div>
+                  <h3>{t("Local order ledger")}</h3>
+                  <p>
+                    {t("Orders remain on this device until they synchronize.")}
+                  </p>
+                </div>
               </div>
               {!orders.length ? (
-                <div className="offline-event-empty">{t("Open the storefront on this device to create the first offline order.")}</div>
-              ) : orders.map((order) => (
-                <article className="offline-event-order" key={order.id}>
-                  <div>
-                    <span>{order.orderCode}</span>
-                    <strong>{order.customerName || t("Walk-in customer")}</strong>
-                    <small>{new Date(order.createdAt).toLocaleString()}</small>
-                  </div>
-                  <div className="offline-event-order-total">
-                    <strong>{formatVnd(order.totalAmount)}</strong>
-                    <small>{t(order.paymentMethod === "cash" ? "Cash" : "VietQR")}</small>
-                  </div>
-                  <div className="offline-event-order-state">
-                    {order.status === "confirmed" ? (
-                      <span className="status-pill status-confirmed"><CheckCircle2 size={13} /> {t("Confirmed")}</span>
-                    ) : order.status === "cancelled" ? (
-                      <span className="status-pill status-cancelled"><XCircle size={13} /> {t("Cancelled")}</span>
-                    ) : (
-                      <div className="offline-event-order-actions">
-                        <Button loading={busy === order.id} onClick={() => void resolveOrder(order, "confirmed")}>{t(order.paymentMethod === "cash" ? "Confirm cash" : "Verify payment")}</Button>
-                        <Button variant="secondary" disabled={busy === order.id} onClick={() => void resolveOrder(order, "cancelled")}>{t("Cancel")}</Button>
-                      </div>
-                    )}
-                    {order.status === "confirmed" && (
-                      <div className="offline-event-fulfillment-actions">
-                        <span>{t(order.fulfillmentStatus ?? "preparing")}</span>
-                        {(order.fulfillmentStatus ?? "preparing") === "preparing" && <Button loading={busy === order.id} onClick={() => void resolveFulfillment(order, "ready")}>{t("Mark ready")}</Button>}
-                        {(order.fulfillmentStatus ?? "preparing") === "ready" && <Button loading={busy === order.id} onClick={() => void resolveFulfillment(order, "picked_up")}>{t("Mark picked up")}</Button>}
-                      </div>
-                    )}
-                  </div>
-                </article>
-              ))}
+                <div className="offline-event-empty">
+                  {t(
+                    "Open the storefront on this device to create the first offline order.",
+                  )}
+                </div>
+              ) : (
+                orders.map((order) => (
+                  <article className="offline-event-order" key={order.id}>
+                    <div>
+                      <span>{order.orderCode}</span>
+                      <strong>
+                        {order.customerName || t("Walk-in customer")}
+                      </strong>
+                      <small>
+                        {new Date(order.createdAt).toLocaleString()}
+                      </small>
+                    </div>
+                    <div className="offline-event-order-total">
+                      <strong>{formatVnd(order.totalAmount)}</strong>
+                      <small>
+                        {t(order.paymentMethod === "cash" ? "Cash" : "VietQR")}
+                      </small>
+                    </div>
+                    <div className="offline-event-order-state">
+                      {order.status === "confirmed" ? (
+                        <span className="status-pill status-confirmed">
+                          <CheckCircle2 size={13} /> {t("Confirmed")}
+                        </span>
+                      ) : order.status === "cancelled" ? (
+                        <span className="status-pill status-cancelled">
+                          <XCircle size={13} /> {t("Cancelled")}
+                        </span>
+                      ) : (
+                        <div className="offline-event-order-actions">
+                          <Button
+                            loading={busy === order.id}
+                            disabled={!sessionIsActive || Boolean(busy)}
+                            onClick={() =>
+                              void resolveOrder(order, "confirmed")
+                            }
+                          >
+                            {t(
+                              order.paymentMethod === "cash"
+                                ? "Confirm cash"
+                                : "Verify payment",
+                            )}
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            disabled={!sessionIsActive || Boolean(busy)}
+                            onClick={() =>
+                              void resolveOrder(order, "cancelled")
+                            }
+                          >
+                            {t("Cancel")}
+                          </Button>
+                        </div>
+                      )}
+                      {order.status === "confirmed" && (
+                        <div className="offline-event-fulfillment-actions">
+                          <span>
+                            {t(order.fulfillmentStatus ?? "preparing")}
+                          </span>
+                          {(order.fulfillmentStatus ?? "preparing") ===
+                            "preparing" && (
+                            <Button
+                              loading={busy === order.id}
+                              disabled={!sessionIsActive || Boolean(busy)}
+                              onClick={() =>
+                                void resolveFulfillment(order, "ready")
+                              }
+                            >
+                              {t("Mark ready")}
+                            </Button>
+                          )}
+                          {(order.fulfillmentStatus ?? "preparing") ===
+                            "ready" && (
+                            <Button
+                              loading={busy === order.id}
+                              disabled={!sessionIsActive || Boolean(busy)}
+                              onClick={() =>
+                                void resolveFulfillment(order, "picked_up")
+                              }
+                            >
+                              {t("Mark picked up")}
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                ))
+              )}
             </div>
-            <Alert variant="info" className={online ? "" : "offline-event-warning"}>
-              {online
-                ? t("Synchronization is idempotent; retrying cannot duplicate an offline order.")
-                : t("Sales are safe on this device. Reconnect before closing the event or switching devices.")}
+            <Alert
+              variant="info"
+              className={online ? "" : "offline-event-warning"}
+            >
+              {sessionIsClosing
+                ? t(
+                    "This event is frozen. Retry closing to finish synchronization and return unused stock.",
+                  )
+                : online
+                  ? t(
+                      "Synchronization is idempotent; retrying cannot duplicate an offline order.",
+                    )
+                : t(
+                    "Sales are safe on this device. Reconnect before closing the event or switching devices.",
+                  )}
             </Alert>
             <Button
               variant="danger"
               className="offline-event-primary-action"
               loading={busy === "close"}
-              disabled={!online || pendingCount > 0}
+              disabled={!online || pendingCount > 0 || Boolean(busy)}
               onClick={() => void closeEvent()}
             >
-              {pendingCount > 0 ? t("Resolve pending payments first") : t("Sync and close event")}
+              {pendingCount > 0
+                ? t("Resolve pending payments first")
+                : sessionIsClosing
+                  ? t("Retry sync and close event")
+                  : t("Sync and close event")}
             </Button>
           </div>
         )}

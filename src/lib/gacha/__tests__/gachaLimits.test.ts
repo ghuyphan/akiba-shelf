@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   capGachaFeaturedEntries,
   getGachaFeaturedComposition,
+  getRecommendedGachaEntryPlan,
+  hasGachaBannerRarities,
   isGachaFeaturedCompositionComplete,
   normalizeGachaDisplayLimit,
 } from "../gachaLimits";
@@ -152,5 +154,50 @@ describe("gacha featured-item limits", () => {
     expect(
       isGachaFeaturedCompositionComplete(partial, characterBanner, "genshin"),
     ).toBe(false);
+  });
+
+  it("adds explicit 4-star and 5-star loss candidates to recommended pools", () => {
+    const characterBanner = banner("character");
+    const plan = getRecommendedGachaEntryPlan(
+      ["five", "four-1", "four-2", "four-3", "loss-five", "loss-four"],
+      characterBanner,
+      "genshin",
+      50,
+    );
+
+    expect(plan.canEnable).toBe(true);
+    expect(plan.entries.filter((item) => item.featured)).toHaveLength(4);
+    expect(plan.entries.filter((item) => !item.featured)).toEqual([
+      { productId: "loss-five", rarity: 5, featured: false },
+      { productId: "loss-four", rarity: 4, featured: false },
+    ]);
+  });
+
+  it("keeps recommended pools disabled when a configured loss cannot be fulfilled", () => {
+    const characterBanner = banner("character");
+    const plan = getRecommendedGachaEntryPlan(
+      ["five", "four-1", "four-2", "four-3", "only-one-spare"],
+      characterBanner,
+      "genshin",
+      50,
+    );
+
+    expect(plan.canEnable).toBe(false);
+    expect(plan.entries).toHaveLength(4);
+  });
+
+  it("accepts HSR standard pools only when both non-featured rarities exist", () => {
+    const standardBanner = banner("character");
+    const standardEntries = [
+      { ...entry(standardBanner.id, "five", 5, "character"), featured: false },
+      { ...entry(standardBanner.id, "four", 4, "character"), featured: false },
+    ];
+
+    expect(hasGachaBannerRarities(standardEntries, standardBanner, false)).toBe(
+      true,
+    );
+    expect(
+      getGachaFeaturedComposition(standardEntries, standardBanner).totalCount,
+    ).toBe(0);
   });
 });

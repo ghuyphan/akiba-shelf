@@ -306,6 +306,13 @@ const vi: Record<string, string> = {
   "Create shop": "Tạo gian hàng",
   "Check your connection and try again.": "Kiểm tra kết nối rồi thử lại.",
   "Could not sign out": "Không thể đăng xuất",
+  "Offline Event Mode is still active":
+    "Chế độ sự kiện ngoại tuyến vẫn đang hoạt động",
+  "This device still owns event stock or unsynced orders. Sync and close Offline Event Mode before signing out.":
+    "Thiết bị này vẫn đang giữ tồn kho sự kiện hoặc đơn chưa đồng bộ. Hãy đồng bộ và đóng Chế độ sự kiện ngoại tuyến trước khi đăng xuất.",
+  "Sign-out safety check failed": "Không thể kiểm tra an toàn đăng xuất",
+  "Offline Event storage could not be checked. Keep this account signed in and retry after storage access is restored.":
+    "Không thể kiểm tra bộ nhớ Sự kiện Ngoại tuyến. Hãy giữ trạng thái đăng nhập và thử lại sau khi quyền truy cập bộ nhớ được khôi phục.",
   "Could not save shop details": "Không thể lưu thông tin gian hàng",
   "Your Account": "Tài khoản của bạn",
   "Select a shop workspace to manage orders, products, and designs, or preview its public storefront.":
@@ -645,13 +652,13 @@ const vi: Record<string, string> = {
   "Could not update fulfilment.": "Không thể cập nhật giao hàng.",
   "Confirm payment before updating fulfilment.":
     "Hãy xác nhận thanh toán trước khi cập nhật giao hàng.",
-  "Fulfilment cannot move backward.":
-    "Trạng thái giao hàng không thể lùi lại.",
+  "Fulfilment cannot move backward.": "Trạng thái giao hàng không thể lùi lại.",
   "Order details": "Chi tiết đơn hàng",
   Created: "Đã tạo",
   "Handled by": "Xử lý bởi",
   "Payment updated": "Cập nhật thanh toán",
   "Fulfilment updated": "Cập nhật giao hàng",
+  "Fulfilment handled by": "Người xử lý giao hàng",
   "Online QR checkout": "Thanh toán QR trực tuyến",
   "System expiry": "Hệ thống hết hạn",
   "Not recorded": "Chưa ghi nhận",
@@ -1240,10 +1247,20 @@ const vi: Record<string, string> = {
   "More merch needed": "Cần thêm merch",
   "Recommended pool created. Review it, then publish when ready.":
     "Đã tạo pool đề xuất. Hãy kiểm tra rồi xuất bản khi sẵn sàng.",
+  "The featured lineup was created, but the minigame stays off until you add non-featured 4★ and 5★ loss candidates.":
+    "Đã tạo đội hình nổi bật, nhưng minigame vẫn tắt cho đến khi bạn thêm vật phẩm 4★ và 5★ không nổi bật cho trường hợp trượt rate-up.",
+  "Loss candidates needed": "Cần vật phẩm cho trường hợp trượt rate-up",
+  'The active banner "{{name}}" needs non-featured 4★ and 5★ items for possible featured-rate losses.':
+    'Banner đang hoạt động "{{name}}" cần vật phẩm 4★ và 5★ không nổi bật cho trường hợp có thể trượt rate-up.',
+  "Missing loss candidates": "Thiếu vật phẩm cho trường hợp trượt rate-up",
+  'The standard banner "{{name}}" needs active non-featured 4★ and 5★ items.':
+    'Banner thường "{{name}}" cần vật phẩm 4★ và 5★ không nổi bật đang hoạt động.',
+  "Incomplete standard pool": "Pool thường chưa đầy đủ",
   "Quick setup": "Thiết lập nhanh",
   "Create a playable pool from your active merch, using safe recommended defaults. Everything remains editable and undoable.":
     "Tạo pool chơi được từ merch đang hoạt động bằng thiết lập đề xuất an toàn. Bạn vẫn có thể chỉnh sửa hoặc hoàn tác mọi thứ.",
   "Use recommended setup": "Dùng thiết lập đề xuất",
+  "Minigame availability": "Trạng thái hoạt động của minigame",
   "Publishing switches the public minigame to {{game}}. Continue?":
     "Xuất bản sẽ chuyển minigame công khai sang {{game}}. Tiếp tục?",
   "Delete banner “{{name}}”? Its pool items will be removed too.":
@@ -1408,9 +1425,26 @@ const vi: Record<string, string> = {
   "Verify payment": "Xác minh thanh toán",
   "Synchronization is idempotent; retrying cannot duplicate an offline order.":
     "Đồng bộ có tính lặp an toàn; thử lại sẽ không tạo trùng đơn ngoại tuyến.",
+  "This event is frozen. Retry closing to finish synchronization and return unused stock.":
+    "Sự kiện đã tạm khóa. Hãy thử đóng lại để hoàn tất đồng bộ và hoàn trả tồn kho chưa dùng.",
   "Sales are safe on this device. Reconnect before closing the event or switching devices.":
     "Dữ liệu bán hàng an toàn trên thiết bị này. Hãy kết nối lại trước khi đóng sự kiện hoặc đổi thiết bị.",
   "Resolve pending payments first": "Xử lý các khoản thanh toán đang chờ trước",
+  "Resolve pending offline payments before closing the event.":
+    "Xử lý các khoản thanh toán ngoại tuyến đang chờ trước khi đóng sự kiện.",
+  "Offline Event Mode requires IndexedDB on this device.":
+    "Chế độ Sự kiện Ngoại tuyến yêu cầu IndexedDB trên thiết bị này.",
+  "Offline Event storage is busy in another tab.":
+    "Bộ nhớ Sự kiện Ngoại tuyến đang được sử dụng ở một thẻ khác.",
+  "Offline event session is no longer available.":
+    "Phiên sự kiện ngoại tuyến không còn khả dụng.",
+  "Offline event is closing or closed.":
+    "Sự kiện ngoại tuyến đang đóng hoặc đã đóng.",
+  "Offline finalization acknowledgements are incomplete.":
+    "Xác nhận hoàn tất sự kiện ngoại tuyến chưa đầy đủ.",
+  "Legacy offline event contains orders that require manual reconciliation":
+    "Sự kiện ngoại tuyến cũ có đơn hàng cần được đối soát thủ công.",
+  "Retry sync and close event": "Thử đồng bộ và đóng sự kiện lại",
   "Sync and close event": "Đồng bộ và đóng sự kiện",
 };
 

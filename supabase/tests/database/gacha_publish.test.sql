@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(27);
 
 insert into auth.users(
   id,instance_id,aud,role,email,encrypted_password,
@@ -33,7 +33,7 @@ select
   5,
   'Test',
   true
-from generate_series(1, 7) product_number;
+from generate_series(1, 9) product_number;
 
 set local role authenticated;
 set local request.jwt.claim.sub='50000000-0000-4000-8000-000000000001';
@@ -78,7 +78,9 @@ select lives_ok(
         {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-1","kind":"character","element":"anemo","weapon_type":"sword","rarity":5,"weight":100,"featured":true,"active":true},
         {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-2","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":true,"active":true},
         {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-3","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":true,"active":true},
-        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-4","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":true,"active":true}
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-4","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-5","kind":"character","element":"anemo","weapon_type":"sword","rarity":5,"weight":100,"featured":false,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-6","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":false,"active":true}
       ]
     }'::jsonb
   )$$,
@@ -104,6 +106,25 @@ select is(
   '2026-07-18 10:00:00+00',
   'published banner schedule is stored'
 );
+set local role postgres;
+select ok(
+  private.gacha_config_has_invalid_loss_pool(
+    jsonb_set(
+      published.config,
+      '{entries}',
+      (select jsonb_agg(entry)
+       from jsonb_array_elements(published.config -> 'entries') entry
+       where (entry ->> 'featured')::boolean)
+    ),
+    published.game_type
+  ),
+  'pre-v6 featured-only published configs are detected for quarantine'
+)
+from public.gacha_published_configs published
+where published.shop_id='51000000-0000-4000-8000-000000000001'
+  and published.game_type='genshin';
+set local role authenticated;
+set local request.jwt.claim.sub='50000000-0000-4000-8000-000000000001';
 
 select lives_ok(
   $$select public.publish_gacha_configuration_v6(
@@ -116,7 +137,9 @@ select lives_ok(
         {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-1","kind":"character","element":"anemo","weapon_type":"sword","rarity":5,"weight":100,"featured":true,"active":true},
         {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-2","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":true,"active":true},
         {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-3","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":true,"active":true},
-        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-4","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":true,"active":true}
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-4","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-5","kind":"character","element":"anemo","weapon_type":"sword","rarity":5,"weight":100,"featured":false,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000001","product_id":"gacha-product-6","kind":"character","element":"anemo","weapon_type":"sword","rarity":4,"weight":100,"featured":false,"active":true}
       ]
     }'::jsonb
   )$$,
@@ -142,7 +165,9 @@ select lives_ok(
         {"banner_id":"52000000-0000-4000-8000-000000000002","product_id":"gacha-product-4","kind":"weapon","element":"pyro","weapon_type":"claymore","rarity":4,"weight":100,"featured":true,"active":true},
         {"banner_id":"52000000-0000-4000-8000-000000000002","product_id":"gacha-product-5","kind":"weapon","element":"pyro","weapon_type":"polearm","rarity":4,"weight":100,"featured":true,"active":true},
         {"banner_id":"52000000-0000-4000-8000-000000000002","product_id":"gacha-product-6","kind":"weapon","element":"pyro","weapon_type":"bow","rarity":4,"weight":100,"featured":true,"active":true},
-        {"banner_id":"52000000-0000-4000-8000-000000000002","product_id":"gacha-product-7","kind":"weapon","element":"pyro","weapon_type":"catalyst","rarity":4,"weight":100,"featured":true,"active":true}
+        {"banner_id":"52000000-0000-4000-8000-000000000002","product_id":"gacha-product-7","kind":"weapon","element":"pyro","weapon_type":"catalyst","rarity":4,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000002","product_id":"gacha-product-8","kind":"weapon","element":"pyro","weapon_type":"sword","rarity":5,"weight":100,"featured":false,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000002","product_id":"gacha-product-9","kind":"weapon","element":"pyro","weapon_type":"sword","rarity":4,"weight":100,"featured":false,"active":true}
       ]
     }'::jsonb
   )$$,
@@ -159,7 +184,7 @@ select throws_ok(
     '51000000-0000-4000-8000-000000000001',
     'genshin',
     '{
-      "settings":{"enabled":true,"title":"Incomplete Weapon Wish","description":""},
+      "settings":{"enabled":true,"title":"Incomplete Weapon Wish","description":"","featured_item_rate":100},
       "banners":[{"id":"52000000-0000-4000-8000-000000000002","name":"Incomplete Weapon Banner","description":"","kind":"weapon","theme":"pyro","display_limit":7,"active":true}],
       "entries":[
         {"banner_id":"52000000-0000-4000-8000-000000000002","product_id":"gacha-product-1","kind":"weapon","element":"pyro","weapon_type":"sword","rarity":5,"weight":100,"featured":true,"active":true},
@@ -184,7 +209,9 @@ select lives_ok(
         {"banner_id":"52000000-0000-4000-8000-000000000003","product_id":"gacha-product-1","kind":"character","element":"physical","weapon_type":"destruction","rarity":5,"weight":100,"featured":true,"active":true},
         {"banner_id":"52000000-0000-4000-8000-000000000003","product_id":"gacha-product-2","kind":"character","element":"physical","weapon_type":"destruction","rarity":4,"weight":100,"featured":true,"active":true},
         {"banner_id":"52000000-0000-4000-8000-000000000003","product_id":"gacha-product-3","kind":"character","element":"physical","weapon_type":"harmony","rarity":4,"weight":100,"featured":true,"active":true},
-        {"banner_id":"52000000-0000-4000-8000-000000000003","product_id":"gacha-product-4","kind":"character","element":"physical","weapon_type":"erudition","rarity":4,"weight":100,"featured":true,"active":true}
+        {"banner_id":"52000000-0000-4000-8000-000000000003","product_id":"gacha-product-4","kind":"character","element":"physical","weapon_type":"erudition","rarity":4,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000003","product_id":"gacha-product-5","kind":"character","element":"physical","weapon_type":"destruction","rarity":5,"weight":100,"featured":false,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000003","product_id":"gacha-product-6","kind":"character","element":"physical","weapon_type":"harmony","rarity":4,"weight":100,"featured":false,"active":true}
       ]
     }'::jsonb
   )$$,
@@ -202,7 +229,9 @@ select lives_ok(
         {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-1","kind":"lightcone","element":"physical","weapon_type":"destruction","rarity":5,"weight":100,"featured":true,"active":true},
         {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-2","kind":"lightcone","element":"physical","weapon_type":"destruction","rarity":4,"weight":100,"featured":true,"active":true},
         {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-3","kind":"lightcone","element":"physical","weapon_type":"harmony","rarity":4,"weight":100,"featured":true,"active":true},
-        {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-4","kind":"lightcone","element":"physical","weapon_type":"erudition","rarity":4,"weight":100,"featured":true,"active":true}
+        {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-4","kind":"lightcone","element":"physical","weapon_type":"erudition","rarity":4,"weight":100,"featured":true,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-5","kind":"lightcone","element":"physical","weapon_type":"destruction","rarity":5,"weight":100,"featured":false,"active":true},
+        {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-6","kind":"lightcone","element":"physical","weapon_type":"harmony","rarity":4,"weight":100,"featured":false,"active":true}
       ]
     }'::jsonb
   )$$,
@@ -214,7 +243,7 @@ select throws_ok(
     '51000000-0000-4000-8000-000000000001',
     'hsr',
     '{
-      "settings":{"enabled":true,"title":"Incomplete Light Cone Warp","description":""},
+      "settings":{"enabled":true,"title":"Incomplete Light Cone Warp","description":"","featured_item_rate":100},
       "banners":[{"id":"52000000-0000-4000-8000-000000000004","name":"Incomplete Light Cone Warp","description":"","kind":"lightcone","theme":"physical","display_limit":4,"active":true}],
       "entries":[
         {"banner_id":"52000000-0000-4000-8000-000000000004","product_id":"gacha-product-1","kind":"lightcone","element":"physical","weapon_type":"destruction","rarity":5,"weight":100,"featured":true,"active":true},
@@ -233,7 +262,7 @@ select throws_ok(
     '51000000-0000-4000-8000-000000000001',
     'genshin',
     '{
-      "settings":{"enabled":true,"title":"Wrong Kind Wish","description":""},
+      "settings":{"enabled":true,"title":"Wrong Kind Wish","description":"","featured_item_rate":100},
       "banners":[{"id":"52000000-0000-4000-8000-000000000002","name":"Wrong Kind Banner","description":"","kind":"weapon","theme":"pyro","display_limit":7,"active":true}],
       "entries":[
         {"banner_id":"52000000-0000-4000-8000-000000000002","product_id":"gacha-product-1","kind":"character","element":"pyro","weapon_type":"sword","rarity":5,"weight":100,"featured":true,"active":true}
@@ -244,6 +273,99 @@ select throws_ok(
   'Featured items in banner "Wrong Kind Banner" must match its type and use 4-star or 5-star rarity',
   'featured item kind must match the banner kind'
 );
+
+set local role postgres;
+create temporary table loss_pool_configs(
+  label text primary key,
+  game_type text not null,
+  config jsonb not null
+);
+grant select on loss_pool_configs to authenticated;
+insert into loss_pool_configs(label, game_type, config) values
+(
+  'featured-only-50',
+  'genshin',
+  '{"settings":{"enabled":true,"title":"Loss Pool Test","featured_item_rate":50},"banners":[{"id":"52000000-0000-4000-8000-000000000005","name":"Loss Pool Banner","kind":"character","display_limit":4,"active":true}],"entries":[{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-1","kind":"character","rarity":5,"weight":100,"featured":true,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-2","kind":"character","rarity":4,"weight":100,"featured":true,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-3","kind":"character","rarity":4,"weight":100,"featured":true,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-4","kind":"character","rarity":4,"weight":100,"featured":true,"active":true}]}'
+),
+(
+  'with-losses-50',
+  'genshin',
+  '{"settings":{"enabled":true,"title":"Loss Pool Test","featured_item_rate":50},"banners":[{"id":"52000000-0000-4000-8000-000000000005","name":"Loss Pool Banner","kind":"character","display_limit":4,"active":true}],"entries":[{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-1","kind":"character","rarity":5,"weight":100,"featured":true,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-2","kind":"character","rarity":4,"weight":100,"featured":true,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-3","kind":"character","rarity":4,"weight":100,"featured":true,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-4","kind":"character","rarity":4,"weight":100,"featured":true,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-5","kind":"character","rarity":5,"weight":100,"featured":false,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-6","kind":"character","rarity":4,"weight":100,"featured":false,"active":true}]}'
+),
+(
+  'featured-only-100',
+  'genshin',
+  '{"settings":{"enabled":true,"title":"Certain Featured Test","featured_item_rate":100},"banners":[{"id":"52000000-0000-4000-8000-000000000005","name":"Certain Featured Banner","kind":"character","display_limit":4,"active":true}],"entries":[{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-1","kind":"character","rarity":5,"weight":100,"featured":true,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-2","kind":"character","rarity":4,"weight":100,"featured":true,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-3","kind":"character","rarity":4,"weight":100,"featured":true,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000005","product_id":"gacha-product-4","kind":"character","rarity":4,"weight":100,"featured":true,"active":true}]}'
+),
+(
+  'hsr-standard-complete',
+  'hsr',
+  '{"settings":{"enabled":true,"title":"Standard Warp","featured_item_rate":50},"banners":[{"id":"52000000-0000-4000-8000-000000000006","name":"Standard Warp","kind":"character","display_limit":4,"active":true}],"entries":[{"banner_id":"52000000-0000-4000-8000-000000000006","product_id":"gacha-product-5","kind":"character","rarity":5,"weight":100,"featured":false,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000006","product_id":"gacha-product-6","kind":"character","rarity":4,"weight":100,"featured":false,"active":true}]}'
+),
+(
+  'hsr-standard-missing-five',
+  'hsr',
+  '{"settings":{"enabled":true,"title":"Broken Standard Warp","featured_item_rate":50},"banners":[{"id":"52000000-0000-4000-8000-000000000006","name":"Broken Standard Warp","kind":"character","display_limit":4,"active":true}],"entries":[{"banner_id":"52000000-0000-4000-8000-000000000006","product_id":"gacha-product-6","kind":"character","rarity":4,"weight":100,"featured":false,"active":true}]}'
+),
+(
+  'genshin-zero-featured',
+  'genshin',
+  '{"settings":{"enabled":true,"title":"Broken Genshin Wish","featured_item_rate":50},"banners":[{"id":"52000000-0000-4000-8000-000000000007","name":"Broken Genshin Banner","kind":"character","display_limit":4,"active":true}],"entries":[{"banner_id":"52000000-0000-4000-8000-000000000007","product_id":"gacha-product-5","kind":"character","rarity":5,"weight":100,"featured":false,"active":true},{"banner_id":"52000000-0000-4000-8000-000000000007","product_id":"gacha-product-6","kind":"character","rarity":4,"weight":100,"featured":false,"active":true}]}'
+);
+update loss_pool_configs
+set config = jsonb_set(
+  config,
+  '{banners,0,theme}',
+  to_jsonb(case when game_type = 'genshin' then 'anemo' else 'physical' end)
+);
+update loss_pool_configs target
+set config = jsonb_set(
+  target.config,
+  '{entries}',
+  (
+    select jsonb_agg(
+      entry.value || jsonb_build_object(
+        'element', case when target.game_type = 'genshin' then 'anemo' else 'physical' end,
+        'weapon_type', case when target.game_type = 'genshin' then 'sword' else 'destruction' end
+      )
+      order by entry.ordinality
+    )
+    from jsonb_array_elements(target.config -> 'entries') with ordinality as entry(value, ordinality)
+  )
+);
+set local role authenticated;
+set local request.jwt.claim.sub='50000000-0000-4000-8000-000000000001';
+
+select throws_ok(
+  format($$select public.publish_gacha_configuration_v6('51000000-0000-4000-8000-000000000001',%L,%L::jsonb)$$, game_type, config::text),
+  'P0001',
+  'Active banner "Loss Pool Banner" needs an active nonfeatured 4-star item when featured-item rate is below 100',
+  'featured-only event banners reject rates below 100'
+) from loss_pool_configs where label='featured-only-50';
+select lives_ok(
+  format($$select public.publish_gacha_configuration_v6('51000000-0000-4000-8000-000000000001',%L,%L::jsonb)$$, game_type, config::text),
+  'event banners accept same-banner nonfeatured 4-star and 5-star loss candidates'
+) from loss_pool_configs where label='with-losses-50';
+select lives_ok(
+  format($$select public.publish_gacha_configuration_v6('51000000-0000-4000-8000-000000000001',%L,%L::jsonb)$$, game_type, config::text),
+  '100-percent featured banners do not require loss candidates'
+) from loss_pool_configs where label='featured-only-100';
+select lives_ok(
+  format($$select public.publish_gacha_configuration_v6('51000000-0000-4000-8000-000000000001',%L,%L::jsonb)$$, game_type, config::text),
+  'HSR standard banners accept nonfeatured 4-star and 5-star pools'
+) from loss_pool_configs where label='hsr-standard-complete';
+select throws_ok(
+  format($$select public.publish_gacha_configuration_v6('51000000-0000-4000-8000-000000000001',%L,%L::jsonb)$$, game_type, config::text),
+  'P0001',
+  'Active HSR standard banner "Broken Standard Warp" needs active nonfeatured 4-star and 5-star items',
+  'HSR standard banners reject a missing rarity pool'
+) from loss_pool_configs where label='hsr-standard-missing-five';
+select throws_ok(
+  format($$select public.publish_gacha_configuration_v6('51000000-0000-4000-8000-000000000001',%L,%L::jsonb)$$, game_type, config::text),
+  'P0001',
+  'Active Genshin banner "Broken Genshin Banner" needs exactly 1 featured 5-star and 3 featured 4-star items',
+  'Genshin banners still reject zero featured entries'
+) from loss_pool_configs where label='genshin-zero-featured';
 
 set local role postgres;
 delete from public.gacha_pool_entries

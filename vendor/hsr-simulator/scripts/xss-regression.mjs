@@ -11,7 +11,10 @@ const componentPath = resolve(root, 'src/lib/components/HighlightedText.svelte')
 const helperPath = resolve(root, 'src/lib/helpers/highlighted-text.js');
 const descriptionPath = 'src/routes/_gachainfo/_details/_description.svelte';
 const descriptionSource = await readFile(resolve(root, descriptionPath), 'utf8');
-const eventBranchStart = descriptionSource.indexOf('{#if isEventWarp}');
+const eventBranchStart = Math.max(
+	descriptionSource.indexOf('{#if isEventWarp}'),
+	descriptionSource.indexOf('{:else if isEventWarp}')
+);
 const eventBranchEnd = descriptionSource.indexOf('{:else}', eventBranchStart);
 assert.ok(eventBranchStart >= 0 && eventBranchEnd > eventBranchStart);
 assert.ok(

@@ -24,6 +24,13 @@ Every `VITE_*` value is shipped to browsers. Keep these values out of Vite:
 Matsuri creates VietQR payloads and SVG images locally. It does not require a
 VietQR API secret.
 
+The public frontend key may be a current publishable key or a legacy anon JWT.
+`create-order`, `notify-new-order`, and `gacha-music-proxy` use
+`verify_jwt = false` so publishable keys can reach their handlers; those
+handlers enforce their own request bounds, origin policy, rate limits, or
+recovery-token checks. `invite-shop-member` remains `verify_jwt = true` because
+it requires the caller's signed-in Auth JWT.
+
 Required Edge Function secrets depend on enabled features:
 
 ```bash
@@ -126,6 +133,11 @@ npx supabase functions deploy invite-shop-member
 npx supabase functions deploy notify-new-order
 npx supabase functions deploy gacha-music-proxy
 ```
+
+Deploy from the repository configuration so each function receives the
+intended `verify_jwt` setting. After deployment, smoke-test public checkout and
+HSR music with the configured publishable/anon key, then test invitations with
+an authenticated owner session.
 
 Responsibilities:
 

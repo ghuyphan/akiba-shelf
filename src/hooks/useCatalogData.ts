@@ -13,12 +13,10 @@ import {
 } from "../lib/offline/offline";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import type { Product } from "../types/catalog";
-import {
-  useCatalogProducts,
-  type CatalogQuery,
-} from "./useCatalogProducts";
+import { useCatalogProducts, type CatalogQuery } from "./useCatalogProducts";
 import { useStorefrontBootstrap } from "./useStorefrontBootstrap";
 import { OFFLINE_EVENT_UPDATED } from "../lib/offline/offlineEvents";
+import { translations } from "../lib/i18n/catalogI18n";
 
 const EMPTY_PRODUCTS: Product[] = [];
 
@@ -38,6 +36,7 @@ export function useCatalogData(
   const initialProducts = cached?.products ?? EMPTY_PRODUCTS;
   const initialBooth = cached?.booth ?? defaultBooth;
   const [cartError, setCartError] = useState("");
+  const [refreshError, setRefreshError] = useState("");
   const [rewardProducts, setRewardProducts] = useState<Product[]>([]);
   const [gachaAvailability, setGachaAvailability] = useState<{
     shopId: string;
@@ -47,9 +46,6 @@ export function useCatalogData(
     gachaAvailability?.shopId === shopId ? gachaAvailability : null;
   const gachaEnabled =
     resolvedGachaAvailability?.enabled ?? cached?.gachaEnabled ?? false;
-  const isGachaInitialLoading = Boolean(
-    shopId && !resolvedGachaAvailability,
-  );
 
   useEffect(() => {
     let active = true;
@@ -94,6 +90,8 @@ export function useCatalogData(
   const refreshBooth = storefront.refreshBooth;
   const refreshPayment = storefront.refreshPayment;
   const refreshPromotion = storefront.refreshPromotion;
+  const liveRefreshError =
+    translations[storefront.booth.catalog_locale ?? "en"].liveRefreshFailed;
 
   useEffect(() => {
     if (!shopId) return;
@@ -169,6 +167,7 @@ export function useCatalogData(
       loadCartProducts({ forceRefresh: true }),
       refreshCompleteOfflineSnapshot(),
     ]);
+    setRefreshError("");
   }, [
     loadCartProducts,
     refreshCompleteOfflineSnapshot,
@@ -187,7 +186,9 @@ export function useCatalogData(
     }
     let active = true;
     void getPublicProductsByIds(shopId, storefront.promotion.reward_product_ids)
-      .then((next) => { if (active) setRewardProducts(next); })
+      .then((next) => {
+        if (active) setRewardProducts(next);
+      })
       .catch(() => {
         if (active) {
           const cachedMap = new Map(initialProducts.map((p) => [p.id, p]));
@@ -197,7 +198,9 @@ export function useCatalogData(
           setRewardProducts(fallback);
         }
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [shopId, storefront.promotion.reward_product_ids, initialProducts]);
 
   useEffect(() => {
@@ -272,7 +275,14 @@ export function useCatalogData(
                   : table === "payment_settings"
                     ? handlers.refreshPayment()
                     : handlers.refreshPromotion();
-            void request;
+            void request
+              .then(() => setRefreshError(""))
+              .catch((error: unknown) => {
+                if (!isSessionNoise(error))
+                  setRefreshError(
+                    getErrorMessage(error, liveRefreshError),
+                  );
+              });
           }, 150),
         );
       },
@@ -281,7 +291,7 @@ export function useCatalogData(
       timers.forEach((timer) => window.clearTimeout(timer));
       unsubscribe();
     };
-  }, [refreshCompleteOfflineSnapshot, shopId]);
+  }, [liveRefreshError, refreshCompleteOfflineSnapshot, shopId]);
 
   return {
     products: productCatalog.products,
@@ -292,12 +302,12 @@ export function useCatalogData(
     promotion: storefront.promotion,
     rewardProducts,
     hasMore: productCatalog.hasMore,
-    loadError: productCatalog.error || storefront.error || cartError,
+    loadError:
+      productCatalog.error || storefront.error || cartError || refreshError,
     isLoading: productCatalog.isLoading,
     isInitialLoading:
-      ((productCatalog.isInitialLoading || storefront.isInitialLoading) &&
-        !cached) ||
-      isGachaInitialLoading,
+      (productCatalog.isInitialLoading || storefront.isInitialLoading) &&
+      !cached,
     isLoadingMore: productCatalog.isLoadingMore,
     loadMore: productCatalog.loadMore,
     reloadAll,

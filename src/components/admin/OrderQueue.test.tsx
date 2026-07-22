@@ -1,5 +1,20 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import type { Order } from "../../types/catalog";
@@ -143,6 +158,58 @@ describe("OrderQueue", () => {
     expect(card.getByText("2×")).toBeInTheDocument();
     expect(card.getByText("1×")).toBeInTheDocument();
     expect(card.getByText(vnd(330000))).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "What needs to be packed" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("summarizes only confirmed orders that have not been picked up", () => {
+    const confirmed = {
+      ...pendingOrder,
+      id: "confirmed-order",
+      order_code: "AKB-0043",
+      status: "confirmed" as const,
+      fulfillment_status: "preparing" as const,
+    };
+    const pickedUp = {
+      ...pendingOrder,
+      id: "picked-up-order",
+      order_code: "AKB-0044",
+      status: "confirmed" as const,
+      fulfillment_status: "picked_up" as const,
+    };
+
+    renderQueue({ orders: [pendingOrder, confirmed, pickedUp], filter: "all" });
+
+    const summary = screen
+      .getByRole("heading", { name: "What needs to be packed" })
+      .closest("section");
+    if (!summary) throw new Error("Packing summary not found");
+    expect(within(summary).getByText("3 total units")).toBeInTheDocument();
+    expect(
+      within(summary).getByText("Acrylic Stand — Miku"),
+    ).toBeInTheDocument();
+    expect(within(summary).getByText("Holo Badge — Rin")).toBeInTheDocument();
+  });
+
+  it("shows the staff actor for the latest fulfilment update", async () => {
+    const user = userEvent.setup();
+    renderQueue({
+      orders: [
+        {
+          ...pendingOrder,
+          status: "confirmed",
+          fulfillment_status: "ready",
+          fulfillment_updated_at: "2026-07-22T01:00:00.000Z",
+          fulfillment_updated_by_email: "staff@example.com",
+        },
+      ],
+    });
+
+    await user.click(screen.getByRole("button", { name: "Order details" }));
+
+    expect(screen.getByText("Fulfilment handled by")).toBeInTheDocument();
+    expect(screen.getByText("staff@example.com")).toBeInTheDocument();
   });
 
   it("makes long order item lists independently scrollable", () => {
@@ -270,21 +337,27 @@ describe("OrderQueue", () => {
     renderQueue({
       filter: "event",
       eventCount: 1,
-      orders: [{
-        ...pendingOrder,
-        source: "offline_event",
-        offline_event_session_id: "71000000-0000-4000-8000-000000000001",
-        offline_event_name: "Convention day",
-        payment_method: "vietqr",
-        payment_state: "bank_verification_pending",
-      }],
+      orders: [
+        {
+          ...pendingOrder,
+          source: "offline_event",
+          offline_event_session_id: "71000000-0000-4000-8000-000000000001",
+          offline_event_name: "Convention day",
+          payment_method: "vietqr",
+          payment_state: "bank_verification_pending",
+        },
+      ],
     });
 
     const card = within(getOrderCard());
     expect(card.getByText("Convention day")).toBeInTheDocument();
     expect(card.getByText(/designated Event Mode device/i)).toBeInTheDocument();
-    expect(card.queryByRole("button", { name: /swipe right/i })).not.toBeInTheDocument();
-    expect(card.queryByRole("button", { name: /cancel and release stock/i })).not.toBeInTheDocument();
+    expect(
+      card.queryByRole("button", { name: /swipe right/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      card.queryByRole("button", { name: /cancel and release stock/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("advances a confirmed online order to ready", async () => {
@@ -303,8 +376,37 @@ describe("OrderQueue", () => {
 
     await user.click(screen.getByRole("button", { name: "Mark ready" }));
 
-    expect(apiMocks.updateOrderFulfillment).toHaveBeenCalledWith("order-1", "ready");
+    expect(apiMocks.updateOrderFulfillment).toHaveBeenCalledWith(
+      "order-1",
+      "ready",
+    );
     expect(props.onOrderUpdated).toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("keeps confirmed Event fulfilment read-only on the synced queue", () => {
+    renderQueue({
+      filter: "event",
+      eventCount: 1,
+      orders: [
+        {
+          ...pendingOrder,
+          status: "confirmed",
+          source: "offline_event",
+          offline_event_session_id: "71000000-0000-4000-8000-000000000001",
+          offline_event_name: "Convention day",
+          payment_method: "cash",
+          payment_state: "cash_confirmed",
+          fulfillment_status: "preparing",
+        },
+      ],
+    });
+
+    const card = within(getOrderCard());
+    expect(card.getByText("preparing")).toBeInTheDocument();
+    expect(
+      card.queryByRole("button", { name: "Mark ready" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows a today-specific empty state that can reset both filters", async () => {

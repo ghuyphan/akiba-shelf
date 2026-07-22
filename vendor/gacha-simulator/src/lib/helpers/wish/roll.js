@@ -1,22 +1,14 @@
 import HistoryIDB from '$lib/store/historyIdb';
 import { pity4star, pity5star } from '$lib/store/localstore';
 import prob from './prob';
-import { getMerchConfig, getMerchItems } from '$lib/helpers/merch';
+import {
+	getMerchAvailability,
+	getMerchBanners,
+	getMerchConfig,
+	getMerchPityChance
+} from '$lib/helpers/merch';
 
 const { addHistory, countItem } = HistoryIDB;
-
-const configuredRate = (value, fallback) => {
-	const rate = Number(value);
-	return Number.isFinite(rate) && rate > 0 && rate < 100 ? rate : fallback;
-};
-
-const pityRate = ({ baseRate, currentPity, softPity, hardPity }) => {
-	const nextPull = currentPity + 1;
-	if (nextPull >= hardPity) return 100;
-	if (nextPull < softPity) return baseRate;
-	const increase = (100 - baseRate) / (hardPity + 1 - softPity);
-	return Math.min(100, baseRate + (nextPull + 1 - softPity) * increase);
-};
 
 /**
  * Roll and get result for the selected Banner
@@ -29,20 +21,34 @@ const roll = async (banner, indexOfBanner, WishInstance) => {
 	const pity4 = pity4star.get(banner);
 	const pity5 = pity5star.get(banner);
 	const { settings } = getMerchConfig();
-	const base5star = configuredRate(settings.legendary_base_rate, 0.6);
-	const base4star = configuredRate(settings.rare_base_rate, 5.1);
+	const base5star = Number.isFinite(Number(settings.legendary_base_rate))
+		? Number(settings.legendary_base_rate)
+		: 0.6;
+	const base4star = Number.isFinite(Number(settings.rare_base_rate))
+		? Number(settings.rare_base_rate)
+		: 5.1;
 	const hardPity5 = Number(settings.legendary_pity) || 50;
 	const hardPity4 = Number(settings.rare_pity) || 10;
 	const softPity5 = Math.min(Number(settings.legendary_soft_pity) || hardPity5 - 1, hardPity5 - 1);
 	const softPity4 = Math.min(Number(settings.rare_soft_pity) || hardPity4 - 1, hardPity4 - 1);
-	const bannerId = getMerchConfig().banners?.filter((item) => item.active)[indexOfBanner]?.id;
-	const available = new Set(getMerchItems(bannerId).map(({ rarity }) => rarity));
+	const bannerId = getMerchBanners().filter((item) => item.active)[indexOfBanner]?.id;
+	const available = getMerchAvailability(bannerId);
 	const chance5star = !available.has(5)
 		? 0
-		: pityRate({ baseRate: base5star, currentPity: pity5, softPity: softPity5, hardPity: hardPity5 });
+		: getMerchPityChance({
+				baseRate: base5star,
+				currentPity: pity5,
+				softPity: softPity5,
+				hardPity: hardPity5
+		  });
 	let chance4star = !available.has(4)
 		? 0
-		: pityRate({ baseRate: base4star, currentPity: pity4, softPity: softPity4, hardPity: hardPity4 });
+		: getMerchPityChance({
+				baseRate: base4star,
+				currentPity: pity4,
+				softPity: softPity4,
+				hardPity: hardPity4
+		  });
 	let chance3star = 100 - chance4star - chance5star;
 
 	if (!available.has(3)) chance3star = 0;
@@ -101,12 +107,7 @@ const roll = async (banner, indexOfBanner, WishInstance) => {
 		result.stelaFortuna = !isFullConstellation;
 	}
 	result.fateType = result.rarity === 3 ? 'stardust' : 'starglitter';
-	result.fateQty = getMilestoneQty(
-		result.rarity,
-		result.type,
-		isFullConstellation,
-		result.isNew
-	);
+	result.fateQty = getMilestoneQty(result.rarity, result.type, isFullConstellation, result.isNew);
 	return result;
 };
 

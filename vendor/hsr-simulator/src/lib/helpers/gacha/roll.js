@@ -6,19 +6,21 @@ import {
 	owneditem,
 	rollCounter
 } from '$lib/helpers/dataAPI/api-localstorage';
-import { rates, prob, getRate } from './probabilities';
-import { getMerchConfig } from '$lib/helpers/merch';
+import { prob, getRate } from './probabilities';
+import {
+	getMerchAvailability,
+	getMerchBanners,
+	getMerchConfig,
+	getMerchPityChance
+} from '$lib/helpers/merch';
 
 const { addHistory } = HistoryManager;
 
-const configuredRate = (value, fallback) => {
-	const rate = Number(value);
-	return Number.isFinite(rate) && rate > 0 && rate < 100 ? rate : fallback;
-};
-
 export const roll = async (banner, WarpInstance, indexOfBanner) => {
-	const pity5 = localPity.get(`pity5${banner}`) + 1;
-	const pity4 = localPity.get(`pity4${banner}`) + 1;
+	const storedPity5 = localPity.get(`pity5${banner}`);
+	const storedPity4 = localPity.get(`pity4${banner}`);
+	const pity5 = storedPity5 + 1;
+	const pity4 = storedPity4 + 1;
 	const settings = getMerchConfig().settings || {};
 	const configuredLegendaryPity = banner.includes('lightcone')
 		? settings.lightcone_legendary_pity
@@ -39,34 +41,40 @@ export const roll = async (banner, WarpInstance, indexOfBanner) => {
 		Math.max(1, Number(settings.rare_soft_pity) || getRate(banner, 'hard4')),
 		maxPity4 - 1
 	);
-	const baseRate5 = configuredRate(configuredLegendaryRate, getRate(banner, 'baseRate5'));
-	const baseRate4 = configuredRate(settings.rare_base_rate, getRate(banner, 'baseRate4'));
+	const baseRate5 = Number.isFinite(Number(configuredLegendaryRate))
+		? Number(configuredLegendaryRate)
+		: getRate(banner, 'baseRate5');
+	const baseRate4 = Number.isFinite(Number(settings.rare_base_rate))
+		? Number(settings.rare_base_rate)
+		: getRate(banner, 'baseRate4');
+	const bannerId = getMerchBanners().filter((item) => item.active)[indexOfBanner]?.id;
+	const available = getMerchAvailability(bannerId);
 
-	const rate5star = () => {
-		return rates({
-			baseRate: baseRate5,
-			rateIncreasedAt: softPity5,
-			currentPity: pity5,
-			maxPity
-		});
-	};
-
-	const rate4star = () => {
-		return rates({
-			baseRate: baseRate4,
-			currentPity: pity4,
-			rateIncreasedAt: softPity4,
-			maxPity: maxPity4
-		});
-	};
-
-	let chance5star = rate5star();
-	let chance4star = rate4star();
+	let chance5star = !available.has(5)
+		? 0
+		: getMerchPityChance({
+				baseRate: baseRate5,
+				currentPity: storedPity5,
+				softPity: softPity5,
+				hardPity: maxPity
+			});
+	let chance4star = !available.has(4)
+		? 0
+		: getMerchPityChance({
+				baseRate: baseRate4,
+				currentPity: storedPity4,
+				softPity: softPity4,
+				hardPity: maxPity4
+			});
 	let chance3star = 100 - chance4star - chance5star;
 
+	if (!available.has(3)) chance3star = 0;
 	if ((chance3star < 0 && pity5 >= maxPity) || chance5star === 100) chance4star = 0;
 	if (chance3star < 0) chance3star = 0;
 	if (chance4star === 100) chance5star = 0;
+	if (chance3star + chance4star + chance5star === 0) {
+		throw new Error('This warp shelf has no active merch.');
+	}
 
 	const item = [
 		{

@@ -1,3 +1,13 @@
+import {
+	availableRarities,
+	disclosureForSettings,
+	parseLocalizedText,
+	pityChance,
+	rarityPool,
+	selectPromotedPool,
+	weightedChoice
+} from '../../../../shared/gacha-policy.js';
+
 const emptyConfig = {
 	settings: {
 		title: 'Matsuri Wish Simulator',
@@ -37,41 +47,26 @@ export const getMerchConfig = () => {
 export const getMerchBanners = () => getMerchConfig().banners || [];
 
 export const getMerchItems = (bannerId) =>
-	getMerchConfig().entries
-		.filter(
+	getMerchConfig()
+		.entries.filter(
 			(entry) =>
-				entry.active !== false && (!bannerId || entry.banner_id === bannerId)
+				entry.active !== false && (!bannerId || entry.rarity === 3 || entry.banner_id === bannerId)
 		)
 		.map((entry) => ({
-		name: entry.product.name,
-		itemID: entry.product_id,
-		bannerId: entry.banner_id,
-		rarity: entry.rarity,
-		type: entry.kind,
-		weaponType: entry.weapon_type || 'sword',
-		vision: entry.element || 'anemo',
-		weight: entry.weight || 100,
-		featured: !!entry.featured,
-		isMerch: true,
-		imageUrl:
-			entry.product.images?.[0] ||
-			entry.product.image_variants?.[0]?.detail ||
-			'',
-		wishBoxPosition: {},
-		buttonPosition: {}
-	}));
-
-const weightedChoice = (items) => {
-	if (!items.length) return null;
-	const total = items.reduce((sum, item) => sum + item.weight, 0);
-	let cursor = Math.random() * total;
-	for (const item of items) {
-		cursor -= item.weight;
-		if (cursor < 0) return { ...item };
-	}
-	return { ...items[items.length - 1] };
-};
-
+			name: entry.product.name,
+			itemID: entry.product_id,
+			bannerId: entry.banner_id,
+			rarity: entry.rarity,
+			type: entry.kind,
+			weaponType: entry.weapon_type || 'sword',
+			vision: entry.element || 'anemo',
+			weight: entry.weight || 100,
+			featured: !!entry.featured,
+			isMerch: true,
+			imageUrl: entry.product.images?.[0] || entry.product.image_variants?.[0]?.detail || '',
+			wishBoxPosition: {},
+			buttonPosition: {}
+		}));
 const featuredGuaranteeKey = (bannerId, rarity) =>
 	`matsuri-gacha-featured-guarantee:${shopSlug()}:${bannerId}:${rarity}`;
 
@@ -95,25 +90,23 @@ const setGuaranteed = (key, guaranteed) => {
 };
 
 export const weightedMerch = (rarity, bannerId) => {
-	let items = getMerchItems(bannerId).filter((item) => item.rarity === rarity);
-	if (!items.length) {
-		const sharedItems = getMerchItems().filter((item) => item.rarity === rarity);
-		const sharedStandardItems = sharedItems.filter((item) => !item.featured);
-		items = sharedStandardItems.length ? sharedStandardItems : sharedItems;
-	}
+	const items = rarityPool(getMerchItems(), bannerId, rarity);
 	if (!items.length) return null;
-
-	const featured = items.filter((item) => item.featured);
-	const standard = items.filter((item) => !item.featured);
-	if (!featured.length || !standard.length) return weightedChoice(items);
-
 	const settings = getMerchConfig().settings || {};
-	const configuredRate = Number(settings.featured_item_rate);
-	const rate = Math.min(100, Math.max(0, Number.isFinite(configuredRate) ? configuredRate : 50));
 	const guaranteeEnabled = settings.featured_guaranteed_after_loss !== false;
 	const guaranteeKey = featuredGuaranteeKey(bannerId, rarity);
-	const useFeatured =
-		(guaranteeEnabled && getGuaranteed(guaranteeKey)) || Math.random() * 100 < rate;
-	setGuaranteed(guaranteeKey, guaranteeEnabled && !useFeatured);
-	return weightedChoice(useFeatured ? featured : standard);
+	const selected = selectPromotedPool({
+		items,
+		featuredRate: settings.featured_item_rate,
+		guaranteed: guaranteeEnabled && getGuaranteed(guaranteeKey),
+		guaranteeEnabled
+	});
+	setGuaranteed(guaranteeKey, selected.guaranteedNext);
+	return weightedChoice(selected.items);
 };
+
+export const getMerchAvailability = (bannerId) => availableRarities(getMerchItems(), bannerId);
+export const getMerchDisclosure = (gearBanner = false) =>
+	disclosureForSettings(getMerchConfig().settings || {}, gearBanner);
+export const getMerchPityChance = pityChance;
+export const parseMerchLocalizedText = parseLocalizedText;

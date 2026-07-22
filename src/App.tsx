@@ -9,7 +9,10 @@ import {
   useParams,
 } from "react-router-dom";
 import { useEffect } from "react";
-import { ToastLocalization, ToastProvider } from "./components/ui/ToastProvider";
+import {
+  ToastLocalization,
+  ToastProvider,
+} from "./components/ui/ToastProvider";
 import { PageLoading } from "./components/ui/PageLoading";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { PLATFORM_BRAND, resetDocumentBranding } from "./lib/branding";
@@ -86,9 +89,10 @@ function RouteAwareToastProvider({ children }: { children: ReactNode }) {
 }
 
 function RouteAwarePwa() {
+  const { pathname } = useLocation();
   useEffect(() => {
-    configurePwa();
-  }, []);
+    configurePwa(pathname);
+  }, [pathname]);
   return null;
 }
 
@@ -133,36 +137,45 @@ export function App() {
       <RouteAwarePwa />
       <RouteAwareToastProvider>
         <RouteErrorBoundary>
-        <Suspense fallback={<RouteLoading />}>
-          <Routes>
-            <Route
-              path="/s/:shopSlug/play"
-              element={
-                <Suspense fallback={<div style={{ background: "#ffffff", minHeight: "100vh" }} />}>
-                  <GachaPage />
-                </Suspense>
-              }
-            />
-            <Route path="/s/:shopSlug" element={<KeyedCatalogPage />} />
-            <Route element={<PlatformLayoutProvider />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/dashboard/shops/new" element={<NewShopPage />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/auth/callback" element={<AuthCallbackPage />} />
-              <Route path="/auth/set-password" element={<SetPasswordPage />} />
+          <Suspense fallback={<RouteLoading />}>
+            <Routes>
               <Route
-                path="/admin"
+                path="/s/:shopSlug/play"
                 element={
-                  <ErrorBoundary>
-                    <AdminPage />
-                  </ErrorBoundary>
+                  <Suspense
+                    fallback={
+                      <div
+                        style={{ background: "#ffffff", minHeight: "100vh" }}
+                      />
+                    }
+                  >
+                    <GachaPage />
+                  </Suspense>
                 }
               />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
-        </Suspense>
+              <Route path="/s/:shopSlug" element={<KeyedCatalogPage />} />
+              <Route element={<PlatformLayoutProvider />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/dashboard/shops/new" element={<NewShopPage />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                <Route
+                  path="/auth/set-password"
+                  element={<SetPasswordPage />}
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ErrorBoundary>
+                      <AdminPage />
+                    </ErrorBoundary>
+                  }
+                />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
+          </Suspense>
         </RouteErrorBoundary>
       </RouteAwareToastProvider>
     </BrowserRouter>

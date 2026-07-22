@@ -9,7 +9,14 @@
 
 	export let item = {};
 
-	let { rateup, bannerName, combat_type, featured, isMerch = false } = item;
+	let {
+		rateup,
+		bannerName,
+		combat_type,
+		featured,
+		isMerch = false,
+		isStandardMerch = false
+	} = item;
 	$: bannerTitle = bannerName
 		? isMerch
 			? bannerName
@@ -47,7 +54,9 @@
 					</div>
 					<div class="description">
 						<p>{@html $t('warp.warpDescription')}</p>
-						<p>{$t('warp.itemRateBoost', { values: { itemtype: $t('character') } })}</p>
+						{#if !isStandardMerch}
+							<p>{$t('warp.itemRateBoost', { values: { itemtype: $t('character') } })}</p>
+						{/if}
 					</div>
 				</div>
 
@@ -79,18 +88,20 @@
 		</div>
 
 		<!-- Right Pane -->
-		<div class="character" transition:fade|global>
-			<div class="char-group" style={characterOffset(featured, 'textOffset')}>
-				<div class="name">
-					<i class="hsr-{combat_type} icon-gradient {combat_type}"></i>
-					<span>{$t(featured)}</span>
-				</div>
-				<div class="stars">
-					{#each Array(5) as _, i (i)}
-						<i class="hsr-star"></i>{/each}
+		{#if !isStandardMerch}
+			<div class="character" transition:fade|global>
+				<div class="char-group" style={characterOffset(featured, 'textOffset')}>
+					<div class="name">
+						<i class="hsr-{combat_type} icon-gradient {combat_type}"></i>
+						<span>{$t(featured)}</span>
+					</div>
+					<div class="stars">
+						{#each Array(5) as _, i (i)}
+							<i class="hsr-star"></i>{/each}
+					</div>
 				</div>
 			</div>
-		</div>
+		{/if}
 	{/if}
 </div>
 

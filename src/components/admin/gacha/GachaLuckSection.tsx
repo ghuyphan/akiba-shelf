@@ -5,7 +5,7 @@ import {
 } from "../../../lib/gacha/gachaGames";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaSettings } from "../../../types/gacha";
-import { Field, TextInput } from "../../ui/Field";
+import { Field, FieldLabel, TextInput } from "../../ui/Field";
 import { AdminCard } from "../AdminCard";
 
 type Props = {
@@ -356,15 +356,14 @@ export function GachaLuckSection({
                   }
                 />
               </Field>
-              <Field
-                label={t("Guarantee promoted prize after a miss")}
-                hint={t(
-                  "After a 4★ or 5★ pull misses the promoted prize, the next one is guaranteed.",
-                )}
-              >
+              <div className="field">
+                <FieldLabel>
+                  {t("Guarantee promoted prize after a miss")}
+                </FieldLabel>
                 <label className="gacha-toggle">
                   <input
                     type="checkbox"
+                    aria-label={t("Guarantee promoted prize after a miss")}
                     checked={settings.featured_guaranteed_after_loss}
                     onChange={(event) =>
                       onUpdateSettings({
@@ -374,7 +373,12 @@ export function GachaLuckSection({
                   />
                   <span aria-hidden="true" />
                 </label>
-              </Field>
+                <span className="field-hint">
+                  {t(
+                    "After a 4★ or 5★ pull misses the promoted prize, the next one is guaranteed.",
+                  )}
+                </span>
+              </div>
             </div>
           </details>
         </div>

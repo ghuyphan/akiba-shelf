@@ -22,7 +22,9 @@ import type {
 import { extractEdgeFunctionError, requireSupabase } from "./shared";
 
 export class CheckoutOutcomeUnknownError extends Error {
-  constructor(message = "The checkout result could not be verified. Retry safely with the same checkout details.") {
+  constructor(
+    message = "The checkout result could not be verified. Retry safely with the same checkout details.",
+  ) {
     super(message);
     this.name = "CheckoutOutcomeUnknownError";
   }
@@ -32,6 +34,23 @@ export function isCheckoutOutcomeUnknownError(
   error: unknown,
 ): error is CheckoutOutcomeUnknownError {
   return error instanceof CheckoutOutcomeUnknownError;
+}
+
+const notificationRetryDelays = [0, 1_000, 3_000];
+
+async function notifyNewOrderWithRetry(
+  client: ReturnType<typeof requireSupabase>,
+  orderId: string,
+  recoveryToken: string,
+) {
+  for (const delay of notificationRetryDelays) {
+    if (delay > 0)
+      await new Promise((resolve) => window.setTimeout(resolve, delay));
+    const { error } = await client.functions.invoke("notify-new-order", {
+      body: { orderId, recoveryToken },
+    });
+    if (!error) return;
+  }
 }
 
 export async function createOrder(
@@ -74,11 +93,9 @@ export async function createOrder(
   const parsed = orderSchema.safeParse(data);
   if (!parsed.success) throw new CheckoutOutcomeUnknownError();
   const createdOrder = parsed.data as Order;
-  void client.functions
-    .invoke("notify-new-order", {
-      body: { orderId: createdOrder.id, recoveryToken },
-    })
-    .catch(() => undefined);
+  void notifyNewOrderWithRetry(client, createdOrder.id, recoveryToken).catch(
+    () => undefined,
+  );
   return createdOrder;
 }
 

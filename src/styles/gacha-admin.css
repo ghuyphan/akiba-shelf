@@ -1592,6 +1592,19 @@
 
   .gacha-status-games button {
     justify-content: center;
+    min-height: 44px;
+  }
+
+  .gacha-preview-button,
+  .gacha-segmented button,
+  .gacha-admin-page .icon-button {
+    min-height: 44px;
+  }
+
+  .gacha-admin-page .icon-button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
   }
 
   .gacha-banner-strip {

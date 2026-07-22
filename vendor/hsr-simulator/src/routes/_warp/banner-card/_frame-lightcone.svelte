@@ -12,6 +12,7 @@
 	export let item = {};
 
 	const lightcones = item.rateup.map((d) => ({ name: d, rarity: 4 }));
+	const isStandardMerch = item.isStandardMerch === true;
 	const { animationID } = getLCDetails(item.featured) || null;
 	$: bannerTitle = item.bannerName
 		? item.isMerch
@@ -45,33 +46,37 @@
 					</div>
 					<div class="description">
 						<p>{@html $t('warp.warpDescription')}</p>
-						<p>{$t('warp.itemRateBoost', { values: { itemtype: $t('lightcone') } })}</p>
+						{#if !isStandardMerch}
+							<p>{$t('warp.itemRateBoost', { values: { itemtype: $t('lightcone') } })}</p>
+						{/if}
 					</div>
 				</div>
-				<RateupLightones {lightcones} />
+				{#if !isStandardMerch}<RateupLightones {lightcones} />{/if}
 			</div>
 		</div>
 
 		<!-- Right Pane -->
-		<div class="item-name" transition:fade|global>
-			<div class="row" in:fade|global={{ delay: 250, duration: 1000 }}>
-				<div class="path">
-					<Path path={item.path} dark />
+		{#if !isStandardMerch}
+			<div class="item-name" transition:fade|global>
+				<div class="row" in:fade|global={{ delay: 250, duration: 1000 }}>
+					<div class="path">
+						<Path path={item.path} dark />
+					</div>
+					<div class="name">{item.featured ? $t(item.featured) : ''}</div>
+					<span class="stars">
+						{#each Array(5) as _, i (i)}
+							<i class="hsr-star"></i>
+						{/each}
+					</span>
 				</div>
-				<div class="name">{item.featured ? $t(item.featured) : ''}</div>
-				<span class="stars">
-					{#each Array(5) as _, i (i)}
-						<i class="hsr-star"></i>
-					{/each}
-				</span>
 			</div>
-		</div>
-		<div class="featured-lightcone" transition:fade|global>
-			<LightCones
-				item={item.featured}
-				animationID={$animatedLC && !$liteMode ? animationID : null}
-			/>
-		</div>
+			<div class="featured-lightcone" transition:fade|global>
+				<LightCones
+					item={item.featured}
+					animationID={$animatedLC && !$liteMode ? animationID : null}
+				/>
+			</div>
+		{/if}
 	{/if}
 </div>
 

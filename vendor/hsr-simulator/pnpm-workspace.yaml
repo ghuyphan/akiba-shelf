@@ -1,0 +1,11 @@
+packages:
+  - "."
+
+overrides:
+  intl-messageformat: ^10.7.16
+
+onlyBuiltDependencies:
+  - "@sentry/cli"
+  - es5-ext
+  - esbuild
+  - sharp

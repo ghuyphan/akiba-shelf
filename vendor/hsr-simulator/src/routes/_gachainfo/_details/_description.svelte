@@ -1,15 +1,18 @@
 <script>
 	import { json, t } from 'svelte-i18n';
 	import HighlightedText from '$lib/components/HighlightedText.svelte';
+	import { getMerchDisclosure, getMerchDisclosureCopy } from '$lib/helpers/merch';
 
 	export let bannerName;
 	export let bannerType;
 	export let data = {};
 	export let isMerch = false;
+	export let isStandardMerch = false;
 	export let merchDescription = '';
 
-	const isEventWarp = bannerType.match('event');
+	const isEventWarp = bannerType.match('event') && !isStandardMerch;
 	const isCharBanner = bannerType === 'character-event';
+	const merchCopy = getMerchDisclosureCopy();
 
 	const { drop5char = [], drop4char = [], drop5lc = [], drop4lc = [] } = data;
 
@@ -67,6 +70,22 @@
 	};
 
 	const rates = (isCharBanner) => {
+		if (isMerch) {
+			const disclosure = getMerchDisclosure(!isCharBanner);
+			const percent = (value) => `${Number(value).toFixed(3)}%`;
+			return {
+				base5Rate: percent(disclosure.base5Rate),
+				base4Rate: percent(disclosure.base4Rate),
+				consolidated5Rate: percent(disclosure.consolidated5Rate),
+				consolidated4Rate: percent(disclosure.consolidated4Rate),
+				maxPity: disclosure.maxPity,
+				maxPity4: disclosure.maxPity4,
+				softPity: disclosure.softPity,
+				softPity4: disclosure.softPity4,
+				winRate: percent(disclosure.featuredRate),
+				guaranteeEnabled: disclosure.guaranteeEnabled
+			};
+		}
 		if (isCharBanner) {
 			return {
 				base5Rate: '0.600%',
@@ -93,64 +112,84 @@
 </script>
 
 <div class="description">
-	{#if isEventWarp}
+	{#if isMerch && isStandardMerch}
+		<p><strong>{bannerName}</strong></p>
+		{#if merchDescription}<p>{merchDescription}</p>{/if}
+		<p>{merchCopy.standardPool}</p>
+	{:else if isEventWarp}
 		<p>
 			<HighlightedText text={$t('details.bannerStarted', { values: { banner: bannerName } })} />
 		</p>
 		{#if isMerch && merchDescription}
 			<p>{merchDescription}</p>
 		{/if}
-		<p>
-			{#each $json('details.eventDetails') as txt (txt)}
-				<HighlightedText
-					text={$t(txt, {
-						values: {
-							banner: bannerName,
-							rateupList: rateUpList(isCharBanner ? 'rateupCharList' : 'rateupLCList'),
-							itemType: isCharBanner ? $t('character') : $t('lightcone')
-						}
-					})}
-				/>
-				<br />
-			{/each}
-		</p>
+		{#if isMerch}
+			{@const merchRates = rates(isCharBanner)}
+			<p>
+				<strong>{merchCopy.ratesTitle}</strong><br />
+				{merchCopy.fiveStar(merchRates)}
+			</p>
+			<p>{merchCopy.fourStar(merchRates)}</p>
+			<p>
+				{merchCopy.promoted({
+					featuredRate: merchRates.winRate,
+					guaranteeEnabled: merchRates.guaranteeEnabled
+				})}
+			</p>
+			<p>{merchCopy.selection}</p>
+		{:else}
+			<p>
+				{#each $json('details.eventDetails') as txt (txt)}
+					<HighlightedText
+						text={$t(txt, {
+							values: {
+								banner: bannerName,
+								rateupList: rateUpList(isCharBanner ? 'rateupCharList' : 'rateupLCList'),
+								itemType: isCharBanner ? $t('character') : $t('lightcone')
+							}
+						})}
+					/>
+					<br />
+				{/each}
+			</p>
 
-		<p>
-			{$t('details.eventWarpNote', { values: { banner: bannerName } })}
-		</p>
+			<p>
+				{$t('details.eventWarpNote', { values: { banner: bannerName } })}
+			</p>
 
-		<p>
-			{#each $json('details.eventWarpRate') as txt (txt)}
-				<HighlightedText
-					text={$t(txt, {
-						values: {
-							itemType: isCharBanner ? $t('character') : $t('lightcone'),
-							banner: bannerName,
-							...rates(isCharBanner)
-						}
-					})}
-				/>
-				<br />
-			{/each}
-		</p>
+			<p>
+				{#each $json('details.eventWarpRate') as txt (txt)}
+					<HighlightedText
+						text={$t(txt, {
+							values: {
+								itemType: isCharBanner ? $t('character') : $t('lightcone'),
+								banner: bannerName,
+								...rates(isCharBanner)
+							}
+						})}
+					/>
+					<br />
+				{/each}
+			</p>
 
-		<p>
-			{#each $json('details.boostedRate') as txt (txt)}
-				<HighlightedText
-					text={$t(txt, {
-						values: {
-							rateupList: rateUpList(isCharBanner ? 'rateupCharList' : 'rateupLCList'),
-							featuredName: $t(itemName),
-							featuredPath: $t(`path.${path}`),
-							featuredCombatType: $t(combat_type),
-							itemType: isCharBanner ? $t('character') : $t('lightcone'),
-							...rates(isCharBanner)
-						}
-					})}
-				/>
-				<br />
-			{/each}
-		</p>
+			<p>
+				{#each $json('details.boostedRate') as txt (txt)}
+					<HighlightedText
+						text={$t(txt, {
+							values: {
+								rateupList: rateUpList(isCharBanner ? 'rateupCharList' : 'rateupLCList'),
+								featuredName: $t(itemName),
+								featuredPath: $t(`path.${path}`),
+								featuredCombatType: $t(combat_type),
+								itemType: isCharBanner ? $t('character') : $t('lightcone'),
+								...rates(isCharBanner)
+							}
+						})}
+					/>
+					<br />
+				{/each}
+			</p>
+		{/if}
 	{:else}
 		{#if bannerType == 'starter'}
 			<p>{@html $t('details.starterDescription')}</p>

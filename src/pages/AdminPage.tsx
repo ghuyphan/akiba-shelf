@@ -22,7 +22,11 @@ import {
   defaultPromotion,
   MAX_OWNED_SHOPS,
 } from "../lib/constants";
-import { getErrorMessage, isSessionNoise, isTransportError } from "../lib/errors";
+import {
+  getErrorMessage,
+  isSessionNoise,
+  isTransportError,
+} from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
 import {
   applyPageTheme,
@@ -47,6 +51,7 @@ import { useToast } from "../components/ui/ToastProvider";
 import { useAdminSession } from "../hooks/useAdminSession";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
 import { PwaInstallBanner } from "../components/admin/PwaInstallBanner";
+import { getOfflineEventSignOutRisk } from "../lib/offline/offlineEvents";
 import { useAdminOrderRealtime } from "../hooks/useAdminOrderRealtime";
 import { AdminWorkspaceHeader } from "../components/admin/AdminWorkspaceHeader";
 import { AdminViewHero } from "../components/admin/AdminViewHero";
@@ -89,6 +94,7 @@ export function AdminPage() {
   } = useAdminSession();
   const isAuthed = adminSession.status === "authorized";
   const shopId = isAuthed ? adminSession.access.shop_id : "";
+  const userId = isAuthed ? adminSession.userId : "";
   const canManageCatalog = isAuthed && adminSession.access.role !== "staff";
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -222,11 +228,8 @@ export function AdminPage() {
       .catch((error) => {
         if (navigator.onLine && !isTransportError(error)) throw error;
         const snapshot = loadCatalogSnapshot(shopId);
-        if (
-          !snapshot?.complete ||
-          !snapshot.payment ||
-          !snapshot.promotion
-        ) throw error;
+        if (!snapshot?.complete || !snapshot.payment || !snapshot.promotion)
+          throw error;
         setBooth(snapshot.booth);
         setPayment(snapshot.payment);
         setPromotion(snapshot.promotion);
@@ -271,42 +274,47 @@ export function AdminPage() {
         }
         const filter = orderFilterRef.current;
         const dateScope = { createdAfter, createdBefore };
-        const [result, countResult] = filter === "event"
-          ? await Promise.all([
-              getOfflineEventOrders(shopId, {
-                page,
-                pageSize: orderPageSize,
-                ...dateScope,
-              }),
-              refreshCounts
-                ? getOrderStatusCounts(shopId, dateScope)
-                : Promise.resolve(null),
-            ]).then(([eventResult, counts]) => [
-              eventResult,
-              counts ? [counts, eventResult.total] as const : null,
-            ] as const)
-          : await Promise.all([
-              getOrders(shopId, {
-                page,
-                pageSize: orderPageSize,
-                status: filter,
-                ...dateScope,
-              }),
-              refreshCounts
-                ? Promise.all([
-                    getOrderStatusCounts(shopId, dateScope),
-                    getOfflineEventOrders(shopId, {
-                      page: 1,
-                      pageSize: 1,
-                      ...dateScope,
-                    })
-                      .then((eventResult) => eventResult.total)
-                      .catch(() => null),
-                  ])
-                : Promise.resolve(null),
-            ]);
+        const [result, countResult] =
+          filter === "event"
+            ? await Promise.all([
+                getOfflineEventOrders(shopId, {
+                  page,
+                  pageSize: orderPageSize,
+                  ...dateScope,
+                }),
+                refreshCounts
+                  ? getOrderStatusCounts(shopId, dateScope)
+                  : Promise.resolve(null),
+              ]).then(
+                ([eventResult, counts]) =>
+                  [
+                    eventResult,
+                    counts ? ([counts, eventResult.total] as const) : null,
+                  ] as const,
+              )
+            : await Promise.all([
+                getOrders(shopId, {
+                  page,
+                  pageSize: orderPageSize,
+                  status: filter,
+                  ...dateScope,
+                }),
+                refreshCounts
+                  ? Promise.all([
+                      getOrderStatusCounts(shopId, dateScope),
+                      getOfflineEventOrders(shopId, {
+                        page: 1,
+                        pageSize: 1,
+                        ...dateScope,
+                      })
+                        .then((eventResult) => eventResult.total)
+                        .catch(() => null),
+                    ])
+                  : Promise.resolve(null),
+              ]);
         if (requestId !== orderRequestRef.current) return;
         saveAdminOrdersSnapshot(
+          userId,
           shopId,
           result.orders,
           filter === "event" ? "event" : "online",
@@ -338,7 +346,7 @@ export function AdminPage() {
           if (navigator.onLine && !isTransportError(error)) throw error;
           const filter = orderFilterRef.current;
           const source = filter === "event" ? "event" : "online";
-          const cached = loadAdminOrdersSnapshot(shopId, source);
+          const cached = loadAdminOrdersSnapshot(userId, shopId, source);
           let available = cached;
           if (filter === "event") {
             const session = await loadOfflineEventSession(shopId);
@@ -363,10 +371,13 @@ export function AdminPage() {
               filter !== "event" &&
               filter !== "all" &&
               order.status !== filter
-            ) return false;
+            )
+              return false;
             const created = new Date(order.created_at);
-            return !ordersTodayOnlyRef.current ||
-              (created >= today && created < tomorrow);
+            return (
+              !ordersTodayOnlyRef.current ||
+              (created >= today && created < tomorrow)
+            );
           });
           const from = Math.max(0, page - 1) * orderPageSize;
           setOrders(scoped.slice(from, from + orderPageSize));
@@ -378,14 +389,19 @@ export function AdminPage() {
             ordersTodayOnlyRef.current,
           ].join(":");
           if (filter === "event") setEventOrderCount(scoped.length);
-          const onlineCached = loadAdminOrdersSnapshot(shopId, "online");
+          const onlineCached = loadAdminOrdersSnapshot(
+            userId,
+            shopId,
+            "online",
+          );
           const counts = onlineCached.reduce<OrderStatusCounts>(
             (result, order) => {
               const created = new Date(order.created_at);
               if (
                 ordersTodayOnlyRef.current &&
                 (created < today || created >= tomorrow)
-              ) return result;
+              )
+                return result;
               result[order.status] += 1;
               result.all += 1;
               return result;
@@ -406,7 +422,7 @@ export function AdminPage() {
       orderLoadRef.current = { key: loadKey, promise };
       return promise;
     },
-    [shopId],
+    [shopId, userId],
   );
 
   const scheduleOrdersReload = useAdminOrderRealtime({
@@ -492,12 +508,21 @@ export function AdminPage() {
         t("Admin unavailable"),
       );
     });
-  }, [canManageCatalog, isInitialLoading, reloadCatalogAdmin, shopId, t, toast]);
+  }, [
+    canManageCatalog,
+    isInitialLoading,
+    reloadCatalogAdmin,
+    shopId,
+    t,
+    toast,
+  ]);
 
   useEffect(() => {
     if (!isAuthed) return;
     if (isInitialLoading) return;
-    const queryKey = [shopId, orderPage, orderFilter, ordersTodayOnly].join(":");
+    const queryKey = [shopId, orderPage, orderFilter, ordersTodayOnly].join(
+      ":",
+    );
     if (loadedOrderQueryRef.current === queryKey) return;
 
     reloadOrders().catch((error) => {
@@ -553,8 +578,12 @@ export function AdminPage() {
       .catch(async (error) => {
         if (isSessionNoise(error)) return;
         if (!navigator.onLine || isTransportError(error)) {
-          const onlineCached = loadAdminOrdersSnapshot(shopId, "online");
-          const eventCached = loadAdminOrdersSnapshot(shopId, "event");
+          const onlineCached = loadAdminOrdersSnapshot(
+            userId,
+            shopId,
+            "online",
+          );
+          const eventCached = loadAdminOrdersSnapshot(userId, shopId, "event");
           const session = await loadOfflineEventSession(shopId);
           const localOrders = session
             ? (await listOfflineEventOrders(session.id)).map((order) =>
@@ -571,16 +600,17 @@ export function AdminPage() {
             return created >= startOfToday && created < startOfTomorrow;
           };
           setOrderCounts(
-            onlineCached.reduce<OrderStatusCounts>((counts, order) => {
-              if (!inScope(order)) return counts;
-              counts[order.status] += 1;
-              counts.all += 1;
-              return counts;
-            }, { ...emptyOrderCounts }),
+            onlineCached.reduce<OrderStatusCounts>(
+              (counts, order) => {
+                if (!inScope(order)) return counts;
+                counts[order.status] += 1;
+                counts.all += 1;
+                return counts;
+              },
+              { ...emptyOrderCounts },
+            ),
           );
-          setEventOrderCount(
-            [...eventOrders.values()].filter(inScope).length,
-          );
+          setEventOrderCount([...eventOrders.values()].filter(inScope).length);
           loadedOrderCountScopeRef.current = countScope;
           return;
         }
@@ -589,7 +619,7 @@ export function AdminPage() {
           t("Admin unavailable"),
         );
       });
-  }, [isAuthed, shopId, ordersTodayOnly, isInitialLoading, t, toast]);
+  }, [isAuthed, shopId, userId, ordersTodayOnly, isInitialLoading, t, toast]);
 
   useEffect(() => {
     if (!isAuthed || isInitialLoading || orderFilter !== "event") return;
@@ -720,6 +750,29 @@ export function AdminPage() {
   async function handleSignOut() {
     setSignOutBusy(true);
     try {
+      let offlineRisk: Awaited<
+        ReturnType<typeof getOfflineEventSignOutRisk>
+      >;
+      try {
+        offlineRisk = await getOfflineEventSignOutRisk();
+      } catch {
+        toast.error(
+          t(
+            "Offline Event storage could not be checked. Keep this account signed in and retry after storage access is restored.",
+          ),
+          t("Sign-out safety check failed"),
+        );
+        return;
+      }
+      if (offlineRisk) {
+        toast.error(
+          t(
+            "This device still owns event stock or unsynced orders. Sync and close Offline Event Mode before signing out.",
+          ),
+          t("Offline Event Mode is still active"),
+        );
+        return;
+      }
       await signOutAdmin();
       setIsSignOutOpen(false);
       await refreshAdminSession();

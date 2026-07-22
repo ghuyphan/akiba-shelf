@@ -26,7 +26,8 @@
 		return positionToStyle({ ...bannerOffset, ...tmp });
 	};
 
-	$: offset = characterOffset(item.featured, $isMobileLandscape);
+	$: visualItem = item.featured || item.displayItem;
+	$: offset = characterOffset(visualItem, $isMobileLandscape);
 </script>
 
 <BannerTpl {group}>
@@ -49,17 +50,17 @@
 							>
 								<picture style={offset}>
 									<source
-										srcset={$assets[`splash-art/large/${item.featured}`]}
+										srcset={$assets[`splash-art/large/${visualItem}`]}
 										media="(min-width: 1280px)"
 									/>
 									<source
-										srcset={$assets[`splash-art/medium/${item.featured}`]}
+										srcset={$assets[`splash-art/medium/${visualItem}`]}
 										media="(min-width: 640px)"
 									/>
 									<img
 										crossorigin="anonymous"
-										alt={$t(item.featured)}
-										src={$assets[`splash-art/small/${item.featured}`]}
+										alt={visualItem ? $t(visualItem) : ''}
+										src={$assets[`splash-art/small/${visualItem}`]}
 									/>
 								</picture>
 							</div>

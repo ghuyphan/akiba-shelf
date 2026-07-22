@@ -10,6 +10,7 @@
 		getCharDetails,
 		getLCDetails
 	} from '$lib/helpers/gacha/gacha-base';
+	import { getMerchDisclosure } from '$lib/helpers/merch';
 
 	import Description from './_description.svelte';
 	import ItemCard from './_item-card.svelte';
@@ -22,6 +23,7 @@
 		rateup = [],
 		merchItems = [],
 		isMerch = false,
+		isStandardMerch = false,
 		description = ''
 	} = $activeWarp;
 	const { featured } = identifyBanner(bannerID);
@@ -32,7 +34,7 @@
 	$: nameOfbanner = isMerch ? bannerName : $t(`banner.${bannerName}`, { default: bannerName });
 
 	// Drop 3 Star
-	const drop3star = get3StarItem();
+	const drop3star = isMerch ? merchItems.filter((item) => item.rarity === 3) : get3StarItem();
 
 	// Drop 4 star
 	const list4star = (itemType) =>
@@ -51,8 +53,16 @@
 			.map((val) => ({ ...val, rateup: true }));
 	};
 
-	const drop4char = [...rateupItem('character'), ...list4star('character')];
-	const drop4lc = [...rateupItem('lightcone'), ...list4star('lightcone')];
+	const merchItemsBy = (rarity, itemType) =>
+		merchItems
+			.filter((item) => item.rarity === rarity && item.type === itemType)
+			.map((item) => ({ ...item, rateup: item.featured }));
+	const drop4char = isMerch
+		? merchItemsBy(4, 'character')
+		: [...rateupItem('character'), ...list4star('character')];
+	const drop4lc = isMerch
+		? merchItemsBy(4, 'lightcone')
+		: [...rateupItem('lightcone'), ...list4star('lightcone')];
 
 	// Drop 5star
 
@@ -72,14 +82,14 @@
 			rateupItem: [featured]
 		});
 	};
-	const drop5char = [
-		{ ...getItemDetails(featured, 'character'), rateup: true },
-		...list5star('character')
-	];
-	const drop5lc = [
-		{ ...getItemDetails(featured, 'lightcone'), rateup: true },
-		...list5star('lightcone')
-	];
+	const drop5char = isMerch
+		? merchItemsBy(5, 'character')
+		: [{ ...getItemDetails(featured, 'character'), rateup: true }, ...list5star('character')];
+	const drop5lc = isMerch
+		? merchItemsBy(5, 'lightcone')
+		: [{ ...getItemDetails(featured, 'lightcone'), rateup: true }, ...list5star('lightcone')];
+	const disclosure = getMerchDisclosure(type === 'lightcone-event');
+	const percent = (value) => `${Number(value).toFixed(3)}%`;
 </script>
 
 <svelte:head>
@@ -89,8 +99,14 @@
 <div class="details">
 	<h1>{nameOfbanner}</h1>
 
-	{#if type.match('event')}
-		{@const { combat_type, rateup, path, name, type: itemType } = type.match('char') ? drop5char[0] : drop5lc[0]}
+	{#if type.match('event') && !isStandardMerch}
+		{@const {
+			combat_type,
+			rateup,
+			path,
+			name,
+			type: itemType
+		} = type.match('char') ? drop5char[0] : drop5lc[0]}
 		<h2>{$t('details.dropRateBoost')}</h2>
 		<div class="rateInfo">
 			<div class="rarity">
@@ -100,7 +116,14 @@
 			</div>
 			<span>
 				{$t('details.droprate', {
-					values: { rate: type === 'lightcone-event' ? '75%' : '50%', rarity: 5 }
+					values: {
+						rate: isMerch
+							? percent(disclosure.featuredRate)
+							: type === 'lightcone-event'
+								? '75%'
+								: '50%',
+						rarity: 5
+					}
 				})}
 			</span>
 		</div>
@@ -119,7 +142,14 @@
 			</div>
 			<span>
 				{$t('details.droprate', {
-					values: { rate: type === 'lightcone-event' ? '75%' : '50%', rarity: 4 }
+					values: {
+						rate: isMerch
+							? percent(disclosure.featuredRate)
+							: type === 'lightcone-event'
+								? '75%'
+								: '50%',
+						rarity: 4
+					}
 				})}
 			</span>
 		</div>
@@ -135,13 +165,13 @@
 		</div>
 	{/if}
 
-
 	<h2>{$t('details.heading')}</h2>
 	<Description
 		bannerName={nameOfbanner}
 		bannerType={type}
 		data={{ drop5char, drop4char, drop5lc, drop4lc }}
 		{isMerch}
+		{isStandardMerch}
 		merchDescription={description}
 	/>
 
@@ -157,17 +187,25 @@
 		<span>
 			{$t('details.baseWarpRate', {
 				values: {
-					rate: type === 'lightcone-event' ? '0.800%' : '0.600%',
-					avgRate: type === 'lightcone-event' ? '1.870%' : '1.600%',
+					rate: isMerch
+						? percent(disclosure.base5Rate)
+						: type === 'lightcone-event'
+							? '0.800%'
+							: '0.600%',
+					avgRate: isMerch
+						? percent(disclosure.consolidated5Rate)
+						: type === 'lightcone-event'
+							? '1.870%'
+							: '1.600%',
 					rarity: 5
 				}
 			})}
 		</span>
 	</div>
-	{#if type !== 'lightcone-event'}
-		<Table data={drop5char} type="character" />
-	{/if}
-	{#if ['lightcone-event', 'regular'].includes(type)}
+		{#if isMerch || type !== 'lightcone-event'}
+			<Table data={drop5char} type="character" />
+		{/if}
+		{#if isMerch || ['lightcone-event', 'regular'].includes(type)}
 		<Table data={drop5lc} type="lightcone" />
 	{/if}
 
@@ -181,8 +219,16 @@
 		<span>
 			{$t('details.baseWarpRate', {
 				values: {
-					rate: type === 'lightcone-event' ? '6.600%' : '5.100%',
-					avgRate: type === 'lightcone-event' ? '14.800%' : '13.000%',
+					rate: isMerch
+						? percent(disclosure.base4Rate)
+						: type === 'lightcone-event'
+							? '6.600%'
+							: '5.100%',
+					avgRate: isMerch
+						? percent(disclosure.consolidated4Rate)
+						: type === 'lightcone-event'
+							? '14.800%'
+							: '13.000%',
 					rarity: 4
 				}
 			})}
@@ -201,7 +247,15 @@
 		</div>
 		<span>
 			{$t('details.baseWarpRate', {
-				values: { rate: '94.300%', avgRate: '85.400%', rarity: 3 }
+				values: {
+					rate: isMerch
+						? percent(Math.max(0, 100 - disclosure.base4Rate - disclosure.base5Rate))
+						: '94.300%',
+						avgRate: isMerch
+							? percent(disclosure.consolidated3Rate)
+						: '85.400%',
+					rarity: 3
+				}
 			})}
 		</span>
 	</div>

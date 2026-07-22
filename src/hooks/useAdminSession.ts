@@ -4,7 +4,7 @@ import { getShopMemberships } from "../lib/api";
 import type { ShopMembership } from "../types/catalog";
 import { isTransportError } from "../lib/errors";
 import {
-  clearAdminAccessSnapshot,
+  clearAdminOfflineData,
   loadAdminAccessSnapshot,
   saveAdminAccessSnapshot,
 } from "../lib/offline/adminOffline";
@@ -39,6 +39,7 @@ export function useAdminSession() {
   );
   const resolvedUserId = useRef<string | null>(null);
   const resolvingUserId = useRef<string | null>(null);
+  const lastAuthenticatedUserId = useRef<string | null>(null);
   const requestId = useRef(0);
 
   const resolve = useCallback(async (showChecking = true) => {
@@ -62,6 +63,7 @@ export function useAdminSession() {
       setState({ status: "unauthenticated" });
       return;
     }
+    lastAuthenticatedUserId.current = user.id;
     resolvingUserId.current = user.id;
     try {
       const memberships = await getShopMemberships();
@@ -136,14 +138,20 @@ export function useAdminSession() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "TOKEN_REFRESHED") return;
       if (event === "SIGNED_OUT") {
+        const previousUserId =
+          resolvedUserId.current ??
+          resolvingUserId.current ??
+          lastAuthenticatedUserId.current;
         requestId.current += 1;
         resolvedUserId.current = null;
         resolvingUserId.current = null;
-        clearAdminAccessSnapshot();
+        lastAuthenticatedUserId.current = null;
+        if (previousUserId) clearAdminOfflineData(previousUserId);
         setState({ status: "unauthenticated" });
         return;
       }
       const nextUserId = session?.user.id ?? null;
+      if (nextUserId) lastAuthenticatedUserId.current = nextUserId;
       if (
         !nextUserId ||
         nextUserId === resolvedUserId.current ||

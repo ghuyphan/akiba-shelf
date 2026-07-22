@@ -52,6 +52,12 @@ VITE_SUPABASE_ANON_KEY=your-publishable-or-anon-key
 VITE_VAPID_PUBLIC_KEY=your-public-vapid-key
 ```
 
+Both current `sb_publishable_...` keys and legacy JWT-based anon keys are
+supported. Public checkout, order-notification, and gacha-music Edge Functions
+perform their own bounded request or recovery-token validation and therefore
+deploy with gateway JWT verification disabled. Staff invitation functions keep
+gateway JWT verification enabled and require a signed-in user session.
+
 Every `VITE_*` value is public browser configuration. Never put service-role,
 OAuth, SMTP, VietQR, or VAPID private credentials in a Vite variable or commit
 them to the repository.

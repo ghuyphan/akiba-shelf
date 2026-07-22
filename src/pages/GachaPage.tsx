@@ -8,7 +8,12 @@ import {
   type MouseEvent,
 } from "react";
 import { ArrowLeft, ArrowRight, Check, Download, Sparkles } from "lucide-react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PageLoading } from "../components/ui/PageLoading";
 import {
@@ -65,7 +70,9 @@ export function GachaPage() {
   const launchTimerRef = useRef<number | null>(null);
   const skipSelectorIntroRef = useRef(false);
   const offlineProgressRef = useRef({ status: "idle", progress: 0 });
-  const [launchingGame, setLaunchingGame] = useState<GachaGameType | null>(null);
+  const [launchingGame, setLaunchingGame] = useState<GachaGameType | null>(
+    null,
+  );
   const [packDownload, setPackDownload] = useState<{
     status: "idle" | "downloading" | "ready" | "error";
     progress: number;
@@ -76,7 +83,8 @@ export function GachaPage() {
     document.body.classList.add("gacha-screen");
     return () => {
       document.body.classList.remove("gacha-screen");
-      if (launchTimerRef.current !== null) window.clearTimeout(launchTimerRef.current);
+      if (launchTimerRef.current !== null)
+        window.clearTimeout(launchTimerRef.current);
     };
   }, []);
 
@@ -87,27 +95,31 @@ export function GachaPage() {
       setState(null);
       setError(null);
       const applyLaunch = (launch: GachaLaunchData) => {
-        const previewCatalog = preview && selectedGame
-          ? parseGachaPreviewConfig(
-              localStorage.getItem(
-                `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${launch.shop.slug}:${selectedGame}`,
-              ) ?? localStorage.getItem(
-                `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${launch.shop.slug}`,
-              ),
-            )
-          : null;
+        const previewCatalog =
+          preview && selectedGame
+            ? parseGachaPreviewConfig(
+                localStorage.getItem(
+                  `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${launch.shop.slug}:${selectedGame}`,
+                ) ??
+                  localStorage.getItem(
+                    `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${launch.shop.slug}`,
+                  ),
+              )
+            : null;
         const catalogs = Object.fromEntries(
           Object.entries(launch.catalogs).map(([gameType, catalog]) => [
             gameType,
             runningGachaCatalog(catalog),
           ]),
         ) as GachaLaunchData["catalogs"];
-        if (previewCatalog && selectedGame) catalogs[selectedGame] = previewCatalog;
+        if (previewCatalog && selectedGame)
+          catalogs[selectedGame] = runningGachaCatalog(previewCatalog);
         const available = (["genshin", "hsr"] as const).filter((gameType) => {
           const catalog = catalogs[gameType];
           return Boolean(
             catalog?.settings &&
-              (catalog.settings.enabled || (preview && selectedGame === gameType)) &&
+              (catalog.settings.enabled ||
+                (preview && selectedGame === gameType)) &&
               catalog.banners.length &&
               catalog.entries.length,
           );
@@ -152,7 +164,8 @@ export function GachaPage() {
       const catalog = state?.catalogs[gameType];
       return Boolean(
         catalog?.settings &&
-          (catalog.settings.enabled || (preview && selectedGame === gameType)) &&
+          (catalog.settings.enabled ||
+            (preview && selectedGame === gameType)) &&
           catalog.banners.length &&
           catalog.entries.length,
       );
@@ -166,7 +179,7 @@ export function GachaPage() {
         ? availableGames[0]
         : null;
   const activeCatalog: GachaCatalog | null = activeGame
-    ? state?.catalogs[activeGame] ?? null
+    ? (state?.catalogs[activeGame] ?? null)
     : null;
 
   useEffect(() => {
@@ -182,7 +195,7 @@ export function GachaPage() {
     async function checkOfflineStatus() {
       try {
         const checks = await Promise.all(
-          availableGames.map((game) => hasGachaOfflinePack(game))
+          availableGames.map((game) => hasGachaOfflinePack(game)),
         );
         if (!active) return;
         const allReady = checks.every(Boolean);
@@ -236,9 +249,7 @@ export function GachaPage() {
         return;
       if (event.data?.type === GACHA_CLOSE_MESSAGE_TYPE) {
         navigate(
-          availableGames.length > 1
-            ? `/s/${shopSlug}/play`
-            : `/s/${shopSlug}`,
+          availableGames.length > 1 ? `/s/${shopSlug}/play` : `/s/${shopSlug}`,
         );
         return;
       }
@@ -273,12 +284,13 @@ export function GachaPage() {
           }
           const productImages = gachaCatalogOfflineUrls(activeCatalog);
           sendOfflineProgress("downloading", 0);
-          await downloadGachaOfflinePack(gameType, productImages, (progress) => {
-            sendOfflineProgress(
-              "downloading",
-              offlinePackPercent(progress),
-            );
-          });
+          await downloadGachaOfflinePack(
+            gameType,
+            productImages,
+            (progress) => {
+              sendOfflineProgress("downloading", offlinePackPercent(progress));
+            },
+          );
           sendOfflineProgress("ready", 100);
         })
         .catch((cause) =>
@@ -290,7 +302,15 @@ export function GachaPage() {
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [activeCatalog, activeGame, availableGames.length, navigate, sendOfflineProgress, shopSlug, state]);
+  }, [
+    activeCatalog,
+    activeGame,
+    availableGames.length,
+    navigate,
+    sendOfflineProgress,
+    shopSlug,
+    state,
+  ]);
 
   const queryParams = new URLSearchParams();
   queryParams.set("shop", shopSlug);
@@ -306,7 +326,6 @@ export function GachaPage() {
   if (import.meta.env.VITE_SUPABASE_ANON_KEY) {
     queryParams.set("supabase_anon", import.meta.env.VITE_SUPABASE_ANON_KEY);
   }
-
 
   const copy = translations[state?.booth.catalog_locale ?? "en"];
 
@@ -343,9 +362,7 @@ export function GachaPage() {
         <EmptyState
           icon={<Sparkles size={28} />}
           title={copy.wishUnavailable}
-          message={
-            copy.wishPoolEmptyHint
-          }
+          message={copy.wishPoolEmptyHint}
           action={
             <Link className="button button-primary" to={`/s/${shopSlug}`}>
               <ArrowLeft size={17} /> {copy.backToStore}
@@ -366,21 +383,29 @@ export function GachaPage() {
     );
     setPackDownload({ status: "downloading", progress: 1 });
     try {
-      await downloadGachaOfflinePacks(availableGames, imagesByGame, (progress) => {
-        setPackDownload({
-          status: "downloading",
-          progress: progress.percent,
-          game: progress.gameType,
-        });
-      });
+      await downloadGachaOfflinePacks(
+        availableGames,
+        imagesByGame,
+        (progress) => {
+          setPackDownload({
+            status: "downloading",
+            progress: progress.percent,
+            game: progress.gameType,
+          });
+        },
+      );
       setPackDownload({ status: "ready", progress: 100 });
     } catch {
       setPackDownload({ status: "error", progress: 0 });
     }
   }
 
-  function beginGachaLaunch(event: MouseEvent<HTMLAnchorElement>, gameType: GachaGameType) {
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  function beginGachaLaunch(
+    event: MouseEvent<HTMLAnchorElement>,
+    gameType: GachaGameType,
+  ) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+      return;
     event.preventDefault();
     if (launchingGame) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -388,7 +413,9 @@ export function GachaPage() {
       return;
     }
     setLaunchingGame(gameType);
-    const launchDelay = window.matchMedia("(max-width: 760px)").matches ? 640 : 1350;
+    const launchDelay = window.matchMedia("(max-width: 760px)").matches
+      ? 640
+      : 1350;
     launchTimerRef.current = window.setTimeout(() => {
       navigate(`?game=${gameType}`);
     }, launchDelay);
@@ -413,14 +440,23 @@ export function GachaPage() {
           <button
             type="button"
             className={`gacha-cache-btn is-${packDownload.status}`}
-            disabled={packDownload.status === "downloading" || packDownload.status === "ready"}
+            disabled={
+              packDownload.status === "downloading" ||
+              packDownload.status === "ready"
+            }
             onClick={() => void saveAvailableGames()}
             title={copy.saveBothGachaOfflineHint}
           >
             {packDownload.status === "downloading" ? (
               <span className="gacha-progress-container" aria-hidden="true">
                 <svg className="gacha-progress-svg" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="16" fill="none" className="gacha-progress-track" />
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="16"
+                    fill="none"
+                    className="gacha-progress-track"
+                  />
                   <circle
                     cx="18"
                     cy="18"
@@ -428,11 +464,15 @@ export function GachaPage() {
                     fill="none"
                     className="gacha-progress-bar"
                     strokeDasharray="100.53"
-                    strokeDashoffset={100.53 - (packDownload.progress / 100) * 100.53}
+                    strokeDashoffset={
+                      100.53 - (packDownload.progress / 100) * 100.53
+                    }
                     transform="rotate(-90 18 18)"
                   />
                 </svg>
-                <span className="gacha-progress-text">{packDownload.progress}</span>
+                <span className="gacha-progress-text">
+                  {packDownload.progress}
+                </span>
               </span>
             ) : packDownload.status === "ready" ? (
               <Check size={18} />
@@ -461,13 +501,21 @@ export function GachaPage() {
               const catalog = state.catalogs[gameType];
               const uniqueProducts = Array.from(
                 new Map(
-                  (catalog?.entries ?? []).map((entry) => [entry.product.id, entry.product]),
+                  (catalog?.entries ?? []).map((entry) => [
+                    entry.product.id,
+                    entry.product,
+                  ]),
                 ).values(),
               );
               const previewProducts = uniqueProducts
-                .filter((product) => product.images[0] || product.image_variants?.[0]?.thumbnail)
+                .filter(
+                  (product) =>
+                    product.images[0] || product.image_variants?.[0]?.thumbnail,
+                )
                 .slice(0, 4);
-              const simulatorName = isHsr ? copy.warpSimulator : copy.wishSimulator;
+              const simulatorName = isHsr
+                ? copy.warpSimulator
+                : copy.wishSimulator;
               return (
                 <Link
                   key={gameType}
@@ -475,14 +523,24 @@ export function GachaPage() {
                   to={`?game=${gameType}`}
                   aria-label={`${copy.enterGacha}: ${simulatorName}`}
                   onClick={(event) => beginGachaLaunch(event, gameType)}
-                  style={{
-                    "--portal-background": `url(${isHsr ? hsrWarpBackground : genshinWishBackground})`,
-                    "--portal-button": isHsr ? "none" : `url(${genshinWishButton})`,
-                  } as CSSProperties}
+                  style={
+                    {
+                      "--portal-background": `url(${isHsr ? hsrWarpBackground : genshinWishBackground})`,
+                      "--portal-button": isHsr
+                        ? "none"
+                        : `url(${genshinWishButton})`,
+                    } as CSSProperties
+                  }
                 >
                   <span className="gacha-portal-glow" aria-hidden="true" />
                   <span className="gacha-portal-art" aria-hidden="true">
-                    {isHsr && <img className="gacha-hsr-ornament" src={hsrCircleOrnament} alt="" />}
+                    {isHsr && (
+                      <img
+                        className="gacha-hsr-ornament"
+                        src={hsrCircleOrnament}
+                        alt=""
+                      />
+                    )}
                     <img
                       className="gacha-portal-currency"
                       src={isHsr ? hsrSpecialPass : intertwinedFate}
@@ -497,7 +555,9 @@ export function GachaPage() {
                       alt={isHsr ? "Honkai: Star Rail" : "Genshin Impact"}
                     />
                     <span className="gacha-portal-meta">
-                      <span>{copy.gachaBannerCount(catalog?.banners.length ?? 0)}</span>
+                      <span>
+                        {copy.gachaBannerCount(catalog?.banners.length ?? 0)}
+                      </span>
                       <span aria-hidden="true">/</span>
                       <span>{copy.gachaPrizeCount(uniqueProducts.length)}</span>
                     </span>
@@ -506,12 +566,17 @@ export function GachaPage() {
                         {previewProducts.map((product) => (
                           <img
                             key={product.id}
-                            src={product.image_variants?.[0]?.thumbnail || product.images[0]}
+                            src={
+                              product.image_variants?.[0]?.thumbnail ||
+                              product.images[0]
+                            }
                             alt=""
                           />
                         ))}
                         {uniqueProducts.length > previewProducts.length && (
-                          <span>+{uniqueProducts.length - previewProducts.length}</span>
+                          <span>
+                            +{uniqueProducts.length - previewProducts.length}
+                          </span>
                         )}
                       </span>
                     )}

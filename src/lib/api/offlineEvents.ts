@@ -3,6 +3,7 @@ import type {
   Order,
   OfflineEventOrder,
   OfflineEventSession,
+  OfflineEventSyncAcknowledgement,
   PaymentSettings,
   Product,
   PromotionSettings,
@@ -63,7 +64,12 @@ const eventOrderSchema = orderSchema.extend({
     "bank_verification_pending",
     "bank_confirmed",
   ]),
-  fulfillment_status: z.enum(["unfulfilled", "preparing", "ready", "picked_up"]),
+  fulfillment_status: z.enum([
+    "unfulfilled",
+    "preparing",
+    "ready",
+    "picked_up",
+  ]),
   fulfillment_updated_at: z.string().nullable().optional(),
   confirmed_by_email: z.string().nullable().optional(),
   cancelled_by_email: z.string().nullable().optional(),
@@ -77,7 +83,77 @@ const eventOrderResultSchema = z.object({
   counts: orderStatusCountsSchema,
 });
 
-function normalizeBundle(value: unknown, shopSlug: string): OfflineEventSession {
+const syncResultSchema = z.object({
+  inserted: z.coerce.number().int().nonnegative().optional(),
+  updated: z.coerce.number().int().nonnegative().optional(),
+  stale: z.coerce.number().int().nonnegative().optional(),
+  acknowledged_revisions: z
+    .record(z.string(), z.coerce.number().int().nonnegative())
+    .optional(),
+});
+
+const finalizeResultSchema = z.object({
+  sync: syncResultSchema,
+  status: z.string(),
+});
+
+function offlineOrderPayload(order: OfflineEventOrder) {
+  return {
+    id: order.id,
+    order_code: order.orderCode,
+    customer_name: order.customerName,
+    total_amount: order.totalAmount,
+    status: order.status,
+    payment_method: order.paymentMethod,
+    payment_state: order.paymentState,
+    client_revision: order.clientRevision,
+    fulfillment_status: order.fulfillmentStatus,
+    fulfillment_updated_at: order.fulfillmentUpdatedAt ?? null,
+    confirmed_by_label: order.confirmedByLabel ?? null,
+    cancelled_by_label: order.cancelledByLabel ?? null,
+    fulfillment_updated_by_label: order.fulfillmentUpdatedByLabel ?? null,
+    created_at: order.createdAt,
+    updated_at: order.updatedAt,
+    items: order.items,
+  };
+}
+
+function acknowledgementsFor(
+  orders: OfflineEventOrder[],
+  value: z.infer<typeof syncResultSchema>,
+): OfflineEventSyncAcknowledgement[] {
+  const acknowledged = value.acknowledged_revisions;
+  if (!acknowledged) return [];
+  return orders.flatMap((order) =>
+    acknowledged[order.id] === undefined
+      ? []
+      : [{ id: order.id, clientRevision: acknowledged[order.id] }],
+  );
+}
+
+function exactFinalizationAcknowledgements(
+  orders: OfflineEventOrder[],
+  value: z.infer<typeof syncResultSchema>,
+) {
+  const acknowledged = value.acknowledged_revisions ?? {};
+  const expected = new Map(
+    orders.map((order) => [order.id, order.clientRevision]),
+  );
+  const exact =
+    Object.keys(acknowledged).length === expected.size &&
+    Object.entries(acknowledged).every(
+      ([id, revision]) => expected.get(id) === revision,
+    );
+  if (!exact) {
+    throw new Error("Offline finalization acknowledgements are incomplete.");
+  }
+  return acknowledgementsFor(orders, value);
+}
+
+function normalizeBundle(
+  value: unknown,
+  shopSlug: string,
+): OfflineEventSession {
   const bundle = eventBundleSchema.parse(value);
   return {
     version: 1,
@@ -150,39 +226,41 @@ export async function recoverOfflineEventSession(
 export async function syncOfflineEventOrders(
   session: OfflineEventSession,
   orders: OfflineEventOrder[],
-): Promise<void> {
-  const { error } = await requireSupabase().rpc("sync_offline_event_orders", {
-    p_session_id: session.id,
-    p_device_id: session.deviceId,
-    p_orders: orders.map((order) => ({
-      id: order.id,
-      order_code: order.orderCode,
-      customer_name: order.customerName,
-      total_amount: order.totalAmount,
-      status: order.status,
-      payment_method: order.paymentMethod,
-      payment_state: order.paymentState,
-      fulfillment_status: order.fulfillmentStatus,
-      fulfillment_updated_at: order.fulfillmentUpdatedAt ?? null,
-      confirmed_by_label: order.confirmedByLabel ?? null,
-      cancelled_by_label: order.cancelledByLabel ?? null,
-      fulfillment_updated_by_label: order.fulfillmentUpdatedByLabel ?? null,
-      created_at: order.createdAt,
-      updated_at: order.updatedAt,
-      items: order.items,
-    })),
-  });
-  if (error) throw error;
-}
-
-export async function closeOfflineEventSession(
-  session: OfflineEventSession,
-): Promise<void> {
-  const { error } = await requireSupabase().rpc(
-    "close_offline_event_session",
-    { p_session_id: session.id, p_device_id: session.deviceId },
+): Promise<OfflineEventSyncAcknowledgement[]> {
+  const { data, error } = await requireSupabase().rpc(
+    "sync_offline_event_orders",
+    {
+      p_session_id: session.id,
+      p_device_id: session.deviceId,
+      p_orders: orders.map(offlineOrderPayload),
+    },
   );
   if (error) throw error;
+  const parsed = syncResultSchema.parse(data);
+  return acknowledgementsFor(orders, parsed);
+}
+
+export async function finalizeOfflineEventSession(
+  session: OfflineEventSession,
+  orders: OfflineEventOrder[],
+): Promise<{
+  acknowledgements: OfflineEventSyncAcknowledgement[];
+  status: string;
+}> {
+  const { data, error } = await requireSupabase().rpc(
+    "finalize_offline_event_session",
+    {
+      p_session_id: session.id,
+      p_device_id: session.deviceId,
+      p_orders: orders.map(offlineOrderPayload),
+    },
+  );
+  if (error) throw error;
+  const parsed = finalizeResultSchema.parse(data);
+  return {
+    acknowledgements: exactFinalizationAcknowledgements(orders, parsed.sync),
+    status: parsed.status,
+  };
 }
 
 export async function getOfflineEventOrders(
