@@ -18,7 +18,11 @@ import {
 import { getShopBranding, useDocumentBranding } from "../lib/branding";
 import { applyDocumentSeo } from "../lib/seo";
 import type { Order, Product, StorefrontSection } from "../types/catalog";
-import { CatalogLocaleProvider, translations, useCatalogCopy } from "../lib/i18n/catalogI18n";
+import {
+  CatalogLocaleProvider,
+  translations,
+  useCatalogCopy,
+} from "../lib/i18n/catalogI18n";
 import { PromotionProvider } from "../lib/promotionContext";
 import { CatalogHeader } from "../components/catalog/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
@@ -30,7 +34,11 @@ import { SelectedItemPanel } from "../components/catalog/SelectedItemPanel";
 import { StackedFeatured } from "../components/catalog/StackedFeatured";
 import { ToastLocalization, useToast } from "../components/ui/ToastProvider";
 import { loadCheckoutSession } from "../lib/offline/checkoutSession";
-import { loadShopSnapshot, saveShopSnapshot, loadCatalogSnapshot } from "../lib/offline/offline";
+import {
+  loadShopSnapshot,
+  saveShopSnapshot,
+  loadCatalogSnapshot,
+} from "../lib/offline/offline";
 import { usePersistentCart } from "../hooks/usePersistentCart";
 import { useCatalogData } from "../hooks/useCatalogData";
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
@@ -43,10 +51,7 @@ import {
 import { layoutOrderSchema } from "../lib/schemas";
 import { PageLoading } from "../components/ui/PageLoading";
 import { useParams } from "react-router-dom";
-import {
-  getPublicShop,
-  type PublicProductSort,
-} from "../lib/api";
+import { getPublicShop, type PublicProductSort } from "../lib/api";
 import type { Shop } from "../types/catalog";
 import {
   calculateCartPricing,
@@ -85,8 +90,8 @@ function CatalogToastLocalization() {
 export function CatalogPage() {
   const { shopSlug = "" } = useParams();
   const toast = useToast();
-  const [shop, setShop] = useState<Shop | null | undefined>(() =>
-    loadShopSnapshot(shopSlug),
+  const [shop, setShop] = useState<Shop | null | undefined>(
+    () => loadShopSnapshot(shopSlug) ?? undefined,
   );
   const [shopLoadError, setShopLoadError] = useState("");
   const [lightweightMode] = useState(prefersLightweightCatalog);
@@ -201,7 +206,13 @@ export function CatalogPage() {
       robots: verifiedBranding ? "index, follow" : "noindex, nofollow",
       type: "profile",
     });
-  }, [booth.booth_name, booth.subtitle, shop?.name, shopSlug, verifiedBranding]);
+  }, [
+    booth.booth_name,
+    booth.subtitle,
+    shop?.name,
+    shopSlug,
+    verifiedBranding,
+  ]);
 
   useEffect(() => {
     const next = loadCheckoutSession(shopSlug)?.order ?? null;
@@ -229,7 +240,7 @@ export function CatalogPage() {
         saveShopSnapshot(freshShop, shopSlug);
       }
     } catch (error) {
-      if (!loadShopSnapshot(shopSlug)) {
+      if (!cachedShop) {
         setShop(null);
       }
       setShopLoadError(
@@ -243,8 +254,6 @@ export function CatalogPage() {
   useEffect(() => {
     void loadShop();
   }, [loadShop]);
-
-
 
   const prepareGacha = useCallback(() => {
     if (!shop || !catalogShopId) return;
@@ -537,7 +546,8 @@ export function CatalogPage() {
       );
       return;
     }
-    const hasCachedPayment = catalogBooth && loadCatalogSnapshot(catalogShopId)?.payment;
+    const hasCachedPayment =
+      catalogBooth && loadCatalogSnapshot(catalogShopId)?.payment;
     if (!online && !hasCachedPayment) {
       toast.info(
         catalogCopy.cartSavedOffline,
@@ -561,7 +571,9 @@ export function CatalogPage() {
           setPaymentModalRequested(true);
           setIsQrOpen(true);
         } else {
-          toast.error(err instanceof Error ? err.message : "Could not open checkout.");
+          toast.error(
+            err instanceof Error ? err.message : "Could not open checkout.",
+          );
         }
       });
   }, [
@@ -822,7 +834,8 @@ export function CatalogPage() {
               <div className="offline-status-banner" role="alert">
                 <CloudOff size={15} />
                 <span>
-                  <strong>{catalogCopy.offlineTitle}</strong> {catalogCopy.offlineHint}
+                  <strong>{catalogCopy.offlineTitle}</strong>{" "}
+                  {catalogCopy.offlineHint}
                 </span>
               </div>
             )}
@@ -887,11 +900,11 @@ export function CatalogPage() {
               }}
               onAddToCart={handleAddToCart}
             />
-      <BoothDetailsModal
+            <BoothDetailsModal
               booth={booth}
               payment={payment}
               open={isInfoOpen}
-        onClose={() => setIsInfoOpen(false)}
+              onClose={() => setIsInfoOpen(false)}
             />
             <FlyingItemsLayer items={flyingItems} />
           </main>

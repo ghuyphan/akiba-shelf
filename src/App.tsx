@@ -1,25 +1,20 @@
-import { Suspense, type ReactNode } from "react";
+import { Suspense, type ReactNode, useEffect } from "react";
 import {
   BrowserRouter,
-  Outlet,
   Route,
   Routes,
   useLocation,
   useParams,
 } from "react-router-dom";
-import { useEffect } from "react";
-import {
-  ToastLocalization,
-  ToastProvider,
-} from "./components/ui/ToastProvider";
+import { ToastProvider } from "./components/ui/ToastProvider";
 import { PageLoading } from "./components/ui/PageLoading";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
-import { PLATFORM_BRAND, resetDocumentBranding } from "./lib/branding";
-import { resetPageTheme } from "./utils/theme";
-import { PlatformI18nProvider, usePlatformI18n } from "./lib/i18n/platformI18n";
 import { configurePwa } from "./lib/offline/pwa";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
-import { applyDocumentSeo } from "./lib/seo";
+
+const PlatformLayout = lazyWithRetry("platform-layout", () =>
+  import("./pages/PlatformLayout").then((m) => ({ default: m.PlatformLayout })),
+);
 
 const HomePage = lazyWithRetry("home", () =>
   import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
@@ -56,56 +51,6 @@ const NotFoundPage = lazyWithRetry("not-found", () =>
   import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
 );
 
-function PlatformRouteBranding() {
-  const { pathname, search } = useLocation();
-  const { locale, t } = usePlatformI18n();
-  useEffect(() => {
-    if (pathname.startsWith("/s/")) return;
-    document.documentElement.lang = locale;
-    if (pathname === "/admin") {
-      applyDocumentSeo({
-        description: t("Secure workspace for managing a Matsuri shop."),
-        canonicalPath: pathname,
-        robots: "noindex, nofollow",
-      });
-      return;
-    }
-    resetPageTheme();
-    let title: string = PLATFORM_BRAND.name;
-    let description = t(
-      "Matsuri helps independent artists run a branded merch storefront with reliable stock reservation and a live order queue for event teams.",
-    );
-    let robots: "index, follow" | "noindex, nofollow" = "noindex, nofollow";
-    if (pathname === "/auth") {
-      const mode = new URLSearchParams(search).get("mode");
-      title = `${mode === "signup" ? t("Create account") : mode === "forgot" ? t("Reset password") : t("Sign in")} · ${PLATFORM_BRAND.name}`;
-    } else if (pathname === "/") {
-      title = `${PLATFORM_BRAND.name} · ${t("Artist booth storefront and live orders")}`;
-      robots = "index, follow";
-    } else if (pathname === "/dashboard")
-      title = `${t("Your shops")} · ${PLATFORM_BRAND.name}`;
-    else if (pathname === "/dashboard/shops/new")
-      title = `${t("Create a shop")} · ${PLATFORM_BRAND.name}`;
-    else if (pathname === "/auth/set-password")
-      title = `${t("Set password")} · ${PLATFORM_BRAND.name}`;
-    else if (pathname === "/auth/callback")
-      title = `${t("Finishing sign in")} · ${PLATFORM_BRAND.name}`;
-    else {
-      title = `${t("Page not found")} · ${PLATFORM_BRAND.name}`;
-      description = t(
-        "This Matsuri page could not be found. Return home or visit the demo artist booth.",
-      );
-    }
-    resetDocumentBranding(title);
-    applyDocumentSeo({
-      description,
-      canonicalPath: pathname === "/" ? "/" : pathname,
-      robots,
-    });
-  }, [locale, pathname, search, t]);
-  return null;
-}
-
 function KeyedCatalogPage() {
   const { shopSlug = "" } = useParams();
   return <CatalogPage key={shopSlug} />;
@@ -133,32 +78,6 @@ function RouteLoading() {
   return <PageLoading />;
 }
 
-function PlatformLayout() {
-  const { t } = usePlatformI18n();
-  return (
-    <>
-      <ToastLocalization
-        labels={{
-          successTitle: t("Done"),
-          errorTitle: t("Something went wrong"),
-          infoTitle: t("Notice"),
-          dismiss: t("Dismiss notification"),
-        }}
-      />
-      <PlatformRouteBranding />
-      <Outlet />
-    </>
-  );
-}
-
-function PlatformLayoutProvider() {
-  return (
-    <PlatformI18nProvider>
-      <PlatformLayout />
-    </PlatformI18nProvider>
-  );
-}
-
 export function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
@@ -182,7 +101,7 @@ export function App() {
                 }
               />
               <Route path="/s/:shopSlug" element={<KeyedCatalogPage />} />
-              <Route element={<PlatformLayoutProvider />}>
+              <Route element={<PlatformLayout />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/shops/new" element={<NewShopPage />} />

@@ -67,7 +67,6 @@ export function GachaPage() {
   const [lightweightMode] = useState(prefersLightweightCatalog);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const offlineDownloadRef = useRef<Promise<void> | null>(null);
-  const launchTimerRef = useRef<number | null>(null);
   const skipSelectorIntroRef = useRef(false);
   const offlineProgressRef = useRef({ status: "idle", progress: 0 });
   const [launchingGame, setLaunchingGame] = useState<GachaGameType | null>(
@@ -83,10 +82,19 @@ export function GachaPage() {
     document.body.classList.add("gacha-screen");
     return () => {
       document.body.classList.remove("gacha-screen");
-      if (launchTimerRef.current !== null)
-        window.clearTimeout(launchTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!launchingGame) return;
+    const launchDelay = window.matchMedia("(max-width: 760px)").matches
+      ? 640
+      : 1350;
+    const timer = window.setTimeout(() => {
+      navigate(`?game=${launchingGame}`);
+    }, launchDelay);
+    return () => window.clearTimeout(timer);
+  }, [launchingGame, navigate]);
 
   useEffect(() => {
     let active = true;
@@ -186,7 +194,6 @@ export function GachaPage() {
     if (!activeGame) return;
     skipSelectorIntroRef.current = true;
     setLaunchingGame(null);
-    launchTimerRef.current = null;
   }, [activeGame]);
 
   useEffect(() => {
@@ -413,12 +420,6 @@ export function GachaPage() {
       return;
     }
     setLaunchingGame(gameType);
-    const launchDelay = window.matchMedia("(max-width: 760px)").matches
-      ? 640
-      : 1350;
-    launchTimerRef.current = window.setTimeout(() => {
-      navigate(`?game=${gameType}`);
-    }, launchDelay);
   }
 
   if (!activeGame || !activeCatalog) {

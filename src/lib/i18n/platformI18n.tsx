@@ -917,8 +917,8 @@ const vi: Record<string, string> = {
   "The Featured banner displays details directly from active featured products. Mark products as Featured in the Products workspace.":
     "Banner Nổi bật lấy nội dung trực tiếp từ các sản phẩm nổi bật đang hoạt động. Đánh dấu sản phẩm là Nổi bật trong khu vực Sản phẩm.",
   "Auto-rotate products": "Tự động chuyển sản phẩm",
-  "Advance to the next featured item every 4.5 seconds. Pauses after customer interaction and respects reduced motion.":
-    "Chuyển sang sản phẩm nổi bật tiếp theo sau mỗi 4,5 giây. Tạm dừng sau tương tác và tôn trọng cài đặt giảm chuyển động.",
+  "Rotate featured items every 4.5 seconds after the customer first interacts. Pauses while they browse and respects reduced motion.":
+    "Chuyển sản phẩm nổi bật mỗi 4,5 giây sau lần tương tác đầu tiên của khách. Tạm dừng khi khách đang xem và tôn trọng cài đặt giảm chuyển động.",
   "Banner style": "Kiểu banner",
   "Swipe deck": "Bộ thẻ vuốt",
   "Layered cards and soft orbit": "Thẻ xếp lớp và quỹ đạo nhẹ",

@@ -280,6 +280,9 @@ test("keeps a long cart reachable while the customer continues browsing", async 
     const floatingCart = page.locator(".floating-cart-bar");
     await expect(floatingCart).toBeVisible();
     await expect(floatingCart).toContainText("8 items ready in your cart");
+    const floatingCartBounds = await floatingCart.boundingBox();
+    expect(floatingCartBounds?.width).toBeLessThanOrEqual(622);
+    expect(floatingCartBounds?.height).toBeLessThanOrEqual(68);
     await expect(page.locator(".app-shell")).toHaveClass(
       /storefront-has-cart-dock/,
     );
@@ -294,6 +297,10 @@ test("keeps a long cart reachable while the customer continues browsing", async 
       );
     });
     expect(cartDockOverlap).toBeLessThanOrEqual(0);
+    const shellBottomPadding = await page
+      .locator(".app-shell")
+      .evaluate((shell) => Number.parseFloat(getComputedStyle(shell).paddingBottom));
+    expect(shellBottomPadding).toBeLessThanOrEqual(32);
     const revealCart = floatingCart.getByRole("button", { name: "View cart" });
     await expect(revealCart).toBeVisible();
     await revealCart.click();
@@ -319,6 +326,11 @@ test("keeps products clear of the pending payment dock", async ({ page }) => {
 
   const pendingDock = page.locator(".pending-order-bar");
   await expect(pendingDock).toBeVisible();
+  if ((page.viewportSize()?.width ?? 1000) > 760) {
+    const pendingDockBounds = await pendingDock.boundingBox();
+    expect(pendingDockBounds?.width).toBeLessThanOrEqual(622);
+    expect(pendingDockBounds?.height).toBeLessThanOrEqual(68);
+  }
   await expect(page.locator(".app-shell")).toHaveClass(
     /storefront-has-order-dock/,
   );
@@ -336,6 +348,12 @@ test("keeps products clear of the pending payment dock", async ({ page }) => {
     );
   });
   expect(pendingDockOverlap).toBeLessThanOrEqual(0);
+  if ((page.viewportSize()?.width ?? 1000) > 760) {
+    await expect(page.locator(".app-shell")).toHaveCSS(
+      "padding-bottom",
+      "32px",
+    );
+  }
 });
 
 test("keeps the view toggle aligned and animates results as one grid", async ({
@@ -580,6 +598,25 @@ test("keeps the phone game selector full-screen during launch", async ({
   await expect(
     page.getByRole("link", { name: "Vào game: Cầu Nguyện" }),
   ).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Array.from(document.querySelectorAll(".gacha-game-portal")).every(
+          (portal) =>
+            portal
+              .getAnimations()
+              .filter(
+                (animation): animation is CSSAnimation =>
+                  animation instanceof CSSAnimation &&
+                  animation.animationName.includes(
+                    "gacha-mobile-portal-arrive",
+                  ),
+              )
+              .every((animation) => animation.playState === "finished"),
+        ),
+      ),
+    )
+    .toBe(true);
   const layout = await page.evaluate(() => ({
     cardRects: Array.from(
       document.querySelectorAll<HTMLElement>(".gacha-game-portal"),

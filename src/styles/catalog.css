@@ -1024,16 +1024,16 @@
   --dock-action: var(--green);
   position: fixed;
   z-index: 41;
-  bottom: 22px;
+  bottom: 18px;
   left: 50%;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 15px;
-  width: min(720px, calc(100vw - 44px));
-  padding: 14px 16px;
+  gap: 12px;
+  width: min(620px, calc(100vw - 40px));
+  padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--green) 24%, var(--line));
-  border-radius: calc(var(--store-radius, 16px) + 6px);
+  border-radius: calc(var(--store-radius, 16px) + 2px);
   background: rgb(255 255 255 / 96%);
   box-shadow: 0 22px 58px rgb(15 23 42 / 20%);
   backdrop-filter: blur(18px);
@@ -1041,17 +1041,17 @@
 }
 @media (min-width: 761px) {
   .app-shell:is(.storefront-has-cart-dock, .storefront-has-order-dock) {
-    padding-bottom: 132px;
+    padding-bottom: 32px;
   }
 }
-.storefront-dock-icon { position: relative; display: grid; place-items: center; width: 52px; height: 52px; flex: 0 0 auto; border-radius: 50%; color: color-mix(in srgb, var(--green) 88%, #17311c); background: color-mix(in srgb, var(--green) 13%, #fff); }
-.storefront-dock-badge { position: absolute; top: -4px; right: -4px; display: grid; place-items: center; min-width: 21px; height: 21px; padding-inline: 4px; border: 2px solid #fff; border-radius: 999px; color: #fff; background: var(--coral); font-size: 10px; }
+.storefront-dock-icon { position: relative; display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 auto; border-radius: 50%; color: color-mix(in srgb, var(--green) 88%, #17311c); background: color-mix(in srgb, var(--green) 13%, #fff); }
+.storefront-dock-badge { position: absolute; top: -4px; right: -4px; display: grid; place-items: center; min-width: 19px; height: 19px; padding-inline: 4px; border: 2px solid #fff; border-radius: 999px; color: #fff; background: var(--coral); font-size: 9px; }
 .storefront-dock-copy { display: grid; min-width: 0; gap: 3px; }
 .storefront-dock-copy strong,.storefront-dock-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.storefront-dock-copy strong { color: var(--ink); font-size: 16px; }
-.storefront-dock-copy small { color: var(--muted); font-size: 12px; }
-.storefront-dock-total { color: var(--ink); font-size: 18px; white-space: nowrap; }
-.storefront-dock>button { min-height: 48px; padding: 0 23px; border: 0; border-radius: 999px; color: #fff; background: var(--dock-action); box-shadow: 0 10px 24px color-mix(in srgb, var(--dock-action) 24%, transparent); cursor: pointer; font-size: 14px; font-weight: 900; }
+.storefront-dock-copy strong { color: var(--ink); font-size: 14px; }
+.storefront-dock-copy small { color: var(--muted); font-size: 11px; }
+.storefront-dock-total { color: var(--ink); font-size: 16px; white-space: nowrap; }
+.storefront-dock>button { min-height: 42px; padding: 0 18px; border: 0; border-radius: 999px; color: #fff; background: var(--dock-action); box-shadow: 0 8px 20px color-mix(in srgb, var(--dock-action) 22%, transparent); cursor: pointer; font-size: 13px; font-weight: 900; }
 .storefront-dock>button:hover { transform: translateY(-1px); }
 .storefront-dock>button:focus-visible { outline: 3px solid color-mix(in srgb, var(--dock-action) 24%, transparent); outline-offset: 2px; }
 
@@ -1064,7 +1064,7 @@
 }
 
 @media (max-width: 900px) and (min-width: 761px) {
-  .storefront-dock { grid-template-columns: auto minmax(0, 1fr) auto; width: calc(100vw - 32px); }
+  .storefront-dock { grid-template-columns: auto minmax(0, 1fr) auto; width: min(560px, calc(100vw - 24px)); }
   .storefront-dock-copy small { display: none; }
   .storefront-dock-total { display: none; }
 }

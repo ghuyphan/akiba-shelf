@@ -586,7 +586,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
                     {featuredStyleOptions.map(([value, label, description]) => <button key={value} type="button" className={(draft.featured_style ?? "deck") === value ? "active" : ""} onClick={() => update("featured_style", value as StorefrontFeaturedStyle)} aria-pressed={(draft.featured_style ?? "deck") === value}><i className={`section-style-sample sample-featured-${value}`} /><span><strong>{t(label)}</strong><small>{t(description)}</small></span></button>)}
                   </div>
                 </div>
-                <label className="builder-toggle"><span><strong>{t("Auto-rotate products")}</strong><small>{t("Advance to the next featured item every 4.5 seconds. Pauses after customer interaction and respects reduced motion.")}</small></span><input type="checkbox" checked={draft.featured_autoplay ?? true} onChange={(event) => update("featured_autoplay", event.target.checked)} /></label>
+                <label className="builder-toggle"><span><strong>{t("Auto-rotate products")}</strong><small>{t("Rotate featured items every 4.5 seconds after the customer first interacts. Pauses while they browse and respects reduced motion.")}</small></span><input type="checkbox" checked={draft.featured_autoplay ?? true} onChange={(event) => update("featured_autoplay", event.target.checked)} /></label>
               </div>}
               {selected === "booth" && <>
                 <div className="builder-field-group">

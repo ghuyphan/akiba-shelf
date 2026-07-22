@@ -42,7 +42,7 @@ test("production storefront starts quickly on a slow uncached connection", async
   await expect(page.locator(".product-grid")).toBeVisible({ timeout: 60000 });
   const loadDuration = Date.now() - startTime;
   console.log(`[Perf Test] Page fully loaded in ${loadDuration}ms`);
-  expect(loadDuration).toBeLessThan(15000);
+  expect(loadDuration).toBeLessThan(8000);
 
   await expect(page.locator("script[src*='src/main.tsx']")).toHaveCount(0);
 
@@ -71,11 +71,23 @@ test("production storefront starts quickly on a slow uncached connection", async
   const paymentModalJs = fileNames.find(
     (name) => name.startsWith("PaymentQrModal-") && name.endsWith(".js"),
   );
+  const shopUnavailableJs = fileNames.find(
+    (name) => name.startsWith("ShopUnavailablePage-") && name.endsWith(".js"),
+  );
+  const platformI18nJs = fileNames.find(
+    (name) => name.startsWith("platformI18n-") && name.endsWith(".js"),
+  );
+  const adminCss = fileNames.find(
+    (name) => name.startsWith("admin-") && name.endsWith(".css"),
+  );
 
   expect(indexJs).toBeDefined();
   expect(appJs).toBeDefined();
   expect(catalogPageJs).toBeDefined();
   expect(paymentModalJs).toBeUndefined();
+  expect(shopUnavailableJs).toBeUndefined();
+  expect(platformI18nJs).toBeUndefined();
+  expect(adminCss).toBeUndefined();
 
   const appDiff = Math.abs(
     requestStartTimes.get(appJs!)! - requestStartTimes.get(indexJs!)!,
