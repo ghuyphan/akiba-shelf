@@ -12,6 +12,7 @@ import type {
 } from "../../../types/gacha";
 import { Field, TextArea, TextInput } from "../../ui/Field";
 import { Alert } from "../../ui/Alert";
+import { DateTimeInput } from "../../ui/DateTimeInput";
 import type { SelectMenuOption } from "../../ui/SelectMenu";
 import { DropdownField } from "./DropdownField";
 import { GachaElementIcon } from "./GachaElementIcon";
@@ -191,12 +192,12 @@ export function GachaBannerEditor({
           label={t("Banner starts")}
           hint={t("Leave empty to make it available immediately.")}
         >
-          <TextInput
-            type="datetime-local"
+          <DateTimeInput
+            label={t("Banner starts")}
             value={toLocalDateTime(banner.starts_at)}
-            onChange={(event) =>
+            onChange={(value) =>
               onUpdateBanner({
-                starts_at: fromLocalDateTime(event.target.value),
+                starts_at: fromLocalDateTime(value),
               })
             }
           />
@@ -206,14 +207,14 @@ export function GachaBannerEditor({
           hint={t("Leave empty to keep it running until you close it.")}
           error={errorField === "schedule" ? error : undefined}
         >
-          <TextInput
-            type="datetime-local"
+          <DateTimeInput
+            label={t("Banner ends")}
             min={toLocalDateTime(banner.starts_at)}
             value={toLocalDateTime(banner.ends_at)}
-            aria-invalid={errorField === "schedule"}
-            onChange={(event) =>
+            invalid={errorField === "schedule"}
+            onChange={(value) =>
               onUpdateBanner({
-                ends_at: fromLocalDateTime(event.target.value),
+                ends_at: fromLocalDateTime(value),
               })
             }
           />

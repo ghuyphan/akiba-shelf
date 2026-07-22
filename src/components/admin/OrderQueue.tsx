@@ -409,7 +409,7 @@ export function OrderQueue({
             </div>
             <small>{t("{{count}} total units", { count: packingUnits })}</small>
           </div>
-          <div className="admin-items-summary-grid">
+          <div className="admin-items-summary-grid admin-scroll-list">
             {itemSummary.map((item) => (
               <article key={`${item.name}-${item.code}`}>
                 {item.imageUrl ? (
@@ -504,7 +504,7 @@ export function OrderQueue({
           }
         />
       ) : (
-        <div className={`admin-orders-grid ${loading ? "is-loading" : ""}`}>
+        <div className={`admin-orders-grid admin-scroll-list ${loading ? "is-loading" : ""}`}>
           {orders.map((order) => (
             <OrderCard
               key={order.id}
@@ -874,7 +874,7 @@ function OrderDetailsModal({
             </strong>
           </div>
         </div>
-        <div className="admin-order-details-items">
+        <div className="admin-order-details-items admin-scroll-list">
           {order.order_items?.map((item) => (
             <div key={item.id}>
               <div>

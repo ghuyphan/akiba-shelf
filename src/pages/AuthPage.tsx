@@ -106,6 +106,14 @@ export function AuthPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      toast.error(t("Enter a valid email address."), t("Check your email"));
+      return;
+    }
+    if (mode !== "forgot" && !password) {
+      toast.error(t("Enter your password."), t("Check your password"));
+      return;
+    }
     if (mode === "signup") {
       const passwordError = getNewPasswordError(password, confirmPassword);
       if (passwordError) {
@@ -230,14 +238,13 @@ export function AuthPage() {
               <AuthDivider />
             </div>
           )}
-          <form onSubmit={submit} className="admin-login-form">
+          <form onSubmit={submit} className="admin-login-form" noValidate>
             <label className="admin-login-field">
               <span>{t("Email address")}</span>
               <div className="admin-login-input">
                 <Mail size={19} className="input-icon" aria-hidden="true" />
                 <input
                   type="email"
-                  required
                   autoComplete="email"
                   placeholder={t("you@example.com")}
                   value={email}

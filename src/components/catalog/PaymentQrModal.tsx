@@ -33,6 +33,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   });
   const { session, order, connectionState, isSubmitting, isCancelling } = checkout;
   const [customerName, setCustomerName] = useState(() => session?.customerName ?? "");
+  const [customerNameError, setCustomerNameError] = useState("");
   const checkoutCart = session?.cart ?? cart;
 
   const pricing = useMemo(
@@ -46,7 +47,13 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) return;
-    await checkout.start(customerName);
+    const trimmedName = customerName.trim();
+    if (!trimmedName) {
+      setCustomerNameError(copy.pickupRequired);
+      return;
+    }
+    setCustomerNameError("");
+    await checkout.start(trimmedName);
   };
 
   const handleSuccessClose = () => {
@@ -174,7 +181,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
               </div>
             </div>
           ) : (
-          <form onSubmit={handlePlaceOrder} className="order-confirm-layout">
+          <form onSubmit={handlePlaceOrder} className="order-confirm-layout" noValidate>
             <div className="order-confirm-main">
               <div className="order-confirm-intro"><span><ReceiptText size={20} /></span><div><h3>{copy.lastCheck}</h3><p>{copy.reviewCart}</p></div></div>
               <div className="order-confirm-items">{checkoutCart.map((item) => { const image = item.product.image_variants?.[0]?.thumbnail || item.product.images.find(Boolean); const line = getPricingLine(pricing, item.product.id); if (!line) return null; return <div key={item.product.id}>{image ? <img src={image} alt="" /> : <span className="order-confirm-placeholder" />}<div><strong>{item.product.name}</strong><small>{line.quantity} × {formatVnd(line.unitPrice)}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</small></div><b>{formatVnd(line.total)}</b></div>; })}</div>
@@ -182,7 +189,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
               <div className="order-confirm-total"><span>{copy.total}</span><strong>{formatVnd(totalAmount)}</strong></div>
             </div>
             <div className="order-confirm-side">
-              <label className="order-confirm-name"><span>{copy.pickupName}</span><div><UserRound size={18} /><input type="text" placeholder={copy.pickupPlaceholder} value={customerName} onChange={(event) => setCustomerName(event.target.value)} maxLength={30} required autoFocus /></div><small>{copy.pickupHint}</small></label>
+              <label className="order-confirm-name"><span>{copy.pickupName}</span><div><UserRound size={18} /><input type="text" placeholder={copy.pickupPlaceholder} value={customerName} aria-invalid={Boolean(customerNameError) || undefined} aria-describedby={customerNameError ? "pickup-name-error" : undefined} onChange={(event) => { setCustomerName(event.target.value); if (customerNameError) setCustomerNameError(""); }} maxLength={30} autoFocus /></div>{customerNameError ? <small className="order-confirm-name-error" id="pickup-name-error" role="alert">{customerNameError}</small> : <small>{copy.pickupHint}</small>}</label>
               <div className="order-confirm-secure"><ShieldCheck size={17} /><span>{copy.secureCheck}</span></div>
               <div className="order-confirm-actions"><button type="button" className="button button-secondary" onClick={onClose} disabled={isSubmitting}>{copy.keepShopping}</button><button type="submit" className="button button-primary" disabled={isSubmitting || checkoutCart.length === 0}>{isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.createPay}</button></div>
             </div>

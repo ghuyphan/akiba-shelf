@@ -63,8 +63,10 @@
 .order-confirm-name>span { display: block; margin-bottom: 9px; color: var(--ink); font-size: 13px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
 .order-confirm-name>div { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 0 15px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); background: #fbfcfe; }
 .order-confirm-name>div:focus-within { border-color: color-mix(in srgb, var(--coral) 45%, var(--line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 9%, transparent); }
+.order-confirm-name>div:has(input[aria-invalid="true"]) { border-color: var(--red); box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 9%, transparent); }
 .order-confirm-name input { width: 100%; border: 0; outline: 0; color: var(--ink); background: transparent; font-size: 16px; }
 .order-confirm-name>small { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.order-confirm-name>.order-confirm-name-error { color: var(--red); font-weight: 700; }
 .order-confirm-secure { display: flex; align-items: flex-start; gap: 9px; padding: 13px; border-radius: 11px; color: #36765f; background: #edf8f4; font-size: 13px; line-height: 1.5; }
 .order-confirm-secure svg { flex: 0 0 auto; }
 .payment-submit-error { padding: 11px; border-radius: 10px; color: #b23e49; background: #fff0f2; font-size: 13px; }

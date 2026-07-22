@@ -79,7 +79,7 @@ export function DashboardEditShopDialog({
       className="edit-shop-modal"
       closeLabel={t("Close modal")}
     >
-      <form onSubmit={handleSubmit} className="admin-form dashboard-edit-form">
+      <form onSubmit={handleSubmit} className="admin-form dashboard-edit-form" noValidate>
         <div className="dashboard-edit-intro">
           <span className="dashboard-edit-icon" aria-hidden="true">
             <Store size={20} />
@@ -95,7 +95,6 @@ export function DashboardEditShopDialog({
               placeholder={t("My shop name")}
               maxLength={SHOP_NAME_MAX_LENGTH}
               disabled={busy}
-              required
             />
           </Field>
           <div className="dashboard-url-field">

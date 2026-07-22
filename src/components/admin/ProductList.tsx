@@ -38,7 +38,7 @@ export function ProductList({ products, selectedId, onSelect, onCreate, loading 
       <div className="admin-list-filters" aria-label={t("Product filters")}>
         {(["all", "live", "low", "hidden"] as const).map((item) => <button key={item} type="button" className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>{t(item === "low" ? "Low / sold out" : item)}</button>)}
       </div>
-      <div className="admin-product-list">
+      <div className="admin-product-list admin-scroll-list">
         {visibleProducts.length === 0 && (
           <EmptyState
             variant="compact"

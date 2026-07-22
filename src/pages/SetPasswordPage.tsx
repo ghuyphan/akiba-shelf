@@ -237,7 +237,7 @@ export function SetPasswordPage() {
         <h1>{t("Set your password")}</h1>
         <p>{t("Choose a secure password to finish account setup.")}</p>
       </div>
-      <form onSubmit={submit} className="admin-login-form">
+      <form onSubmit={submit} className="admin-login-form" noValidate>
         <PasswordField
           label={t("New password")}
           value={password}

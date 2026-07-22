@@ -34,7 +34,10 @@ import type { PublicProductSort } from "../../lib/api";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
-import { Field, SelectInput, TextArea, TextInput } from "../ui/Field";
+import { Field, TextArea, TextInput } from "../ui/Field";
+import { SelectMenu } from "../ui/SelectMenu";
+import { ColorPicker } from "../ui/ColorPicker";
+import { RangeInput } from "../ui/RangeInput";
 import { CatalogHeader } from "../catalog/CatalogHeader";
 import { CategoryFilters } from "../catalog/CategoryFilters";
 import { CatalogToolbar } from "../catalog/CatalogToolbar";
@@ -635,7 +638,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
                     </div>
                     <div className="designer-card-fields">
                       <Field label={t("Payment label")}><TextInput value={paymentDraft.bank_label} onChange={(event) => updatePayment("bank_label", event.target.value)} /></Field>
-                      <Field label={t("Bank")}><SelectInput value={selectedBank?.code ?? ""} onChange={(event) => { const bank = banks.find((item) => item.code === event.target.value); commitSnapshot({ booth: draftRef.current, payment: { ...paymentDraftRef.current, bank_code: bank?.code ?? "", bank_acq_id: bank?.bin ?? "" } }); }}><option value="">{t("Select bank")}</option>{banks.map((bank) => <option key={bank.code} value={bank.code}>{bank.name}</option>)}</SelectInput></Field>
+                      <Field label={t("Bank")}><SelectMenu label={t("Bank")} value={selectedBank?.code ?? ""} options={[{ value: "", label: t("Select bank") }, ...banks.map((bank) => ({ value: bank.code, label: bank.name, description: bank.full_name }))]} onChange={(value) => { const bank = banks.find((item) => item.code === value); commitSnapshot({ booth: draftRef.current, payment: { ...paymentDraftRef.current, bank_code: bank?.code ?? "", bank_acq_id: bank?.bin ?? "" } }); }} /></Field>
                       <div className="builder-field-row">
                         <Field label={t("Account number")}><TextInput value={paymentDraft.bank_account_no ?? ""} onChange={(event) => updatePayment("bank_account_no", event.target.value)} /></Field>
                         <Field label={t("Account name")}><TextInput value={paymentDraft.bank_account_name ?? ""} onChange={(event) => updatePayment("bank_account_name", event.target.value)} /></Field>
@@ -692,8 +695,8 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
                 </div>
               </div>
               <div className="designer-style-section-heading designer-custom-colors-heading"><strong>{t("Custom colors")}</strong><small>{t("Make this palette completely yours.")}</small></div>
-              <div className="designer-color-grid">{([['theme_primary','Primary',DEFAULT_STOREFRONT_PALETTE.primary],['theme_secondary','Dark',DEFAULT_STOREFRONT_PALETTE.secondary],['theme_accent','Accent',DEFAULT_STOREFRONT_PALETTE.accent],['theme_background','Page',DEFAULT_STOREFRONT_PALETTE.background]] as const).map(([key,label,fallback]) => <label key={key}><span>{t(label)}</span><div><input type="color" value={draft[key] ?? fallback} onChange={(event) => update(key, event.target.value)} /><code>{draft[key] ?? fallback}</code></div></label>)}</div>
-              <div className="designer-setting-group"><div><Palette size={16} /><span><strong>{t("Corner radius")}</strong><small>{t("{{radius}}px across storefront cards", { radius: draft.corner_radius ?? 16 })}</small></span></div><input type="range" aria-label={t("Corner radius")} min="0" max="32" step="1" value={draft.corner_radius ?? 16} onChange={(event) => update("corner_radius", Number(event.target.value))} /></div>
+              <div className="designer-color-grid">{([['theme_primary','Primary',DEFAULT_STOREFRONT_PALETTE.primary],['theme_secondary','Dark',DEFAULT_STOREFRONT_PALETTE.secondary],['theme_accent','Accent',DEFAULT_STOREFRONT_PALETTE.accent],['theme_background','Page',DEFAULT_STOREFRONT_PALETTE.background]] as const).map(([key,label,fallback]) => <div className="designer-color-field" key={key}><span>{t(label)}</span><ColorPicker label={t(label)} value={draft[key] ?? fallback} onChange={(value) => update(key, value)} /></div>)}</div>
+              <div className="designer-setting-group"><div><Palette size={16} /><span><strong>{t("Corner radius")}</strong><small>{t("{{radius}}px across storefront cards", { radius: draft.corner_radius ?? 16 })}</small></span></div><RangeInput aria-label={t("Corner radius")} min={0} max={32} step={1} value={draft.corner_radius ?? 16} onChange={(event) => update("corner_radius", Number(event.target.value))} /></div>
               <div className="designer-locale"><Languages size={17} /><span><strong>{t("Storefront language")}</strong><small>{t("Customer-facing interface copy.")}</small></span><div><button type="button" className={(draft.catalog_locale ?? "en") === "en" ? "active" : ""} aria-pressed={(draft.catalog_locale ?? "en") === "en"} onClick={() => update("catalog_locale", "en")}>EN</button><button type="button" className={draft.catalog_locale === "vi" ? "active" : ""} aria-pressed={draft.catalog_locale === "vi"} onClick={() => update("catalog_locale", "vi")}>VI</button></div></div>
             </>}
 

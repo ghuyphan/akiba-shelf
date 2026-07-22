@@ -186,6 +186,21 @@ describe("PaymentQrModal", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows custom inline feedback instead of browser validation for a missing pickup name", () => {
+    renderModal();
+
+    fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
+
+    expect(
+      screen.getByRole("alert"),
+    ).toHaveTextContent("Enter a pickup name before creating the order.");
+    expect(screen.getByPlaceholderText("e.g. Huy or Alice")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(apiMocks.createOrder).not.toHaveBeenCalled();
+  });
+
   it("creates the order on submit and waits for staff confirmation", async () => {
     const pending = makeOrder("pending");
     let resolveOrder!: (order: Order) => void;

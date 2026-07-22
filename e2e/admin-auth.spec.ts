@@ -50,6 +50,30 @@ async function expectNoHorizontalOverflow(page: Page) {
     .toEqual({ documentFits: true, bodyFits: true });
 }
 
+async function expectAdminListsBounded(page: Page) {
+  const lists = await page
+    .locator(".admin-scroll-list")
+    .evaluateAll((elements) =>
+      elements.flatMap((element) => {
+        const bounds = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        if (
+          style.visibility === "hidden" ||
+          style.display === "none" ||
+          bounds.width === 0 ||
+          bounds.height === 0
+        )
+          return [];
+        return [{ height: bounds.height, overflowY: style.overflowY }];
+      }),
+    );
+  expect(lists.length).toBeGreaterThan(0);
+  for (const list of lists) {
+    expect.soft(list.height).toBeLessThanOrEqual(321);
+    expect.soft(list.overflowY).toBe("auto");
+  }
+}
+
 async function seedOfflineEventLedger(page: Page) {
   const now = new Date().toISOString();
   const sessionId = "71000000-0000-4000-8000-000000000001";
@@ -790,6 +814,7 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
       ".admin-order-fulfillment button, .admin-order-details-trigger",
     ),
   );
+  await expectAdminListsBounded(page);
   await expectNoHorizontalOverflow(page);
 
   await expect(page.getByRole("button", { name: /Storefront/ })).toHaveCount(0);
@@ -799,7 +824,46 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
 
   await page.getByRole("button", { name: /Products/ }).click();
   await expect(page.locator(".admin-grid")).toBeVisible();
+  const boundedProductList = await page
+    .locator(".product-manager-list .admin-product-list")
+    .evaluate((list) => {
+      return {
+        clientHeight: list.clientHeight,
+        scrollHeight: list.scrollHeight,
+        overflowY: getComputedStyle(list).overflowY,
+      };
+    });
+  expect(boundedProductList.clientHeight).toBeLessThanOrEqual(320);
+  expect(boundedProductList.scrollHeight).toBeGreaterThan(
+    boundedProductList.clientHeight,
+  );
+  expect(boundedProductList.overflowY).toBe("auto");
+  await expectAdminListsBounded(page);
   await expectNoHorizontalOverflow(page);
+
+  await page.getByRole("button", { name: /Product 01/ }).click();
+  const mobileProductForm = page.locator(".admin-grid-col-form");
+  await mobileProductForm
+    .getByRole("button", { name: "Edit", exact: true })
+    .click();
+  await mobileProductForm
+    .getByRole("button", { name: "Badge color: #5f8d55" })
+    .click();
+  const colorPickerBounds = await page
+    .getByRole("dialog", { name: "Choose color for Badge color" })
+    .evaluate((popover) => {
+      const bounds = popover.getBoundingClientRect();
+      return {
+        left: bounds.left,
+        right: bounds.right,
+        viewportWidth: window.innerWidth,
+      };
+    });
+  expect(colorPickerBounds.left).toBeGreaterThanOrEqual(0);
+  expect(colorPickerBounds.right).toBeLessThanOrEqual(
+    colorPickerBounds.viewportWidth,
+  );
+  await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Gacha", exact: true }).click();
   await expect(page.locator(".gacha-admin-page")).toBeVisible();
@@ -846,6 +910,7 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
   expect(ownedCardGeometry.tagTop).toBeGreaterThanOrEqual(
     ownedCardGeometry.identityBottom,
   );
+  await expectAdminListsBounded(page);
   await page.evaluate(() =>
     window.scrollTo({ top: document.documentElement.scrollHeight }),
   );
@@ -872,6 +937,7 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
 
   await page.getByRole("button", { name: "Team", exact: true }).click();
   await expect(page.locator(".admin-team-page")).toBeVisible();
+  await expectAdminListsBounded(page);
   await expectNoHorizontalOverflow(page);
 });
 

@@ -28,6 +28,14 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      toast.error(t("Enter a valid email address."), t("Check your email"));
+      return;
+    }
+    if (!password) {
+      toast.error(t("Enter your password."), t("Check your password"));
+      return;
+    }
     await run(() => onLogin(email, password))
       .catch((error) => {
         const notice = getAuthErrorNotice(error, "signin");
@@ -50,7 +58,7 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
         <AuthDivider />
       </div>
 
-      <form onSubmit={handleSubmit} className="admin-login-form">
+      <form onSubmit={handleSubmit} className="admin-login-form" noValidate>
         <label className="admin-login-field">
           <span>{t("Email address")}</span>
           <div className="admin-login-input">
@@ -59,7 +67,6 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              required
               disabled={!isSupabaseConfigured}
               autoComplete="email"
               placeholder={t("staff@example.com")}

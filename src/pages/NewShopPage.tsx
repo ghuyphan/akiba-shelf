@@ -158,14 +158,13 @@ export function NewShopPage() {
 
           {creationLimitReached ? <Alert title={t("Shop creation limit reached")}>
             {t("You can create up to {{limit}} shops. Joined shops do not count toward this limit.", { limit: MAX_OWNED_SHOPS })}
-          </Alert> : <form onSubmit={handleSubmit} className="admin-login-form">
+          </Alert> : <form onSubmit={handleSubmit} className="admin-login-form" noValidate>
             <Field label={t("Shop name")} hint={t("A friendly name for your merch booth.")}>
               <TextInput
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
                 placeholder={t("My Artist Booth")}
                 maxLength={SHOP_NAME_MAX_LENGTH}
-                required
                 disabled={busy}
               />
             </Field>
@@ -181,7 +180,6 @@ export function NewShopPage() {
                   placeholder="my-artist-booth"
                   minLength={SHOP_SLUG_MIN_LENGTH}
                   maxLength={SHOP_SLUG_MAX_LENGTH}
-                  required
                   disabled={busy}
                 />
                 {slug && (

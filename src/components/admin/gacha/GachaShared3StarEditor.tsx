@@ -97,7 +97,7 @@ export function GachaShared3StarEditor({
         )}
       </div>
 
-      <div className="gacha-shared-3star-list">
+      <div className="gacha-shared-3star-list admin-scroll-list">
         {activeTab === "included" ? (
           custom3StarProducts.length ? (
             custom3StarProducts.map((product) => {

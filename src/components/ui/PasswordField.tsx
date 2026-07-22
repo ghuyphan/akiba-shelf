@@ -37,7 +37,6 @@ export function PasswordField({
         <Lock size={19} className="input-icon" aria-hidden="true" />
         <input
           type={visible ? "text" : "password"}
-          required
           minLength={minLength}
           disabled={disabled}
           autoComplete={autoComplete}

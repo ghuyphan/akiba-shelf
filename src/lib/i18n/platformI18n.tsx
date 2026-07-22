@@ -794,6 +794,18 @@ const vi: Record<string, string> = {
   "Full shop and team access": "Toàn quyền gian hàng và đội ngũ",
   "Could not load staff": "Không thể tải danh sách staff",
   "Enter a valid email address.": "Nhập địa chỉ email hợp lệ.",
+  "Enter your password.": "Nhập mật khẩu.",
+  "Choose color for {{label}}": "Chọn màu cho {{label}}",
+  "Choose a preset or enter a hex color.":
+    "Chọn màu có sẵn hoặc nhập mã màu hex.",
+  "Color presets": "Màu có sẵn",
+  "Hex color": "Mã màu hex",
+  "Choose date and time": "Chọn ngày và giờ",
+  "Clear {{label}}": "Xóa {{label}}",
+  "Previous month": "Tháng trước",
+  "Next month": "Tháng sau",
+  Hour: "Giờ",
+  Minute: "Phút",
   "Could not send invitation": "Không thể gửi lời mời",
   "Invite processed. The team list is up to date.":
     "Đã xử lý lời mời. Danh sách đội ngũ đã được cập nhật.",

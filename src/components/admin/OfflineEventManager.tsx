@@ -57,6 +57,7 @@ import { formatVnd } from "../../utils/format";
 import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
 import { Field, TextInput } from "../ui/Field";
+import { DateTimeInput } from "../ui/DateTimeInput";
 import { Modal } from "../ui/Modal";
 import { useToast } from "../ui/ToastProvider";
 import { ConfirmationDialog } from "../ui/ConfirmationDialog";
@@ -788,13 +789,13 @@ export function OfflineEventManager({
                   </Field>
                   <div className="offline-event-schedule">
                     <Field label={t("Event starts")}>
-                      <TextInput
-                        type="datetime-local"
+                      <DateTimeInput
+                        label={t("Event starts")}
                         value={scheduledStart}
                         disabled={Boolean(busy)}
-                        onChange={(event) => {
+                        onChange={(value) => {
                           markFormEdited();
-                          setScheduledStart(event.target.value);
+                          setScheduledStart(value);
                         }}
                       />
                     </Field>
@@ -806,14 +807,14 @@ export function OfflineEventManager({
                           : undefined
                       }
                     >
-                      <TextInput
-                        type="datetime-local"
+                      <DateTimeInput
+                        label={t("Event ends")}
                         min={scheduledStart}
                         value={scheduledEnd}
                         disabled={Boolean(busy)}
-                        onChange={(event) => {
+                        onChange={(value) => {
                           markFormEdited();
-                          setScheduledEnd(event.target.value);
+                          setScheduledEnd(value);
                         }}
                       />
                     </Field>
@@ -835,7 +836,7 @@ export function OfflineEventManager({
                       meta={[]}
                     />
                   ) : (
-                    <div className="offline-event-allocation-list">
+                    <div className="offline-event-allocation-list admin-scroll-list">
                       {availableProducts.map((product) => {
                         const quantity = allocationQuantities[product.id] ?? 0;
                         const selected = quantity > 0;
@@ -1047,7 +1048,7 @@ export function OfflineEventManager({
                 {t("awaiting verification")}
               </span>
             </div>
-            <div className="offline-event-orders">
+            <div className="offline-event-orders admin-scroll-list">
               <div className="offline-event-section-heading">
                 <div>
                   <h3>{t("Local order ledger")}</h3>

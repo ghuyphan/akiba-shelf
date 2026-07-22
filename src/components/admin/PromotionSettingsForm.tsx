@@ -253,7 +253,7 @@ export function PromotionSettingsForm({
                   <span className="counter-badge">{draft.reward_product_ids.length}/{products.length}</span>
                 </span>
               </div>
-              <div className="promotion-products-list">
+              <div className="promotion-products-list admin-scroll-list">
                 {products.map((product) => {
                   const isBuySelected = draft.qualifying_product_ids.includes(product.id);
                   const isFreeSelected = draft.reward_product_ids.includes(product.id);

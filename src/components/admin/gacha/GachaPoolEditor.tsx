@@ -240,7 +240,7 @@ export function GachaPoolEditor({
           {sharedPool}
         </div>
       ) : (
-        <div className="gacha-pool-list">
+        <div className="gacha-pool-list admin-scroll-list">
           {visibleProducts.length ? (
             visibleProducts.map((product) => {
               const entry = entriesByProduct.get(product.id);

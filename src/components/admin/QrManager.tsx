@@ -4,7 +4,8 @@ import type { PaymentSettings } from "../../types/catalog";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
-import { Field, SelectInput, TextArea, TextInput } from "../ui/Field";
+import { Field, TextArea, TextInput } from "../ui/Field";
+import { SelectMenu } from "../ui/SelectMenu";
 import { AdminCard } from "./AdminCard";
 import { AdminEditBar } from "./AdminEditBar";
 import { ImageUpload } from "./ImageUpload";
@@ -37,7 +38,7 @@ export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span>01</span><div><h3>{t("Bank account")}</h3><p>{t("Used to generate each payment QR.")}</p></div></div>
           <div className="admin-bank-card"><img src={getBankLogoUrl(selectedBank)} alt="" onError={(event) => { event.currentTarget.src = getBankLogoUrl(); }} /><div><strong>{selectedBank?.name ?? t("Choose a bank")}</strong><small>{selectedBank?.full_name ?? t("No bank is configured yet")}</small></div><span>{draft.bank_account_no || t("Account not set")}</span></div>
-          <div className="form-grid"><Field label={t("Payment label")}><TextInput value={draft.bank_label} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, bank_label: event.target.value })} /></Field><Field label={t("Bank")}><SelectInput value={selectedBank?.code ?? ""} disabled={!isEditing} onChange={(event) => { const bank = banks.find((item) => item.code === event.target.value); setDraft({ ...draft, bank_code: bank?.code ?? "", bank_acq_id: bank?.bin ?? "" }); }}><option value="">{t("Select bank")}</option>{banks.map((bank) => <option key={bank.code} value={bank.code}>{bank.name}</option>)}</SelectInput></Field><Field label={t("Account number")}><TextInput value={draft.bank_account_no ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, bank_account_no: event.target.value })} /></Field><Field label={t("Account name")}><TextInput value={draft.bank_account_name ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, bank_account_name: event.target.value })} /></Field></div>
+          <div className="form-grid"><Field label={t("Payment label")}><TextInput value={draft.bank_label} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, bank_label: event.target.value })} /></Field><Field label={t("Bank")}><SelectMenu label={t("Bank")} value={selectedBank?.code ?? ""} disabled={!isEditing} options={[{ value: "", label: t("Select bank") }, ...banks.map((bank) => ({ value: bank.code, label: bank.name, description: bank.full_name }))]} onChange={(value) => { const bank = banks.find((item) => item.code === value); setDraft({ ...draft, bank_code: bank?.code ?? "", bank_acq_id: bank?.bin ?? "" }); }} /></Field><Field label={t("Account number")}><TextInput value={draft.bank_account_no ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, bank_account_no: event.target.value })} /></Field><Field label={t("Account name")}><TextInput value={draft.bank_account_name ?? ""} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, bank_account_name: event.target.value })} /></Field></div>
         </section>
 
         <section className="admin-form-section">

@@ -199,7 +199,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
         <div className={teamLimitReached ? "is-full" : ""}><strong>{loading || loadError ? "—" : `${teamPlacesUsed}/${MAX_SHOP_TEAM_SIZE}`}</strong><span>{t("Team places used")}</span></div>
       </section>
       <div className="staff-manager-layout">
-        <form onSubmit={submit} className="staff-invite-panel">
+        <form onSubmit={submit} className="staff-invite-panel" noValidate>
           <div className="staff-section-heading">
             <span>
               <UserPlus size={17} />
@@ -259,7 +259,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
               </p>
             </div>
           </div>
-          <div className="admin-staff-list">
+          <div className="admin-staff-list admin-scroll-list">
             {!members.length ? (
               <EmptyState
                 variant="compact"
@@ -345,29 +345,31 @@ export function StaffManager({ shopId }: { shopId: string }) {
               <p>{t("Track who still needs to accept their email invitation.")}</p>
             </div>
           </div>
-          {invitations.map((invitation) => (
-            <div key={invitation.id} className="staff-invitation-row">
-              <div>
-                <strong>{invitation.email}</strong>
-                <small>
-                  {t(invitation.role)} · {t("expires")}{" "}
-                  {new Date(invitation.expires_at).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US")}
-                </small>
+          <div className="staff-invitation-list admin-scroll-list">
+            {invitations.map((invitation) => (
+              <div key={invitation.id} className="staff-invitation-row">
+                <div>
+                  <strong>{invitation.email}</strong>
+                  <small>
+                    {t(invitation.role)} · {t("expires")}{" "}
+                    {new Date(invitation.expires_at).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US")}
+                  </small>
+                </div>
+                <span className={`staff-invitation-status status-${invitation.status}`}>{t(invitation.status)}</span>
+                {invitation.status === "pending" && (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    icon={<Ban size={15} />}
+                    loading={revokingId === invitation.id}
+                    onClick={() => void revoke(invitation)}
+                  >
+                    {t("Revoke")}
+                  </Button>
+                )}
               </div>
-              <span className={`staff-invitation-status status-${invitation.status}`}>{t(invitation.status)}</span>
-              {invitation.status === "pending" && (
-                <Button
-                  type="button"
-                  variant="danger"
-                  icon={<Ban size={15} />}
-                  loading={revokingId === invitation.id}
-                  onClick={() => void revoke(invitation)}
-                >
-                  {t("Revoke")}
-                </Button>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </section>
       )}
       <ConfirmationDialog

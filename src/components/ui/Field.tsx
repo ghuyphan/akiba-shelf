@@ -2,7 +2,6 @@ import {
   createContext,
   type InputHTMLAttributes,
   type ReactNode,
-  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
   useContext,
   useId,
@@ -87,25 +86,6 @@ export function TextArea({
   return (
     <textarea
       className="input textarea"
-      aria-describedby={ariaDescribedBy ?? field.describedBy}
-      aria-labelledby={ariaLabelledBy ?? field.labelledBy}
-      aria-invalid={(ariaInvalid ?? field.invalid) || undefined}
-      {...props}
-    />
-  );
-}
-
-export function SelectInput({
-  className = "",
-  "aria-describedby": ariaDescribedBy,
-  "aria-labelledby": ariaLabelledBy,
-  "aria-invalid": ariaInvalid,
-  ...props
-}: SelectHTMLAttributes<HTMLSelectElement>) {
-  const field = useContext(FieldDescriptionContext);
-  return (
-    <select
-      className={`input ${className}`.trim()}
       aria-describedby={ariaDescribedBy ?? field.describedBy}
       aria-labelledby={ariaLabelledBy ?? field.labelledBy}
       aria-invalid={(ariaInvalid ?? field.invalid) || undefined}
