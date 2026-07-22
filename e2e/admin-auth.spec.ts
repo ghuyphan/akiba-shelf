@@ -431,7 +431,29 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
     expect(sheetGeometry.height).toBeLessThanOrEqual(
       sheetGeometry.viewportHeight * 0.88 + 1,
     );
-    await expect(dialog.locator(".offline-event-details-card")).toBeVisible();
+    const detailsCard = dialog.locator(".offline-event-details-card");
+    await expect(detailsCard).toBeVisible();
+    const setupGeometry = await dialog.evaluate((element) => {
+      const warningBounds = element
+        .querySelector<HTMLElement>(".offline-event-warning")!
+        .getBoundingClientRect();
+      const detailsBounds = element
+        .querySelector<HTMLElement>(".offline-event-details-card")!
+        .getBoundingClientRect();
+      return {
+        warningLeft: warningBounds.left,
+        warningRight: warningBounds.right,
+        detailsLeft: detailsBounds.left,
+        detailsRight: detailsBounds.right,
+        gap: detailsBounds.top - warningBounds.bottom,
+      };
+    });
+    expect(setupGeometry.warningLeft).toBeCloseTo(setupGeometry.detailsLeft, 1);
+    expect(setupGeometry.warningRight).toBeCloseTo(
+      setupGeometry.detailsRight,
+      1,
+    );
+    expect(setupGeometry.gap).toBeGreaterThanOrEqual(11);
     const allocationRows = dialog.locator(".offline-event-allocation-row");
     expect(await allocationRows.count()).toBeGreaterThan(0);
     await expect(

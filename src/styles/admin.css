@@ -3503,7 +3503,7 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
   .offline-event-modal { width: 100%; padding: 0 var(--sheet-horizontal-padding) var(--sheet-bottom-padding); border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; }
   .offline-event-modal .offline-event-workspace { gap: 12px; }
   .offline-event-modal .offline-event-lead { font-size: 11px; line-height: 1.5; }
-  .offline-event-modal .offline-event-warning { margin: 0; padding: 10px 12px; border-radius: 12px; font-size: 11px; line-height: 1.45; }
+  .offline-event-modal .offline-event-warning { top: auto; right: auto; width: 100%; max-width: 100%; margin: 0; padding: 10px 12px; border-radius: 12px; font-size: 11px; line-height: 1.45; }
   .offline-event-setup-fields { gap: 12px; }
   .offline-event-details-card { gap: 12px; padding: 12px; border: 1px solid var(--soft-line); border-radius: 14px; background: var(--admin-inner-bg); }
   .offline-event-details-card .field { gap: 5px; }
