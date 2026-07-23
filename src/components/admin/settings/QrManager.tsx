@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { BadgeDollarSign, Building2, CreditCard, Edit3, MessageSquareText, QrCode, X } from "lucide-react";
 import type { PaymentSettings } from "../../../types/catalog";
-import { useAsyncAction } from "../../../hooks/useAsyncAction";
+import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { useToast } from "../../ui/ToastProvider";
 import { Button } from "../../ui/Button";
 import { Field, TextArea, TextInput } from "../../ui/Field";

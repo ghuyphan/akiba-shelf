@@ -1,9 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Product } from "../types/catalog";
+import type { Product } from "../../types/catalog";
 
 const storedCart = vi.hoisted(() => ({ current: [] as unknown[] }));
-vi.mock("../lib/offline/offline", () => ({
+vi.mock("../../lib/offline/offline", () => ({
   loadCart: vi.fn(() => storedCart.current),
   saveCart: vi.fn((cart: unknown[]) => {
     storedCart.current = cart;

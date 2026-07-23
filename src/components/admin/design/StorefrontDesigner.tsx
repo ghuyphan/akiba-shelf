@@ -31,7 +31,7 @@ import type { BoothSettings, PaymentSettings, Product, StorefrontCardStyle, Stor
 import { getStorefrontSectionStyleClass, getThemeStyle } from "../../../utils/theme";
 import { CatalogLocaleProvider } from "../../../lib/i18n/catalogI18n";
 import type { PublicProductSort } from "../../../lib/catalogQueries";
-import { useAsyncAction } from "../../../hooks/useAsyncAction";
+import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { useToast } from "../../ui/ToastProvider";
 import { Button } from "../../ui/Button";
 import { Field, TextArea, TextInput } from "../../ui/Field";

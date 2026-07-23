@@ -21,7 +21,7 @@ import type {
   Order,
   PaymentSettings,
 } from "../../../types/catalog";
-import type { FlyingItem } from "../../../hooks/useAddToCartFeedback";
+import type { FlyingItem } from "../../../hooks/catalog/useAddToCartFeedback";
 import { safePublicUrl } from "../../../lib/branding";
 
 export function BoothDetailsModal({

@@ -1,6 +1,6 @@
 # Styles
 
-Route code imports only the ownership entry files:
+Application code imports only the ownership entry files, never fragments:
 
 - `base/global.css`: ordered shared foundations and reusable primitives.
 - `admin/admin.css`: platform, auth, dashboard, and admin workspaces.
@@ -15,8 +15,8 @@ contract, so add a rule to the owning fragment and do not alphabetize imports.
 Late `overrides/` and refinement files intentionally remain late until visual
 coverage supports consolidating repeated selectors.
 
-Do not import fragments directly from components. Keeping one entry per surface
-prevents route-dependent import order from changing which rule wins.
+Load entries at their route or top-level feature boundary. Keeping one entry per
+surface prevents route-dependent import order from changing which rule wins.
 
 When moving CSS between fragments, compare the affected desktop and phone
 surfaces before and after, then run the checks in `AGENTS.md`.

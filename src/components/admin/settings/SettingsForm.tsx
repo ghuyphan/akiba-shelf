@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Clock3, Edit3, Link2, MapPin, Store, Type, X } from "lucide-react";
 import type { BoothSettings } from "../../../types/catalog";
-import { useAsyncAction } from "../../../hooks/useAsyncAction";
+import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { useToast } from "../../ui/ToastProvider";
 import { Button } from "../../ui/Button";
 import { Field, TextInput } from "../../ui/Field";

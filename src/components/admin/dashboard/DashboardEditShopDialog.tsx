@@ -3,7 +3,7 @@ import { Store } from "lucide-react";
 import { updateShop } from "../../../lib/api/shops";
 import { SHOP_NAME_MAX_LENGTH } from "../../../lib/constants";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
-import { useAsyncAction } from "../../../hooks/useAsyncAction";
+import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import type { ShopMembership } from "../../../types/catalog";
 import { Button } from "../../ui/Button";
 import { Field, TextInput } from "../../ui/Field";

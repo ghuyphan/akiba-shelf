@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { safeUuid } from "../utils/id";
-import type { Product } from "../types/catalog";
+import { safeUuid } from "../../utils/id";
+import type { Product } from "../../types/catalog";
 
 export type FlyingItem = {
   id: string;

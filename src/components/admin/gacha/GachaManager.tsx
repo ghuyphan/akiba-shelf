@@ -26,7 +26,7 @@ import {
   normalizeGachaDisplayLimit,
 } from "../../../lib/gacha/gachaLimits";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
-import { useAsyncAction } from "../../../hooks/useAsyncAction";
+import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import type { Product } from "../../../types/catalog";
 import {
   defaultGachaBanner,

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(62);
+select plan(64);
 
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values
 ('10000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner@test.local','',now(),now(),now()),
@@ -24,6 +24,10 @@ values('auth-b-active','11000000-0000-4000-8000-000000000002','Inactive shop pro
 update public.shops set active=false where id='11000000-0000-4000-8000-000000000002';
 insert into public.booth_settings(id,shop_id,booth_name) values('auth-a','11000000-0000-4000-8000-000000000001','Shop A'),('auth-b','11000000-0000-4000-8000-000000000002','Shop B');
 insert into public.payment_settings(id,shop_id) values('auth-a','11000000-0000-4000-8000-000000000001'),('auth-b','11000000-0000-4000-8000-000000000002');
+insert into public.promotions(shop_id,enabled,buy_quantity,free_quantity,repeatable)
+values('11000000-0000-4000-8000-000000000002',true,1,1,true);
+insert into public.promotion_products(shop_id,product_id,role)
+values('11000000-0000-4000-8000-000000000002','auth-b-active','both');
 
 set local role anon;
 select results_eq($$select id from public.products where shop_id='11000000-0000-4000-8000-000000000001' order by id$$,array['auth-a-active'::text],'anonymous sees active products only');
@@ -37,6 +41,8 @@ select lives_ok($$select id,name,images,image_variants from public.products$$,'a
 select lives_ok($$select id,booth_name,logo_url,theme_primary from public.booth_settings$$,'anonymous can select public booth fields');
 select lives_ok($$select id,bank_code,bank_account_no,payment_instructions from public.payment_settings$$,'anonymous can select public payment fields');
 select is_empty($$select id from public.products where id='auth-b-active'$$,'anonymous cannot read products from inactive shops');
+select is_empty($$select shop_id from public.promotions where shop_id='11000000-0000-4000-8000-000000000002'$$,'anonymous cannot read promotions from inactive shops');
+select is_empty($$select product_id from public.promotion_products where shop_id='11000000-0000-4000-8000-000000000002'$$,'anonymous cannot read promotion mappings from inactive shops');
 
 set local role authenticated;
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000004';

@@ -4,14 +4,14 @@ import {
   createOrder,
   getCustomerOrder,
   isCheckoutOutcomeUnknownError,
-} from "../lib/api/orders";
-import { getErrorMessage, isTransportError } from "../lib/errors";
+} from "../../lib/api/orders";
+import { getErrorMessage, isTransportError } from "../../lib/errors";
 import {
   clearCheckoutSession,
   createCheckoutSession,
   loadCheckoutSession,
   saveCheckoutSession,
-} from "../lib/offline/checkoutSession";
+} from "../../lib/offline/checkoutSession";
 import {
   createOfflineEventOrder,
   isOfflineEventStorageUnavailableError,
@@ -19,9 +19,9 @@ import {
   loadOfflineEventSessionBySlug,
   offlineEventOrderAsOrder,
   updateOfflineEventOrder,
-} from "../lib/offline/offlineEvents";
-import type { CartItem, CheckoutSession, Order } from "../types/catalog";
-import { trackClientEvent } from "../lib/observability";
+} from "../../lib/offline/offlineEvents";
+import type { CartItem, CheckoutSession, Order } from "../../types/catalog";
+import { trackClientEvent } from "../../lib/observability";
 
 type CheckoutConnectionState =
   | "online"

@@ -7,7 +7,7 @@ import {
   SHEET_EXIT_DURATION_MS,
   SheetHandle,
 } from "./MobileSheetShell";
-import { useOverlayHistory } from "../../hooks/useOverlayHistory";
+import { useOverlayHistory } from "../../hooks/shared/useOverlayHistory";
 
 type ModalProps = {
   title: string;

@@ -4,7 +4,7 @@ import type { Product, StockStatus } from "../../../types/catalog";
 import { formatNumber, formatVnd, normalizeSlug } from "../../../utils/format";
 import { LIMITED_STOCK_THRESHOLD, productBadges } from "../../../lib/constants";
 import { validateProduct } from "../../../utils/validation";
-import { useAsyncAction } from "../../../hooks/useAsyncAction";
+import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { useToast } from "../../ui/ToastProvider";
 import { Button } from "../../ui/Button";
 import { Field, TextArea, TextInput } from "../../ui/Field";

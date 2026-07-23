@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { isSupabaseConfigured, supabase } from "../lib/supabase";
-import { getShopMemberships } from "../lib/api/shops";
-import type { ShopMembership } from "../types/catalog";
-import { isTransportError } from "../lib/errors";
+import { isSupabaseConfigured, supabase } from "../../lib/supabase";
+import { getShopMemberships } from "../../lib/api/shops";
+import type { ShopMembership } from "../../types/catalog";
+import { isTransportError } from "../../lib/errors";
 import {
   clearAdminOfflineData,
   loadAdminAccessSnapshot,
   saveAdminAccessSnapshot,
-} from "../lib/offline/adminOffline";
+} from "../../lib/offline/adminOffline";
 
 const STORAGE_KEY = "akiba-active-shop";
 const ACCESS_ERROR_MESSAGE =

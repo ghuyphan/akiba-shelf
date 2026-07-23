@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { subscribeToAdminOrderChanges } from "../lib/realtime";
+import { subscribeToAdminOrderChanges } from "../../lib/realtime";
 
 export function useAdminOrderRealtime({
   enabled,

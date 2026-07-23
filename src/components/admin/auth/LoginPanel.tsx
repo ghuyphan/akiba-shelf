@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { ArrowRight, Mail, LoaderCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { isSupabaseConfigured } from "../../../lib/supabase";
-import { useAsyncAction } from "../../../hooks/useAsyncAction";
+import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { Alert } from "../../ui/Alert";
 import { useToast } from "../../ui/ToastProvider";
 

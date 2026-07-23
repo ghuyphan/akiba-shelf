@@ -51,11 +51,11 @@ import {
   LoginPanel,
 } from "../components/admin/auth/LoginPanel";
 import { useToast } from "../components/ui/ToastProvider";
-import { useAdminSession } from "../hooks/useAdminSession";
+import { useAdminSession } from "../hooks/admin/useAdminSession";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
 import { PwaInstallBanner } from "../components/admin/shell/PwaInstallBanner";
 import { getOfflineEventSignOutRisk } from "../lib/offline/offlineEvents";
-import { useAdminOrderRealtime } from "../hooks/useAdminOrderRealtime";
+import { useAdminOrderRealtime } from "../hooks/admin/useAdminOrderRealtime";
 import { AdminWorkspaceHeader } from "../components/admin/shell/AdminWorkspaceHeader";
 import { AdminViewHero } from "../components/admin/shell/AdminViewHero";
 import { AdminAttentionPanel } from "../components/admin/shell/AdminAttentionPanel";

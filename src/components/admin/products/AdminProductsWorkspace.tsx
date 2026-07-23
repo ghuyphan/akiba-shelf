@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Package } from "lucide-react";
-import { useTabIndicator } from "../../../hooks/useTabIndicator";
+import { useTabIndicator } from "../../../hooks/shared/useTabIndicator";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import { safeUuid } from "../../../utils/id";
 import type { Product, PromotionSettings } from "../../../types/catalog";

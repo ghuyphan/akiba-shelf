@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import {
   generateVietQrForCart,
   getPaymentQrFallbackUrl,
-} from "../utils/vietqr";
-import type { CartItem, Order, PaymentSettings } from "../types/catalog";
+} from "../../utils/vietqr";
+import type { CartItem, Order, PaymentSettings } from "../../types/catalog";
 
 export function usePaymentQrSource(isOpen: boolean, order: Order | null, payment: PaymentSettings, cart: CartItem[]) {
   const [source, setSource] = useState("");

@@ -18,7 +18,7 @@ import type {
 import { hasUsablePayment } from "../../../utils/vietqr";
 import { formatRelativeTime } from "../../../utils/format";
 import { Button } from "../../ui/Button";
-import { useAsyncAction } from "../../../hooks/useAsyncAction";
+import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 
 type ReadinessItem = {
   key: string;

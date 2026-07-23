@@ -45,8 +45,11 @@ src/
                           shared holds admin-only cross-feature controls
   components/catalog/     Storefront features: browsing, cart, checkout,
                           overlays, shell, social
+  components/gacha/host/  Public gacha host and selector presentation
   components/ui/          Shared primitives
-  hooks/                   Reusable stateful orchestration
+  hooks/admin/             Admin session and order Realtime orchestration
+  hooks/catalog/           Storefront, cart, and checkout orchestration
+  hooks/shared/            Cross-feature UI and async behavior
   lib/api/                 Supabase/Storage/Edge Function domain modules
   lib/auth/                Auth routing, URLs, validation, safe errors
   lib/gacha/               Game rules, featured limits, launch handoff
@@ -95,7 +98,10 @@ Ignored build/local output is not source of truth: `dist/`, `.gacha-dist/`,
 | `api/staff.ts`         | Team members and invitations                 |
 | `api/storage.ts`       | Upload and safe image cleanup                |
 | `api/gacha.ts`         | Draft/published config and publish contract  |
+| `api/gachaPublic.ts`   | Focused public gacha availability reads      |
 | `api/offlineEvents.ts` | Server event allocation and sync RPCs        |
+| `api/push.ts`          | Push subscription registration               |
+| `api/shared.ts`        | Shared API request and normalization helpers |
 
 Supporting sources of truth:
 
@@ -129,7 +135,7 @@ theme, catalog, and cart state render offline and reconcile when online.
 ### Checkout
 
 ```text
-PaymentQrModal / useCheckoutSession
+PaymentQrModal / hooks/catalog/useCheckoutSession
   -> api/orders.createOrder()
   -> create-order Edge Function
   -> create_order_rate_limited RPC
@@ -140,8 +146,8 @@ PaymentQrModal / useCheckoutSession
 
 ### Admin
 
-`useAdminSession()` resolves Auth plus memberships and remembers the selected
-shop in `akiba-active-shop`.
+`hooks/admin/useAdminSession.ts` resolves Auth plus memberships and remembers
+the selected shop in `akiba-active-shop`.
 `components/admin/shell/AdminWorkspaceContent.tsx` maps tabs to:
 
 - orders: `OrderQueue`
@@ -168,7 +174,7 @@ shop in `akiba-active-shop`.
 
 ```text
 GachaManager -> api/gacha.ts -> publish RPC/migrations
-GachaPage -> gachaLaunch.ts -> localStorage handoff -> simulator iframe
+GachaPage -> components/gacha/host -> gachaLaunch.ts -> simulator iframe
 build scripts -> .gacha-dist/.hsr-gacha-dist -> dist simulator folders
 ```
 
@@ -181,7 +187,7 @@ coupling list in `AGENTS.md` before changing banner composition or roll logic.
 | --------------------- | --------------------------------------------- | ----------------------------------------------- |
 | Product/card UI       | `catalog/browsing/ProductCard.tsx`            | `styles/catalog/catalog.css`, grid/list tests   |
 | Cart/payment          | `catalog/checkout/PaymentQrModal.tsx`         | checkout hook, orders API, storage, pricing     |
-| Catalog fetching      | `useCatalogData.ts`, `useCatalogProducts.ts`  | products API, Realtime, snapshots               |
+| Catalog fetching      | `hooks/catalog/useCatalogData.ts`             | products hook, API, Realtime, snapshots         |
 | Admin shell           | `AdminPage.tsx`, `admin/shell/`               | header, permissions, admin CSS                  |
 | Product/settings data | matching admin feature form                   | API module, types/defaults, migration, fixture  |
 | Storefront designer   | `admin/design/StorefrontDesigner.tsx`         | checklist in `AGENTS.md`, theme, mobile preview |

@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { defaultBooth } from "../lib/constants";
-import { getCatalogCoreData } from "../lib/api/catalog";
-import { getPublicProductsByIds } from "../lib/api/products";
-import { getErrorMessage, isSessionNoise } from "../lib/errors";
+import { defaultBooth } from "../../lib/constants";
+import { getCatalogCoreData } from "../../lib/api/catalog";
+import { getPublicProductsByIds } from "../../lib/api/products";
+import { getErrorMessage, isSessionNoise } from "../../lib/errors";
 import {
   loadCatalogSnapshot,
   replaceCompleteCatalogSnapshot,
   saveCatalogSnapshot,
-} from "../lib/offline/offline";
-import { subscribeToCatalogChanges } from "../lib/realtime";
-import type { CartItem, Product, StorefrontBootstrap } from "../types/catalog";
+} from "../../lib/offline/offline";
+import { subscribeToCatalogChanges } from "../../lib/realtime";
+import type { CartItem, Product, StorefrontBootstrap } from "../../types/catalog";
 import { useCatalogProducts, type CatalogQuery } from "./useCatalogProducts";
 import { useStorefrontBootstrap } from "./useStorefrontBootstrap";
-import { OFFLINE_EVENT_UPDATED } from "../lib/offline/offlineEvents";
-import { translations } from "../lib/i18n/catalogI18n";
-import { calculateCartPricing } from "../utils/pricing";
+import { OFFLINE_EVENT_UPDATED } from "../../lib/offline/offlineEvents";
+import { translations } from "../../lib/i18n/catalogI18n";
+import { calculateCartPricing } from "../../utils/pricing";
 
 const EMPTY_PRODUCTS: Product[] = [];
 

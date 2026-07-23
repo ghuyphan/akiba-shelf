@@ -6,7 +6,7 @@ import { Button } from "../../ui/Button";
 import { EmptyState } from "../../ui/EmptyState";
 import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
 import { MobileSheetShell, SheetHandle } from "../../ui/MobileSheetShell";
-import { useOverlayHistory } from "../../../hooks/useOverlayHistory";
+import { useOverlayHistory } from "../../../hooks/shared/useOverlayHistory";
 
 type SelectedItemPanelProps = {
   cart: CartItem[];

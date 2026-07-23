@@ -45,9 +45,9 @@ import {
   saveShopSnapshot,
   loadCatalogSnapshot,
 } from "../lib/offline/offline";
-import { usePersistentCart } from "../hooks/usePersistentCart";
-import { useCatalogData } from "../hooks/useCatalogData";
-import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
+import { usePersistentCart } from "../hooks/catalog/usePersistentCart";
+import { useCatalogData } from "../hooks/catalog/useCatalogData";
+import { useAddToCartFeedback } from "../hooks/catalog/useAddToCartFeedback";
 import {
   BoothDetailsModal,
   FloatingCartBar,

@@ -1,24 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { defaultPayment, defaultPromotion } from "../lib/constants";
-import { getStorefrontBootstrap } from "../lib/api/catalog";
-import { getPublicGachaEnabled } from "../lib/api/gachaPublic";
+import { defaultPayment, defaultPromotion } from "../../lib/constants";
+import { getStorefrontBootstrap } from "../../lib/api/catalog";
+import { getPublicGachaEnabled } from "../../lib/api/gachaPublic";
 import {
   getPublicBoothSettings,
   getPublicPaymentSettings,
   getPublicPromotionSettings,
-} from "../lib/api/settings";
+} from "../../lib/api/settings";
 import {
   getPublicFeaturedProducts,
   getPublicProductCategories,
-} from "../lib/api/products";
-import { getErrorMessage, isSessionNoise } from "../lib/errors";
+} from "../../lib/api/products";
+import { getErrorMessage, isSessionNoise } from "../../lib/errors";
 import type {
   BoothSettings,
   PaymentSettings,
   Product,
   PromotionSettings,
   StorefrontBootstrap,
-} from "../types/catalog";
+} from "../../types/catalog";
 
 type BootstrapPhase = "initial-loading" | "ready";
 type InitialProductPage = {

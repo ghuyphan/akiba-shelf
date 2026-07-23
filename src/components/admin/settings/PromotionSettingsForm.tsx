@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Edit3, Gift, Package, X } from "lucide-react";
 import type { Product, PromotionSettings } from "../../../types/catalog";
-import { useAsyncAction } from "../../../hooks/useAsyncAction";
+import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import { useToast } from "../../ui/ToastProvider";
 import { Button } from "../../ui/Button";

@@ -6,9 +6,9 @@ import {
   useRef,
   useState,
 } from "react";
-import type { CartItem, Product } from "../types/catalog";
-import { loadCart, saveCart } from "../lib/offline/offline";
-import { getProductPrice } from "../utils/pricing";
+import type { CartItem, Product } from "../../types/catalog";
+import { loadCart, saveCart } from "../../lib/offline/offline";
+import { getProductPrice } from "../../utils/pricing";
 
 export type CartReconciliationNotice = {
   removed: number;

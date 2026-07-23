@@ -6,9 +6,9 @@ import { calculateCartPricing, getPricingLine } from "../../../utils/pricing";
 import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
 import { canGenerateVietQr, hasUsablePayment } from "../../../utils/vietqr";
 import { Modal } from "../../ui/Modal";
-import { useOrderCountdown, usePaymentQrSource } from "../../../hooks/useCheckoutPresentation";
+import { useOrderCountdown, usePaymentQrSource } from "../../../hooks/catalog/useCheckoutPresentation";
 import { getPaymentBank, getBankLogoUrl } from "../../../utils/banks";
-import { useCheckoutSession } from "../../../hooks/useCheckoutSession";
+import { useCheckoutSession } from "../../../hooks/catalog/useCheckoutSession";
 
 type PaymentQrModalProps = {
   shopSlug: string;

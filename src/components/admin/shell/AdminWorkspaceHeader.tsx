@@ -19,7 +19,7 @@ import {
 import { AppHeader } from "../../ui/AppHeader";
 import { SelectMenu } from "../../ui/SelectMenu";
 import { useToast } from "../../ui/ToastProvider";
-import { useTabIndicator } from "../../../hooks/useTabIndicator";
+import { useTabIndicator } from "../../../hooks/shared/useTabIndicator";
 import { getErrorMessage } from "../../../lib/errors";
 import {
   canUsePush,
