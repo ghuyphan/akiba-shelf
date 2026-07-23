@@ -50,7 +50,7 @@ import hsrWarpBackground from "../../vendor/hsr-simulator/src/images/background/
 import hsrCircleOrnament from "../../vendor/hsr-simulator/src/images/utils/circle-ornament1.svg";
 import hsrLogo from "../../vendor/hsr-simulator/src/images/utils/starrail-logo.webp";
 import hsrSpecialPass from "../../vendor/hsr-simulator/src/images/utils/special-pass-clean.webp";
-import "../styles/gacha-host.css";
+import "../styles/gacha/host.css";
 
 export function GachaPage() {
   const { shopSlug = "" } = useParams();

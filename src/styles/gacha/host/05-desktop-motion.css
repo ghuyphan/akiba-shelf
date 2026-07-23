@@ -1,0 +1,217 @@
+@keyframes gacha-portal-reveal-left {
+  from {
+    opacity: 0;
+    transform: translateX(-5%) scale(1.035);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes gacha-portal-reveal-right {
+  from {
+    opacity: 0;
+    transform: translateX(5%) scale(1.035);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes gacha-seam-arrive {
+  from {
+    opacity: 0;
+    transform: skewX(-8deg) translateX(-50%) scaleY(0);
+  }
+  to {
+    opacity: 1;
+    transform: skewX(-8deg) translateX(-50%) scaleY(1);
+  }
+}
+
+@keyframes gacha-content-rise {
+  from {
+    opacity: 0;
+    translate: 0 34px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes gacha-currency-float {
+  from {
+    transform: translate3d(0, -4px, 0) rotate(-2deg);
+  }
+  to {
+    transform: translate3d(0, 10px, 0) rotate(2deg);
+  }
+}
+
+@keyframes gacha-ui-dismiss {
+  to {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+}
+
+@keyframes gacha-seam-charge {
+  0% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  55% {
+    opacity: 1;
+    filter: brightness(2.4);
+    box-shadow: 0 0 75px 20px rgb(176 222 255 / 82%);
+  }
+  100% {
+    opacity: 0;
+    filter: brightness(4);
+    transform: skewX(-8deg) translateX(-50%) scaleX(28);
+  }
+}
+
+@keyframes gacha-rift-burst {
+  0% {
+    opacity: 0.75;
+    transform: translateX(-50%) skewX(-8deg) scaleX(0.3);
+  }
+  48% {
+    opacity: 1;
+    transform: translateX(-50%) skewX(-8deg) scaleX(1.4);
+  }
+  82% {
+    opacity: 1;
+    filter: blur(1px) brightness(2.4);
+    transform: translateX(-50%) skewX(-4deg) scaleX(7);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0) brightness(4);
+    transform: translateX(-50%) skewX(0) scaleX(30);
+  }
+}
+
+@keyframes gacha-enter-genshin {
+  0% {
+    width: 67%;
+  }
+  62% {
+    width: 92%;
+    clip-path: polygon(0 0, 100% 0, 94% 100%, 0 100%);
+  }
+  100% {
+    width: 115%;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes gacha-enter-hsr {
+  0% {
+    width: 67%;
+  }
+  62% {
+    width: 92%;
+    clip-path: polygon(6% 0, 100% 0, 100% 100%, 0 100%);
+  }
+  100% {
+    width: 115%;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes gacha-dismiss-left {
+  to {
+    opacity: 0;
+    filter: brightness(0.2) blur(8px);
+    transform: translateX(-24%) scale(0.94);
+  }
+}
+
+@keyframes gacha-dismiss-right {
+  to {
+    opacity: 0;
+    filter: brightness(0.2) blur(8px);
+    transform: translateX(24%) scale(0.94);
+  }
+}
+
+@keyframes gacha-content-launch {
+  to {
+    opacity: 0;
+    transform: translateY(12vh) scale(0.82);
+  }
+}
+
+@keyframes gacha-art-launch-genshin {
+  0% {
+    opacity: 1;
+  }
+  58% {
+    opacity: 1;
+    transform: translate3d(-20vw, 12vh, 0) rotate(-32deg) scale(2.5);
+    filter: brightness(1.15) drop-shadow(0 0 24px rgb(144 211 255 / 72%));
+  }
+  84% {
+    opacity: 1;
+    transform: translate3d(-26vw, 15vh, 0) rotate(-66deg) scale(3.8);
+    filter: brightness(1.45) blur(1px) drop-shadow(0 0 42px rgb(208 235 255 / 90%));
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-28vw, 16vh, 0) rotate(-80deg) scale(5.5);
+    filter: brightness(3) blur(5px);
+  }
+}
+
+@keyframes gacha-art-launch-hsr {
+  0% {
+    opacity: 1;
+  }
+  58% {
+    opacity: 1;
+    transform: translate3d(-25vw, 12vh, 0) rotate(-28deg) scale(2.5);
+    filter: brightness(1.15) drop-shadow(0 0 24px rgb(149 138 255 / 72%));
+  }
+  84% {
+    opacity: 1;
+    transform: translate3d(-29vw, 15vh, 0) rotate(-62deg) scale(3.8);
+    filter: brightness(1.45) blur(1px) drop-shadow(0 0 42px rgb(196 190 255 / 90%));
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-31vw, 16vh, 0) rotate(-78deg) scale(5.5);
+    filter: brightness(3) blur(5px);
+  }
+}
+
+@keyframes gacha-portal-ring {
+  0%,
+  22% {
+    opacity: 0;
+    transform: rotate(0deg) scale(0.6);
+  }
+  56% {
+    opacity: 0.92;
+    transform: rotate(95deg) scale(1);
+  }
+  84% {
+    opacity: 1;
+    transform: rotate(230deg) scale(1.18);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(330deg) scale(1.5);
+  }
+}
+
+@keyframes gacha-orbit {
+  to {
+    transform: scale(1.36) rotate(360deg);
+  }
+}
+

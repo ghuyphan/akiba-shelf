@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import { CloudOff } from "lucide-react";
-import "../styles/catalog.css";
+import "../styles/catalog/catalog.css";
 import {
   applyPageTheme,
   getStorefrontSectionStyleClass,
@@ -30,14 +30,14 @@ import {
   useCatalogCopy,
 } from "../lib/i18n/catalogI18n";
 import { PromotionProvider } from "../lib/promotionContext";
-import { CatalogHeader } from "../components/catalog/CatalogHeader";
-import { CatalogToolbar } from "../components/catalog/CatalogToolbar";
-import { CategoryFilters } from "../components/catalog/CategoryFilters";
-import { BoothInfoPanel } from "../components/catalog/BoothInfoPanel";
-import { ProductGrid } from "../components/catalog/ProductGrid";
-import { ProductDetailModal } from "../components/catalog/ProductDetailModal";
-import { SelectedItemPanel } from "../components/catalog/SelectedItemPanel";
-import { StackedFeatured } from "../components/catalog/StackedFeatured";
+import { CatalogHeader } from "../components/catalog/shell/CatalogHeader";
+import { CatalogToolbar } from "../components/catalog/browsing/CatalogToolbar";
+import { CategoryFilters } from "../components/catalog/browsing/CategoryFilters";
+import { BoothInfoPanel } from "../components/catalog/shell/BoothInfoPanel";
+import { ProductGrid } from "../components/catalog/browsing/ProductGrid";
+import { ProductDetailModal } from "../components/catalog/browsing/ProductDetailModal";
+import { SelectedItemPanel } from "../components/catalog/cart/SelectedItemPanel";
+import { StackedFeatured } from "../components/catalog/browsing/StackedFeatured";
 import { ToastLocalization, useToast } from "../components/ui/ToastProvider";
 import { loadCheckoutSession } from "../lib/offline/checkoutSession";
 import {
@@ -54,7 +54,7 @@ import {
   FlyingItemsLayer,
   PendingOrderBar,
   RecoverCheckoutBar,
-} from "../components/catalog/CatalogOverlays";
+} from "../components/catalog/overlays/CatalogOverlays";
 import { layoutOrderSchema } from "../lib/schemas";
 import { useParams } from "react-router-dom";
 import { getStorefrontBootstrap } from "../lib/api/catalog";
@@ -79,7 +79,7 @@ const ShopUnavailablePage = lazy(() =>
 );
 
 const PaymentQrModal = lazyWithRetry("PaymentQrModal", () =>
-  import("../components/catalog/PaymentQrModal").then((module) => ({
+  import("../components/catalog/checkout/PaymentQrModal").then((module) => ({
     default: module.PaymentQrModal,
   })),
 );
@@ -161,7 +161,9 @@ export function CatalogPage() {
 
   useEffect(() => {
     if (cart.length > 0) {
-      void import("../components/catalog/PaymentQrModal").catch(() => {});
+      void import("../components/catalog/checkout/PaymentQrModal").catch(
+        () => {},
+      );
     }
   }, [cart.length]);
   const orderingEnabled = shop?.accepting_orders !== false;

@@ -37,6 +37,49 @@ type Props = {
   sharedCount: number;
 };
 
+type GachaPoolSortItem = {
+  entry: GachaPoolEntry;
+  productActive: boolean;
+  catalogIndex: number;
+};
+
+function entryTypeRank(entry: GachaPoolEntry, descriptor: GachaGameDescriptor) {
+  if (entry.kind === "character") {
+    const index = descriptor.elements.findIndex(
+      (element) => element.id === entry.element,
+    );
+    return index === -1 ? descriptor.elements.length : index;
+  }
+
+  const index = descriptor.weaponTypes.indexOf(entry.weapon_type);
+  return index === -1 ? descriptor.weaponTypes.length : index;
+}
+
+export function compareGachaPoolItems(
+  left: GachaPoolSortItem,
+  right: GachaPoolSortItem,
+  descriptor: GachaGameDescriptor,
+) {
+  const leftInactive = !left.entry.active || !left.productActive;
+  const rightInactive = !right.entry.active || !right.productActive;
+  if (leftInactive !== rightInactive) return leftInactive ? 1 : -1;
+
+  if (left.entry.featured !== right.entry.featured) {
+    return left.entry.featured ? -1 : 1;
+  }
+
+  if (left.entry.rarity !== right.entry.rarity) {
+    return right.entry.rarity - left.entry.rarity;
+  }
+
+  const typeDifference =
+    entryTypeRank(left.entry, descriptor) -
+    entryTypeRank(right.entry, descriptor);
+  if (typeDifference) return typeDifference;
+
+  return left.catalogIndex - right.catalogIndex;
+}
+
 export function GachaPoolEditor({
   products,
   banner,
@@ -119,6 +162,9 @@ export function GachaPoolEditor({
   );
 
   const visibleProducts = useMemo(() => {
+    const catalogIndexByProduct = new Map(
+      products.map((product, index) => [product.id, index]),
+    );
     const normalized = query.trim().toLowerCase();
     const searched = normalized
       ? products.filter((product) =>
@@ -139,13 +185,35 @@ export function GachaPoolEditor({
         : !entriesByProduct.has(product.id);
     });
     return [...filtered].sort((a, b) => {
+      const leftEntry = entriesByProduct.get(a.id);
+      const rightEntry = entriesByProduct.get(b.id);
+      if (leftEntry && rightEntry) {
+        return compareGachaPoolItems(
+          {
+            entry: leftEntry,
+            productActive: a.active,
+            catalogIndex: catalogIndexByProduct.get(a.id) ?? 0,
+          },
+          {
+            entry: rightEntry,
+            productActive: b.active,
+            catalogIndex: catalogIndexByProduct.get(b.id) ?? 0,
+          },
+          descriptor,
+        );
+      }
+
       const rank = (product: Product) => {
         if (entriesByProduct.has(product.id)) return 0;
         const owner = assignedBannerByProduct.get(product.id);
         if (owner && owner.id !== banner.id) return 2;
         return 1;
       };
-      return rank(a) - rank(b);
+      return (
+        rank(a) - rank(b) ||
+        (catalogIndexByProduct.get(a.id) ?? 0) -
+          (catalogIndexByProduct.get(b.id) ?? 0)
+      );
     });
   }, [
     assignedBannerByProduct,
@@ -154,6 +222,7 @@ export function GachaPoolEditor({
     products,
     query,
     banner.id,
+    descriptor,
   ]);
 
   return (

@@ -1,0 +1,30 @@
+.admin-settings-intro>p { margin: 10px 0 0; color: var(--muted); font-size: 10px; }
+
+@media (max-width: 1100px) {
+  .storefront-builder,.storefront-builder.sidebar-closed { grid-template-columns: 1fr; }
+  .builder-sidebar { position: static; max-height: none; }
+  .sidebar-closed .builder-sidebar { min-height: 66px; }
+  .sidebar-closed .builder-sidebar-head { flex-direction: row; }
+  .storefront-builder .designer-preview-stage { height: 620px; min-height: 620px; }
+}
+
+@media (max-width: 760px) {
+  .admin-mobile-settings-page { display: grid; gap: 14px; }
+  .admin-filter-bar { width: 100%; min-width: 0; }
+  .admin-filter-tabs { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; min-width: 0; overflow: visible !important; }
+  .admin-filter-tabs button { min-width: 0; width: 100%; padding-inline: 8px !important; }
+  .admin-queue-utilities { width: 100%; justify-content: space-between; }
+  .admin-orders-view,.admin-order-metrics,.admin-section-heading,.admin-orders-grid { width: 100%; min-width: 0; }
+  .builder-toolbar { grid-template-columns: 1fr auto; }
+  .builder-toolbar-controls { justify-self: end; }
+  .builder-zoom-controls button:nth-child(2) span { display: none; }
+  .builder-zoom-controls button { min-width: 28px; padding-inline: 5px; }
+  .builder-status { display: none; }
+  .builder-history-actions { grid-column: 1 / -1; width: 100%; justify-content: flex-end; padding-top: 6px; }
+  .builder-history-actions>button span { display: none; }
+  .builder-device-switcher button { font-size: 0; }
+  .builder-field-row { grid-template-columns: 1fr; }
+  .storefront-builder .designer-preview-stage { width: 100%; min-height: 560px; height: 70vh; padding: 8px; }
+  .builder-canvas { padding: 8px; }
+}
+

@@ -1,0 +1,30 @@
+/* Product editor: calm, explicit controls with predictable mobile behavior. */
+.admin-product-form .form-grid { align-items: start; }
+.admin-product-form .field { min-width: 0; }
+.admin-product-form .field-label { color: #42526a; }
+.admin-product-form .field-hint { font-size: 10px; line-height: 1.4; }
+.admin-product-form .input::placeholder { color: #a5afbd; }
+.admin-product-form .input[aria-invalid="true"] { border-color: #d95c68; box-shadow: 0 0 0 3px rgb(217 92 104 / 9%); }
+.admin-input-affix { position: relative; min-width: 0; }
+.admin-input-affix .input { width: 100%; padding-right: 54px; }
+.admin-input-affix>span { position: absolute; top: 50%; right: 13px; color: var(--muted); font-size: 10px; font-weight: 900; transform: translateY(-50%); pointer-events: none; }
+.admin-badge-preview { align-items: center; gap: 5px; }
+.admin-badge-customizer { display: flex; align-items: center; gap: 9px; margin-top: 8px; }
+.admin-color-well { position: relative; display: grid; place-items: center; width: 34px; height: 30px; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: #fff; cursor: pointer; }
+.admin-color-well input { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.admin-color-well span { width: 20px; height: 20px; border: 2px solid #fff; border-radius: 6px; box-shadow: 0 0 0 1px rgb(15 23 42 / 14%); }
+.admin-switch-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.admin-switch-row label { display: flex !important; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; min-height: 68px !important; padding: 12px 14px !important; border: 1px solid var(--soft-line) !important; border-radius: 13px !important; cursor: pointer; }
+.admin-switch-row label>span { display: grid; gap: 3px; min-width: 0; }
+.admin-switch-row strong { color: var(--ink); font-size: 11px; }
+.admin-switch-row small { color: var(--muted); font-size: 9px; line-height: 1.35; }
+.admin-switch-row input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--coral); }
+.admin-gallery-error { padding: 9px 11px; border-radius: 9px; background: #fff0f2; }
+
+@media (max-width: 760px) {
+  .admin-product-form .admin-form-section-heading p { max-width: 34ch; }
+  .admin-switch-row { grid-template-columns: 1fr; }
+  .admin-switch-row label { min-height: 64px !important; }
+  .admin-product-form .admin-sticky-actions { padding-bottom: max(10px,env(safe-area-inset-bottom)); }
+}
+

@@ -11,14 +11,14 @@ import {
   AdminAccessCheck,
   AdminAccessDenied,
   LoginPanel,
-} from "../components/admin/LoginPanel";
+} from "../components/admin/auth/LoginPanel";
 import { useToast } from "../components/ui/ToastProvider";
 import type { ShopMembership } from "../types/catalog";
-import "../styles/admin.css";
+import "../styles/admin/admin.css";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
 import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";
 import { MAX_OWNED_SHOPS } from "../lib/constants";
-import { PwaInstallBanner } from "../components/admin/PwaInstallBanner";
+import { PwaInstallBanner } from "../components/admin/shell/PwaInstallBanner";
 import { DashboardShopCard } from "../components/admin/dashboard/DashboardShopCard";
 import { DashboardEditShopDialog } from "../components/admin/dashboard/DashboardEditShopDialog";
 import { getOfflineEventSignOutRisk } from "../lib/offline/offlineEvents";

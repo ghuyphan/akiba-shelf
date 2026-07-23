@@ -1,0 +1,67 @@
+/* Active Admin Legacy Migration Rules */
+.admin-grid-col-list,
+.admin-grid-col-form {
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .admin-grid-col-list.hide,
+  .admin-grid-col-form.hide {
+    display: none !important;
+  }
+
+  .admin-grid-col-list.show,
+  .admin-grid-col-form.show {
+    display: block !important;
+  }
+
+  .admin-mobile-tabs,
+  .admin-mobile-tabs-row {
+    display: flex;
+  }
+}
+
+.admin-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.admin-product-thumb-placeholder {
+  width: 42px;
+  height: 42px;
+  padding: 8px;
+  border: 1px dashed var(--line);
+  border-radius: 7px;
+  color: #91a0b4;
+  background: #fff;
+}
+
+.admin-mobile-tabs {
+  display: none;
+  gap: 8px;
+  margin-bottom: 16px;
+  background: var(--surface-soft);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+.admin-mobile-tabs-row {
+  display: none;
+}
+
+.admin-form-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--store-radius, 16px);
+  background: var(--surface);
+  box-shadow: var(--soft-shadow);
+  min-height: 480px;
+  padding: 40px;
+  text-align: center;
+}
+

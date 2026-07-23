@@ -1,0 +1,12 @@
+@media (prefers-reduced-motion: reduce) {
+  .gacha-banner-card,
+  .gacha-item,
+  .gacha-availability,
+  .gacha-item-expand svg,
+  .gacha-pity > summary > svg,
+  .gacha-toggle > span,
+  .gacha-toggle > span::after,
+  .gacha-admin-page .icon-button {
+    transition: none;
+  }
+}

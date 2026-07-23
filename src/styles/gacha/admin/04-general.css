@@ -1,0 +1,87 @@
+/* ------------------------------------------------------------------- setup */
+
+.gacha-setup-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+  gap: 12px;
+}
+
+.gacha-panel {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--soft-line, #eee9e1);
+  border-radius: 14px;
+  background: var(--admin-inner-bg, #f8fafc);
+}
+
+.gacha-panel-heading h3,
+.gacha-panel-heading p {
+  margin: 0;
+}
+
+.gacha-panel-heading h3 {
+  color: var(--ink, #20304a);
+  font-size: 13px;
+}
+
+.gacha-panel-heading p {
+  margin-top: 3px;
+  color: var(--muted, #677284);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.gacha-panel-note {
+  margin: 0;
+  color: var(--muted, #677284);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.gacha-availability {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line, #ded9cf);
+  border-radius: 11px;
+  background: #fff;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.gacha-availability.is-open {
+  border-color: color-mix(
+    in srgb,
+    var(--accent, #5f8d55) 35%,
+    var(--line, #ded9cf)
+  );
+  background: color-mix(in srgb, var(--accent, #5f8d55) 6%, #fff);
+}
+
+.gacha-availability-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.gacha-availability-copy strong {
+  color: var(--ink, #20304a);
+  font-size: 13px;
+}
+
+.gacha-availability-copy small {
+  color: var(--muted, #677284);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.gacha-copy-fields {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+

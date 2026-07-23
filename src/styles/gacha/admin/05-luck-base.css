@@ -1,0 +1,188 @@
+.gacha-pity {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  border: 1px solid var(--soft-line, #eee9e1);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.gacha-pity > summary {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  list-style: none;
+  transition: background 150ms ease;
+}
+
+.gacha-pity > summary::-webkit-details-marker {
+  display: none;
+}
+
+.gacha-pity > summary:hover {
+  background: var(--admin-inner-bg, #f8fafc);
+}
+
+.gacha-pity-summary-content {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.gacha-pity-heading {
+  display: grid;
+  flex: 1 1 180px;
+  min-width: 0;
+  gap: 2px;
+}
+
+.gacha-pity-heading strong {
+  color: var(--ink, #20304a);
+  font-size: 13px;
+}
+
+.gacha-pity-heading small {
+  color: var(--muted, #677284);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.gacha-pity-values {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gacha-pity-values > span {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid var(--soft-line, #eee9e1);
+  border-radius: 999px;
+  color: var(--muted, #677284);
+  background: var(--admin-inner-bg, #f8fafc);
+  font-size: 10.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.gacha-pity > summary > svg {
+  flex: none;
+  color: var(--muted, #677284);
+  transition: transform 160ms ease;
+}
+
+.gacha-pity[open] > summary {
+  border-bottom: 1px solid var(--soft-line, #eee9e1);
+}
+
+.gacha-pity[open] > summary > svg {
+  transform: rotate(180deg);
+}
+
+.gacha-presets-section {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid var(--soft-line, #eee9e1);
+  background: #fff;
+}
+
+.gacha-presets-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink, #20304a);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gacha-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gacha-preset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line, #ded9cf);
+  border-radius: 11px;
+  color: inherit;
+  background: var(--admin-inner-bg, #f8fafc);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: all 150ms ease;
+}
+
+.gacha-preset-card:hover {
+  border-style: solid;
+  border-color: var(--accent, #5f8d55);
+  background: #fff;
+}
+
+.gacha-preset-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+}
+
+.gacha-preset-summary > span {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--soft-line, #eee9e1);
+  border-radius: 999px;
+  color: var(--muted, #677284);
+  background: var(--admin-inner-bg, #f8fafc);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gacha-preset-card.is-active {
+  border-style: solid;
+  border-color: var(--accent, #5f8d55);
+  background: color-mix(in srgb, var(--accent, #5f8d55) 8%, white);
+  box-shadow: 0 2px 8px rgb(95 141 85 / 12%);
+}
+
+.gacha-preset-card strong {
+  color: var(--ink, #20304a);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gacha-preset-card small {
+  color: var(--muted, #677284);
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+.gacha-pity-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--admin-inner-bg, #f8fafc);
+}
+
+.gacha-pity-fields input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+

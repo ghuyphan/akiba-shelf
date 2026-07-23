@@ -1,0 +1,190 @@
+.gacha-game-select {
+  --portal-ease: cubic-bezier(0.22, 0.74, 0.2, 1);
+  position: fixed;
+  inset: 0;
+  overflow: auto;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 50% -15%, rgb(91 119 184 / 22%), transparent 38%),
+    #050812;
+}
+
+.gacha-game-select::before {
+  content: "";
+  position: fixed;
+  z-index: 7;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 8%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 8%) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: linear-gradient(to bottom, black, transparent 48%);
+}
+
+.gacha-select-actions {
+  position: fixed;
+  z-index: 20;
+  top: max(20px, env(safe-area-inset-top));
+  right: 24px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.gacha-select-back,
+.gacha-cache-btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 0 17px;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-decoration: none;
+  border: 1px solid rgb(255 255 255 / 19%);
+  border-radius: 999px;
+  background: rgb(4 8 18 / 58%);
+  box-shadow: 0 12px 34px rgb(0 0 0 / 22%);
+  backdrop-filter: blur(18px) saturate(135%);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.gacha-select-back:hover,
+.gacha-cache-btn:not(:disabled):hover {
+  color: #ffffff;
+  border-color: rgb(255 255 255 / 50%);
+  background: rgb(12 19 34 / 84%);
+  box-shadow: 0 15px 42px rgb(0 0 0 / 30%);
+  transform: translateY(-2px);
+}
+
+.gacha-select-back:active,
+.gacha-cache-btn:not(:disabled):active {
+  transform: translateY(0) scale(0.98);
+}
+
+.gacha-select-back:focus-visible,
+.gacha-cache-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.gacha-cache-btn:disabled {
+  cursor: default;
+}
+
+.gacha-cache-btn.is-ready {
+  color: #d9ffeb;
+  border-color: rgb(151 255 199 / 34%);
+  background: rgb(16 63 47 / 58%);
+}
+
+.gacha-cache-btn.is-error {
+  border-color: rgb(255 160 148 / 55%);
+}
+
+.gacha-progress-container {
+  position: relative;
+  flex: 0 0 27px;
+  width: 27px;
+  height: 27px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gacha-progress-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.gacha-progress-track {
+  stroke: rgb(255 255 255 / 16%);
+  stroke-width: 2.5;
+}
+
+.gacha-progress-bar {
+  stroke: #ffffff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 200ms ease;
+}
+
+.gacha-progress-text {
+  font-size: 0.56rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.gacha-select-panel,
+.gacha-game-portals {
+  position: relative;
+  min-height: 100dvh;
+}
+
+.gacha-select-heading {
+  position: fixed;
+  z-index: 15;
+  top: max(22px, env(safe-area-inset-top));
+  left: 50%;
+  width: min(580px, calc(100% - 440px));
+  text-align: center;
+  text-shadow: 0 3px 18px rgb(0 0 0 / 55%);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.gacha-select-heading > span {
+  display: block;
+  color: rgb(255 255 255 / 65%);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.gacha-select-heading h1 {
+  margin: 4px 0 0;
+  font-size: clamp(1.35rem, 2.4vw, 2.15rem);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+
+.gacha-select-heading p {
+  margin: 6px auto 0;
+  color: rgb(255 255 255 / 72%);
+  font-size: clamp(0.76rem, 1vw, 0.92rem);
+  line-height: 1.4;
+}
+
+.gacha-select-heading strong {
+  display: inline-block;
+  max-width: 100%;
+  margin-top: 8px;
+  overflow: hidden;
+  color: #f6dfaa;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+

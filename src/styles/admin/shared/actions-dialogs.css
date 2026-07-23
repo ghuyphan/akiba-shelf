@@ -1,0 +1,62 @@
+/* Admin button overrides to ensure readability and follow design language */
+.admin-shell .button-primary {
+  color: #fff;
+  background: var(--coral);
+  border-color: var(--coral);
+}
+
+.admin-shell .button-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--coral) 88%, black);
+  border-color: color-mix(in srgb, var(--coral) 88%, black);
+  box-shadow: 0 8px 18px rgb(23 32 51 / 10%);
+}
+
+.admin-shell .button-secondary {
+  color: var(--ink, #20304a);
+  background: #fff;
+  border-color: var(--admin-surface-border, #cdd8e5);
+  box-shadow: 0 2px 4px rgb(20 33 53 / 4%);
+}
+
+.admin-shell .button-secondary:hover:not(:disabled) {
+  background: var(--admin-inner-bg, #f8fafc);
+  border-color: color-mix(in srgb, var(--admin-surface-border, #cdd8e5) 85%, black);
+  box-shadow: 0 8px 18px rgb(23 32 51 / 10%);
+}
+
+/* Portaled admin dialogs must keep the same action language as the workspace. */
+.modal-admin .button-primary {
+  color: #fff;
+  border-color: var(--coral);
+  background: var(--coral);
+}
+
+.modal-admin .button-secondary {
+  color: var(--ink);
+  border-color: var(--admin-surface-border, var(--line));
+  background: #fff;
+  box-shadow: 0 2px 4px rgb(20 33 53 / 4%);
+}
+
+.modal-admin .button-primary:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--coral) 88%, #000);
+  background: color-mix(in srgb, var(--coral) 88%, #000);
+}
+
+.modal-admin .button-secondary:hover:not(:disabled) {
+  background: var(--admin-inner-bg, #f8fafc);
+}
+
+.confirmation-modal { width: min(92vw, 520px); border-radius: 18px; }
+.confirmation-dialog { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; min-width: 0; }
+.confirmation-dialog-icon { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; color: var(--red); background: color-mix(in srgb, var(--red) 9%, #fff); }
+.confirmation-dialog-message { min-width: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.confirmation-dialog-message :is(p,h3) { margin-top: 0; }
+.confirmation-dialog-message :last-child { margin-bottom: 0; }
+.confirmation-dialog-actions { display: flex; grid-column: 1 / -1; justify-content: flex-end; gap: 9px; padding-top: 4px; }
+
+@media (max-width: 760px) {
+  .confirmation-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .confirmation-dialog-actions .button { width: 100%; min-width: 0; }
+}
+

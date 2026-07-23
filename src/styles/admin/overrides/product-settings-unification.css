@@ -1,0 +1,25 @@
+/* Unified product and settings cards */
+.admin-product-list { gap: 9px !important; }
+.admin-product { grid-template-columns: 66px minmax(0, 1fr) !important; min-height: 88px !important; padding: 10px !important; border: 1px solid var(--soft-line) !important; border-radius: 15px !important; background: #fff !important; }
+.admin-product:hover { border-color: color-mix(in srgb, var(--coral) 24%, var(--line)) !important; background: #fff !important; box-shadow: 0 10px 24px rgb(15 23 42 / 6%) !important; }
+.admin-product.active { border-color: color-mix(in srgb, var(--coral) 42%, var(--line)) !important; background: color-mix(in srgb, var(--coral) 4%, #fff) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 8%, transparent) !important; }
+.admin-product-thumb { width: 66px !important; height: 66px !important; border-radius: 12px !important; }
+.admin-settings-switcher { padding: 6px; border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: 0 10px 28px rgb(15 23 42 / 5%); }
+.admin-settings-switcher button { border-radius: 11px; }
+.admin-settings-switcher button.active { border-color: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--coral) 18%, transparent); }
+.admin-settings-panel>.admin-card { border-radius: 20px !important; box-shadow: 0 16px 40px rgb(15 23 42 / 6%) !important; }
+.admin-settings-panel .admin-form-section { border: 1px solid var(--soft-line); background: #fbfcfe; }
+
+@media (max-width: 600px) {
+  .designer-controls,.designer-preview-wrap { padding: 15px; border-radius: 16px; }
+  .designer-setting-group { grid-template-columns: 1fr; }
+  .designer-setting-group input[type="range"] { width: 100%; }
+  .designer-color-grid { grid-template-columns: 1fr; }
+  .designer-palette-grid,.designer-card-style-grid { grid-template-columns: 1fr; }
+  .designer-preview { min-height: 390px; padding: 11px; }
+  .preview-products { grid-template-columns: 1fr 1fr; }
+  .preview-products i { height: 86px; }
+  .admin-product { grid-template-columns: 58px minmax(0, 1fr) !important; min-height: 78px !important; }
+  .admin-product-thumb { width: 58px !important; height: 58px !important; }
+}
+

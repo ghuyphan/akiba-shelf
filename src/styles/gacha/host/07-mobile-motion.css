@@ -1,0 +1,112 @@
+@keyframes gacha-mobile-portal-arrive {
+  from {
+    opacity: 0;
+    scale: 1.035;
+  }
+}
+
+@keyframes gacha-mobile-portal-enter-genshin {
+  58% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  84% {
+    opacity: 1;
+    transform: scale(1.28);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.42);
+  }
+}
+
+@keyframes gacha-mobile-portal-enter-hsr {
+  58% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  84% {
+    opacity: 1;
+    transform: scale(1.28);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.42);
+  }
+}
+
+@keyframes gacha-mobile-portal-dismiss-genshin {
+  to {
+    opacity: 0;
+    transform: translateY(-12%);
+  }
+}
+
+@keyframes gacha-mobile-portal-dismiss-hsr {
+  to {
+    opacity: 0;
+    transform: translateY(12%);
+  }
+}
+
+@keyframes gacha-mobile-logo-launch {
+  45% {
+    opacity: 1;
+    scale: 1.04;
+  }
+  82% {
+    opacity: 1;
+    scale: 1.14;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.22;
+  }
+}
+
+@keyframes gacha-mobile-rift-breathe {
+  to {
+    opacity: 0.68;
+    scale: 1.06 1;
+  }
+}
+
+@keyframes gacha-mobile-seam-breathe {
+  to {
+    opacity: 0.52;
+    scale: 0.94 1;
+  }
+}
+
+@keyframes gacha-mobile-rift-launch {
+  45% {
+    opacity: 0.9;
+    scale: 1.18 1.4;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.5 2.4;
+  }
+}
+
+@keyframes gacha-mobile-seam-launch {
+  55% {
+    opacity: 1;
+    scale: 1.15 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 2.2 1;
+  }
+}
+
+@keyframes gacha-mobile-flash {
+  0%,
+  68% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+

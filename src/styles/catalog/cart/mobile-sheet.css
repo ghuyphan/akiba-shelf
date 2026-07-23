@@ -1,0 +1,77 @@
+@keyframes cart-sheet-enter {
+  from { bottom: -90px; opacity: 0; }
+  to { bottom: 0; opacity: 1; }
+}
+
+@keyframes cart-backdrop-out {
+  from { opacity: 1; backdrop-filter: blur(4px); }
+  to { opacity: 0; backdrop-filter: blur(0); }
+}
+
+@media (max-width: 760px) {
+  .selected-panel.mobile-collapsed .mobile-cart-count-badge {
+    top: -2px;
+    right: -2px;
+    width: 20px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    line-height: 1;
+    box-sizing: border-box;
+  }
+
+  .selected-panel:not(.selected-panel-empty) {
+    transition:
+      height 420ms cubic-bezier(.22, 1, .36, 1),
+      padding 360ms cubic-bezier(.22, 1, .36, 1),
+      border-radius 360ms ease,
+      box-shadow 360ms ease !important;
+    will-change: height, padding;
+  }
+
+  .selected-panel:not(.selected-panel-empty).mobile-collapsed {
+    height: 72px;
+  }
+
+  .selected-panel,
+  .selected-panel :is(button, [role="button"]) {
+    -webkit-tap-highlight-color: rgb(0 0 0 / 0) !important;
+  }
+
+  .selected-panel :is(button, [role="button"]) {
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .selected-panel :is(button, [role="button"]):focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  .mobile-cart-summary-bar,
+  .mobile-drag-handle {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .selected-panel:not(.selected-panel-empty).mobile-expanded {
+    right: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: min(var(--sheet-max-height), 640px);
+    max-height: min(var(--sheet-max-height), 640px);
+    transform: none !important;
+    padding: 0 var(--sheet-horizontal-padding) var(--sheet-bottom-padding);
+    border-radius: var(--sheet-radius) var(--sheet-radius) 0 0 !important;
+    box-shadow: var(--sheet-shadow);
+  }
+
+  .mobile-drag-handle { transition: padding 300ms ease; }
+  .mobile-drag-handle .mobile-sheet-handle { cursor: pointer; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selected-panel:not(.selected-panel-empty),
+  .sheet-backdrop { animation: none !important; transition: none !important; }
+}
+

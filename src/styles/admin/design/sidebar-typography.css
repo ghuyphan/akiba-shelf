@@ -1,0 +1,96 @@
+/* Storefront builder sidebar: one compact, readable type and control scale. */
+.storefront-builder .builder-sidebar {
+  --builder-text-title: 13px;
+  --builder-text-section: 11px;
+  --builder-text-control: 13px;
+  --builder-text-label: 10px;
+  --builder-text-help: 9px;
+  --builder-control-height: 46px;
+  --builder-control-radius: 10px;
+}
+.storefront-builder .builder-tabs button { font-size: 10px; }
+.storefront-builder .builder-section-heading strong {
+  font-size: var(--builder-text-title);
+  line-height: 1.3;
+}
+.storefront-builder .builder-section-heading small,
+.storefront-builder .builder-help {
+  font-size: var(--builder-text-help);
+  line-height: 1.45;
+}
+.storefront-builder .builder-field-group h3 {
+  gap: 8px;
+  font-size: var(--builder-text-section);
+  line-height: 1.3;
+}
+.storefront-builder .builder-sidebar .field { gap: 6px; min-width: 0; }
+.storefront-builder .builder-sidebar .field-label {
+  color: #40516a;
+  font-size: var(--builder-text-label);
+  font-weight: 850;
+  line-height: 1.25;
+  letter-spacing: .035em;
+}
+.storefront-builder .builder-sidebar .input,
+.storefront-builder .builder-sidebar .select-menu-trigger {
+  min-width: 0;
+  min-height: var(--builder-control-height) !important;
+  padding-inline: 12px;
+  border-radius: var(--builder-control-radius);
+  font-size: var(--builder-text-control) !important;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.storefront-builder .builder-sidebar select.input {
+  min-height: var(--builder-control-height) !important;
+  padding-right: 36px !important;
+  background-position: right 12px center !important;
+  background-size: 14px 14px !important;
+}
+.storefront-builder .builder-sidebar textarea.input {
+  min-height: 96px !important;
+  padding: 11px 12px;
+  resize: vertical;
+}
+.storefront-builder .builder-sidebar :is(.field-hint,.field-error-msg) {
+  margin-top: 0;
+  font-size: var(--builder-text-help);
+  line-height: 1.4;
+}
+.storefront-builder .builder-empty-inspector {
+  padding: 12px;
+  font-size: var(--builder-text-help);
+  line-height: 1.5;
+}
+.storefront-builder .designer-identity-copy strong,
+.storefront-builder .designer-payment-preview strong { font-size: var(--builder-text-section); }
+.storefront-builder .designer-identity-copy small,
+.storefront-builder .designer-payment-preview :is(small,code) { font-size: var(--builder-text-help); }
+.storefront-builder .designer-identity-preview em,
+.storefront-builder .designer-payment-preview em { font-size: 8px; }
+.storefront-builder .designer-asset-field .upload-button-face {
+  min-height: var(--builder-control-height);
+  gap: 7px;
+  padding-inline: 12px;
+  border-radius: var(--builder-control-radius);
+  font-size: 11px;
+}
+.storefront-builder .social-channel-field { gap: 7px; padding: 10px; }
+.storefront-builder .social-channel-field-head strong { font-size: var(--builder-text-label); }
+.storefront-builder .social-channel-visibility { font-size: var(--builder-text-help); }
+.storefront-builder .social-channel-field .input {
+  min-height: 42px !important;
+  font-size: 11px !important;
+}
+.storefront-builder .designer-palette-grid strong,
+.storefront-builder .designer-card-style-grid strong { font-size: 10px; }
+.storefront-builder .designer-palette-grid small,
+.storefront-builder .designer-card-style-grid small { font-size: 8px; line-height: 1.35; }
+.storefront-builder .designer-color-field>span { font-size: var(--builder-text-help); }
+.storefront-builder .designer-color-field code { font-size: 10px; }
+.storefront-builder .designer-setting-group strong,
+.storefront-builder .designer-locale strong { font-size: var(--builder-text-section); }
+.storefront-builder .designer-setting-group small,
+.storefront-builder .designer-locale small { font-size: var(--builder-text-help); line-height: 1.4; }
+.storefront-builder .designer-locale button { font-size: 10px; }
+

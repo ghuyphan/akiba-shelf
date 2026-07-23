@@ -1,0 +1,376 @@
+.payment-modal {
+  width: min(94vw, 860px);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.qr-modal-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(300px, 360px);
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.qr-display,
+.item-qr-card {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.qr-display {
+  padding: 14px;
+  border-radius: 10px;
+}
+
+.qr-display img {
+  width: min(54vw, 460px);
+  min-width: min(320px, 100%);
+  aspect-ratio: 1;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.qr-copy {
+  display: grid;
+  gap: 12px;
+  align-content: center;
+}
+
+.qr-copy p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.payment-receipt {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  gap: 16px;
+  box-shadow: var(--soft-shadow);
+}
+
+.receipt-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.receipt-success-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: #ecfdf5;
+  color: #059669;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: success-pop 450ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.receipt-success-icon svg {
+  animation: success-rotate 550ms ease-out both;
+  animation-delay: 150ms;
+}
+
+.receipt-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.receipt-header p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.receipt-divider {
+  height: 1px;
+  background: var(--soft-line);
+  margin: 0 -20px;
+}
+
+.receipt-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.receipt-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.receipt-item-name {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.receipt-item-price {
+  font-size: 16px;
+  color: var(--coral-strong);
+  font-weight: 700;
+}
+
+.receipt-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.receipt-detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.receipt-detail-row span {
+  color: var(--muted);
+}
+
+.receipt-detail-row strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.receipt-instructions {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface-soft);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.receipt-instructions svg {
+  color: var(--mustard);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.qr-icon,
+.admin-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+}
+
+.code-modal-layout {
+  display: grid;
+  gap: 10px;
+}
+
+.booth-info-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.booth-info-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.booth-info-icon-wrap {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  background: #fff;
+  color: var(--coral);
+  border-radius: 50%;
+  border: 2px solid var(--coral);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.booth-info-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.booth-code-pill {
+  display: inline-block;
+  margin: 4px 0 0;
+  padding: 2px 8px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.booth-info-divider {
+  height: 1px;
+  background: var(--soft-line);
+  margin: 4px 0;
+}
+
+.booth-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.booth-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.booth-info-item svg {
+  color: var(--coral);
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.booth-info-item div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.booth-info-item strong {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.booth-info-item span {
+  color: var(--ink);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.code-modal-layout {
+  justify-items: center;
+  padding: 4px 0;
+  text-align: center;
+}
+
+.item-qr-card {
+  width: min(100%, 430px);
+  aspect-ratio: 1;
+  padding: 18px;
+  border-radius: 10px;
+}
+
+.item-qr-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.qr-loading {
+  width: 72%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #edf2f0, #ffffff);
+}
+
+.code-modal-title {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 12px;
+  align-items: center;
+  width: min(100%, 430px);
+  text-align: left;
+}
+
+.code-modal-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+}
+
+.code-modal-kicker {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.code-modal-code {
+  display: block;
+  color: var(--teal-dark);
+  font-size: clamp(32px, 7vw, 54px);
+  line-height: 1.05;
+}
+
+.code-modal-item {
+  display: grid;
+  grid-template-columns: 68px 1fr;
+  gap: 12px;
+  align-items: center;
+  width: min(100%, 430px);
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  text-align: left;
+  background: #fff;
+}
+
+.code-modal-item img {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  border-radius: 7px;
+  background: var(--surface-soft);
+}
+
+.code-modal-image-placeholder {
+  width: 68px;
+  height: 68px;
+  border: 1px dashed var(--line);
+  border-radius: 7px;
+  background: var(--surface-soft);
+}
+
+.code-modal-item span {
+  display: grid;
+  gap: 4px;
+}
+
+.code-modal-item small {
+  color: var(--coral-strong);
+  font-weight: 800;
+}
+

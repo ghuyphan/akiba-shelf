@@ -1,0 +1,5 @@
+.order-summary-item,.order-card-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; font-size: 13px; }
+.order-summary-thumb,.order-summary-thumb-placeholder,.order-card-item-thumb { width: 36px; height: 36px; flex: 0 0 auto; border: 1px solid var(--soft-line); border-radius: 9px; background: var(--surface-soft); object-fit: cover; }
+.order-card-item-thumb { width: 40px; height: 40px; }
+.order-summary-thumb-placeholder,.order-card-item-thumb-placeholder { display: inline-block; }
+

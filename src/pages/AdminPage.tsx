@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import "../styles/admin.css";
+import "../styles/admin/admin.css";
 import { Navigate } from "react-router-dom";
 import { getAdminCatalogData } from "../lib/api/catalog";
 import {
@@ -49,20 +49,20 @@ import {
   AdminAccessCheck,
   AdminAccessDenied,
   LoginPanel,
-} from "../components/admin/LoginPanel";
+} from "../components/admin/auth/LoginPanel";
 import { useToast } from "../components/ui/ToastProvider";
 import { useAdminSession } from "../hooks/useAdminSession";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
-import { PwaInstallBanner } from "../components/admin/PwaInstallBanner";
+import { PwaInstallBanner } from "../components/admin/shell/PwaInstallBanner";
 import { getOfflineEventSignOutRisk } from "../lib/offline/offlineEvents";
 import { useAdminOrderRealtime } from "../hooks/useAdminOrderRealtime";
-import { AdminWorkspaceHeader } from "../components/admin/AdminWorkspaceHeader";
-import { AdminViewHero } from "../components/admin/AdminViewHero";
-import { AdminAttentionPanel } from "../components/admin/AdminAttentionPanel";
-import { AdminWorkspaceContent } from "../components/admin/AdminWorkspaceContent";
-import { AdminUnsavedChangesProvider } from "../components/admin/AdminUnsavedChanges";
-import type { OrderViewFilter } from "../components/admin/OrderQueue";
-import type { AdminViewTab } from "../components/admin/adminWorkspaceTypes";
+import { AdminWorkspaceHeader } from "../components/admin/shell/AdminWorkspaceHeader";
+import { AdminViewHero } from "../components/admin/shell/AdminViewHero";
+import { AdminAttentionPanel } from "../components/admin/shell/AdminAttentionPanel";
+import { AdminWorkspaceContent } from "../components/admin/shell/AdminWorkspaceContent";
+import { AdminUnsavedChangesProvider } from "../components/admin/shell/AdminUnsavedChanges";
+import type { OrderViewFilter } from "../components/admin/orders/OrderQueue";
+import type { AdminViewTab } from "../components/admin/shell/adminWorkspaceTypes";
 import { SignOutDialog } from "../components/ui/SignOutDialog";
 import {
   loadAdminOrdersSnapshot,

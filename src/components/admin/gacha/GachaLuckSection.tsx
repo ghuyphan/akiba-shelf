@@ -8,7 +8,7 @@ import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaSettings } from "../../../types/gacha";
 import { Field, FieldLabel, TextInput } from "../../ui/Field";
 import { Alert } from "../../ui/Alert";
-import { AdminCard } from "../AdminCard";
+import { AdminCard } from "../shell/AdminCard";
 
 type Props = {
   settings: GachaSettings;

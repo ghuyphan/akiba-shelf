@@ -4,7 +4,7 @@ import { AppHeader } from "../components/ui/AppHeader";
 import { PlatformHeaderBrand } from "../components/ui/PlatformHeaderBrand";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { useCatalogCopy } from "../lib/i18n/catalogI18n";
-import "../styles/admin.css";
+import "../styles/admin/admin.css";
 
 type ShopUnavailablePageProps = {
   hasLoadError: boolean;

@@ -14,7 +14,7 @@ import { AppHeader } from "../components/ui/AppHeader";
 import { PlatformHeaderBrand } from "../components/ui/PlatformHeaderBrand";
 import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
-import "../styles/admin.css";
+import "../styles/admin/admin.css";
 
 export function HomePage() {
   const { t } = usePlatformI18n();

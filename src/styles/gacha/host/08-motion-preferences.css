@@ -1,0 +1,25 @@
+@media (max-width: 390px) {
+  .gacha-portal-logo {
+    max-width: 80%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gacha-game-portal,
+  .gacha-game-portal::before,
+  .gacha-portal-art,
+  .gacha-portal-content,
+  .gacha-portal-enter,
+  .gacha-portal-enter::before,
+  .gacha-portal-glow,
+  .gacha-portal-currency,
+  .gacha-game-portals::after,
+  .gacha-game-select::after {
+    animation: none;
+    transition: none;
+  }
+
+  .gacha-hsr-ornament {
+    animation: none;
+  }
+}

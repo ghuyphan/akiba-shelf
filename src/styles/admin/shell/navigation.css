@@ -1,0 +1,59 @@
+.app-header .admin-nav-tabs {
+  position: relative;
+  justify-content: center;
+  justify-self: center;
+  gap: 5px;
+  margin: 0;
+  padding: 4px;
+  overflow-x: auto;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  --active-left: 4px;
+  --active-width: 0px;
+}
+.app-header .admin-nav-tabs::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: var(--active-width);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 5px 14px rgb(20 33 53 / 8%);
+  transform: translateX(var(--active-left));
+  transition:
+    transform 260ms var(--ease-out),
+    width 260ms var(--ease-out);
+  pointer-events: none;
+}
+.app-header .admin-nav-tab {
+  position: relative;
+  z-index: 1;
+  min-height: 38px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 12px;
+  background: transparent;
+  transition: color 220ms var(--ease-out);
+}
+.app-header .admin-nav-tab.active { border: 0; color: var(--ink); background: transparent; box-shadow: none; }
+.admin-nav-count { display: grid; place-items: center; min-width: 19px; height: 19px; padding: 0 4px; border-radius: 999px; color: #fff; background: var(--red); font-size: 9px; font-weight: 900; line-height: 1; pointer-events: none; }
+.admin-nav-count-products { color: var(--muted); background: color-mix(in srgb, var(--ink) 8%, #fff); }
+
+@media (max-width: 1280px) and (min-width: 761px) {
+  .admin-workspace-identity .app-header-title { max-width: 132px; }
+  .admin-workspace-identity .app-header-title small,
+  .admin-workspace-header .admin-shop-switcher-menu > .select-menu-trigger .select-menu-copy small { display: none; }
+  .admin-workspace-header .admin-shop-switcher-menu { width: 150px; }
+  .admin-workspace-header .admin-nav-tabs { gap: 2px; }
+  .admin-workspace-header .admin-nav-tab { padding-inline: 11px; }
+}
+
+@media (max-width: 1100px) {
+  .admin-mobile-settings-page { grid-template-columns: minmax(0, 1fr); }
+  .admin-workspace-header .admin-nav-storefront { display: none; }
+  .admin-workspace-header .admin-nav-mobile-settings { display: inline-flex; }
+}
+

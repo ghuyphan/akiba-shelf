@@ -1,0 +1,54 @@
+/* Platform and admin layouts built on the shared global primitives. */
+
+/* Final admin system layer: keep every workspace surface visually consistent. */
+.admin-shell {
+  --admin-surface-radius: 18px;
+  --admin-surface-border: rgb(205 216 229 / 82%);
+  --admin-surface-shadow: 0 12px 34px rgb(20 33 53 / 6%);
+  --admin-inner-radius: 13px;
+  --admin-inner-bg: #f8fafc;
+}
+.admin-container :is(.admin-card,.admin-surface,.admin-order-metrics article,.admin-items-summary,.admin-order-card) { border: 1px solid var(--admin-surface-border) !important; border-radius: var(--admin-surface-radius) !important; background: rgb(255 255 255 / 94%) !important; box-shadow: var(--admin-surface-shadow) !important; }
+.admin-container .admin-card { padding: 20px !important; }
+.admin-card-header { min-height: 44px; margin-bottom: 18px !important; padding-bottom: 16px !important; border-bottom: 1px solid var(--soft-line) !important; }
+.admin-card-icon { width: 40px !important; height: 40px !important; border-radius: 12px !important; }
+.admin-card h2 { font-size: 15px !important; }
+.admin-card-header p { max-width: 62ch; font-size: 10px !important; line-height: 1.45; }
+.admin-container :is(.admin-form-section,.admin-readout,.admin-social-preview,.admin-bank-card,.admin-fallback-qr,.admin-product,.designer-setting-group,.designer-locale) { border: 1px solid var(--soft-line) !important; border-radius: var(--admin-inner-radius) !important; background: var(--admin-inner-bg) !important; box-shadow: none !important; }
+.admin-form-section { padding: 18px; }
+.admin-order-metrics article { min-height: 100px; padding: 16px; }
+.admin-items-summary { padding: 18px; }
+.admin-order-card { padding: 16px; }
+.admin-settings-switcher { border: 1px solid var(--admin-surface-border); border-radius: 15px; background: #fff; box-shadow: var(--admin-surface-shadow); }
+
+.storefront-designer { grid-template-columns: minmax(300px, 350px) minmax(0, 1fr); gap: 18px; }
+.designer-controls,.designer-preview-wrap { padding: 20px; border-radius: var(--admin-surface-radius); }
+.designer-preview-wrap { min-width: 0; overflow: hidden; }
+.designer-block-list article { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+.designer-block-list article>em { padding: 4px 7px; border-radius: 999px; color: var(--muted); background: #fff; font-size: 7px; font-style: normal; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.designer-preview-label { gap: 12px; }
+.designer-preview-label small { text-align: right; }
+.designer-preview-stage { position: relative; height: 680px; overflow: auto; border: 1px solid var(--soft-line); border-radius: 15px; background: linear-gradient(45deg, #f3f6fa 25%, transparent 25%), linear-gradient(-45deg, #f3f6fa 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f6fa 75%), linear-gradient(-45deg, transparent 75%, #f3f6fa 75%), #fff; background-position: 0 0, 0 8px, 8px -8px, -8px 0; background-size: 16px 16px; }
+.designer-live-storefront { width: 1380px !important; min-height: 1120px; margin: 0 !important; transform: scale(.52); transform-origin: top left; box-shadow: none !important; }
+.designer-live-storefront .catalog-header { position: relative; top: auto; }
+.designer-live-storefront .catalog-layout { padding-bottom: 60px; }
+.designer-live-module { position: relative !important; outline: 2px solid transparent; outline-offset: 4px; transition: outline-color 150ms ease, opacity 150ms ease; }
+.designer-live-module:has(.designer-module-handle:hover) { outline-color: color-mix(in srgb, var(--coral) 55%, transparent); }
+.designer-module-handle { position: absolute; top: 8px; right: 8px; z-index: 50; display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 0 9px; border: 1px solid rgb(255 255 255 / 88%); border-radius: 999px; color: #fff; background: rgb(15 23 42 / 76%); box-shadow: 0 6px 18px rgb(15 23 42 / 18%); cursor: grab; font-size: 8px; font-weight: 900; backdrop-filter: blur(10px); }
+.designer-module-handle::before { content: ""; position: absolute; inset: -8px; }
+.designer-module-handle:active { cursor: grabbing; }
+.designer-live-storefront .selected-panel { position: relative !important; inset: auto !important; }
+
+@media (max-width: 1180px) {
+  .storefront-designer { grid-template-columns: 1fr; }
+  .designer-preview-wrap { position: static; }
+  .designer-live-storefront { transform: scale(.58); }
+}
+@media (max-width: 760px) {
+  .admin-shell { --admin-surface-radius: 16px; --admin-inner-radius: 12px; }
+  .admin-container .admin-card { padding: 15px !important; }
+  .designer-block-list article { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .designer-block-list article>em { display: none; }
+  .designer-preview-stage { height: 540px; }
+  .designer-live-storefront { transform: scale(.42); }
+}

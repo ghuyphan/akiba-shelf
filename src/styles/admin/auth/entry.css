@@ -1,0 +1,24 @@
+.admin-login {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  width: 100vw;
+  min-height: 100vh;
+  padding: clamp(16px, 4vw, 48px);
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--page-bg, #f6f8fb);
+}
+
+.admin-access-card {
+  position: relative;
+  width: min(100%, 470px);
+  overflow: hidden;
+  border: 1px solid rgb(205 216 229 / 78%);
+  border-radius: 24px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 24px 64px rgb(15 23 42 / 11%);
+}
+.admin-login-panel { display: flex; flex-direction: column; min-width: 0; padding: 28px 32px 26px; }

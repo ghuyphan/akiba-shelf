@@ -1,0 +1,32 @@
+/* Modal staff footer */
+.booth-modal-utility-row {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  width: 100% !important;
+  gap: 12px;
+}
+
+@media (max-width: 760px) {
+  .booth-staff-link { align-self: flex-end; }
+}
+
+/* Subtle Staff Access Link */
+.booth-staff-link {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: var(--muted) !important;
+  opacity: 0.75 !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.booth-staff-link:hover {
+  opacity: 1 !important;
+  color: var(--ink) !important;
+  text-decoration: underline !important;
+}
+

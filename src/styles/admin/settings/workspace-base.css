@@ -1,0 +1,11 @@
+.admin-settings-workspace { display: grid; grid-template-columns: minmax(230px, 290px) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); padding: 8px; }
+.admin-settings-intro { position: sticky; top: 104px; align-self: start; display: grid; gap: 24px; }
+.admin-settings-intro>div:first-child>span { color: var(--coral); font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.admin-settings-intro h2 { margin: 8px 0 9px; font-size: 24px; line-height: 1.1; letter-spacing: -.035em; }
+.admin-settings-intro p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.admin-settings-switcher { display: grid; gap: 8px; }
+.admin-settings-switcher button { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 14px; border: 1px solid transparent; border-radius: 12px; color: var(--muted); background: transparent; cursor: pointer; font-size: 13px; font-weight: 800; text-align: left; }
+.admin-settings-switcher button.active { border-color: color-mix(in srgb, var(--coral) 18%, var(--line)); color: var(--coral); background: color-mix(in srgb, var(--coral) 6%, var(--surface)); }
+.admin-settings-panel { min-width: 0; padding: clamp(18px, 3vw, 32px); border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+.admin-settings-panel .admin-card { max-width: 820px; }
+

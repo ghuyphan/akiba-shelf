@@ -4,7 +4,7 @@ import { ArrowRight, LoaderCircle, RotateCw } from "lucide-react";
 import { useToast } from "../components/ui/ToastProvider";
 import { PageLoading } from "../components/ui/PageLoading";
 import { Button } from "../components/ui/Button";
-import "../styles/admin.css";
+import "../styles/admin/admin.css";
 import {
   clearPasswordFlow,
   clearPendingInvitation,

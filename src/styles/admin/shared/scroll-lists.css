@@ -1,0 +1,31 @@
+/* Dynamic admin collections share one bounded, touch-friendly scroll area. */
+.admin-scroll-list {
+  min-height: 0;
+  max-height: min(680px, calc(100dvh - 280px)) !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain !important;
+  scrollbar-color: color-mix(in srgb, var(--muted) 34%, transparent) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-scroll-list::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.admin-scroll-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 34%, transparent);
+}
+
+.staff-invitation-list {
+  display: grid;
+}
+
+@media (max-width: 760px) {
+  .admin-scroll-list {
+    max-height: min(46dvh, 320px) !important;
+  }
+}

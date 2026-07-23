@@ -1,0 +1,195 @@
+/* ---------------------------------------------------------------- toolbar */
+
+.gacha-status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line, #ded9cf);
+  border-radius: 17px;
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 10px 30px rgb(20 33 53 / 5%);
+}
+
+.gacha-status-games {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--soft-line, #eee9e1);
+  border-radius: 11px;
+  background: var(--admin-inner-bg, #f8fafc);
+}
+
+.gacha-status-games button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 40px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted, #677284);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.gacha-status-games button strong {
+  color: var(--ink, #20304a);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gacha-status-games button small {
+  color: var(--muted, #677284);
+  font-size: 10px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.gacha-status-games button:hover:not(.active) {
+  background: rgb(255 255 255 / 40%);
+}
+
+.gacha-status-games button.active {
+  color: var(--ink, #20304a);
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(15 23 42 / 10%);
+}
+
+.gacha-status-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.gacha-admin-page .icon-button {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--soft-line, #eee9e1);
+  border-radius: 11px;
+  color: var(--ink, #20304a);
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.gacha-admin-page .icon-button:hover:not(:disabled) {
+  border-color: color-mix(
+    in srgb,
+    var(--accent, #5f8d55) 38%,
+    var(--soft-line, #eee9e1)
+  );
+  background: color-mix(in srgb, var(--accent, #5f8d55) 8%, white);
+}
+
+.gacha-admin-page .icon-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent, #5f8d55) 24%, transparent);
+  outline-offset: 2px;
+}
+
+.gacha-admin-page .icon-button:disabled {
+  color: #a7adb5;
+  background: #f1f2f3;
+  cursor: not-allowed;
+}
+
+.gacha-admin-page .icon-button.danger:hover:not(:disabled) {
+  border-color: color-mix(
+    in srgb,
+    var(--danger, #b42318) 35%,
+    var(--soft-line, #eee9e1)
+  );
+  color: var(--danger, #b42318);
+  background: #fef3f2;
+}
+
+.gacha-preview-button {
+  min-height: 38px;
+  border-radius: 11px;
+}
+
+.gacha-sticky-actions {
+  z-index: 6;
+}
+
+.gacha-sticky-actions .gacha-reset-button {
+  color: var(--ink, #20304a);
+}
+
+.gacha-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gacha-chip {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--soft-line, #eee9e1);
+  border-radius: 999px;
+  color: var(--muted, #677284);
+  background: var(--admin-inner-bg, #f8fafc);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gacha-chip > i {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: #b6bdc7;
+}
+
+.gacha-chip.is-open {
+  border-color: color-mix(in srgb, var(--accent, #5f8d55) 25%, transparent);
+  color: color-mix(in srgb, var(--accent, #5f8d55) 82%, black);
+  background: color-mix(in srgb, var(--accent, #5f8d55) 10%, #fff);
+}
+
+.gacha-chip.is-open > i {
+  background: var(--accent, #5f8d55);
+}
+
+.gacha-chip.is-live {
+  border-color: color-mix(in srgb, var(--accent, #5f8d55) 40%, transparent);
+  color: color-mix(in srgb, var(--accent, #5f8d55) 82%, black);
+  background: color-mix(in srgb, var(--accent, #5f8d55) 16%, #fff);
+}
+
+.gacha-chip.is-closed {
+  border-color: color-mix(in srgb, var(--danger, #b42318) 22%, transparent);
+  color: var(--danger, #b42318);
+  background: #fef3f2;
+}
+
+.gacha-chip.is-closed > i {
+  background: var(--danger, #b42318);
+}
+
+.gacha-chip.is-dirty {
+  border-color: color-mix(in srgb, #b54708 26%, transparent);
+  color: #866018;
+  background: #fff3cf;
+}
+

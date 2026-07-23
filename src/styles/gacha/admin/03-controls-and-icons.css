@@ -1,0 +1,188 @@
+/* ------------------------------------------------------- shared primitives */
+
+.gacha-admin-page .field {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+
+.gacha-admin-page .field-label {
+  color: var(--muted, #677284);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gacha-admin-page .field-hint {
+  color: var(--muted, #677284);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.gacha-admin-page .input,
+.gacha-admin-page .select-menu-trigger {
+  min-height: 44px;
+  border-radius: 11px;
+}
+
+.gacha-admin-page .select-menu-trigger:hover,
+.gacha-admin-page .select-menu.open .select-menu-trigger {
+  border-color: color-mix(
+    in srgb,
+    var(--accent, #5f8d55) 42%,
+    var(--line, #ded9cf)
+  );
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--accent, #5f8d55) 10%, transparent);
+}
+
+.gacha-admin-page .select-menu-trigger:focus-visible {
+  outline-color: color-mix(in srgb, var(--accent, #5f8d55) 25%, transparent);
+}
+
+.gacha-admin-page .select-menu-icon {
+  color: var(--accent, #5f8d55);
+}
+
+.gacha-admin-page .select-menu-popover button:hover,
+.gacha-admin-page .select-menu-popover button:focus-visible,
+.gacha-admin-page .select-menu-popover button.active {
+  background: color-mix(in srgb, var(--accent, #5f8d55) 9%, white);
+}
+
+.gacha-admin-page .select-menu-copy strong {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* One standard field background; legacy.css paints .input #fbfcfe. */
+.gacha-admin-page .input:not(:disabled),
+.gacha-admin-page .select-menu-trigger:not(:disabled) {
+  background: #fff;
+}
+
+.gacha-admin-page .input:disabled {
+  color: var(--muted, #677284);
+  background: #f3f4f5;
+  cursor: not-allowed;
+}
+
+.gacha-admin-page .textarea {
+  min-height: 88px;
+  line-height: 1.5;
+}
+
+.gacha-admin-page .field.is-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.gacha-toggle {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  cursor: pointer;
+}
+
+.gacha-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gacha-toggle > span {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: #c7ccd4;
+  transition: background 160ms ease;
+}
+
+.gacha-toggle > span::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgb(31 42 55 / 22%);
+  content: "";
+  transition: transform 160ms ease;
+}
+
+.gacha-toggle input:checked + span {
+  background: var(--accent, #5f8d55);
+}
+
+.gacha-toggle input:checked + span::after {
+  transform: translateX(20px);
+}
+
+.gacha-toggle input:focus-visible + span {
+  outline: 3px solid color-mix(in srgb, var(--accent, #5f8d55) 28%, transparent);
+  outline-offset: 2px;
+}
+
+.gacha-mini-check {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid var(--line, #ded9cf);
+  border-radius: 10px;
+  color: var(--ink, #20304a);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  cursor: pointer;
+}
+
+.gacha-mini-check input {
+  accent-color: var(--accent, #5f8d55);
+}
+
+.gacha-mini-check.is-disabled {
+  color: var(--muted, #677284);
+  background: #f3f4f5;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.gacha-banner-kind {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  border-radius: 11px;
+  color: #675235;
+  background: #fff1c9;
+}
+
+.gacha-banner-kind.weapon,
+.gacha-banner-kind.lightcone {
+  color: #4f4672;
+  background: #eee9ff;
+}
+
+.gacha-element-icon {
+  display: inline-block;
+  flex: none;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.gacha-element-icon.is-genshin {
+  color: var(--gacha-element-color, currentColor);
+}
+

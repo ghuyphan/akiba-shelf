@@ -21,14 +21,14 @@ route page -> screen component / domain hook -> src/lib/api/* -> Supabase
 
 ## Routes
 
-| Route               | Page                         | Copy               | Styles                           |
-| ------------------- | ---------------------------- | ------------------ | -------------------------------- |
-| `/`                 | `HomePage.tsx`               | `platformI18n.tsx` | `admin.css`                      |
-| `/auth*`            | Auth/callback/password pages | `platformI18n.tsx` | `admin.css`                      |
-| `/dashboard*`       | Dashboard/new-shop pages     | `platformI18n.tsx` | `admin.css`                      |
-| `/s/:shopSlug`      | `CatalogPage.tsx`            | `catalogI18n.tsx`  | `catalog.css`, `gacha-entry.css` |
-| `/s/:shopSlug/play` | `GachaPage.tsx`              | `catalogI18n.tsx`  | `gacha-host.css`                 |
-| `/admin`            | `AdminPage.tsx`              | `platformI18n.tsx` | `admin.css`, `gacha-admin.css`   |
+| Route               | Page                         | Copy               | Styles                                      |
+| ------------------- | ---------------------------- | ------------------ | ------------------------------------------- |
+| `/`                 | `HomePage.tsx`               | `platformI18n.tsx` | `styles/admin/admin.css`                    |
+| `/auth*`            | Auth/callback/password pages | `platformI18n.tsx` | `styles/admin/admin.css`                    |
+| `/dashboard*`       | Dashboard/new-shop pages     | `platformI18n.tsx` | `styles/admin/admin.css`                    |
+| `/s/:shopSlug`      | `CatalogPage.tsx`            | `catalogI18n.tsx`  | `styles/catalog/`, `styles/gacha/entry.css` |
+| `/s/:shopSlug/play` | `GachaPage.tsx`              | `catalogI18n.tsx`  | `styles/gacha/host.css`                     |
+| `/admin`            | `AdminPage.tsx`              | `platformI18n.tsx` | `styles/admin/`, `styles/gacha/admin.css`   |
 
 Entry points:
 
@@ -40,8 +40,11 @@ Entry points:
 
 ```text
 src/
-  components/admin/       Admin workspaces and forms
-  components/catalog/     Storefront cards, overlays, cart, and payment UI
+  components/admin/       Admin features: auth, dashboard, design, events,
+                          gacha, orders, products, settings, shell, team;
+                          shared holds admin-only cross-feature controls
+  components/catalog/     Storefront features: browsing, cart, checkout,
+                          overlays, shell, social
   components/ui/          Shared primitives
   hooks/                   Reusable stateful orchestration
   lib/api/                 Supabase/Storage/Edge Function domain modules
@@ -52,7 +55,11 @@ src/
   lib/schemas.ts           Runtime validation
   lib/realtime.ts          Catalog and admin order subscriptions
   pages/                   Route composition
-  styles/                  Shared and screen-owned CSS
+  styles/base/             Global tokens, resets, and shared primitives
+  styles/admin/            Platform, auth, dashboard, and admin workspace CSS
+  styles/catalog/          Storefront, product, cart, and checkout CSS
+  styles/gacha/            Gacha admin, entry, and host CSS
+  styles/legacy.css        Compatibility-only CSS pending incremental removal
   types/                   Shared catalog and gacha models
   utils/                   Pricing, theme, images, VietQR, formatting
 e2e/                       Playwright specs and Supabase HTTP mock
@@ -64,6 +71,10 @@ vendor/                    Vendored Genshin and HSR SvelteKit simulators
 docs/                      Operations, debt, and focused plans
 public/                    PWA/deep-link assets and bank/brand files
 ```
+
+Each non-legacy stylesheet entry is an ordered import manifest. See
+`src/styles/README.md` before moving rules between fragments; import order is
+part of the current cascade contract.
 
 Ignored build/local output is not source of truth: `dist/`, `.gacha-dist/`,
 `.hsr-gacha-dist/`, `.perf-dist/`, `coverage/`, `test-results/`,
@@ -130,7 +141,8 @@ PaymentQrModal / useCheckoutSession
 ### Admin
 
 `useAdminSession()` resolves Auth plus memberships and remembers the selected
-shop in `akiba-active-shop`. `AdminWorkspaceContent.tsx` maps tabs to:
+shop in `akiba-active-shop`.
+`components/admin/shell/AdminWorkspaceContent.tsx` maps tabs to:
 
 - orders: `OrderQueue`
 - event: `OfflineEventManager`
@@ -167,16 +179,16 @@ coupling list in `AGENTS.md` before changing banner composition or roll logic.
 
 | Task                  | Start                                         | Also inspect                                    |
 | --------------------- | --------------------------------------------- | ----------------------------------------------- |
-| Product/card UI       | `ProductCard.tsx`, `ProductGrid.tsx`          | `catalog.css`, grid/list tests                  |
-| Cart/payment          | `PaymentQrModal.tsx`, `useCheckoutSession.ts` | orders API, checkout storage, pricing           |
+| Product/card UI       | `catalog/browsing/ProductCard.tsx`            | `styles/catalog/catalog.css`, grid/list tests   |
+| Cart/payment          | `catalog/checkout/PaymentQrModal.tsx`         | checkout hook, orders API, storage, pricing     |
 | Catalog fetching      | `useCatalogData.ts`, `useCatalogProducts.ts`  | products API, Realtime, snapshots               |
-| Admin shell           | `AdminPage.tsx`, `AdminWorkspaceContent.tsx`  | header, permissions, `admin.css`                |
-| Product/settings data | matching admin form                           | API module, types/defaults, migration, fixture  |
-| Storefront designer   | `StorefrontDesigner.tsx`                      | checklist in `AGENTS.md`, theme, mobile preview |
+| Admin shell           | `AdminPage.tsx`, `admin/shell/`               | header, permissions, admin CSS                  |
+| Product/settings data | matching admin feature form                   | API module, types/defaults, migration, fixture  |
+| Storefront designer   | `admin/design/StorefrontDesigner.tsx`         | checklist in `AGENTS.md`, theme, mobile preview |
 | Auth/membership       | page/hook plus auth/shops API                 | auth helpers, callback tests, RPC/function      |
 | Order lifecycle       | `api/orders.ts`                               | latest RPC migrations, database/function tests  |
 | Offline/PWA           | relevant `lib/offline/*`                      | Vite PWA config, build scripts, offline tests   |
-| Gacha admin           | `GachaManager.tsx`, `components/admin/gacha/` | focused plan and `gacha-admin.css`              |
+| Gacha admin           | `components/admin/gacha/GachaManager.tsx`     | focused plan and `styles/gacha/admin.css`       |
 | Gacha limits          | `gachaGames.ts`, `gachaLimits.ts`             | publish SQL/tests, both simulators, fixtures    |
 | UI copy               | correct i18n provider                         | English/Vietnamese parity tests                 |
 | CSS migration         | owning stylesheet                             | `legacy.css` and migration plan                 |

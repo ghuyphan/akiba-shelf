@@ -1,0 +1,26 @@
+.booth-modal-redesign { width: min(94vw, 760px); padding: 22px; border-radius: 22px; }
+.booth-modal-redesign .modal-header { margin-bottom: 18px; }
+.booth-modal-content { display: grid; gap: 18px; }
+.booth-modal-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 18px; border-radius: 18px; color: #fff; background: linear-gradient(135deg, color-mix(in srgb, var(--coral) 88%, #283755), color-mix(in srgb, var(--teal) 62%, #293754)); }
+.booth-modal-logo { display: grid; place-items: center; width: 64px; height: 64px; overflow: hidden; border: 2px solid rgb(255 255 255 / 38%); border-radius: 18px; color: #fff; background: rgb(255 255 255 / 14%); }
+.booth-modal-identity { min-width: 0; }
+.booth-modal-eyebrow { display: block; margin-bottom: 5px; color: rgb(255 255 255 / 68%); font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.booth-modal-identity h3 { margin: 0; overflow: hidden; color: #fff; font-size: 22px; letter-spacing: -.025em; text-overflow: ellipsis; white-space: nowrap; }
+.booth-modal-identity p { margin: 4px 0 0; color: rgb(255 255 255 / 72%); font-size: 11px; }
+.booth-modal-hero .booth-code-pill { margin: 0; padding: 7px 11px; border: 1px solid rgb(255 255 255 / 25%); border-radius: 999px; color: #fff; background: rgb(255 255 255 / 12%); font-size: 10px; font-weight: 900; white-space: nowrap; }
+.booth-modal-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.booth-modal-facts>div { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: #fbfcfe; }
+.booth-modal-facts svg { flex: 0 0 auto; color: var(--coral); }
+.booth-modal-facts span { display: flex; flex-direction: column; min-width: 0; }
+.booth-modal-facts small { color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+.booth-modal-facts strong { margin-top: 3px; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.booth-modal-note { display: flex; align-items: flex-start; gap: 11px; padding: 14px; border-radius: 14px; color: #7a5712; background: #fff8e7; }
+.booth-modal-note svg { flex: 0 0 auto; }
+.booth-modal-note div { display: flex; flex-direction: column; gap: 3px; }
+.booth-modal-note strong { font-size: 11px; }
+.booth-modal-note span { font-size: 11px; line-height: 1.5; }
+.booth-modal-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.booth-modal-section-heading span { color: var(--coral); font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.booth-modal-section-heading strong { font-size: 14px; }
+.booth-modal-social-grid { margin-top: 4px; }
+

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { LoaderCircle } from "lucide-react";
 
 type EmptyStateProps = {
   title: string;
@@ -12,9 +13,19 @@ type EmptyStateProps = {
 };
 
 export function EmptyState({ title, message, icon, meta = [], action, variant = "default", tone = "neutral", className = "" }: EmptyStateProps) {
+  const resolvedIcon =
+    icon ??
+    (tone === "loading" ? (
+      <LoaderCircle
+        className="state-spinner"
+        size={26}
+        aria-hidden="true"
+      />
+    ) : undefined);
+
   return (
     <div className={`empty-state empty-state-${variant} empty-state-${tone} ${className}`.trim()} role={tone === "error" ? "alert" : "status"} aria-live="polite" aria-busy={tone === "loading" || undefined}>
-      {icon && <div className="empty-state-icon">{icon}</div>}
+      {resolvedIcon && <div className="empty-state-icon">{resolvedIcon}</div>}
       <div className="empty-state-copy">
         <h3>{title}</h3>
         <p>{message}</p>

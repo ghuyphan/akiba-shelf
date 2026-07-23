@@ -1,0 +1,103 @@
+.gacha-item-editor {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  align-items: end;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--soft-line, #eee9e1);
+  border-radius: 0 0 12px 12px;
+  background: var(--admin-inner-bg, #f8fafc);
+}
+
+.gacha-featured-control {
+  display: grid;
+  align-self: stretch;
+  align-content: end;
+  gap: 5px;
+  min-width: 0;
+}
+
+.gacha-control-explanation {
+  color: var(--muted, #677284);
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+
+.gacha-item-editor.is-disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.gacha-item-editor .select-menu-trigger {
+  min-height: 42px;
+}
+
+.gacha-item-editor .input {
+  min-height: 42px;
+}
+
+.gacha-item-editor .select-menu-popover {
+  width: 100%;
+  min-width: 0;
+}
+
+.gacha-item-add,
+.gacha-item-remove {
+  display: inline-flex;
+  min-height: 36px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--line, #ded9cf);
+  border-radius: 9px;
+  color: var(--ink, #20304a);
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.gacha-item-add {
+  border-color: color-mix(
+    in srgb,
+    var(--accent, #5f8d55) 35%,
+    var(--line, #ded9cf)
+  );
+  color: color-mix(in srgb, var(--accent, #5f8d55) 78%, black);
+}
+
+.gacha-item-add:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent, #5f8d55) 8%, #fff);
+}
+
+.gacha-item-remove {
+  justify-self: end;
+  color: var(--muted, #677284);
+}
+
+.gacha-item-remove:hover:not(:disabled) {
+  border-color: color-mix(
+    in srgb,
+    var(--danger, #b42318) 30%,
+    var(--line, #ded9cf)
+  );
+  color: var(--danger, #b42318);
+  background: #fef3f2;
+}
+
+.gacha-item-add:focus-visible,
+.gacha-item-remove:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent, #5f8d55) 22%, transparent);
+  outline-offset: 2px;
+}
+
+.gacha-item-add:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+

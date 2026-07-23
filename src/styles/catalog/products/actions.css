@@ -1,0 +1,16 @@
+.product-badge,
+.product-soldout-overlay span {
+  border-radius: 999px !important;
+  padding-inline: 10px !important;
+}
+
+.product-card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.cart-total-actions { margin-top: 16px; }
+.cart-total-row { display: flex; justify-content: space-between; margin-bottom: 12px; padding: 0 4px; }
+.cart-total-row span { color: var(--muted); font-size: 14px; font-weight: 600; }
+.cart-total-row strong { color: var(--ink); font-size: 16px; font-weight: 800; }
+.product-add-button { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; border: 0; border-radius: 999px; color: #fff; background: var(--coral); box-shadow: 0 8px 18px color-mix(in srgb, var(--coral) 24%, transparent); cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease; }
+.product-add-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 11px 24px color-mix(in srgb, var(--coral) 30%, transparent); }
+.product-add-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--coral) 22%, transparent); outline-offset: 2px; }
+.product-add-button:disabled { color: var(--muted); background: #e8edf3; box-shadow: none; cursor: not-allowed; }
+

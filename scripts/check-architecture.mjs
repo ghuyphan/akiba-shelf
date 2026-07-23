@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 const sourcePattern = /\.(?:ts|tsx)$/;
 const importPattern = /(?:from\s+|import\s*\(|vi\.mock\()\s*["']([^"']+)["']/g;
 const supabaseImportAllowlist = new Set([
-  "src/components/admin/LoginPanel.tsx",
+  "src/components/admin/auth/LoginPanel.tsx",
   "src/components/ui/GoogleAuthButton.tsx",
   "src/hooks/useAdminSession.ts",
   "src/lib/offline/pwa.ts",

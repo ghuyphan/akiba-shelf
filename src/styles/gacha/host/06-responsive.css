@@ -1,0 +1,328 @@
+@media (max-width: 980px) and (min-width: 761px) {
+  .gacha-select-heading {
+    width: min(440px, calc(100% - 360px));
+  }
+
+  .gacha-select-heading p {
+    display: none;
+  }
+
+  .gacha-game-portal {
+    padding-inline: 4vw;
+  }
+
+  .gacha-game-portal.is-genshin {
+    padding-right: 9vw;
+  }
+
+  .gacha-game-portal.is-hsr {
+    padding-left: 9vw;
+  }
+
+}
+
+@media (max-width: 760px) {
+  .gacha-screen,
+  .gacha-screen #root {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .gacha-game-select {
+    position: fixed;
+    inset: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .gacha-game-select::before {
+    position: absolute;
+    background-size: 34px 34px;
+  }
+
+  .gacha-game-select::after {
+    content: "";
+    position: fixed;
+    z-index: 40;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    background: #ffffff;
+  }
+
+  .gacha-game-select.is-launching::after {
+    animation: gacha-mobile-flash 620ms ease both;
+  }
+
+  .gacha-select-actions {
+    position: fixed;
+    top: max(14px, env(safe-area-inset-top));
+    right: 14px;
+    left: 14px;
+  }
+
+  .gacha-select-back,
+  .gacha-cache-btn {
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-color: rgb(255 255 255 / 28%);
+    border-radius: 50%;
+    background: rgb(3 7 17 / 48%);
+    box-shadow:
+      0 10px 28px rgb(0 0 0 / 28%),
+      inset 0 0 0 1px rgb(255 255 255 / 5%);
+  }
+
+  .gacha-select-back > span,
+  .gacha-cache-btn > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .gacha-progress-container {
+    flex-basis: 31px;
+    width: 31px;
+    height: 31px;
+  }
+
+  .gacha-select-panel {
+    height: 100dvh;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .gacha-select-heading {
+    display: none;
+  }
+
+  .gacha-game-portals {
+    position: relative;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    display: block;
+    margin: 0;
+    overflow: hidden;
+    background: #070b16;
+  }
+
+  .gacha-game-portals::before {
+    display: block;
+    top: calc(50% - 48px);
+    right: -18%;
+    bottom: auto;
+    left: -18%;
+    width: auto;
+    height: 96px;
+    opacity: 0.38;
+    background: radial-gradient(ellipse at center, rgb(198 226 255 / 62%), transparent 68%);
+    transform: rotate(-8deg);
+    animation: gacha-mobile-rift-breathe 3.2s ease-in-out 600ms infinite alternate;
+  }
+
+  .gacha-game-portals::after {
+    display: block;
+    top: 50%;
+    right: -10%;
+    bottom: auto;
+    left: -10%;
+    width: auto;
+    height: 2px;
+    opacity: 0.88;
+    background: linear-gradient(90deg, transparent, #ffffff 22% 78%, transparent);
+    box-shadow:
+      0 0 14px rgb(180 220 255 / 86%),
+      0 0 34px rgb(115 176 255 / 62%);
+    transform: rotate(-8deg);
+    animation: gacha-mobile-seam-breathe 3.2s ease-in-out 600ms infinite alternate;
+  }
+
+  .gacha-game-portal,
+  .gacha-game-portal.is-genshin,
+  .gacha-game-portal.is-hsr {
+    position: absolute;
+    inset: auto;
+    left: 0;
+    width: 100%;
+    min-height: 0;
+    height: 58%;
+    padding: 0;
+    align-items: center;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    transform-origin: center;
+    animation: gacha-mobile-portal-arrive 520ms var(--portal-ease) both;
+    transition: none;
+  }
+
+  .gacha-game-portal.is-genshin {
+    top: 0;
+    clip-path: polygon(0 0, 100% 0, 100% 76%, 0 100%);
+    transform-origin: center top;
+  }
+
+  .gacha-game-portal.is-hsr {
+    right: auto;
+    bottom: 0;
+    clip-path: polygon(0 24%, 100% 0, 100% 100%, 0 100%);
+    transform-origin: center bottom;
+    animation-delay: 70ms;
+  }
+
+  .gacha-game-portal.is-genshin::before {
+    background-position: 30% 48%;
+  }
+
+  .gacha-game-portal.is-hsr::before {
+    background-position: 56% 46%;
+  }
+
+  .gacha-game-portal::before,
+  .gacha-game-portal:hover::before,
+  .gacha-game-portal:focus-visible::before {
+    filter: none;
+    transform: none;
+    transition: none;
+  }
+
+  .gacha-game-portals:has(.is-genshin:hover) .is-genshin,
+  .gacha-game-portals:has(.is-genshin:focus-visible) .is-genshin,
+  .gacha-game-portals:has(.is-hsr:hover) .is-hsr,
+  .gacha-game-portals:has(.is-hsr:focus-visible) .is-hsr {
+    width: 100%;
+  }
+
+  .gacha-game-portals:has(.is-genshin:hover) .is-hsr,
+  .gacha-game-portals:has(.is-genshin:focus-visible) .is-hsr,
+  .gacha-game-portals:has(.is-hsr:hover) .is-genshin,
+  .gacha-game-portals:has(.is-hsr:focus-visible) .is-genshin {
+    filter: none;
+  }
+
+  .gacha-portal-glow {
+    display: none;
+  }
+
+  .gacha-portal-art {
+    top: 36%;
+    right: 6%;
+    width: clamp(70px, 20vw, 96px);
+    opacity: 0.72;
+    filter: none;
+    transform: translateY(-50%) rotate(7deg);
+    transition: none;
+  }
+
+  .gacha-game-portal.is-genshin .gacha-portal-art {
+    top: 34%;
+    right: 7%;
+    opacity: 0.7;
+  }
+
+  .gacha-portal-content,
+  .gacha-game-portal:hover .gacha-portal-content,
+  .gacha-game-portal:focus-visible .gacha-portal-content {
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    transform: none;
+    translate: none;
+    animation: none;
+    transition: none;
+  }
+
+  .gacha-portal-logo {
+    order: 1;
+    max-width: 84%;
+    height: clamp(112px, 33vw, 152px);
+  }
+
+  .gacha-game-portal.is-genshin .gacha-portal-logo {
+    height: clamp(98px, 29vw, 134px);
+    margin: 0;
+  }
+
+  .gacha-portal-kicker {
+    order: 2;
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    margin: 8px 0 0;
+    padding: 5px 11px;
+    color: rgb(255 255 255 / 82%);
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    border: 1px solid rgb(255 255 255 / 24%);
+    border-radius: 999px;
+    background: rgb(4 8 18 / 42%);
+    box-shadow: 0 8px 22px rgb(0 0 0 / 18%);
+  }
+
+  .gacha-game-portal.is-genshin .gacha-portal-content {
+    transform: translateY(-4.5vh);
+  }
+
+  .gacha-game-portal.is-hsr .gacha-portal-content {
+    transform: translateY(4.5vh);
+  }
+
+  .gacha-portal-meta,
+  .gacha-portal-prizes,
+  .gacha-portal-enter {
+    display: none;
+  }
+
+  .gacha-game-select.is-launching-genshin .gacha-game-portal.is-genshin,
+  .gacha-game-select.is-launching-hsr .gacha-game-portal.is-hsr {
+    z-index: 10;
+  }
+
+  .gacha-game-select.is-launching-genshin .gacha-game-portal.is-genshin {
+    animation: gacha-mobile-portal-enter-genshin 620ms var(--portal-ease) both;
+  }
+
+  .gacha-game-select.is-launching-hsr .gacha-game-portal.is-hsr {
+    animation: gacha-mobile-portal-enter-hsr 620ms var(--portal-ease) both;
+  }
+
+  .gacha-game-select.is-launching-genshin .gacha-game-portal.is-hsr {
+    animation: gacha-mobile-portal-dismiss-hsr 300ms ease both;
+  }
+
+  .gacha-game-select.is-launching-hsr .gacha-game-portal.is-genshin {
+    animation: gacha-mobile-portal-dismiss-genshin 300ms ease both;
+  }
+
+  .gacha-game-select.is-launching-genshin .is-genshin .gacha-portal-content,
+  .gacha-game-select.is-launching-hsr .is-hsr .gacha-portal-content {
+    animation: gacha-mobile-logo-launch 500ms ease both;
+  }
+
+  .gacha-game-select.is-launching-genshin .is-genshin .gacha-portal-art,
+  .gacha-game-select.is-launching-hsr .is-hsr .gacha-portal-art {
+    animation: none;
+  }
+
+  .gacha-game-select.is-launching .gacha-game-portals::before {
+    animation: gacha-mobile-rift-launch 620ms ease both;
+  }
+
+  .gacha-game-select.is-launching .gacha-game-portals::after {
+    animation: gacha-mobile-seam-launch 620ms ease both;
+  }
+
+  .gacha-portal-currency,
+  .gacha-hsr-ornament {
+    animation: none;
+  }
+}
+

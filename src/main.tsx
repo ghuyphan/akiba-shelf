@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./styles/global.css";
+import "./styles/base/global.css";
 import "./styles/legacy.css";
 import { resetDocumentBranding } from "./lib/branding";
 import { hydrateInitialPageTheme } from "./utils/theme";

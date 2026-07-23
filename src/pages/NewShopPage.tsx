@@ -7,12 +7,12 @@ import { useAdminSession } from "../hooks/useAdminSession";
 import { signInAdmin } from "../lib/api/auth";
 import { createShop } from "../lib/api/shops";
 import { useAsyncAction } from "../hooks/useAsyncAction";
-import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/LoginPanel";
+import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/auth/LoginPanel";
 import { useToast } from "../components/ui/ToastProvider";
 import { Alert } from "../components/ui/Alert";
 import { Field, TextInput } from "../components/ui/Field";
 import { getErrorMessage } from "../lib/errors";
-import "../styles/admin.css";
+import "../styles/admin/admin.css";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
 import {
   MAX_OWNED_SHOPS,

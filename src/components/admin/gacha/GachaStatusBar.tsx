@@ -2,7 +2,7 @@ import { Eye, Gamepad2, Layers3, Rocket, X } from "lucide-react";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaGameType, GachaLiveStatus } from "../../../types/gacha";
 import { Button } from "../../ui/Button";
-import { AdminEditBar } from "../AdminEditBar";
+import { AdminEditBar } from "../shell/AdminEditBar";
 
 export type GachaStatusGame = {
   gameType: GachaGameType;

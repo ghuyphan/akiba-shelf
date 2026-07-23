@@ -1,0 +1,80 @@
+/* Core admin remediation: preserve readable, keyboard-safe editing on every viewport. */
+.admin-validation-summary { margin: 0 0 4px; }
+.admin-image-tile > button { width: 40px; height: 40px; }
+.role-pill.role-unavailable { color: #596579; background: #edf1f5; }
+.shop-card-edit-btn { min-width: 40px; min-height: 40px; }
+
+.builder-publish-alert { margin: 12px 12px 0; }
+.designer-list-select:focus-visible,
+.designer-module-handle:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--coral) 35%, transparent);
+  outline-offset: 2px;
+}
+.designer-block-list article small,
+.storefront-builder .designer-palette-grid small,
+.storefront-builder .designer-card-style-grid small { white-space: normal; overflow: visible; text-overflow: clip; }
+.storefront-builder .builder-section-heading small,
+.storefront-builder .builder-help,
+.storefront-builder .builder-empty-inspector,
+.storefront-builder .designer-setting-group small,
+.storefront-builder .designer-locale small { font-size: 10px; }
+
+.promotion-products-selection.is-empty { min-height: 180px; justify-content: center; padding: 20px; }
+.promotion-product-copy strong,
+.promotion-product-copy small { overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; }
+
+.admin-login {
+  width: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+.admin-login > .admin-access-card { flex: 0 0 auto; margin: auto; }
+
+@media (max-width: 760px) {
+  .admin-image-tile > button { width: 44px; height: 44px; }
+  .shop-card-edit-btn { min-width: 44px; min-height: 44px; }
+  .edit-shop-modal { width: 100%; padding: 0 var(--sheet-horizontal-padding) var(--sheet-bottom-padding); border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; }
+
+  .admin-container .storefront-builder,
+  .admin-container .storefront-builder.sidebar-closed { border-radius: 16px; }
+  .storefront-builder .builder-sidebar { width: 100%; }
+  .storefront-builder.sidebar-closed .builder-sidebar { min-height: 66px; }
+  .storefront-builder .builder-sidebar-head { min-height: 64px; }
+  .storefront-builder .builder-collapse,
+  .storefront-builder .builder-tabs button,
+  .storefront-builder .designer-block-list button,
+  .storefront-builder .designer-locale button,
+  .storefront-builder .builder-device-switcher button,
+  .storefront-builder .builder-zoom-controls button,
+  .storefront-builder .builder-history-actions > button { min-width: 44px; min-height: 44px; height: 44px; }
+  .storefront-builder .builder-tabs { min-height: auto; padding: 8px 12px; }
+  .storefront-builder .builder-inspector { max-height: none; overflow: visible; padding: 14px !important; }
+  .storefront-builder .designer-block-list article { min-height: 76px; cursor: default; }
+  .storefront-builder .designer-block-list article strong { font-size: 12px; }
+  .storefront-builder .designer-block-list article small { font-size: 10px; line-height: 1.4; }
+  .storefront-builder .builder-toolbar { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 10px 12px; }
+  .storefront-builder .builder-toolbar-controls,
+  .storefront-builder .builder-history-actions { grid-column: 1; width: 100%; justify-content: space-between; padding: 0; }
+  .storefront-builder .builder-device-switcher { flex: 1; }
+  .storefront-builder .builder-device-switcher button { flex: 1; font-size: 11px; }
+  .storefront-builder .builder-history-actions .button { min-height: 44px; }
+  .storefront-builder .designer-preview-stage { height: min(70dvh, 620px); min-height: 460px; }
+
+  .admin-promotion-modal { width: 100%; padding: 0 var(--sheet-horizontal-padding) var(--sheet-bottom-padding); border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; }
+  .promotion-products-list { max-height: none; overflow: visible; scrollbar-gutter: auto; overscroll-behavior: auto; }
+  .promotion-product-row .checkbox-wrapper { min-height: 44px; }
+  .promotion-product-row .checkbox-wrapper input[type="checkbox"],
+  .compact-switch-label input[type="checkbox"] { width: 22px; height: 22px; }
+  .compact-switch-label { min-height: 52px; }
+
+  .admin-login { padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); }
+  .admin-login > .admin-access-card { margin-block: auto; }
+}
+
+@media (max-height: 640px) {
+  .admin-login > .admin-access-card { margin-block: 0; }
+}
+

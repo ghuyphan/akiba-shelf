@@ -1,0 +1,114 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(6 14 24 / 58%);
+  backdrop-filter: blur(10px);
+}
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--sheet-backdrop);
+  backdrop-filter: blur(4px);
+}
+.sheet-backdrop.is-open { animation: fade-in var(--sheet-animation-duration) ease-out both; }
+.sheet-backdrop.is-closing {
+  pointer-events: none;
+  animation: fade-out var(--sheet-animation-duration) ease-in both;
+}
+.modal-backdrop.is-open {
+  animation: fade-in 220ms ease-out both;
+}
+.modal-backdrop.is-closing {
+  pointer-events: none;
+  animation: fade-out 220ms ease-in both;
+}
+
+.modal {
+  width: min(96vw, 620px);
+  max-height: min(92vh, 860px);
+  overflow: auto;
+  border-radius: 10px;
+  padding: 18px;
+}
+.modal.is-open {
+  animation: modal-scale-in 280ms var(--ease-out) both;
+}
+.modal.is-closing {
+  animation: modal-scale-out 220ms ease-in both;
+}
+
+.modal-wide {
+  width: min(96vw, 900px);
+}
+
+@keyframes mobile-sheet-enter {
+  from { transform: translateY(calc(100% + 16px)); opacity: .88; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes mobile-sheet-exit {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(calc(100% + 16px)); opacity: .88; }
+}
+
+@media (max-width: 760px) {
+  .mobile-sheet-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .mobile-sheet-modal {
+    width: 100% !important;
+    max-width: none;
+    max-height: var(--sheet-max-height);
+    margin: 0;
+    padding: 0 var(--sheet-horizontal-padding) var(--sheet-bottom-padding);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: var(--sheet-radius) var(--sheet-radius) 0 0 !important;
+    box-shadow: var(--sheet-shadow);
+    scrollbar-width: thin;
+  }
+
+  .mobile-sheet-modal.is-open {
+    animation: mobile-sheet-enter 420ms cubic-bezier(.22, 1, .36, 1) both;
+  }
+
+  .mobile-sheet-modal.is-closing {
+    animation: mobile-sheet-exit var(--sheet-animation-duration) ease-in both;
+  }
+
+  .mobile-sheet-handle {
+    position: sticky;
+    z-index: 3;
+    top: 0;
+    display: grid;
+    place-items: center;
+    height: 14px;
+    margin: 0;
+    background: var(--surface);
+  }
+
+  .mobile-sheet-handle span {
+    width: var(--sheet-handle-width);
+    height: 4px;
+    border-radius: 999px;
+    background: var(--sheet-handle-color);
+  }
+
+  .mobile-sheet-modal .modal-header {
+    position: sticky;
+    z-index: 2;
+    top: 14px;
+    margin-bottom: 8px;
+    padding: 4px 0 8px;
+    background: var(--surface);
+  }
+}
+

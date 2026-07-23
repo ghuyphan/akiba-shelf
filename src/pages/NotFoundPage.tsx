@@ -5,7 +5,7 @@ import { PlatformHeaderBrand } from "../components/ui/PlatformHeaderBrand";
 import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
-import "../styles/admin.css";
+import "../styles/admin/admin.css";
 
 export function NotFoundPage() {
   const { pathname } = useLocation();

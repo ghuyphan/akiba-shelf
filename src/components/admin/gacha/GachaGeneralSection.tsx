@@ -2,7 +2,7 @@ import { Gamepad2 } from "lucide-react";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaSettings } from "../../../types/gacha";
 import { Field, TextArea, TextInput } from "../../ui/Field";
-import { AdminCard } from "../AdminCard";
+import { AdminCard } from "../shell/AdminCard";
 
 type Props = {
   settings: GachaSettings;

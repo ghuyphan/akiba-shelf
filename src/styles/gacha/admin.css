@@ -1,0 +1,12 @@
+@import "./admin/01-foundation.css";
+@import "./admin/02-status.css";
+@import "./admin/03-controls-and-icons.css";
+@import "./admin/04-general.css";
+@import "./admin/05-luck-base.css";
+@import "./admin/06-banners.css";
+@import "./admin/07-pool-shell.css";
+@import "./admin/08-pool-items.css";
+@import "./admin/09-entry-editor.css";
+@import "./admin/10-workflow-refinements.css";
+@import "./admin/11-mobile.css";
+@import "./admin/12-motion-preferences.css";

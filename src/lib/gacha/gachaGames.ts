@@ -82,7 +82,7 @@ export const GACHA_GAME_TYPES = [
   "hsr",
 ] as const satisfies readonly GachaGameType[];
 
-const genshinElements: GachaElementMeta[] = [
+const genshinElementDefinitions: GachaElementMeta[] = [
   {
     id: "anemo",
     color: "#33af8f",
@@ -140,6 +140,22 @@ const genshinElements: GachaElementMeta[] = [
     },
   },
 ];
+
+const genshinElementOrder = [
+  "pyro",
+  "hydro",
+  "anemo",
+  "electro",
+  "dendro",
+  "cryo",
+  "geo",
+] as const satisfies readonly GachaElement[];
+
+const genshinElements = genshinElementOrder.map((id) => {
+  const element = genshinElementDefinitions.find((item) => item.id === id);
+  if (!element) throw new Error(`Missing Genshin element definition: ${id}`);
+  return element;
+});
 
 const hsrElements: GachaElementMeta[] = [
   {

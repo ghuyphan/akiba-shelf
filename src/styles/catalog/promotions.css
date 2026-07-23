@@ -1,0 +1,23 @@
+.product-promotion-label { display: inline-flex; align-items: center; width: max-content; margin-top: 4px; padding: 3px 7px; border-radius: 999px; color: color-mix(in srgb,var(--green) 86%,#17311c); background: color-mix(in srgb,var(--green) 10%,#fff); font-size: 10px; font-style: normal; font-weight: 800; line-height: 1.2; }
+.product-promotion-label.is-qualifying { color: color-mix(in srgb,var(--blue) 68%,var(--navy)); background: color-mix(in srgb,var(--blue) 10%,#fff); }
+.product-promotion-label.is-reward { color: #8a5b17; background: #fff4d8; }
+.product-promotion-label.is-combined { color: color-mix(in srgb,var(--green) 86%,#17311c); background: color-mix(in srgb,var(--green) 10%,#fff); }
+.cart-item-promotion { display: block; margin-top: 3px; color: var(--green); font-size: 11px; font-weight: 800; }
+.cart-promotion-summary { display: grid; gap: 3px; margin-bottom: 9px; padding: 10px 11px; border: 1px solid color-mix(in srgb,var(--green) 18%,var(--line)); border-radius: calc(var(--store-radius) * .65); color: var(--ink); background: color-mix(in srgb,var(--green) 5%,#fff); }
+.cart-promotion-summary strong { font-size: 12px; }
+.cart-promotion-summary span { color: var(--muted); font-size: 11px; line-height: 1.4; }
+.cart-promotion-summary.is-applied span { color: var(--green); font-weight: 750; }
+.cart-discount-row,.order-confirm-discount { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--green); font-size: 13px; font-weight: 800; }
+.cart-discount-row { margin-bottom: 8px; padding: 0 4px; }
+.order-confirm-discount { padding: 10px 0; border-top: 1px dashed var(--line); }
+.payment-receipt-discount { color: var(--green); font-weight: 800; }
+.cart-reward-picker { display: grid; gap: 4px; margin-bottom: 10px; padding: 11px; border: 1px solid color-mix(in srgb,var(--green) 24%,var(--line)); border-radius: calc(var(--store-radius) * .7); background: color-mix(in srgb,var(--green) 7%,#fff); }
+.cart-reward-picker>strong { font-size: 13px; }
+.cart-reward-picker>span { color: var(--green); font-size: 11px; font-weight: 750; }
+.cart-reward-picker>div { display: grid; gap: 6px; margin-top: 5px; }
+.cart-reward-picker button { display: grid; grid-template-columns: 34px minmax(0,1fr); align-items: center; gap: 8px; min-height: 44px; padding: 5px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: #fff; text-align: left; cursor: pointer; }
+.cart-reward-picker button img,.cart-reward-picker button i { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; background: var(--surface-soft); }
+.cart-reward-picker button>span { display: grid; min-width: 0; font-size: 11px; font-weight: 800; }
+.cart-reward-picker button small { color: var(--green); font-size: 10px; }
+.cart-reward-picker button:disabled { opacity: .5; cursor: not-allowed; }
+

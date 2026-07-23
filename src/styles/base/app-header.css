@@ -1,0 +1,284 @@
+a {
+  color: inherit;
+}
+
+/* Shared platform header used by landing, dashboard, and admin screens. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  width: 100%;
+  padding: 14px 16px 0;
+  border: 0;
+  background: linear-gradient(var(--page-bg) 72%, transparent);
+}
+
+.app-header-surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  width: min(100%, 1400px);
+  min-height: 66px;
+  margin: 0 auto;
+  padding: 8px 10px;
+  border: 1px solid rgb(205 216 229 / 80%);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 14px 38px rgb(26 38 60 / 10%);
+  backdrop-filter: blur(18px);
+}
+
+.app-header-surface-simple {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.app-header-brand,
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.app-header-brand {
+  justify-self: start;
+  gap: 9px;
+}
+
+.app-header-navigation {
+  min-width: 0;
+  justify-self: center;
+}
+
+.app-header-actions {
+  justify-self: end;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.app-header-title {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.app-header-title strong,
+.app-header-title small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-header-title strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.app-header-title small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.app-header-icon-button,
+.app-header-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  text-decoration: none;
+}
+
+.app-header-icon-button {
+  color: var(--ink);
+  background: var(--surface-soft);
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.app-header-icon-button:hover {
+  background: var(--surface-tint);
+  transform: translateY(-1px);
+}
+
+.app-header-icon-button:active {
+  transform: translateY(0);
+}
+
+.app-header-mark {
+  overflow: hidden;
+  color: #fff;
+  background: var(--coral);
+}
+
+.app-header-mark > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.app-header-mark .platform-mark {
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--coral) 16%, var(--line));
+  border-radius: inherit;
+  background: var(--surface-soft);
+  object-fit: contain;
+}
+
+.app-header-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.app-header-button:hover {
+  color: var(--ink);
+  background: var(--surface-tint);
+  transform: translateY(-1px);
+}
+
+.app-header-button:active {
+  background: var(--line);
+  transform: translateY(0);
+}
+
+.signout-modal {
+  width: min(92vw, 480px);
+}
+
+.signout-confirmation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  padding: 10px 2px 2px;
+}
+
+.signout-confirmation-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 8%, var(--surface));
+}
+
+.signout-confirmation h3 {
+  margin: 2px 0 6px;
+  font-size: 16px;
+}
+
+.signout-confirmation p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.signout-confirmation-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.app-header-icon-button:focus-visible,
+.app-header-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--coral) 22%, transparent);
+  outline-offset: 2px;
+}
+
+@media (min-width: 761px) {
+  .app-header-actions > .app-header-button {
+    width: 42px;
+    padding: 0;
+  }
+
+  .app-header-actions > .app-header-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 1100px) {
+  .app-header-surface-with-nav {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .app-header-surface-with-nav .app-header-navigation {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-header {
+    padding: 8px;
+  }
+
+  .app-header-surface {
+    gap: 8px;
+    padding: 7px;
+    border-radius: 17px;
+  }
+
+  .app-header-brand > .app-header-title,
+  .app-header-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .app-header-button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .app-header-icon-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .signout-confirmation-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+

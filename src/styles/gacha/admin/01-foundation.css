@@ -1,0 +1,53 @@
+/* Gacha admin workspace — one coherent layer. Keep selectors scoped to
+   .gacha-admin-page and prefer existing theme variables over hard-coded colors. */
+
+.gacha-admin-page {
+  --accent: var(--coral);
+  display: grid;
+  gap: 16px;
+}
+
+.gacha-admin-page,
+.gacha-admin-page > *,
+.gacha-section-anchor,
+.gacha-section-anchor > *,
+.gacha-setup-grid > *,
+.gacha-banner-fields > *,
+.gacha-item-editor > * {
+  min-width: 0;
+}
+
+.gacha-section-anchor {
+  display: block;
+}
+
+.gacha-section-error {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.gacha-persistent-feedback {
+  display: grid;
+  gap: 8px;
+}
+
+.gacha-inline-retry {
+  min-height: 32px;
+  margin-left: 6px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.gacha-inline-retry:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--red, #b42318) 22%, transparent);
+  outline-offset: 2px;
+}
+

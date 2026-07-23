@@ -1,0 +1,74 @@
+.gacha-game-select.skip-selector-intro .gacha-game-portal,
+.gacha-game-select.skip-selector-intro .gacha-portal-content,
+.gacha-game-select.skip-selector-intro .gacha-game-portals::after {
+  animation: none;
+}
+
+.gacha-game-select.is-launching {
+  overflow: hidden;
+}
+
+.gacha-game-select.is-launching .gacha-select-actions,
+.gacha-game-select.is-launching .gacha-select-heading {
+  pointer-events: none;
+  animation: gacha-ui-dismiss 360ms ease both;
+}
+
+.gacha-game-select.is-launching .gacha-game-portals::after {
+  animation: gacha-seam-charge 1320ms var(--portal-ease) both;
+}
+
+.gacha-game-select.is-launching .gacha-game-portals::before {
+  animation: gacha-rift-burst 1320ms var(--portal-ease) both;
+}
+
+.gacha-game-select.is-launching-genshin .gacha-game-portal.is-genshin,
+.gacha-game-select.is-launching-hsr .gacha-game-portal.is-hsr {
+  z-index: 10;
+  pointer-events: none;
+}
+
+.gacha-game-select.is-launching-genshin .gacha-game-portal.is-genshin {
+  animation: gacha-enter-genshin 1320ms var(--portal-ease) both;
+}
+
+.gacha-game-select.is-launching-hsr .gacha-game-portal.is-hsr {
+  animation: gacha-enter-hsr 1320ms var(--portal-ease) both;
+}
+
+.gacha-game-select.is-launching-genshin .gacha-game-portal.is-hsr {
+  animation: gacha-dismiss-right 620ms var(--portal-ease) both;
+}
+
+.gacha-game-select.is-launching-hsr .gacha-game-portal.is-genshin {
+  animation: gacha-dismiss-left 620ms var(--portal-ease) both;
+}
+
+.gacha-game-select.is-launching .gacha-portal-content {
+  animation: gacha-content-launch 520ms ease both;
+}
+
+.gacha-game-select.is-launching-genshin .is-genshin .gacha-portal-art {
+  z-index: 11;
+  animation: gacha-art-launch-genshin 1320ms var(--portal-ease) both;
+}
+
+.gacha-game-select.is-launching-hsr .is-hsr .gacha-portal-art {
+  z-index: 11;
+  animation: gacha-art-launch-hsr 1320ms var(--portal-ease) both;
+}
+
+.gacha-game-select.is-launching-genshin .is-genshin .gacha-portal-art::after,
+.gacha-game-select.is-launching-hsr .is-hsr .gacha-portal-art::after {
+  animation: gacha-portal-ring 1320ms ease-in-out both;
+}
+
+.gacha-game-select.is-launching .gacha-game-portal:focus-visible {
+  outline: 0;
+}
+
+.gacha-game-select.is-launching .gacha-portal-currency,
+.gacha-game-select.is-launching .gacha-hsr-ornament {
+  animation: none;
+}
+

@@ -4,6 +4,31 @@ import { describe, expect, it } from "vitest";
 import { getGachaGameDescriptor } from "../gachaGames";
 
 describe("Genshin element icons", () => {
+  it("keeps both games' elements in native UI order", () => {
+    expect(
+      getGachaGameDescriptor("genshin").elements.map((element) => element.id),
+    ).toEqual([
+      "pyro",
+      "hydro",
+      "anemo",
+      "electro",
+      "dendro",
+      "cryo",
+      "geo",
+    ]);
+    expect(
+      getGachaGameDescriptor("hsr").elements.map((element) => element.id),
+    ).toEqual([
+      "physical",
+      "fire",
+      "ice",
+      "lightning",
+      "wind",
+      "quantum",
+      "imaginary",
+    ]);
+  });
+
   it("keeps element paths aligned with the vendored icon font", () => {
     const font = readFileSync(
       resolve(

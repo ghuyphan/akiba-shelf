@@ -1,0 +1,100 @@
+/* Touch storefront feedback: avoid sticky hover states and native blue tap flashes. */
+.catalog-screen :is(a, button, [role="button"], input, select, textarea, summary) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.catalog-screen:not(.catalog-keyboard-navigation) :focus {
+  outline: none;
+}
+
+@keyframes storefront-add-confirm {
+  0% { transform: scale(1); }
+  34% { transform: scale(.86); }
+  68% { transform: scale(1.1); box-shadow: 0 0 0 8px color-mix(in srgb, var(--coral) 14%, transparent); }
+  100% { transform: scale(1); }
+}
+
+@keyframes storefront-cart-confirm {
+  0%,100% { translate: 0 0; }
+  38% { translate: 0 -7px; }
+  68% { translate: 0 2px; }
+}
+
+@keyframes mobile-cart-pickup-flight {
+  0% { transform: translate(0, 0) scale(.68) rotate(-5deg); opacity: 0; }
+  16% { transform: translate(0, -10px) scale(.92) rotate(-2deg); opacity: 1; }
+  68% { transform: translate(var(--tx-half), var(--ty-half)) scale(.62) rotate(3deg); opacity: .96; }
+  92% { opacity: .88; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(.12) rotate(7deg); opacity: 0; }
+}
+
+@keyframes mobile-cart-icon-land {
+  0%,100% { transform: scale(1); }
+  42% { transform: scale(.88); }
+  72% { transform: scale(1.14); box-shadow: 0 0 0 7px color-mix(in srgb,var(--coral) 13%,transparent); }
+}
+
+@media (hover: none), (pointer: coarse), (max-width: 1100px) {
+  .catalog-screen :is(a, button, [role="button"]) { touch-action: manipulation; }
+
+  .catalog-screen .button:hover,
+  .catalog-screen .chip:hover,
+  .catalog-screen .search-clear:hover,
+  .catalog-screen .view-toggle button:hover,
+  .catalog-screen .clear-button:hover,
+  .catalog-screen .mobile-drag-handle:hover .drag-handle-bar,
+  .catalog-screen .product-add-button:hover:not(:disabled),
+  .catalog-screen .featured-banner-add:hover,
+  .catalog-screen .featured-banner-nav>button:hover,
+  .catalog-screen .booth-info-trigger:hover,
+  .catalog-screen .social-qr-card:hover,
+  .catalog-screen .social-qr-zoom-link:hover,
+  .catalog-screen .sort-control-select > .select-menu-trigger:hover,
+  .catalog-screen .sort-control:hover,
+  .catalog-screen .select-menu-popover button:hover,
+  .catalog-screen .cart-quantity-stepper button:hover:not(:disabled),
+  .catalog-screen .cart-item-remove:hover {
+    transform: none !important;
+    box-shadow: none;
+  }
+
+  .catalog-screen .product-card:hover {
+    transform: none !important;
+    border-color: var(--line) !important;
+    box-shadow: 0 10px 26px rgb(15 23 42 / 5%) !important;
+  }
+
+  .catalog-screen .product-card:hover .product-image-wrap>img { transform: none; }
+  .catalog-screen .booth-info-trigger:hover { border-color: var(--line); }
+  .catalog-screen .booth-info-trigger:hover .booth-info-trigger-arrow { transform: none; }
+  .catalog-screen .sort-control-select > .select-menu-trigger:hover,
+  .catalog-screen .sort-control-select > .select-menu-trigger:hover span { color: inherit; }
+  .catalog-screen .sort-control-select > .select-menu-trigger:hover { border-color: var(--soft-line); background: var(--surface); }
+  .catalog-screen .select-menu-popover button:hover { color: #405067; background: transparent; }
+  .catalog-screen .select-menu-popover button.active:hover { background: color-mix(in srgb, var(--coral) 10%, #fff); }
+
+  .catalog-screen .is-adding-to-cart { animation: storefront-add-confirm 520ms cubic-bezier(.22, 1, .36, 1) both !important; }
+  .catalog-screen .selected-panel.cart-just-updated { animation: none !important; }
+  .flying-product-item {
+    display: grid !important;
+    width: 44px;
+    height: 50px;
+    padding: 3px;
+    border-radius: 11px;
+    box-shadow: 0 10px 24px rgb(15 23 42 / 18%);
+    animation: mobile-cart-pickup-flight 560ms cubic-bezier(.22, 1, .36, 1) forwards !important;
+  }
+  .flying-product-item>img { border-radius: 8px; }
+  .flying-product-item>span { top: -5px; right: -5px; width: 19px; height: 19px; border-width: 2px; }
+  .flying-product-item>span svg { width: 10px; height: 10px; }
+  .mobile-cart-summary-icon-wrap.cart-icon-landing { animation: mobile-cart-icon-land 340ms cubic-bezier(.22,1,.36,1) both; }
+  .catalog-lightweight .flying-product-item { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalog-screen .is-adding-to-cart,
+  .catalog-screen .selected-panel.cart-just-updated { animation: none !important; }
+  .flying-product-item { display: none !important; }
+  .mobile-cart-summary-icon-wrap.cart-icon-landing { animation: none !important; }
+}
+

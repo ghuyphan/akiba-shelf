@@ -1,0 +1,118 @@
+.open-pill,
+.button {
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  padding: 0 13px;
+  gap: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.open-pill {
+  justify-content: center;
+  color: var(--ink);
+  background: #fff;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgb(23 32 51 / 10%);
+}
+
+.button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.button:focus-visible,
+.alert-close:focus-visible,
+.toast-close:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--green) 28%, transparent);
+  outline-offset: 2px;
+}
+
+.button-loading {
+  pointer-events: none;
+}
+
+.button-spinner {
+  animation: spin 900ms linear infinite;
+}
+
+.button-primary {
+  color: #fff;
+  background: var(--coral);
+  border-color: var(--coral);
+}
+
+.button-secondary {
+  color: #fff;
+  background: var(--teal-dark);
+  border-color: var(--teal-dark);
+}
+
+.button-ghost {
+  min-width: 44px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: transparent;
+  border-color: transparent;
+}
+
+.button-danger {
+  color: #fff;
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.status-pill {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  min-height: 26px;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.status-pill > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.status-pill-neutral { color: var(--muted); background: var(--surface-soft); }
+.status-pill-pending,
+.status-pill-warning { color: #865b12; background: #fff4d6; border-color: #f0ddb0; }
+.status-pill-success { color: #286f50; background: #e7f6ee; border-color: #b9decf; }
+.status-pill-danger { color: #a83e49; background: #fff0f1; border-color: #efc3c8; }
+.status-pill-info { color: #315f8d; background: #eef6ff; border-color: #cdd9ea; }
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+

@@ -8,7 +8,7 @@ import {
 } from "../lib/api/auth";
 import { getShopMemberships } from "../lib/api/shops";
 import { useToast } from "../components/ui/ToastProvider";
-import "../styles/admin.css";
+import "../styles/admin/admin.css";
 import { routeAfterAuthentication } from "../lib/auth/authRouting";
 import { getAuthErrorNotice } from "../lib/auth/authErrors";
 import {

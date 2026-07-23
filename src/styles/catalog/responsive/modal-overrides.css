@@ -1,0 +1,20 @@
+@media (max-width: 760px) {
+  .product-image-thumbs { right: 7px; bottom: 7px; }
+  .product-image-thumbs button { width: 24px; height: 24px; }
+  .product-card-actions { gap: 5px; }
+  .product-add-button { width: 44px; height: 44px; }
+  .booth-modal-redesign,.order-confirm-modal,.payment-qr-modal-redesign { width: min(100vw - 16px, 930px); max-height: calc(100vh - 16px); padding: 16px; border-radius: 18px; }
+  .booth-modal-hero { grid-template-columns: auto minmax(0, 1fr); padding: 15px; }
+  .booth-modal-hero .booth-code-pill { grid-column: 1 / -1; width: max-content; }
+  .booth-modal-facts { grid-template-columns: 1fr; }
+  .booth-modal-social-grid { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding-bottom: 6px; }
+  .order-confirm-layout,.payment-qr-layout { grid-template-columns: 1fr; }
+  .order-confirm-main,.order-confirm-side { padding: 14px; }
+  .order-confirm-actions { grid-template-columns: 1fr; }
+  .order-confirm-actions .button-primary { grid-row: 1; }
+  .payment-qr-pane { padding: 14px; }
+  .payment-qr-image,.payment-qr-loading { width: min(100%, 300px) !important; }
+  .payment-transfer-card { grid-template-columns: 1fr; }
+  .payment-transfer-card>span { grid-column: auto; }
+}
+

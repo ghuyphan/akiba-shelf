@@ -6,13 +6,17 @@ to one surface.
 
 ## Destination ownership
 
-- `global.css`: tokens, reset, typography, shared buttons/fields/modal/alert/
-  toast, accessibility states.
-- `catalog.css`: storefront, featured deck, products, booth, cart, checkout,
-  and payment.
-- `admin.css`: platform, auth, dashboard, admin navigation/workspaces, settings,
-  and designer.
-- `gacha-*.css`: named gacha admin, entry, and host surfaces.
+- `src/styles/base/global.css`: import manifest for tokens, reset, typography,
+  shared controls, overlays, feedback, and accessibility states.
+- `src/styles/catalog/catalog.css`: import manifest for storefront, featured
+  deck, products, booth, cart, checkout, and payment fragments.
+- `src/styles/admin/admin.css`: import manifest for platform, auth, dashboard,
+  navigation, workspace, settings, and designer fragments.
+- `src/styles/gacha/`: `admin.css` and `host.css` are import manifests;
+  `entry.css` owns the small storefront gacha entry surface directly.
+
+Manifest order is part of the current cascade contract. Do not alphabetize
+imports or load individual fragments from components during a migration.
 
 ## Process for one slice
 

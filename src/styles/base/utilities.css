@@ -1,0 +1,65 @@
+/* Shared foundations: tokens, resets, typography, and reusable UI primitives. */
+
+.stack {
+  display: grid;
+  gap: 14px;
+}
+
+.quantity-stepper {
+  display: grid;
+  grid-template-columns: 34px 44px 34px;
+  align-items: center;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.quantity-stepper button {
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    transform 150ms var(--ease-standard),
+    color 150ms var(--ease-standard),
+    background 150ms var(--ease-standard);
+}
+
+.quantity-stepper button:hover {
+  color: var(--coral);
+  transform: translateY(-1px);
+}
+
+.quantity-stepper button:disabled {
+  color: #a8b2c2;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.upload-button-loading {
+  pointer-events: none;
+}
+
+.upload-button-loading .upload-button-face {
+  opacity: 0.72;
+}
+
+.field {
+  display: grid;
+  gap: 5px;
+}
+
+.field-label {
+  color: #314159;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.field-hint {
+  color: #627089;
+  font-size: 12px;
+  font-weight: 700;
+}
