@@ -238,6 +238,14 @@ describe("PaymentQrModal", () => {
       document.querySelector(".payment-qr-loading .spin-icon"),
     ).toBeInTheDocument();
     expect(
+      document.querySelector(".payment-qr-loading-code"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Price and stock are checked securely before your order is created.",
+      ),
+    ).toBeInTheDocument();
+    expect(
       screen.queryByText("Couldn’t reach checkout"),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Scan to pay" })).toBe(

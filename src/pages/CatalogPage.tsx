@@ -159,13 +159,6 @@ export function CatalogPage() {
     clearReconciliationNotice,
   } = usePersistentCart(shopSlug);
 
-  useEffect(() => {
-    if (cart.length > 0) {
-      void import("../components/catalog/checkout/PaymentQrModal").catch(
-        () => {},
-      );
-    }
-  }, [cart.length]);
   const orderingEnabled = shop?.accepting_orders !== false;
   const catalogQuery = useMemo(
     () => ({ category: activeCategory, search: debouncedSearch, sort }),
@@ -197,12 +190,6 @@ export function CatalogPage() {
     orderingEnabled,
     initialBootstrap,
   );
-  useEffect(() => {
-    if (cart.length === 0 || !orderingEnabled) return;
-    void ensurePayment().catch(() => {
-      // Checkout surfaces the actionable error if the warm-up request fails.
-    });
-  }, [cart.length, ensurePayment, orderingEnabled]);
   const booth = useMemo(
     () =>
       shop?.catalog_source_shop_id
@@ -652,13 +639,15 @@ export function CatalogPage() {
         );
         return;
       }
+      // Mount the lazy checkout chunk while payment settings load so restored
+      // carts stay off the initial storefront path without adding click delay.
+      setPaymentModalRequested(true);
       void Promise.all([ensurePayment(), waitFor ?? Promise.resolve()])
         .then(([nextPayment]) => {
           if (!hasUsablePayment(nextPayment)) {
             toast.error(catalogCopy.paymentSettingsError);
             return;
           }
-          setPaymentModalRequested(true);
           setIsQrOpen(true);
         })
         .catch((err) => {

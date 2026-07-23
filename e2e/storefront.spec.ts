@@ -41,6 +41,43 @@ test("does not cache empty payment defaults before checkout needs them", async (
     .toBe(false);
 });
 
+test("defers restored-cart checkout code and payment settings until payment intent", async ({
+  page,
+}) => {
+  const checkoutModuleRequests: string[] = [];
+  const paymentRequests: string[] = [];
+  page.on("request", (request) => {
+    const url = request.url();
+    if (url.includes("PaymentQrModal")) checkoutModuleRequests.push(url);
+    if (url.includes("/rest/v1/payment_settings")) paymentRequests.push(url);
+  });
+  await page.evaluate((product) => {
+    localStorage.setItem(
+      "akiba-shelf-cart-v1:akiba-shelf",
+      JSON.stringify({ version: 1, items: [{ product, quantity: 1 }] }),
+    );
+  }, products[0]);
+
+  await page.reload();
+  const viewCart = page.getByRole("button", { name: /View cart/i });
+  if ((page.viewportSize()?.width ?? 1000) <= 760) {
+    await expect(viewCart).toBeVisible();
+    await viewCart.click();
+  } else if (await viewCart.isVisible()) {
+    await viewCart.click();
+  }
+  const payNow = page.getByRole("button", { name: /Pay now/i });
+  await expect(payNow).toBeVisible();
+
+  expect(checkoutModuleRequests).toHaveLength(0);
+  expect(paymentRequests).toHaveLength(0);
+
+  await payNow.click();
+  await expect(page.getByRole("dialog", { name: "Scan to pay" })).toBeVisible();
+  expect(checkoutModuleRequests).toHaveLength(1);
+  expect(paymentRequests).toHaveLength(1);
+});
+
 test("restores a pending order quietly and loads payment before showing it", async ({
   page,
 }) => {
@@ -735,12 +772,16 @@ test("queues checkout offline and reserves it safely after reconnect", async ({
   await context.setOffline(false);
   await expect(page.getByRole("dialog", { name: "Scan to pay" })).toBeVisible();
   await expect(page.getByText("A100").first()).toBeVisible();
-  const reservedCart = await page.evaluate(() =>
-    JSON.parse(
-      localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null",
-    ),
-  );
-  expect(reservedCart?.items).toHaveLength(0);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const reservedCart = JSON.parse(
+          localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null",
+        );
+        return reservedCart?.items?.length ?? -1;
+      }),
+    )
+    .toBe(0);
 });
 
 test("isolates storefront state when navigating between shops", async ({

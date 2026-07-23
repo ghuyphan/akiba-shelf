@@ -1,6 +1,7 @@
 import { pathToFileURL } from "node:url";
 
 const DEFAULT_ATTEMPTS = 10;
+const DEFAULT_CANONICAL_ATTEMPTS = 40;
 const DEFAULT_DELAY_MS = 3_000;
 const REQUEST_TIMEOUT_MS = 15_000;
 const deploymentCheckPath = "/__deployment-check?source=github-actions";
@@ -155,6 +156,7 @@ export async function verifyCloudflareDeployment({
   canonicalUrl,
   wwwUrl,
   expectedRelease,
+  canonicalAttempts,
   ...options
 }) {
   const deploymentOrigin = normalizeOrigin(deploymentUrl, "Deployment URL");
@@ -174,13 +176,22 @@ export async function verifyCloudflareDeployment({
   }
   await fetchAppHtml(`${deploymentOrigin}/auth`, options, entryAsset);
   await fetchEntryAsset(deploymentOrigin, entryAsset, options);
+
+  // Custom-domain routing can briefly expose the new HTML before every edge
+  // serves its matching hashed assets. Give that propagation a longer budget
+  // while still verifying the exact canonical asset users will request.
+  const canonicalOptions = {
+    ...options,
+    attempts:
+      canonicalAttempts ?? options.attempts ?? DEFAULT_CANONICAL_ATTEMPTS,
+  };
   await fetchRelease(
     `${canonicalOrigin}/release.json`,
-    options,
+    canonicalOptions,
     metadata.release,
   );
-  await fetchAppHtml(`${canonicalOrigin}/`, options, entryAsset);
-  await fetchEntryAsset(canonicalOrigin, entryAsset, options);
+  await fetchAppHtml(`${canonicalOrigin}/`, canonicalOptions, entryAsset);
+  await fetchEntryAsset(canonicalOrigin, entryAsset, canonicalOptions);
 
   const wwwCheckUrl = new URL(deploymentCheckPath, wwwOrigin);
   const expectedLocation = new URL(deploymentCheckPath, canonicalOrigin).href;

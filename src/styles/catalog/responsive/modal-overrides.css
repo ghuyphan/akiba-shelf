@@ -13,8 +13,7 @@
   .order-confirm-actions { grid-template-columns: 1fr; }
   .order-confirm-actions .button-primary { grid-row: 1; }
   .payment-qr-pane { padding: 14px; }
-  .payment-qr-image,.payment-qr-loading { width: min(100%, 300px) !important; }
+  .payment-qr-image,.payment-qr-loading,.payment-qr-unavailable { width: min(100%, 300px) !important; }
   .payment-transfer-card { grid-template-columns: 1fr; }
   .payment-transfer-card>span { grid-column: auto; }
 }
-

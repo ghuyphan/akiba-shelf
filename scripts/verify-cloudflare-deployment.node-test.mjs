@@ -90,6 +90,57 @@ test("waits for the canonical domain and verifies the www redirect", async () =>
   ]);
 });
 
+test("allows canonical hashed assets to outlast the normal retry budget", async () => {
+  let canonicalAssetRequests = 0;
+  const fetchImpl = async (url) => {
+    if (url === "https://deploy.pages.dev/release.json")
+      return releaseResponse("release-1");
+    if (url === "https://deploy.pages.dev/") return htmlResponse(currentHtml);
+    if (url === "https://deploy.pages.dev/auth")
+      return htmlResponse(currentHtml);
+    if (url === "https://deploy.pages.dev/assets/index-new12345.js")
+      return new Response("export {};", {
+        headers: { "content-type": "application/javascript" },
+      });
+    if (url === "https://matsuri.pro/release.json")
+      return releaseResponse("release-1");
+    if (url === "https://matsuri.pro/") return htmlResponse(currentHtml);
+    if (url === "https://matsuri.pro/assets/index-new12345.js") {
+      canonicalAssetRequests += 1;
+      return canonicalAssetRequests <= 10
+        ? htmlResponse(currentHtml)
+        : new Response("export {};", {
+            headers: { "content-type": "application/javascript" },
+          });
+    }
+    if (
+      url === "https://www.matsuri.pro/__deployment-check?source=github-actions"
+    ) {
+      return new Response(null, {
+        status: 301,
+        headers: {
+          location:
+            "https://matsuri.pro/__deployment-check?source=github-actions",
+        },
+      });
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  };
+
+  await verifyCloudflareDeployment({
+    deploymentUrl: "https://deploy.pages.dev",
+    canonicalUrl: "https://matsuri.pro",
+    wwwUrl: "https://www.matsuri.pro",
+    attempts: 1,
+    canonicalAttempts: 12,
+    delayMs: 0,
+    fetchImpl,
+    sleep: async () => undefined,
+  });
+
+  assert.equal(canonicalAssetRequests, 11);
+});
+
 test("rejects non-HTTPS deployment origins", async () => {
   await assert.rejects(
     verifyCloudflareDeployment({
