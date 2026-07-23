@@ -9,7 +9,6 @@ import {
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { PageLoading } from "./components/ui/PageLoading";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
-import { configurePwa } from "./lib/offline/pwa";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
 
 const PlatformLayout = lazyWithRetry("platform-layout", () =>
@@ -64,7 +63,41 @@ function RouteAwareToastProvider({ children }: { children: ReactNode }) {
 function RouteAwarePwa() {
   const { pathname } = useLocation();
   useEffect(() => {
-    configurePwa(pathname);
+    let cancelled = false;
+    let delayTimer: number | undefined;
+    let idleCallback: number | undefined;
+
+    const configure = () => {
+      if (cancelled) return;
+      void import("./lib/offline/pwa")
+        .then(({ configurePwa }) => {
+          if (!cancelled) configurePwa(pathname);
+        })
+        .catch(() => undefined);
+    };
+    const scheduleAfterLoad = () => {
+      delayTimer = window.setTimeout(() => {
+        if ("requestIdleCallback" in window) {
+          idleCallback = window.requestIdleCallback(configure, {
+            timeout: 4_000,
+          });
+        } else {
+          configure();
+        }
+      }, 1_500);
+    };
+
+    if (document.readyState === "complete") scheduleAfterLoad();
+    else window.addEventListener("load", scheduleAfterLoad, { once: true });
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("load", scheduleAfterLoad);
+      window.clearTimeout(delayTimer);
+      if (idleCallback !== undefined && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleCallback);
+      }
+    };
   }, [pathname]);
   return null;
 }

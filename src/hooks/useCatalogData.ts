@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultBooth } from "../lib/constants";
-import {
-  getCatalogCoreData,
-  getPublicGachaEnabled,
-  getPublicProductsByIds,
-} from "../lib/api";
+import { getCatalogCoreData } from "../lib/api/catalog";
+import { getPublicGachaEnabled } from "../lib/api/gachaPublic";
+import { getPublicProductsByIds } from "../lib/api/products";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import {
   loadCatalogSnapshot,

@@ -8,6 +8,7 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:4174/",
     trace: "on-first-retry",
+    serviceWorkers: "block",
   },
   webServer: {
     command: "npm run build:perf && npm run preview:perf",
@@ -24,6 +25,10 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "phone-chromium",
+      use: { ...devices["Pixel 7"] },
     },
   ],
 });

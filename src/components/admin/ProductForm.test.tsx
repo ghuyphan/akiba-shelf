@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PlatformI18nProvider } from "../../lib/i18n/platformI18n";
 import type { Product } from "../../types/catalog";
 import { ToastProvider } from "../ui/ToastProvider";
@@ -44,6 +44,8 @@ function renderForm(onDelete = vi.fn().mockResolvedValue(undefined)) {
 }
 
 describe("ProductForm", () => {
+  afterEach(cleanup);
+
   it("uses the shared destructive confirmation before deleting", async () => {
     const user = userEvent.setup();
     const onDelete = renderForm();
@@ -54,5 +56,22 @@ describe("ProductForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Delete product" }));
     expect(onDelete).toHaveBeenCalledWith("product-1");
+  });
+
+  it("associates the item-code validation message with its input", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const itemCode = screen.getByRole("textbox", {
+      name: "Item code · Required",
+    });
+    await user.clear(itemCode);
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    const error = await screen.findByText("Item code is required.");
+    expect(error).toHaveAttribute("role", "alert");
+    expect(itemCode).toHaveAttribute("aria-describedby", error.id);
+    expect(itemCode).toHaveAttribute("aria-invalid", "true");
   });
 });

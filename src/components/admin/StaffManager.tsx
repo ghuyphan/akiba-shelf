@@ -18,8 +18,8 @@ import {
   type ShopInvitation,
   type StaffAccess,
   type StaffRole,
-} from "../../lib/api";
-import { getErrorMessage } from "../../lib/errors";
+} from "../../lib/api/staff";
+import { getUserFacingErrorMessage } from "../../lib/errors";
 import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
 import { Field, FieldLabel, TextInput } from "../ui/Field";
@@ -90,7 +90,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
     setInvitations([]);
     void reload()
       .catch((caught) => {
-        const message = getErrorMessage(caught);
+        const message = getUserFacingErrorMessage(caught, "Could not load staff");
         setLoadError(message);
         toast.error(t(message), t("Could not load staff"));
       })
@@ -103,7 +103,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
     try {
       await reload();
     } catch (caught) {
-      setLoadError(getErrorMessage(caught));
+      setLoadError(getUserFacingErrorMessage(caught, "Could not load staff"));
     } finally {
       setLoading(false);
     }
@@ -128,7 +128,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
       await reload();
       toast.success(t("Invite processed. The team list is up to date."));
     } catch (caught) {
-      toast.error(t(getErrorMessage(caught)), t("Could not send invitation"));
+      toast.error(t(getUserFacingErrorMessage(caught, "Could not send invitation")), t("Could not send invitation"));
     } finally {
       setInviteBusy(false);
     }
@@ -154,7 +154,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
       toast.success(t("Staff access updated."));
       return true;
     } catch (caught) {
-      toast.error(t(getErrorMessage(caught)), t("Could not update staff"));
+      toast.error(t(getUserFacingErrorMessage(caught, "Could not update staff")), t("Could not update staff"));
       return false;
     } finally {
       setUpdatingId(null);
@@ -169,7 +169,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
       await reload();
       toast.success(t("Shop access removed."));
     } catch (caught) {
-      toast.error(t(getErrorMessage(caught)), t("Could not remove access"));
+      toast.error(t(getUserFacingErrorMessage(caught, "Could not remove access")), t("Could not remove access"));
     } finally {
       setRemoveBusy(false);
     }
@@ -181,7 +181,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
       await reload();
       toast.success(t("Invitation revoked."));
     } catch (caught) {
-      toast.error(t(getErrorMessage(caught)), t("Could not revoke invitation"));
+      toast.error(t(getUserFacingErrorMessage(caught, "Could not revoke invitation")), t("Could not revoke invitation"));
     } finally {
       setRevokingId(null);
     }

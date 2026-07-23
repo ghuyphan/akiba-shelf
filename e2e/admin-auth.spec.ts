@@ -1282,7 +1282,9 @@ test("designer phone rules apply inside the preview iframe", async ({
     )
     .toBe(3);
 
-  await desktopPreview.locator(".storefront-module-booth").click();
+  await desktopPreview
+    .locator(".storefront-module-booth > .designer-module-handle")
+    .click();
   await expect(page.locator(".designer-identity-card")).toBeVisible();
   await expect(page.locator(".designer-identity-preview")).toContainText(
     "Fixture Booth",
@@ -1316,25 +1318,33 @@ test("designer phone rules apply inside the preview iframe", async ({
     )
     .toBeGreaterThan(240);
 
-  await desktopPreview.locator(".storefront-module-cart").click();
+  await desktopPreview
+    .locator(".storefront-module-cart > .designer-module-handle")
+    .click();
   await expect(page.locator(".designer-payment-card")).toBeVisible();
   await expect(page.locator(".designer-payment-preview")).toContainText(
     "Customer ready",
   );
 
-  await desktopPreview.locator(".storefront-module-featured").click();
+  await desktopPreview
+    .locator(".storefront-module-featured > .designer-module-handle")
+    .click();
   await page.getByRole("button", { name: /Pop poster/ }).click();
   await expect(
     desktopPreview.locator(".storefront-module-featured"),
   ).toHaveClass(/style-featured-poster/);
 
-  await desktopPreview.locator(".storefront-module-controls").click();
+  await desktopPreview
+    .locator(".storefront-module-controls > .designer-module-handle")
+    .click();
   await page.getByRole("button", { name: /Compact/ }).click();
   await expect(
     desktopPreview.locator(".storefront-module-controls"),
   ).toHaveClass(/style-controls-compact/);
 
-  await desktopPreview.locator(".storefront-module-products").click();
+  await desktopPreview
+    .locator(".storefront-module-products > .designer-module-handle")
+    .click();
   await page.getByRole("button", { name: /Framed/ }).click();
   await expect(
     desktopPreview.locator(".storefront-module-products"),

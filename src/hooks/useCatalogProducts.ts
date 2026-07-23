@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  getPublicProducts,
-  type PublicProductSort,
-} from "../lib/api";
+import { getPublicProducts } from "../lib/api/products";
+import type { PublicProductSort } from "../lib/catalogQueries";
 import { getErrorMessage, isSessionNoise, isTransportError } from "../lib/errors";
 import { queryLocalCatalog } from "../lib/catalogQueries";
 import type { Product } from "../types/catalog";

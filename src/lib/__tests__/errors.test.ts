@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getErrorMessage, isSessionNoise, isTransportError } from "../errors";
+import {
+  getErrorMessage,
+  getUserFacingErrorMessage,
+  isSessionNoise,
+  isTransportError,
+} from "../errors";
 
 describe("getErrorMessage", () => {
   it("sanitizes database check constraint errors into human friendly copy", () => {
@@ -23,6 +28,40 @@ describe("getErrorMessage", () => {
   it("passes friendly error messages through unchanged", () => {
     const error = new Error("Every active banner needs at least one merch item.");
     expect(getErrorMessage(error)).toBe("Every active banner needs at least one merch item.");
+  });
+
+  it("keeps short plain-language action errors user-facing", () => {
+    expect(
+      getUserFacingErrorMessage(
+        new Error("This order was already handled."),
+        "Could not update the order.",
+      ),
+    ).toBe("This order was already handled.");
+  });
+
+  it("replaces technical, structured, and oversized errors", () => {
+    const fallback = "Could not update the order.";
+    expect(
+      getUserFacingErrorMessage(
+        new Error('relation "orders" violates constraint "orders_check"'),
+        fallback,
+      ),
+    ).toBe(fallback);
+    expect(
+      getUserFacingErrorMessage(
+        new Error('{"message":"upstream failed","request_id":"secret"}'),
+        fallback,
+      ),
+    ).toBe(fallback);
+    expect(
+      getUserFacingErrorMessage(new Error("x".repeat(241)), fallback),
+    ).toBe(fallback);
+    expect(
+      getUserFacingErrorMessage(
+        new Error("permission denied for function get_shop_members"),
+        fallback,
+      ),
+    ).toBe(fallback);
   });
 
   it("identifies session noise correctly", () => {

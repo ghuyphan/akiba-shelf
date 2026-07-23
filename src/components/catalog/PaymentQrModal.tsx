@@ -34,6 +34,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   const { session, order, connectionState, isSubmitting, isCancelling } = checkout;
   const [customerName, setCustomerName] = useState(() => session?.customerName ?? "");
   const [customerNameError, setCustomerNameError] = useState("");
+  const [copyFeedback, setCopyFeedback] = useState("");
   const checkoutCart = session?.cart ?? cart;
 
   const pricing = useMemo(
@@ -70,6 +71,20 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
     if (!order || (!navigator.onLine && order.source !== "offline_event")) return;
     setIsCancelConfirmOpen(false);
     await checkout.cancel();
+  }
+
+  async function copyAccountNumber() {
+    const accountNumber = (payment.bank_account_no ?? "").trim();
+    if (!accountNumber || !navigator.clipboard) {
+      setCopyFeedback(copy.copyAccountNumberFailed);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(accountNumber);
+      setCopyFeedback(copy.accountNumberCopied);
+    } catch {
+      setCopyFeedback(copy.copyAccountNumberFailed);
+    }
   }
 
   if (order?.status === "confirmed") {
@@ -312,7 +327,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
 
         <div className="payment-receipt payment-receipt-redesign">
           <div className="payment-order-identity"><div><span>{copy.orderCode}</span><strong>{order.order_code}</strong></div>{order.customer_name && <div><span>{copy.pickupName}</span><strong>{order.customer_name}</strong></div>}</div>
-          <div className="payment-transfer-card"><span>{copy.transferTo}</span><div><small>{copy.accountName}</small><strong>{payment.bank_account_name || "N/A"}</strong></div><div><small>{copy.accountNumber}</small><button type="button" onClick={() => void navigator.clipboard.writeText(payment.bank_account_no || "")}><strong>{payment.bank_account_no || "N/A"}</strong><Copy size={14} /></button></div><div><small>{copy.bank}</small><strong>{bankName}</strong></div><div className="payment-transfer-note"><small>{copy.transferNote}</small><strong>{order.order_code}</strong></div></div>
+          <div className="payment-transfer-card"><span>{copy.transferTo}</span><div><small>{copy.accountName}</small><strong>{payment.bank_account_name || "N/A"}</strong></div><div><small>{copy.accountNumber}</small><button type="button" aria-label={copy.copyAccountNumber} onClick={() => void copyAccountNumber()}><strong>{payment.bank_account_no || "N/A"}</strong><Copy size={14} /></button><span className="payment-copy-feedback" aria-live="polite">{copyFeedback}</span></div><div><small>{copy.bank}</small><strong>{bankName}</strong></div><div className="payment-transfer-note"><small>{copy.transferNote}</small><strong>{order.order_code}</strong></div></div>
           <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => { const line = getPricingLine(pricing, item.product.id); if (!line) return null; return <div key={item.product.id}><span>{line.quantity} × {item.product.name}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</span>{totalAmount === order.total_amount && <strong>{formatVnd(line.total)}</strong>}</div>; })}{pricing.discountAmount > 0 && <div className="payment-receipt-discount"><span>{copy.discount}</span><strong>−{formatVnd(pricing.discountAmount)}</strong></div>}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
           {payment.payment_instructions.trim() && <div className="receipt-instructions"><Sparkles size={16} /><span>{payment.payment_instructions}</span></div>}
           <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button>

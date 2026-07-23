@@ -5,8 +5,8 @@ import {
   getAdminGachaConfiguration,
   publishGachaConfiguration,
   saveGachaDraft,
-} from "../../lib/api";
-import { getErrorMessage } from "../../lib/errors";
+} from "../../lib/api/gacha";
+import { getUserFacingErrorMessage } from "../../lib/errors";
 import {
   GACHA_GAME_TYPES,
   getGachaBannerFeaturedRule,
@@ -178,7 +178,9 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       })
       .catch((error) => {
         if (cancelled) return;
-        setLoadError(t(getErrorMessage(error, "Could not load the minigame.")));
+        setLoadError(
+          t(getUserFacingErrorMessage(error, "Could not load the minigame.")),
+        );
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -228,7 +230,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
         setAutosaveError(null);
       }).catch((error: unknown) => {
         setAutosaveError({
-          message: t(getErrorMessage(error, "Could not save draft")),
+          message: t(getUserFacingErrorMessage(error, "Could not save draft")),
           snapshotKey,
           gameType,
           snapshot,
@@ -608,7 +610,9 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       clearGachaLaunchCache(shopSlug);
       published = true;
     }).catch((error: unknown) => {
-      const message = t(getErrorMessage(error, "Could not save the minigame."));
+      const message = t(
+        getUserFacingErrorMessage(error, "Could not save the minigame."),
+      );
       setPublishError(message);
       toast.error(message, t("Could not publish gacha"));
     });
@@ -644,7 +648,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       });
     } catch (error) {
       toast.error(
-        t(getErrorMessage(error, "Could not load the minigame.")),
+        t(getUserFacingErrorMessage(error, "Could not load the minigame.")),
         t("Gacha unavailable"),
       );
     }
@@ -667,7 +671,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
       });
     } catch (error) {
       setAutosaveError({
-        message: t(getErrorMessage(error, "Could not save draft")),
+        message: t(getUserFacingErrorMessage(error, "Could not save draft")),
         snapshotKey,
         gameType,
         snapshot,

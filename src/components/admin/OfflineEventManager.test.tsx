@@ -33,7 +33,7 @@ const apiMocks = vi.hoisted(() => ({
   syncOfflineEventOrders: vi.fn(),
 }));
 
-vi.mock("../../lib/api", () => apiMocks);
+vi.mock("../../lib/api/offlineEvents", () => apiMocks);
 
 import { OfflineEventManager } from "./OfflineEventManager";
 

@@ -31,12 +31,14 @@ vi.mock("../lib/supabase", () => ({
     rpc: auth.rpc,
   },
 }));
-vi.mock("../lib/api", () => ({
+vi.mock("../lib/api/auth", () => ({
   acceptShopInvitation: api.acceptShopInvitation,
   clearShopInvitationMetadata: api.clearShopInvitationMetadata,
   getAuthSession: api.getAuthSession,
-  getShopMemberships: api.getShopMemberships,
   updateAdminPassword: api.updateAdminPassword,
+}));
+vi.mock("../lib/api/shops", () => ({
+  getShopMemberships: api.getShopMemberships,
 }));
 
 import { SetPasswordPage } from "./SetPasswordPage";

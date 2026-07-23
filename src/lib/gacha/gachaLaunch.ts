@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { getGachaCatalogs, getPublicBoothSettings, getPublicShop } from "../api";
+import { getGachaCatalogs } from "../api/gacha";
+import { getPublicBoothSettings } from "../api/settings";
+import { getPublicShop } from "../api/shops";
 import type { BoothSettings, Shop } from "../../types/catalog";
 import type {
   GachaCatalog,
@@ -29,7 +31,10 @@ export type GachaLaunchData = {
 };
 
 export function isGachaBannerRunning(
-  banner: Pick<GachaCatalog["banners"][number], "active" | "starts_at" | "ends_at">,
+  banner: Pick<
+    GachaCatalog["banners"][number],
+    "active" | "starts_at" | "ends_at"
+  >,
   now = Date.now(),
 ) {
   if (!banner.active) return false;
@@ -101,7 +106,8 @@ export function getGachaSimulatorPath(gameType: GachaGameType) {
 }
 
 function prefetchSimulatorDocument(gameType: GachaGameType) {
-  if (typeof document === "undefined" || prefetchedSimulators.has(gameType)) return;
+  if (typeof document === "undefined" || prefetchedSimulators.has(gameType))
+    return;
   prefetchedSimulators.add(gameType);
   const link = document.createElement("link");
   link.rel = "prefetch";
@@ -182,7 +188,10 @@ export async function prepareGachaLaunch(
 ) {
   const hadStoredLaunch = hasStoredGachaLaunch(shopSlug);
   let launch = await loadGachaLaunch(shopSlug, seed);
-  if (hadStoredLaunch && (typeof navigator === "undefined" || navigator.onLine)) {
+  if (
+    hadStoredLaunch &&
+    (typeof navigator === "undefined" || navigator.onLine)
+  ) {
     launch = await refreshGachaLaunch(shopSlug, seed).catch(() => launch);
   }
   if (prefetchSimulator) {
@@ -276,7 +285,9 @@ const gachaPreviewCatalogSchema = z
  * not match the expected catalog shape, so callers can fall back to the
  * server-published catalog instead of trusting a blind cast.
  */
-export function parseGachaPreviewConfig(raw: string | null): GachaCatalog | null {
+export function parseGachaPreviewConfig(
+  raw: string | null,
+): GachaCatalog | null {
   if (!raw) return null;
   let json: unknown;
   try {
@@ -305,7 +316,8 @@ function loadStoredGachaLaunch(slug: string): GachaLaunchData | null {
     const parsedCatalogs: GachaCatalogsByGame = {};
     for (const gameType of ["genshin", "hsr"] as const) {
       const parsed = gachaPreviewCatalogSchema.safeParse(catalogs?.[gameType]);
-      if (parsed.success) parsedCatalogs[gameType] = parsed.data as GachaCatalog;
+      if (parsed.success)
+        parsedCatalogs[gameType] = parsed.data as GachaCatalog;
     }
     if (Object.keys(parsedCatalogs).length === 0) {
       const legacyCatalog = gachaPreviewCatalogSchema.safeParse(value.catalog);

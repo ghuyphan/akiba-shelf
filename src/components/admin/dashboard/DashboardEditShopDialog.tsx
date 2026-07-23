@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Store } from "lucide-react";
-import { updateShop } from "../../../lib/api";
+import { updateShop } from "../../../lib/api/shops";
 import { SHOP_NAME_MAX_LENGTH } from "../../../lib/constants";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import { useAsyncAction } from "../../../hooks/useAsyncAction";
@@ -9,6 +9,7 @@ import { Button } from "../../ui/Button";
 import { Field, TextInput } from "../../ui/Field";
 import { Modal } from "../../ui/Modal";
 import { useToast } from "../../ui/ToastProvider";
+import { getUserFacingErrorMessage } from "../../../lib/errors";
 
 type DashboardEditShopDialogProps = {
   shop: ShopMembership | null;
@@ -57,7 +58,7 @@ export function DashboardEditShopDialog({
       saved = true;
     }).catch((error) =>
       toast.error(
-        t(error instanceof Error ? error.message : String(error)),
+        t(getUserFacingErrorMessage(error, "Could not save shop details")),
         t("Could not save shop details"),
       ),
     );
@@ -79,7 +80,11 @@ export function DashboardEditShopDialog({
       className="edit-shop-modal"
       closeLabel={t("Close modal")}
     >
-      <form onSubmit={handleSubmit} className="admin-form dashboard-edit-form" noValidate>
+      <form
+        onSubmit={handleSubmit}
+        className="admin-form dashboard-edit-form"
+        noValidate
+      >
         <div className="dashboard-edit-intro">
           <span className="dashboard-edit-icon" aria-hidden="true">
             <Store size={20} />

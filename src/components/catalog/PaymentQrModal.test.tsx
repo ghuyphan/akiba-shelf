@@ -34,7 +34,7 @@ const apiMocks = vi.hoisted(() => ({
 }));
 const checkoutStorage = vi.hoisted(() => ({ current: null as unknown }));
 
-vi.mock("../../lib/api", () => apiMocks);
+vi.mock("../../lib/api/orders", () => apiMocks);
 
 vi.mock("../../lib/offline/checkoutSession", () => ({
   loadCheckoutSession: vi.fn(() => checkoutStorage.current),
@@ -362,6 +362,42 @@ describe("PaymentQrModal", () => {
     expect(
       screen.getByRole("button", { name: "Retry status check" }),
     ).toBeEnabled();
+  });
+
+  it("announces clipboard copy success with an accessible action name", async () => {
+    const pending = makeOrder("pending");
+    checkoutStorage.current = {
+      version: 2,
+      shopSlug: "test-shop",
+      clientRequestId: "11111111-1111-4111-8111-111111111111",
+      recoveryToken: "0123456789abcdef0123456789abcdef",
+      order: pending,
+      cart,
+      customerName: "Huy",
+      state: "reserved",
+      createdAt: "2026-07-17T10:00:00.000Z",
+      updatedAt: "2026-07-17T10:00:00.000Z",
+    };
+    apiMocks.getCustomerOrder.mockResolvedValue(pending);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      onLine: true,
+      clipboard: { writeText },
+    });
+
+    renderModal();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Copy account number" }),
+    );
+
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith("0123456789"),
+    );
+    expect(screen.getByText("Account number copied.")).toHaveAttribute(
+      "aria-live",
+      "polite",
+    );
   });
 
   it("does not queue a programming TypeError as an offline checkout", async () => {

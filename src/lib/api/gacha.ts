@@ -23,6 +23,8 @@ import type {
 import { getPublicProductsByIds } from "./products";
 import { booleanValue, numberValue, requireSupabase, text } from "./shared";
 
+export { getPublicGachaEnabled } from "./gachaPublic";
+
 const elements = [
   "anemo",
   "geo",
@@ -294,16 +296,6 @@ export async function getGachaCatalog(shopId: string): Promise<GachaCatalog> {
     catalogs.genshin ??
     catalogs.hsr ?? { settings: null, banners: [], entries: [] }
   );
-}
-
-export async function getPublicGachaEnabled(shopId: string): Promise<boolean> {
-  const { data, error } = await requireSupabase()
-    .from("gacha_published_configs")
-    .select("game_type")
-    .eq("shop_id", shopId)
-    .limit(1);
-  if (error) throw error;
-  return (data?.length ?? 0) > 0;
 }
 
 export async function getAdminGachaConfiguration(shopId: string): Promise<{

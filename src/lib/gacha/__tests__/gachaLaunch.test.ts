@@ -9,7 +9,15 @@ const api = vi.hoisted(() => ({
   getPublicShop: vi.fn(),
 }));
 
-vi.mock("../../api", () => api);
+vi.mock("../../api/gacha", () => ({
+  getGachaCatalogs: api.getGachaCatalogs,
+}));
+vi.mock("../../api/settings", () => ({
+  getPublicBoothSettings: api.getPublicBoothSettings,
+}));
+vi.mock("../../api/shops", () => ({
+  getPublicShop: api.getPublicShop,
+}));
 
 import {
   clearGachaLaunchCache,

@@ -6,7 +6,7 @@ import { AppHeader } from "../components/ui/AppHeader";
 import { PlatformHeaderBrand } from "../components/ui/PlatformHeaderBrand";
 import { SignOutDialog } from "../components/ui/SignOutDialog";
 import { useAdminSession } from "../hooks/useAdminSession";
-import { signInAdmin, signOutAdmin } from "../lib/api";
+import { signInAdmin, signOutAdmin } from "../lib/api/auth";
 import {
   AdminAccessCheck,
   AdminAccessDenied,

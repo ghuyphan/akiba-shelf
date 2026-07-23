@@ -20,6 +20,7 @@ describe("push configuration", () => {
     vi.resetModules();
     vi.unstubAllEnvs();
     document.head.querySelector("link[data-matsuri-staff-pwa]")?.remove();
+    window.history.replaceState(null, "", "/");
     if (originalServiceWorker) {
       Object.defineProperty(navigator, "serviceWorker", originalServiceWorker);
     } else {
@@ -62,6 +63,20 @@ describe("push configuration", () => {
 
     configurePwa("/s/akiba-shelf");
     expect(document.head.querySelector("link[rel='manifest']")).toBeNull();
+  });
+
+  it("captures an early install prompt before the workspace subscribes", async () => {
+    window.history.replaceState(null, "", "/admin");
+    const pwa = await import("../pwa");
+    const event = new Event("beforeinstallprompt", { cancelable: true });
+    Object.assign(event, {
+      prompt: vi.fn().mockResolvedValue(undefined),
+      userChoice: Promise.resolve({ outcome: "accepted" }),
+    });
+
+    window.dispatchEvent(event);
+
+    expect(pwa.getPwaInstallState()).toBe("available");
   });
 
   it("does not claim an offline download is ready without an active worker", async () => {

@@ -10,6 +10,7 @@ import { Modal } from "../ui/Modal";
 import { AdminCard } from "./AdminCard";
 import { AdminEditBar } from "./AdminEditBar";
 import { EmptyState } from "../ui/EmptyState";
+import { getUserFacingErrorMessage } from "../../lib/errors";
 
 type PromotionSettingsFormProps = {
   promotion: PromotionSettings;
@@ -52,7 +53,10 @@ export function PromotionSettingsForm({
 
   useEffect(() => {
     if (!error) return;
-    toast.error(t(error), t("Could not save promotion"));
+    toast.error(
+      t(getUserFacingErrorMessage(error, "Could not save promotion")),
+      t("Could not save promotion"),
+    );
     setError("");
   }, [error, setError, t, toast]);
 

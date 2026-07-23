@@ -18,7 +18,11 @@ export const clientFactory = {
     key: string,
     options: { auth: { autoRefreshToken: boolean; persistSession: boolean } },
   ): CheckoutAdminClient {
-    return defaultCreateClient(url, key, options) as unknown as CheckoutAdminClient;
+    return defaultCreateClient(
+      url,
+      key,
+      options,
+    ) as unknown as CheckoutAdminClient;
   },
 };
 
@@ -55,6 +59,62 @@ const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const maxBodyLength = 32 * 1024;
+const publicRpcErrors = new Map<string, { error: string; status: number }>([
+  [
+    "Too many active checkout reservations. Complete or cancel an existing order first.",
+    {
+      error:
+        "Too many active checkout reservations. Complete or cancel an existing order first.",
+      status: 429,
+    },
+  ],
+  [
+    "Too many checkout attempts. Please wait a few minutes and try again.",
+    {
+      error:
+        "Too many checkout attempts. Please wait a few minutes and try again.",
+      status: 429,
+    },
+  ],
+  ["Shop not found or inactive", {
+    error: "Shop not found or inactive",
+    status: 409,
+  }],
+  [
+    "This storefront is a read-only demo and does not accept orders",
+    {
+      error: "This storefront is a read-only demo and does not accept orders",
+      status: 409,
+    },
+  ],
+  [
+    "Cart must contain between 1 and 50 items",
+    { error: "Cart must contain between 1 and 50 items", status: 409 },
+  ],
+  [
+    "Cart contains an invalid item",
+    { error: "Cart contains an invalid item", status: 409 },
+  ],
+  [
+    "One or more items are sold out or no longer have enough stock",
+    {
+      error: "One or more items are sold out or no longer have enough stock",
+      status: 409,
+    },
+  ],
+  [
+    "This promotion is no longer active",
+    { error: "This promotion is no longer active", status: 409 },
+  ],
+  [
+    "Cart contains an invalid reward item",
+    { error: "Cart contains an invalid reward item", status: 409 },
+  ],
+  [
+    "Cart contains too many free reward items",
+    { error: "Cart contains too many free reward items", status: 409 },
+  ],
+]);
 
 const failure = (
   error: string,
@@ -67,8 +127,9 @@ async function sha256(value: string) {
     "SHA-256",
     new TextEncoder().encode(value),
   );
-  return Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0"),
+  return Array.from(
+    new Uint8Array(digest),
+    (byte) => byte.toString(16).padStart(2, "0"),
   ).join("");
 }
 
@@ -96,7 +157,9 @@ function validItems(value: unknown) {
     value.length >= 1 &&
     value.length <= 50 &&
     value.every((item) => {
-      if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+      if (!item || typeof item !== "object" || Array.isArray(item)) {
+        return false;
+      }
       const row = item as Record<string, unknown>;
       return (
         typeof row.product_id === "string" &&
@@ -124,22 +187,12 @@ function clientAddress(request: Request) {
 }
 
 function publicError(message: string) {
-  const known = [
-    "Too many active checkout reservations",
-    "Too many checkout attempts",
-    "Shop not found or inactive",
-    "read-only demo",
-    "Cart must contain",
-    "Cart contains",
-    "sold out",
-    "stock",
-    "promotion",
-  ];
-  return known.some((fragment) =>
-    message.toLowerCase().includes(fragment.toLowerCase()),
-  )
-    ? message
-    : "The order could not be created. Review the cart and try again.";
+  return (
+    publicRpcErrors.get(message) ?? {
+      error: "The order could not be created. Review the cart and try again.",
+      status: 409,
+    }
+  );
 }
 
 export async function handleCreateOrderRequest(
@@ -147,23 +200,32 @@ export async function handleCreateOrderRequest(
 ): Promise<Response> {
   const requestOrigin = normalizeOrigin(request.headers.get("Origin") ?? "");
   const cors = corsHeaders(requestOrigin);
-  if (!siteOrigins.size)
+  if (!siteOrigins.size) {
     return failure("Checkout is not configured.", 503, cors);
-  if (!requestOrigin || !siteOrigins.has(requestOrigin))
+  }
+  if (!requestOrigin || !siteOrigins.has(requestOrigin)) {
     return failure("Origin not allowed.", 403, cors);
-  if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (request.method !== "POST")
+  }
+  if (request.method === "OPTIONS") {
+    return new Response("ok", { headers: cors });
+  }
+  if (request.method !== "POST") {
     return failure("Method not allowed.", 405, cors);
+  }
 
   const body = await parseBody(request);
-  const shopSlug =
-    typeof body?.shopSlug === "string" ? body.shopSlug.trim().toLowerCase() : "";
-  const customerName =
-    typeof body?.customerName === "string" ? body.customerName.trim() : "";
-  const clientRequestId =
-    typeof body?.clientRequestId === "string" ? body.clientRequestId : "";
-  const recoveryToken =
-    typeof body?.recoveryToken === "string" ? body.recoveryToken : "";
+  const shopSlug = typeof body?.shopSlug === "string"
+    ? body.shopSlug.trim().toLowerCase()
+    : "";
+  const customerName = typeof body?.customerName === "string"
+    ? body.customerName.trim()
+    : "";
+  const clientRequestId = typeof body?.clientRequestId === "string"
+    ? body.clientRequestId
+    : "";
+  const recoveryToken = typeof body?.recoveryToken === "string"
+    ? body.recoveryToken
+    : "";
   const items = body?.items;
   if (
     !slugPattern.test(shopSlug) ||
@@ -179,8 +241,9 @@ export async function handleCreateOrderRequest(
   try {
     const url = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    if (!url || !serviceKey)
+    if (!url || !serviceKey) {
       return failure("Checkout is not configured.", 503, cors);
+    }
     const salt = Deno.env.get("CHECKOUT_RATE_LIMIT_SALT") || serviceKey;
     const fingerprintHash = await sha256(
       `${salt}:${clientAddress(request)}`,
@@ -197,20 +260,17 @@ export async function handleCreateOrderRequest(
       p_fingerprint_hash: fingerprintHash,
     });
     if (error) {
-      const message = publicError(error.message || "");
-      return failure(
-        message,
-        message.startsWith("Too many") ? 429 : 409,
-        cors,
-      );
+      const publicFailure = publicError(error.message || "");
+      return failure(publicFailure.error, publicFailure.status, cors);
     }
     const order = Array.isArray(data) ? data[0] : data;
-    if (!order)
+    if (!order) {
       return failure(
         "The order response was incomplete. Retry checkout.",
         502,
         cors,
       );
+    }
     return Response.json(order, { headers: cors });
   } catch (error) {
     console.error(

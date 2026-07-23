@@ -2,11 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { defaultPayment, defaultPromotion } from "../lib/constants";
 import {
   getPublicBoothSettings,
-  getPublicFeaturedProducts,
   getPublicPaymentSettings,
-  getPublicProductCategories,
   getPublicPromotionSettings,
-} from "../lib/api";
+} from "../lib/api/settings";
+import {
+  getPublicFeaturedProducts,
+  getPublicProductCategories,
+} from "../lib/api/products";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import type { BoothSettings, PaymentSettings, Product, PromotionSettings } from "../types/catalog";
 

@@ -15,8 +15,8 @@
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint --max-warnings 0 src e2e vite.config.ts vitest.config.ts playwright.config.ts playwright.perf.config.ts",
     "lint:fix": "npm run lint -- --fix",
-    "format": "prettier --write package.json eslint.config.js playwright.config.ts playwright.perf.config.ts vitest.config.ts",
-    "format:check": "prettier --check package.json eslint.config.js playwright.config.ts playwright.perf.config.ts vitest.config.ts e2e/admin-auth.spec.ts .github/workflows",
+    "format": "prettier --write package.json wrangler.jsonc eslint.config.js playwright.config.ts playwright.perf.config.ts vitest.config.ts",
+    "format:check": "prettier --check package.json wrangler.jsonc eslint.config.js playwright.config.ts playwright.perf.config.ts vitest.config.ts e2e/admin-auth.spec.ts .github/workflows",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -31,6 +31,8 @@
     "build:app": "tsc -b && vite build",
     "build:perf": "tsc -b && vite build --outDir .perf-dist",
     "build": "npm run build:app && npm run build:simulators && node scripts/build-offline-assets.mjs",
+    "deploy:cloudflare": "wrangler pages deploy dist --project-name=matsuri --branch=main",
+    "preview:cloudflare": "wrangler pages dev dist",
     "preview": "vite preview --host ::",
     "preview:perf": "vite preview --host 127.0.0.1 --outDir .perf-dist --port 4174 --strictPort"
   },
@@ -42,6 +44,9 @@
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.1.1",
     "zod": "4.4.3"
+  },
+  "overrides": {
+    "sharp": "0.35.3"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
@@ -64,6 +69,7 @@
     "typescript-eslint": "8.46.4",
     "vite": "^6.0.7",
     "vite-plugin-pwa": "^1.0.3",
-    "vitest": "3.2.4"
+    "vitest": "3.2.4",
+    "wrangler": "4.113.0"
   }
 }

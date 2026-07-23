@@ -70,7 +70,8 @@ Deno.test("create order rejects foreign origins and malformed requests", async (
   assertEquals(foreign.headers.get("Access-Control-Allow-Origin"), null);
   assertEquals((await handleCreateOrderRequest(request("{"))).status, 400);
   assertEquals(
-    (await handleCreateOrderRequest(request({ ...validBody, items: [] }))).status,
+    (await handleCreateOrderRequest(request({ ...validBody, items: [] })))
+      .status,
     400,
   );
 });
@@ -109,18 +110,55 @@ Deno.test("create order exposes rate limits without leaking internal errors", as
         error: { message: "Too many checkout attempts. Please wait." },
       }),
   });
-  const limited = await handleCreateOrderRequest(request(validBody));
-  assertEquals(limited.status, 429);
-  assertEquals((await limited.json()).error, "Too many checkout attempts. Please wait.");
+  const nearMatch = await handleCreateOrderRequest(request(validBody));
+  assertEquals(nearMatch.status, 409);
+  assertEquals(
+    (await nearMatch.json()).error,
+    "The order could not be created. Review the cart and try again.",
+  );
 
   clientFactory.createClient = () => ({
     rpc: () =>
-      Promise.resolve({ data: null, error: { message: "sensitive database detail" } }),
+      Promise.resolve({
+        data: null,
+        error: {
+          message:
+            "Too many checkout attempts. Please wait a few minutes and try again.",
+        },
+      }),
+  });
+  const exactLimited = await handleCreateOrderRequest(request(validBody));
+  assertEquals(exactLimited.status, 429);
+  assertEquals(
+    (await exactLimited.json()).error,
+    "Too many checkout attempts. Please wait a few minutes and try again.",
+  );
+
+  clientFactory.createClient = () => ({
+    rpc: () =>
+      Promise.resolve({
+        data: null,
+        error: { message: "sensitive database detail" },
+      }),
   });
   const hidden = await handleCreateOrderRequest(request(validBody));
   assertEquals(hidden.status, 409);
   assertEquals(
     (await hidden.json()).error,
+    "The order could not be created. Review the cart and try again.",
+  );
+
+  clientFactory.createClient = () => ({
+    rpc: () =>
+      Promise.resolve({
+        data: null,
+        error: { message: "relation public.promotions does not exist" },
+      }),
+  });
+  const promotionLeak = await handleCreateOrderRequest(request(validBody));
+  assertEquals(promotionLeak.status, 409);
+  assertEquals(
+    (await promotionLeak.json()).error,
     "The order could not be created. Review the cart and try again.",
   );
 });

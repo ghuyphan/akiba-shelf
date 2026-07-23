@@ -110,6 +110,7 @@
 .payment-transfer-card small { color: var(--muted); font-size: 11px; }
 .payment-transfer-card strong { overflow-wrap: anywhere; font-size: 14px; line-height: 1.35; }
 .payment-transfer-card button { display: inline-flex; align-items: center; gap: 5px; width: max-content; max-width: 100%; padding: 0; border: 0; color: var(--ink); background: transparent; cursor: pointer; }
+.payment-copy-feedback { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .payment-transfer-note { padding: 7px; border-radius: 9px; background: color-mix(in srgb, var(--coral) 7%, #fff); }
 .payment-transfer-note strong { color: var(--coral); font-size: 16px; letter-spacing: .06em; }
 .payment-receipt-items { display: grid; gap: 7px; }

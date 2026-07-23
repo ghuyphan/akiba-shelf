@@ -17,7 +17,7 @@ export const translations = {
     nothingCategory: "Nothing in this category", noSearchResults: "No items found", noSearchResultsHint: "Try a different search or clear the filters to see everything.", noMerch: "No merch is live yet", switchCatalog: "Try another category or return to the full catalog.", addInAdmin: "New releases will appear here as soon as the booth adds them.", catalogEmpty: "Catalog empty", showAll: "Show all items", loadingCatalog: "Stocking the shelf", loadingCatalogHint: "Getting the latest merch and availability…", catalogUnavailable: "We couldn’t load the shelf", catalogUnavailableHint: "Check your connection and try again. Your cart is still safe on this device.", tryAgain: "Try again", loadMore: "Load more", loadingMore: "Loading…", itemsShown: (count: number) => `${count} items shown`,
     paymentComplete: "Payment complete", allSet: "You’re all set!", reservedPickup: "Staff confirmed your payment and the items are now reserved for pickup.", totalPaid: "Total paid", backShop: "Back to the shop",
     confirmOrder: "Confirm your order", lastCheck: "One last check", reviewCart: "Review your cart and add the name staff should call at pickup.", total: "Total", pickupName: "Pickup name", pickupPlaceholder: "e.g. Huy or Alice", pickupHint: "Use a name you can easily hear at the booth.", pickupRequired: "Enter a pickup name before creating the order.", secureCheck: "Price and stock are checked securely before your order is created.", keepShopping: "Keep shopping", checking: "Checking…", createPay: "Create order & pay",
-    scanPay: "Scan to pay", exactNote: "Use the exact transfer note shown below.", waitingConfirmation: "Waiting for staff confirmation", orderCode: "Order code", transferTo: "Transfer to", accountName: "Account name", accountNumber: "Account number", bank: "Bank", transferNote: "Transfer note", orderSummary: "Order summary",
+    scanPay: "Scan to pay", exactNote: "Use the exact transfer note shown below.", waitingConfirmation: "Waiting for staff confirmation", orderCode: "Order code", transferTo: "Transfer to", accountName: "Account name", accountNumber: "Account number", copyAccountNumber: "Copy account number", accountNumberCopied: "Account number copied.", copyAccountNumberFailed: "Could not copy the account number.", bank: "Bank", transferNote: "Transfer note", orderSummary: "Order summary",
     retryOrder: "Retry safely", reconnectingOrder: "Updating order status…", offlineOrder: "Offline — status will update when connected", offlineEventOrder: "Event order saved on this booth device", orderStatusError: "Couldn’t refresh order status", retryOrderStatus: "Retry status check", hidePayment: "Hide payment details", pendingOrder: "Pending order", viewPayment: "View payment", pendingOrderHint: "Your order stays active if you close this window.", orderCancelled: "Order cancelled", cancelledPaymentNote: "Staff cancelled this order. Please do not send payment for it.",
     reservedFor: (time: string) => `Reserved for ${time}`, reservedWhilePaying: "Your items are reserved while you complete payment.", offlineEventReserved: "Reserved from this booth device’s event stock.", cancelOrder: "Cancel order", cancelling: "Cancelling…", qrUnavailable: "Payment QR is unavailable. Please ask booth staff for help.", amountLabel: "Amount",
     demoCheckout: "Demo cart only", demoCheckoutTitle: "Checkout is disabled in this demo", demoCheckoutMessage: "This sample shop is for browsing and testing the cart. Open a live booth to place an order.",
@@ -52,7 +52,7 @@ export const translations = {
     nothingCategory: "Không có sản phẩm trong danh mục", noSearchResults: "Không tìm thấy sản phẩm", noSearchResultsHint: "Hãy thử từ khóa khác hoặc xóa bộ lọc để xem tất cả sản phẩm.", noMerch: "Chưa có sản phẩm được mở bán", switchCatalog: "Hãy thử danh mục khác hoặc quay lại toàn bộ sản phẩm.", addInAdmin: "Sản phẩm mới sẽ xuất hiện tại đây ngay khi gian hàng cập nhật.", catalogEmpty: "Gian hàng trống", showAll: "Xem tất cả", loadingCatalog: "Đang xếp hàng lên kệ", loadingCatalogHint: "Đang tải sản phẩm và số lượng mới nhất…", catalogUnavailable: "Không thể tải gian hàng", catalogUnavailableHint: "Hãy kiểm tra kết nối và thử lại. Giỏ hàng vẫn được lưu trên thiết bị này.", tryAgain: "Thử lại", loadMore: "Xem thêm", loadingMore: "Đang tải…", itemsShown: (count: number) => `Đang hiển thị ${count} sản phẩm`,
     paymentComplete: "Thanh toán hoàn tất", allSet: "Xong rồi!", reservedPickup: "Staff đã xác nhận thanh toán và giữ sản phẩm để bạn đến nhận.", totalPaid: "Đã thanh toán", backShop: "Quay lại cửa hàng",
     confirmOrder: "Xác nhận đơn hàng", lastCheck: "Kiểm tra lần cuối", reviewCart: "Kiểm tra giỏ hàng và nhập tên để staff gọi khi nhận hàng.", total: "Tổng cộng", pickupName: "Tên nhận hàng", pickupPlaceholder: "Ví dụ: Huy hoặc Alice", pickupHint: "Dùng tên bạn có thể dễ dàng nghe thấy tại gian hàng.", pickupRequired: "Nhập tên nhận hàng trước khi tạo đơn.", secureCheck: "Giá và tồn kho được kiểm tra an toàn trước khi tạo đơn.", keepShopping: "Tiếp tục mua", checking: "Đang kiểm tra…", createPay: "Tạo đơn & thanh toán",
-    scanPay: "Quét mã để thanh toán", exactNote: "Vui lòng dùng đúng nội dung chuyển khoản bên dưới.", waitingConfirmation: "Đang chờ staff xác nhận", orderCode: "Mã đơn", transferTo: "Chuyển khoản đến", accountName: "Tên tài khoản", accountNumber: "Số tài khoản", bank: "Ngân hàng", transferNote: "Nội dung chuyển khoản", orderSummary: "Chi tiết đơn hàng",
+    scanPay: "Quét mã để thanh toán", exactNote: "Vui lòng dùng đúng nội dung chuyển khoản bên dưới.", waitingConfirmation: "Đang chờ staff xác nhận", orderCode: "Mã đơn", transferTo: "Chuyển khoản đến", accountName: "Tên tài khoản", accountNumber: "Số tài khoản", copyAccountNumber: "Sao chép số tài khoản", accountNumberCopied: "Đã sao chép số tài khoản.", copyAccountNumberFailed: "Không thể sao chép số tài khoản.", bank: "Ngân hàng", transferNote: "Nội dung chuyển khoản", orderSummary: "Chi tiết đơn hàng",
     retryOrder: "Thử lại an toàn", reconnectingOrder: "Đang cập nhật trạng thái đơn…", offlineOrder: "Đang ngoại tuyến — trạng thái sẽ cập nhật khi có mạng", offlineEventOrder: "Đơn sự kiện đã được lưu trên thiết bị của gian hàng", orderStatusError: "Không thể cập nhật trạng thái đơn", retryOrderStatus: "Kiểm tra lại trạng thái", hidePayment: "Ẩn thông tin thanh toán", pendingOrder: "Đơn đang chờ", viewPayment: "Xem thanh toán", pendingOrderHint: "Đơn hàng vẫn hoạt động khi bạn đóng cửa sổ này.", orderCancelled: "Đơn đã bị hủy", cancelledPaymentNote: "Staff đã hủy đơn này. Vui lòng không chuyển khoản cho đơn.",
     reservedFor: (time: string) => `Giữ hàng trong ${time}`, reservedWhilePaying: "Sản phẩm được giữ trong lúc bạn hoàn tất thanh toán.", offlineEventReserved: "Sản phẩm được giữ từ tồn kho sự kiện trên thiết bị gian hàng này.", cancelOrder: "Hủy đơn hàng", cancelling: "Đang hủy…", qrUnavailable: "Không thể tải mã thanh toán. Vui lòng nhờ staff tại gian hàng hỗ trợ.", amountLabel: "Số tiền",
     demoCheckout: "Chỉ thử giỏ hàng", demoCheckoutTitle: "Demo này không hỗ trợ thanh toán", demoCheckoutMessage: "Cửa hàng mẫu dùng để xem sản phẩm và thử giỏ hàng. Hãy mở một gian hàng thật để đặt đơn.",
@@ -77,11 +77,23 @@ export const translations = {
 export type CatalogCopy = (typeof translations)["en"] | (typeof translations)["vi"];
 const CatalogLocaleContext = createContext<CatalogCopy>(translations.en);
 
-export function CatalogLocaleProvider({ locale, children }: { locale: CatalogLocale; children: ReactNode }) {
+export function CatalogLocaleProvider({
+  locale,
+  children,
+  targetDocument,
+}: {
+  locale: CatalogLocale;
+  children: ReactNode;
+  targetDocument?: Document;
+}) {
   useEffect(() => {
-    document.documentElement.lang = locale;
-    return () => { document.documentElement.lang = "en"; };
-  }, [locale]);
+    const root = (targetDocument ?? document).documentElement;
+    const previousLanguage = root.lang;
+    root.lang = locale;
+    return () => {
+      root.lang = previousLanguage || "en";
+    };
+  }, [locale, targetDocument]);
   return <CatalogLocaleContext.Provider value={translations[locale]}>{children}</CatalogLocaleContext.Provider>;
 }
 
