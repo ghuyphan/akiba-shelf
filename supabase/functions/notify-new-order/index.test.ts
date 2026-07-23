@@ -45,7 +45,11 @@ function request(
   });
 }
 
-function query(result: unknown, deletes: Array<[string, unknown]>) {
+function query(
+  result: unknown,
+  deletes: Array<[string, unknown]>,
+  deleteResult: unknown = result,
+) {
   let deleting = false;
   const chain: any = {
     select: () => chain,
@@ -60,7 +64,8 @@ function query(result: unknown, deletes: Array<[string, unknown]>) {
       deleting = true;
       return chain;
     },
-    then: (resolve: (value: unknown) => void) => resolve(result),
+    then: (resolve: (value: unknown) => void) =>
+      resolve(deleting ? deleteResult : result),
   };
   return chain;
 }
@@ -83,10 +88,12 @@ function mockAdmin({
     },
   ],
   orderStatus = "pending",
+  deleteError = null,
 }: {
   batch?: Record<string, unknown>[];
   subscriptions?: Array<Record<string, unknown>>;
   orderStatus?: string;
+  deleteError?: { code?: string; message?: string } | null;
 } = {}) {
   const completions: Record<string, unknown>[] = [];
   const deletes: Array<[string, unknown]> = [];
@@ -111,7 +118,11 @@ function mockAdmin({
       if (table === "booth_settings") {
         return query({ data: { logo_url: null }, error: null }, deletes);
       }
-      return query({ data: null, error: null }, deletes);
+      return query(
+        { data: null, error: null },
+        deletes,
+        { data: null, error: deleteError },
+      );
     },
     rpc: (name: string, params: Record<string, unknown>) => {
       rpcCalls.push({ name, params });
@@ -266,6 +277,42 @@ Deno.test(
       { outcome: "delivered", sent: 1 },
     ]);
     assertEquals(admin.deletes.length, 4);
+  },
+);
+
+Deno.test(
+  "subscription cleanup reports database failures without logging endpoints",
+  async () => {
+    const endpoint = "http://localhost/private-push-endpoint";
+    const admin = mockAdmin({
+      subscriptions: [{ endpoint, p256dh, auth: authSecret }],
+      deleteError: {
+        code: "42501",
+        message: `delete denied for ${endpoint}`,
+      },
+    });
+    clientFactory.createClient = () => admin.client as any;
+    pushClient.setVapidDetails = () => undefined;
+    const warnings: unknown[][] = [];
+    const originalWarn = console.warn;
+    console.warn = (...values: unknown[]) => warnings.push(values);
+
+    try {
+      const response = await handleNotifyRequest(request());
+      assertEquals((await response.json()).results, [
+        { outcome: "skipped", sent: 0 },
+      ]);
+    } finally {
+      console.warn = originalWarn;
+    }
+
+    assertEquals(warnings, [
+      [
+        "could not remove invalid push subscription",
+        { shopId, errorCode: "42501" },
+      ],
+    ]);
+    assertEquals(JSON.stringify(warnings).includes(endpoint), false);
   },
 );
 

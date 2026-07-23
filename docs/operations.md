@@ -201,11 +201,12 @@ runtime.
 
 ### Notification worker setup
 
-The durable notification migration schedules a one-minute `pg_cron` job when
-`pg_cron` is available. It uses `pg_net` to call the `notify-new-order` drain
-endpoint and reads the URL and shared worker secret from Supabase Vault.
-Generate an independent secret, set the Edge Function secret, and then create
-the two named Vault entries from the SQL editor:
+The durable notification migration schedules a one-minute `pg_cron` job only
+when `pg_cron` and both Vault entries are already available. It uses `pg_net`
+to call the `notify-new-order` drain endpoint and reads the URL and shared
+worker secret from Supabase Vault. Generate an independent secret, set the Edge
+Function secret, and then create the two named Vault entries from the SQL
+editor:
 
 ```bash
 openssl rand -hex 32
@@ -223,17 +224,20 @@ select vault.create_secret(
   'notification_worker_secret',
   'Shared secret for the durable notification worker'
 );
-
-select public.configure_order_notification_drain_schedule();
-
-select jobid, jobname, schedule, active
-from cron.job
-where jobname = 'drain-order-notification-queue';
 ```
 
-Run the schedule function after creating or rotating the Vault entries. The
-cron query must return one active job. If either named Vault entry already
-exists, update it instead of creating a duplicate.
+Immediately after both Vault entries exist, run the checked, idempotent
+configuration operation against the linked project:
+
+```bash
+npx --yes supabase@2.109.1 db query --linked \
+  --file scripts/configure-notification-cron.sql
+```
+
+The operation fails and rolls back unless it leaves exactly one active
+one-minute drain job. Re-run it after creating or rotating the Vault entries,
+or after restoring a project. If either named Vault entry already exists,
+update it instead of creating a duplicate.
 
 Do not query or log `vault.decrypted_secrets` during routine verification. To
 rotate the worker credential, set the new Edge Function secret first, then use

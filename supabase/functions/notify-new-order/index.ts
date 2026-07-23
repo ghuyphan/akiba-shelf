@@ -88,11 +88,21 @@ async function deleteSubscriptionBestEffort(
     if (error) {
       console.warn("could not remove invalid push subscription", {
         shopId,
-        error: error.message,
+        errorCode: typeof error.code === "string"
+          ? error.code.slice(0, 80)
+          : "database_error",
       });
     }
-  } catch {
-    console.warn("could not remove invalid push subscription", { shopId });
+  } catch (error) {
+    console.warn("could not remove invalid push subscription", {
+      shopId,
+      errorCode: error &&
+          typeof error === "object" &&
+          "code" in error &&
+          typeof error.code === "string"
+        ? error.code.slice(0, 80)
+        : "request_error",
+    });
   }
 }
 
