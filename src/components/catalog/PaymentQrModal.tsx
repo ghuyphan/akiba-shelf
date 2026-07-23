@@ -4,7 +4,7 @@ import type { CartItem, PaymentSettings, PromotionSettings, Order, BoothSettings
 import { formatVnd } from "../../utils/format";
 import { calculateCartPricing, getPricingLine } from "../../utils/pricing";
 import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
-import { canGenerateVietQr } from "../../utils/vietqr";
+import { canGenerateVietQr, hasUsablePayment } from "../../utils/vietqr";
 import { Modal } from "../ui/Modal";
 import { useOrderCountdown, usePaymentQrSource } from "../../hooks/useCheckoutPresentation";
 import { getPaymentBank, getBankLogoUrl } from "../../utils/banks";
@@ -41,12 +41,13 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
     [checkoutCart, promotion],
   );
   const totalAmount = pricing.total;
+  const paymentReady = hasUsablePayment(payment);
   const { qrSrc, isGenerating, qrUnavailable } = usePaymentQrSource(isOpen, order, payment, checkoutCart);
   const centerLogoUrl = booth?.logo_url || booth?.social_qr_logo_url || `${import.meta.env.BASE_URL}brand/matsuri-mark.svg`;
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (cart.length === 0) return;
+    if (cart.length === 0 || !paymentReady) return;
     const trimmedName = customerName.trim();
     if (!trimmedName) {
       setCustomerNameError(copy.pickupRequired);
@@ -115,9 +116,12 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
 
   if (session && !order && !isSubmitting) {
     const needsReview = session.state === "needs_review";
+    const eventStorageUnavailable = session.lastErrorCode === "offline_event_storage_unavailable";
     const isOffline = connectionState === "offline";
     const title = needsReview
       ? copy.checkoutUnavailableTitle
+      : eventStorageUnavailable
+        ? copy.checkoutUnavailableTitle
       : isOffline
         ? copy.reconnectCheckoutTitle
         : copy.checkoutConnectionTitle;
@@ -135,7 +139,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
             {needsReview ? <CircleAlert size={38} /> : isOffline ? <CloudOff size={38} /> : <RefreshCw size={38} />}
           </div>
           <h2>{title}</h2>
-          <p>{needsReview ? session.lastError || copy.orderSubmitError : isOffline ? copy.cartSavedOffline : copy.checkoutConnectionHint}</p>
+          <p>{eventStorageUnavailable ? copy.offlineEventStorageError : needsReview ? session.lastError || copy.orderSubmitError : isOffline ? copy.cartSavedOffline : copy.checkoutConnectionHint}</p>
           <div className="payment-success-summary">
             <span>{copy.total}</span>
             <strong>{formatVnd(totalAmount)}</strong>
@@ -191,7 +195,8 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
             <div className="order-confirm-side">
               <label className="order-confirm-name"><span>{copy.pickupName}</span><div><UserRound size={18} /><input type="text" placeholder={copy.pickupPlaceholder} value={customerName} aria-invalid={Boolean(customerNameError) || undefined} aria-describedby={customerNameError ? "pickup-name-error" : undefined} onChange={(event) => { setCustomerName(event.target.value); if (customerNameError) setCustomerNameError(""); }} maxLength={30} autoFocus /></div>{customerNameError ? <small className="order-confirm-name-error" id="pickup-name-error" role="alert">{customerNameError}</small> : <small>{copy.pickupHint}</small>}</label>
               <div className="order-confirm-secure"><ShieldCheck size={17} /><span>{copy.secureCheck}</span></div>
-              <div className="order-confirm-actions"><button type="button" className="button button-secondary" onClick={onClose} disabled={isSubmitting}>{copy.keepShopping}</button><button type="submit" className="button button-primary" disabled={isSubmitting || checkoutCart.length === 0}>{isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.createPay}</button></div>
+              {!paymentReady && <p className="order-confirm-payment-error" role="alert">{copy.paymentSettingsError}</p>}
+              <div className="order-confirm-actions"><button type="button" className="button button-secondary" onClick={onClose} disabled={isSubmitting}>{copy.keepShopping}</button><button type="submit" className="button button-primary" disabled={isSubmitting || checkoutCart.length === 0 || !paymentReady}>{isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.createPay}</button></div>
             </div>
           </form>
           )}

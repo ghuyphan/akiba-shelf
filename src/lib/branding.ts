@@ -80,8 +80,17 @@ export function resetDocumentBranding(title?: string) {
 }
 
 export function useDocumentBranding(branding: DocumentBranding | null | undefined) {
+  const {
+    title,
+    faviconUrl,
+    themeColor,
+  } = branding ?? getPlatformBranding();
+
   useEffect(() => {
-    applyDocumentBranding(branding ?? getPlatformBranding());
+    applyDocumentBranding({ title, faviconUrl, themeColor });
+  }, [faviconUrl, themeColor, title]);
+
+  useEffect(() => {
     return () => resetDocumentBranding();
-  }, [branding]);
+  }, []);
 }

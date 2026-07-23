@@ -151,6 +151,8 @@ export type CheckoutSessionState =
   | "cancelled"
   | "expired";
 
+export type CheckoutSessionErrorCode = "offline_event_storage_unavailable";
+
 export type CheckoutSession = {
   version: 2;
   shopSlug: string;
@@ -164,6 +166,7 @@ export type CheckoutSession = {
   updatedAt: string;
   lastAttemptAt?: string;
   lastError?: string;
+  lastErrorCode?: CheckoutSessionErrorCode;
 };
 
 export type OrderStatus = "pending" | "confirmed" | "cancelled" | "expired";

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { CartItem, PaymentSettings, Product } from "../../types/catalog";
-import { generateVietQr, generateVietQrForCart } from "../vietqr";
+import {
+  generateVietQr,
+  generateVietQrForCart,
+  getPaymentQrFallbackUrl,
+  hasUsablePayment,
+} from "../vietqr";
 
 const payment: PaymentSettings = {
   momo_qr_url: "",
@@ -61,5 +66,29 @@ describe("VietQR image generation", () => {
     await expect(
       generateVietQr({ ...payment, bank_account_no: "" }, product),
     ).resolves.toBeNull();
+  });
+
+  it("accepts either local VietQR details or a safe static fallback", () => {
+    expect(hasUsablePayment(payment)).toBe(true);
+    expect(
+      hasUsablePayment({
+        ...payment,
+        bank_acq_id: "",
+        bank_account_no: "",
+        bank_qr_url: "https://example.test/payment.png",
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects missing or unsafe static payment URLs", () => {
+    const unavailable = {
+      ...payment,
+      bank_acq_id: "",
+      bank_account_no: "",
+      bank_qr_url: "javascript:alert(1)",
+    };
+
+    expect(getPaymentQrFallbackUrl(unavailable)).toBe("");
+    expect(hasUsablePayment(unavailable)).toBe(false);
   });
 });

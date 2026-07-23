@@ -1,6 +1,10 @@
 import { assert, assertEquals, assertMatch } from "jsr:@std/assert@1";
 
 Deno.env.set("PUBLIC_SITE_URL", "https://matsuri.pro");
+Deno.env.set(
+  "CHECKOUT_ALLOWED_ORIGINS",
+  "http://localhost:5173,http://127.0.0.1:5173",
+);
 Deno.env.set("SUPABASE_URL", "https://project.test");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
 Deno.env.set("CHECKOUT_RATE_LIMIT_SALT", "test-rate-limit-salt");
@@ -32,26 +36,38 @@ function request(
   });
 }
 
-Deno.test("create order preflight is scoped to the configured site", async () => {
-  const response = await handleCreateOrderRequest(
+Deno.test("create order preflight reflects only configured origins", async () => {
+  const production = await handleCreateOrderRequest(
     new Request("https://project.test/functions/v1/create-order", {
       method: "OPTIONS",
       headers: { Origin: "https://matsuri.pro" },
     }),
   );
-  assertEquals(response.status, 200);
+  assertEquals(production.status, 200);
   assertEquals(
-    response.headers.get("Access-Control-Allow-Origin"),
+    production.headers.get("Access-Control-Allow-Origin"),
     "https://matsuri.pro",
+  );
+
+  const local = await handleCreateOrderRequest(
+    new Request("https://project.test/functions/v1/create-order", {
+      method: "OPTIONS",
+      headers: { Origin: "http://localhost:5173" },
+    }),
+  );
+  assertEquals(local.status, 200);
+  assertEquals(
+    local.headers.get("Access-Control-Allow-Origin"),
+    "http://localhost:5173",
   );
 });
 
 Deno.test("create order rejects foreign origins and malformed requests", async () => {
-  assertEquals(
-    (await handleCreateOrderRequest(request(validBody, "https://evil.test")))
-      .status,
-    403,
+  const foreign = await handleCreateOrderRequest(
+    request(validBody, "https://evil.test"),
   );
+  assertEquals(foreign.status, 403);
+  assertEquals(foreign.headers.get("Access-Control-Allow-Origin"), null);
   assertEquals((await handleCreateOrderRequest(request("{"))).status, 400);
   assertEquals(
     (await handleCreateOrderRequest(request({ ...validBody, items: [] }))).status,

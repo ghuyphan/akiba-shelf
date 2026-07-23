@@ -339,7 +339,6 @@ export default defineConfig(({ command }) => ({
                 "assets/App-*.js",
                 "assets/PlatformMark-*.js",
                 "assets/pwa-*.js",
-                "assets/lazyWithRetry-*.js",
                 "assets/platformI18n-*.js",
                 "assets/supabase-*.js",
                 "assets/EmptyState-*.js",

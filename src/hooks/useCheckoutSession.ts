@@ -14,6 +14,7 @@ import {
 } from "../lib/offline/checkoutSession";
 import {
   createOfflineEventOrder,
+  isOfflineEventStorageUnavailableError,
   listOfflineEventOrders,
   loadOfflineEventSessionBySlug,
   offlineEventOrderAsOrder,
@@ -92,6 +93,7 @@ export function useCheckoutSession({
         updatedAt: new Date().toISOString(),
         lastAttemptAt: new Date().toISOString(),
         lastError: undefined,
+        lastErrorCode: undefined,
       };
       persist(attempting);
       setIsSubmitting(true);
@@ -128,20 +130,29 @@ export function useCheckoutSession({
           return order;
         })
         .catch((error: unknown) => {
+          const eventStorageUnavailable =
+            isOfflineEventStorageUnavailableError(error);
           const queued =
-            isTransportError(error) || isCheckoutOutcomeUnknownError(error);
+            !eventStorageUnavailable &&
+            (isTransportError(error) || isCheckoutOutcomeUnknownError(error));
           persist({
             ...attempting,
-            state: queued ? "queued" : "needs_review",
+            state:
+              queued || eventStorageUnavailable ? "queued" : "needs_review",
             updatedAt: new Date().toISOString(),
-            lastError: queued
-              ? "Reconnect to verify stock and reserve these items."
-              : getErrorMessage(
-                  error,
-                  "Stock or pricing changed. Review your cart and try again.",
-                ),
+            lastError: eventStorageUnavailable
+              ? undefined
+              : queued
+                ? "Reconnect to verify stock and reserve these items."
+                : getErrorMessage(
+                    error,
+                    "Stock or pricing changed. Review your cart and try again.",
+                  ),
+            lastErrorCode: eventStorageUnavailable
+              ? "offline_event_storage_unavailable"
+              : undefined,
           });
-          if (queued) {
+          if (queued || eventStorageUnavailable) {
             setConnectionState(navigator.onLine ? "reconnecting" : "offline");
           } else {
             setConnectionState("online");
@@ -170,6 +181,7 @@ export function useCheckoutSession({
               state: "queued" as const,
               updatedAt: new Date().toISOString(),
               lastError: undefined,
+              lastErrorCode: undefined,
             }
           : createCheckoutSession(shopSlug, cart, customerName);
       persist(next);

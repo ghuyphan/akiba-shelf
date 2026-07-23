@@ -60,6 +60,7 @@ import {
 import { prefersLightweightCatalog } from "../lib/network";
 import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
+import { hasUsablePayment } from "../utils/vietqr";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -166,7 +167,7 @@ export function CatalogPage() {
   const { flyingItems, animateAdd } = useAddToCartFeedback(lightweightMode);
   const initialCheckoutRef = useRef(loadCheckoutSession(shopSlug));
   const [online, setOnline] = useState(navigator.onLine);
-  const [isQrOpen, setIsQrOpen] = useState(Boolean(initialCheckoutRef.current));
+  const [isQrOpen, setIsQrOpen] = useState(false);
   const [paymentModalRequested, setPaymentModalRequested] = useState(
     Boolean(initialCheckoutRef.current),
   );
@@ -215,9 +216,12 @@ export function CatalogPage() {
   ]);
 
   useEffect(() => {
-    const next = loadCheckoutSession(shopSlug)?.order ?? null;
+    const restored = loadCheckoutSession(shopSlug);
+    const next = restored?.order ?? null;
     setActiveOrder(next);
     activeOrderRef.current = next;
+    setIsQrOpen(false);
+    setPaymentModalRequested(Boolean(restored));
   }, [shopSlug]);
 
   useEffect(() => {
@@ -538,20 +542,41 @@ export function CatalogPage() {
     });
   }, []);
 
+  const openPaymentFlow = useCallback(
+    (waitFor?: Promise<void>) => {
+      const cachedPayment = loadCatalogSnapshot(catalogShopId)?.payment;
+      if (!online && !hasUsablePayment(cachedPayment)) {
+        toast.info(
+          catalogCopy.cartSavedOffline,
+          catalogCopy.reconnectCheckoutTitle,
+        );
+        return;
+      }
+      void Promise.all([ensurePayment(), waitFor ?? Promise.resolve()])
+        .then(([nextPayment]) => {
+          if (!hasUsablePayment(nextPayment)) {
+            toast.error(catalogCopy.paymentSettingsError);
+            return;
+          }
+          setPaymentModalRequested(true);
+          setIsQrOpen(true);
+        })
+        .catch((err) => {
+          toast.error(
+            err instanceof Error
+              ? err.message
+              : catalogCopy.paymentSettingsError,
+          );
+        });
+    },
+    [catalogCopy, catalogShopId, ensurePayment, online, toast],
+  );
+
   const handleOpenPayment = useCallback(() => {
     if (!orderingEnabled) {
       toast.info(
         catalogCopy.demoCheckoutMessage,
         catalogCopy.demoCheckoutTitle,
-      );
-      return;
-    }
-    const hasCachedPayment =
-      catalogBooth && loadCatalogSnapshot(catalogShopId)?.payment;
-    if (!online && !hasCachedPayment) {
-      toast.info(
-        catalogCopy.cartSavedOffline,
-        catalogCopy.reconnectCheckoutTitle,
       );
       return;
     }
@@ -561,28 +586,11 @@ export function CatalogPage() {
     const sheetExit = closingMobileSheet
       ? new Promise<void>((resolve) => window.setTimeout(resolve, 260))
       : Promise.resolve();
-    void Promise.all([ensurePayment(), sheetExit])
-      .then(() => {
-        setPaymentModalRequested(true);
-        setIsQrOpen(true);
-      })
-      .catch((err) => {
-        if (!online && hasCachedPayment) {
-          setPaymentModalRequested(true);
-          setIsQrOpen(true);
-        } else {
-          toast.error(
-            err instanceof Error ? err.message : "Could not open checkout.",
-          );
-        }
-      });
+    openPaymentFlow(sheetExit);
   }, [
-    catalogBooth,
-    catalogShopId,
     catalogCopy,
-    ensurePayment,
     isCartExpanded,
-    online,
+    openPaymentFlow,
     orderingEnabled,
     toast,
   ]);
@@ -804,10 +812,11 @@ export function CatalogPage() {
 
   const pendingOrder =
     orderingEnabled && activeOrder?.status === "pending" ? activeOrder : null;
+  const showPendingOrderDock = Boolean(pendingOrder && !isQrOpen);
   const reserveFloatingCartSpace = cart.length > 0 && !activeOrder;
   const showFloatingCartDock =
     isFloatingCartVisible && reserveFloatingCartSpace;
-  const storefrontDockClasses = `${pendingOrder ? " storefront-has-order-dock" : ""}${reserveFloatingCartSpace ? " storefront-has-cart-dock" : ""}`;
+  const storefrontDockClasses = `${showPendingOrderDock ? " storefront-has-order-dock" : ""}${reserveFloatingCartSpace ? " storefront-has-cart-dock" : ""}`;
 
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
@@ -859,14 +868,11 @@ export function CatalogPage() {
                 {contentStorefrontColumns.map((column) => column.node)}
               </div>
             </div>
-            {pendingOrder && (
+            {showPendingOrderDock && pendingOrder && (
               <PendingOrderBar
                 order={pendingOrder}
                 style={getThemeStyle(booth)}
-                onOpen={() => {
-                  setPaymentModalRequested(true);
-                  setIsQrOpen(true);
-                }}
+                onOpen={() => openPaymentFlow()}
               />
             )}
             {showFloatingCartDock && (

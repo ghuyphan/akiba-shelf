@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { generateVietQrForCart } from "../utils/vietqr";
+import {
+  generateVietQrForCart,
+  getPaymentQrFallbackUrl,
+} from "../utils/vietqr";
 import type { CartItem, Order, PaymentSettings } from "../types/catalog";
 
 export function usePaymentQrSource(isOpen: boolean, order: Order | null, payment: PaymentSettings, cart: CartItem[]) {
@@ -8,7 +11,12 @@ export function usePaymentQrSource(isOpen: boolean, order: Order | null, payment
   const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || !order) return;
+    if (!isOpen || !order) {
+      setSource("");
+      setGenerating(false);
+      setUnavailable(false);
+      return;
+    }
     let cancelled = false;
     setGenerating(true);
     setUnavailable(false);
@@ -16,7 +24,7 @@ export function usePaymentQrSource(isOpen: boolean, order: Order | null, payment
       .catch(() => null)
       .then((generated: { src: string } | null) => {
         if (cancelled) return;
-        const nextSource = generated?.src || payment.bank_qr_url || payment.momo_qr_url;
+        const nextSource = generated?.src || getPaymentQrFallbackUrl(payment);
         setSource(nextSource);
         setUnavailable(!nextSource);
         setGenerating(false);

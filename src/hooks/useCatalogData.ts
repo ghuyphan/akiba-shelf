@@ -215,7 +215,7 @@ export function useCatalogData(
       {
         products: productCatalog.products,
         booth: storefront.booth,
-        payment: storefront.payment,
+        payment: storefront.paymentResolved ? storefront.payment : undefined,
         promotion: storefront.promotion,
         categories: storefront.categories,
         gachaEnabled: resolvedGachaAvailability?.enabled,
@@ -232,6 +232,7 @@ export function useCatalogData(
     storefront.categories,
     storefront.isInitialLoading,
     storefront.payment,
+    storefront.paymentResolved,
     storefront.promotion,
   ]);
 

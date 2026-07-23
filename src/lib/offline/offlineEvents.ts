@@ -20,6 +20,19 @@ const DEVICE_KEY = "matsuri-offline-event-device-v1";
 const UPDATE_CHANNEL = "matsuri-offline-event-updates-v1";
 export const OFFLINE_EVENT_UPDATED = "matsuri:offline-event-updated";
 
+export class OfflineEventStorageUnavailableError extends Error {
+  constructor() {
+    super("Offline Event Mode storage could not be read on this device.");
+    this.name = "OfflineEventStorageUnavailableError";
+  }
+}
+
+export function isOfflineEventStorageUnavailableError(
+  error: unknown,
+): error is OfflineEventStorageUnavailableError {
+  return error instanceof OfflineEventStorageUnavailableError;
+}
+
 type LedgerState = {
   session: OfflineEventSession | null;
   orders: OfflineEventOrder[];
@@ -377,7 +390,7 @@ export async function loadOfflineEventSessionBySlug(shopSlug: string) {
     }
     return null;
   } catch {
-    return null;
+    throw new OfflineEventStorageUnavailableError();
   }
 }
 

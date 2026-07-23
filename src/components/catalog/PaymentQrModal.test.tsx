@@ -13,7 +13,7 @@ import type {
   PaymentSettings,
   Product,
 } from "../../types/catalog";
-import { defaultPromotion } from "../../lib/constants";
+import { defaultPayment, defaultPromotion } from "../../lib/constants";
 import { formatVnd } from "../../utils/format";
 import {
   listOfflineEventOrders,
@@ -201,6 +201,18 @@ describe("PaymentQrModal", () => {
     expect(apiMocks.createOrder).not.toHaveBeenCalled();
   });
 
+  it("does not reserve stock when payment details are unavailable", () => {
+    renderModal({ payment: defaultPayment });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Payment details are not ready",
+    );
+    expect(
+      screen.getByRole("button", { name: "Create order & pay" }),
+    ).toBeDisabled();
+    expect(apiMocks.createOrder).not.toHaveBeenCalled();
+  });
+
   it("creates the order on submit and waits for staff confirmation", async () => {
     const pending = makeOrder("pending");
     let resolveOrder!: (order: Order) => void;
@@ -370,6 +382,27 @@ describe("PaymentQrModal", () => {
       screen.queryByRole("dialog", { name: "Reconnect to checkout" }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry safely" })).toBeEnabled();
+  });
+
+  it("fails closed when Event Mode storage cannot be inspected", async () => {
+    resetOfflineLedger?.();
+    resetOfflineLedger = useMemoryOfflineEventLedgerForTests({
+      getSessionsError: new Error("IndexedDB unavailable"),
+    });
+    renderModal();
+
+    fireEvent.change(screen.getByPlaceholderText("e.g. Huy or Alice"), {
+      target: { value: "Huy" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
+
+    expect(
+      await screen.findByRole("dialog", { name: "Checkout unavailable" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Event Mode storage could not be read/i),
+    ).toBeInTheDocument();
+    expect(apiMocks.createOrder).not.toHaveBeenCalled();
   });
 
   it("keeps an ambiguous checkout identity when the customer closes the modal", async () => {

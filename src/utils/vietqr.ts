@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
 import type { CartItem, PaymentSettings, Product } from "../types/catalog";
+import { safePublicUrl } from "../lib/branding";
 import { getProductPrice } from "./pricing";
 
 type GeneratedVietQr = {
@@ -101,6 +102,21 @@ async function renderVietQr(
 export function canGenerateVietQr(settings: PaymentSettings) {
   return Boolean(
     settings.bank_acq_id?.trim() && settings.bank_account_no?.trim(),
+  );
+}
+
+export function getPaymentQrFallbackUrl(settings: PaymentSettings) {
+  return (
+    safePublicUrl(settings.bank_qr_url) ??
+    safePublicUrl(settings.momo_qr_url) ??
+    ""
+  );
+}
+
+export function hasUsablePayment(settings: PaymentSettings | undefined) {
+  return Boolean(
+    settings &&
+      (canGenerateVietQr(settings) || getPaymentQrFallbackUrl(settings)),
   );
 }
 

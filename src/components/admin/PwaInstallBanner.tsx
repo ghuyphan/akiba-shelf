@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, Share2, Smartphone, X } from "lucide-react";
+import { Download, Share2, X } from "lucide-react";
 import {
   getPwaInstallState,
   promptPwaInstall,
@@ -83,7 +83,10 @@ export function PwaInstallBanner() {
   const banner = (
     <aside className="staff-install-banner" aria-label={t("Install Matsuri staff app")}>
       <span className="staff-install-banner-icon" aria-hidden="true">
-        <Smartphone size={19} />
+        <img
+          src={`${import.meta.env.BASE_URL}brand/matsuri-icon-192.png`}
+          alt=""
+        />
       </span>
       <div className="staff-install-banner-copy">
         <strong>{t("Keep Matsuri close")}</strong>

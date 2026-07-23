@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockSupabase } from "./fixtures";
+import { mockSupabase, products } from "./fixtures";
 
 test.beforeEach(async ({ page }) => {
   await mockSupabase(page);
@@ -10,6 +10,134 @@ test("does not advertise the staff PWA from a customer storefront", async ({
   page,
 }) => {
   await expect(page.locator("link[rel='manifest']")).toHaveCount(0);
+});
+
+test("does not cache empty payment defaults before checkout needs them", async ({
+  page,
+}) => {
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const snapshot = JSON.parse(
+          localStorage.getItem("akiba-shelf-catalog-v1:main") || "null",
+        );
+        return snapshot ? "payment" in snapshot : null;
+      }),
+    )
+    .toBe(false);
+});
+
+test("restores a pending order quietly and loads payment before showing it", async ({
+  page,
+}) => {
+  await page.route("**/mock-supabase/rest/v1/payment_settings**", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await route.fallback();
+  });
+  await page.evaluate((product) => {
+    const now = new Date().toISOString();
+    localStorage.setItem(
+      "akiba-shelf-active-order-v1:akiba-shelf",
+      JSON.stringify({
+        version: 2,
+        shopSlug: "akiba-shelf",
+        clientRequestId: "11111111-1111-4111-8111-111111111111",
+        recoveryToken: "0123456789abcdef0123456789abcdef",
+        order: {
+          id: "40000000-0000-4000-8000-000000000001",
+          order_code: "A100",
+          customer_name: "Customer",
+          total_amount: 120000,
+          status: "pending",
+          created_at: now,
+          updated_at: now,
+          expires_at: new Date(Date.now() + 600000).toISOString(),
+          confirmed_at: null,
+          cancelled_at: null,
+          expired_at: null,
+        },
+        cart: [{ product, quantity: 1 }],
+        customerName: "Customer",
+        state: "reserved",
+        createdAt: now,
+        updatedAt: now,
+      }),
+    );
+  }, products[0]);
+
+  await page.reload();
+
+  await expect(page.getByRole("dialog", { name: "Scan to pay" })).toHaveCount(0);
+  await expect(page.getByText(/Pending order · A100/i)).toBeVisible();
+  await page.getByRole("button", { name: "View payment" }).click();
+
+  const paymentDialog = page.getByRole("dialog", { name: "Scan to pay" });
+  await expect(paymentDialog).toBeVisible();
+  await expect(paymentDialog.getByAltText("Payment QR code")).toBeVisible();
+  await expect(paymentDialog.locator(".vietqr-acc-name")).toHaveText("AKIBA");
+  await expect(paymentDialog.locator(".vietqr-acc-number")).toHaveText(
+    "123456",
+  );
+  await expect(paymentDialog.getByText("N/A", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".storefront-dock-order")).toHaveCount(0);
+  const brandLayout = await paymentDialog
+    .locator(".vietqr-card-brands")
+    .evaluate((brands) => {
+      const napas = brands
+        .querySelector(".vietqr-napas-logo")!
+        .getBoundingClientRect();
+      const napasStyle = getComputedStyle(
+        brands.querySelector(".vietqr-napas-logo")!,
+      );
+      const bankStyle = getComputedStyle(
+        brands.querySelector(".vietqr-bank-icon img")!,
+      );
+      return {
+        napasWidth: napas.width,
+        napasHeight: Number.parseFloat(napasStyle.height),
+        bankWidth: Number.parseFloat(bankStyle.width),
+        bankHeight: Number.parseFloat(bankStyle.height),
+      };
+    });
+  expect(brandLayout.napasWidth).toBeGreaterThan(60);
+  expect(brandLayout.napasWidth).toBeLessThanOrEqual(72);
+  expect(brandLayout.napasHeight).toBe(18);
+  expect(brandLayout.bankWidth).toBe(22);
+  expect(brandLayout.bankHeight).toBe(22);
+  if ((page.viewportSize()?.width ?? 1000) <= 760) {
+    const phoneQrLayout = await paymentDialog
+      .locator(".vietqr-card")
+      .evaluate((card) => {
+        const bounds = card.getBoundingClientRect();
+        const qr = card.querySelector(".vietqr-card-qr")!.getBoundingClientRect();
+        const center = card
+          .querySelector(".vietqr-center-logo")!
+          .getBoundingClientRect();
+        const centerImage = card
+          .querySelector(".vietqr-center-logo img")!
+          .getBoundingClientRect();
+        const napas = card
+          .querySelector(".vietqr-napas-logo")!
+          .getBoundingClientRect();
+        return {
+          cardWidth: bounds.width,
+          qrWidth: qr.width,
+          centerContained:
+            centerImage.left >= center.left &&
+            centerImage.right <= center.right &&
+            centerImage.top >= center.top &&
+            centerImage.bottom <= center.bottom,
+          napasWidth: napas.width,
+          napasHeight: napas.height,
+          napasContained:
+            napas.left >= bounds.left && napas.right <= bounds.right,
+        };
+      });
+    expect(phoneQrLayout.cardWidth).toBeLessThanOrEqual(300);
+    expect(phoneQrLayout.qrWidth).toBeLessThanOrEqual(218);
+    expect(phoneQrLayout.centerContained).toBe(true);
+    expect(phoneQrLayout.napasContained).toBe(true);
+  }
 });
 
 test("reloads the storefront while completely offline", async ({
@@ -191,6 +319,10 @@ test("browses, filters, searches, opens details, and enforces quantity limits", 
 test("keeps the storefront mounted while a category refreshes", async ({
   page,
 }) => {
+  await expect(
+    page.getByRole("button", { name: /Add Moon Stand to cart/i }),
+  ).toBeVisible();
+
   await page.route("**/mock-supabase/rest/v1/products**", async (route) => {
     const url = new URL(route.request().url());
     if (
@@ -365,7 +497,17 @@ test("keeps the view toggle aligned and animates results as one grid", async ({
   const productGrid = page.locator(".product-grid");
 
   await expect(viewToggle).toHaveCSS("display", "grid");
-  await expect(viewToggle).toHaveCSS("width", "76px");
+  const phoneLayout = (page.viewportSize()?.width ?? 1000) <= 760;
+  await expect(viewToggle).toHaveCSS("width", phoneLayout ? "100px" : "76px");
+  const toggleBounds = await viewToggle.evaluate((element) => {
+    const container = element.getBoundingClientRect();
+    const buttons = [...element.querySelectorAll("button")].map((button) => {
+      const bounds = button.getBoundingClientRect();
+      return { left: bounds.left, right: bounds.right };
+    });
+    return { left: container.left, right: container.right, buttons };
+  });
+  expect(toggleBounds.buttons.every((button) => button.left >= toggleBounds.left && button.right <= toggleBounds.right)).toBe(true);
   await expect(gridButton).toHaveCSS("transform", "none");
   await expect(gridButton).not.toHaveCSS(
     "background-color",
@@ -385,6 +527,13 @@ test("keeps the view toggle aligned and animates results as one grid", async ({
     "background-color",
     "rgba(0, 0, 0, 0)",
   );
+});
+
+test("keeps phone categories swipeable without covering labels", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "phone-chromium");
+  await expect(page.locator(".category-row")).toHaveCSS("overflow-x", "auto");
+  await expect(page.getByRole("button", { name: "More categories" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Previous categories" })).toBeHidden();
 });
 
 test("shows desktop category arrows when categories overflow", async ({
@@ -432,6 +581,27 @@ test("keeps the cart available when server validation rejects checkout", async (
     page.getByRole("dialog", { name: "Checkout unavailable" }),
   ).toBeVisible();
   await expect(page.getByText(/Stock changed/i)).toBeVisible();
+  if ((page.viewportSize()?.width ?? 1000) <= 760) {
+    const dialog = page.getByRole("dialog", { name: "Checkout unavailable" });
+    const sheetLayout = await dialog.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      const actions = element.querySelector(".order-confirm-actions")?.getBoundingClientRect();
+      const buttonTops = [...element.querySelectorAll(".order-confirm-actions button")].map((button) => button.getBoundingClientRect().top);
+      const repeatedTitle = element.querySelector<HTMLElement>(".payment-cancelled-state h2");
+      return {
+        bottom: bounds.bottom,
+        viewportHeight: window.innerHeight,
+        actionsWidth: actions?.width ?? 0,
+        dialogWidth: bounds.width,
+        buttonTops,
+        repeatedTitleDisplay: repeatedTitle ? getComputedStyle(repeatedTitle).display : "missing",
+      };
+    });
+    expect(sheetLayout.bottom).toBe(sheetLayout.viewportHeight);
+    expect(sheetLayout.actionsWidth).toBeGreaterThan(sheetLayout.dialogWidth * 0.8);
+    expect(new Set(sheetLayout.buttonTops).size).toBe(1);
+    expect(sheetLayout.repeatedTitleDisplay).toBe("none");
+  }
   const storedCart = await page.evaluate(() =>
     JSON.parse(
       localStorage.getItem("akiba-shelf-cart-v1:akiba-shelf") || "null",

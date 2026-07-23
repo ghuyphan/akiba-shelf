@@ -67,6 +67,7 @@
 .order-confirm-name input { width: 100%; border: 0; outline: 0; color: var(--ink); background: transparent; font-size: 16px; }
 .order-confirm-name>small { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 1.45; }
 .order-confirm-name>.order-confirm-name-error { color: var(--red); font-weight: 700; }
+.order-confirm-payment-error { margin: 0; color: var(--red); font-size: .84rem; font-weight: 700; line-height: 1.45; }
 .order-confirm-secure { display: flex; align-items: flex-start; gap: 9px; padding: 13px; border-radius: 11px; color: #36765f; background: #edf8f4; font-size: 13px; line-height: 1.5; }
 .order-confirm-secure svg { flex: 0 0 auto; }
 .payment-submit-error { padding: 11px; border-radius: 10px; color: #b23e49; background: #fff0f2; font-size: 13px; }
@@ -479,17 +480,12 @@
   }
 
   .storefront-content-main .category-scroll-button {
-    width: 30px;
-    height: 30px;
+    display: none !important;
   }
-
-  .storefront-content-main .category-scroll-previous { left: 6px; }
-  .storefront-content-main .category-scroll-next { right: 6px; }
 
   .storefront-content-main .category-scroller.has-overflow:not(.is-start)::before,
   .storefront-content-main .category-scroller.has-overflow:not(.is-end)::after {
-    content: "";
-    width: 42px;
+    display: none;
   }
 
   .storefront-content-main .chip {
@@ -499,8 +495,12 @@
 
   .storefront-content-main .catalog-toolbar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 76px;
+    grid-template-columns: minmax(0, 1fr) 100px;
     gap: 8px;
+  }
+
+  .storefront-content-main .view-toggle {
+    width: 100px;
   }
 
   .storefront-content-main .search-control {
@@ -516,6 +516,19 @@
   .storefront-content-main .view-toggle button {
     height: 36px;
   }
+}
+
+@media (max-width: 760px) {
+  .payment-success-modal .modal-header { margin-bottom: 0; }
+  .payment-success-modal .modal-header h2 { min-width: 0; font-size: 22px; line-height: 1.15; }
+  .payment-success-modal .payment-cancelled-state { gap: 10px; padding: 8px 2px 4px; }
+  .payment-success-modal .payment-cancelled-state .success-icon-wrap { width: 58px; height: 58px; }
+  .payment-success-modal .payment-cancelled-state .success-icon-wrap svg { width: 30px; height: 30px; }
+  .payment-success-modal .payment-cancelled-state h2 { display: none; }
+  .payment-success-modal .payment-cancelled-state p { font-size: 13px; }
+  .payment-success-modal .payment-success-summary { margin: 2px 0; }
+  .payment-success-modal .order-confirm-actions { grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; }
+  .payment-success-modal .order-confirm-actions .button-primary { grid-row: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1401,6 +1414,12 @@
   overflow: hidden;
 }
 
+.qr-display .vietqr-card img {
+  min-width: 0;
+  aspect-ratio: auto;
+  image-rendering: auto;
+}
+
 .vietqr-card-logo {
   height: 32px;
   width: auto;
@@ -1448,6 +1467,7 @@
   padding: 4px;
   box-sizing: border-box;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
   pointer-events: none;
   z-index: 2;
 }
@@ -1455,7 +1475,8 @@
 .vietqr-card-qr .vietqr-center-logo img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  max-width: 100%;
+  object-fit: cover;
   border-radius: 7px;
 }
 
@@ -1477,9 +1498,9 @@
 }
 
 .vietqr-card-brands .vietqr-napas-logo {
-  height: 16px;
+  height: 18px;
   width: auto;
-  max-width: 64px;
+  max-width: 72px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -1500,8 +1521,8 @@
 }
 
 .vietqr-card-brands .vietqr-bank-icon img {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
   border-radius: 6px;
   flex-shrink: 0;
@@ -1565,14 +1586,19 @@
 }
 
 @media (max-width: 700px) {
-  .vietqr-card { max-width: none; padding: 16px 14px 18px; border-radius: 14px; }
-  .vietqr-card-qr { max-width: none; }
-  .vietqr-card-header { margin-bottom: 12px; }
-  .vietqr-card-logo { height: 28px; }
-  .vietqr-card > .vietqr-card-brands { gap: 6px; margin-bottom: 10px; }
-  .vietqr-card-brands .vietqr-bank-icon img { width: 24px; height: 24px; }
+  .vietqr-card { max-width: 300px; padding: 12px 12px 14px; border-radius: 14px; }
+  .vietqr-card-qr { max-width: 218px; margin-bottom: 10px; }
+  .vietqr-card-qr .vietqr-center-logo { width: 42px; height: 42px; padding: 3px; border-radius: 10px; }
+  .vietqr-card-header { margin-bottom: 8px; }
+  .vietqr-card-logo { height: 24px; }
+  .vietqr-card > .vietqr-card-brands { gap: 8px; min-height: 30px; margin-bottom: 8px; }
+  .vietqr-card-brands .vietqr-napas-logo { height: 18px; max-width: 72px; }
+  .vietqr-card-brands .vietqr-bank-icon img { width: 22px; height: 22px; }
   .vietqr-card-brands .vietqr-bank-icon span,
-  .vietqr-card-brands .vietqr-bank-text { max-width: 74px; font-size: 12px; }
+  .vietqr-card-brands .vietqr-bank-text { max-width: 78px; font-size: 11px; }
+  .vietqr-card-details .vietqr-acc-name { font-size: 13px; }
+  .vietqr-card-details .vietqr-acc-number { font-size: 13px; }
+  .vietqr-card-details .vietqr-amount { font-size: 12px; }
 }
 
 /* Modal staff footer */

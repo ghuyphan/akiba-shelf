@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { getAdminBranding, getPlatformBranding, getShopBranding, PLATFORM_BRAND, PLATFORM_FAVICON, resetDocumentBranding, safePublicUrl, useDocumentBranding } from "../branding";
 
@@ -39,5 +39,20 @@ describe("branding", () => {
     expect(document.title).toBe("B · Matsuri");
     view.unmount();
     expect(document.title).toBe("Matsuri");
+  });
+
+  it("does not reset document branding between equivalent renders", () => {
+    function Subject({ name }: { name: string }) {
+      useDocumentBranding(getShopBranding(name, undefined, `/${name}.png`));
+      return null;
+    }
+
+    const view = render(<Subject name="A" />);
+    const titleSetter = vi.spyOn(document, "title", "set");
+
+    view.rerender(<Subject name="A" />);
+
+    expect(titleSetter).not.toHaveBeenCalled();
+    titleSetter.mockRestore();
   });
 });

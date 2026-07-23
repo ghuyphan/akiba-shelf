@@ -88,76 +88,80 @@
   }
 }
 .staff-install-banner {
+  --pwa-accent: #d95c64;
+  --pwa-accent-strong: #a93945;
   position: fixed;
   z-index: 45;
   right: max(18px, env(safe-area-inset-right));
   bottom: max(18px, env(safe-area-inset-bottom));
   display: none;
-  grid-template-columns: auto minmax(0,1fr) auto auto;
+  grid-template-columns: 46px minmax(0,1fr) auto auto;
   align-items: center;
-  gap: 11px;
-  width: min(440px, calc(100vw - 36px));
+  gap: 10px;
+  width: min(470px, calc(100vw - 36px));
   min-width: 0;
   margin: 0;
-  padding: 10px 11px;
-  border: 1px solid color-mix(in srgb,var(--green) 16%,var(--line));
-  border-radius: 14px;
-  background: rgb(255 255 255 / 94%);
-  box-shadow: 0 16px 38px rgb(15 23 42 / 14%);
-  backdrop-filter: blur(16px);
-  animation: staff-install-banner-enter 220ms ease-out both;
+  padding: 10px 10px 10px 11px;
+  overflow: hidden;
+  border: 1px solid rgb(203 213 225 / 82%);
+  border-radius: 13px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 12px 30px rgb(15 23 42 / 13%);
+  backdrop-filter: blur(14px);
+  animation: staff-install-banner-enter 240ms var(--ease-out) both;
 }
 @keyframes staff-install-banner-enter {
-  from { opacity: 0; scale: .98; translate: 0 14px; }
+  from { opacity: 0; scale: .98; translate: 0 16px; }
   to { opacity: 1; scale: 1; translate: 0 0; }
 }
 .staff-install-banner-icon {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 46px;
+  height: 46px;
   flex: 0 0 auto;
-  border-radius: 11px;
-  color: #fff;
-  background: var(--green);
-  box-shadow: 0 5px 14px color-mix(in srgb,var(--green) 24%,transparent);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
 }
-.staff-install-banner-copy { display: grid; gap: 2px; min-width: 0; }
-.staff-install-banner-copy strong { color: var(--ink); font-size: 11px; }
-.staff-install-banner-copy>span { color: var(--muted); font-size: 9px; line-height: 1.4; }
-.staff-install-banner-copy small { display: flex; align-items: center; gap: 5px; margin-top: 4px; color: var(--green); font-size: 9px; font-weight: 800; }
+.staff-install-banner-icon img { width: 100%; height: 100%; object-fit: cover; }
+.staff-install-banner-copy { display: grid; gap: 3px; min-width: 0; }
+.staff-install-banner-copy strong { color: var(--ink); font-size: 13px; line-height: 1.25; }
+.staff-install-banner-copy>span { color: var(--muted); font-size: 10px; line-height: 1.4; }
+.staff-install-banner-copy small { display: flex; align-items: center; gap: 5px; margin-top: 3px; color: var(--pwa-accent-strong); font-size: 9px; font-weight: 800; }
 .staff-install-banner-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 36px;
-  padding: 0 12px;
+  min-height: 42px;
+  padding: 0 14px;
   border: 0;
-  border-radius: 11px;
+  border-radius: 12px;
   color: #fff;
-  background: var(--coral);
+  background: var(--pwa-accent);
   cursor: pointer;
   font: inherit;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 850;
 }
-.staff-install-banner-action:hover { background: color-mix(in srgb,var(--coral) 88%,#173b2c); }
+.staff-install-banner-action:hover { background: var(--pwa-accent-strong); }
 .staff-install-banner-action:disabled { opacity: .65; cursor: wait; }
 .staff-install-banner-dismiss {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: 0;
-  border-radius: 10px;
+  border-radius: 12px;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
 }
 .staff-install-banner-dismiss:hover { color: var(--ink); background: rgb(15 23 42 / 5%); }
-.staff-install-banner :is(button):focus-visible { outline: 3px solid color-mix(in srgb,var(--coral) 25%,transparent); outline-offset: 2px; }
+.staff-install-banner :is(button):focus-visible { outline: 3px solid color-mix(in srgb,var(--pwa-accent) 25%,transparent); outline-offset: 2px; }
 body:has(.admin-sticky-actions) .staff-install-banner {
   bottom: max(92px, calc(74px + env(safe-area-inset-bottom)));
 }
@@ -841,17 +845,15 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
     left: max(10px, env(safe-area-inset-left));
     bottom: max(10px, env(safe-area-inset-bottom));
     width: auto;
-    gap: 8px;
-    padding: 8px;
+    gap: 9px;
+    padding: 10px 10px 10px 11px;
     border-radius: 13px;
   }
   body:has(.pending-order-bar) .staff-install-banner {
     bottom: calc(78px + max(10px, env(safe-area-inset-bottom)));
   }
-  .staff-install-banner-icon { width: 34px; height: 34px; }
-  .staff-install-banner-copy>span { display: none; }
-  .staff-install-banner-action { width: 44px; min-width: 44px; min-height: 44px; padding: 0; }
-  .staff-install-banner-action span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .staff-install-banner-icon { width: 44px; height: 44px; }
+  .staff-install-banner-action { min-height: 44px; padding: 0 13px; }
   .staff-install-banner-dismiss { width: 44px; height: 44px; }
   .admin-login { padding: 12px; }
   .admin-access-card { border-radius: 22px; }
@@ -890,6 +892,14 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
   .admin-settings-panel { padding: 16px; border-radius: 14px; }
   .admin-settings-panel .admin-card-header { align-items: center; }
   .admin-settings-panel .form-grid,.admin-settings-panel .palette-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 420px) {
+  .staff-install-banner { grid-template-columns: 44px minmax(0,1fr) auto auto; gap: 7px; }
+  .staff-install-banner-copy>span { display: none; }
+  .staff-install-banner-action { width: 44px; min-width: 44px; padding: 0; }
+  .staff-install-banner-action span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .staff-install-banner-dismiss { width: 40px; }
 }
 
 

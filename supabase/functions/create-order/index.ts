@@ -23,28 +23,44 @@ export const clientFactory = {
 };
 
 const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "";
-const siteOrigin = (() => {
+const additionalSiteUrls = Deno.env.get("CHECKOUT_ALLOWED_ORIGINS") ?? "";
+
+function normalizeOrigin(value: string) {
   try {
-    return new URL(siteUrl).origin;
+    return new URL(value.trim()).origin;
   } catch {
     return "";
   }
-})();
-const cors = {
-  "Access-Control-Allow-Origin": siteOrigin,
+}
+
+const siteOrigins = new Set(
+  [siteUrl, ...additionalSiteUrls.split(",")]
+    .map(normalizeOrigin)
+    .filter(Boolean),
+);
+const baseCors = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Cache-Control": "no-store",
   Vary: "Origin",
 };
+
+function corsHeaders(origin: string) {
+  return siteOrigins.has(origin)
+    ? { ...baseCors, "Access-Control-Allow-Origin": origin }
+    : baseCors;
+}
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const maxBodyLength = 32 * 1024;
 
-const failure = (error: string, status: number) =>
-  Response.json({ error }, { status, headers: cors });
+const failure = (
+  error: string,
+  status: number,
+  headers: Record<string, string>,
+) => Response.json({ error }, { status, headers });
 
 async function sha256(value: string) {
   const digest = await crypto.subtle.digest(
@@ -129,11 +145,15 @@ function publicError(message: string) {
 export async function handleCreateOrderRequest(
   request: Request,
 ): Promise<Response> {
+  const requestOrigin = normalizeOrigin(request.headers.get("Origin") ?? "");
+  const cors = corsHeaders(requestOrigin);
+  if (!siteOrigins.size)
+    return failure("Checkout is not configured.", 503, cors);
+  if (!requestOrigin || !siteOrigins.has(requestOrigin))
+    return failure("Origin not allowed.", 403, cors);
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (request.method !== "POST") return failure("Method not allowed.", 405);
-  if (!siteOrigin) return failure("Checkout is not configured.", 503);
-  if (request.headers.get("Origin") !== siteOrigin)
-    return failure("Origin not allowed.", 403);
+  if (request.method !== "POST")
+    return failure("Method not allowed.", 405, cors);
 
   const body = await parseBody(request);
   const shopSlug =
@@ -153,13 +173,14 @@ export async function handleCreateOrderRequest(
     recoveryToken.length > 160 ||
     !validItems(items)
   ) {
-    return failure("Invalid checkout request.", 400);
+    return failure("Invalid checkout request.", 400, cors);
   }
 
   try {
     const url = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    if (!url || !serviceKey) return failure("Checkout is not configured.", 503);
+    if (!url || !serviceKey)
+      return failure("Checkout is not configured.", 503, cors);
     const salt = Deno.env.get("CHECKOUT_RATE_LIMIT_SALT") || serviceKey;
     const fingerprintHash = await sha256(
       `${salt}:${clientAddress(request)}`,
@@ -177,17 +198,30 @@ export async function handleCreateOrderRequest(
     });
     if (error) {
       const message = publicError(error.message || "");
-      return failure(message, message.startsWith("Too many") ? 429 : 409);
+      return failure(
+        message,
+        message.startsWith("Too many") ? 429 : 409,
+        cors,
+      );
     }
     const order = Array.isArray(data) ? data[0] : data;
-    if (!order) return failure("The order response was incomplete. Retry checkout.", 502);
+    if (!order)
+      return failure(
+        "The order response was incomplete. Retry checkout.",
+        502,
+        cors,
+      );
     return Response.json(order, { headers: cors });
   } catch (error) {
     console.error(
       "create-order failed",
       error instanceof Error ? error.message : "Unknown failure",
     );
-    return failure("Checkout is temporarily unavailable. Please retry.", 503);
+    return failure(
+      "Checkout is temporarily unavailable. Please retry.",
+      503,
+      cors,
+    );
   }
 }
 

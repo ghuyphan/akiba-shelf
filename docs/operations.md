@@ -36,6 +36,7 @@ Required Edge Function secrets depend on enabled features:
 ```bash
 npx supabase secrets set \
   PUBLIC_SITE_URL=https://matsuri.pro \
+  CHECKOUT_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173 \
   CHECKOUT_RATE_LIMIT_SALT=independent-random-value
 
 npx supabase secrets set \
@@ -45,6 +46,12 @@ npx supabase secrets set \
 ```
 
 Never commit `.env.local`, secret env files, or service-role credentials.
+
+`CHECKOUT_ALLOWED_ORIGINS` is an optional comma-separated exact allowlist for
+frontend origins that call the deployed `create-order` function. Keep
+`PUBLIC_SITE_URL` as the production origin and add localhost entries only when
+the local frontend intentionally tests against the linked project. Never use a
+wildcard origin.
 
 ## Supabase Auth
 
@@ -175,6 +182,11 @@ npm run build
 GitHub Pages deep-link generation belongs to `public/404.html`. Runtime restore
 belongs only to `restoreRedirect()` and uses `import.meta.env.BASE_URL`. Do not
 add a second restoration script to `index.html`.
+
+The Pages workflow merges non-conflicting files from the previous successful
+main-branch source into the new artifact. This keeps one generation of hashed
+assets available for tabs opened before a deployment. Do not remove that merge
+without replacing it with an equivalent stale-client compatibility strategy.
 
 ## Release gate
 

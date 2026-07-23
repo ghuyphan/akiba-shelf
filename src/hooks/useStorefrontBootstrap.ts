@@ -18,7 +18,7 @@ export function useStorefrontBootstrap(
   paymentEnabled: boolean,
   initialBooth: BoothSettings,
   initialProducts: Product[],
-  initialPayment: PaymentSettings = defaultPayment,
+  initialPayment?: PaymentSettings,
   initialPromotion: PromotionSettings = defaultPromotion,
   initialCategories: string[] = EMPTY_CATEGORIES,
 ) {
@@ -27,14 +27,19 @@ export function useStorefrontBootstrap(
     initialProducts.filter((product) => product.featured),
   );
   const [categories, setCategories] = useState<string[]>(initialCategories);
-  const [payment, setPayment] = useState<PaymentSettings>(initialPayment);
+  const [payment, setPayment] = useState<PaymentSettings>(
+    initialPayment ?? defaultPayment,
+  );
+  const [paymentResolved, setPaymentResolved] = useState(
+    initialPayment !== undefined,
+  );
   const [promotion, setPromotion] = useState<PromotionSettings>(initialPromotion);
   const [phase, setPhase] = useState<BootstrapPhase>("initial-loading");
   const [error, setError] = useState("");
   const shopIdentityRef = useRef(0);
   const paymentRequestRef = useRef<Promise<PaymentSettings> | null>(null);
   const paymentLoadedRef = useRef(false);
-  const paymentRef = useRef(initialPayment);
+  const paymentRef = useRef(initialPayment ?? defaultPayment);
 
   paymentRef.current = payment;
 
@@ -47,7 +52,8 @@ export function useStorefrontBootstrap(
       initialProducts.filter((product) => product.featured),
     );
     setCategories(initialCategories);
-    setPayment(initialPayment);
+    setPayment(initialPayment ?? defaultPayment);
+    setPaymentResolved(initialPayment !== undefined);
     setPromotion(initialPromotion);
     setError("");
     setPhase("initial-loading");
@@ -125,7 +131,7 @@ export function useStorefrontBootstrap(
     if (paymentRequestRef.current) return paymentRequestRef.current;
     if (paymentLoadedRef.current) return Promise.resolve(paymentRef.current);
     if (!shopId) return Promise.reject(new Error("Shop is not loaded."));
-    if (!navigator.onLine && initialPayment !== defaultPayment)
+    if (!navigator.onLine && initialPayment)
       return Promise.resolve(initialPayment);
     const identity = shopIdentityRef.current;
     const request = getPublicPaymentSettings(shopId)
@@ -134,14 +140,16 @@ export function useStorefrontBootstrap(
           paymentLoadedRef.current = true;
           paymentRef.current = nextPayment;
           setPayment(nextPayment);
+          setPaymentResolved(true);
         }
         return nextPayment;
       })
       .catch((err) => {
-        if (identity === shopIdentityRef.current && initialPayment !== defaultPayment) {
+        if (identity === shopIdentityRef.current && initialPayment) {
           paymentLoadedRef.current = true;
           paymentRef.current = initialPayment;
           setPayment(initialPayment);
+          setPaymentResolved(true);
           return initialPayment;
         }
         throw err;
@@ -203,6 +211,7 @@ export function useStorefrontBootstrap(
     featuredProducts,
     categories,
     payment,
+    paymentResolved,
     promotion,
     phase,
     error,

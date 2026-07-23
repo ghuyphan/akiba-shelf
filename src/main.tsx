@@ -6,6 +6,7 @@ import { resetDocumentBranding } from "./lib/branding";
 import { hydrateInitialPageTheme } from "./utils/theme";
 import { restoreRedirect } from "./lib/auth/authUrls";
 import { getRoutePrefetchTarget } from "./lib/routePrefetch";
+import { reloadForAppUpdate } from "./utils/lazyWithRetry";
 
 restoreRedirect();
 hydrateInitialPageTheme();
@@ -35,10 +36,10 @@ void import("./App")
       </StrictMode>,
     );
   })
-  .catch(() => {
+  .catch(async () => {
     if (!sessionStorage.getItem(appChunkRetryKey)) {
       sessionStorage.setItem(appChunkRetryKey, "1");
-      window.location.reload();
+      await reloadForAppUpdate();
     } else {
       sessionStorage.removeItem(appChunkRetryKey);
       document.body.textContent =
