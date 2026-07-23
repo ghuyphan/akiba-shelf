@@ -3,6 +3,9 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    "import.meta.env.VITE_TURNSTILE_TEST_BYPASS": JSON.stringify("true"),
+  },
   test: {
     exclude: [
       "e2e/**",

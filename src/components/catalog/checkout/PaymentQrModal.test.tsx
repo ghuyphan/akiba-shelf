@@ -31,6 +31,10 @@ const apiMocks = vi.hoisted(() => ({
     void error;
     return false;
   }),
+  isCheckoutSecurityError: vi.fn((error: unknown) => {
+    void error;
+    return false;
+  }),
 }));
 const checkoutStorage = vi.hoisted(() => ({ current: null as unknown }));
 
@@ -166,6 +170,8 @@ describe("PaymentQrModal", () => {
     apiMocks.cancelCustomerOrder.mockReset();
     apiMocks.isCheckoutOutcomeUnknownError.mockReset();
     apiMocks.isCheckoutOutcomeUnknownError.mockReturnValue(false);
+    apiMocks.isCheckoutSecurityError.mockReset();
+    apiMocks.isCheckoutSecurityError.mockReturnValue(false);
   });
 
   it("reviews the cart with quantities, prices, and total before ordering", () => {
@@ -265,6 +271,7 @@ describe("PaymentQrModal", () => {
       cart,
       "11111111-1111-4111-8111-111111111111",
       "0123456789abcdef0123456789abcdef",
+      "turnstile-test-token",
     );
     expect(screen.getAllByText("AKB-0042").length).toBeGreaterThan(0);
     expect(screen.getByText("Huy")).toBeInTheDocument();
@@ -431,7 +438,9 @@ describe("PaymentQrModal", () => {
     expect(
       screen.queryByRole("dialog", { name: "Reconnect to checkout" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Retry safely" })).toBeEnabled();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Retry safely" })).toBeEnabled(),
+    );
   });
 
   it("fails closed when Event Mode storage cannot be inspected", async () => {

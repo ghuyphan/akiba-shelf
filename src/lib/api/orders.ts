@@ -48,10 +48,25 @@ export class CheckoutOutcomeUnknownError extends Error {
   }
 }
 
+export class CheckoutSecurityError extends Error {
+  constructor(
+    message = "Security verification failed. Refresh the check and try again.",
+  ) {
+    super(message);
+    this.name = "CheckoutSecurityError";
+  }
+}
+
 export function isCheckoutOutcomeUnknownError(
   error: unknown,
 ): error is CheckoutOutcomeUnknownError {
   return error instanceof CheckoutOutcomeUnknownError;
+}
+
+export function isCheckoutSecurityError(
+  error: unknown,
+): error is CheckoutSecurityError {
+  return error instanceof CheckoutSecurityError;
 }
 
 export async function createOrder(
@@ -60,6 +75,7 @@ export async function createOrder(
   cart: CartItem[],
   clientRequestId: string,
   recoveryToken: string,
+  turnstileToken: string,
 ): Promise<Order> {
   const client = requireSupabase();
   const { data, error } = await client.functions.invoke("create-order", {
@@ -74,6 +90,7 @@ export async function createOrder(
       clientRequestId,
       recoveryToken,
       deviceId: checkoutDeviceId(),
+      turnstileToken,
     },
   });
   if (error) {
@@ -85,6 +102,7 @@ export async function createOrder(
     }
     const message = await extractEdgeFunctionError(error);
     const status = "context" in error ? error.context?.status : undefined;
+    if (status === 403) throw new CheckoutSecurityError(message ?? undefined);
     if (typeof status === "number" && status >= 500) {
       throw new CheckoutOutcomeUnknownError(message ?? undefined);
     }

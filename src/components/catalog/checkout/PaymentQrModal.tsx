@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Ban, CheckCircle2, CircleAlert, CloudOff, Copy, Loader2, ReceiptText, RefreshCw, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import type { CartItem, PaymentSettings, PromotionSettings, Order, BoothSettings, CheckoutSession } from "../../../types/catalog";
 import { formatVnd } from "../../../utils/format";
@@ -9,6 +9,10 @@ import { Modal } from "../../ui/Modal";
 import { useOrderCountdown, usePaymentQrSource } from "../../../hooks/catalog/useCheckoutPresentation";
 import { getPaymentBank, getBankLogoUrl } from "../../../utils/banks";
 import { useCheckoutSession } from "../../../hooks/catalog/useCheckoutSession";
+import {
+  TurnstileWidget,
+  type TurnstileWidgetHandle,
+} from "../../ui/TurnstileWidget";
 
 type PaymentQrModalProps = {
   shopSlug: string;
@@ -55,6 +59,13 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   const { session, order, connectionState, isSubmitting, isCancelling } = checkout;
   const [customerName, setCustomerName] = useState(() => session?.customerName ?? "");
   const [customerNameError, setCustomerNameError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(() =>
+    import.meta.env.DEV &&
+    import.meta.env.VITE_TURNSTILE_TEST_BYPASS === "true"
+      ? "turnstile-test-token"
+      : null,
+  );
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const [copyFeedback, setCopyFeedback] = useState("");
   const checkoutCart = session?.cart ?? cart;
 
@@ -66,6 +77,38 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   const paymentReady = hasUsablePayment(payment);
   const { qrSrc, isGenerating, qrUnavailable } = usePaymentQrSource(isOpen, order, payment, checkoutCart);
   const centerLogoUrl = booth?.logo_url || booth?.social_qr_logo_url || `${import.meta.env.BASE_URL}brand/matsuri-mark.svg`;
+  const requiresTurnstile =
+    checkout.checkoutMode === "online" && navigator.onLine;
+  const securityReady =
+    checkout.checkoutMode === "offline_event" ||
+    checkout.checkoutMode === "event_storage_unavailable" ||
+    (checkout.checkoutMode === "online" && !navigator.onLine) ||
+    (requiresTurnstile && Boolean(turnstileToken));
+
+  const securityCheck = requiresTurnstile ? (
+    <TurnstileWidget
+      ref={turnstileRef}
+      onTokenChange={setTurnstileToken}
+      loadingLabel={copy.securityChecking}
+      errorLabel={copy.securityLoadError}
+      missingLabel={copy.securityMissing}
+    />
+  ) : (
+    <div className="turnstile-shell" role="status" aria-live="polite">
+      <div className="turnstile-status">
+        <span className="turnstile-status-dot" aria-hidden="true" />
+        <span>
+          {checkout.checkoutMode === "offline_event"
+            ? copy.offlineEventSecurity
+            : checkout.checkoutMode === "event_storage_unavailable"
+              ? copy.offlineEventSecurityUnavailable
+              : checkout.checkoutMode === "online" && !navigator.onLine
+                ? copy.offlineSecurityQueued
+              : copy.securityChecking}
+        </span>
+      </div>
+    </div>
+  );
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +119,23 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
       return;
     }
     setCustomerNameError("");
-    await checkout.start(trimmedName);
+    if (!securityReady) return;
+    try {
+      await checkout.start(trimmedName, turnstileToken);
+    } finally {
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
+    }
+  };
+
+  const retryCheckout = async () => {
+    if (!securityReady) return;
+    try {
+      await checkout.retry(turnstileToken);
+    } finally {
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
+    }
   };
 
   const handleSuccessClose = () => {
@@ -175,11 +234,12 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
             {needsReview ? <CircleAlert size={38} /> : isOffline ? <CloudOff size={38} /> : <RefreshCw size={38} />}
           </div>
           <h2>{title}</h2>
-          <p>{eventStorageUnavailable ? copy.offlineEventStorageError : needsReview ? session.lastError || copy.orderSubmitError : isOffline ? copy.cartSavedOffline : copy.checkoutConnectionHint}</p>
+          <p>{eventStorageUnavailable ? copy.offlineEventStorageError : session.lastErrorCode === "security_verification_failed" ? copy.securityFailed : needsReview ? session.lastError || copy.orderSubmitError : isOffline ? copy.cartSavedOffline : copy.checkoutConnectionHint}</p>
           <div className="payment-success-summary">
             <span>{copy.total}</span>
             <strong>{formatVnd(totalAmount)}</strong>
           </div>
+          {securityCheck}
           <div className="order-confirm-actions">
             <button
               type="button"
@@ -195,8 +255,8 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
             <button
               type="button"
               className="button button-primary"
-              onClick={() => void checkout.retry()}
-              disabled={isSubmitting}
+              onClick={() => void retryCheckout()}
+              disabled={isSubmitting || !securityReady}
             >
               {isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.retryOrder}
             </button>
@@ -232,8 +292,9 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
             <div className="order-confirm-side">
               <label className="order-confirm-name"><span>{copy.pickupName}</span><div><UserRound size={18} /><input type="text" placeholder={copy.pickupPlaceholder} value={customerName} aria-invalid={Boolean(customerNameError) || undefined} aria-describedby={customerNameError ? "pickup-name-error" : undefined} onChange={(event) => { setCustomerName(event.target.value); if (customerNameError) setCustomerNameError(""); }} maxLength={30} autoFocus /></div>{customerNameError ? <small className="order-confirm-name-error" id="pickup-name-error" role="alert">{customerNameError}</small> : <small>{copy.pickupHint}</small>}</label>
               <div className="order-confirm-secure"><ShieldCheck size={17} /><span>{copy.secureCheck}</span></div>
+              {securityCheck}
               {!paymentReady && <p className="order-confirm-payment-error" role="alert">{copy.paymentSettingsError}</p>}
-              <div className="order-confirm-actions"><button type="button" className="button button-secondary" onClick={onClose} disabled={isSubmitting}>{copy.keepShopping}</button><button type="submit" className="button button-primary" disabled={isSubmitting || checkoutCart.length === 0 || !paymentReady}>{isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.createPay}</button></div>
+              <div className="order-confirm-actions"><button type="button" className="button button-secondary" onClick={onClose} disabled={isSubmitting}>{copy.keepShopping}</button><button type="submit" className="button button-primary" disabled={isSubmitting || checkoutCart.length === 0 || !paymentReady || !securityReady}>{isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.createPay}</button></div>
             </div>
           </form>
           )}

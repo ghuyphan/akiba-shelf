@@ -8,8 +8,14 @@ Deno.env.set(
 Deno.env.set("SUPABASE_URL", "https://project.test");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
 Deno.env.set("CHECKOUT_RATE_LIMIT_SALT", "test-rate-limit-salt");
+Deno.env.set("TURNSTILE_SECRET", "test-turnstile-secret");
 
-const { clientFactory, handleCreateOrderRequest } = await import("./index.ts");
+const { clientFactory, handleCreateOrderRequest, turnstileVerifier } =
+  await import("./index.ts");
+
+const allowTurnstile = () =>
+  Promise.resolve({ success: true, action: "turnstile-spin-v2" });
+turnstileVerifier.verify = allowTurnstile;
 
 const validBody = {
   shopSlug: "akiba-shelf",
@@ -18,6 +24,7 @@ const validBody = {
   clientRequestId: "11111111-1111-4111-8111-111111111111",
   deviceId: "22222222-2222-4222-8222-222222222222",
   recoveryToken: "0123456789abcdef0123456789abcdef",
+  turnstileToken: "test-turnstile-token",
 };
 
 function request(
@@ -90,8 +97,65 @@ Deno.test(
       ).status,
       400,
     );
+    assertEquals(
+      (
+        await handleCreateOrderRequest(
+          request({ ...validBody, turnstileToken: "" }),
+        )
+      ).status,
+      400,
+    );
   },
 );
+
+Deno.test("create order rejects failed or unavailable security checks", async () => {
+  let rpcCalls = 0;
+  clientFactory.createClient = () => ({
+    rpc: () => {
+      rpcCalls += 1;
+      return Promise.resolve({ data: [], error: null });
+    },
+  });
+
+  turnstileVerifier.verify = () => Promise.resolve({ success: false });
+  const rejected = await handleCreateOrderRequest(request(validBody));
+  assertEquals(rejected.status, 403);
+
+  turnstileVerifier.verify = () =>
+    Promise.resolve({ success: true, action: "unexpected-action" });
+  const wrongAction = await handleCreateOrderRequest(request(validBody));
+  assertEquals(wrongAction.status, 403);
+
+  turnstileVerifier.verify = () =>
+    Promise.resolve({ success: false, unavailable: true });
+  const unavailable = await handleCreateOrderRequest(request(validBody));
+  assertEquals(unavailable.status, 503);
+  assertEquals(rpcCalls, 0);
+  turnstileVerifier.verify = allowTurnstile;
+});
+
+Deno.test("create order accepts a missing token only during optional rollout", async () => {
+  let rpcCalls = 0;
+  clientFactory.createClient = () => ({
+    rpc: () => {
+      rpcCalls += 1;
+      return Promise.resolve({
+        data: [{ id: "40000000-0000-4000-8000-000000000001" }],
+        error: null,
+      });
+    },
+  });
+  Deno.env.set("TURNSTILE_ENFORCEMENT", "optional");
+  try {
+    const response = await handleCreateOrderRequest(
+      request({ ...validBody, turnstileToken: "" }),
+    );
+    assertEquals(response.status, 200);
+    assertEquals(rpcCalls, 1);
+  } finally {
+    Deno.env.delete("TURNSTILE_ENFORCEMENT");
+  }
+});
 
 Deno.test("create order derives layered checkout identities", async () => {
   const calls: Record<string, unknown>[] = [];

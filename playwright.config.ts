@@ -23,6 +23,7 @@ export default defineConfig({
     env: {
       VITE_SUPABASE_URL: "http://127.0.0.1:4174/mock-supabase",
       VITE_SUPABASE_ANON_KEY: "test-publishable-key",
+      VITE_TURNSTILE_TEST_BYPASS: "true",
       VITE_VAPID_PUBLIC_KEY: "",
     },
   },

@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { ArrowRight, Mail, LoaderCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { isSupabaseConfigured } from "../../../lib/supabase";
@@ -13,15 +13,25 @@ import { PasswordField } from "../../ui/PasswordField";
 import { AuthSecurityNote, AuthShell } from "../../ui/AuthShell";
 import { AuthDivider, GoogleAuthButton } from "../../ui/GoogleAuthButton";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
+import {
+  TurnstileWidget,
+  type TurnstileWidgetHandle,
+} from "../../ui/TurnstileWidget";
 
 type LoginPanelProps = {
-  onLogin: (email: string, password: string) => Promise<void>;
+  onLogin: (
+    email: string,
+    password: string,
+    captchaToken: string,
+  ) => Promise<void>;
   booth?: BoothSettings;
 };
 
 export function LoginPanel({ onLogin }: LoginPanelProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const { busy, run } = useAsyncAction();
   const toast = useToast();
   const { t } = usePlatformI18n();
@@ -36,13 +46,22 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
       toast.error(t("Enter your password."), t("Check your password"));
       return;
     }
-    await run(() => onLogin(email, password))
+    if (!captchaToken) {
+      toast.error(
+        t("Complete the security check before continuing."),
+        t("Security check required"),
+      );
+      return;
+    }
+    await run(() => onLogin(email, password, captchaToken))
       .catch((error) => {
         const notice = getAuthErrorNotice(error, "signin");
         toast.error(t(notice.message), t(notice.title));
       })
       .finally(() => {
         setPassword("");
+        setCaptchaToken(null);
+        turnstileRef.current?.reset();
       });
   }
 
@@ -89,10 +108,20 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
           </Alert>
         )}
 
+        <TurnstileWidget
+          ref={turnstileRef}
+          onTokenChange={setCaptchaToken}
+          loadingLabel={t("Checking browser security…")}
+          errorLabel={t(
+            "Security check could not load. Check your connection and try again.",
+          )}
+          missingLabel={t("Security verification is not configured.")}
+        />
+
         <button
           type="submit"
           className="admin-login-submit"
-          disabled={busy || !isSupabaseConfigured}
+          disabled={busy || !isSupabaseConfigured || !captchaToken}
           aria-busy={busy}
         >
           {busy && (

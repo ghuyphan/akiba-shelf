@@ -80,27 +80,35 @@ describe("AuthPage credential fields", () => {
     api.getShopMemberships.mockReset().mockResolvedValue([]);
     api.requestPasswordReset
       .mockReset()
-      .mockImplementation(async (email: string) => {
+      .mockImplementation(async (email: string, captchaToken: string) => {
       const result = await auth.resetPasswordForEmail(email, {
+        captchaToken,
         redirectTo: "http://localhost:3000/auth/callback?next=set-password",
       });
       if (result.error) throw result.error;
       });
     api.signInAdmin
       .mockReset()
-      .mockImplementation(async (email: string, password: string) => {
-      const result = await auth.signInWithPassword({ email, password });
+      .mockImplementation(async (email: string, password: string, captchaToken: string) => {
+      const result = await auth.signInWithPassword({
+        email,
+        password,
+        options: { captchaToken },
+      });
       if (result.error) throw result.error;
       return result.data;
       });
     api.signInWithGoogle.mockReset();
     api.signUpAdmin
       .mockReset()
-      .mockImplementation(async (email: string, password: string) => {
+      .mockImplementation(async (email: string, password: string, captchaToken: string) => {
       const result = await auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: "http://localhost:3000/auth/callback" },
+        options: {
+          captchaToken,
+          emailRedirectTo: "http://localhost:3000/auth/callback",
+        },
       });
       if (result.error) throw result.error;
       return { needsConfirmation: !result.data.session };
@@ -216,7 +224,10 @@ describe("AuthPage credential fields", () => {
       expect(auth.signUp).toHaveBeenCalledWith({
         email: "artist@example.com",
         password: "StrongPassword1",
-        options: { emailRedirectTo: expect.stringContaining("/auth/callback") },
+        options: {
+          captchaToken: "turnstile-test-token",
+          emailRedirectTo: expect.stringContaining("/auth/callback"),
+        },
       }),
     );
     expect(await screen.findByText("Check your email")).toBeInTheDocument();
@@ -246,6 +257,7 @@ describe("AuthPage credential fields", () => {
     expect(auth.resetPasswordForEmail).toHaveBeenCalledWith(
       "artist@example.com",
       expect.objectContaining({
+        captchaToken: "turnstile-test-token",
         redirectTo: expect.stringContaining("/auth/callback?next=set-password"),
       }),
     );

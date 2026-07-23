@@ -4,6 +4,7 @@ import {
   createOrder,
   getCustomerOrder,
   isCheckoutOutcomeUnknownError,
+  isCheckoutSecurityError,
 } from "../../lib/api/orders";
 import { getErrorMessage, isTransportError } from "../../lib/errors";
 import {
@@ -28,6 +29,12 @@ type CheckoutConnectionState =
   | "offline"
   | "reconnecting"
   | "error";
+
+type CheckoutMode =
+  | "checking"
+  | "online"
+  | "offline_event"
+  | "event_storage_unavailable";
 
 type UseCheckoutSessionOptions = {
   shopSlug: string;
@@ -62,6 +69,8 @@ export function useCheckoutSession({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [checkoutMode, setCheckoutMode] =
+    useState<CheckoutMode>("online");
   const [connectionState, setConnectionState] =
     useState<CheckoutConnectionState>(
       navigator.onLine ? "online" : "offline",
@@ -89,7 +98,7 @@ export function useCheckoutSession({
   }, [shopSlug]);
 
   const reserve = useCallback(
-    (target: CheckoutSession) => {
+    (target: CheckoutSession, turnstileToken: string | null) => {
       if (target.order) return Promise.resolve(target.order);
       if (submissionRef.current) return submissionRef.current;
 
@@ -105,21 +114,31 @@ export function useCheckoutSession({
       setIsSubmitting(true);
 
       const request = loadOfflineEventSessionBySlug(shopSlug)
-        .then((eventSession) =>
-          eventSession?.status === "active"
-            ? createOfflineEventOrder(
-                eventSession,
-                attempting.cart,
-                attempting.customerName,
-              ).then(offlineEventOrderAsOrder)
-            : createOrder(
-                shopSlug,
-                attempting.customerName,
-                attempting.cart,
-                attempting.clientRequestId,
-                attempting.recoveryToken,
-              ),
-        )
+        .then((eventSession) => {
+          if (eventSession?.status === "active") {
+            return createOfflineEventOrder(
+              eventSession,
+              attempting.cart,
+              attempting.customerName,
+            ).then(offlineEventOrderAsOrder);
+          }
+          if (!navigator.onLine) {
+            throw new TypeError("Failed to fetch");
+          }
+          if (!turnstileToken) {
+            throw new Error(
+              "Complete the security check before continuing.",
+            );
+          }
+          return createOrder(
+            shopSlug,
+            attempting.customerName,
+            attempting.cart,
+            attempting.clientRequestId,
+            attempting.recoveryToken,
+            turnstileToken,
+          );
+        })
         .then((order) => {
           const reserved = sessionWithOrder(attempting, order);
           persist(reserved);
@@ -138,6 +157,7 @@ export function useCheckoutSession({
         .catch((error: unknown) => {
           const eventStorageUnavailable =
             isOfflineEventStorageUnavailableError(error);
+          const securityVerificationFailed = isCheckoutSecurityError(error);
           const queued =
             !eventStorageUnavailable &&
             (isTransportError(error) || isCheckoutOutcomeUnknownError(error));
@@ -156,6 +176,8 @@ export function useCheckoutSession({
                   ),
             lastErrorCode: eventStorageUnavailable
               ? "offline_event_storage_unavailable"
+              : securityVerificationFailed
+                ? "security_verification_failed"
               : undefined,
           });
           if (queued || eventStorageUnavailable) {
@@ -186,7 +208,7 @@ export function useCheckoutSession({
   );
 
   const start = useCallback(
-    async (customerName: string) => {
+    async (customerName: string, turnstileToken: string | null) => {
       const existing = sessionRef.current;
       const next =
         existing && !existing.order
@@ -201,15 +223,15 @@ export function useCheckoutSession({
             }
           : createCheckoutSession(shopSlug, cart, customerName);
       persist(next);
-      return reserve(next);
+      return reserve(next, turnstileToken);
     },
     [cart, persist, reserve, shopSlug],
   );
 
-  const retry = useCallback(() => {
+  const retry = useCallback((turnstileToken: string | null) => {
     const current = sessionRef.current;
     if (!current || current.order) return Promise.resolve(null);
-    return reserve(current);
+    return reserve(current, turnstileToken);
   }, [reserve]);
 
   const refreshOrder = useCallback(() => {
@@ -315,25 +337,40 @@ export function useCheckoutSession({
   }, [persist]);
 
   useEffect(() => {
+    let cancelled = false;
+    void loadOfflineEventSessionBySlug(shopSlug)
+      .then((eventSession) => {
+        if (cancelled) return;
+        setCheckoutMode(
+          eventSession?.status === "active" ? "offline_event" : "online",
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setCheckoutMode("event_storage_unavailable");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [shopSlug]);
+
+  useEffect(() => {
     const next = loadCheckoutSession(shopSlug);
     persist(next);
     confirmedHandledRef.current = next?.state === "confirmed";
     onOrderChangeRef.current?.(next?.order ?? null);
-    if (
-      resumedShopRef.current !== shopSlug &&
-      next?.state === "queued" &&
-      navigator.onLine
-    ) {
+    if (resumedShopRef.current !== shopSlug && next?.state === "queued") {
       resumedShopRef.current = shopSlug;
-      void reserve(next);
+      setConnectionState(navigator.onLine ? "online" : "offline");
     }
-  }, [persist, reserve, shopSlug]);
+  }, [persist, shopSlug]);
 
   useEffect(() => {
     const resume = () => {
       const current = sessionRef.current;
       if (current?.order) void refreshOrder();
-      else if (current?.state === "queued") void reserve(current);
+      else if (current?.state === "queued") {
+        setConnectionState(navigator.onLine ? "online" : "offline");
+      }
     };
     const handleOnline = () => resume();
     const handleOffline = () => setConnectionState("offline");
@@ -351,7 +388,7 @@ export function useCheckoutSession({
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [refreshOrder, reserve]);
+  }, [refreshOrder]);
 
   useEffect(() => {
     const order = session?.order;
@@ -374,6 +411,7 @@ export function useCheckoutSession({
     isSubmitting,
     isCancelling,
     connectionState,
+    checkoutMode,
     start,
     retry,
     refreshOrder,

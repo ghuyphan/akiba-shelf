@@ -646,7 +646,13 @@ export async function mockSupabase(
         },
       ]);
     }
-    if (url.pathname.includes("/functions/v1/create-order"))
+    if (url.pathname.includes("/functions/v1/create-order")) {
+      const requestBody = route.request().postDataJSON() as {
+        turnstileToken?: string;
+      };
+      if (requestBody.turnstileToken !== "turnstile-test-token") {
+        return json(route, { error: "Security verification failed" }, 403);
+      }
       return options.checkoutFails
         ? json(route, { error: "Stock changed" }, 409)
         : json(route, {
@@ -662,6 +668,7 @@ export async function mockSupabase(
             cancelled_at: null,
             expired_at: null,
           });
+    }
     if (url.pathname.includes("/rest/v1/rpc/get_customer_order"))
       return json(route, []);
     if (url.pathname.includes("/rest/v1/promotion_products"))

@@ -814,8 +814,12 @@ export function AdminPage() {
     toast.success(t(message));
   }
 
-  async function handleLogin(email: string, password: string) {
-    await signInAdmin(email, password);
+  async function handleLogin(
+    email: string,
+    password: string,
+    captchaToken: string,
+  ) {
+    await signInAdmin(email, password, captchaToken);
     await refreshAdminSession();
   }
 

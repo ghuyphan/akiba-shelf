@@ -64,6 +64,14 @@ const vi: Record<string, string> = {
   "The image could not be read.": "Không thể đọc ảnh.",
   "Push notifications are not configured. Set VITE_VAPID_PUBLIC_KEY.":
     "Thông báo đẩy chưa được cấu hình. Hãy đặt VITE_VAPID_PUBLIC_KEY.",
+  "Checking browser security…": "Đang kiểm tra bảo mật trình duyệt…",
+  "Security check could not load. Check your connection and try again.":
+    "Không thể tải bước kiểm tra bảo mật. Hãy kiểm tra kết nối và thử lại.",
+  "Security verification is not configured.":
+    "Xác minh bảo mật chưa được cấu hình.",
+  "Complete the security check before continuing.":
+    "Hãy hoàn tất bước kiểm tra bảo mật trước khi tiếp tục.",
+  "Security check required": "Cần kiểm tra bảo mật",
   "Select a shop before enabling notifications.":
     "Hãy chọn gian hàng trước khi bật thông báo.",
   "Supabase is not configured.": "Supabase chưa được cấu hình.",

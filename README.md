@@ -50,6 +50,7 @@ Frontend environment variables:
 ```bash
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-publishable-or-anon-key
+VITE_TURNSTILE_SITE_KEY=your-public-turnstile-site-key
 VITE_VAPID_PUBLIC_KEY=your-public-vapid-key
 ```
 
@@ -59,9 +60,10 @@ perform their own bounded request or recovery-token validation and therefore
 deploy with gateway JWT verification disabled. Staff invitation functions keep
 gateway JWT verification enabled and require a signed-in user session.
 
-Every `VITE_*` value is public browser configuration. Never put service-role,
-OAuth, SMTP, VietQR, or VAPID private credentials in a Vite variable or commit
-them to the repository.
+Every `VITE_*` value is public browser configuration. The Turnstile site key is
+public; its secret belongs in Supabase Auth and Edge Function secrets. Never put
+service-role, OAuth, SMTP, VietQR, Turnstile secret, or VAPID private credentials
+in a Vite variable or commit them to the repository.
 
 Useful commands:
 

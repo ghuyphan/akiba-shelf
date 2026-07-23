@@ -162,7 +162,9 @@ export type CheckoutSessionState =
   | "cancelled"
   | "expired";
 
-export type CheckoutSessionErrorCode = "offline_event_storage_unavailable";
+export type CheckoutSessionErrorCode =
+  | "offline_event_storage_unavailable"
+  | "security_verification_failed";
 
 export type CheckoutSession = {
   version: 2;

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, LoaderCircle, Mail } from "lucide-react";
 import {
@@ -23,6 +23,10 @@ import {
   GoogleAuthButton,
 } from "../components/ui/GoogleAuthButton";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
+import {
+  TurnstileWidget,
+  type TurnstileWidgetHandle,
+} from "../components/ui/TurnstileWidget";
 
 type Mode = "signin" | "signup" | "forgot";
 type EmailCompletion = { mode: "signup" | "forgot"; email: string };
@@ -70,6 +74,8 @@ export function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const [busy, setBusy] = useState(false);
   const [completion, setCompletion] = useState<EmailCompletion | null>(null);
   const [resendIn, setResendIn] = useState(0);
@@ -92,11 +98,16 @@ export function AuthPage() {
   async function requestAccountEmail(
     requestMode: "signup" | "forgot",
     requestEmail: string,
+    requestCaptchaToken: string,
   ) {
     if (requestMode === "forgot") {
-      await requestPasswordReset(requestEmail);
+      await requestPasswordReset(requestEmail, requestCaptchaToken);
     } else {
-      const { needsConfirmation } = await signUpAdmin(requestEmail, password);
+      const { needsConfirmation } = await signUpAdmin(
+        requestEmail,
+        password,
+        requestCaptchaToken,
+      );
       if (!needsConfirmation) return false;
     }
     setCompletion({ mode: requestMode, email: requestEmail });
@@ -126,17 +137,28 @@ export function AuthPage() {
         return;
       }
     }
+    if (!captchaToken) {
+      toast.error(
+        t("Complete the security check before continuing."),
+        t("Security check required"),
+      );
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "forgot") {
-        await requestAccountEmail("forgot", email);
+        await requestAccountEmail("forgot", email, captchaToken);
         return;
       }
       if (mode === "signup") {
-        const needsConfirmation = await requestAccountEmail("signup", email);
+        const needsConfirmation = await requestAccountEmail(
+          "signup",
+          email,
+          captchaToken,
+        );
         if (needsConfirmation) return;
       } else {
-        await signInAdmin(email, password);
+        await signInAdmin(email, password, captchaToken);
       }
       const memberships = await getShopMemberships();
       navigate(routeAfterAuthentication(memberships), { replace: true });
@@ -154,16 +176,28 @@ export function AuthPage() {
         setPassword("");
         setConfirmPassword("");
       }
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
       setBusy(false);
     }
   }
 
   async function resendEmail() {
-    if (!completion || completion.mode !== "forgot" || resendIn > 0 || busy)
+    if (
+      !completion ||
+      completion.mode !== "forgot" ||
+      resendIn > 0 ||
+      busy ||
+      !captchaToken
+    )
       return;
     setBusy(true);
     try {
-      await requestAccountEmail(completion.mode, completion.email);
+      await requestAccountEmail(
+        completion.mode,
+        completion.email,
+        captchaToken,
+      );
       toast.success(t("A new secure link is on its way."), t("Email sent"));
     } catch (error) {
       const notice = getAuthErrorNotice(
@@ -172,6 +206,8 @@ export function AuthPage() {
       );
       toast.error(t(notice.message), t(notice.title));
     } finally {
+      setCaptchaToken(null);
+      turnstileRef.current?.reset();
       setBusy(false);
     }
   }
@@ -181,6 +217,7 @@ export function AuthPage() {
     setConfirmPassword("");
     setCompletion(null);
     setResendIn(0);
+    setCaptchaToken(null);
     setParams({ mode: next });
   };
   return (
@@ -198,31 +235,42 @@ export function AuthPage() {
       {completion ? (
         <div className="auth-completion-actions">
           {completion.mode === "forgot" && (
-            <button
-              type="button"
-              className="admin-login-submit"
-              disabled={busy || resendIn > 0}
-              onClick={() => void resendEmail()}
-              aria-busy={busy}
-            >
-              {busy && (
-                <LoaderCircle
-                  className="button-spinner"
-                  size={18}
-                  aria-hidden="true"
-                />
-              )}
-              <span>
-                {busy
-                  ? t("Sending…")
-                  : resendIn > 0
-                    ? t("Send again in {{seconds}}s", { seconds: resendIn })
-                    : t("Send another email")}
-              </span>
-              {!busy && resendIn === 0 && (
-                <ArrowRight size={18} aria-hidden="true" />
-              )}
-            </button>
+            <>
+              <TurnstileWidget
+                ref={turnstileRef}
+                onTokenChange={setCaptchaToken}
+                loadingLabel={t("Checking browser security…")}
+                errorLabel={t(
+                  "Security check could not load. Check your connection and try again.",
+                )}
+                missingLabel={t("Security verification is not configured.")}
+              />
+              <button
+                type="button"
+                className="admin-login-submit"
+                disabled={busy || resendIn > 0 || !captchaToken}
+                onClick={() => void resendEmail()}
+                aria-busy={busy}
+              >
+                {busy && (
+                  <LoaderCircle
+                    className="button-spinner"
+                    size={18}
+                    aria-hidden="true"
+                  />
+                )}
+                <span>
+                  {busy
+                    ? t("Sending…")
+                    : resendIn > 0
+                      ? t("Send again in {{seconds}}s", { seconds: resendIn })
+                      : t("Send another email")}
+                </span>
+                {!busy && resendIn === 0 && (
+                  <ArrowRight size={18} aria-hidden="true" />
+                )}
+              </button>
+            </>
           )}
           <button type="button" onClick={() => choose("signin")}>
             {t("Return to sign in")}
@@ -284,9 +332,19 @@ export function AuthPage() {
                 />
               </>
             )}
+            <TurnstileWidget
+              key={mode}
+              ref={turnstileRef}
+              onTokenChange={setCaptchaToken}
+              loadingLabel={t("Checking browser security…")}
+              errorLabel={t(
+                "Security check could not load. Check your connection and try again.",
+              )}
+              missingLabel={t("Security verification is not configured.")}
+            />
             <button
               className="admin-login-submit"
-              disabled={busy}
+              disabled={busy || !captchaToken}
               aria-busy={busy}
             >
               {busy && (

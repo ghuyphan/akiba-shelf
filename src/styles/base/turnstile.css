@@ -1,0 +1,78 @@
+.turnstile-shell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 65px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft, #f8fafc);
+  box-sizing: border-box;
+}
+
+.turnstile-shell-compact {
+  height: 140px;
+}
+
+.cf-turnstile {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.turnstile-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  color: var(--muted);
+  background: var(--surface-soft, #f8fafc);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.turnstile-status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 12%, transparent);
+}
+
+.turnstile-shell[data-state="loading"] .turnstile-status-dot {
+  animation: turnstile-pulse 1.2s ease-in-out infinite;
+}
+
+.turnstile-shell[data-state="error"] .turnstile-status-dot,
+.turnstile-shell[data-state="missing"] .turnstile-status-dot {
+  background: var(--red);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 10%, transparent);
+}
+
+@keyframes turnstile-pulse {
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+
+@media (max-width: 420px) {
+  .turnstile-shell {
+    height: 140px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turnstile-shell[data-state="loading"] .turnstile-status-dot {
+    animation: none;
+  }
+}

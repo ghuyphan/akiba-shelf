@@ -37,8 +37,12 @@ export function NewShopPage() {
     : 0;
   const creationLimitReached = ownedShopCount >= MAX_OWNED_SHOPS;
 
-  async function handleLogin(email: string, password: string) {
-    await signInAdmin(email, password);
+  async function handleLogin(
+    email: string,
+    password: string,
+    captchaToken: string,
+  ) {
+    await signInAdmin(email, password, captchaToken);
     await refreshAdminSession();
   }
 

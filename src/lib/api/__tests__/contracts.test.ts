@@ -167,6 +167,7 @@ describe("order API contracts", () => {
       cart,
       "client-request-1",
       "recovery-token-1",
+      "turnstile-token-1",
     );
 
     expect(mocks.invoke).toHaveBeenNthCalledWith(1, "create-order", {
@@ -177,6 +178,7 @@ describe("order API contracts", () => {
         clientRequestId: "client-request-1",
         recoveryToken: "recovery-token-1",
         deviceId: expect.any(String),
+        turnstileToken: "turnstile-token-1",
       },
     });
     expect(mocks.invoke).toHaveBeenCalledTimes(1);
@@ -197,6 +199,7 @@ describe("order API contracts", () => {
         [{ product, quantity: 1 }],
         "client-request-1",
         "recovery-token-1",
+        "turnstile-token-1",
       ),
     ).rejects.toBeInstanceOf(CheckoutOutcomeUnknownError);
     expect(mocks.invoke).toHaveBeenCalledTimes(1);
@@ -215,6 +218,7 @@ describe("order API contracts", () => {
         [{ product, quantity: 1 }],
         "client-request-1",
         "recovery-token-1",
+        "turnstile-token-1",
       ),
     ).rejects.toBeInstanceOf(CheckoutOutcomeUnknownError);
   });

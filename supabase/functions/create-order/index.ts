@@ -20,6 +20,12 @@ type CheckoutAdminClient = {
   ) => PromiseLike<CheckoutRpcResult>;
 };
 
+type TurnstileVerification = {
+  success: boolean;
+  action?: string;
+  unavailable?: boolean;
+};
+
 export const clientFactory = {
   createClient(
     url: string,
@@ -42,6 +48,8 @@ const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const maxBodyLength = 32 * 1024;
+const maxTurnstileTokenLength = 2048;
+const turnstileAction = "turnstile-spin-v2";
 const publicRpcErrors = new Map<string, { error: string; status: number }>([
   [
     "Too many active checkout reservations. Complete or cancel an existing order first.",
@@ -175,6 +183,41 @@ function forwardedClientIpHint(request: Request) {
   return value.toLowerCase();
 }
 
+export const turnstileVerifier = {
+  async verify(
+    secret: string,
+    token: string,
+    remoteIp: string | null,
+    idempotencyKey: string,
+  ): Promise<TurnstileVerification> {
+    const body = new URLSearchParams({
+      secret,
+      response: token,
+      idempotency_key: idempotencyKey,
+    });
+    if (remoteIp) body.set("remoteip", remoteIp);
+
+    try {
+      const response = await fetch(
+        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body,
+        },
+      );
+      if (!response.ok) return { success: false, unavailable: true };
+      const result = (await response.json()) as Record<string, unknown>;
+      return {
+        success: result.success === true,
+        action: typeof result.action === "string" ? result.action : undefined,
+      };
+    } catch {
+      return { success: false, unavailable: true };
+    }
+  },
+};
+
 export async function handleCreateOrderRequest(
   request: Request,
 ): Promise<Response> {
@@ -205,6 +248,10 @@ export async function handleCreateOrderRequest(
   const recoveryToken =
     typeof body?.recoveryToken === "string" ? body.recoveryToken : "";
   const deviceId = typeof body?.deviceId === "string" ? body.deviceId : null;
+  const turnstileToken =
+    typeof body?.turnstileToken === "string" ? body.turnstileToken : "";
+  const turnstileRequired =
+    Deno.env.get("TURNSTILE_ENFORCEMENT") !== "optional";
   const items = body?.items;
   if (
     !slugPattern.test(shopSlug) ||
@@ -213,6 +260,8 @@ export async function handleCreateOrderRequest(
     (deviceId !== null && !uuidPattern.test(deviceId)) ||
     recoveryToken.length < 32 ||
     recoveryToken.length > 160 ||
+    (turnstileRequired && turnstileToken.length < 1) ||
+    turnstileToken.length > maxTurnstileTokenLength ||
     !validItems(items)
   ) {
     return jsonFailure("Invalid checkout request.", 400, cors);
@@ -223,12 +272,36 @@ export async function handleCreateOrderRequest(
       "SUPABASE_URL",
       "SUPABASE_SERVICE_ROLE_KEY",
       "CHECKOUT_RATE_LIMIT_SALT",
+      "TURNSTILE_SECRET",
     ]);
     if (!env) {
       return jsonFailure("Checkout is not configured.", 503, cors);
     }
     const url = env.SUPABASE_URL;
     const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+    const ipHint = forwardedClientIpHint(request);
+    if (turnstileToken) {
+      const verification = await turnstileVerifier.verify(
+        env.TURNSTILE_SECRET,
+        turnstileToken,
+        ipHint,
+        clientRequestId,
+      );
+      if (verification.unavailable) {
+        return jsonFailure(
+          "Security verification is temporarily unavailable. Please try again.",
+          503,
+          cors,
+        );
+      }
+      if (!verification.success || verification.action !== turnstileAction) {
+        return jsonFailure(
+          "Security verification failed. Refresh the check and try again.",
+          403,
+          cors,
+        );
+      }
+    }
     const fingerprintHash = await sha256(
       `${env.CHECKOUT_RATE_LIMIT_SALT}:checkout:${shopSlug}:${recoveryToken}`,
     );
@@ -237,7 +310,6 @@ export async function handleCreateOrderRequest(
         ? `${env.CHECKOUT_RATE_LIMIT_SALT}:device:${deviceId}`
         : `${env.CHECKOUT_RATE_LIMIT_SALT}:legacy-device:${fingerprintHash}`,
     );
-    const ipHint = forwardedClientIpHint(request);
     const ipHash = ipHint
       ? await sha256(`${env.CHECKOUT_RATE_LIMIT_SALT}:ip:${ipHint}`)
       : null;

@@ -62,6 +62,11 @@ describe("admin login panel", () => {
     await user.click(screen.getByRole("button", { name: "Open admin" }));
 
     expect(await screen.findByText("Confirm your email")).toBeInTheDocument();
+    expect(onLogin).toHaveBeenCalledWith(
+      "artist@example.com",
+      "password123",
+      "turnstile-test-token",
+    );
     expect(screen.getByLabelText("Password")).toHaveValue("");
   });
 });

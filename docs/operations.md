@@ -10,6 +10,7 @@ Public frontend variables:
 ```bash
 VITE_SUPABASE_URL=https://PROJECT_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=publishable-or-anon-key
+VITE_TURNSTILE_SITE_KEY=public-turnstile-site-key
 VITE_VAPID_PUBLIC_KEY=public-vapid-key
 VITE_SENTRY_DSN=https://public-key@o0.ingest.sentry.io/project-id
 VITE_APP_ENV=production
@@ -29,6 +30,7 @@ Every `VITE_*` value is shipped to browsers. Keep these values out of Vite:
 - Google OAuth client secret
 - SMTP credentials
 - `CHECKOUT_RATE_LIMIT_SALT`
+- Turnstile secret key
 - VAPID private key
 - `NOTIFICATION_WORKER_SECRET`
 
@@ -49,7 +51,9 @@ Required Edge Function secrets depend on enabled features:
 npx supabase secrets set \
   PUBLIC_SITE_URL=https://matsuri.pro \
   CHECKOUT_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173 \
-  CHECKOUT_RATE_LIMIT_SALT=independent-random-value
+  CHECKOUT_RATE_LIMIT_SALT=independent-random-value \
+  TURNSTILE_SECRET=cloudflare-turnstile-secret \
+  TURNSTILE_ENFORCEMENT=optional
 
 npx supabase secrets set \
   VAPID_PUBLIC_KEY=... \
@@ -77,6 +81,25 @@ frontend origins that call the deployed `create-order` function. Keep
 `PUBLIC_SITE_URL` as the production origin and add localhost entries only when
 the local frontend intentionally tests against the linked project. Never use a
 wildcard origin.
+
+The managed Turnstile widget must allow `matsuri.pro`, `localhost`, and
+`127.0.0.1`. Use `VITE_TURNSTILE_SITE_KEY` in the browser and keep
+`TURNSTILE_SECRET` only in Supabase. `create-order` validates every supplied
+token with Cloudflare Siteverify, including the `turnstile-spin-v2` action.
+Tokens are single-use and expire after five minutes.
+
+Use `TURNSTILE_ENFORCEMENT=optional` only for the short expand phase while the
+previous Pages artifact remains eligible for rollback. Deploy the token-aware
+frontend first, then deploy `create-order`, verify checkout on desktop and
+phone, and finally set:
+
+```bash
+npx supabase secrets set TURNSTILE_ENFORCEMENT=required
+```
+
+After enforcement becomes required, do not roll back to a frontend build that
+does not submit `turnstileToken`. Remove the compatibility setting only after
+the retained rollback artifact is also Turnstile-aware.
 
 Checkout hashes the first `X-Forwarded-For` value as one supplemental abuse
 signal, alongside shop, device, and checkout-identity limits. Supabase's
@@ -116,9 +139,13 @@ For a fully local stack, enable `[auth.external.google]` in
 `supabase/config.toml`, load credentials from the ignored root `.env`, and
 restart the local stack.
 
-Recommend CAPTCHA, conservative Auth rate limits, leaked-password protection,
-and short-lived sessions appropriate to the deployment. End users never need
-Supabase Dashboard access.
+Turnstile protects email/password sign-in, sign-up, and password recovery. In
+Supabase Dashboard, open Auth CAPTCHA settings, choose Cloudflare Turnstile,
+enter the same widget secret, and enable CAPTCHA only after the token-aware
+frontend is live. Enabling it earlier blocks every password flow, including the
+inline staff login panels. OAuth remains unchanged. Also keep conservative Auth
+rate limits, leaked-password protection, and short-lived sessions appropriate
+to the deployment. End users never need Supabase Dashboard access.
 
 ## Database changes
 
@@ -305,7 +332,8 @@ platform and Wrangler uploads the verified `dist/` artifact. Do not create a
 second Git-integrated Pages project or enable another production deployer. The
 deployment workflow requires the `cloudflare-pages` GitHub environment to
 provide `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`,
-`VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`. Scope the Cloudflare token to
+`VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`, plus the public environment
+variable `VITE_TURNSTILE_SITE_KEY`. Scope the Cloudflare token to
 Account > Cloudflare Pages > Edit for the account that owns the `matsuri`
 project. Every `VITE_*` value is public in the built application.
 

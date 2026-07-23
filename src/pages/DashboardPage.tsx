@@ -34,8 +34,12 @@ export function DashboardPage() {
 
   const [editingShop, setEditingShop] = useState<ShopMembership | null>(null);
 
-  async function handleLogin(email: string, password: string) {
-    await signInAdmin(email, password);
+  async function handleLogin(
+    email: string,
+    password: string,
+    captchaToken: string,
+  ) {
+    await signInAdmin(email, password, captchaToken);
     await refreshAdminSession();
   }
 

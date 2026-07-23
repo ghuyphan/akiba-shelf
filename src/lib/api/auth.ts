@@ -4,11 +4,16 @@ import { requireSupabase } from "./shared";
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export async function signInAdmin(email: string, password: string) {
+export async function signInAdmin(
+  email: string,
+  password: string,
+  captchaToken: string,
+) {
   const client = requireSupabase();
   const { data, error } = await client.auth.signInWithPassword({
     email,
     password,
+    options: { captchaToken },
   });
   if (error) throw error;
   return data;
@@ -17,18 +22,26 @@ export async function signInAdmin(email: string, password: string) {
 export async function signUpAdmin(
   email: string,
   password: string,
+  captchaToken: string,
 ): Promise<{ needsConfirmation: boolean }> {
   const { data, error } = await requireSupabase().auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: getAppUrl("/auth/callback") },
+    options: {
+      captchaToken,
+      emailRedirectTo: getAppUrl("/auth/callback"),
+    },
   });
   if (error) throw error;
   return { needsConfirmation: !data.session };
 }
 
-export async function requestPasswordReset(email: string): Promise<void> {
+export async function requestPasswordReset(
+  email: string,
+  captchaToken: string,
+): Promise<void> {
   const { error } = await requireSupabase().auth.resetPasswordForEmail(email, {
+    captchaToken,
     redirectTo: getAppUrl("/auth/callback?next=set-password"),
   });
   if (error) throw error;

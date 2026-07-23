@@ -41,7 +41,12 @@ const checkoutSessionSchema = z.object({
   updatedAt: z.string().datetime(),
   lastAttemptAt: z.string().datetime().optional(),
   lastError: z.string().optional(),
-  lastErrorCode: z.enum(["offline_event_storage_unavailable"]).optional(),
+  lastErrorCode: z
+    .enum([
+      "offline_event_storage_unavailable",
+      "security_verification_failed",
+    ])
+    .optional(),
 });
 
 const legacyCheckoutSchema = z.object({

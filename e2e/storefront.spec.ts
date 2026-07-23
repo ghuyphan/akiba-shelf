@@ -741,7 +741,7 @@ test("shows an order-status error without calling an online customer offline", a
   ).toBeEnabled();
 });
 
-test("queues checkout offline and reserves it safely after reconnect", async ({
+test("queues checkout offline and retries it safely after reconnect", async ({
   context,
   page,
 }) => {
@@ -770,6 +770,9 @@ test("queues checkout offline and reserves it safely after reconnect", async ({
 
   await page.unroute(createOrderPattern);
   await context.setOffline(false);
+  const retryCheckout = page.getByRole("button", { name: "Retry safely" });
+  await expect(retryCheckout).toBeEnabled();
+  await retryCheckout.click();
   await expect(page.getByRole("dialog", { name: "Scan to pay" })).toBeVisible();
   await expect(page.getByText("A100").first()).toBeVisible();
   await expect
