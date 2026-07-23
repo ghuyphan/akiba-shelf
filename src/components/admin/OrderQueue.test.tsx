@@ -29,7 +29,8 @@ const apiMocks = vi.hoisted(() => ({
   listOfflineEvents: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock("../../lib/api", () => apiMocks);
+vi.mock("../../lib/api/orders", () => apiMocks);
+vi.mock("../../lib/api/offlineEvents", () => apiMocks);
 
 import { OrderQueue } from "./OrderQueue";
 

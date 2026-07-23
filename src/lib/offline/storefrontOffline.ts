@@ -1,9 +1,9 @@
+import { getCatalogCoreData } from "../api/catalog";
 import {
-  getCatalogCoreData,
-  getPublicGachaEnabled,
   getPublicPaymentSettings,
   getPublicPromotionSettings,
-} from "../api";
+} from "../api/settings";
+import { getPublicGachaEnabled } from "../api/gachaPublic";
 import {
   loadCatalogSnapshot,
   saveCatalogSnapshot,
@@ -73,9 +73,10 @@ async function cacheStorefrontAssets(urls: string[]) {
         throw new Error(
           `Could not download ${new URL(url, location.origin).pathname}.`,
         );
-      const cache = cacheNameForStorefrontUrl(url) === "supabase-storage-cache-v2"
-        ? storageCache
-        : productImageCache;
+      const cache =
+        cacheNameForStorefrontUrl(url) === "supabase-storage-cache-v2"
+          ? storageCache
+          : productImageCache;
       await cache.put(request, prepareResponseForCache(response));
     }
   }
@@ -101,7 +102,11 @@ export async function prepareStorefrontOffline(shop: Shop) {
   ]);
 
   if (gachaEnabled) {
-    await prepareGachaLaunch(shop.slug, { shop, booth: catalog.booth }, false).catch(() => null);
+    await prepareGachaLaunch(
+      shop.slug,
+      { shop, booth: catalog.booth },
+      false,
+    ).catch(() => null);
   }
 
   saveShopSnapshot(shop, shop.slug);
@@ -110,7 +115,11 @@ export async function prepareStorefrontOffline(shop: Shop) {
       ...catalog,
       payment,
       promotion,
-      categories: [...new Set(catalog.products.map((product) => product.category).filter(Boolean))],
+      categories: [
+        ...new Set(
+          catalog.products.map((product) => product.category).filter(Boolean),
+        ),
+      ],
       gachaEnabled,
     },
     shopId,
@@ -123,32 +132,49 @@ export async function prepareStorefrontOffline(shop: Shop) {
       catalog.booth.social_qr_logo_url,
       payment.bank_qr_url,
       payment.momo_qr_url,
-      new URL(`${import.meta.env.BASE_URL}bank-logos/${payment.bank_code || "default"}.png`, location.origin).href,
-      new URL(`${import.meta.env.BASE_URL}bank-logos/MOMO.png`, location.origin).href,
-      new URL(`${import.meta.env.BASE_URL}bank-logos/default.png`, location.origin).href,
-      new URL(`${import.meta.env.BASE_URL}brand/napas.png`, location.origin).href,
-      new URL(`${import.meta.env.BASE_URL}brand/vietqr.png`, location.origin).href,
+      new URL(
+        `${import.meta.env.BASE_URL}bank-logos/${payment.bank_code || "default"}.png`,
+        location.origin,
+      ).href,
+      new URL(`${import.meta.env.BASE_URL}bank-logos/MOMO.png`, location.origin)
+        .href,
+      new URL(
+        `${import.meta.env.BASE_URL}bank-logos/default.png`,
+        location.origin,
+      ).href,
+      new URL(`${import.meta.env.BASE_URL}brand/napas.png`, location.origin)
+        .href,
+      new URL(`${import.meta.env.BASE_URL}brand/vietqr.png`, location.origin)
+        .href,
       ...catalog.products.flatMap((product) => [
         ...product.images,
-        ...(product.image_variants ?? []).flatMap((image) => [image.thumbnail, image.detail]),
+        ...(product.image_variants ?? []).flatMap((image) => [
+          image.thumbnail,
+          image.detail,
+        ]),
       ]),
     ].filter((url): url is string => Boolean(url)),
   );
   await cacheStorefrontAssets([...imageUrls]);
-  localStorage.setItem(storefrontMarkerKey(shop.slug), JSON.stringify({
-    version: 4,
-    shopId,
-    savedAt: new Date().toISOString(),
-    required: [...imageUrls].map((url) => ({
-      url,
-      cacheName: cacheNameForStorefrontUrl(url),
-    })),
-  } satisfies StorefrontOfflineMarker));
+  localStorage.setItem(
+    storefrontMarkerKey(shop.slug),
+    JSON.stringify({
+      version: 4,
+      shopId,
+      savedAt: new Date().toISOString(),
+      required: [...imageUrls].map((url) => ({
+        url,
+        cacheName: cacheNameForStorefrontUrl(url),
+      })),
+    } satisfies StorefrontOfflineMarker),
+  );
 }
 
 export function isStorefrontOfflineReady(slug: string) {
   const marker = readStorefrontMarker(slug);
-  return Boolean(marker && loadCatalogSnapshot(marker.shopId)?.complete === true);
+  return Boolean(
+    marker && loadCatalogSnapshot(marker.shopId)?.complete === true,
+  );
 }
 
 export async function verifyStorefrontOfflineReady(slug: string) {
@@ -157,7 +183,8 @@ export async function verifyStorefrontOfflineReady(slug: string) {
     !marker ||
     loadCatalogSnapshot(marker.shopId)?.complete !== true ||
     !("caches" in window)
-  ) return false;
+  )
+    return false;
   try {
     const cacheByName = new Map<string, Cache>();
     for (const item of marker.required) {

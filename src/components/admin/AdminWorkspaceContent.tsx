@@ -1,5 +1,7 @@
-import type { OrderStatusCounts } from "../../lib/api";
+import { Suspense } from "react";
+import type { OrderStatusCounts } from "../../lib/api/orders";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
+import { lazyWithRetry } from "../../utils/lazyWithRetry";
 import type {
   BoothSettings,
   Order,
@@ -9,16 +11,37 @@ import type {
 } from "../../types/catalog";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
-import { GachaManager } from "./GachaManager";
 import { OrderQueue } from "./OrderQueue";
-import { QrManager } from "./QrManager";
-import { SettingsForm } from "./SettingsForm";
-import { StaffManager } from "./StaffManager";
-import { StorefrontDesigner } from "./StorefrontDesigner";
-import { AdminProductsWorkspace } from "./AdminProductsWorkspace";
 import type { AdminViewTab } from "./adminWorkspaceTypes";
-import { OfflineEventManager } from "./OfflineEventManager";
 import type { OrderViewFilter } from "./OrderQueue";
+
+const AdminProductsWorkspace = lazyWithRetry("admin-products-workspace", () =>
+  import("./AdminProductsWorkspace").then((module) => ({
+    default: module.AdminProductsWorkspace,
+  })),
+);
+const GachaManager = lazyWithRetry("admin-gacha-workspace", () =>
+  import("./GachaManager").then((module) => ({ default: module.GachaManager })),
+);
+const StorefrontDesigner = lazyWithRetry("admin-design-workspace", () =>
+  import("./StorefrontDesigner").then((module) => ({
+    default: module.StorefrontDesigner,
+  })),
+);
+const SettingsForm = lazyWithRetry("admin-settings-form", () =>
+  import("./SettingsForm").then((module) => ({ default: module.SettingsForm })),
+);
+const QrManager = lazyWithRetry("admin-qr-manager", () =>
+  import("./QrManager").then((module) => ({ default: module.QrManager })),
+);
+const StaffManager = lazyWithRetry("admin-team-workspace", () =>
+  import("./StaffManager").then((module) => ({ default: module.StaffManager })),
+);
+const OfflineEventManager = lazyWithRetry("admin-offline-event-manager", () =>
+  import("./OfflineEventManager").then((module) => ({
+    default: module.OfflineEventManager,
+  })),
+);
 
 type AdminWorkspaceContentProps = {
   viewTab: AdminViewTab;
@@ -94,6 +117,13 @@ export function AdminWorkspaceContent({
   onSavePayment,
 }: AdminWorkspaceContentProps) {
   const { t } = usePlatformI18n();
+  const workspaceFallback = (
+    <EmptyState
+      tone="loading"
+      title={t("Loading")}
+      message={t("Loading your workspace…")}
+    />
+  );
 
   if (workspaceLoadFailed) {
     return (
@@ -120,14 +150,16 @@ export function AdminWorkspaceContent({
         eventCount={eventOrderCount}
         eventControl={
           canManageCatalog ? (
-            <OfflineEventManager
-              shopId={shopId}
-              shopSlug={shopSlug}
-              products={products}
-              booth={booth}
-              payment={payment}
-              promotion={promotion}
-            />
+            <Suspense fallback={workspaceFallback}>
+              <OfflineEventManager
+                shopId={shopId}
+                shopSlug={shopSlug}
+                products={products}
+                booth={booth}
+                payment={payment}
+                promotion={promotion}
+              />
+            </Suspense>
           ) : undefined
         }
         page={orderPage}
@@ -147,53 +179,63 @@ export function AdminWorkspaceContent({
 
   if (viewTab === "products") {
     return (
-      <AdminProductsWorkspace
-        shopId={shopId}
-        products={products}
-        promotion={promotion}
-        selectedProduct={selectedProduct}
-        loading={catalogLoading}
-        onSelectProduct={onSelectProduct}
-        onSaveProduct={onSaveProduct}
-        onDeleteProduct={onDeleteProduct}
-        onSavePromotion={onSavePromotion}
-      />
+      <Suspense fallback={workspaceFallback}>
+        <AdminProductsWorkspace
+          shopId={shopId}
+          products={products}
+          promotion={promotion}
+          selectedProduct={selectedProduct}
+          loading={catalogLoading}
+          onSelectProduct={onSelectProduct}
+          onSaveProduct={onSaveProduct}
+          onDeleteProduct={onDeleteProduct}
+          onSavePromotion={onSavePromotion}
+        />
+      </Suspense>
     );
   }
 
   if (viewTab === "gacha") {
     return (
-      <GachaManager shopId={shopId} shopSlug={shopSlug} products={products} />
+      <Suspense fallback={workspaceFallback}>
+        <GachaManager shopId={shopId} shopSlug={shopSlug} products={products} />
+      </Suspense>
     );
   }
 
   if (viewTab === "design") {
     return (
-      <StorefrontDesigner
-        shopId={shopId}
-        settings={booth}
-        products={products}
-        payment={payment}
-        onSave={onSaveBooth}
-        onSavePayment={onSavePayment}
-      />
+      <Suspense fallback={workspaceFallback}>
+        <StorefrontDesigner
+          shopId={shopId}
+          settings={booth}
+          products={products}
+          payment={payment}
+          onSave={onSaveBooth}
+          onSavePayment={onSavePayment}
+        />
+      </Suspense>
     );
   }
 
   if (viewTab === "settings") {
     return (
-      <section className="admin-mobile-settings-page">
-        <SettingsForm shopId={shopId} settings={booth} onSave={onSaveBooth} />
-        <QrManager shopId={shopId} settings={payment} onSave={onSavePayment} />
-      </section>
+      <Suspense fallback={workspaceFallback}>
+        <section className="admin-mobile-settings-page">
+          <SettingsForm shopId={shopId} settings={booth} onSave={onSaveBooth} />
+          <QrManager shopId={shopId} settings={payment} onSave={onSavePayment} />
+        </section>
+      </Suspense>
     );
   }
 
   if (viewTab === "team" && canManageTeam) {
     return (
-      <section className="admin-team-page">
-        <StaffManager shopId={shopId} />
-      </section>
+      <Suspense fallback={workspaceFallback}>
+        <section className="admin-team-page">
+          <StaffManager shopId={shopId} />
+        </section>
+      </Suspense>
     );
   }
 

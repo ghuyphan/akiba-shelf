@@ -24,8 +24,10 @@ vi.mock("../lib/supabase", () => ({
   isSupabaseConfigured: true,
 }));
 
-vi.mock("../lib/api", () => ({
+vi.mock("../lib/api/auth", () => ({
   getAuthSession: api.getAuthSession,
+}));
+vi.mock("../lib/api/shops", () => ({
   getShopMemberships: api.getShopMemberships,
 }));
 

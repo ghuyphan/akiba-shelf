@@ -126,7 +126,7 @@ img {
 .page-loading-track i { display: block; width: 42%; height: 100%; border-radius: inherit; background: var(--loading-accent); animation: loading-track 1.25s ease-in-out infinite; }
 @keyframes loading-float { 50% { transform: translateY(-4px); } }
 @keyframes loading-track { from { transform: translateX(-110%); } to { transform: translateX(350%); } }
-@media (prefers-reduced-motion: reduce) { .page-loading-brand, .page-loading-track i, .state-spinner { animation-duration: 2.4s; } }
+@media (prefers-reduced-motion: reduce) { .page-loading-brand, .page-loading-track i, .state-spinner { animation: none; } }
 
 a {
   color: inherit;

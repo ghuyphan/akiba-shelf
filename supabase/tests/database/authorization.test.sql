@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(54);
+select plan(62);
 
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values
 ('10000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','owner@test.local','',now(),now(),now()),
@@ -117,6 +117,10 @@ select results_eq($$select id from public.products where shop_id='11000000-0000-
 select is_empty($$select id from public.products where id='auth-b-hidden'$$,'staff cannot see another shop private product');
 select is_empty($$update public.products set name='attack' where id='auth-a-active' returning id$$,'staff cannot edit products');
 select is_empty($$update public.payment_settings set bank_account_name='attack' where id='auth-a' returning id$$,'staff cannot edit payment settings');
+select throws_ok($$select public.save_promotion_settings('11000000-0000-4000-8000-000000000001',true,1,1,true,array['auth-a-active'],array['auth-a-active'])$$,'42501','Active shop owner or admin access required','staff cannot change promotion settings');
+select throws_ok($$insert into public.push_subscriptions(user_id,shop_id,endpoint,p256dh,auth) values('10000000-0000-4000-8000-000000000003','11000000-0000-4000-8000-000000000001','http://push.test/insecure','key','auth')$$,'23514',null,'push subscriptions require HTTPS endpoints');
+select throws_ok($$insert into public.push_subscriptions(user_id,shop_id,endpoint,p256dh,auth) values('10000000-0000-4000-8000-000000000003','11000000-0000-4000-8000-000000000001','https://push.test/oversized',repeat('k',513),'auth')$$,'23514',null,'push subscription keys are bounded');
+select lives_ok($$insert into public.push_subscriptions(user_id,shop_id,endpoint,p256dh,auth,user_agent) values('10000000-0000-4000-8000-000000000003','11000000-0000-4000-8000-000000000001','https://push.test/valid','key','auth','pgTAP')$$,'valid push subscriptions remain writable by their staff owner');
 
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000002';
 select lives_ok($$update public.payment_settings set bank_account_name='Admin' where id='auth-a'$$,'admin edits own payment settings');
@@ -126,6 +130,10 @@ values('auth-a-new','11000000-0000-4000-8000-000000000001','New A','AUTH-NEW',1,
 select lives_ok($$update public.products set name='Updated A',image_paths=array['11000000-0000-4000-8000-000000000001/updated.webp'] where id='auth-a-new'$$,'admin updates a product with private image paths');
 select is_empty($$update public.payment_settings set bank_account_name='attack' where id='auth-b' returning id$$,'admin cannot edit another shop');
 select is_empty($$select * from public.get_shop_members('11000000-0000-4000-8000-000000000001')$$,'admin cannot enumerate members');
+select throws_ok($$insert into public.promotions(shop_id,enabled,buy_quantity,free_quantity,repeatable) values('11000000-0000-4000-8000-000000000001',true,1,1,true)$$,'42501',null,'admin cannot bypass the serialized promotion RPC');
+select throws_ok($$insert into public.promotion_products(shop_id,product_id,role) values('11000000-0000-4000-8000-000000000001','auth-a-active','both')$$,'42501',null,'admin cannot mutate promotion mappings directly');
+select lives_ok($$select public.save_promotion_settings('11000000-0000-4000-8000-000000000001',true,1,1,true,array['auth-a-active'],array['auth-a-active'])$$,'admin changes promotion settings through the protected RPC');
+select throws_ok($$select public.save_promotion_settings('11000000-0000-4000-8000-000000000002',true,1,1,true,array['auth-b-active'],array['auth-b-active'])$$,'42501','Active shop owner or admin access required','admin cannot change another shop promotion');
 
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000001';
 select lives_ok($$select public.save_shop_member('11000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000004','staff',true)$$,'owner manages own members');

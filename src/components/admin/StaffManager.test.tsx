@@ -14,7 +14,7 @@ const apiMocks = vi.hoisted(() => ({
   updateShopInvitation: vi.fn(),
 }));
 
-vi.mock("../../lib/api", () => apiMocks);
+vi.mock("../../lib/api/staff", () => apiMocks);
 
 describe("StaffManager", () => {
   beforeEach(() => {

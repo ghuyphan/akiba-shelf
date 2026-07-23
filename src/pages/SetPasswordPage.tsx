@@ -16,9 +16,9 @@ import {
   acceptShopInvitation,
   clearShopInvitationMetadata,
   getAuthSession,
-  getShopMemberships,
   updateAdminPassword,
-} from "../lib/api";
+} from "../lib/api/auth";
+import { getShopMemberships } from "../lib/api/shops";
 import { getAuthErrorNotice } from "../lib/auth/authErrors";
 import {
   getNewPasswordError,

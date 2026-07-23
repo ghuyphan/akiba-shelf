@@ -18,7 +18,7 @@ const apiMocks = vi.hoisted(() => ({
   saveGachaDraft: vi.fn(),
 }));
 
-vi.mock("../../lib/api", () => apiMocks);
+vi.mock("../../lib/api/gacha", () => apiMocks);
 
 const workspace = { configurations: {}, liveByGame: {} };
 

@@ -24,13 +24,24 @@ function request(body: string, origin = "https://matsuri.pro") {
   });
 }
 
-function queryResult(result: unknown) {
+function queryResult(
+  result: unknown,
+  onDeleteFilter?: (column: string, value: unknown) => void,
+) {
+  let deleting = false;
   const chain: any = {
     select: () => chain,
-    eq: () => chain,
+    eq: (column: string, value: unknown) => {
+      if (deleting) onDeleteFilter?.(column, value);
+      return chain;
+    },
+    limit: () => chain,
     single: () => chain,
     maybeSingle: () => chain,
-    delete: () => chain,
+    delete: () => {
+      deleting = true;
+      return chain;
+    },
     then: (resolve: (value: unknown) => void) => resolve(result),
   };
   return chain;
@@ -56,9 +67,11 @@ function mockAdmin({
   subscriptions?: Array<{ endpoint: string; p256dh: string; auth: string }>;
 } = {}) {
   const completions: Record<string, unknown>[] = [];
+  const deletedFilters: Array<[string, unknown]> = [];
   let claimIndex = 0;
   return {
     completions,
+    deletedFilters,
     client: {
       from: (table: string) => {
         if (table === "orders") {
@@ -74,7 +87,10 @@ function mockAdmin({
           });
         }
         if (table === "push_subscriptions") {
-          return queryResult({ data: subscriptions, error: null });
+          return queryResult(
+            { data: subscriptions, error: null },
+            (column, value) => deletedFilters.push([column, value]),
+          );
         }
         if (table === "booth_settings") {
           return queryResult({
@@ -258,6 +274,82 @@ Deno.test("expired subscriptions do not keep the order retryable", async () => {
   assertEquals(await response.json(), { sent: 0 });
   assertEquals(admin.completions[0]?.p_delivered, true);
   assertEquals(admin.completions[0]?.p_failed_endpoints, []);
+  assertEquals(admin.deletedFilters, [
+    ["shop_id", "21000000-0000-4000-8000-000000000001"],
+    ["endpoint", "https://push.test/1"],
+  ]);
+});
+
+Deno.test("invalid subscriptions are removed without attempting delivery", async () => {
+  const admin = mockAdmin({
+    subscriptions: [{
+      endpoint: "http://push.test/1",
+      p256dh: "",
+      auth: "auth",
+    }],
+  });
+  clientFactory.createClient = () => admin.client as any;
+  let deliveries = 0;
+  pushClient.sendNotification = () => {
+    deliveries += 1;
+    return Promise.resolve({} as any);
+  };
+
+  const response = await handleNotifyRequest(request(validBody));
+  assertEquals(response.status, 200);
+  assertEquals(await response.json(), { sent: 0 });
+  assertEquals(deliveries, 0);
+  assertEquals(admin.completions[0]?.p_delivered, true);
+  assertEquals(admin.deletedFilters, [
+    ["shop_id", "21000000-0000-4000-8000-000000000001"],
+    ["endpoint", "http://push.test/1"],
+  ]);
+});
+
+Deno.test("push delivery concurrency is bounded", async () => {
+  const admin = mockAdmin({
+    subscriptions: Array.from({ length: 20 }, (_, index) => ({
+      endpoint: `https://push.test/${index}`,
+      p256dh: `key-${index}`,
+      auth: `auth-${index}`,
+    })),
+  });
+  clientFactory.createClient = () => admin.client as any;
+  let activeDeliveries = 0;
+  let maxActiveDeliveries = 0;
+  pushClient.sendNotification = async () => {
+    activeDeliveries += 1;
+    maxActiveDeliveries = Math.max(maxActiveDeliveries, activeDeliveries);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    activeDeliveries -= 1;
+    return {} as any;
+  };
+
+  const response = await handleNotifyRequest(request(validBody));
+  assertEquals(response.status, 200);
+  assertEquals(await response.json(), { sent: 20 });
+  assertEquals(maxActiveDeliveries, 8);
+});
+
+Deno.test("notification fan-out is bounded", async () => {
+  const admin = mockAdmin({
+    subscriptions: Array.from({ length: 101 }, (_, index) => ({
+      endpoint: `https://push.test/${index}`,
+      p256dh: `key-${index}`,
+      auth: `auth-${index}`,
+    })),
+  });
+  clientFactory.createClient = () => admin.client as any;
+  let deliveries = 0;
+  pushClient.sendNotification = () => {
+    deliveries += 1;
+    return Promise.resolve({} as any);
+  };
+
+  const response = await handleNotifyRequest(request(validBody));
+  assertEquals(response.status, 503);
+  assertEquals(deliveries, 0);
+  assertEquals(admin.completions[0]?.p_delivered, false);
 });
 
 Deno.test("delivered notification claims remain deduplicated", async () => {

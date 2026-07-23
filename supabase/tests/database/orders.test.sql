@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(51);
+select plan(53);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values('20000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','staff-orders@test.local','',now(),now(),now());
 insert into public.shops(id,name,slug,created_by) values('21000000-0000-4000-8000-000000000001','Orders','orders-test','20000000-0000-4000-8000-000000000001');
 insert into public.shop_members(shop_id,user_id,role) values('21000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','staff');
@@ -56,6 +56,8 @@ insert into test_order_ids values('second',(select id from public.orders where c
 
 set local role anon;
 select is((public.cancel_customer_order((select id from test_order_ids where label='second'),repeat('x',32))->>'outcome'),'not_found','wrong token reveals nothing');
+select is((public.cancel_customer_order((select id from test_order_ids where label='second'),repeat('x',161))->>'outcome'),'not_found','oversized recovery token reveals nothing');
+select is_empty($$select * from public.get_customer_order((select id from test_order_ids where label='second'),repeat('x',161))$$,'oversized recovery token is rejected before lookup');
 select is((public.cancel_customer_order((select id from test_order_ids where label='second'),repeat('h',32))->>'outcome'),'cancelled','correct token cancels');
 
 set local role postgres;

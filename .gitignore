@@ -4,6 +4,7 @@ dist/
 dev-dist/
 .gacha-dist/
 .hsr-gacha-dist/
+.wrangler/
 .agents/
 .env
 .env.*

@@ -304,6 +304,7 @@ export default defineConfig(({ command }) => ({
   build: {
     rollupOptions: {
       output: {
+        experimentalMinChunkSize: 4_000,
         manualChunks(id) {
           if (id.includes("node_modules/@supabase/")) return "supabase";
         },
@@ -337,11 +338,6 @@ export default defineConfig(({ command }) => ({
                 "index.html",
                 "assets/index-*.{js,css}",
                 "assets/App-*.js",
-                "assets/PlatformMark-*.js",
-                "assets/pwa-*.js",
-                "assets/platformI18n-*.js",
-                "assets/supabase-*.js",
-                "assets/EmptyState-*.js",
               ]
             : [],
         importScripts: ["push-handlers.js"],

@@ -2,20 +2,28 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin.css";
 import { Navigate } from "react-router-dom";
 import {
-  deleteProduct,
   getAdminCatalogData,
-  getOfflineEventOrders,
-  getShopWorkspaceSummary,
+} from "../lib/api/catalog";
+import {
   getOrderStatusCounts,
   getOrders,
+  type OrderStatusCounts,
+} from "../lib/api/orders";
+import {
+  deleteProduct,
+  saveProduct,
+} from "../lib/api/products";
+import {
   saveBoothSettings,
   savePaymentSettings,
   savePromotionSettings,
-  saveProduct,
+} from "../lib/api/settings";
+import {
   signInAdmin,
   signOutAdmin,
-} from "../lib/api";
-import type { OrderStatusCounts } from "../lib/api";
+} from "../lib/api/auth";
+import { getShopWorkspaceSummary } from "../lib/api/shops";
+import { getOfflineEventOrders } from "../lib/api/offlineEvents";
 import {
   defaultBooth,
   defaultPayment,

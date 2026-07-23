@@ -12,6 +12,7 @@ import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { SocialLinkFields } from "./SocialLinkFields";
 import { SocialBrandIcon } from "../ui/SocialBrandIcon";
 import { useAdminUnsavedChanges } from "./AdminUnsavedChanges";
+import { getUserFacingErrorMessage } from "../../lib/errors";
 
 type SettingsFormProps = { shopId: string; settings: BoothSettings; onSave: (settings: BoothSettings) => Promise<void> };
 
@@ -22,7 +23,7 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
   const toast = useToast();
   const { t } = usePlatformI18n();
   const hasChanges = useMemo(() => JSON.stringify(draft) !== JSON.stringify(settings), [draft, settings]);
-  useEffect(() => { if (error) { toast.error(t(error), t("Could not save booth settings")); setError(""); } }, [error, setError, t, toast]);
+  useEffect(() => { if (error) { toast.error(t(getUserFacingErrorMessage(error, "Could not save booth settings")), t("Could not save booth settings")); setError(""); } }, [error, setError, t, toast]);
   useEffect(() => { setDraft(settings); setIsEditing(false); setError(""); }, [settings, setError]);
   const resetDraft = useCallback(() => { setDraft(settings); setIsEditing(false); setError(""); }, [settings, setError]);
   useAdminUnsavedChanges(`settings:${shopId}`, isEditing && hasChanges, resetDraft);

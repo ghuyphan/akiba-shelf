@@ -12,6 +12,16 @@ function domainFiles() {
     .sort();
 }
 
+function applicationFiles(
+  directory = path.resolve(process.cwd(), "src"),
+): string[] {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) return applicationFiles(entryPath);
+    return /\.(?:ts|tsx)$/.test(entry.name) ? [entryPath] : [];
+  });
+}
+
 describe("API module architecture", () => {
   it("keeps api.ts as a small compatibility barrel", () => {
     const barrel = fs.readFileSync(
@@ -81,6 +91,21 @@ describe("API module architecture", () => {
     for (const file of domainFiles()) {
       const source = fs.readFileSync(path.join(apiDir, file), "utf8");
       expect(source, file).not.toMatch(/from\s+["']\.\.\/api["']/);
+    }
+  });
+
+  it("keeps application runtime imports on focused API domains", () => {
+    const compatibilityBarrel = path.resolve(process.cwd(), "src/lib/api.ts");
+    const architectureTest = path.resolve(
+      process.cwd(),
+      "src/lib/api/__tests__/architecture.test.ts",
+    );
+    for (const file of applicationFiles()) {
+      if (file === compatibilityBarrel || file === architectureTest) continue;
+      const source = fs.readFileSync(file, "utf8");
+      expect(path.relative(process.cwd(), file), source).not.toMatch(
+        /(?:from\s+|vi\.mock\()\s*["'][^"']*\/lib\/api["']/,
+      );
     }
   });
 

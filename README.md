@@ -33,6 +33,7 @@ Core behavior:
 
 - React 19, TypeScript, Vite, React Router
 - Supabase Auth, Postgres, Storage, Realtime, and Edge Functions
+- Cloudflare Pages for frontend delivery and application-route fallback
 - Vitest, Testing Library, Playwright, pgTAP
 - Two vendored SvelteKit simulator workspaces
 

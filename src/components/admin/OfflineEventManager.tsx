@@ -20,7 +20,7 @@ import {
   recoverOfflineEventSession,
   saveOfflineEventDraft,
   syncOfflineEventOrders,
-} from "../../lib/api";
+} from "../../lib/api/offlineEvents";
 import { getErrorMessage } from "../../lib/errors";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { saveCatalogSnapshot } from "../../lib/offline/offline";

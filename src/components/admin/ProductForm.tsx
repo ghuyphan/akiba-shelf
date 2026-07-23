@@ -19,6 +19,7 @@ import { getProductDiscountPercent, getProductPrice, isProductOnSale } from "../
 import { ConfirmationDialog } from "../ui/ConfirmationDialog";
 import { Alert } from "../ui/Alert";
 import { useAdminUnsavedChanges } from "./AdminUnsavedChanges";
+import { getUserFacingErrorMessage } from "../../lib/errors";
 
 function formatDisplayPrice(value: number | string): string {
   const digits = String(value ?? "").replace(/\D/g, "");
@@ -45,7 +46,7 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
   const busy = isSaving || isDeleting;
   const toast = useToast();
   const { t } = usePlatformI18n();
-  useEffect(() => { const message = saveError || deleteError; if (message) { toast.error(t(message), t("Could not update item")); setSaveError(""); setDeleteError(""); } }, [saveError, deleteError, setDeleteError, setSaveError, t, toast]);
+  useEffect(() => { const message = saveError || deleteError; if (message) { toast.error(t(getUserFacingErrorMessage(message, "Could not update item")), t("Could not update item")); setSaveError(""); setDeleteError(""); } }, [saveError, deleteError, setDeleteError, setSaveError, t, toast]);
   const isNewProduct = !product.name && !product.item_code;
   const hasLegacyBadge = Boolean(draft.badge) && !productBadges.includes(draft.badge ?? "");
   const images = draft.images.filter(Boolean);
@@ -247,7 +248,7 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
           <div className="admin-form-section-heading"><span>01</span><div><h3>{t("Listing details")}</h3><p>{t("The information customers use to identify this item.")}</p></div></div>
           <div className="form-grid">
             <Field label={t("Product name · Required")} error={getFieldError("name") ? t(getFieldError("name")!) : undefined}><TextInput autoFocus={isNewProduct} placeholder={t("e.g. Moonlight acrylic stand")} value={draft.name} disabled={!isEditing} aria-invalid={Boolean(getFieldError("name"))} onFocus={startTextEditSession} onChange={(event) => setField("name", event.target.value)} /></Field>
-            <Field label={t("Item code · Required")} hint={t("A short unique code used by staff.")}><TextInput placeholder="e.g. AST-001" value={draft.item_code} disabled={!isEditing} aria-invalid={Boolean(getFieldError("item_code"))} onFocus={startTextEditSession} onChange={(event) => setField("item_code", event.target.value.toUpperCase())} />{getFieldError("item_code") && <span className="field-error-msg">{t(getFieldError("item_code")!)}</span>}</Field>
+            <Field label={t("Item code · Required")} hint={getFieldError("item_code") ? undefined : t("A short unique code used by staff.")} error={getFieldError("item_code") ? t(getFieldError("item_code")!) : undefined}><TextInput placeholder="e.g. AST-001" value={draft.item_code} disabled={!isEditing} aria-invalid={Boolean(getFieldError("item_code"))} onFocus={startTextEditSession} onChange={(event) => setField("item_code", event.target.value.toUpperCase())} /></Field>
             <Field label={t("Collection")} hint={t("Optional grouping, such as Spring 2026.")}><TextInput placeholder={t("e.g. Starry Days")} value={draft.collection} disabled={!isEditing} onFocus={startTextEditSession} onChange={(event) => setField("collection", event.target.value)} /></Field>
             <Field label={t("Category · Required")} error={getFieldError("category") ? t(getFieldError("category")!) : undefined}><TextInput placeholder={t("e.g. Acrylic, Print, Apparel")} value={draft.category} disabled={!isEditing} aria-invalid={Boolean(getFieldError("category"))} onFocus={startTextEditSession} onChange={(event) => setField("category", event.target.value)} /></Field>
           </div>

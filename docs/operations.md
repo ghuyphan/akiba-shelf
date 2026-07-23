@@ -179,14 +179,33 @@ Build with the public Vite variables and deploy `dist/`:
 npm run build
 ```
 
-GitHub Pages deep-link generation belongs to `public/404.html`. Runtime restore
-belongs only to `restoreRedirect()` and uses `import.meta.env.BASE_URL`. Do not
-add a second restoration script to `index.html`.
+The frontend is hosted on Cloudflare Pages as a Direct Upload project named
+`matsuri`. There must be no top-level `404.html` in `dist/`: Cloudflare then
+serves `index.html` with HTTP 200 for application routes such as `/admin` and
+`/s/:shopSlug`. `restoreRedirect()` remains only for compatibility with links
+created by the former GitHub Pages deployment.
 
-The Pages workflow merges non-conflicting files from the previous successful
+The deployment workflow requires GitHub Actions secrets named
+`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. Scope the token to Account >
+Cloudflare Pages > Edit for the account that owns the `matsuri` project. The
+workflow builds and uploads `dist/` with Wrangler only after checks, database
+tests, and e2e tests pass.
+
+The workflow still merges non-conflicting files from the previous successful
 main-branch source into the new artifact. This keeps one generation of hashed
 assets available for tabs opened before a deployment. Do not remove that merge
 without replacing it with an equivalent stale-client compatibility strategy.
+
+Cloudflare Pages reads `public/_headers` for browser security and cache policy.
+Hashed Vite and simulator assets are immutable; `sw.js` and
+`offline-assets.json` must always revalidate. Keep HTML on Cloudflare's default
+revalidation behavior.
+
+The apex custom domain `matsuri.pro` must be an active zone in the same
+Cloudflare account as the Pages project. Associate the domain with the project
+before changing nameservers. After cutover, verify the apex route, a storefront
+deep link, Auth callbacks, the service worker, and the current/previous hashed
+asset generations.
 
 ## Release gate
 

@@ -2,11 +2,11 @@ import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, LoaderCircle, Mail } from "lucide-react";
 import {
-  getShopMemberships,
   requestPasswordReset,
   signInAdmin,
   signUpAdmin,
-} from "../lib/api";
+} from "../lib/api/auth";
+import { getShopMemberships } from "../lib/api/shops";
 import { useToast } from "../components/ui/ToastProvider";
 import "../styles/admin.css";
 import { routeAfterAuthentication } from "../lib/auth/authRouting";

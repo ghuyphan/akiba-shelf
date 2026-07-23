@@ -23,16 +23,60 @@ const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const roles = new Set(["admin", "staff"]);
+const maxBodyLength = 8 * 1024;
 const success = () =>
   Response.json({ outcome: "processed" }, { headers: cors });
 const failure = (error: string, status: number) =>
   Response.json({ error }, { status, headers: cors });
 
+async function readBoundedText(request: Request) {
+  const declaredLength = request.headers.get("Content-Length");
+  if (declaredLength) {
+    const bytes = Number(declaredLength);
+    if (!Number.isSafeInteger(bytes) || bytes < 0 || bytes > maxBodyLength) {
+      return null;
+    }
+  }
+  if (!request.body) return null;
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBodyLength) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
+    }
+  } catch {
+    return null;
+  }
+
+  const body = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(body);
+  } catch {
+    return null;
+  }
+}
+
 async function parseBody(
   request: Request,
 ): Promise<Record<string, unknown> | null> {
   try {
-    const value = await request.json();
+    const raw = await readBoundedText(request);
+    if (!raw) return null;
+    const value = JSON.parse(raw);
     return value && typeof value === "object" && !Array.isArray(value)
       ? (value as Record<string, unknown>)
       : null;
@@ -42,34 +86,44 @@ async function parseBody(
 }
 
 export async function handleInviteRequest(request: Request): Promise<Response> {
-  if (request.method === "OPTIONS")
+  if (request.method === "OPTIONS") {
     return new Response("ok", { headers: cors });
+  }
   if (request.method !== "POST") return failure("Method not allowed.", 405);
   const authorization = request.headers.get("Authorization");
   if (!authorization) return failure("Authentication required.", 401);
   if (!siteOrigin) return failure("Invitation email is not configured.", 503);
   const origin = request.headers.get("Origin");
-  if (origin && origin !== siteOrigin)
+  if (origin && origin !== siteOrigin) {
     return failure("Origin not allowed.", 403);
+  }
 
   const body = await parseBody(request);
   if (!body) return failure("Invalid request body.", 400);
   const action = typeof body.action === "string" ? body.action : "";
   const shopId = typeof body.shopId === "string" ? body.shopId : "";
-  if (!uuidPattern.test(shopId))
+  if (!uuidPattern.test(shopId)) {
     return failure("Invalid shop identifier.", 400);
-  if (action !== "invite" && action !== "revoke")
+  }
+  if (action !== "invite" && action !== "revoke") {
     return failure("Unsupported invitation action.", 400);
-  const invitationId =
-    typeof body.invitationId === "string" ? body.invitationId : "";
-  if (action === "revoke" && !uuidPattern.test(invitationId))
+  }
+  const invitationId = typeof body.invitationId === "string"
+    ? body.invitationId
+    : "";
+  if (action === "revoke" && !uuidPattern.test(invitationId)) {
     return failure("Invalid invitation identifier.", 400);
+  }
 
   try {
     const url = Deno.env.get("SUPABASE_URL")!;
-    const caller = clientFactory.createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authorization } },
-    });
+    const caller = clientFactory.createClient(
+      url,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      {
+        global: { headers: { Authorization: authorization } },
+      },
+    );
     const admin = clientFactory.createClient(
       url,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -97,8 +151,9 @@ export async function handleInviteRequest(request: Request): Promise<Response> {
         .eq("active", true)
         .maybeSingle(),
     ]);
-    if (!shop || !owner)
+    if (!shop || !owner) {
       return failure("Active shop owner access required.", 403);
+    }
 
     if (action === "revoke") {
       const { data: invitation, error: lookupError } = await admin
@@ -109,8 +164,9 @@ export async function handleInviteRequest(request: Request): Promise<Response> {
         .maybeSingle();
       if (lookupError) throw lookupError;
       if (!invitation) return failure("Invitation not found.", 404);
-      if (invitation.status !== "pending")
+      if (invitation.status !== "pending") {
         return failure("Invitation is no longer pending.", 409);
+      }
       const { data: revoked, error: revokeError } = await admin
         .from("shop_invitations")
         .update({ status: "revoked" })
@@ -124,18 +180,21 @@ export async function handleInviteRequest(request: Request): Promise<Response> {
       return success();
     }
 
-    const email =
-      typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const email = typeof body.email === "string"
+      ? body.email.trim().toLowerCase()
+      : "";
     const role = typeof body.role === "string" ? body.role : "";
-    if (!emailPattern.test(email) || email.length > 320 || !roles.has(role))
+    if (!emailPattern.test(email) || email.length > 320 || !roles.has(role)) {
       return failure("Invalid invitation details.", 400);
+    }
     const { count } = await admin
       .from("shop_invitations")
       .select("id", { count: "exact", head: true })
       .eq("invited_by", user.id)
       .gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
-    if ((count ?? 0) >= 20)
+    if ((count ?? 0) >= 20) {
       return failure("Too many invitations. Try again later.", 429);
+    }
 
     const { data: resolved, error: resolveError } = await admin.rpc(
       "resolve_invitation_user",
@@ -190,11 +249,12 @@ export async function handleInviteRequest(request: Request): Promise<Response> {
           .eq("status", "pending")
           .select("id")
           .maybeSingle();
-        if (compensationError || !compensated)
+        if (compensationError || !compensated) {
           console.warn("Invitation delivery compensation failed", {
             shopId,
             invitationId: invitationIdForEmail,
           });
+        }
       }
       console.error("Auth invitation delivery failed", {
         shopId,
@@ -204,19 +264,19 @@ export async function handleInviteRequest(request: Request): Promise<Response> {
     }
     return success();
   } catch (error) {
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : error && typeof error === "object" && "message" in error &&
-            typeof error.message === "string"
-          ? error.message
-          : "Unknown failure";
+    const errorMessage = error instanceof Error
+      ? error.message
+      : error && typeof error === "object" && "message" in error &&
+          typeof error.message === "string"
+      ? error.message
+      : "Unknown failure";
     console.error(
       "invite-shop-member failed",
       errorMessage,
     );
-    if (errorMessage.includes("Shop team limit reached"))
+    if (errorMessage.includes("Shop team limit reached")) {
       return failure("Shop team limit reached.", 409);
+    }
     return failure("The invitation could not be completed.", 400);
   }
 }

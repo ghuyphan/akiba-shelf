@@ -898,8 +898,8 @@ const vi: Record<string, string> = {
   "Drag {{section}}": "Kéo {{section}}",
   "Payment settings": "Cài đặt thanh toán",
   "Storefront builder": "Trình thiết kế cửa hàng",
-  "Click anything in the preview to edit it.":
-    "Nhấp vào nội dung trong bản xem trước để chỉnh sửa.",
+  "Use a section handle in the preview to edit it.":
+    "Dùng nút điều khiển của từng phần trong bản xem trước để chỉnh sửa.",
   "Collapse builder sidebar": "Thu gọn thanh thiết kế",
   "Expand builder sidebar": "Mở rộng thanh thiết kế",
   "Builder tools": "Công cụ thiết kế",

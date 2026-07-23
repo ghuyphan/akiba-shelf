@@ -1,9 +1,10 @@
 import { ImageUp, LoaderCircle } from "lucide-react";
 import { useState } from "react";
-import { uploadImage, uploadProductImages } from "../../lib/api";
+import { uploadImage, uploadProductImages } from "../../lib/api/storage";
 import { compressImage, createProductImageVariants } from "../../utils/image";
 import { useToast } from "../ui/ToastProvider";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
+import { getUserFacingErrorMessage } from "../../lib/errors";
 
 type ImageUploadProps = {
   shopId: string;
@@ -33,7 +34,10 @@ export function ImageUpload({ shopId, bucket, label, onUploaded, onProductUpload
         onUploaded(uploaded.url, uploaded.path);
       }
     } catch (caught) {
-      toast.error(t(caught instanceof Error ? caught.message : "Could not upload image."), t("Upload failed"));
+      toast.error(
+        t(getUserFacingErrorMessage(caught, "Could not upload image.")),
+        t("Upload failed"),
+      );
     } finally {
       setBusy(false);
     }

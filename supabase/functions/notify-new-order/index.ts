@@ -25,6 +25,8 @@ const cors = {
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const maxBodyLength = 1_024;
+const maxPushSubscriptions = 100;
+const pushConcurrency = 8;
 type PushSubscriptionRecord = {
   endpoint: string;
   p256dh: string;
@@ -56,6 +58,52 @@ async function parseBody(request: Request) {
   } catch {
     return null;
   }
+}
+
+function validPushSubscription(
+  value: unknown,
+): value is PushSubscriptionRecord {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const subscription = value as Record<string, unknown>;
+  if (
+    typeof subscription.endpoint !== "string" ||
+    subscription.endpoint.length < 1 ||
+    subscription.endpoint.length > 2_048 ||
+    typeof subscription.p256dh !== "string" ||
+    subscription.p256dh.length < 1 ||
+    subscription.p256dh.length > 512 ||
+    typeof subscription.auth !== "string" ||
+    subscription.auth.length < 1 ||
+    subscription.auth.length > 512
+  ) {
+    return false;
+  }
+  try {
+    const endpoint = new URL(subscription.endpoint);
+    return !/\s/.test(subscription.endpoint) && endpoint.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+async function mapWithConcurrency<T, R>(
+  values: T[],
+  concurrency: number,
+  mapper: (value: T) => Promise<R>,
+) {
+  const results = new Array<R>(values.length);
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.min(concurrency, values.length) },
+    async () => {
+      while (cursor < values.length) {
+        const index = cursor++;
+        results[index] = await mapper(values[index]);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
 }
 
 export async function handleNotifyRequest(request: Request): Promise<Response> {
@@ -145,7 +193,8 @@ export async function handleNotifyRequest(request: Request): Promise<Response> {
       admin
         .from("push_subscriptions")
         .select("endpoint, p256dh, auth")
-        .eq("shop_id", order.shop_id),
+        .eq("shop_id", order.shop_id)
+        .limit(maxPushSubscriptions + 1),
       admin
         .from("booth_settings")
         .select("booth_name, logo_url")
@@ -154,10 +203,16 @@ export async function handleNotifyRequest(request: Request): Promise<Response> {
     ]);
     if (subscriptionResult.error) throw subscriptionResult.error;
     if (boothResult.error) throw boothResult.error;
-    const subscriptions = (subscriptionResult.data || []).filter(
-      (subscription: PushSubscriptionRecord) =>
-        retryEndpoints.length === 0 ||
-        retryEndpoints.includes(subscription.endpoint),
+    const subscriptionRows = subscriptionResult.data || [];
+    if (subscriptionRows.length > maxPushSubscriptions) {
+      throw new Error("Push subscription limit exceeded");
+    }
+    const retryEndpointSet = new Set(retryEndpoints);
+    const subscriptions = subscriptionRows.filter(
+      (subscription: { endpoint?: unknown }) =>
+        retryEndpointSet.size === 0 ||
+        (typeof subscription.endpoint === "string" &&
+          retryEndpointSet.has(subscription.endpoint)),
     );
     const booth = boothResult.data;
     pushClient.setVapidDetails(subject, publicKey, privateKey);
@@ -172,8 +227,25 @@ export async function handleNotifyRequest(request: Request): Promise<Response> {
       tag: `order-${order.id}`,
       url: "./admin",
     });
-    const deliveries = await Promise.all(
-      subscriptions.map(async (subscription: PushSubscriptionRecord) => {
+    const deliveries = await mapWithConcurrency(
+      subscriptions,
+      pushConcurrency,
+      async (subscription: unknown) => {
+        if (!validPushSubscription(subscription)) {
+          const endpoint = subscription && typeof subscription === "object" &&
+              "endpoint" in subscription &&
+              typeof subscription.endpoint === "string"
+            ? subscription.endpoint
+            : null;
+          if (endpoint !== null) {
+            await admin
+              .from("push_subscriptions")
+              .delete()
+              .eq("shop_id", order.shop_id)
+              .eq("endpoint", endpoint);
+          }
+          return { endpoint: endpoint ?? "", sent: false, retry: false };
+        }
         try {
           await pushClient.sendNotification(
             {
@@ -193,6 +265,7 @@ export async function handleNotifyRequest(request: Request): Promise<Response> {
             await admin
               .from("push_subscriptions")
               .delete()
+              .eq("shop_id", order.shop_id)
               .eq("endpoint", subscription.endpoint);
           }
           return {
@@ -201,7 +274,7 @@ export async function handleNotifyRequest(request: Request): Promise<Response> {
             retry: !expired,
           };
         }
-      }),
+      },
     );
     const failedEndpoints = deliveries
       .filter((delivery) => delivery.retry)
@@ -252,7 +325,7 @@ export async function handleNotifyRequest(request: Request): Promise<Response> {
       "notify-new-order failed",
       error instanceof Error ? error.message : "Unknown failure",
     );
-    return failure("The notification could not be completed.", 400);
+    return failure("The notification could not be completed.", 503);
   }
 }
 

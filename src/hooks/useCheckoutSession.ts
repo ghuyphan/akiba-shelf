@@ -4,7 +4,7 @@ import {
   createOrder,
   getCustomerOrder,
   isCheckoutOutcomeUnknownError,
-} from "../lib/api";
+} from "../lib/api/orders";
 import { getErrorMessage, isTransportError } from "../lib/errors";
 import {
   clearCheckoutSession,

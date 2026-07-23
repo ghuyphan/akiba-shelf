@@ -12,6 +12,7 @@ import { ImageUpload } from "./ImageUpload";
 import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../utils/banks";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { useAdminUnsavedChanges } from "./AdminUnsavedChanges";
+import { getUserFacingErrorMessage } from "../../lib/errors";
 
 type QrManagerProps = { shopId: string; settings: PaymentSettings; onSave: (settings: PaymentSettings) => Promise<void> };
 
@@ -22,7 +23,7 @@ export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
   const toast = useToast();
   const { t } = usePlatformI18n();
   const hasChanges = useMemo(() => JSON.stringify(draft) !== JSON.stringify(settings), [draft, settings]);
-  useEffect(() => { if (error) { toast.error(t(error), t("Could not save payment settings")); setError(""); } }, [error, setError, t, toast]);
+  useEffect(() => { if (error) { toast.error(t(getUserFacingErrorMessage(error, "Could not save payment settings")), t("Could not save payment settings")); setError(""); } }, [error, setError, t, toast]);
   const banks = getVietQrBanks();
   const selectedBank = getPaymentBank(draft.bank_code, draft.bank_acq_id);
   useEffect(() => { setDraft(settings); setIsEditing(false); setError(""); }, [settings, setError]);

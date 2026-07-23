@@ -70,18 +70,16 @@ jobs:
             test-results/
           if-no-files-found: ignore
 
-  deploy-pages:
+  deploy-cloudflare:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [checks, database, e2e]
     runs-on: ubuntu-latest
     permissions:
-      actions: read
       contents: read
-      pages: write
-      id-token: write
+      deployments: write
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: cloudflare-pages
+      url: ${{ steps.deployment.outputs.deployment-url }}
     env:
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
@@ -121,9 +119,11 @@ jobs:
         working-directory: previous-deployment
       - name: Retain previous immutable assets
         run: rsync -a --ignore-existing previous-deployment/dist/ dist/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: Deploy to Cloudflare Pages
+        id: deployment
+        uses: cloudflare/wrangler-action@v3
         with:
-          path: dist
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=matsuri --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

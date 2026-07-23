@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
-import { getShopMemberships } from "../lib/api";
+import { getShopMemberships } from "../lib/api/shops";
 import type { ShopMembership } from "../types/catalog";
 import { isTransportError } from "../lib/errors";
 import {

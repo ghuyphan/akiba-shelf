@@ -1,6 +1,6 @@
 import { ArrowDownUp, Grid2X2, List, Search, X } from "lucide-react";
 import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
-import type { PublicProductSort } from "../../lib/api";
+import type { PublicProductSort } from "../../lib/catalogQueries";
 import { SelectMenu } from "../ui/SelectMenu";
 
 type CatalogToolbarProps = {

@@ -30,7 +30,7 @@ import {
 import type { BoothSettings, PaymentSettings, Product, StorefrontCardStyle, StorefrontControlsStyle, StorefrontFeaturedStyle, StorefrontProductStyle, StorefrontSection } from "../../types/catalog";
 import { getStorefrontSectionStyleClass, getThemeStyle } from "../../utils/theme";
 import { CatalogLocaleProvider } from "../../lib/i18n/catalogI18n";
-import type { PublicProductSort } from "../../lib/api";
+import type { PublicProductSort } from "../../lib/catalogQueries";
 import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { useToast } from "../ui/ToastProvider";
 import { Button } from "../ui/Button";
@@ -49,6 +49,7 @@ import { ImageUpload } from "./ImageUpload";
 import { getBankLogoUrl, getPaymentBank, getVietQrBanks } from "../../utils/banks";
 import { DEFAULT_STOREFRONT_PALETTE, STOREFRONT_PALETTES } from "../../lib/constants";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
+import { getUserFacingErrorMessage } from "../../lib/errors";
 import { SocialLinkFields } from "./SocialLinkFields";
 import { Alert } from "../ui/Alert";
 import { useAdminUnsavedChanges } from "./AdminUnsavedChanges";
@@ -136,7 +137,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   const { busy, error, run, setError } = useAsyncAction();
   const toast = useToast();
   const { t } = usePlatformI18n();
-  useEffect(() => { if (error) { toast.error(t(error), t("Could not publish")); setError(""); } }, [error, setError, t, toast]);
+  useEffect(() => { if (error) { toast.error(t(getUserFacingErrorMessage(error, "Could not publish")), t("Could not publish")); setError(""); } }, [error, setError, t, toast]);
   const order = normalizedOrder(draft.layout_order);
 
   function handleInspectorTabKeyDown(
@@ -509,19 +510,10 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
       key={section}
       className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, draft)} designer-live-module ${section === "featured" || section === "booth" ? "drop-axis-horizontal" : "drop-axis-vertical"} ${selected === section ? "is-selected" : ""} ${dragged === section ? "is-dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `is-drag-over drop-${dropTarget.edge}` : ""}`}
       style={{ viewTransitionName: `designer-${section}` } as React.CSSProperties}
-      onClick={(event) => { event.stopPropagation(); selectModule(section); }}
-      onKeyDown={(event) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        selectModule(section);
-      }}
       onDragOver={(event) => markDropTarget(event, section, section === "featured" || section === "booth" ? "horizontal" : "vertical")}
       onDrop={(event) => dropOn(event, section)}
-      role="button"
-      tabIndex={0}
-      aria-label={t("Edit {{section}}", { section: t(sectionMeta[section].title) })}
     >
-      <button type="button" className="designer-module-handle" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} aria-label={t("Drag {{section}}", { section: t(sectionMeta[section].title) })}><GripVertical size={15} /><i>{order.indexOf(section) + 1}</i><span>{t(sectionMeta[section].title)}</span>{section === "cart" && <em><CreditCard size={11} /> {t("Payment settings")}</em>}</button>
+      <button type="button" className="designer-module-handle" draggable onClick={(event) => { event.stopPropagation(); selectModule(section); }} onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} aria-label={t("Edit {{section}}", { section: t(sectionMeta[section].title) })}><GripVertical size={15} /><i>{order.indexOf(section) + 1}</i><span>{t(sectionMeta[section].title)}</span>{section === "cart" && <em><CreditCard size={11} /> {t("Payment settings")}</em>}</button>
       {previewBlocks[section]}
     </div>;
   }
@@ -558,7 +550,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
       <aside className="builder-sidebar admin-surface">
         <div className="builder-sidebar-head">
           <span className="builder-logo"><LayoutTemplate size={18} /></span>
-          {sidebarOpen && <div><strong>{t("Storefront builder")}</strong><small>{t("Click anything in the preview to edit it.")}</small></div>}
+          {sidebarOpen && <div><strong>{t("Storefront builder")}</strong><small>{t("Use a section handle in the preview to edit it.")}</small></div>}
           <button type="button" className="builder-collapse" onClick={() => setSidebarOpen((open) => !open)} aria-label={t(sidebarOpen ? "Collapse builder sidebar" : "Expand builder sidebar")}>{sidebarOpen ? <ChevronLeft size={17} /> : <ChevronRight size={17} />}</button>
         </div>
 
@@ -571,7 +563,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
             {tab === "layout" && <>
               <div className="builder-section-heading"><div><strong>{t("Page sections")}</strong><small>{t("Drag to reorder the public page.")}</small></div></div>
               <div className="designer-block-list">
-                {order.map((section, index) => <article key={section} data-designer-section={section} style={{ viewTransitionName: `designer-list-${section}` } as React.CSSProperties} onClick={() => selectModule(section)} onKeyDown={(event) => { if (event.key !== "Enter" && event.key !== " ") return; event.preventDefault(); selectModule(section); }} onDragOver={(event) => markDropTarget(event, section, "vertical")} onDrop={(event) => dropOn(event, section)} className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""}`} role="button" tabIndex={0} aria-label={t("Edit {{section}}", { section: t(sectionMeta[section].title) })}><button type="button" className="designer-list-grip" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} onClick={(event) => event.stopPropagation()} aria-label={t("Drag {{section}}", { section: t(sectionMeta[section].title) })}><GripVertical size={17} /></button><span><strong>{index + 1}. {t(sectionMeta[section].title)}</strong><small>{t(sectionMeta[section].description)}</small></span><em>{t(sectionMeta[section].size)}</em><div><button type="button" disabled={index === 0} onClick={(event) => { event.stopPropagation(); nudge(section, -1); }} aria-label={t("Move {{section}} up", { section: t(sectionMeta[section].title) })}><ArrowUp size={14} /></button><button type="button" disabled={index === order.length - 1} onClick={(event) => { event.stopPropagation(); nudge(section, 1); }} aria-label={t("Move {{section}} down", { section: t(sectionMeta[section].title) })}><ArrowDown size={14} /></button></div></article>)}
+                {order.map((section, index) => <article key={section} data-designer-section={section} style={{ viewTransitionName: `designer-list-${section}` } as React.CSSProperties} onDragOver={(event) => markDropTarget(event, section, "vertical")} onDrop={(event) => dropOn(event, section)} className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""}`}><button type="button" className="designer-list-grip" draggable onDragStart={(event) => beginDrag(event, section)} onDragEnd={endDrag} aria-label={t("Drag {{section}}", { section: t(sectionMeta[section].title) })}><GripVertical size={17} /></button><button type="button" className="designer-list-select" onClick={() => selectModule(section)} aria-label={t("Edit {{section}}", { section: t(sectionMeta[section].title) })}><span><strong>{index + 1}. {t(sectionMeta[section].title)}</strong><small>{t(sectionMeta[section].description)}</small></span></button><em>{t(sectionMeta[section].size)}</em><div><button type="button" disabled={index === 0} onClick={() => nudge(section, -1)} aria-label={t("Move {{section}} up", { section: t(sectionMeta[section].title) })}><ArrowUp size={14} /></button><button type="button" disabled={index === order.length - 1} onClick={() => nudge(section, 1)} aria-label={t("Move {{section}} down", { section: t(sectionMeta[section].title) })}><ArrowDown size={14} /></button></div></article>)}
               </div>
               <p className="builder-help">{t("Wide and side modules keep safe column widths. Dragging changes their order within those responsive lanes.")}</p>
             </>}
@@ -737,12 +729,12 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
             <iframe
               className="designer-preview-iframe"
               title={t("{{device}} storefront preview", { device: t(device) })}
-              srcDoc={'<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="designer-preview-root"></div></body></html>'}
+              srcDoc={`<!doctype html><html lang="${draft.catalog_locale ?? "en"}"><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="designer-preview-root"></div></body></html>`}
               onLoad={loadPreviewFrame}
               style={{ width: device === "phone" ? 390 : 1380, height: device === "phone" ? 844 : 1120, transform: `scale(${previewScale})` }}
             />
             {previewDocument && createPortal(
-              <CatalogLocaleProvider locale={draft.catalog_locale ?? "en"}>
+              <CatalogLocaleProvider locale={draft.catalog_locale ?? "en"} targetDocument={previewDocument}>
                 <div className="designer-live-storefront app-shell" style={{ ...getThemeStyle(draft), transform: "none" }}>
                   <CatalogHeader
                     booth={draft}

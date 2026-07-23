@@ -51,7 +51,8 @@ import {
 import { layoutOrderSchema } from "../lib/schemas";
 import { PageLoading } from "../components/ui/PageLoading";
 import { useParams } from "react-router-dom";
-import { getPublicShop, type PublicProductSort } from "../lib/api";
+import { getPublicShop } from "../lib/api/shops";
+import type { PublicProductSort } from "../lib/catalogQueries";
 import type { Shop } from "../types/catalog";
 import {
   calculateCartPricing,
@@ -61,6 +62,7 @@ import { prefersLightweightCatalog } from "../lib/network";
 import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 import { hasUsablePayment } from "../utils/vietqr";
+import { getUserFacingErrorMessage } from "../lib/errors";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -248,9 +250,10 @@ export function CatalogPage() {
         setShop(null);
       }
       setShopLoadError(
-        error instanceof Error
-          ? error.message
-          : catalogCopyRef.current.shopConnectError,
+        getUserFacingErrorMessage(
+          error,
+          catalogCopyRef.current.shopConnectError,
+        ),
       );
     }
   }, [shopSlug]);
@@ -563,9 +566,7 @@ export function CatalogPage() {
         })
         .catch((err) => {
           toast.error(
-            err instanceof Error
-              ? err.message
-              : catalogCopy.paymentSettingsError,
+            getUserFacingErrorMessage(err, catalogCopy.paymentSettingsError),
           );
         });
     },

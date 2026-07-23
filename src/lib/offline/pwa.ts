@@ -65,6 +65,11 @@ export function isStaffPwaPath(pathname: string) {
   );
 }
 
+// Capture the one-shot browser prompt before an authenticated workspace mounts.
+if (typeof window !== "undefined" && isStaffPwaPath(window.location.pathname)) {
+  ensureInstallListeners();
+}
+
 function ensureManifest() {
   if (document.head.querySelector(`link[${MANIFEST_MARKER}]`)) return;
   const manifest = document.createElement("link");

@@ -22,12 +22,14 @@ vi.mock("../lib/supabase", () => ({
   supabase: { auth },
   isSupabaseConfigured: true,
 }));
-vi.mock("../lib/api", () => ({
-  getShopMemberships: api.getShopMemberships,
+vi.mock("../lib/api/auth", () => ({
   requestPasswordReset: api.requestPasswordReset,
   signInAdmin: api.signInAdmin,
   signInWithGoogle: api.signInWithGoogle,
   signUpAdmin: api.signUpAdmin,
+}));
+vi.mock("../lib/api/shops", () => ({
+  getShopMemberships: api.getShopMemberships,
 }));
 
 import { AuthPage } from "./AuthPage";

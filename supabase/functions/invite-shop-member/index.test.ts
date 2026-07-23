@@ -59,9 +59,17 @@ function mockSupabaseClient(responses: {
 
   return {
     auth: {
-      getUser: () => Promise.resolve({ data: { user: responses.user }, error: responses.userError }),
+      getUser: () =>
+        Promise.resolve({
+          data: { user: responses.user },
+          error: responses.userError,
+        }),
       admin: {
-        inviteUserByEmail: () => Promise.resolve({ data: {}, error: responses.inviteUserError || null }),
+        inviteUserByEmail: () =>
+          Promise.resolve({
+            data: {},
+            error: responses.inviteUserError || null,
+          }),
       },
     },
     from: (table: string) => {
@@ -96,9 +104,16 @@ function mockSupabaseClient(responses: {
             if (isCount) {
               resolve({ count: responses.invitationsCount ?? 0, error: null });
             } else if (isInsert) {
-              resolve({ data: responses.insertedInvitation ?? { id: "new-invitation-uuid" }, error: null });
+              resolve({
+                data: responses.insertedInvitation ??
+                  { id: "new-invitation-uuid" },
+                error: null,
+              });
             } else {
-              resolve({ data: responses.existingInvitation ?? null, error: null });
+              resolve({
+                data: responses.existingInvitation ?? null,
+                error: null,
+              });
             }
           },
         };
@@ -108,16 +123,18 @@ function mockSupabaseClient(responses: {
     },
     rpc: (name: string, _args?: any) => {
       if (name === "resolve_invitation_user") {
-        return Promise.resolve({ data: responses.rpcResolve ?? null, error: null });
+        return Promise.resolve({
+          data: responses.rpcResolve ?? null,
+          error: null,
+        });
       }
       if (name === "reserve_shop_invitation") {
         return Promise.resolve({
-          data: responses.teamLimitError
-            ? null
-            : [{
-              invitation_id: responses.insertedInvitation?.id ?? "new-invitation-uuid",
-              created_new: !responses.existingInvitation,
-            }],
+          data: responses.teamLimitError ? null : [{
+            invitation_id: responses.insertedInvitation?.id ??
+              "new-invitation-uuid",
+            created_new: !responses.existingInvitation,
+          }],
           error: responses.teamLimitError ?? null,
         });
       }
@@ -135,6 +152,14 @@ Deno.test("requires authorization", async () => {
 
 Deno.test("rejects malformed JSON cleanly", async () => {
   const response = await handleInviteRequest(request("{"));
+  assertEquals(response.status, 400);
+  assertEquals(await response.json(), { error: "Invalid request body." });
+});
+
+Deno.test("rejects oversized invitation bodies", async () => {
+  const response = await handleInviteRequest(
+    request(`{"padding":"${"x".repeat(8 * 1024)}"}`),
+  );
   assertEquals(response.status, 400);
   assertEquals(await response.json(), { error: "Invalid request body." });
 });
@@ -207,9 +232,18 @@ Deno.test("OPTIONS preflight returns correct status and CORS headers without aut
     }),
   );
   assertEquals(response.status === 200 || response.status === 204, true);
-  assertEquals(response.headers.get("Access-Control-Allow-Origin"), "https://matsuri.pro");
-  assertEquals(response.headers.get("Access-Control-Allow-Headers"), "authorization, x-client-info, apikey, content-type");
-  assertEquals(response.headers.get("Access-Control-Allow-Methods"), "POST, OPTIONS");
+  assertEquals(
+    response.headers.get("Access-Control-Allow-Origin"),
+    "https://matsuri.pro",
+  );
+  assertEquals(
+    response.headers.get("Access-Control-Allow-Headers"),
+    "authorization, x-client-info, apikey, content-type",
+  );
+  assertEquals(
+    response.headers.get("Access-Control-Allow-Methods"),
+    "POST, OPTIONS",
+  );
   assertEquals(response.headers.get("Vary"), "Origin");
 });
 
@@ -219,7 +253,14 @@ Deno.test("POST with invalid token returns 401", async () => {
     userError: { message: "Invalid token" } as any,
   });
   const response = await handleInviteRequest(
-    request(JSON.stringify({ action: "invite", shopId: "11000000-0000-4000-8000-000000000001", email: "test@example.com", role: "staff" }))
+    request(
+      JSON.stringify({
+        action: "invite",
+        shopId: "11000000-0000-4000-8000-000000000001",
+        email: "test@example.com",
+        role: "staff",
+      }),
+    ),
   );
   assertEquals(response.status, 401);
   assertEquals(await response.json(), { error: "Authentication required." });
@@ -235,10 +276,19 @@ Deno.test("POST by authenticated non-owner returns 403", async () => {
   });
 
   const response = await handleInviteRequest(
-    request(JSON.stringify({ action: "invite", shopId: "11000000-0000-4000-8000-000000000001", email: "test@example.com", role: "staff" }))
+    request(
+      JSON.stringify({
+        action: "invite",
+        shopId: "11000000-0000-4000-8000-000000000001",
+        email: "test@example.com",
+        role: "staff",
+      }),
+    ),
   );
   assertEquals(response.status, 403);
-  assertEquals(await response.json(), { error: "Active shop owner access required." });
+  assertEquals(await response.json(), {
+    error: "Active shop owner access required.",
+  });
 });
 
 Deno.test("POST with inactive owner or inactive shop returns 403", async () => {
@@ -251,10 +301,19 @@ Deno.test("POST with inactive owner or inactive shop returns 403", async () => {
   });
 
   const response = await handleInviteRequest(
-    request(JSON.stringify({ action: "invite", shopId: "11000000-0000-4000-8000-000000000001", email: "test@example.com", role: "staff" }))
+    request(
+      JSON.stringify({
+        action: "invite",
+        shopId: "11000000-0000-4000-8000-000000000001",
+        email: "test@example.com",
+        role: "staff",
+      }),
+    ),
   );
   assertEquals(response.status, 403);
-  assertEquals(await response.json(), { error: "Active shop owner access required." });
+  assertEquals(await response.json(), {
+    error: "Active shop owner access required.",
+  });
 });
 
 Deno.test("POST by owner of another shop returns 403", async () => {
@@ -267,10 +326,19 @@ Deno.test("POST by owner of another shop returns 403", async () => {
   });
 
   const response = await handleInviteRequest(
-    request(JSON.stringify({ action: "invite", shopId: "11000000-0000-4000-8000-000000000002", email: "test@example.com", role: "staff" }))
+    request(
+      JSON.stringify({
+        action: "invite",
+        shopId: "11000000-0000-4000-8000-000000000002",
+        email: "test@example.com",
+        role: "staff",
+      }),
+    ),
   );
   assertEquals(response.status, 403);
-  assertEquals(await response.json(), { error: "Active shop owner access required." });
+  assertEquals(await response.json(), {
+    error: "Active shop owner access required.",
+  });
 });
 
 Deno.test("Active owner reaches invitation logic and succeeds", async () => {
@@ -287,7 +355,14 @@ Deno.test("Active owner reaches invitation logic and succeeds", async () => {
   });
 
   const response = await handleInviteRequest(
-    request(JSON.stringify({ action: "invite", shopId: "11000000-0000-4000-8000-000000000001", email: "test@example.com", role: "staff" }))
+    request(
+      JSON.stringify({
+        action: "invite",
+        shopId: "11000000-0000-4000-8000-000000000001",
+        email: "test@example.com",
+        role: "staff",
+      }),
+    ),
   );
   assertEquals(response.status, 200);
   assertEquals(await response.json(), { outcome: "processed" });

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
-import { signInWithGoogle } from "../../lib/api";
+import { signInWithGoogle } from "../../lib/api/auth";
 import { getAuthErrorNotice } from "../../lib/auth/authErrors";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { useToast } from "./ToastProvider";

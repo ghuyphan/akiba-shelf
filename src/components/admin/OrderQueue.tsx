@@ -17,19 +17,23 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { OfflineEventSummary, Order } from "../../types/catalog";
-import type { OrderFilter, OrderStatusCounts } from "../../lib/api";
-import { listOfflineEvents } from "../../lib/api";
+import type {
+  OrderFilter,
+  OrderStatusCounts,
+} from "../../lib/api/orders";
+import { listOfflineEvents } from "../../lib/api/offlineEvents";
 import { formatRelativeTime, formatVnd } from "../../utils/format";
 import {
   confirmOrderPayment,
   cancelOrder,
   updateOrderFulfillment,
-} from "../../lib/api";
+} from "../../lib/api/orders";
 import { SwipeConfirmButton } from "./SwipeConfirmButton";
 import { useToast } from "../ui/ToastProvider";
 import { EmptyState } from "../ui/EmptyState";
 import { Button } from "../ui/Button";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
+import { getUserFacingErrorMessage } from "../../lib/errors";
 import { Modal } from "../ui/Modal";
 import { SelectMenu } from "../ui/SelectMenu";
 import { ConfirmationDialog } from "../ui/ConfirmationDialog";
@@ -224,9 +228,7 @@ export function OrderQueue({
       return true;
     } catch (error) {
       toast.error(
-        t(
-          error instanceof Error ? error.message : "Failed to confirm payment.",
-        ),
+        t(getUserFacingErrorMessage(error, "Failed to confirm payment.")),
         t("Could not confirm order"),
       );
       return false;
@@ -247,7 +249,7 @@ export function OrderQueue({
       else toast.success(t("Order cancelled and stock released."));
     } catch (error) {
       toast.error(
-        t(error instanceof Error ? error.message : "Failed to cancel order."),
+        t(getUserFacingErrorMessage(error, "Failed to cancel order.")),
         t("Could not cancel order"),
       );
     } finally {
@@ -291,11 +293,7 @@ export function OrderQueue({
       }
     } catch (error) {
       toast.error(
-        t(
-          error instanceof Error
-            ? error.message
-            : "Could not update fulfilment.",
-        ),
+        t(getUserFacingErrorMessage(error, "Could not update fulfilment.")),
       );
     } finally {
       setFulfillmentBusyId(null);

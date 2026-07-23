@@ -8,7 +8,7 @@ import { PlatformI18nProvider } from "../../lib/i18n/platformI18n";
 const signInWithGoogle = vi.hoisted(() => vi.fn());
 
 vi.mock("../../lib/supabase", () => ({ isSupabaseConfigured: true }));
-vi.mock("../../lib/api", () => ({ signInWithGoogle }));
+vi.mock("../../lib/api/auth", () => ({ signInWithGoogle }));
 
 import { LoginPanel } from "./LoginPanel";
 
