@@ -94,14 +94,29 @@ function unlockBodyScroll() {
   }
 }
 
-function useSheetScrollLock(active: boolean, mobileOnly: boolean) {
+function usePhoneSheetLayout(enabled: boolean) {
+  const [matches, setMatches] = useState(() =>
+    enabled ? window.matchMedia("(max-width: 760px)").matches : true,
+  );
+
+  useEffect(() => {
+    if (!enabled) return;
+    const media = window.matchMedia("(max-width: 760px)");
+    const handleChange = () => setMatches(media.matches);
+    handleChange();
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, [enabled]);
+
+  return enabled ? matches : true;
+}
+
+function useSheetScrollLock(active: boolean) {
   useEffect(() => {
     if (!active) return;
-    const media = window.matchMedia("(max-width: 760px)");
-    if (mobileOnly && !media.matches) return;
     lockBodyScroll();
     return unlockBodyScroll;
-  }, [active, mobileOnly]);
+  }, [active]);
 }
 
 export function SheetHandle({ onClick, label }: { onClick?: () => void; label?: string }) {
@@ -139,7 +154,9 @@ export function MobileSheetShell({
   tabIndex,
   portalBackdrop = false,
 }: MobileSheetShellProps) {
-  const [backdropMounted, setBackdropMounted] = useState(open);
+  const phoneSheetLayout = usePhoneSheetLayout(mode === "expandable");
+  const active = open && phoneSheetLayout;
+  const [backdropMounted, setBackdropMounted] = useState(active);
   const surfaceRef = useRef<HTMLElement>(null);
 
   function setSurfaceRef(node: HTMLElement | null) {
@@ -148,7 +165,7 @@ export function MobileSheetShell({
   }
 
   useEffect(() => {
-    if (open) {
+    if (active) {
       setBackdropMounted(true);
       return;
     }
@@ -157,12 +174,12 @@ export function MobileSheetShell({
       SHEET_EXIT_DURATION_MS,
     );
     return () => window.clearTimeout(timer);
-  }, [open]);
+  }, [active]);
 
-  useSheetScrollLock(open, mode === "expandable");
+  useSheetScrollLock(active);
 
   useEffect(() => {
-    if (mode !== "expandable" || !open) return;
+    if (mode !== "expandable" || !active) return;
     const surface = surfaceRef.current;
     if (!surface) return;
     const previousFocus =
@@ -211,14 +228,14 @@ export function MobileSheetShell({
       restoreInert();
       previousFocus?.focus();
     };
-  }, [mode, onDismiss, open]);
+  }, [active, mode, onDismiss]);
 
   const surface = (
     <section
         ref={setSurfaceRef}
-        className={`sheet-surface sheet-${mode} ${open ? "is-open" : "is-closing"} ${className}`}
-        role={role}
-        aria-modal={ariaModal}
+        className={`sheet-surface sheet-${mode} ${active ? "is-open" : "is-closing"} ${className}`}
+        role={phoneSheetLayout ? role : undefined}
+        aria-modal={phoneSheetLayout ? ariaModal : undefined}
         aria-label={ariaLabel}
         tabIndex={tabIndex}
         onClick={(event) => event.stopPropagation()}
@@ -230,7 +247,7 @@ export function MobileSheetShell({
   if (mode === "modal") {
     return backdropMounted ? (
       <div
-        className={`sheet-backdrop ${backdropClassName} ${open ? "is-open" : "is-closing"}`}
+        className={`sheet-backdrop ${backdropClassName} ${active ? "is-open" : "is-closing"}`}
         role="presentation"
         onClick={onDismiss}
       >
@@ -241,7 +258,7 @@ export function MobileSheetShell({
 
   const backdropElement = backdropMounted ? (
     <div
-      className={`sheet-backdrop ${backdropClassName} ${open ? "is-open" : "is-closing"}`}
+      className={`sheet-backdrop ${backdropClassName} ${active ? "is-open" : "is-closing"}`}
       role="presentation"
       onClick={onDismiss}
     />

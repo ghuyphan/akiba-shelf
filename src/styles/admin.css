@@ -1590,6 +1590,7 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
 .designer-live-module { position: relative !important; outline: 2px solid transparent; outline-offset: 4px; transition: outline-color 150ms ease, opacity 150ms ease; }
 .designer-live-module:has(.designer-module-handle:hover) { outline-color: color-mix(in srgb, var(--coral) 55%, transparent); }
 .designer-module-handle { position: absolute; top: 8px; right: 8px; z-index: 50; display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 0 9px; border: 1px solid rgb(255 255 255 / 88%); border-radius: 999px; color: #fff; background: rgb(15 23 42 / 76%); box-shadow: 0 6px 18px rgb(15 23 42 / 18%); cursor: grab; font-size: 8px; font-weight: 900; backdrop-filter: blur(10px); }
+.designer-module-handle::before { content: ""; position: absolute; inset: -8px; }
 .designer-module-handle:active { cursor: grabbing; }
 .designer-live-storefront .selected-panel { position: relative !important; inset: auto !important; }
 

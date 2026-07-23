@@ -39,6 +39,21 @@ describe("getErrorMessage", () => {
     ).toBe("This order was already handled.");
   });
 
+  it("sanitizes normalized string errors without discarding friendly copy", () => {
+    expect(
+      getUserFacingErrorMessage(
+        "Sale price must be lower than the regular price.",
+        "Could not update the item.",
+      ),
+    ).toBe("Sale price must be lower than the regular price.");
+    expect(
+      getUserFacingErrorMessage(
+        'relation "products" violates constraint "products_check"',
+        "Could not update the item.",
+      ),
+    ).toBe("Could not update the item.");
+  });
+
   it("replaces technical, structured, and oversized errors", () => {
     const fallback = "Could not update the order.";
     expect(

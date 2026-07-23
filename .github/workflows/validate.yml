@@ -118,7 +118,7 @@ jobs:
         run: npm ci && npm run build
         working-directory: previous-deployment
       - name: Retain previous immutable assets
-        run: rsync -a --ignore-existing previous-deployment/dist/ dist/
+        run: node scripts/retain-previous-assets.mjs previous-deployment/dist dist
       - name: Deploy to Cloudflare Pages
         id: deployment
         uses: cloudflare/wrangler-action@v3

@@ -191,10 +191,12 @@ Cloudflare Pages > Edit for the account that owns the `matsuri` project. The
 workflow builds and uploads `dist/` with Wrangler only after checks, database
 tests, and e2e tests pass.
 
-The workflow still merges non-conflicting files from the previous successful
-main-branch source into the new artifact. This keeps one generation of hashed
-assets available for tabs opened before a deployment. Do not remove that merge
-without replacing it with an equivalent stale-client compatibility strategy.
+The workflow retains one generation of hashed Vite assets and simulator
+`internal/immutable` assets from the previous successful main-branch source.
+This keeps old tabs working without carrying removed HTML, manifests, or stable
+media into the next release. The allowlist lives in
+`scripts/retain-previous-assets.mjs`; do not broaden it or remove the retention
+without an equivalent stale-client compatibility strategy.
 
 Cloudflare Pages reads `public/_headers` for browser security and cache policy.
 Hashed Vite and simulator assets are immutable; `sw.js` and
@@ -206,6 +208,12 @@ Cloudflare account as the Pages project. Associate the domain with the project
 before changing nameservers. After cutover, verify the apex route, a storefront
 deep link, Auth callbacks, the service worker, and the current/previous hashed
 asset generations.
+
+Keep `matsuri.pro` as the only application origin. Cloudflare Pages
+`_redirects` files cannot match hostnames, so configure a zone-level Single
+Redirect for `www.matsuri.pro`: match that hostname, redirect permanently to
+the equivalent `https://matsuri.pro` path, and preserve the query string. Both
+hostnames must remain proxied for the Redirect Rule to run.
 
 ## Release gate
 

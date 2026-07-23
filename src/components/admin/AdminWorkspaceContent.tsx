@@ -150,7 +150,7 @@ export function AdminWorkspaceContent({
         eventCount={eventOrderCount}
         eventControl={
           canManageCatalog ? (
-            <Suspense fallback={workspaceFallback}>
+            <Suspense fallback={null}>
               <OfflineEventManager
                 shopId={shopId}
                 shopSlug={shopSlug}

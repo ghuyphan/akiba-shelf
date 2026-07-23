@@ -49,6 +49,25 @@ unrelated work in a dirty tree and use focused patches.
   query/schema work, the Postgres best-practices skill. `.agents/` is ignored,
   so use migrations and `docs/operations.md` as the portable fallback.
 
+## Deployment
+
+- Production frontend hosting is the Cloudflare Pages project `matsuri`.
+  `matsuri.pro` is the canonical application origin.
+- `www.matsuri.pro` redirects permanently to the equivalent `matsuri.pro` URL
+  through the active Cloudflare Redirect Rule `Canonical www to matsuri.pro`.
+  Keep both DNS records proxied so the rule and Cloudflare certificates apply.
+- Do not restore GitHub Pages deployment, `public/CNAME`, or the GitHub Pages
+  SPA `404.html` fallback. GitHub Pages must not control the production domain.
+- Normal production releases run from `main` through
+  `.github/workflows/validate.yml` after all release gates pass. The workflow
+  requires the `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` GitHub
+  secrets; never commit provider credentials.
+- Preserve the immutable-asset compatibility strategy in
+  `scripts/retain-previous-assets.mjs`. Do not copy an unrestricted previous
+  deployment into the new artifact.
+- Follow `docs/operations.md` for Cloudflare setup, release verification,
+  rollback, credential permissions, and any emergency manual deployment.
+
 ## Code ownership
 
 - Route fetching and composition: `src/pages/`.
