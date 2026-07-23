@@ -8,3 +8,4 @@ export * from "./api/shops";
 export * from "./api/staff";
 export * from "./api/storage";
 export * from "./api/offlineEvents";
+export * from "./api/push";

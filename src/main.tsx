@@ -7,10 +7,12 @@ import { hydrateInitialPageTheme } from "./utils/theme";
 import { restoreRedirect } from "./lib/auth/authUrls";
 import { getRoutePrefetchTarget } from "./lib/routePrefetch";
 import { reloadForAppUpdate } from "./utils/lazyWithRetry";
+import { initObservability, reportError } from "./lib/observability";
 
 restoreRedirect();
 hydrateInitialPageTheme();
 resetDocumentBranding();
+initObservability();
 
 // Route-aware page chunk prefetching
 const pathname = window.location.pathname;
@@ -36,7 +38,8 @@ void import("./App")
       </StrictMode>,
     );
   })
-  .catch(async () => {
+  .catch(async (error: unknown) => {
+    reportError(error, { stage: "app_bootstrap" });
     if (!sessionStorage.getItem(appChunkRetryKey)) {
       sessionStorage.setItem(appChunkRetryKey, "1");
       await reloadForAppUpdate();

@@ -12,6 +12,18 @@ test("does not advertise the staff PWA from a customer storefront", async ({
   await expect(page.locator("link[rel='manifest']")).toHaveCount(0);
 });
 
+test("loads through legacy public reads while the bootstrap migration rolls out", async ({
+  page,
+}) => {
+  await page.unrouteAll({ behavior: "wait" });
+  await mockSupabase(page, { bootstrapUnavailable: true });
+  await page.reload();
+
+  await expect(page.getByText("Fixture Booth").first()).toBeVisible();
+  await expect(page.getByText("Moon Stand").first()).toBeVisible();
+  await expect(page.locator(".page-loading")).toHaveCount(0);
+});
+
 test("does not cache empty payment defaults before checkout needs them", async ({
   page,
 }) => {
@@ -19,7 +31,9 @@ test("does not cache empty payment defaults before checkout needs them", async (
     .poll(() =>
       page.evaluate(() => {
         const snapshot = JSON.parse(
-          localStorage.getItem("akiba-shelf-catalog-v1:main") || "null",
+          localStorage.getItem(
+            "akiba-shelf-catalog-v1:00000000-0000-4000-8000-000000000001",
+          ) || "null",
         );
         return snapshot ? "payment" in snapshot : null;
       }),
@@ -30,10 +44,13 @@ test("does not cache empty payment defaults before checkout needs them", async (
 test("restores a pending order quietly and loads payment before showing it", async ({
   page,
 }) => {
-  await page.route("**/mock-supabase/rest/v1/payment_settings**", async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    await route.fallback();
-  });
+  await page.route(
+    "**/mock-supabase/rest/v1/payment_settings**",
+    async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      await route.fallback();
+    },
+  );
   await page.evaluate((product) => {
     const now = new Date().toISOString();
     localStorage.setItem(
@@ -67,7 +84,9 @@ test("restores a pending order quietly and loads payment before showing it", asy
 
   await page.reload();
 
-  await expect(page.getByRole("dialog", { name: "Scan to pay" })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Scan to pay" })).toHaveCount(
+    0,
+  );
   await expect(page.getByText(/Pending order · A100/i)).toBeVisible();
   await page.getByRole("button", { name: "View payment" }).click();
 
@@ -109,7 +128,9 @@ test("restores a pending order quietly and loads payment before showing it", asy
       .locator(".vietqr-card")
       .evaluate((card) => {
         const bounds = card.getBoundingClientRect();
-        const qr = card.querySelector(".vietqr-card-qr")!.getBoundingClientRect();
+        const qr = card
+          .querySelector(".vietqr-card-qr")!
+          .getBoundingClientRect();
         const center = card
           .querySelector(".vietqr-center-logo")!
           .getBoundingClientRect();
@@ -431,7 +452,9 @@ test("keeps a long cart reachable while the customer continues browsing", async 
     expect(cartDockOverlap).toBeLessThanOrEqual(0);
     const shellBottomPadding = await page
       .locator(".app-shell")
-      .evaluate((shell) => Number.parseFloat(getComputedStyle(shell).paddingBottom));
+      .evaluate((shell) =>
+        Number.parseFloat(getComputedStyle(shell).paddingBottom),
+      );
     expect(shellBottomPadding).toBeLessThanOrEqual(32);
     const revealCart = floatingCart.getByRole("button", { name: "View cart" });
     await expect(revealCart).toBeVisible();
@@ -507,7 +530,12 @@ test("keeps the view toggle aligned and animates results as one grid", async ({
     });
     return { left: container.left, right: container.right, buttons };
   });
-  expect(toggleBounds.buttons.every((button) => button.left >= toggleBounds.left && button.right <= toggleBounds.right)).toBe(true);
+  expect(
+    toggleBounds.buttons.every(
+      (button) =>
+        button.left >= toggleBounds.left && button.right <= toggleBounds.right,
+    ),
+  ).toBe(true);
   await expect(gridButton).toHaveCSS("transform", "none");
   await expect(gridButton).not.toHaveCSS(
     "background-color",
@@ -529,11 +557,17 @@ test("keeps the view toggle aligned and animates results as one grid", async ({
   );
 });
 
-test("keeps phone categories swipeable without covering labels", async ({ page }, testInfo) => {
+test("keeps phone categories swipeable without covering labels", async ({
+  page,
+}, testInfo) => {
   test.skip(testInfo.project.name !== "phone-chromium");
   await expect(page.locator(".category-row")).toHaveCSS("overflow-x", "auto");
-  await expect(page.getByRole("button", { name: "More categories" })).toBeHidden();
-  await expect(page.getByRole("button", { name: "Previous categories" })).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "More categories" }),
+  ).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Previous categories" }),
+  ).toBeHidden();
 });
 
 test("shows desktop category arrows when categories overflow", async ({
@@ -585,20 +619,30 @@ test("keeps the cart available when server validation rejects checkout", async (
     const dialog = page.getByRole("dialog", { name: "Checkout unavailable" });
     const sheetLayout = await dialog.evaluate((element) => {
       const bounds = element.getBoundingClientRect();
-      const actions = element.querySelector(".order-confirm-actions")?.getBoundingClientRect();
-      const buttonTops = [...element.querySelectorAll(".order-confirm-actions button")].map((button) => button.getBoundingClientRect().top);
-      const repeatedTitle = element.querySelector<HTMLElement>(".payment-cancelled-state h2");
+      const actions = element
+        .querySelector(".order-confirm-actions")
+        ?.getBoundingClientRect();
+      const buttonTops = [
+        ...element.querySelectorAll(".order-confirm-actions button"),
+      ].map((button) => button.getBoundingClientRect().top);
+      const repeatedTitle = element.querySelector<HTMLElement>(
+        ".payment-cancelled-state h2",
+      );
       return {
         bottom: bounds.bottom,
         viewportHeight: window.innerHeight,
         actionsWidth: actions?.width ?? 0,
         dialogWidth: bounds.width,
         buttonTops,
-        repeatedTitleDisplay: repeatedTitle ? getComputedStyle(repeatedTitle).display : "missing",
+        repeatedTitleDisplay: repeatedTitle
+          ? getComputedStyle(repeatedTitle).display
+          : "missing",
       };
     });
     expect(sheetLayout.bottom).toBe(sheetLayout.viewportHeight);
-    expect(sheetLayout.actionsWidth).toBeGreaterThan(sheetLayout.dialogWidth * 0.8);
+    expect(sheetLayout.actionsWidth).toBeGreaterThan(
+      sheetLayout.dialogWidth * 0.8,
+    );
     expect(new Set(sheetLayout.buttonTops).size).toBe(1);
     expect(sheetLayout.repeatedTitleDisplay).toBe("none");
   }

@@ -51,7 +51,7 @@ select is(
 
 set local role service_role;
 select throws_ok(
-  $$select * from public.create_order_rate_limited('demo-booth', null, '[]', gen_random_uuid(), repeat('d', 32), repeat('d', 64))$$,
+  $$select * from public.create_order_rate_limited('demo-booth', null, '[]', gen_random_uuid(), repeat('d', 32), repeat('d', 64), repeat('e', 64), repeat('f', 64))$$,
   'This storefront is a read-only demo and does not accept orders',
   'demo checkout is rejected before cart processing'
 );

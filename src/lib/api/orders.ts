@@ -7,6 +7,8 @@ import {
   orderItemProductSchema,
   fulfillmentMutationSchema,
   orderMutationSchema,
+  orderNotificationRetrySchema,
+  orderNotificationStatusListSchema,
   orderSchema,
   orderStatusCountsSchema,
 } from "../schemas";
@@ -17,9 +19,25 @@ import type {
   Order,
   OrderItemProduct,
   OrderMutationResult,
+  OrderNotificationStatus,
   OrderStatus,
 } from "../../types/catalog";
 import { extractEdgeFunctionError, requireSupabase } from "./shared";
+import { safeUuid } from "../../utils/id";
+
+const CHECKOUT_DEVICE_KEY = "matsuri-checkout-device-v1";
+
+function checkoutDeviceId() {
+  try {
+    const existing = window.localStorage.getItem(CHECKOUT_DEVICE_KEY);
+    if (existing) return existing;
+    const created = safeUuid();
+    window.localStorage.setItem(CHECKOUT_DEVICE_KEY, created);
+    return created;
+  } catch {
+    return safeUuid();
+  }
+}
 
 export class CheckoutOutcomeUnknownError extends Error {
   constructor(
@@ -34,23 +52,6 @@ export function isCheckoutOutcomeUnknownError(
   error: unknown,
 ): error is CheckoutOutcomeUnknownError {
   return error instanceof CheckoutOutcomeUnknownError;
-}
-
-const notificationRetryDelays = [0, 1_000, 3_000];
-
-async function notifyNewOrderWithRetry(
-  client: ReturnType<typeof requireSupabase>,
-  orderId: string,
-  recoveryToken: string,
-) {
-  for (const delay of notificationRetryDelays) {
-    if (delay > 0)
-      await new Promise((resolve) => window.setTimeout(resolve, delay));
-    const { error } = await client.functions.invoke("notify-new-order", {
-      body: { orderId, recoveryToken },
-    });
-    if (!error) return;
-  }
 }
 
 export async function createOrder(
@@ -72,6 +73,7 @@ export async function createOrder(
       })),
       clientRequestId,
       recoveryToken,
+      deviceId: checkoutDeviceId(),
     },
   });
   if (error) {
@@ -92,11 +94,7 @@ export async function createOrder(
 
   const parsed = orderSchema.safeParse(data);
   if (!parsed.success) throw new CheckoutOutcomeUnknownError();
-  const createdOrder = parsed.data as Order;
-  void notifyNewOrderWithRetry(client, createdOrder.id, recoveryToken).catch(
-    () => undefined,
-  );
-  return createdOrder;
+  return parsed.data as Order;
 }
 
 export async function getCustomerOrder(
@@ -192,6 +190,41 @@ export async function getOrderStatusCounts(
   );
   if (error) throw error;
   return orderStatusCountsSchema.parse(data) as OrderStatusCounts;
+}
+
+export async function getOrderNotificationStatus(
+  shopId: string,
+  limit = 200,
+): Promise<OrderNotificationStatus[]> {
+  const boundedLimit = Math.max(1, Math.min(Math.trunc(limit) || 200, 200));
+  const { data, error } = await requireSupabase().rpc(
+    "get_order_notification_status",
+    {
+      p_shop_id: shopId,
+      p_limit: boundedLimit,
+    },
+  );
+  if (error) throw error;
+  return orderNotificationStatusListSchema.parse(
+    data ?? [],
+  ) as OrderNotificationStatus[];
+}
+
+export async function retryOrderNotification(
+  shopId: string,
+  orderId: string,
+  reason?: string,
+): Promise<boolean> {
+  const { data, error } = await requireSupabase().rpc(
+    "retry_order_notification",
+    {
+      p_shop_id: shopId,
+      p_order_id: orderId,
+      p_reason: reason?.trim() || null,
+    },
+  );
+  if (error) throw error;
+  return orderNotificationRetrySchema.parse(data);
 }
 
 export async function confirmOrderPayment(

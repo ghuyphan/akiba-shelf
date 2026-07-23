@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(53);
+select plan(63);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values('20000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','staff-orders@test.local','',now(),now(),now());
 insert into public.shops(id,name,slug,created_by) values('21000000-0000-4000-8000-000000000001','Orders','orders-test','20000000-0000-4000-8000-000000000001');
 insert into public.shop_members(shop_id,user_id,role) values('21000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','staff');
@@ -15,7 +15,7 @@ select throws_ok($$select * from public.create_order('orders-test',null,'[{"prod
 select throws_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"missing","quantity":1}]',gen_random_uuid(),repeat('c',32))$$,'One or more items are sold out or no longer have enough stock','missing product fails');
 select throws_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-b","quantity":2}]',gen_random_uuid(),repeat('d',32))$$,'One or more items are sold out or no longer have enough stock','insufficient stock fails');
 select throws_ok($$select * from public.create_order('missing-shop',null,'[{"product_id":"order-a","quantity":1}]',gen_random_uuid(),repeat('e',32))$$,'Shop not found or inactive','unknown shop fails');
-select lives_ok($$select * from public.create_order_rate_limited('orders-test','Customer','[{"product_id":"order-a","quantity":1},{"product_id":"order-a","quantity":2}]','30000000-0000-4000-8000-000000000001',repeat('f',32),repeat('1',64))$$,'valid rate-limited order succeeds');
+select lives_ok($$select * from public.create_order_rate_limited('orders-test','Customer','[{"product_id":"order-a","quantity":1},{"product_id":"order-a","quantity":2}]','30000000-0000-4000-8000-000000000001',repeat('f',32),repeat('1',64),repeat('2',64),repeat('3',64))$$,'valid rate-limited order succeeds');
 
 set local role postgres;
 create temporary table test_order_ids(label text primary key,id uuid not null);
@@ -26,11 +26,13 @@ select is((select quantity from public.order_items where order_id=(select id fro
 select is((select quantity_available from public.products where id='order-a'),7,'creation reserves once');
 
 set local role service_role;
-select lives_ok($$select * from public.create_order_rate_limited('orders-test','Customer','[{"product_id":"order-a","quantity":3}]','30000000-0000-4000-8000-000000000001',repeat('f',32),repeat('1',64))$$,'rate-limited retry is idempotent');
+select lives_ok($$select * from public.create_order_rate_limited('orders-test','Customer','[{"product_id":"order-a","quantity":3}]','30000000-0000-4000-8000-000000000001',repeat('f',32),repeat('1',64),repeat('2',64),repeat('3',64))$$,'rate-limited retry is idempotent');
 
 set local role postgres;
 select is((select count(*) from public.orders where client_request_id='30000000-0000-4000-8000-000000000001'),1::bigint,'retry creates one order');
 select is((select count(*) from private.checkout_reservation_clients where client_request_id='30000000-0000-4000-8000-000000000001'),1::bigint,'retry stores one client reservation record');
+select throws_ok($$update private.checkout_reservation_clients set device_hash='invalid' where client_request_id='30000000-0000-4000-8000-000000000001'$$,'23514',null,'checkout device hashes remain canonical at the storage boundary');
+select throws_ok($$update private.checkout_reservation_clients set ip_hash='invalid' where client_request_id='30000000-0000-4000-8000-000000000001'$$,'23514',null,'checkout IP hashes remain canonical at the storage boundary');
 
 set local role authenticated;set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000001';
 select is((public.confirm_order_payment((select id from test_order_ids where label='first'))->>'outcome'),'confirmed','staff confirms own order');
@@ -47,6 +49,11 @@ select is((select quantity_available from public.products where id='order-a'),7,
 
 set local role authenticated;set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000001';
 select is((public.cancel_order((select id from test_order_ids where label='first'))->>'outcome'),'already_confirmed','confirmed order is terminal');
+
+set local role service_role;
+select is((select status::text from public.create_order_rate_limited('orders-test','Customer','[{"product_id":"order-a","quantity":3}]','30000000-0000-4000-8000-000000000001',repeat('f',32),repeat('1',64),repeat('2',64),repeat('3',64))),'confirmed','checkout retry returns the existing confirmed order');
+set local role postgres;
+select is((select count(*) from public.order_notification_events where order_id=(select id from test_order_ids where label='first')),1::bigint,'confirmed checkout retry does not enqueue a second notification');
 
 set local role service_role;
 select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-a","quantity":2}]','30000000-0000-4000-8000-000000000002',repeat('h',32))$$,'second order succeeds');
@@ -66,7 +73,12 @@ select is((select quantity_available from public.products where id='order-a'),7,
 set local role anon;
 select is((public.cancel_customer_order((select id from test_order_ids where label='second'),repeat('h',32))->>'outcome'),'already_cancelled','cancellation is idempotent');
 
+set local role service_role;
+select is((select status::text from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":2}]','30000000-0000-4000-8000-000000000002',repeat('h',32),repeat('4',64),repeat('5',64),repeat('6',64))),'cancelled','checkout retry returns the existing cancelled order');
 set local role postgres;
+select is((select count(*) from public.order_notification_events where order_id=(select id from test_order_ids where label='second')),0::bigint,'cancelled checkout retry does not enqueue a notification');
+select is((select count(*) from private.checkout_reservation_clients where client_request_id='30000000-0000-4000-8000-000000000002'),1::bigint,'cancelled checkout retry records one client reservation row');
+
 select is((select quantity_available from public.products where id='order-a'),7,'terminal retry does not restore twice');
 update public.products set sale_price_vnd=8000 where id='order-a';
 
@@ -112,27 +124,74 @@ set local role postgres;
 with inserted as (
   insert into public.orders(shop_id,customer_name,total_amount,status,client_request_id,expires_at)
   select '21000000-0000-4000-8000-000000000001','rate-active-' || value,0,'pending',gen_random_uuid(),now()+interval '10 minutes'
-  from generate_series(1,8) value
+  from generate_series(1,4) value
   returning id,client_request_id
 )
-insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash)
-select id,client_request_id,'21000000-0000-4000-8000-000000000001',repeat('9',64) from inserted;
+insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash,device_hash,ip_hash)
+select id,client_request_id,'21000000-0000-4000-8000-000000000001',repeat('9',64),repeat('8',64),repeat('7',64) from inserted;
 
 set local role service_role;
-select throws_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000009',repeat('w',32),repeat('9',64))$$,'Too many active checkout reservations. Complete or cancel an existing order first.','ninth active reservation for one network is rate limited');
+select throws_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000009',repeat('w',32),repeat('9',64),repeat('8',64),repeat('7',64))$$,'Too many active checkout reservations. Complete or cancel an existing order first.','fifth active reservation for one checkout identity is rate limited');
 
 set local role postgres;
 with inserted as (
   insert into public.orders(shop_id,customer_name,total_amount,status,client_request_id,cancelled_at)
   select '21000000-0000-4000-8000-000000000001','rate-recent-' || value,0,'cancelled',gen_random_uuid(),now()
-  from generate_series(1,30) value
+  from generate_series(1,12) value
   returning id,client_request_id
 )
-insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash)
-select id,client_request_id,'21000000-0000-4000-8000-000000000001',repeat('8',64) from inserted;
+insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash,device_hash,ip_hash)
+select id,client_request_id,'21000000-0000-4000-8000-000000000001',repeat('6',64),repeat('5',64),repeat('4',64) from inserted;
 
 set local role service_role;
-select throws_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000010',repeat('z',32),repeat('8',64))$$,'Too many checkout attempts. Please wait a few minutes and try again.','thirty-first recent reservation for one network is rate limited');
+select throws_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000010',repeat('z',32),repeat('6',64),repeat('5',64),repeat('4',64))$$,'Too many checkout attempts. Please wait a few minutes and try again.','thirteenth recent reservation for one checkout identity is rate limited');
+
+set local role postgres;
+with inserted as (
+  insert into public.orders(shop_id,customer_name,total_amount,status,client_request_id,expires_at)
+  select '21000000-0000-4000-8000-000000000001','rate-ip-' || value,0,'pending',gen_random_uuid(),now()+interval '10 minutes'
+  from generate_series(1,8) value
+  returning id,client_request_id
+)
+insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash,device_hash,ip_hash)
+select id,client_request_id,'21000000-0000-4000-8000-000000000001',
+  encode(extensions.digest('ip-identity-' || id::text,'sha256'),'hex'),
+  encode(extensions.digest('ip-device-' || id::text,'sha256'),'hex'),
+  repeat('a',64)
+from inserted;
+set local role service_role;
+select throws_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000012',repeat('i',32),repeat('d',64),repeat('e',64),repeat('a',64))$$,'Too many checkout attempts. Please wait a few minutes and try again.','ninth active reservation from one IP is rate limited independently of identity and device');
+
+set local role postgres;
+with inserted as (
+  insert into public.orders(shop_id,customer_name,total_amount,status,client_request_id,cancelled_at)
+  select '21000000-0000-4000-8000-000000000001','rate-device-' || value,0,'cancelled',gen_random_uuid(),now()
+  from generate_series(1,12) value
+  returning id,client_request_id
+)
+insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash,device_hash,ip_hash)
+select id,client_request_id,'21000000-0000-4000-8000-000000000001',
+  encode(extensions.digest('device-identity-' || id::text,'sha256'),'hex'),
+  repeat('b',64),
+  encode(extensions.digest('device-ip-' || id::text,'sha256'),'hex')
+from inserted;
+set local role service_role;
+select throws_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000013',repeat('j',32),repeat('d',64),repeat('b',64),repeat('e',64))$$,'Too many checkout attempts. Please wait a few minutes and try again.','thirteenth recent reservation from one device is rate limited independently of identity and IP');
+
+set local role postgres;
+with inserted as (
+  insert into public.orders(shop_id,customer_name,total_amount,status,client_request_id,expires_at,expired_at)
+  select '21000000-0000-4000-8000-000000000001','rate-expired-' || value,0,'expired',gen_random_uuid(),now()-interval '1 minute',now()
+  from generate_series(1,3) value
+  returning id,client_request_id
+)
+insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash,device_hash,ip_hash)
+select id,client_request_id,'21000000-0000-4000-8000-000000000001',repeat('c',64),
+  encode(extensions.digest('expired-device-' || id::text,'sha256'),'hex'),
+  encode(extensions.digest('expired-ip-' || id::text,'sha256'),'hex')
+from inserted;
+set local role service_role;
+select throws_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000014',repeat('k',32),repeat('c',64),repeat('d',64),repeat('e',64))$$,'Too many expired checkout reservations. Please wait before trying again.','fourth expired reservation for one checkout identity is rate limited');
 
 set local role postgres;
 with inserted as (
@@ -141,10 +200,10 @@ with inserted as (
   from generate_series(1,100) value
   returning id,client_request_id
 )
-insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash,created_at)
-select id,client_request_id,'21000000-0000-4000-8000-000000000001',repeat('7',64),now()-interval '1 year' from inserted;
+insert into private.checkout_reservation_clients(order_id,client_request_id,shop_id,fingerprint_hash,device_hash,ip_hash,created_at)
+select id,client_request_id,'21000000-0000-4000-8000-000000000001',repeat('3',64),repeat('2',64),repeat('1',64),now()-interval '1 year' from inserted;
 set local role service_role;
-select lives_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000011',repeat('v',32),repeat('7',64))$$,'historical fingerprint rows do not slow or block the active reservation window');
+select lives_ok($$select * from public.create_order_rate_limited('orders-test',null,'[{"product_id":"order-a","quantity":1}]','30000000-0000-4000-8000-000000000011',repeat('v',32),repeat('3',64),repeat('2',64),repeat('1',64))$$,'historical checkout identity rows do not slow or block active rate-limit windows');
 
 set local role postgres;
 create temporary table notification_order_id as
@@ -164,6 +223,9 @@ insert into notification_claims values('first',public.claim_order_notification_d
 select is((select payload->>'outcome' from notification_claims where label='first'),'claimed','service role claims a new notification delivery');
 select is(public.claim_order_notification_delivery((select id from notification_order_id),'21000000-0000-4000-8000-000000000001')->>'outcome','in_progress','concurrent delivery observes the active lease');
 select ok(public.complete_order_notification_delivery((select id from notification_order_id),(select (payload->>'lease_token')::uuid from notification_claims where label='first'),false,'temporary push outage',array['https://push.test/retry']),'failed notification attempts remain retryable');
+set local role postgres;
+update public.order_notification_events set next_attempt_at=now() where order_id=(select id from notification_order_id);
+set local role service_role;
 insert into notification_claims values('second',public.claim_order_notification_delivery((select id from notification_order_id),'21000000-0000-4000-8000-000000000001'));
 select is((select payload->>'outcome' from notification_claims where label='second'),'claimed','retryable notification can be claimed again');
 select is((select payload #>> '{retry_endpoints,0}' from notification_claims where label='second'),'https://push.test/retry','retry claims target only failed subscriptions');

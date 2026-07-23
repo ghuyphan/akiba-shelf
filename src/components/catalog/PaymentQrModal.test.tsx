@@ -230,7 +230,10 @@ describe("PaymentQrModal", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Create order & pay" }));
 
-    expect(await screen.findByText("Checking…")).toBeInTheDocument();
+    expect(await screen.findByText("Reserving your items…")).toBeInTheDocument();
+    expect(
+      screen.getByText(/If the connection drops, this checkout is saved/),
+    ).toBeInTheDocument();
     expect(
       document.querySelector(".payment-qr-loading .spin-icon"),
     ).toBeInTheDocument();
@@ -259,6 +262,9 @@ describe("PaymentQrModal", () => {
     expect(screen.getByText("Huy")).toBeInTheDocument();
     expect(
       screen.getByText("Waiting for staff confirmation"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Recovery details are saved on this device/),
     ).toBeInTheDocument();
     const paymentQr = await screen.findByAltText("Payment QR code");
     expect(paymentQr).toHaveAttribute(

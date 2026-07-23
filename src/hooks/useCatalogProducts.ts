@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getPublicProducts } from "../lib/api/products";
 import type { PublicProductSort } from "../lib/catalogQueries";
-import { getErrorMessage, isSessionNoise, isTransportError } from "../lib/errors";
+import {
+  getErrorMessage,
+  isSessionNoise,
+  isTransportError,
+} from "../lib/errors";
 import { queryLocalCatalog } from "../lib/catalogQueries";
 import type { Product } from "../types/catalog";
 import { loadOfflineEventSession } from "../lib/offline/offlineEvents";
@@ -38,11 +42,14 @@ export function useCatalogProducts(
   query: CatalogQuery,
   initialProducts: Product[],
   onProductsLoaded: ProductsLoadedHandler,
+  bootstrap: {
+    pending: boolean;
+    page: { shopId: string; products: Product[]; hasMore: boolean } | null;
+  },
 ) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [hasMore, setHasMore] = useState(false);
-  const [phase, setPhase] =
-    useState<ProductCatalogPhase>("initial-loading");
+  const [phase, setPhase] = useState<ProductCatalogPhase>("initial-loading");
   const [error, setError] = useState("");
   const productsRef = useRef(products);
   const requestIdRef = useRef(0);
@@ -202,7 +209,14 @@ export function useCatalogProducts(
         }
       }
     },
-    [initialProducts, onProductsLoaded, query.category, query.search, query.sort, shopId],
+    [
+      initialProducts,
+      onProductsLoaded,
+      query.category,
+      query.search,
+      query.sort,
+      shopId,
+    ],
   );
 
   const loadFirstPage = useCallback(async () => {
@@ -234,8 +248,41 @@ export function useCatalogProducts(
   }, [requestProducts]);
 
   useEffect(() => {
+    if (bootstrap.pending) return;
+    const isDefaultQuery =
+      query.category === "All" &&
+      query.search.trim() === "" &&
+      query.sort === "recommended";
+    const bootstrapPage = bootstrap.page;
+    if (
+      !completedInitialLoadRef.current &&
+      isDefaultQuery &&
+      bootstrapPage &&
+      bootstrapPage.shopId === shopId
+    ) {
+      productsRef.current = bootstrapPage.products;
+      setProducts(bootstrapPage.products);
+      setHasMore(bootstrapPage.hasMore);
+      setError("");
+      completedInitialLoadRef.current = true;
+      setPhase("ready");
+      onProductsLoaded(bootstrapPage.products);
+      return;
+    }
+    const queryChanged = previousQueryKeyRef.current !== queryKey;
+    if (completedInitialLoadRef.current && !queryChanged) return;
     void loadFirstPage();
-  }, [loadFirstPage]);
+  }, [
+    bootstrap.page,
+    bootstrap.pending,
+    loadFirstPage,
+    onProductsLoaded,
+    query.category,
+    queryKey,
+    query.search,
+    query.sort,
+    shopId,
+  ]);
 
   useEffect(
     () => () => {

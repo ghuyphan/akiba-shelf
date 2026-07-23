@@ -11,7 +11,11 @@ type ProductDetailModalProps = {
   onAddToCart: (product: Product, event?: React.MouseEvent) => void;
 };
 
-export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDetailModalProps) {
+export function ProductDetailModal({
+  product,
+  onClose,
+  onAddToCart,
+}: ProductDetailModalProps) {
   const copy = useCatalogCopy();
   const [activeImage, setActiveImage] = useState(0);
   const [displayedProduct, setDisplayedProduct] = useState(product);
@@ -32,17 +36,42 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
     ? variants.map((variant) => variant.thumbnail)
     : fallbackImages;
   const image = detailImages[activeImage] || detailImages[0];
-  const isSoldOut = displayedProduct.quantity_available <= 0 || displayedProduct.stock_status === "sold_out";
+  const isSoldOut =
+    displayedProduct.quantity_available <= 0 ||
+    displayedProduct.stock_status === "sold_out";
 
   return (
-    <Modal title={copy.itemDetails} isOpen={Boolean(product)} onClose={onClose} className="product-detail-modal" mobileSheet closeLabel={copy.closeModal}>
+    <Modal
+      title={copy.itemDetails}
+      isOpen={Boolean(product)}
+      onClose={onClose}
+      className="product-detail-modal"
+      mobileSheet
+      closeLabel={copy.closeModal}
+    >
       <div className="product-detail-layout">
         <div className="product-detail-gallery">
           <div className="product-detail-main-image">
-            {image ? <img src={image} alt={displayedProduct.name} decoding="async" /> : <span className="product-image-placeholder" />}
-            {displayedProduct.badge && <span className="product-detail-image-badge" style={{ backgroundColor: displayedProduct.badge_color || undefined }}>{displayedProduct.badge}</span>}
+            {image ? (
+              <img src={image} alt={displayedProduct.name} decoding="async" />
+            ) : (
+              <span className="product-image-placeholder" />
+            )}
+            {displayedProduct.badge && (
+              <span
+                className="product-detail-image-badge"
+                style={{
+                  backgroundColor: displayedProduct.badge_color || undefined,
+                }}
+              >
+                {displayedProduct.badge}
+              </span>
+            )}
             {thumbnailImages.length > 1 && (
-              <div className="product-detail-thumbnails" aria-label={copy.productImages}>
+              <div
+                className="product-detail-thumbnails"
+                aria-label={copy.productImages}
+              >
                 {thumbnailImages.slice(0, 6).map((source, index) => (
                   <button
                     key={`${source}-${index}`}
@@ -61,15 +90,50 @@ export function ProductDetailModal({ product, onClose, onAddToCart }: ProductDet
         </div>
 
         <div className="product-detail-copy">
-          <div className="product-detail-taxonomy"><span><Tag size={13} /> {displayedProduct.collection || displayedProduct.category}</span>{displayedProduct.featured && <span>{copy.featuredItem}</span>}</div>
+          <div className="product-detail-taxonomy">
+            <span>
+              <Tag size={13} />{" "}
+              {displayedProduct.collection || displayedProduct.category}
+            </span>
+            {displayedProduct.featured && <span>{copy.featuredItem}</span>}
+          </div>
           <h2>{displayedProduct.name}</h2>
-          <span className="product-detail-code">{copy.item} {displayedProduct.item_code}</span>
+          <span className="product-detail-code">
+            {copy.item} {displayedProduct.item_code}
+          </span>
           <p>{displayedProduct.description || copy.noDescription}</p>
           <div className="product-detail-purchase">
-            <div><small>{copy.price}</small><ProductPrice product={displayedProduct} /></div>
-            <span className={isSoldOut ? "soldout" : displayedProduct.quantity_available <= 5 ? "limited" : "available"}><PackageCheck size={15} />{isSoldOut ? copy.soldOut : copy.available(displayedProduct.quantity_available)}</span>
+            <div>
+              <small>{copy.price}</small>
+              <ProductPrice product={displayedProduct} />
+            </div>
+            <span
+              className={
+                isSoldOut
+                  ? "soldout"
+                  : displayedProduct.quantity_available <= 5
+                    ? "limited"
+                    : "available"
+              }
+            >
+              <PackageCheck size={15} />
+              {isSoldOut
+                ? copy.soldOut
+                : copy.available(displayedProduct.quantity_available)}
+            </span>
           </div>
-          <button type="button" className="product-detail-add" disabled={isSoldOut} onClick={(event) => { onAddToCart(displayedProduct, event); onClose(); }}><ShoppingCart size={18} />{isSoldOut ? copy.currentlyUnavailable : copy.addToCart}</button>
+          <button
+            type="button"
+            className="product-detail-add"
+            disabled={isSoldOut}
+            onClick={(event) => {
+              onAddToCart(displayedProduct, event);
+              onClose();
+            }}
+          >
+            <ShoppingCart size={18} />
+            {isSoldOut ? copy.currentlyUnavailable : copy.addToCart}
+          </button>
           <small className="product-detail-note">{copy.stockNote}</small>
         </div>
       </div>

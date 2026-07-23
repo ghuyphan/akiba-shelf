@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { trackClientEvent } from "./observability";
 
 const CATALOG_TABLES = ["products", "booth_settings", "payment_settings", "promotions", "promotion_products"] as const;
 
@@ -28,11 +29,22 @@ export function subscribeToCatalogChanges(shopId: string, { onChange, onStatus }
     client.channel(`shop-${shopId}-catalog-db-changes`),
   );
 
+  let intentionalClose = false;
   channel.subscribe((status, error) => {
     onStatus?.(status, error);
+    if (
+      !intentionalClose &&
+      (status === "CHANNEL_ERROR" || status === "TIMED_OUT")
+    ) {
+      trackClientEvent("realtime_disconnect", {
+        surface: "storefront",
+        status,
+      }, "warning");
+    }
   });
 
   return () => {
+    intentionalClose = true;
     void client.removeChannel(channel);
   };
 }
@@ -44,6 +56,7 @@ export function subscribeToAdminOrderChanges(
   const client = supabase;
   if (!client) return () => undefined;
 
+  let intentionalClose = false;
   const channel = client
     .channel("admin-orders-realtime")
     .on(
@@ -66,9 +79,20 @@ export function subscribeToAdminOrderChanges(
       },
       onChange,
     )
-    .subscribe();
+    .subscribe((status) => {
+      if (
+        !intentionalClose &&
+        (status === "CHANNEL_ERROR" || status === "TIMED_OUT")
+      ) {
+        trackClientEvent("realtime_disconnect", {
+          surface: "admin_orders",
+          status,
+        }, "warning");
+      }
+    });
 
   return () => {
+    intentionalClose = true;
     void client.removeChannel(channel);
   };
 }

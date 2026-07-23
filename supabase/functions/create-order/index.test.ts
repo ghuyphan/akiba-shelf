@@ -16,6 +16,7 @@ const validBody = {
   customerName: "Customer",
   items: [{ product_id: "moon-stand", quantity: 2, reward_quantity: 0 }],
   clientRequestId: "11111111-1111-4111-8111-111111111111",
+  deviceId: "22222222-2222-4222-8222-222222222222",
   recoveryToken: "0123456789abcdef0123456789abcdef",
 };
 
@@ -23,6 +24,7 @@ function request(
   body: unknown,
   origin = "https://matsuri.pro",
   userAgent = "checkout-test",
+  proxyHeaders: Record<string, string> = {},
 ) {
   return new Request("https://project.test/functions/v1/create-order", {
     method: "POST",
@@ -32,51 +34,66 @@ function request(
       Origin: origin,
       "User-Agent": userAgent,
       "X-Forwarded-For": "203.0.113.7",
+      ...proxyHeaders,
     },
   });
 }
 
-Deno.test("create order preflight reflects only configured origins", async () => {
-  const production = await handleCreateOrderRequest(
-    new Request("https://project.test/functions/v1/create-order", {
-      method: "OPTIONS",
-      headers: { Origin: "https://matsuri.pro" },
-    }),
-  );
-  assertEquals(production.status, 200);
-  assertEquals(
-    production.headers.get("Access-Control-Allow-Origin"),
-    "https://matsuri.pro",
-  );
+Deno.test(
+  "create order preflight reflects only configured origins",
+  async () => {
+    const production = await handleCreateOrderRequest(
+      new Request("https://project.test/functions/v1/create-order", {
+        method: "OPTIONS",
+        headers: { Origin: "https://matsuri.pro" },
+      }),
+    );
+    assertEquals(production.status, 200);
+    assertEquals(
+      production.headers.get("Access-Control-Allow-Origin"),
+      "https://matsuri.pro",
+    );
 
-  const local = await handleCreateOrderRequest(
-    new Request("https://project.test/functions/v1/create-order", {
-      method: "OPTIONS",
-      headers: { Origin: "http://localhost:5173" },
-    }),
-  );
-  assertEquals(local.status, 200);
-  assertEquals(
-    local.headers.get("Access-Control-Allow-Origin"),
-    "http://localhost:5173",
-  );
-});
+    const local = await handleCreateOrderRequest(
+      new Request("https://project.test/functions/v1/create-order", {
+        method: "OPTIONS",
+        headers: { Origin: "http://localhost:5173" },
+      }),
+    );
+    assertEquals(local.status, 200);
+    assertEquals(
+      local.headers.get("Access-Control-Allow-Origin"),
+      "http://localhost:5173",
+    );
+  },
+);
 
-Deno.test("create order rejects foreign origins and malformed requests", async () => {
-  const foreign = await handleCreateOrderRequest(
-    request(validBody, "https://evil.test"),
-  );
-  assertEquals(foreign.status, 403);
-  assertEquals(foreign.headers.get("Access-Control-Allow-Origin"), null);
-  assertEquals((await handleCreateOrderRequest(request("{"))).status, 400);
-  assertEquals(
-    (await handleCreateOrderRequest(request({ ...validBody, items: [] })))
-      .status,
-    400,
-  );
-});
+Deno.test(
+  "create order rejects foreign origins and malformed requests",
+  async () => {
+    const foreign = await handleCreateOrderRequest(
+      request(validBody, "https://evil.test"),
+    );
+    assertEquals(foreign.status, 403);
+    assertEquals(foreign.headers.get("Access-Control-Allow-Origin"), null);
+    assertEquals((await handleCreateOrderRequest(request("{"))).status, 400);
+    assertEquals(
+      (await handleCreateOrderRequest(request({ ...validBody, items: [] })))
+        .status,
+      400,
+    );
+    assertEquals(
+      (
+        await handleCreateOrderRequest(
+          request({ ...validBody, deviceId: "bad" }),
+        )
+      ).status,
+      400,
+    );
+  },
+);
 
-Deno.test("create order forwards a hashed fingerprint to the private wrapper", async () => {
+Deno.test("create order derives layered checkout identities", async () => {
   const calls: Record<string, unknown>[] = [];
   clientFactory.createClient = () => ({
     rpc: (_name: string, params: Record<string, unknown>) => {
@@ -91,74 +108,97 @@ Deno.test("create order forwards a hashed fingerprint to the private wrapper", a
   const response = await handleCreateOrderRequest(request(validBody));
   assertEquals(response.status, 200);
   const rotatedAgentResponse = await handleCreateOrderRequest(
-    request(validBody, "https://matsuri.pro", "rotated-agent"),
+    request(validBody, "https://matsuri.pro", "rotated-agent", {
+      "X-Forwarded-For": "198.51.100.99",
+      "X-Real-IP": "192.0.2.40",
+      "CF-Connecting-IP": "203.0.113.200",
+    }),
   );
   assertEquals(rotatedAgentResponse.status, 200);
-  assertEquals(calls.length, 2);
+  const legacyResponse = await handleCreateOrderRequest(
+    request(
+      { ...validBody, deviceId: undefined },
+      "https://matsuri.pro",
+      "legacy-agent",
+      { "X-Forwarded-For": "" },
+    ),
+  );
+  assertEquals(legacyResponse.status, 200);
+  assertEquals(calls.length, 3);
   const params = calls[0];
   assertMatch(String(params.p_fingerprint_hash), /^[0-9a-f]{64}$/);
+  assertMatch(String(params.p_device_hash), /^[0-9a-f]{64}$/);
+  assertMatch(String(params.p_ip_hash), /^[0-9a-f]{64}$/);
   assertEquals(params.p_shop_slug, "akiba-shelf");
   assertEquals(params.p_client_request_id, validBody.clientRequestId);
   assertEquals(calls[1].p_fingerprint_hash, params.p_fingerprint_hash);
+  assertEquals(calls[1].p_device_hash, params.p_device_hash);
+  assert(calls[1].p_ip_hash !== params.p_ip_hash);
+  assertMatch(String(calls[2].p_device_hash), /^[0-9a-f]{64}$/);
+  assert(calls[2].p_device_hash !== params.p_device_hash);
+  assertEquals(calls[2].p_ip_hash, null);
 });
 
-Deno.test("create order exposes rate limits without leaking internal errors", async () => {
-  clientFactory.createClient = () => ({
-    rpc: () =>
-      Promise.resolve({
-        data: null,
-        error: { message: "Too many checkout attempts. Please wait." },
-      }),
-  });
-  const nearMatch = await handleCreateOrderRequest(request(validBody));
-  assertEquals(nearMatch.status, 409);
-  assertEquals(
-    (await nearMatch.json()).error,
-    "The order could not be created. Review the cart and try again.",
-  );
+Deno.test(
+  "create order exposes rate limits without leaking internal errors",
+  async () => {
+    clientFactory.createClient = () => ({
+      rpc: () =>
+        Promise.resolve({
+          data: null,
+          error: { message: "Too many checkout attempts. Please wait." },
+        }),
+    });
+    const nearMatch = await handleCreateOrderRequest(request(validBody));
+    assertEquals(nearMatch.status, 409);
+    assertEquals(
+      (await nearMatch.json()).error,
+      "The order could not be created. Review the cart and try again.",
+    );
 
-  clientFactory.createClient = () => ({
-    rpc: () =>
-      Promise.resolve({
-        data: null,
-        error: {
-          message:
-            "Too many checkout attempts. Please wait a few minutes and try again.",
-        },
-      }),
-  });
-  const exactLimited = await handleCreateOrderRequest(request(validBody));
-  assertEquals(exactLimited.status, 429);
-  assertEquals(
-    (await exactLimited.json()).error,
-    "Too many checkout attempts. Please wait a few minutes and try again.",
-  );
+    clientFactory.createClient = () => ({
+      rpc: () =>
+        Promise.resolve({
+          data: null,
+          error: {
+            message:
+              "Too many checkout attempts. Please wait a few minutes and try again.",
+          },
+        }),
+    });
+    const exactLimited = await handleCreateOrderRequest(request(validBody));
+    assertEquals(exactLimited.status, 429);
+    assertEquals(
+      (await exactLimited.json()).error,
+      "Too many checkout attempts. Please wait a few minutes and try again.",
+    );
 
-  clientFactory.createClient = () => ({
-    rpc: () =>
-      Promise.resolve({
-        data: null,
-        error: { message: "sensitive database detail" },
-      }),
-  });
-  const hidden = await handleCreateOrderRequest(request(validBody));
-  assertEquals(hidden.status, 409);
-  assertEquals(
-    (await hidden.json()).error,
-    "The order could not be created. Review the cart and try again.",
-  );
+    clientFactory.createClient = () => ({
+      rpc: () =>
+        Promise.resolve({
+          data: null,
+          error: { message: "sensitive database detail" },
+        }),
+    });
+    const hidden = await handleCreateOrderRequest(request(validBody));
+    assertEquals(hidden.status, 409);
+    assertEquals(
+      (await hidden.json()).error,
+      "The order could not be created. Review the cart and try again.",
+    );
 
-  clientFactory.createClient = () => ({
-    rpc: () =>
-      Promise.resolve({
-        data: null,
-        error: { message: "relation public.promotions does not exist" },
-      }),
-  });
-  const promotionLeak = await handleCreateOrderRequest(request(validBody));
-  assertEquals(promotionLeak.status, 409);
-  assertEquals(
-    (await promotionLeak.json()).error,
-    "The order could not be created. Review the cart and try again.",
-  );
-});
+    clientFactory.createClient = () => ({
+      rpc: () =>
+        Promise.resolve({
+          data: null,
+          error: { message: "relation public.promotions does not exist" },
+        }),
+    });
+    const promotionLeak = await handleCreateOrderRequest(request(validBody));
+    assertEquals(promotionLeak.status, 409);
+    assertEquals(
+      (await promotionLeak.json()).error,
+      "The order could not be created. Review the cart and try again.",
+    );
+  },
+);

@@ -137,6 +137,17 @@ export type CatalogData = {
   promotion: PromotionSettings;
 };
 
+export type StorefrontBootstrap = {
+  shop: Shop;
+  catalogShopId: string;
+  products: Product[];
+  hasMore: boolean;
+  booth: BoothSettings;
+  categories: string[];
+  promotion: PromotionSettings;
+  gachaEnabled: boolean;
+};
+
 export type CartItem = {
   product: Product;
   quantity: number;
@@ -170,6 +181,32 @@ export type CheckoutSession = {
 };
 
 export type OrderStatus = "pending" | "confirmed" | "cancelled" | "expired";
+export type OrderNotificationDeliveryStatus =
+  | "pending"
+  | "queued"
+  | "sending"
+  | "retryable_failed"
+  | "delivered"
+  | "skipped"
+  | "dead_letter";
+
+export type OrderNotificationStatus = {
+  order_id: string;
+  status: OrderNotificationDeliveryStatus;
+  attempt_count: number;
+  failed_endpoint_count: number;
+  next_attempt_at: string | null;
+  delivered_at: string | null;
+  skipped_at: string | null;
+  dead_lettered_at: string | null;
+  updated_at: string;
+  last_error: string | null;
+  due_count: number;
+  oldest_due_at: string | null;
+  retryable_failed_count: number;
+  dead_letter_count: number;
+};
+
 export type FulfillmentStatus =
   | "unfulfilled"
   | "preparing"

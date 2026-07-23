@@ -21,20 +21,22 @@ type ProductGridProps = {
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  emptyMessage?: string;
 };
 
-export function ProductGrid({ products, totalProducts, activeCategory, selectedProduct, viewMode, onSelect, onViewDetails, onResetFilters, loading = false, error, onRetry, searchActive = false, hasMore = false, loadingMore = false, onLoadMore }: ProductGridProps) {
+export function ProductGrid({ products, totalProducts, activeCategory, selectedProduct, viewMode, onSelect, onViewDetails, onResetFilters, loading = false, error, onRetry, searchActive = false, hasMore = false, loadingMore = false, onLoadMore, emptyMessage }: ProductGridProps) {
   const copy = useCatalogCopy();
   if (loading && totalProducts === 0) return <EmptyState tone="loading" icon={<LoaderCircle className="state-spinner" size={28} />} title={copy.loadingCatalog} message={copy.loadingCatalogHint} />;
   if (error && totalProducts === 0) return <EmptyState tone="error" icon={<AlertTriangle size={28} />} title={copy.catalogUnavailable} message={copy.catalogUnavailableHint} action={onRetry ? <Button type="button" icon={<RotateCcw size={18} />} onClick={onRetry}>{copy.tryAgain}</Button> : undefined} />;
   if (products.length === 0) {
-    const hasInventory = totalProducts > 0;
+    const hasInventory =
+      totalProducts > 0 || searchActive || activeCategory !== "All";
 
     return (
       <EmptyState
         icon={hasInventory ? <Tags size={28} /> : <PackageSearch size={28} />}
         title={hasInventory ? (searchActive ? copy.noSearchResults : copy.nothingCategory) : copy.noMerch}
-        message={hasInventory ? (searchActive ? copy.noSearchResultsHint : copy.switchCatalog) : copy.addInAdmin}
+        message={hasInventory ? (searchActive ? copy.noSearchResultsHint : copy.switchCatalog) : emptyMessage ?? copy.addInAdmin}
         meta={hasInventory ? [activeCategory === "All" ? copy.all : activeCategory, viewMode === "grid" ? copy.gridView : copy.listView] : []}
         action={
           hasInventory ? (

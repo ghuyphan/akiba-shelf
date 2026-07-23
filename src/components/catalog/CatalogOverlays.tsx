@@ -5,6 +5,7 @@ import {
   Check,
   Clock,
   MapPin,
+  RefreshCw,
   ShoppingBag,
   Sparkles,
 } from "lucide-react";
@@ -16,6 +17,7 @@ import { formatVnd } from "../../utils/format";
 import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
 import type {
   BoothSettings,
+  CheckoutSession,
   Order,
   PaymentSettings,
 } from "../../types/catalog";
@@ -65,7 +67,9 @@ export function BoothDetailsModal({
             <h3>{booth.booth_name || copy.boothDetails}</h3>
             <p>{booth.subtitle || copy.independentMerchBooth}</p>
           </div>
-          <span className="booth-code-pill">{copy.boothCode(booth.booth_code)}</span>
+          <span className="booth-code-pill">
+            {copy.boothCode(booth.booth_code)}
+          </span>
         </div>
         <div className="booth-modal-facts">
           <div>
@@ -106,7 +110,7 @@ export function BoothDetailsModal({
                     key={item.label}
                     label={item.label}
                     url={item.url!}
-              logoUrl={safePublicUrl(booth.social_qr_logo_url)}
+                    logoUrl={safePublicUrl(booth.social_qr_logo_url)}
                     icon={<SocialBrandIcon platform={item.label} size={18} />}
                     brandColor={item.color}
                     brandGradient={item.gradient}
@@ -136,14 +140,72 @@ export function PendingOrderBar({
   style?: CSSProperties;
 }) {
   const copy = useCatalogCopy();
+  const presentation =
+    order.status === "confirmed"
+      ? {
+          icon: <Check size={18} />,
+          title: `${copy.paymentComplete} · ${order.order_code}`,
+          hint: copy.reservedPickup,
+          action: copy.viewOrder,
+        }
+      : order.status === "cancelled"
+        ? {
+            icon: <Clock size={18} />,
+            title: `${copy.orderCancelled} · ${order.order_code}`,
+            hint: copy.cancelledPaymentNote,
+            action: copy.viewOrder,
+          }
+        : order.status === "expired"
+          ? {
+              icon: <Clock size={18} />,
+              title: `${copy.reservationExpired} · ${order.order_code}`,
+              hint: copy.reservationExpiredHint,
+              action: copy.viewOrder,
+            }
+          : {
+              icon: <Clock size={18} />,
+              title: `${copy.pendingOrder} · ${order.order_code}`,
+              hint: copy.pendingOrderHint,
+              action: copy.viewPayment,
+            };
   return (
     <StorefrontDock
       variant="order"
-      icon={<Clock size={18} />}
-      title={`${copy.pendingOrder} · ${order.order_code}`}
-      hint={copy.pendingOrderHint}
+      icon={presentation.icon}
+      title={presentation.title}
+      hint={presentation.hint}
       total={order.total_amount}
-      actionLabel={copy.viewPayment}
+      actionLabel={presentation.action}
+      onAction={onOpen}
+      style={style}
+    />
+  );
+}
+
+export function RecoverCheckoutBar({
+  session,
+  total,
+  onOpen,
+  style,
+}: {
+  session: CheckoutSession;
+  total: number;
+  onOpen: () => void;
+  style?: CSSProperties;
+}) {
+  const copy = useCatalogCopy();
+  return (
+    <StorefrontDock
+      variant="order"
+      icon={<RefreshCw size={18} />}
+      title={copy.checkoutRecoveryTitle}
+      hint={
+        session.state === "needs_review"
+          ? copy.checkoutRecoveryReviewHint
+          : copy.checkoutRecoveryHint
+      }
+      total={total}
+      actionLabel={copy.resumeCheckout}
       onAction={onOpen}
       style={style}
     />

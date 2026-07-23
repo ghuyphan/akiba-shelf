@@ -1,0 +1,8 @@
+{
+  "appRouteChunks": "app-route-chunks-v1",
+  "simulatorShell": "gacha-app-shell-v4",
+  "simulatorMedia": "gacha-media-cache-v2",
+  "simulatorStatic": "gacha-static-cache-v2",
+  "supabaseStorage": "supabase-storage-cache-v2",
+  "productImages": "product-image-cache-v2"
+}

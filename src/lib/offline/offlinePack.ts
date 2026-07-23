@@ -1,6 +1,7 @@
 import type { GachaGameType } from "../../types/gacha";
 import { prepareResponseForCache } from "./cacheResponse";
 import { ensureOfflineNavigationReady } from "./pwa";
+import { OFFLINE_CACHE_NAMES } from "./cacheNames";
 
 type OfflineAsset = { path: string; size: number };
 type OfflinePackManifest = {
@@ -35,11 +36,11 @@ export type MultiOfflinePackProgress = OfflinePackProgress & {
 
 const DOWNLOAD_CONCURRENCY = 4;
 const OFFLINE_PACK_MARKER_PREFIX = "matsuri-offline-pack-v3";
-const APP_SHELL_CACHE_NAME = "gacha-app-shell-v3";
-const MEDIA_CACHE_NAME = "gacha-media-cache-v1";
-const STATIC_CACHE_NAME = "gacha-static-cache-v1";
-const STORAGE_CACHE_NAME = "supabase-storage-cache-v2";
-const PRODUCT_IMAGE_CACHE_NAME = "product-image-cache-v2";
+const APP_SHELL_CACHE_NAME = OFFLINE_CACHE_NAMES.simulatorShell;
+const MEDIA_CACHE_NAME = OFFLINE_CACHE_NAMES.simulatorMedia;
+const STATIC_CACHE_NAME = OFFLINE_CACHE_NAMES.simulatorStatic;
+const STORAGE_CACHE_NAME = OFFLINE_CACHE_NAMES.supabaseStorage;
+const PRODUCT_IMAGE_CACHE_NAME = OFFLINE_CACHE_NAMES.productImages;
 
 export function gachaCatalogOfflineUrls(catalog?: {
   entries: Array<{
@@ -50,15 +51,19 @@ export function gachaCatalogOfflineUrls(catalog?: {
   }>;
 }) {
   if (!catalog) return [];
-  return [...new Set(
-    catalog.entries.flatMap((entry) => [
-      ...(entry.product.images ?? []),
-      ...(entry.product.image_variants ?? []).flatMap((image) => [
-        image.thumbnail,
-        image.detail,
-      ]),
-    ]).filter(Boolean),
-  )];
+  return [
+    ...new Set(
+      catalog.entries
+        .flatMap((entry) => [
+          ...(entry.product.images ?? []),
+          ...(entry.product.image_variants ?? []).flatMap((image) => [
+            image.thumbnail,
+            image.detail,
+          ]),
+        ])
+        .filter(Boolean),
+    ),
+  ];
 }
 
 function markerKey(gameType: GachaGameType) {
@@ -129,9 +134,12 @@ function parseManifestPack(
 }
 
 async function fetchManifestPack(gameType: GachaGameType) {
-  const response = await fetch(`${import.meta.env.BASE_URL}offline-assets.json`, {
-    cache: "no-store",
-  });
+  const response = await fetch(
+    `${import.meta.env.BASE_URL}offline-assets.json`,
+    {
+      cache: "no-store",
+    },
+  );
   if (!response.ok)
     throw new Error("The offline download list is not available yet.");
   return parseManifestPack(await response.json(), gameType);
@@ -154,7 +162,9 @@ async function ensureStorageCapacity(requiredBytes: number) {
     Number.isFinite(usage) &&
     Math.max(0, quota - usage) < requiredBytes
   ) {
-    throw new Error("There is not enough browser storage for this offline game.");
+    throw new Error(
+      "There is not enough browser storage for this offline game.",
+    );
   }
 }
 
@@ -221,7 +231,10 @@ async function deleteCachedPackAssets(
   const cacheByName = new Map<string, Cache>();
   for (const item of marker.required) {
     const url = new URL(item.url, location.origin);
-    if (url.origin !== location.origin || !url.pathname.startsWith(prefix.pathname))
+    if (
+      url.origin !== location.origin ||
+      !url.pathname.startsWith(prefix.pathname)
+    )
       continue;
     let cache = cacheByName.get(item.cacheName);
     if (!cache) {

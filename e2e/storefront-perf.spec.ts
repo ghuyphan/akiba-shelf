@@ -4,17 +4,23 @@ import { mockSupabase } from "./fixtures";
 
 type BrowserPerfMetrics = {
   lcp: number;
+  lcpElement: string;
+  lcpText: string;
+  lcpParent: string;
+  lcpUrl: string;
   cls: number;
   longestTask: number;
   maxInteraction: number;
 };
+
+const STOREFRONT_CONTENT_READY_BUDGET_MS = 5000;
 
 test("production storefront stays within mobile-class performance budgets", async ({
   page,
   context,
 }, testInfo) => {
   test.setTimeout(120000);
-  await mockSupabase(page);
+  await mockSupabase(page, { productCount: 120 });
   await page.route("https://example.test/*.jpg", (route) =>
     route.fulfill({
       path: path.resolve(process.cwd(), "public/brand/matsuri-icon-512.png"),
@@ -28,16 +34,33 @@ test("production storefront stays within mobile-class performance budgets", asyn
     const target = window as Window & { __storefrontPerf: BrowserPerfMetrics };
     target.__storefrontPerf = {
       lcp: 0,
+      lcpElement: "",
+      lcpText: "",
+      lcpParent: "",
+      lcpUrl: "",
       cls: 0,
       longestTask: 0,
       maxInteraction: 0,
     };
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
+        const largest = entry as PerformanceEntry & {
+          element?: Element;
+          url?: string;
+        };
         target.__storefrontPerf.lcp = Math.max(
           target.__storefrontPerf.lcp,
           entry.startTime,
         );
+        target.__storefrontPerf.lcpElement =
+          largest.element?.className?.toString() ||
+          largest.element?.tagName ||
+          "text";
+        target.__storefrontPerf.lcpText =
+          largest.element?.textContent?.trim().slice(0, 80) ?? "";
+        target.__storefrontPerf.lcpParent =
+          largest.element?.parentElement?.className?.toString() ?? "";
+        target.__storefrontPerf.lcpUrl = largest.url ?? "";
       }
     }).observe({ type: "largest-contentful-paint", buffered: true });
     new PerformanceObserver((list) => {
@@ -97,8 +120,12 @@ test("production storefront stays within mobile-class performance budgets", asyn
   });
 
   const requestStartTimes = new Map<string, number>();
+  const initialDataRequests: string[] = [];
   page.on("request", (request) => {
     const url = request.url();
+    if (url.includes("/mock-supabase/")) {
+      initialDataRequests.push(new URL(url).pathname);
+    }
     if (url.includes("/assets/")) {
       const fileName = url.split("/").pop() || "";
       if (!requestStartTimes.has(fileName)) {
@@ -107,10 +134,32 @@ test("production storefront stays within mobile-class performance budgets", asyn
     }
   });
 
-  const startTime = Date.now();
   await page.goto("./s/akiba-shelf");
-  await expect(page.locator(".product-grid")).toBeVisible({ timeout: 60000 });
-  const loadDuration = Date.now() - startTime;
+  const firstProduct = page.locator(".product-grid .product-card").first();
+  await expect(firstProduct).toBeVisible({ timeout: 60000 });
+  await expect(firstProduct.locator(".product-add-button")).toBeEnabled();
+  await expect(page.locator(".page-loading")).toHaveCount(0);
+  const contentReady = await page.evaluate(() => performance.now());
+  await page.waitForTimeout(250);
+  const pageLoadMetrics = await page.evaluate(() => {
+    const target = window as Window & { __storefrontPerf: BrowserPerfMetrics };
+    const paints = performance.getEntriesByType("paint");
+    return {
+      lcp: target.__storefrontPerf.lcp,
+      lcpElement: target.__storefrontPerf.lcpElement,
+      lcpText: target.__storefrontPerf.lcpText,
+      lcpParent: target.__storefrontPerf.lcpParent,
+      lcpUrl: target.__storefrontPerf.lcpUrl,
+      cls: target.__storefrontPerf.cls,
+      fcp:
+        paints.find((entry) => entry.name === "first-contentful-paint")
+          ?.startTime ?? 0,
+    };
+  });
+  const lcpIsLoadingShell = [
+    pageLoadMetrics.lcpElement,
+    pageLoadMetrics.lcpParent,
+  ].some((value) => value.includes("page-loading"));
 
   const interactionDuration = await page.evaluate(async () => {
     const button = document.querySelector<HTMLButtonElement>(
@@ -129,29 +178,46 @@ test("production storefront stays within mobile-class performance budgets", asyn
 
   const metrics = await page.evaluate(() => {
     const target = window as Window & { __storefrontPerf: BrowserPerfMetrics };
-    const paints = performance.getEntriesByType("paint");
-    return {
-      ...target.__storefrontPerf,
-      fcp:
-        paints.find((entry) => entry.name === "first-contentful-paint")
-          ?.startTime ?? 0,
-    };
+    return target.__storefrontPerf;
   });
 
   console.log(
-    `[Perf Test:${testInfo.project.name}] grid=${loadDuration}ms fcp=${Math.round(metrics.fcp)}ms lcp=${Math.round(metrics.lcp)}ms cls=${metrics.cls.toFixed(4)} longestTask=${Math.round(metrics.longestTask)}ms interaction=${Math.round(Math.max(interactionDuration, metrics.maxInteraction))}ms requests=${requestCount} encoded=${Math.round(encodedBytes / 1024)}KiB`,
+    `[Perf Test:${testInfo.project.name}] contentReady=${Math.round(contentReady)}ms fcp=${Math.round(pageLoadMetrics.fcp)}ms browserLcp=${Math.round(pageLoadMetrics.lcp)}ms lcpSource=${lcpIsLoadingShell ? "loading-shell" : "storefront"} lcpElement=${pageLoadMetrics.lcpElement} lcpText=${pageLoadMetrics.lcpText} lcpParent=${pageLoadMetrics.lcpParent} lcpUrl=${pageLoadMetrics.lcpUrl || "text"} cls=${pageLoadMetrics.cls.toFixed(4)} longestTask=${Math.round(metrics.longestTask)}ms interaction=${Math.round(Math.max(interactionDuration, metrics.maxInteraction))}ms requests=${requestCount} encoded=${Math.round(encodedBytes / 1024)}KiB`,
   );
 
-  expect(loadDuration).toBeLessThan(9000);
-  expect(metrics.fcp).toBeGreaterThan(0);
-  expect(metrics.fcp).toBeLessThan(4000);
-  expect(metrics.lcp).toBeGreaterThan(0);
-  expect(metrics.lcp).toBeLessThan(5000);
-  expect(metrics.cls).toBeLessThan(0.1);
+  // Browser LCP can legitimately select the loading shell. This separate gate
+  // measures when a customer can see and act on real storefront content.
+  expect(contentReady).toBeLessThan(STOREFRONT_CONTENT_READY_BUDGET_MS);
+  expect(pageLoadMetrics.fcp).toBeGreaterThan(0);
+  expect(pageLoadMetrics.fcp).toBeLessThan(4000);
+  expect(pageLoadMetrics.lcp).toBeGreaterThan(0);
+  expect(pageLoadMetrics.lcp).toBeLessThan(2500);
+  expect(pageLoadMetrics.cls).toBeLessThan(0.1);
   expect(metrics.longestTask).toBeLessThan(300);
-  expect(Math.max(interactionDuration, metrics.maxInteraction)).toBeLessThan(500);
+  expect(Math.max(interactionDuration, metrics.maxInteraction)).toBeLessThan(
+    500,
+  );
   expect(requestCount).toBeLessThan(45);
   expect(encodedBytes).toBeLessThan(450 * 1024);
+
+  expect(
+    initialDataRequests.filter((path) =>
+      path.endsWith("/rest/v1/rpc/get_storefront_bootstrap"),
+    ),
+  ).toHaveLength(1);
+  for (const replacedPath of [
+    "/rest/v1/shops",
+    "/rest/v1/products",
+    "/rest/v1/booth_settings",
+    "/rest/v1/promotions",
+    "/rest/v1/promotion_products",
+    "/rest/v1/gacha_published_configs",
+  ]) {
+    expect(
+      initialDataRequests.filter((path) => path.endsWith(replacedPath)),
+      `${replacedPath} should be folded into the bootstrap RPC`,
+    ).toHaveLength(0);
+  }
 
   await expect(page.locator("script[src*='src/main.tsx']")).toHaveCount(0);
 

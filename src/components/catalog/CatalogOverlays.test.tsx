@@ -1,8 +1,12 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CSSProperties } from "react";
-import type { Order } from "../../types/catalog";
-import { FloatingCartBar, PendingOrderBar } from "./CatalogOverlays";
+import type { CheckoutSession, Order } from "../../types/catalog";
+import {
+  FloatingCartBar,
+  PendingOrderBar,
+  RecoverCheckoutBar,
+} from "./CatalogOverlays";
 
 afterEach(cleanup);
 
@@ -67,5 +71,23 @@ describe("FloatingCartBar", () => {
     fireEvent.click(screen.getByRole("button", { name: "View cart" }));
     expect(onOpen).toHaveBeenCalledOnce();
     host.remove();
+  });
+});
+
+describe("RecoverCheckoutBar", () => {
+  it("offers a single safe resume action for persisted checkout state", () => {
+    const onOpen = vi.fn();
+    render(
+      <RecoverCheckoutBar
+        session={{ state: "queued" } as CheckoutSession}
+        total={85_000}
+        onOpen={onOpen}
+      />,
+    );
+
+    expect(screen.getByText("Checkout saved on this device")).toBeInTheDocument();
+    expect(screen.getByText(/without creating a duplicate order/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    expect(onOpen).toHaveBeenCalledOnce();
   });
 });

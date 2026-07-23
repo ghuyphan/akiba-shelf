@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Ban, CheckCircle2, CircleAlert, CloudOff, Copy, Loader2, ReceiptText, RefreshCw, ShieldCheck, Sparkles, UserRound } from "lucide-react";
-import type { CartItem, PaymentSettings, PromotionSettings, Order, BoothSettings } from "../../types/catalog";
+import type { CartItem, PaymentSettings, PromotionSettings, Order, BoothSettings, CheckoutSession } from "../../types/catalog";
 import { formatVnd } from "../../utils/format";
 import { calculateCartPricing, getPricingLine } from "../../utils/pricing";
 import { useCatalogCopy } from "../../lib/i18n/catalogI18n";
@@ -19,16 +19,18 @@ type PaymentQrModalProps = {
   onClose: () => void;
   onSuccess: () => void;
   onOrderChange?: (order: Order | null) => void;
+  onSessionChange?: (session: CheckoutSession | null) => void;
   booth?: BoothSettings;
 };
 
-export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onClose, onSuccess, onOrderChange, booth }: PaymentQrModalProps) {
+export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onClose, onSuccess, onOrderChange, onSessionChange, booth }: PaymentQrModalProps) {
   const copy = useCatalogCopy();
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const checkout = useCheckoutSession({
     shopSlug,
     cart,
     onOrderChange,
+    onSessionChange,
     onConfirmed: onSuccess,
   });
   const { session, order, connectionState, isSubmitting, isCancelling } = checkout;
@@ -192,8 +194,8 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
           {isSubmitting ? (
             <div className="payment-qr-layout payment-qr-preparing-layout">
               <div className="payment-qr-pane">
-                <div className="payment-qr-heading"><span>{copy.payNow}</span><strong>{formatVnd(totalAmount)}</strong><small>{copy.secureCheck}</small></div>
-                <div className="qr-loading payment-qr-loading"><Loader2 size={34} className="spin-icon" /><span>{copy.checking}</span></div>
+                <div className="payment-qr-heading"><span>{copy.payNow}</span><strong>{formatVnd(totalAmount)}</strong><small>{copy.preparingOrderHint}</small></div>
+                <div className="qr-loading payment-qr-loading"><Loader2 size={34} className="spin-icon" /><span>{copy.preparingOrder}</span></div>
               </div>
               <div className="payment-receipt payment-receipt-redesign">
                 <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => { const line = getPricingLine(pricing, item.product.id); if (!line) return null; return <div key={item.product.id}><span>{line.quantity} × {item.product.name}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</span><strong>{formatVnd(line.total)}</strong></div>; })}{pricing.discountAmount > 0 && <div className="payment-receipt-discount"><span>{copy.discount}</span><strong>−{formatVnd(pricing.discountAmount)}</strong></div>}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(totalAmount)}</strong></div></div>
@@ -322,6 +324,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
                 </>
               )}
             </p>
+            <p className="payment-recovery-copy">{copy.orderRecoverySaved}</p>
           </div>
         </div>
 

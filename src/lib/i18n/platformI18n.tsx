@@ -91,8 +91,7 @@ const vi: Record<string, string> = {
   "your art takes the spotlight": "tác phẩm của bạn là tâm điểm",
   "Order ready": "Đơn đã sẵn sàng",
   "Scan to shop": "Quét để mua",
-  "A quick storefront on every phone":
-    "Cửa hàng mở nhanh trên mọi điện thoại",
+  "A quick storefront on every phone": "Cửa hàng mở nhanh trên mọi điện thoại",
   "Stock stays honest": "Tồn kho luôn chính xác",
   "Items are reserved when an order is placed":
     "Sản phẩm được giữ khi đơn hàng được tạo",
@@ -1060,6 +1059,51 @@ const vi: Record<string, string> = {
   "matching orders": "đơn phù hợp",
   total: "tổng cộng",
   "need attention": "cần chú ý",
+  "Attention needed": "Cần xử lý",
+  "Resolve the time-sensitive items first, then finish shop setup.":
+    "Xử lý các mục sắp hết hạn trước, sau đó hoàn tất thiết lập gian hàng.",
+  "{{count}} visible reservations expire soon":
+    "{{count}} đơn giữ hàng đang hiển thị sắp hết hạn",
+  "Confirm received payments before stock is released.":
+    "Xác nhận khoản thanh toán đã nhận trước khi tồn kho được trả lại.",
+  "{{count}} products are low or sold out":
+    "{{count}} sản phẩm sắp hết hoặc đã hết hàng",
+  "Review availability before the next rush.":
+    "Kiểm tra lại tồn kho trước đợt khách tiếp theo.",
+  "{{count}} order alerts need manual review":
+    "{{count}} cảnh báo đơn hàng cần kiểm tra thủ công",
+  "{{count}} order alerts are retrying":
+    "{{count}} cảnh báo đơn hàng đang được gửi lại",
+  "{{count}} order alerts are delayed":
+    "{{count}} cảnh báo đơn hàng đang bị chậm",
+  "{{count}} stopped after all retries. Check staff notification devices.":
+    "{{count}} cảnh báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của staff.",
+  "The oldest alert became due {{time}}.":
+    "Cảnh báo lâu nhất đã đến hạn {{time}}.",
+  "Automatic retries are running; orders remain safe in the queue.":
+    "Hệ thống đang tự gửi lại; đơn hàng vẫn an toàn trong hàng đợi.",
+  "Retry notification delivery": "Thử gửi lại thông báo",
+  "Retry one alert after checking that staff notification devices are ready.":
+    "Thử gửi lại một cảnh báo sau khi kiểm tra thiết bị nhận thông báo của staff đã sẵn sàng.",
+  "Retry alert": "Thử gửi lại",
+  "Queuing retry…": "Đang xếp hàng gửi lại…",
+  "Order alert queued for another delivery attempt.":
+    "Cảnh báo đơn hàng đã được xếp hàng để gửi lại.",
+  "This alert is no longer eligible for retry. Its status was refreshed.":
+    "Cảnh báo này không còn đủ điều kiện gửi lại. Trạng thái đã được làm mới.",
+  "Could not retry this order alert.":
+    "Không thể thử gửi lại cảnh báo đơn hàng này.",
+  "Retry unavailable": "Không thể gửi lại",
+  "Production checklist · {{done}}/{{total}} ready":
+    "Danh sách sẵn sàng · {{done}}/{{total}} hoàn tất",
+  "Publish at least one active product":
+    "Đăng ít nhất một sản phẩm đang hoạt động",
+  "Add customer-ready payment details":
+    "Thêm thông tin thanh toán sẵn sàng cho khách",
+  "Complete the storefront name and description":
+    "Hoàn tất tên và mô tả cửa hàng",
+  "Add booth location and opening hours":
+    "Thêm vị trí và giờ mở cửa của gian hàng",
   corners: "bo góc",
   locale: "ngôn ngữ",
   "Workspace unavailable": "Không gian làm việc không khả dụng",

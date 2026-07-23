@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultBooth } from "../lib/constants";
 import { getCatalogCoreData } from "../lib/api/catalog";
-import { getPublicGachaEnabled } from "../lib/api/gachaPublic";
 import { getPublicProductsByIds } from "../lib/api/products";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
 import {
@@ -10,11 +9,12 @@ import {
   saveCatalogSnapshot,
 } from "../lib/offline/offline";
 import { subscribeToCatalogChanges } from "../lib/realtime";
-import type { Product } from "../types/catalog";
+import type { CartItem, Product, StorefrontBootstrap } from "../types/catalog";
 import { useCatalogProducts, type CatalogQuery } from "./useCatalogProducts";
 import { useStorefrontBootstrap } from "./useStorefrontBootstrap";
 import { OFFLINE_EVENT_UPDATED } from "../lib/offline/offlineEvents";
 import { translations } from "../lib/i18n/catalogI18n";
+import { calculateCartPricing } from "../utils/pricing";
 
 const EMPTY_PRODUCTS: Product[] = [];
 
@@ -25,10 +25,12 @@ type ProductsLoadedHandler = (
 
 export function useCatalogData(
   shopId: string | undefined,
+  shopSlug: string,
   query: CatalogQuery,
-  cartProductIds: string[],
+  cart: CartItem[],
   onProductsLoaded: ProductsLoadedHandler,
   paymentEnabled = true,
+  initialBootstrap: StorefrontBootstrap | null | undefined = undefined,
 ) {
   const cached = useMemo(() => loadCatalogSnapshot(shopId), [shopId]);
   const initialProducts = cached?.products ?? EMPTY_PRODUCTS;
@@ -36,51 +38,37 @@ export function useCatalogData(
   const [cartError, setCartError] = useState("");
   const [refreshError, setRefreshError] = useState("");
   const [rewardProducts, setRewardProducts] = useState<Product[]>([]);
-  const [gachaAvailability, setGachaAvailability] = useState<{
-    shopId: string;
-    enabled: boolean;
-  } | null>(null);
-  const resolvedGachaAvailability =
-    gachaAvailability?.shopId === shopId ? gachaAvailability : null;
-  const gachaEnabled =
-    resolvedGachaAvailability?.enabled ?? cached?.gachaEnabled ?? false;
-
-  useEffect(() => {
-    let active = true;
-    if (!shopId) return;
-    void getPublicGachaEnabled(shopId)
-      .then((enabled) => {
-        if (active) setGachaAvailability({ shopId, enabled });
-      })
-      .catch(() => {
-        if (active) {
-          const snapshot = loadCatalogSnapshot(shopId);
-          setGachaAvailability({
-            shopId,
-            enabled: snapshot?.gachaEnabled ?? false,
-          });
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [shopId]);
-
-  const productCatalog = useCatalogProducts(
-    shopId,
-    query,
-    initialProducts,
-    onProductsLoaded,
-  );
+  const rewardProductsRef = useRef<Product[]>([]);
   const storefront = useStorefrontBootstrap(
     shopId,
+    shopSlug,
     paymentEnabled,
     initialBooth,
     initialProducts,
     cached?.payment,
     cached?.promotion,
     cached?.categories,
+    initialBootstrap,
   );
+  const productCatalog = useCatalogProducts(
+    shopId,
+    query,
+    initialProducts,
+    onProductsLoaded,
+    {
+      pending: storefront.isInitialLoading,
+      page: storefront.initialProductPage,
+    },
+  );
+  const gachaEnabled = storefront.gachaEnabled ?? cached?.gachaEnabled ?? false;
+  const cartProductIds = useMemo(
+    () => cart.map((item) => item.product.id),
+    [cart],
+  );
+  const cartProductKey = cartProductIds.join("\u0000");
+  const rewardSelectionAvailable =
+    calculateCartPricing(cart, storefront.promotion).availableRewardQuantity >
+    0;
   const reloadProducts = productCatalog.reload;
   const refreshVisibleProducts = productCatalog.refreshVisible;
   const reloadStorefront = storefront.reload;
@@ -175,31 +163,64 @@ export function useCatalogData(
 
   useEffect(() => {
     void loadCartProducts();
-  }, [cartProductIds, loadCartProducts]);
+  }, [cartProductKey, loadCartProducts]);
 
   useEffect(() => {
-    if (!shopId || storefront.promotion.reward_product_ids.length === 0) {
+    if (
+      !shopId ||
+      !rewardSelectionAvailable ||
+      storefront.promotion.reward_product_ids.length === 0
+    ) {
+      rewardProductsRef.current = [];
       setRewardProducts([]);
       return;
     }
+    const rewardIds = storefront.promotion.reward_product_ids;
+    const availableById = new Map(
+      [
+        ...initialProducts,
+        ...productCatalog.products,
+        ...rewardProductsRef.current,
+      ].map((product) => [product.id, product]),
+    );
+    const resolvedProducts = rewardIds.flatMap((id) => {
+      const product = availableById.get(id);
+      return product ? [product] : [];
+    });
+    rewardProductsRef.current = resolvedProducts;
+    setRewardProducts(resolvedProducts);
+    const missingIds = rewardIds.filter((id) => !availableById.has(id));
+    if (missingIds.length === 0) return;
     let active = true;
-    void getPublicProductsByIds(shopId, storefront.promotion.reward_product_ids)
+    void getPublicProductsByIds(shopId, missingIds)
       .then((next) => {
-        if (active) setRewardProducts(next);
+        if (!active) return;
+        const fetchedById = new Map(
+          next.map((product) => [product.id, product]),
+        );
+        const merged = rewardIds.flatMap((id) => {
+          const product = availableById.get(id) ?? fetchedById.get(id);
+          return product ? [product] : [];
+        });
+        rewardProductsRef.current = merged;
+        setRewardProducts(merged);
       })
       .catch(() => {
         if (active) {
-          const cachedMap = new Map(initialProducts.map((p) => [p.id, p]));
-          const fallback = storefront.promotion.reward_product_ids
-            .map((id) => cachedMap.get(id))
-            .filter((p): p is Product => Boolean(p));
-          setRewardProducts(fallback);
+          rewardProductsRef.current = resolvedProducts;
+          setRewardProducts(resolvedProducts);
         }
       });
     return () => {
       active = false;
     };
-  }, [shopId, storefront.promotion.reward_product_ids, initialProducts]);
+  }, [
+    initialProducts,
+    productCatalog.products,
+    rewardSelectionAvailable,
+    shopId,
+    storefront.promotion.reward_product_ids,
+  ]);
 
   useEffect(() => {
     if (
@@ -216,7 +237,7 @@ export function useCatalogData(
         payment: storefront.paymentResolved ? storefront.payment : undefined,
         promotion: storefront.promotion,
         categories: storefront.categories,
-        gachaEnabled: resolvedGachaAvailability?.enabled,
+        gachaEnabled,
       },
       shopId,
     );
@@ -225,7 +246,7 @@ export function useCatalogData(
     productCatalog.isLoading,
     productCatalog.products,
     shopId,
-    resolvedGachaAvailability,
+    gachaEnabled,
     storefront.booth,
     storefront.categories,
     storefront.isInitialLoading,
@@ -278,9 +299,7 @@ export function useCatalogData(
               .then(() => setRefreshError(""))
               .catch((error: unknown) => {
                 if (!isSessionNoise(error))
-                  setRefreshError(
-                    getErrorMessage(error, liveRefreshError),
-                  );
+                  setRefreshError(getErrorMessage(error, liveRefreshError));
               });
           }, 150),
         );

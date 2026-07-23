@@ -1,5 +1,10 @@
-import { supabase } from "../supabase";
+import {
+  getPushRegistrationStatus,
+  registerPushSubscription,
+  unregisterPushSubscription,
+} from "../api/push";
 import { prepareResponseForCache } from "./cacheResponse";
+import { OFFLINE_CACHE_NAMES } from "./cacheNames";
 
 const MANIFEST_MARKER = "data-matsuri-staff-pwa";
 let registrationPromise: Promise<ServiceWorkerRegistration | undefined> | null =
@@ -15,6 +20,31 @@ export type PwaInstallState = "available" | "ios" | "installed" | "unavailable";
 let installPrompt: InstallPromptEvent | null = null;
 let installListenersReady = false;
 const installStateListeners = new Set<() => void>();
+const versionedRuntimeCachePrefixes = [
+  "gacha-app-shell-v",
+  "gacha-media-cache-v",
+  "gacha-static-cache-v",
+];
+
+async function cleanupSupersededRuntimeCaches() {
+  if (!("caches" in window) || typeof caches.keys !== "function") return;
+  const active = new Set([
+    OFFLINE_CACHE_NAMES.simulatorShell,
+    OFFLINE_CACHE_NAMES.simulatorMedia,
+    OFFLINE_CACHE_NAMES.simulatorStatic,
+  ]);
+  const names = await caches.keys();
+  await Promise.all(
+    names
+      .filter(
+        (name) =>
+          versionedRuntimeCachePrefixes.some((prefix) =>
+            name.startsWith(prefix),
+          ) && !active.has(name),
+      )
+      .map((name) => caches.delete(name)),
+  );
+}
 
 function isStandalone() {
   const navigatorWithStandalone = navigator as Navigator & {
@@ -93,6 +123,7 @@ function performRegistration() {
       updateViaCache: "none",
     })
     .then((registration) => {
+      void cleanupSupersededRuntimeCaches().catch(() => undefined);
       window.setInterval(
         () => {
           void registration.update();
@@ -202,7 +233,9 @@ export async function ensureOfflineNavigationReady() {
           urls.add(url.href);
       });
     const cache = await caches.open(
-      import.meta.env.DEV ? "vite-dev-app-shell" : "app-route-chunks-v1",
+      import.meta.env.DEV
+        ? "vite-dev-app-shell"
+        : OFFLINE_CACHE_NAMES.appRouteChunks,
     );
     await Promise.all(
       [...urls].map(async (url) => {
@@ -278,14 +311,8 @@ export async function getPushEnabled(shopId?: string) {
   if (!canUsePush()) return false;
   const registration = await requireStaffRegistration();
   const subscription = await registration.pushManager.getSubscription();
-  if (!subscription || !shopId || !supabase) return Boolean(subscription);
-  const { count, error } = await supabase
-    .from("push_subscriptions")
-    .select("endpoint", { count: "exact", head: true })
-    .eq("shop_id", shopId)
-    .eq("endpoint", subscription.endpoint);
-  if (error) throw error;
-  return Boolean(count);
+  if (!subscription || !shopId) return Boolean(subscription);
+  return getPushRegistrationStatus(shopId, subscription.endpoint);
 }
 
 export async function enableOrderNotifications(shopId = "") {
@@ -295,10 +322,6 @@ export async function enableOrderNotifications(shopId = "") {
       "Push notifications are not configured. Set VITE_VAPID_PUBLIC_KEY.",
     );
   if (!shopId) throw new Error("Select a shop before enabling notifications.");
-  if (!supabase) throw new Error("Supabase is not configured.");
-  const { data: auth, error: authError } = await supabase.auth.getUser();
-  if (authError || !auth.user)
-    throw new Error("Sign in before enabling notifications.");
   if (!isStaffPwaPath(window.location.pathname))
     throw new Error("Order notifications are available only in the staff app.");
   const permission = await Notification.requestPermission();
@@ -309,40 +332,23 @@ export async function enableOrderNotifications(shopId = "") {
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(publicKey),
   });
-  const json = subscription.toJSON();
-  const { error } = await supabase.from("push_subscriptions").upsert(
-    {
-      user_id: auth.user.id,
-      shop_id: shopId,
-      endpoint: subscription.endpoint,
-      p256dh: json.keys?.p256dh,
-      auth: json.keys?.auth,
-      user_agent: navigator.userAgent,
-    },
-    { onConflict: "shop_id,endpoint" },
-  );
-  if (error) {
+  try {
+    await registerPushSubscription(shopId, subscription);
+  } catch (error) {
     await subscription.unsubscribe();
     throw error;
   }
 }
 
 export async function disableOrderNotifications(shopId = "") {
-  if (!supabase || !canUsePush()) return;
+  if (!canUsePush()) return;
   if (!shopId) throw new Error("Select a shop before disabling notifications.");
   const registration = await requireStaffRegistration();
   const subscription = await registration.pushManager.getSubscription();
   if (!subscription) return;
-  const { error: deleteError } = await supabase
-    .from("push_subscriptions")
-    .delete()
-    .eq("shop_id", shopId)
-    .eq("endpoint", subscription.endpoint);
-  if (deleteError) throw deleteError;
-  const { count, error: countError } = await supabase
-    .from("push_subscriptions")
-    .select("endpoint", { count: "exact", head: true })
-    .eq("endpoint", subscription.endpoint);
-  if (countError) throw countError;
-  if (!count) await subscription.unsubscribe();
+  const shouldUnsubscribe = await unregisterPushSubscription(
+    shopId,
+    subscription.endpoint,
+  );
+  if (shouldUnsubscribe) await subscription.unsubscribe();
 }

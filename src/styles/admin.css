@@ -1191,6 +1191,31 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
 .admin-view-chips span { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: rgb(255 255 255 / 75%); font-size: 11px; font-weight: 700; }
 .admin-view-chips b { color: var(--ink); font-size: 12px; }
 
+.admin-attention-panel { display: grid; gap: 12px; padding: 14px; border: 1px solid color-mix(in srgb,var(--coral) 18%,var(--line)); border-radius: 16px; background: color-mix(in srgb,var(--coral) 4%,#fff); }
+.admin-attention-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.admin-attention-heading>span { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 10px; color: #9a6514; background: #fff2d5; }
+.admin-attention-heading>div { display: grid; gap: 2px; min-width: 0; }
+.admin-attention-heading strong { color: var(--ink); font-size: 13px; }
+.admin-attention-heading small { color: var(--muted); font-size: 10px; line-height: 1.4; }
+.admin-attention-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.admin-attention-grid>:is(button,div) { display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 64px; padding: 10px; border: 1px solid var(--soft-line); border-radius: 12px; color: var(--ink); background: #fff; text-align: left; }
+.admin-attention-grid>button { cursor: pointer; }
+.admin-attention-grid>button:hover:not(:disabled) { border-color: color-mix(in srgb,var(--coral) 30%,var(--line)); }
+.admin-attention-grid>button:focus-visible { outline: 3px solid color-mix(in srgb,var(--coral) 24%,transparent); outline-offset: 2px; }
+.admin-attention-grid>button:disabled { cursor: default; opacity: .78; }
+.admin-attention-grid>:is(button,div)>svg { flex: 0 0 auto; color: var(--coral); }
+.admin-attention-grid>:is(button,div)>span { display: grid; gap: 3px; min-width: 0; }
+.admin-attention-grid strong { font-size: 11px; line-height: 1.3; }
+.admin-attention-grid small { color: var(--muted); font-size: 9px; line-height: 1.4; }
+.admin-notification-retry { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; padding: 10px 12px; border: 1px solid color-mix(in srgb,var(--coral) 16%,var(--soft-line)); border-radius: 12px; background: rgb(255 255 255 / 82%); }
+.admin-notification-retry>span { display: grid; gap: 3px; min-width: 0; }
+.admin-notification-retry strong { color: var(--ink); font-size: 11px; }
+.admin-notification-retry small { color: var(--muted); font-size: 9px; line-height: 1.4; }
+.admin-notification-retry .button { flex: 0 0 auto; min-height: 36px; padding: 0 12px; font-size: 10px; }
+.admin-readiness-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.admin-readiness-list li { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 0 9px; border-radius: 999px; color: #8d5d16; background: #fff2d5; font-size: 9px; font-weight: 750; }
+.admin-readiness-list li.is-complete { color: var(--green); background: color-mix(in srgb,var(--green) 8%,#fff); }
+
 .admin-container .admin-card {
   padding: 22px !important;
   border: 1px solid rgb(205 216 229 / 78%) !important;
@@ -1280,6 +1305,10 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
 .admin-product-form.is-readonly .admin-switch-row :is(strong,small) { color: inherit; }
 
 @media (max-width: 760px) {
+  .admin-attention-grid { grid-template-columns: 1fr; }
+  .admin-attention-grid>:is(button,div) { min-height: 68px; }
+  .admin-notification-retry { align-items: stretch; flex-direction: column; }
+  .admin-notification-retry .button { align-self: flex-start; }
   .admin-switch-row label { min-height: 64px !important; }
 }
 

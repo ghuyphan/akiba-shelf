@@ -30,6 +30,8 @@ describe.skipIf(!run)("database concurrency", () => {
     admin.rpc("create_order_rate_limited", {
       ...args,
       p_fingerprint_hash: "a".repeat(64),
+      p_device_hash: "b".repeat(64),
+      p_ip_hash: "c".repeat(64),
     });
 
   beforeAll(async () => {

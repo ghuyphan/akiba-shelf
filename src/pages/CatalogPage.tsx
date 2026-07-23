@@ -17,7 +17,13 @@ import {
 } from "../utils/theme";
 import { getShopBranding, useDocumentBranding } from "../lib/branding";
 import { applyDocumentSeo } from "../lib/seo";
-import type { Order, Product, StorefrontSection } from "../types/catalog";
+import type {
+  CheckoutSession,
+  Order,
+  Product,
+  StorefrontBootstrap,
+  StorefrontSection,
+} from "../types/catalog";
 import {
   CatalogLocaleProvider,
   translations,
@@ -47,10 +53,11 @@ import {
   FloatingCartBar,
   FlyingItemsLayer,
   PendingOrderBar,
+  RecoverCheckoutBar,
 } from "../components/catalog/CatalogOverlays";
 import { layoutOrderSchema } from "../lib/schemas";
-import { PageLoading } from "../components/ui/PageLoading";
 import { useParams } from "react-router-dom";
+import { getStorefrontBootstrap } from "../lib/api/catalog";
 import { getPublicShop } from "../lib/api/shops";
 import type { PublicProductSort } from "../lib/catalogQueries";
 import type { Shop } from "../types/catalog";
@@ -63,6 +70,7 @@ import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 import { hasUsablePayment } from "../utils/vietqr";
 import { getUserFacingErrorMessage } from "../lib/errors";
+import { Alert } from "../components/ui/Alert";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -90,11 +98,51 @@ function CatalogToastLocalization() {
   );
 }
 
+function StorefrontLoading({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) {
+  return (
+    <main
+      className="page-loading"
+      aria-label="Loading Matsuri"
+      aria-busy="true"
+    >
+      <div className="page-loading-brand" aria-hidden="true">
+        <img
+          src={`${import.meta.env.BASE_URL}brand/matsuri-mark.svg`}
+          alt=""
+          className="platform-mark"
+        />
+      </div>
+      <div className="page-loading-copy">
+        <strong>{title}</strong>
+        <span>{message}</span>
+      </div>
+      <div className="page-loading-track" aria-hidden="true">
+        <i />
+      </div>
+    </main>
+  );
+}
+
 export function CatalogPage() {
   const { shopSlug = "" } = useParams();
   const toast = useToast();
+  const initialShopRef = useRef(loadShopSnapshot(shopSlug));
   const [shop, setShop] = useState<Shop | null | undefined>(
-    () => loadShopSnapshot(shopSlug) ?? undefined,
+    () => initialShopRef.current ?? undefined,
+  );
+  const [initialBootstrap, setInitialBootstrap] = useState<
+    StorefrontBootstrap | null | undefined
+  >(undefined);
+  const [catalogShopId, setCatalogShopId] = useState<string | undefined>(
+    () =>
+      initialShopRef.current?.catalog_source_shop_id ??
+      initialShopRef.current?.id,
   );
   const [shopLoadError, setShopLoadError] = useState("");
   const [lightweightMode] = useState(prefersLightweightCatalog);
@@ -103,20 +151,20 @@ export function CatalogPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sort, setSort] = useState<PublicProductSort>("recommended");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const { cart, setCart, reconcileCart } = usePersistentCart(shopSlug);
+  const {
+    cart,
+    setCart,
+    reconcileCart,
+    reconciliationNotice,
+    clearReconciliationNotice,
+  } = usePersistentCart(shopSlug);
 
   useEffect(() => {
     if (cart.length > 0) {
       void import("../components/catalog/PaymentQrModal").catch(() => {});
     }
   }, [cart.length]);
-  const catalogShopId = shop?.catalog_source_shop_id ?? shop?.id;
   const orderingEnabled = shop?.accepting_orders !== false;
-  const cartProductIdsKey = JSON.stringify(cart.map((item) => item.product.id));
-  const cartProductIds = useMemo(
-    () => JSON.parse(cartProductIdsKey) as string[],
-    [cartProductIdsKey],
-  );
   const catalogQuery = useMemo(
     () => ({ category: activeCategory, search: debouncedSearch, sort }),
     [activeCategory, debouncedSearch, sort],
@@ -140,10 +188,12 @@ export function CatalogPage() {
     gachaEnabled,
   } = useCatalogData(
     catalogShopId,
+    shopSlug,
     catalogQuery,
-    cartProductIds,
+    cart,
     reconcileCart,
     orderingEnabled,
+    initialBootstrap,
   );
   useEffect(() => {
     if (cart.length === 0 || !orderingEnabled) return;
@@ -168,6 +218,8 @@ export function CatalogPage() {
   }, [catalogCopy]);
   const { flyingItems, animateAdd } = useAddToCartFeedback(lightweightMode);
   const initialCheckoutRef = useRef(loadCheckoutSession(shopSlug));
+  const [recoverableCheckout, setRecoverableCheckout] =
+    useState<CheckoutSession | null>(initialCheckoutRef.current);
   const [online, setOnline] = useState(navigator.onLine);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [paymentModalRequested, setPaymentModalRequested] = useState(
@@ -239,22 +291,36 @@ export function CatalogPage() {
     }
     setShopLoadError("");
     try {
-      const freshShop = await getPublicShop(shopSlug);
+      const bootstrap = await getStorefrontBootstrap(shopSlug);
+      const freshShop = bootstrap.shop;
       setOnline(true);
+      setInitialBootstrap(bootstrap);
+      setCatalogShopId(bootstrap.catalogShopId);
       setShop(freshShop);
-      if (freshShop) {
-        saveShopSnapshot(freshShop, shopSlug);
+      saveShopSnapshot(freshShop, shopSlug);
+    } catch (bootstrapError) {
+      setInitialBootstrap(null);
+      try {
+        // Keep rolling deployments compatible while the bootstrap RPC migration
+        // is being applied; the catalog hook will use the existing public reads.
+        const legacyShop = await getPublicShop(shopSlug);
+        if (!legacyShop) throw bootstrapError;
+        setOnline(true);
+        setCatalogShopId(
+          legacyShop.catalog_source_shop_id ?? legacyShop.id,
+        );
+        setShop(legacyShop);
+        saveShopSnapshot(legacyShop, shopSlug);
+      } catch (fallbackError) {
+        setCatalogShopId(cachedShop?.catalog_source_shop_id ?? cachedShop?.id);
+        if (!cachedShop) setShop(null);
+        setShopLoadError(
+          getUserFacingErrorMessage(
+            fallbackError,
+            catalogCopyRef.current.shopConnectError,
+          ),
+        );
       }
-    } catch (error) {
-      if (!cachedShop) {
-        setShop(null);
-      }
-      setShopLoadError(
-        getUserFacingErrorMessage(
-          error,
-          catalogCopyRef.current.shopConnectError,
-        ),
-      );
     }
   }, [shopSlug]);
 
@@ -488,6 +554,35 @@ export function CatalogPage() {
   );
 
   useEffect(() => {
+    setCart((current) => {
+      const normalized = normalizePromotionRewards(current, promotion);
+      const adjusted = normalized.reduce(
+        (count, item, index) => {
+          const previous = current[index];
+          return (
+            count +
+            (previous?.product.id !== item.product.id ||
+            (previous.reward_quantity ?? 0) !== (item.reward_quantity ?? 0)
+              ? 1
+              : 0)
+          );
+        },
+        Math.max(0, current.length - normalized.length),
+      );
+      if (adjusted === 0) return current;
+      globalThis.setTimeout(
+        () =>
+          toast.info(
+            catalogCopy.cartUpdatedHint(0, adjusted, 0),
+            catalogCopy.cartUpdatedTitle,
+          ),
+        0,
+      );
+      return normalized;
+    });
+  }, [catalogCopy, promotion, setCart, toast]);
+
+  useEffect(() => {
     if (rewardProducts.length !== 1) return;
     const pricing = calculateCartPricing(cart, promotion);
     if (pricing.availableRewardQuantity <= 0) return;
@@ -588,13 +683,7 @@ export function CatalogPage() {
       ? new Promise<void>((resolve) => window.setTimeout(resolve, 260))
       : Promise.resolve();
     openPaymentFlow(sheetExit);
-  }, [
-    catalogCopy,
-    isCartExpanded,
-    openPaymentFlow,
-    orderingEnabled,
-    toast,
-  ]);
+  }, [catalogCopy, isCartExpanded, openPaymentFlow, orderingEnabled, toast]);
 
   const categories = useMemo(
     () => ["All", ...catalogCategories],
@@ -620,6 +709,7 @@ export function CatalogPage() {
           products={featuredProducts}
           onSelect={handleAddToCart}
           autoRotate={!lightweightMode && (booth.featured_autoplay ?? true)}
+          lightweightImages={lightweightMode}
         />
       ),
       controls: (
@@ -656,6 +746,11 @@ export function CatalogPage() {
           error={loadError}
           onRetry={handleRetryCatalog}
           searchActive={Boolean(searchQuery.trim())}
+          emptyMessage={catalogCopy.emptyBoothHint(
+            booth.booth_name.trim() ||
+              shop?.name.trim() ||
+              catalogCopy.boothDetails,
+          )}
           hasMore={hasMore}
           loadingMore={isLoadingMore}
           onLoadMore={handleLoadMore}
@@ -707,6 +802,7 @@ export function CatalogPage() {
       rewardProducts,
       searchQuery,
       selectedProductId,
+      shop?.name,
       sort,
       viewMode,
     ],
@@ -784,7 +880,7 @@ export function CatalogPage() {
 
   if (shop === undefined) {
     return (
-      <PageLoading
+      <StorefrontLoading
         title={catalogCopy.openingShop}
         message={catalogCopy.openingShopHint}
       />
@@ -804,20 +900,28 @@ export function CatalogPage() {
 
   if (isInitialLoading) {
     return (
-      <PageLoading
+      <StorefrontLoading
         title={catalogCopy.openingShop}
         message={catalogCopy.openingShopHint}
       />
     );
   }
 
-  const pendingOrder =
-    orderingEnabled && activeOrder?.status === "pending" ? activeOrder : null;
-  const showPendingOrderDock = Boolean(pendingOrder && !isQrOpen);
-  const reserveFloatingCartSpace = cart.length > 0 && !activeOrder;
+  const visibleOrder = orderingEnabled ? activeOrder : null;
+  const showOrderDock = Boolean(visibleOrder && !isQrOpen);
+  const checkoutRecovery =
+    orderingEnabled && recoverableCheckout && !recoverableCheckout.order
+      ? recoverableCheckout
+      : null;
+  const showCheckoutRecoveryDock = Boolean(checkoutRecovery && !isQrOpen);
+  const checkoutRecoveryTotal = checkoutRecovery
+    ? calculateCartPricing(checkoutRecovery.cart, promotion).total
+    : 0;
+  const reserveFloatingCartSpace =
+    cart.length > 0 && !activeOrder && !checkoutRecovery;
   const showFloatingCartDock =
     isFloatingCartVisible && reserveFloatingCartSpace;
-  const storefrontDockClasses = `${showPendingOrderDock ? " storefront-has-order-dock" : ""}${reserveFloatingCartSpace ? " storefront-has-cart-dock" : ""}`;
+  const storefrontDockClasses = `${showOrderDock || showCheckoutRecoveryDock ? " storefront-has-order-dock" : ""}${reserveFloatingCartSpace ? " storefront-has-cart-dock" : ""}`;
 
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
@@ -849,6 +953,20 @@ export function CatalogPage() {
                 </span>
               </div>
             )}
+            {reconciliationNotice && (
+              <Alert
+                className="catalog-reconciliation-alert"
+                title={catalogCopy.cartUpdatedTitle}
+                onClose={clearReconciliationNotice}
+                closeLabel={catalogCopy.dismissNotification}
+              >
+                {catalogCopy.cartUpdatedHint(
+                  reconciliationNotice.removed,
+                  reconciliationNotice.quantityAdjusted,
+                  reconciliationNotice.priceChanged,
+                )}
+              </Alert>
+            )}
             <div className="catalog-layout storefront-layout-grid">
               <div className="storefront-hero-grid">
                 {heroStorefrontSections.map((section) => (
@@ -869,9 +987,17 @@ export function CatalogPage() {
                 {contentStorefrontColumns.map((column) => column.node)}
               </div>
             </div>
-            {showPendingOrderDock && pendingOrder && (
+            {showOrderDock && visibleOrder && (
               <PendingOrderBar
-                order={pendingOrder}
+                order={visibleOrder}
+                style={getThemeStyle(booth)}
+                onOpen={() => openPaymentFlow()}
+              />
+            )}
+            {showCheckoutRecoveryDock && checkoutRecovery && (
+              <RecoverCheckoutBar
+                session={checkoutRecovery}
+                total={checkoutRecoveryTotal}
                 style={getThemeStyle(booth)}
                 onOpen={() => openPaymentFlow()}
               />
@@ -896,6 +1022,7 @@ export function CatalogPage() {
                   onClose={() => setIsQrOpen(false)}
                   onSuccess={() => void loadCatalog()}
                   onOrderChange={handleOrderChange}
+                  onSessionChange={setRecoverableCheckout}
                 />
               </Suspense>
             )}

@@ -15,6 +15,9 @@ import {
   getOfflineEventDraft,
   getOfflineEventOrders,
   getOrderStatusCounts,
+  getOrderNotificationStatus,
+  retryOrderNotification,
+  getStorefrontBootstrap,
   listOfflineEvents,
   normalizeProduct,
   publishGachaConfiguration,
@@ -154,11 +157,9 @@ beforeEach(() => {
 });
 
 describe("order API contracts", () => {
-  it("keeps the create-order request payload and notification boundary stable", async () => {
+  it("keeps checkout creation on the server-owned queue boundary", async () => {
     const cart: CartItem[] = [{ product, quantity: 2, reward_quantity: 1 }];
-    mocks.invoke
-      .mockResolvedValueOnce({ data: orderResponse, error: null })
-      .mockResolvedValueOnce({ data: { sent: 0 }, error: null });
+    mocks.invoke.mockResolvedValueOnce({ data: orderResponse, error: null });
 
     const order = await createOrder(
       "akiba-shelf",
@@ -175,42 +176,15 @@ describe("order API contracts", () => {
         items: [{ product_id: "moon-stand", quantity: 3, reward_quantity: 1 }],
         clientRequestId: "client-request-1",
         recoveryToken: "recovery-token-1",
+        deviceId: expect.any(String),
       },
     });
-    expect(mocks.invoke).toHaveBeenNthCalledWith(2, "notify-new-order", {
-      body: { orderId, recoveryToken: "recovery-token-1" },
-    });
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
     expect(order).toMatchObject({
       id: orderId,
       total_amount: 120000,
       status: "pending",
     });
-  });
-
-  it("retries a transient notification failure without retrying checkout", async () => {
-    vi.useFakeTimers();
-    try {
-      mocks.invoke
-        .mockResolvedValueOnce({ data: orderResponse, error: null })
-        .mockResolvedValueOnce({ data: null, error: new Error("temporary") })
-        .mockResolvedValueOnce({ data: { sent: 1 }, error: null });
-
-      await createOrder(
-        "akiba-shelf",
-        "Customer",
-        [{ product, quantity: 1 }],
-        "client-request-2",
-        "recovery-token-2",
-      );
-      await vi.advanceTimersByTimeAsync(1_000);
-
-      expect(mocks.invoke).toHaveBeenCalledTimes(3);
-      expect(mocks.invoke).toHaveBeenNthCalledWith(3, "notify-new-order", {
-        body: { orderId, recoveryToken: "recovery-token-2" },
-      });
-    } finally {
-      vi.useRealTimers();
-    }
   });
 
   it("treats an invalid success response as an unknown retryable outcome", async () => {
@@ -290,6 +264,59 @@ describe("order API contracts", () => {
       p_shop_id: shopId,
       p_created_after: "2026-07-01T00:00:00.000Z",
       p_created_before: "2026-08-01T00:00:00.000Z",
+    });
+  });
+
+  it("validates durable order notification status and queue aggregates", async () => {
+    mocks.rpc.mockResolvedValueOnce({
+      data: [
+        {
+          order_id: orderId,
+          status: "retryable_failed",
+          attempt_count: "2",
+          failed_endpoint_count: "1",
+          next_attempt_at: "2026-07-23T09:45:00.000Z",
+          delivered_at: null,
+          skipped_at: null,
+          dead_lettered_at: null,
+          updated_at: "2026-07-23T09:44:00.000Z",
+          last_error: "push_provider_unavailable",
+          due_count: "3",
+          oldest_due_at: "2026-07-23T09:30:00.000Z",
+          retryable_failed_count: "2",
+          dead_letter_count: "1",
+        },
+      ],
+      error: null,
+    });
+
+    await expect(getOrderNotificationStatus(shopId, 999)).resolves.toEqual([
+      expect.objectContaining({
+        order_id: orderId,
+        status: "retryable_failed",
+        attempt_count: 2,
+        failed_endpoint_count: 1,
+        due_count: 3,
+        retryable_failed_count: 2,
+        dead_letter_count: 1,
+      }),
+    ]);
+    expect(mocks.rpc).toHaveBeenCalledWith("get_order_notification_status", {
+      p_shop_id: shopId,
+      p_limit: 200,
+    });
+  });
+
+  it("requeues an eligible terminal notification through the guarded RPC", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: true, error: null });
+
+    await expect(
+      retryOrderNotification(shopId, orderId, "admin_attention_panel"),
+    ).resolves.toBe(true);
+    expect(mocks.rpc).toHaveBeenCalledWith("retry_order_notification", {
+      p_shop_id: shopId,
+      p_order_id: orderId,
+      p_reason: "admin_attention_panel",
     });
   });
 
@@ -436,13 +463,23 @@ describe("order API contracts", () => {
     });
     await expect(
       getOfflineEventDraft(shopId, "event-shop", saved.id),
-    ).resolves.toMatchObject({ status: "draft", allocations: [{ quantityAllocated: 2 }] });
+    ).resolves.toMatchObject({
+      status: "draft",
+      allocations: [{ quantityAllocated: 2 }],
+    });
     await expect(listOfflineEvents(shopId)).resolves.toMatchObject([
       { id: eventSession.id, status: "draft", quantityAllocated: 2 },
     ]);
     await expect(
-      activateOfflineEventSession(saved.id, eventSession.deviceId, "event-shop"),
-    ).resolves.toMatchObject({ status: "active", scheduledStartAt: draftBundle.session.scheduled_start_at });
+      activateOfflineEventSession(
+        saved.id,
+        eventSession.deviceId,
+        "event-shop",
+      ),
+    ).resolves.toMatchObject({
+      status: "active",
+      scheduledStartAt: draftBundle.session.scheduled_start_at,
+    });
 
     expect(mocks.rpc).toHaveBeenNthCalledWith(1, "save_offline_event_draft", {
       p_shop_id: shopId,
@@ -676,6 +713,49 @@ describe("gacha publish contract", () => {
 });
 
 describe("catalog response contracts", () => {
+  it("normalizes the one-call storefront bootstrap response", async () => {
+    mocks.rpc.mockResolvedValueOnce({
+      data: {
+        shop: {
+          id: shopId,
+          name: "Akiba Shelf",
+          slug: "akiba-shelf",
+          active: true,
+          accepting_orders: true,
+          catalog_source_shop_id: null,
+        },
+        catalog_shop_id: shopId,
+        products: [product],
+        has_more: true,
+        booth: { ...defaultBooth, shop_id: shopId },
+        categories: ["Acrylic"],
+        promotion: {
+          shop_id: shopId,
+          enabled: false,
+          buy_quantity: 3,
+          free_quantity: 1,
+          repeatable: true,
+          qualifying_product_ids: [],
+          reward_product_ids: [],
+        },
+        gacha_enabled: true,
+      },
+      error: null,
+    });
+
+    await expect(getStorefrontBootstrap("akiba-shelf")).resolves.toMatchObject({
+      shop: { id: shopId, slug: "akiba-shelf" },
+      catalogShopId: shopId,
+      products: [expect.objectContaining({ id: product.id })],
+      hasMore: true,
+      categories: ["Acrylic"],
+      gachaEnabled: true,
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith("get_storefront_bootstrap", {
+      p_shop_slug: "akiba-shelf",
+    });
+  });
+
   it("normalizes public product values and filters unsafe image URLs", () => {
     expect(
       normalizeProduct({
@@ -733,7 +813,6 @@ describe("Playwright Supabase request inventory", () => {
 
     expect([...new Set(actual)].sort()).toEqual([
       "/functions/v1/create-order",
-      "/functions/v1/notify-new-order",
       "/rest/v1/booth_settings",
       "/rest/v1/gacha_game_configs",
       "/rest/v1/gacha_published_configs",
@@ -751,12 +830,15 @@ describe("Playwright Supabase request inventory", () => {
       "/rest/v1/rpc/get_my_shop_memberships",
       "/rest/v1/rpc/get_offline_event_draft",
       "/rest/v1/rpc/get_offline_event_orders",
+      "/rest/v1/rpc/get_order_notification_status",
       "/rest/v1/rpc/get_order_status_counts",
       "/rest/v1/rpc/get_public_product_categories",
       "/rest/v1/rpc/get_shop_members",
       "/rest/v1/rpc/get_shop_workspace_summary",
+      "/rest/v1/rpc/get_storefront_bootstrap",
       "/rest/v1/rpc/list_offline_events",
       "/rest/v1/rpc/publish_gacha_configuration_v6",
+      "/rest/v1/rpc/retry_order_notification",
       "/rest/v1/rpc/save_offline_event_draft",
       "/rest/v1/rpc/start_offline_event_session",
       "/rest/v1/rpc/sync_offline_event_orders",

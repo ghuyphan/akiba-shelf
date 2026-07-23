@@ -13,6 +13,10 @@ each item against the current tree before implementing it.
   `gacha-admin-redesign.md`.
 - Keep `src/lib/api.ts` as a compatibility barrel. New implementations belong
   in the existing domain modules under `src/lib/api/`.
+- `src/pages/NewShopPage.tsx` still dynamically imports that compatibility
+  barrel for sign-out. It is the only runtime exception in
+  `scripts/check-architecture.mjs`; switch it to the focused Auth domain before
+  removing the allowlist entry.
 - Document intentional patches and dependency ownership for both vendored
   simulators. Their upstream README files are not Matsuri architecture docs.
 

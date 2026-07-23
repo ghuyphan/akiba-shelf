@@ -67,6 +67,35 @@ describe("StackedFeatured", () => {
     );
   });
 
+  it("keeps the LCP image on the small variant for constrained connections", () => {
+    const product = {
+      ...featuredProduct("first", "First print"),
+      image_variants: [
+        {
+          thumbnail: "https://example.test/first-600.webp",
+          detail: "https://example.test/first-1400.webp",
+        },
+      ],
+    };
+    const { container } = render(
+      <CatalogLocaleProvider locale="en">
+        <StackedFeatured
+          products={[product]}
+          lightweightImages
+          autoRotate={false}
+          onSelect={vi.fn()}
+        />
+      </CatalogLocaleProvider>,
+    );
+
+    const image = container.querySelector(".featured-deck-card img");
+    expect(image).toHaveAttribute(
+      "src",
+      "https://example.test/first-600.webp",
+    );
+    expect(image).not.toHaveAttribute("srcset");
+  });
+
   it("waits for customer interaction before starting autoplay", () => {
     vi.useFakeTimers();
     const { container } = render(

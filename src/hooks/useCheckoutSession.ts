@@ -21,6 +21,7 @@ import {
   updateOfflineEventOrder,
 } from "../lib/offline/offlineEvents";
 import type { CartItem, CheckoutSession, Order } from "../types/catalog";
+import { trackClientEvent } from "../lib/observability";
 
 type CheckoutConnectionState =
   | "online"
@@ -32,6 +33,7 @@ type UseCheckoutSessionOptions = {
   shopSlug: string;
   cart: CartItem[];
   onOrderChange?: (order: Order | null) => void;
+  onSessionChange?: (session: CheckoutSession | null) => void;
   onConfirmed?: () => void;
 };
 
@@ -52,6 +54,7 @@ export function useCheckoutSession({
   shopSlug,
   cart,
   onOrderChange,
+  onSessionChange,
   onConfirmed,
 }: UseCheckoutSessionOptions) {
   const [session, setSession] = useState<CheckoutSession | null>(() =>
@@ -69,10 +72,12 @@ export function useCheckoutSession({
   const confirmedHandledRef = useRef(false);
   const resumedShopRef = useRef("");
   const onOrderChangeRef = useRef(onOrderChange);
+  const onSessionChangeRef = useRef(onSessionChange);
   const onConfirmedRef = useRef(onConfirmed);
 
   sessionRef.current = session;
   onOrderChangeRef.current = onOrderChange;
+  onSessionChangeRef.current = onSessionChange;
   onConfirmedRef.current = onConfirmed;
 
   const persist = useCallback((next: CheckoutSession | null) => {
@@ -80,6 +85,7 @@ export function useCheckoutSession({
     setSession(next);
     if (next) saveCheckoutSession(next);
     else clearCheckoutSession(shopSlug);
+    onSessionChangeRef.current?.(next);
   }, [shopSlug]);
 
   const reserve = useCallback(
@@ -157,6 +163,16 @@ export function useCheckoutSession({
           } else {
             setConnectionState("online");
           }
+          trackClientEvent(
+            "checkout_failure",
+            {
+              stage: "reservation",
+              shop: shopSlug,
+              retryable: queued,
+              offlineEventStorage: eventStorageUnavailable,
+            },
+            queued ? "warning" : "error",
+          );
           return null;
         })
         .finally(() => {
@@ -240,6 +256,15 @@ export function useCheckoutSession({
               ? "reconnecting"
               : "offline"
             : "error",
+        );
+        trackClientEvent(
+          "checkout_failure",
+          {
+            stage: "recovery",
+            shop: shopSlug,
+            transport: isTransportError(error),
+          },
+          "warning",
         );
       })
       .finally(() => {

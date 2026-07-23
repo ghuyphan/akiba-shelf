@@ -28,7 +28,7 @@ describe("API module architecture", () => {
       path.resolve(process.cwd(), "src/lib/api.ts"),
       "utf8",
     );
-    expect(barrel.trim().split("\n")).toHaveLength(10);
+    expect(barrel.trim().split("\n")).toHaveLength(11);
     expect(barrel).not.toMatch(/\b(function|const|class)\b/);
   });
 
@@ -59,15 +59,18 @@ describe("API module architecture", () => {
       "getPublicProducts",
       "getPublicProductsByIds",
       "getPublicPromotionSettings",
+      "getPushRegistrationStatus",
       "getPublicShop",
       "getShopInvitations",
       "getShopMemberships",
+      "getStorefrontBootstrap",
       "getShopWorkspaceSummary",
       "getStaffMembers",
       "inviteShopMember",
       "normalizeProduct",
       "normalizePromotion",
       "publishGachaConfiguration",
+      "registerPushSubscription",
       "saveBoothSettings",
       "saveGachaDraft",
       "savePaymentSettings",
@@ -79,6 +82,7 @@ describe("API module architecture", () => {
       "signOutAdmin",
       "updateShop",
       "updateShopInvitation",
+      "unregisterPushSubscription",
       "uploadImage",
       "uploadProductImages",
     ];

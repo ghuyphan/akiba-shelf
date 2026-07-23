@@ -15,7 +15,10 @@ async function listFiles(root, directory = root) {
   for (const entry of entries) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) files.push(...(await listFiles(root, path)));
-    else if (entry.name !== ".nojekyll" && !ignoredExtensions.has(extname(entry.name))) {
+    else if (
+      entry.name !== ".nojekyll" &&
+      !ignoredExtensions.has(extname(entry.name))
+    ) {
       const size = (await stat(path)).size;
       const pathname = `/${relative(distRoot, path).split(sep).join("/")}`;
       files.push({ path: pathname, size, sourcePath: path });

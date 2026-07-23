@@ -51,8 +51,10 @@ unrelated work in a dirty tree and use focused patches.
 
 ## Deployment
 
-- Production frontend hosting is the Cloudflare Pages project `matsuri`.
-  `matsuri.pro` is the canonical application origin.
+- Production frontend hosting is the Direct Upload Cloudflare Pages project
+  `matsuri`; GitHub Actions is its only build/deploy pipeline. Do not create a
+  second Git-integrated Pages project. `matsuri.pro` is the canonical
+  application origin.
 - `www.matsuri.pro` redirects permanently to the equivalent `matsuri.pro` URL
   through the active Cloudflare Redirect Rule `Canonical www to matsuri.pro`.
   Keep both DNS records proxied so the rule and Cloudflare certificates apply.
@@ -61,7 +63,8 @@ unrelated work in a dirty tree and use focused patches.
 - Normal production releases run from `main` through
   `.github/workflows/validate.yml` after all release gates pass. The workflow
   requires the `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` GitHub
-  secrets; never commit provider credentials.
+  secrets; never commit provider credentials. Keep its post-deploy smoke checks
+  for the Pages URL, canonical domain, deep links, and `www` redirect.
 - Preserve the immutable-asset compatibility strategy in
   `scripts/retain-previous-assets.mjs`. Do not copy an unrestricted previous
   deployment into the new artifact.

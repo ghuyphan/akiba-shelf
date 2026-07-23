@@ -15,12 +15,14 @@ type StackedFeaturedProps = {
   products: Product[];
   onSelect: (product: Product, event?: React.MouseEvent) => void;
   autoRotate?: boolean;
+  lightweightImages?: boolean;
 };
 
 export function StackedFeatured({
   products,
   onSelect,
   autoRotate = true,
+  lightweightImages = false,
 }: StackedFeaturedProps) {
   const copy = useCatalogCopy();
   const [active, setActive] = useState(0);
@@ -289,11 +291,11 @@ export function StackedFeatured({
                       <img
                         src={image}
                         srcSet={
-                          variant
+                          variant && !lightweightImages
                             ? `${variant.thumbnail} 600w, ${variant.detail} 1400w`
                             : undefined
                         }
-                        sizes="(max-width: 760px) 78vw, 480px"
+                        sizes="(max-width: 420px) 78vw, (max-width: 760px) 360px, 480px"
                         alt={isActive ? product.name : ""}
                         draggable="false"
                         loading={isActive ? "eager" : "lazy"}

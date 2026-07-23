@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.create-order]
 verify_jwt = false
+
+[functions.push-subscriptions]
+verify_jwt = true

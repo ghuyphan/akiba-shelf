@@ -1,27 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin.css";
 import { Navigate } from "react-router-dom";
-import {
-  getAdminCatalogData,
-} from "../lib/api/catalog";
+import { getAdminCatalogData } from "../lib/api/catalog";
 import {
   getOrderStatusCounts,
+  getOrderNotificationStatus,
   getOrders,
+  retryOrderNotification,
   type OrderStatusCounts,
 } from "../lib/api/orders";
-import {
-  deleteProduct,
-  saveProduct,
-} from "../lib/api/products";
+import { deleteProduct, saveProduct } from "../lib/api/products";
 import {
   saveBoothSettings,
   savePaymentSettings,
   savePromotionSettings,
 } from "../lib/api/settings";
-import {
-  signInAdmin,
-  signOutAdmin,
-} from "../lib/api/auth";
+import { signInAdmin, signOutAdmin } from "../lib/api/auth";
 import { getShopWorkspaceSummary } from "../lib/api/shops";
 import { getOfflineEventOrders } from "../lib/api/offlineEvents";
 import {
@@ -49,6 +43,7 @@ import type {
   PromotionSettings,
   Product,
   Order,
+  OrderNotificationStatus,
 } from "../types/catalog";
 import {
   AdminAccessCheck,
@@ -63,6 +58,7 @@ import { getOfflineEventSignOutRisk } from "../lib/offline/offlineEvents";
 import { useAdminOrderRealtime } from "../hooks/useAdminOrderRealtime";
 import { AdminWorkspaceHeader } from "../components/admin/AdminWorkspaceHeader";
 import { AdminViewHero } from "../components/admin/AdminViewHero";
+import { AdminAttentionPanel } from "../components/admin/AdminAttentionPanel";
 import { AdminWorkspaceContent } from "../components/admin/AdminWorkspaceContent";
 import { AdminUnsavedChangesProvider } from "../components/admin/AdminUnsavedChanges";
 import type { OrderViewFilter } from "../components/admin/OrderQueue";
@@ -82,6 +78,7 @@ import {
   offlineEventOrderAsOrder,
   OFFLINE_EVENT_UPDATED,
 } from "../lib/offline/offlineEvents";
+import { reportError } from "../lib/observability";
 
 const orderPageSize = 12;
 // Realtime events caused by this tab's own writes are ignored inside this
@@ -116,6 +113,9 @@ export function AdminPage() {
   const [orderCounts, setOrderCounts] =
     useState<OrderStatusCounts>(emptyOrderCounts);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [notificationStatuses, setNotificationStatuses] = useState<
+    OrderNotificationStatus[]
+  >([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [workspaceLoadFailed, setWorkspaceLoadFailed] = useState(false);
@@ -147,6 +147,7 @@ export function AdminPage() {
   useDocumentBranding(verifiedBranding);
 
   const orderRequestRef = useRef(0);
+  const notificationRequestRef = useRef(0);
   const catalogRequestRef = useRef(0);
   const catalogLoadRef = useRef<{
     shopId: string;
@@ -176,12 +177,22 @@ export function AdminPage() {
     () => products.filter((product) => !product.active).length,
     [products],
   );
+  const expiringOrderCount = useMemo(() => {
+    const cutoff = Date.now() + 10 * 60 * 1000;
+    return orders.filter((order) => {
+      if (order.status !== "pending" || !order.expires_at) return false;
+      const expiresAt = new Date(order.expires_at).getTime();
+      return Number.isFinite(expiresAt) && expiresAt <= cutoff;
+    }).length;
+  }, [orders]);
   useEffect(() => {
     catalogRequestRef.current += 1;
     orderRequestRef.current += 1;
+    notificationRequestRef.current += 1;
     setProducts([]);
     setOrders([]);
     setOrderCounts(emptyOrderCounts);
+    setNotificationStatuses([]);
     setEventOrderCount(0);
     setSelectedEventId("");
     setOrderTotal(0);
@@ -197,6 +208,65 @@ export function AdminPage() {
     catalogLoadRef.current = null;
     orderLoadRef.current = null;
   }, [shopId]);
+
+  const refreshNotificationStatus = useCallback(async () => {
+    const requestId = ++notificationRequestRef.current;
+    const statuses = await getOrderNotificationStatus(shopId);
+    if (requestId === notificationRequestRef.current)
+      setNotificationStatuses(statuses);
+  }, [shopId]);
+
+  useEffect(() => {
+    if (!isAuthed || isInitialLoading) return;
+    const refresh = () => {
+      void refreshNotificationStatus().catch((error) => {
+        if (!isSessionNoise(error)) {
+          reportError(error, {
+            stage: "admin_notification_status",
+            shopId,
+          });
+        }
+      });
+    };
+    refresh();
+    const interval = window.setInterval(refresh, 30_000);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("online", refresh);
+    return () => {
+      notificationRequestRef.current += 1;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("online", refresh);
+    };
+  }, [isAuthed, isInitialLoading, refreshNotificationStatus, shopId]);
+
+  const handleRetryNotification = useCallback(
+    async (orderId: string) => {
+      try {
+        const retried = await retryOrderNotification(
+          shopId,
+          orderId,
+          "admin_attention_panel",
+        );
+        await refreshNotificationStatus();
+        if (retried) {
+          toast.success(t("Order alert queued for another delivery attempt."));
+        } else {
+          toast.info(
+            t("This alert is no longer eligible for retry. Its status was refreshed."),
+          );
+        }
+        return retried;
+      } catch (error) {
+        toast.error(
+          t(getErrorMessage(error, "Could not retry this order alert.")),
+          t("Retry unavailable"),
+        );
+        throw error;
+      }
+    },
+    [refreshNotificationStatus, shopId, t, toast],
+  );
   useEffect(() => {
     orderPageRef.current = orderPage;
     orderFilterRef.current = orderFilter;
@@ -416,9 +486,9 @@ export function AdminPage() {
           loadedOrderQueryRef.current = [
             shopId,
             page,
-          orderFilterRef.current,
-          selectedEventIdRef.current,
-          ordersTodayOnlyRef.current,
+            orderFilterRef.current,
+            selectedEventIdRef.current,
+            ordersTodayOnlyRef.current,
           ].join(":");
           if (filter === "event" && !selectedEventIdRef.current)
             setEventOrderCount(scoped.length);
@@ -772,9 +842,7 @@ export function AdminPage() {
   async function handleSignOut() {
     setSignOutBusy(true);
     try {
-      let offlineRisk: Awaited<
-        ReturnType<typeof getOfflineEventSignOutRisk>
-      >;
+      let offlineRisk: Awaited<ReturnType<typeof getOfflineEventSignOutRisk>>;
       try {
         offlineRisk = await getOfflineEventSignOutRisk();
       } catch {
@@ -840,122 +908,142 @@ export function AdminPage() {
   return (
     <AdminUnsavedChangesProvider>
       <main className="admin-shell" style={getThemeStyle(booth)}>
-      <AdminWorkspaceHeader
-        booth={booth}
-        access={adminSession.access}
-        memberships={adminSession.memberships}
-        viewTab={viewTab}
-        productsCount={products.length}
-        pendingOrderCount={orderCounts.pending}
-        canManageCatalog={canManageCatalog}
-        canCreateShop={canCreateShop}
-        signOutBusy={signOutBusy}
-        onViewTabChange={setViewTab}
-        onSelectShop={selectShop}
-        onRequestSignOut={() => setIsSignOutOpen(true)}
-      />
-
-      <div className="admin-container">
-        <PwaInstallBanner />
-        <AdminViewHero
-          viewTab={viewTab}
+        <AdminWorkspaceHeader
           booth={booth}
+          access={adminSession.access}
+          memberships={adminSession.memberships}
+          viewTab={viewTab}
           productsCount={products.length}
-          lowStockCount={lowStockCount}
-          hiddenCount={hiddenCount}
           pendingOrderCount={orderCounts.pending}
-          matchingOrderCount={orderTotal}
-        />
-        <AdminWorkspaceContent
-          viewTab={viewTab}
-          shopId={shopId}
-          shopSlug={adminSession.access.shop_slug}
           canManageCatalog={canManageCatalog}
-          canManageTeam={adminSession.access.role === "owner"}
-          workspaceLoadFailed={workspaceLoadFailed}
-          products={products}
-          selectedProduct={selectedProduct}
-          catalogLoading={catalogLoading}
-          booth={booth}
-          payment={payment}
-          promotion={promotion}
-          orders={orders}
-          orderFilter={orderFilter}
-          selectedEventId={selectedEventId}
-          eventOrderCount={eventOrderCount}
-          ordersTodayOnly={ordersTodayOnly}
-          orderCounts={orderCounts}
-          orderPage={orderPage}
-          orderPageSize={orderPageSize}
-          orderTotal={orderTotal}
-          ordersLoading={ordersLoading}
-          onRetry={() => {
-            setWorkspaceLoadFailed(false);
-            setIsInitialLoading(true);
-          }}
-          onOrderFilterChange={(filter) => {
-            setOrderFilter(filter);
-            if (filter !== "event") setSelectedEventId("");
-            setOrderPage(1);
-          }}
-          onSelectedEventChange={(eventId) => {
-            setOrderFilter("event");
-            setSelectedEventId(eventId);
-            setOrderPage(1);
-          }}
-          onOrdersTodayOnlyChange={(todayOnly) => {
-            setOrdersTodayOnly(todayOnly);
-            setOrderPage(1);
-          }}
-          onOrderPageChange={setOrderPage}
-          onOrderUpdated={scheduleOrdersReload}
-          onSelectProduct={setSelectedProduct}
-          onSaveProduct={handleSaveProduct}
-          onDeleteProduct={handleDeleteProduct}
-          onSavePromotion={async (nextPromotion) => {
-            markLocalWrite();
-            const saved = await savePromotionSettings(shopId, nextPromotion);
-            markLocalWrite();
-            setPromotion(saved);
-            toast.success(t("Promotion saved."));
-          }}
-          onSaveBooth={async (settings) => {
-            markLocalWrite();
-            const saved = await saveBoothSettings(shopId, settings);
-            markLocalWrite();
-            setBooth(saved);
-            toast.success(
-              t(
-                viewTab === "design"
-                  ? "Storefront design published."
-                  : "Booth settings saved.",
-              ),
-            );
-          }}
-          onSavePayment={async (settings) => {
-            markLocalWrite();
-            const saved = await savePaymentSettings(shopId, settings);
-            markLocalWrite();
-            setPayment(saved);
-            toast.success(t("Checkout settings saved."));
-          }}
+          canCreateShop={canCreateShop}
+          signOutBusy={signOutBusy}
+          onViewTabChange={setViewTab}
+          onSelectShop={selectShop}
+          onRequestSignOut={() => setIsSignOutOpen(true)}
         />
-      </div>
 
-      <SignOutDialog
-        isOpen={isSignOutOpen}
-        busy={signOutBusy}
-        title={t("Sign out of admin?")}
-        heading={t("Your work is saved.")}
-        message={t(
-          "You’ll return to the staff login screen. The public catalog stays open for customers.",
-        )}
-        cancelLabel={t("Stay signed in")}
-        confirmLabel={t("Sign out")}
-        loadingLabel={t("Signing out…")}
-        onClose={() => setIsSignOutOpen(false)}
-        onConfirm={() => void handleSignOut()}
-      />
+        <div className="admin-container">
+          <PwaInstallBanner />
+          <AdminViewHero
+            viewTab={viewTab}
+            booth={booth}
+            productsCount={products.length}
+            lowStockCount={lowStockCount}
+            hiddenCount={hiddenCount}
+            pendingOrderCount={orderCounts.pending}
+            matchingOrderCount={orderTotal}
+          />
+          {viewTab === "orders" && (
+            <AdminAttentionPanel
+              booth={booth}
+              payment={payment}
+              products={products}
+              expiringOrderCount={expiringOrderCount}
+              lowStockCount={lowStockCount}
+              notificationStatuses={notificationStatuses}
+              canManageCatalog={canManageCatalog}
+              canRetryNotifications={adminSession.access.role !== "staff"}
+              onOpenOrders={() => {
+                setOrderFilter("pending");
+                setSelectedEventId("");
+                setOrderPage(1);
+              }}
+              onOpenProducts={() => setViewTab("products")}
+              onOpenSettings={() => setViewTab("settings")}
+              onRetryNotification={handleRetryNotification}
+            />
+          )}
+          <AdminWorkspaceContent
+            viewTab={viewTab}
+            shopId={shopId}
+            shopSlug={adminSession.access.shop_slug}
+            canManageCatalog={canManageCatalog}
+            canManageTeam={adminSession.access.role === "owner"}
+            workspaceLoadFailed={workspaceLoadFailed}
+            products={products}
+            selectedProduct={selectedProduct}
+            catalogLoading={catalogLoading}
+            booth={booth}
+            payment={payment}
+            promotion={promotion}
+            orders={orders}
+            orderFilter={orderFilter}
+            selectedEventId={selectedEventId}
+            eventOrderCount={eventOrderCount}
+            ordersTodayOnly={ordersTodayOnly}
+            orderCounts={orderCounts}
+            orderPage={orderPage}
+            orderPageSize={orderPageSize}
+            orderTotal={orderTotal}
+            ordersLoading={ordersLoading}
+            onRetry={() => {
+              setWorkspaceLoadFailed(false);
+              setIsInitialLoading(true);
+            }}
+            onOrderFilterChange={(filter) => {
+              setOrderFilter(filter);
+              if (filter !== "event") setSelectedEventId("");
+              setOrderPage(1);
+            }}
+            onSelectedEventChange={(eventId) => {
+              setOrderFilter("event");
+              setSelectedEventId(eventId);
+              setOrderPage(1);
+            }}
+            onOrdersTodayOnlyChange={(todayOnly) => {
+              setOrdersTodayOnly(todayOnly);
+              setOrderPage(1);
+            }}
+            onOrderPageChange={setOrderPage}
+            onOrderUpdated={scheduleOrdersReload}
+            onSelectProduct={setSelectedProduct}
+            onSaveProduct={handleSaveProduct}
+            onDeleteProduct={handleDeleteProduct}
+            onSavePromotion={async (nextPromotion) => {
+              markLocalWrite();
+              const saved = await savePromotionSettings(shopId, nextPromotion);
+              markLocalWrite();
+              setPromotion(saved);
+              toast.success(t("Promotion saved."));
+            }}
+            onSaveBooth={async (settings) => {
+              markLocalWrite();
+              const saved = await saveBoothSettings(shopId, settings);
+              markLocalWrite();
+              setBooth(saved);
+              toast.success(
+                t(
+                  viewTab === "design"
+                    ? "Storefront design published."
+                    : "Booth settings saved.",
+                ),
+              );
+            }}
+            onSavePayment={async (settings) => {
+              markLocalWrite();
+              const saved = await savePaymentSettings(shopId, settings);
+              markLocalWrite();
+              setPayment(saved);
+              toast.success(t("Checkout settings saved."));
+            }}
+          />
+        </div>
+
+        <SignOutDialog
+          isOpen={isSignOutOpen}
+          busy={signOutBusy}
+          title={t("Sign out of admin?")}
+          heading={t("Your work is saved.")}
+          message={t(
+            "You’ll return to the staff login screen. The public catalog stays open for customers.",
+          )}
+          cancelLabel={t("Stay signed in")}
+          confirmLabel={t("Sign out")}
+          loadingLabel={t("Signing out…")}
+          onClose={() => setIsSignOutOpen(false)}
+          onConfirm={() => void handleSignOut()}
+        />
       </main>
     </AdminUnsavedChangesProvider>
   );

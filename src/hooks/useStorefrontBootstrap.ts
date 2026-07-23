@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { defaultPayment, defaultPromotion } from "../lib/constants";
+import { getStorefrontBootstrap } from "../lib/api/catalog";
+import { getPublicGachaEnabled } from "../lib/api/gachaPublic";
 import {
   getPublicBoothSettings,
   getPublicPaymentSettings,
@@ -10,19 +12,42 @@ import {
   getPublicProductCategories,
 } from "../lib/api/products";
 import { getErrorMessage, isSessionNoise } from "../lib/errors";
-import type { BoothSettings, PaymentSettings, Product, PromotionSettings } from "../types/catalog";
+import type {
+  BoothSettings,
+  PaymentSettings,
+  Product,
+  PromotionSettings,
+  StorefrontBootstrap,
+} from "../types/catalog";
 
 type BootstrapPhase = "initial-loading" | "ready";
+type InitialProductPage = {
+  shopId: string;
+  products: Product[];
+  hasMore: boolean;
+};
+
+type BootstrapLoadState = {
+  phase: BootstrapPhase;
+  productPage: InitialProductPage | null;
+};
+
 const EMPTY_CATEGORIES: string[] = [];
+const INITIAL_LOAD_STATE: BootstrapLoadState = {
+  phase: "initial-loading",
+  productPage: null,
+};
 
 export function useStorefrontBootstrap(
   shopId: string | undefined,
+  shopSlug: string,
   paymentEnabled: boolean,
   initialBooth: BoothSettings,
   initialProducts: Product[],
   initialPayment?: PaymentSettings,
   initialPromotion: PromotionSettings = defaultPromotion,
   initialCategories: string[] = EMPTY_CATEGORIES,
+  initialBootstrap: StorefrontBootstrap | null | undefined = undefined,
 ) {
   const [booth, setBooth] = useState(initialBooth);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>(
@@ -35,10 +60,14 @@ export function useStorefrontBootstrap(
   const [paymentResolved, setPaymentResolved] = useState(
     initialPayment !== undefined,
   );
-  const [promotion, setPromotion] = useState<PromotionSettings>(initialPromotion);
-  const [phase, setPhase] = useState<BootstrapPhase>("initial-loading");
+  const [promotion, setPromotion] =
+    useState<PromotionSettings>(initialPromotion);
+  const [loadState, setLoadState] =
+    useState<BootstrapLoadState>(INITIAL_LOAD_STATE);
   const [error, setError] = useState("");
+  const [gachaEnabled, setGachaEnabled] = useState<boolean | null>(null);
   const shopIdentityRef = useRef(0);
+  const consumedInitialBootstrapRef = useRef(false);
   const paymentRequestRef = useRef<Promise<PaymentSettings> | null>(null);
   const paymentLoadedRef = useRef(false);
   const paymentRef = useRef(initialPayment ?? defaultPayment);
@@ -47,19 +76,27 @@ export function useStorefrontBootstrap(
 
   useEffect(() => {
     shopIdentityRef.current += 1;
+    consumedInitialBootstrapRef.current = false;
     paymentRequestRef.current = null;
     paymentLoadedRef.current = false;
     setBooth(initialBooth);
-    setFeaturedProducts(
-      initialProducts.filter((product) => product.featured),
-    );
+    setFeaturedProducts(initialProducts.filter((product) => product.featured));
     setCategories(initialCategories);
     setPayment(initialPayment ?? defaultPayment);
     setPaymentResolved(initialPayment !== undefined);
     setPromotion(initialPromotion);
+    setLoadState(INITIAL_LOAD_STATE);
+    setGachaEnabled(null);
     setError("");
-    setPhase("initial-loading");
-  }, [initialBooth, initialCategories, initialPayment, initialProducts, initialPromotion, shopId]);
+  }, [
+    initialBooth,
+    initialCategories,
+    initialPayment,
+    initialProducts,
+    initialPromotion,
+    shopId,
+    shopSlug,
+  ]);
 
   const captureError = useCallback((requestError: unknown) => {
     if (!isSessionNoise(requestError))
@@ -84,7 +121,9 @@ export function useStorefrontBootstrap(
   const loadFeatured = useCallback(async () => {
     if (!shopId) return;
     if (!navigator.onLine) {
-      setFeaturedProducts(initialProducts.filter((product) => product.featured));
+      setFeaturedProducts(
+        initialProducts.filter((product) => product.featured),
+      );
       return;
     }
     const identity = shopIdentityRef.current;
@@ -94,7 +133,9 @@ export function useStorefrontBootstrap(
         setFeaturedProducts(nextFeatured);
     } catch {
       if (identity === shopIdentityRef.current)
-        setFeaturedProducts(initialProducts.filter((product) => product.featured));
+        setFeaturedProducts(
+          initialProducts.filter((product) => product.featured),
+        );
     }
   }, [shopId, initialProducts]);
 
@@ -109,7 +150,8 @@ export function useStorefrontBootstrap(
       const nextCategories = await getPublicProductCategories(shopId);
       if (identity === shopIdentityRef.current) setCategories(nextCategories);
     } catch {
-      if (identity === shopIdentityRef.current) setCategories(initialCategories);
+      if (identity === shopIdentityRef.current)
+        setCategories(initialCategories);
     }
   }, [shopId, initialCategories]);
 
@@ -127,6 +169,15 @@ export function useStorefrontBootstrap(
       if (identity === shopIdentityRef.current) setPromotion(initialPromotion);
     }
   }, [shopId, initialPromotion]);
+
+  const loadGacha = useCallback(async () => {
+    if (!shopId || !navigator.onLine) return;
+    try {
+      setGachaEnabled(await getPublicGachaEnabled(shopId));
+    } catch {
+      setGachaEnabled(null);
+    }
+  }, [shopId]);
 
   const ensurePayment = useCallback(() => {
     if (!paymentEnabled) return Promise.resolve(defaultPayment);
@@ -178,14 +229,81 @@ export function useStorefrontBootstrap(
 
   const reload = useCallback(async () => {
     if (!shopId) return;
-    await settleRequests([
-      loadBooth(),
-      loadFeatured(),
-      loadCategories(),
-      loadPromotion(),
-    ]);
-    setPhase("ready");
-  }, [loadBooth, loadCategories, loadFeatured, loadPromotion, settleRequests, shopId]);
+    if (initialBootstrap === undefined) return;
+    const applyBootstrap = (bootstrap: StorefrontBootstrap) => {
+      setBooth(bootstrap.booth);
+      setFeaturedProducts(
+        bootstrap.products.filter((product) => product.featured),
+      );
+      setCategories(bootstrap.categories);
+      setPromotion(bootstrap.promotion);
+      setGachaEnabled(bootstrap.gachaEnabled);
+      setError("");
+      return {
+        shopId: bootstrap.catalogShopId,
+        products: bootstrap.products,
+        hasMore: bootstrap.hasMore,
+      } satisfies InitialProductPage;
+    };
+    if (!consumedInitialBootstrapRef.current && initialBootstrap) {
+      consumedInitialBootstrapRef.current = true;
+      const productPage =
+        initialBootstrap.catalogShopId === shopId
+          ? applyBootstrap(initialBootstrap)
+          : null;
+      setLoadState({ phase: "ready", productPage });
+      return;
+    }
+    if (!consumedInitialBootstrapRef.current && initialBootstrap === null) {
+      consumedInitialBootstrapRef.current = true;
+      await settleRequests([
+        loadBooth(),
+        loadFeatured(),
+        loadCategories(),
+        loadPromotion(),
+        loadGacha(),
+      ]);
+      setLoadState({ phase: "ready", productPage: null });
+      return;
+    }
+    if (!navigator.onLine) {
+      setLoadState({
+        phase: "ready",
+        productPage: { shopId, products: initialProducts, hasMore: false },
+      });
+      return;
+    }
+    const identity = shopIdentityRef.current;
+    try {
+      const bootstrap = await getStorefrontBootstrap(shopSlug);
+      if (identity !== shopIdentityRef.current) return;
+      setLoadState({
+        phase: "ready",
+        productPage: applyBootstrap(bootstrap),
+      });
+    } catch {
+      if (identity !== shopIdentityRef.current) return;
+      await settleRequests([
+        loadBooth(),
+        loadFeatured(),
+        loadCategories(),
+        loadPromotion(),
+        loadGacha(),
+      ]);
+      setLoadState({ phase: "ready", productPage: null });
+    }
+  }, [
+    initialProducts,
+    initialBootstrap,
+    loadBooth,
+    loadCategories,
+    loadFeatured,
+    loadGacha,
+    loadPromotion,
+    settleRequests,
+    shopId,
+    shopSlug,
+  ]);
 
   const refreshProductMetadata = useCallback(async () => {
     await settleRequests([loadFeatured(), loadCategories()]);
@@ -215,9 +333,11 @@ export function useStorefrontBootstrap(
     payment,
     paymentResolved,
     promotion,
-    phase,
+    initialProductPage: loadState.productPage,
+    gachaEnabled,
+    phase: loadState.phase,
     error,
-    isInitialLoading: phase === "initial-loading",
+    isInitialLoading: loadState.phase === "initial-loading",
     reload,
     refreshProductMetadata,
     refreshBooth,

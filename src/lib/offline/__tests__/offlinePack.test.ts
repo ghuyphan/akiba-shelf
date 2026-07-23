@@ -44,8 +44,8 @@ function marker(game: "genshin" | "hsr", id: string, paths: string[]) {
       required: paths.map((path) => ({
         url: `http://localhost:3000${path}`,
         cacheName: path.endsWith(".png")
-          ? "gacha-static-cache-v1"
-          : "gacha-app-shell-v3",
+          ? "gacha-static-cache-v2"
+          : "gacha-app-shell-v4",
       })),
     }),
   );
@@ -128,10 +128,10 @@ describe("offline gacha pack readiness", () => {
 
   it("accepts a matching marker only when every required asset is cached", async () => {
     installCaches({
-      "gacha-app-shell-v3": [
+      "gacha-app-shell-v4": [
         "http://localhost:3000/hsr-simulator/index.html",
       ],
-      "gacha-static-cache-v1": [
+      "gacha-static-cache-v2": [
         "http://localhost:3000/hsr-simulator/icon.png",
       ],
     });
@@ -146,7 +146,7 @@ describe("offline gacha pack readiness", () => {
 
   it("removes a marker for a partial cache even when index.html remains", async () => {
     installCaches({
-      "gacha-app-shell-v3": [
+      "gacha-app-shell-v4": [
         "http://localhost:3000/gacha-simulator/index.html",
       ],
     });
@@ -162,7 +162,7 @@ describe("offline gacha pack readiness", () => {
 
   it("invalidates a complete cache from an older simulator build", async () => {
     const cacheState = installCaches({
-      "gacha-app-shell-v3": [
+      "gacha-app-shell-v4": [
         "http://localhost:3000/gacha-simulator/index.html",
         "http://localhost:3000/gacha-simulator/app.js",
       ],
@@ -184,7 +184,7 @@ describe("offline gacha pack readiness", () => {
   it("never trusts a proven stale pack when cache cleanup fails", async () => {
     installCaches(
       {
-        "gacha-app-shell-v3": [
+        "gacha-app-shell-v4": [
           "http://localhost:3000/gacha-simulator/index.html",
           "http://localhost:3000/gacha-simulator/app.js",
         ],
@@ -203,7 +203,7 @@ describe("offline gacha pack readiness", () => {
 
   it("redownloads stable asset URLs when the simulator build changes", async () => {
     const cacheState = installCaches({
-      "gacha-app-shell-v3": [
+      "gacha-app-shell-v4": [
         "http://localhost:3000/gacha-simulator/index.html",
         "http://localhost:3000/gacha-simulator/app.js",
       ],
@@ -235,7 +235,7 @@ describe("offline gacha pack readiness", () => {
 
   it("redownloads cached simulator assets when no current marker exists", async () => {
     installCaches({
-      "gacha-app-shell-v3": [
+      "gacha-app-shell-v4": [
         "http://localhost:3000/gacha-simulator/index.html",
         "http://localhost:3000/gacha-simulator/app.js",
       ],
@@ -303,12 +303,12 @@ describe("offline gacha pack readiness", () => {
 
   it("reports one combined completion for two already cached games", async () => {
     installCaches({
-      "gacha-app-shell-v3": [
+      "gacha-app-shell-v4": [
         "http://localhost:3000/gacha-simulator/index.html",
         "http://localhost:3000/gacha-simulator/app.js",
         "http://localhost:3000/hsr-simulator/index.html",
       ],
-      "gacha-static-cache-v1": [
+      "gacha-static-cache-v2": [
         "http://localhost:3000/hsr-simulator/icon.png",
       ],
     });

@@ -118,9 +118,9 @@ select is_empty($$select id from public.products where id='auth-b-hidden'$$,'sta
 select is_empty($$update public.products set name='attack' where id='auth-a-active' returning id$$,'staff cannot edit products');
 select is_empty($$update public.payment_settings set bank_account_name='attack' where id='auth-a' returning id$$,'staff cannot edit payment settings');
 select throws_ok($$select public.save_promotion_settings('11000000-0000-4000-8000-000000000001',true,1,1,true,array['auth-a-active'],array['auth-a-active'])$$,'42501','Active shop owner or admin access required','staff cannot change promotion settings');
-select throws_ok($$insert into public.push_subscriptions(user_id,shop_id,endpoint,p256dh,auth) values('10000000-0000-4000-8000-000000000003','11000000-0000-4000-8000-000000000001','http://push.test/insecure','key','auth')$$,'23514',null,'push subscriptions require HTTPS endpoints');
-select throws_ok($$insert into public.push_subscriptions(user_id,shop_id,endpoint,p256dh,auth) values('10000000-0000-4000-8000-000000000003','11000000-0000-4000-8000-000000000001','https://push.test/oversized',repeat('k',513),'auth')$$,'23514',null,'push subscription keys are bounded');
-select lives_ok($$insert into public.push_subscriptions(user_id,shop_id,endpoint,p256dh,auth,user_agent) values('10000000-0000-4000-8000-000000000003','11000000-0000-4000-8000-000000000001','https://push.test/valid','key','auth','pgTAP')$$,'valid push subscriptions remain writable by their staff owner');
+select ok(not has_table_privilege('authenticated','public.push_subscriptions','insert'),'browser roles cannot register push endpoints directly');
+select ok(not has_table_privilege('authenticated','public.push_subscriptions','update'),'browser roles cannot replace push endpoint ownership directly');
+select ok(not has_table_privilege('authenticated','public.push_subscriptions','delete'),'browser roles cannot bypass protected push unregistration');
 
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000002';
 select lives_ok($$update public.payment_settings set bank_account_name='Admin' where id='auth-a'$$,'admin edits own payment settings');

@@ -2,6 +2,7 @@ import { Component, type ReactNode } from "react";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { EmptyState } from "./EmptyState";
 import { Button } from "./Button";
+import { reportError } from "../../lib/observability";
 
 type ErrorBoundaryProps = {
   children: ReactNode;
@@ -40,8 +41,12 @@ export class ErrorBoundary extends Component<
     return { error };
   }
 
-  componentDidCatch(error: Error) {
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("Route render failed:", error);
+    reportError(error, {
+      stage: "react_error_boundary",
+      componentStack: info.componentStack?.slice(0, 2_000),
+    });
     this.props.onError?.(error);
   }
 

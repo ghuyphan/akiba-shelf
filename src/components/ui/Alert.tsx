@@ -9,6 +9,7 @@ type AlertProps = {
   variant?: AlertVariant;
   className?: string;
   onClose?: () => void;
+  closeLabel?: string;
 };
 
 const icons = {
@@ -17,7 +18,7 @@ const icons = {
   error: AlertCircle,
 };
 
-export function Alert({ children, title, variant = "info", className = "", onClose }: AlertProps) {
+export function Alert({ children, title, variant = "info", className = "", onClose, closeLabel = "Dismiss notification" }: AlertProps) {
   const Icon = icons[variant];
 
   return (
@@ -31,7 +32,7 @@ export function Alert({ children, title, variant = "info", className = "", onClo
         <p className="alert-description">{children}</p>
       </div>
       {onClose && (
-        <button className="alert-close" type="button" aria-label="Dismiss notification" onClick={onClose}>
+        <button className="alert-close" type="button" aria-label={closeLabel} onClick={onClose}>
           <X size={14} aria-hidden="true" />
         </button>
       )}

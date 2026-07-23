@@ -200,6 +200,7 @@ export async function mockSupabase(
     multiShop?: boolean;
     manyCategories?: boolean;
     manyProducts?: boolean;
+    productCount?: number;
     manyShops?: boolean;
     ownedShopCount?: number;
     teamMembers?: boolean;
@@ -208,6 +209,7 @@ export async function mockSupabase(
     dualGacha?: boolean;
     orderQueue?: boolean;
     orderStatus?: "pending" | "confirmed" | "cancelled" | "expired";
+    bootstrapUnavailable?: boolean;
   } = {},
 ) {
   await page.route("https://example.test/*.jpg", (route) =>
@@ -219,8 +221,10 @@ export async function mockSupabase(
     }),
   );
 
-  const catalogProducts = options.manyProducts
-    ? Array.from({ length: 30 }, (_, index) => ({
+  const requestedProductCount = options.productCount ??
+    (options.manyProducts ? 30 : 0);
+  const catalogProducts = requestedProductCount > 0
+    ? Array.from({ length: requestedProductCount }, (_, index) => ({
         ...products[index % products.length],
         id: `product-${index + 1}`,
         name: `Product ${String(index + 1).padStart(2, "0")}`,
@@ -508,10 +512,96 @@ export async function mockSupabase(
         expired: options.orderQueue && fixtureOrderStatus === "expired" ? 1 : 0,
         all: options.orderQueue ? 1 : 0,
       });
+    if (url.pathname.includes("/rest/v1/rpc/get_order_notification_status"))
+      return json(route, []);
+    if (url.pathname.includes("/rest/v1/rpc/retry_order_notification"))
+      return json(route, true);
     if (url.pathname.includes("/rest/v1/rpc/update_order_fulfillment")) {
       const payload = JSON.parse(request.postData() || "{}");
       fixtureFulfillmentStatus = payload.next_status;
       return json(route, { outcome: "updated", order: fixtureOrder() });
+    }
+    if (url.pathname.includes("/rest/v1/rpc/get_storefront_bootstrap")) {
+      if (options.bootstrapUnavailable) {
+        return json(
+          route,
+          {
+            code: "PGRST202",
+            message:
+              "Could not find the function public.get_storefront_bootstrap",
+          },
+          404,
+        );
+      }
+      const payload = JSON.parse(request.postData() || "{}");
+      const slug = String(payload.p_shop_slug || "akiba-shelf");
+      const id = slug === "shop-b"
+        ? "00000000-0000-4000-8000-000000000002"
+        : "00000000-0000-4000-8000-000000000001";
+      const displayId = options.multiShop ? `id-${slug}` : "main";
+      const bootstrapProducts = options.multiShop
+        ? catalogProducts.map((product) => ({
+            ...product,
+            id: `${displayId}-${product.id}`,
+            name: `${displayId} ${product.name}`,
+            shop_id: id,
+          }))
+        : catalogProducts;
+      const catalogBooth = options.socialLinks
+        ? {
+            ...booth,
+            instagram_url: "https://instagram.com/fixture.artist",
+            facebook_url: "https://facebook.com/fixture.booth",
+            tiktok_url: "https://tiktok.com/@fixture.artist",
+            x_url: "https://x.com/fixture_artist",
+            x_visible: true,
+            threads_url: "https://threads.net/@fixture.artist",
+            threads_visible: false,
+            youtube_url: "https://youtube.com/@fixtureartist",
+            youtube_visible: true,
+          }
+        : booth;
+      const localizedBooth = options.catalogLocale
+        ? { ...catalogBooth, catalog_locale: options.catalogLocale }
+        : catalogBooth;
+      return json(route, {
+        shop: {
+          id,
+          name: options.multiShop ? `Fixture ${slug}` : "Fixture Booth",
+          slug,
+          active: true,
+          accepting_orders: true,
+          catalog_source_shop_id: null,
+        },
+        catalog_shop_id: id,
+        products: bootstrapProducts.slice(0, 24),
+        has_more: bootstrapProducts.length > 24,
+        booth: options.multiShop
+          ? {
+              ...localizedBooth,
+              id,
+              shop_id: id,
+              booth_name: `Booth ${displayId}`,
+            }
+          : { ...localizedBooth, id, shop_id: id },
+        categories: [
+          ...new Set(bootstrapProducts.map((product) => product.category)),
+        ]
+          .filter((category) => category.trim() !== "")
+          .sort(),
+        promotion: {
+          shop_id: id,
+          enabled: true,
+          buy_quantity: 3,
+          free_quantity: 1,
+          repeatable: true,
+          qualifying_product_ids: bootstrapProducts.map(
+            (product) => product.id,
+          ),
+          reward_product_ids: bootstrapProducts.map((product) => product.id),
+        },
+        gacha_enabled: Boolean(options.dualGacha),
+      });
     }
     if (url.pathname.includes("/rest/v1/rpc/get_public_product_categories"))
       return json(
@@ -574,8 +664,6 @@ export async function mockSupabase(
           });
     if (url.pathname.includes("/rest/v1/rpc/get_customer_order"))
       return json(route, []);
-    if (url.pathname.includes("/functions/v1/notify-new-order"))
-      return json(route, { sent: 0 });
     if (url.pathname.includes("/rest/v1/promotion_products"))
       return json(
         route,

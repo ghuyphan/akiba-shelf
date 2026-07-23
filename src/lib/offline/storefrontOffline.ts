@@ -13,6 +13,7 @@ import { ensureOfflineNavigationReady } from "./pwa";
 import { prepareGachaLaunch } from "../gacha/gachaLaunch";
 import type { Shop } from "../../types/catalog";
 import { prepareResponseForCache } from "./cacheResponse";
+import { OFFLINE_CACHE_NAMES } from "./cacheNames";
 
 const STOREFRONT_OFFLINE_MARKER_PREFIX = "matsuri-storefront-offline-v2";
 const OFFLINE_DOWNLOAD_CONCURRENCY = 6;
@@ -29,8 +30,8 @@ function storefrontMarkerKey(slug: string) {
 
 function cacheNameForStorefrontUrl(url: string) {
   return /\/storage\/v1\/object\/public\//.test(url)
-    ? "supabase-storage-cache-v2"
-    : "product-image-cache-v2";
+    ? OFFLINE_CACHE_NAMES.supabaseStorage
+    : OFFLINE_CACHE_NAMES.productImages;
 }
 
 function readStorefrontMarker(slug: string): StorefrontOfflineMarker | null {
@@ -60,8 +61,10 @@ function readStorefrontMarker(slug: string): StorefrontOfflineMarker | null {
 }
 
 async function cacheStorefrontAssets(urls: string[]) {
-  const storageCache = await caches.open("supabase-storage-cache-v2");
-  const productImageCache = await caches.open("product-image-cache-v2");
+  const storageCache = await caches.open(OFFLINE_CACHE_NAMES.supabaseStorage);
+  const productImageCache = await caches.open(
+    OFFLINE_CACHE_NAMES.productImages,
+  );
   let nextIndex = 0;
 
   async function worker() {
@@ -74,7 +77,7 @@ async function cacheStorefrontAssets(urls: string[]) {
           `Could not download ${new URL(url, location.origin).pathname}.`,
         );
       const cache =
-        cacheNameForStorefrontUrl(url) === "supabase-storage-cache-v2"
+        cacheNameForStorefrontUrl(url) === OFFLINE_CACHE_NAMES.supabaseStorage
           ? storageCache
           : productImageCache;
       await cache.put(request, prepareResponseForCache(response));

@@ -1,5 +1,15 @@
-import type { CatalogData, Product } from "../../types/catalog";
-import { getAdminProducts, getPublicProducts } from "./products";
+import { defaultBooth } from "../constants";
+import { storefrontBootstrapSchema } from "../schemas";
+import type {
+  CatalogData,
+  Product,
+  StorefrontBootstrap,
+} from "../../types/catalog";
+import {
+  getAdminProducts,
+  getPublicProducts,
+  normalizeProduct,
+} from "./products";
 import {
   getAdminBoothSettings,
   getAdminPaymentSettings,
@@ -7,7 +17,33 @@ import {
   getPublicBoothSettings,
   getPublicPaymentSettings,
   getPublicPromotionSettings,
+  normalizeBooth,
+  normalizePromotion,
 } from "./settings";
+import { requireSupabase } from "./shared";
+
+export async function getStorefrontBootstrap(
+  shopSlug: string,
+): Promise<StorefrontBootstrap> {
+  const { data, error } = await requireSupabase().rpc(
+    "get_storefront_bootstrap",
+    { p_shop_slug: shopSlug },
+  );
+  if (error) throw error;
+  const parsed = storefrontBootstrapSchema.parse(data);
+  return {
+    shop: parsed.shop,
+    catalogShopId: parsed.catalog_shop_id,
+    products: parsed.products.map((product) => normalizeProduct(product)),
+    hasMore: parsed.has_more,
+    booth: normalizeBooth(
+      parsed.booth ?? { ...defaultBooth, shop_id: parsed.catalog_shop_id },
+    ),
+    categories: parsed.categories,
+    promotion: normalizePromotion(parsed.promotion),
+    gachaEnabled: parsed.gacha_enabled,
+  };
+}
 
 export async function getCatalogCoreData(
   shopId: string,
