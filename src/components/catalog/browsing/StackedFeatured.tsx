@@ -7,6 +7,7 @@ import {
   Star,
 } from "lucide-react";
 import type { Product } from "../../../types/catalog";
+import { MAX_FEATURED_PRODUCTS } from "../../../lib/constants";
 import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
 import { EmptyState } from "../../ui/EmptyState";
 import { ProductPrice } from "./ProductPrice";
@@ -38,7 +39,7 @@ export function StackedFeatured({
       product.featured &&
       product.quantity_available > 0 &&
       product.active !== false,
-  );
+  ).slice(0, MAX_FEATURED_PRODUCTS);
 
   useEffect(() => {
     if (active >= featured.length) setActive(0);

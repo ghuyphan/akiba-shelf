@@ -27,7 +27,10 @@ const product: Product = {
   active: true,
 };
 
-function renderForm(onDelete = vi.fn().mockResolvedValue(undefined)) {
+function renderForm(
+  onDelete = vi.fn().mockResolvedValue(undefined),
+  onBack = vi.fn(),
+) {
   render(
     <PlatformI18nProvider>
       <ToastProvider>
@@ -36,6 +39,7 @@ function renderForm(onDelete = vi.fn().mockResolvedValue(undefined)) {
           product={product}
           onSave={vi.fn().mockResolvedValue(undefined)}
           onDelete={onDelete}
+          onBack={onBack}
         />
       </ToastProvider>
     </PlatformI18nProvider>,
@@ -73,5 +77,15 @@ describe("ProductForm", () => {
     expect(error).toHaveAttribute("role", "alert");
     expect(itemCode).toHaveAttribute("aria-describedby", error.id);
     expect(itemCode).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("provides a direct return to the product list", async () => {
+    const user = userEvent.setup();
+    const onBack = vi.fn();
+    renderForm(undefined, onBack);
+
+    await user.click(screen.getByRole("button", { name: "Back to products" }));
+
+    expect(onBack).toHaveBeenCalledOnce();
   });
 });

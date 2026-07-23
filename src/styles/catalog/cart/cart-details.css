@@ -142,9 +142,9 @@
   .catalog-screen .chip { padding-inline: 16px; }
   .featured-banner-add { min-height: 48px; font-size: 13px; }
   .featured-banner-nav>button { width: 44px; height: 44px; }
-  .featured-banner-nav>div { flex: 1; justify-content: center; min-width: 0; gap: clamp(0px, 1vw, 5px); }
-  .featured-banner-nav>div>button { position: relative; width: clamp(20px, 6vw, 28px); min-width: clamp(20px, 6vw, 28px); height: 44px; background: transparent; }
-  .featured-banner-nav>div>button.active { width: clamp(20px, 6vw, 28px); background: transparent; }
+  .featured-banner-nav>div { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); flex: 1; justify-content: stretch; min-width: 0; gap: clamp(0px, 1vw, 5px); }
+  .featured-banner-nav>div>button { position: relative; width: 100%; min-width: 0; max-width: 28px; height: 44px; justify-self: center; background: transparent; }
+  .featured-banner-nav>div>button.active { width: 100%; background: transparent; }
   .featured-banner-nav>div>button::after { content: ""; position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; border-radius: 999px; background: var(--line); transform: translate(-50%, -50%); transition: width 220ms ease, background 220ms ease; }
   .featured-banner-nav>div>button.active::after { width: 16px; background: var(--coral); }
   .selected-header .clear-button { min-height: 44px; }
@@ -167,4 +167,3 @@
   }
   .cart-reward-picker button { scroll-snap-align: start; }
 }
-

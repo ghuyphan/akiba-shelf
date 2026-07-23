@@ -8,7 +8,7 @@ import {
 
 const TURNSTILE_SCRIPT_ID = "matsuri-turnstile-api";
 const TURNSTILE_ACTION = "turnstile-spin-v2";
-const COMPACT_QUERY = "(max-width: 420px)";
+const COMPACT_QUERY = "(max-width: 340px)";
 
 type TurnstileSize = "flexible" | "compact";
 

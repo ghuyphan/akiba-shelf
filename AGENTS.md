@@ -4,6 +4,14 @@ Read this file before changing code. Use `CODEBASE.md` to locate ownership,
 `DESIGN.md` for broad UI work, and `docs/operations.md` for deployment. Preserve
 unrelated work in a dirty tree and use focused patches.
 
+## Communication
+
+Use terse technical English.
+- No greetings, filler, repetition, or generic explanations.
+- Prefer fragments, bullets, symbols, and short field names.
+- Report: result, changed files, tests, blockers.
+- Do not omit information needed for correctness.
+
 ## Product invariants
 
 - Supabase is the source of truth. Catalog and order screens use Realtime, but

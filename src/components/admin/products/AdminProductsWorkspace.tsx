@@ -132,6 +132,7 @@ export function AdminProductsWorkspace({
               product={selectedProduct}
               onSave={onSaveProduct}
               onDelete={onDeleteProduct}
+              onBack={() => requestNavigation(() => setActiveTab("list"))}
             />
           </div>
         ) : (

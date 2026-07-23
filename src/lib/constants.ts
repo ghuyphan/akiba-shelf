@@ -73,6 +73,7 @@ export const defaultPromotion: PromotionSettings = {
 
 export const productBadges = ["New", "Best Seller", "Limited", "Restock", "Event Exclusive", "Preorder", "Last Call"];
 export const LIMITED_STOCK_THRESHOLD = 5;
+export const MAX_FEATURED_PRODUCTS = 8;
 export const SHOP_NAME_MAX_LENGTH = 100;
 export const SHOP_SLUG_MIN_LENGTH = 2;
 export const SHOP_SLUG_MAX_LENGTH = 63;

@@ -65,12 +65,6 @@
   }
 }
 
-@media (max-width: 420px) {
-  .turnstile-shell {
-    height: 140px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .turnstile-shell[data-state="loading"] .turnstile-status-dot {
     animation: none;

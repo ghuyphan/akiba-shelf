@@ -123,4 +123,24 @@ describe("StackedFeatured", () => {
 
     vi.useRealTimers();
   });
+
+  it("caps the mobile deck instead of rendering every featured product", () => {
+    const { container } = render(
+      <CatalogLocaleProvider locale="en">
+        <StackedFeatured
+          products={Array.from({ length: 15 }, (_, index) =>
+            featuredProduct(`item-${index}`, `Item ${index}`),
+          )}
+          autoRotate={false}
+          onSelect={vi.fn()}
+        />
+      </CatalogLocaleProvider>,
+    );
+
+    expect(container.querySelector(".featured-banner-count")).toHaveTextContent(
+      "01 / 08",
+    );
+    expect(container.querySelectorAll(".featured-banner-nav>div>button"))
+      .toHaveLength(8);
+  });
 });

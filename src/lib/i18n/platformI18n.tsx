@@ -1119,6 +1119,7 @@ const vi: Record<string, string> = {
     "Không thể tải không gian của gian hàng này. Hãy kiểm tra kết nối và thử lại.",
   "Retry loading": "Tải lại",
   "Products List ({{count}})": "Danh sách sản phẩm ({{count}})",
+  "Back to products": "Quay lại danh sách sản phẩm",
   "Edit Product": "Sửa sản phẩm",
   "No product selected": "Chưa chọn sản phẩm",
   "Choose a product from the list to edit it, or start a fresh listing.":

@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Boxes, Edit3, Eye, ImageIcon, PackagePlus, Redo2, RotateCcw, Sparkles, Tags, Trash2, Undo2, X } from "lucide-react";
+import { ArrowLeft, Boxes, Edit3, Eye, ImageIcon, PackagePlus, Redo2, RotateCcw, Sparkles, Tags, Trash2, Undo2, X } from "lucide-react";
 import type { Product, StockStatus } from "../../../types/catalog";
 import { formatNumber, formatVnd, normalizeSlug } from "../../../utils/format";
 import { LIMITED_STOCK_THRESHOLD, productBadges } from "../../../lib/constants";
@@ -26,9 +26,9 @@ function formatDisplayPrice(value: number | string): string {
   return digits ? new Intl.NumberFormat("vi-VN").format(Number(digits)) : "";
 }
 
-type ProductFormProps = { shopId: string; product: Product; onSave: (product: Product) => Promise<void>; onDelete: (id: string) => Promise<void> };
+type ProductFormProps = { shopId: string; product: Product; onSave: (product: Product) => Promise<void>; onDelete: (id: string) => Promise<void>; onBack: () => void };
 
-export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormProps) {
+export function ProductForm({ shopId, product, onSave, onDelete, onBack }: ProductFormProps) {
   const [draft, setDraft] = useState(product);
   const [isEditing, setIsEditing] = useState(!product.name);
   const [errors, setErrors] = useState<string[]>([]);
@@ -231,7 +231,7 @@ export function ProductForm({ shopId, product, onSave, onDelete }: ProductFormPr
   }
 
   return (
-    <AdminCard title={isNewProduct ? t("Create product") : draft.name || t("Product details")} description={isNewProduct ? t("Add the essentials first. You can refine the listing later.") : `${draft.item_code} · ${draft.category}`} icon={isNewProduct ? <PackagePlus size={18} /> : <Tags size={18} />} action={!isNewProduct && !isEditing ? <div className="admin-card-actions"><Button type="button" variant="secondary" icon={<Edit3 size={17} />} disabled={busy} onClick={() => setIsEditing(true)}>{t("Edit")}</Button><Button type="button" variant="danger" icon={<Trash2 size={17} />} disabled={busy} onClick={() => setDeleteConfirmationOpen(true)}>{t("Delete")}</Button></div> : undefined}>
+    <AdminCard title={isNewProduct ? t("Create product") : draft.name || t("Product details")} description={isNewProduct ? t("Add the essentials first. You can refine the listing later.") : `${draft.item_code} · ${draft.category}`} icon={isNewProduct ? <PackagePlus size={18} /> : <Tags size={18} />} action={<div className="admin-card-actions"><Button type="button" variant="secondary" icon={<ArrowLeft size={17} />} disabled={busy} onClick={onBack}>{t("Back to products")}</Button>{!isNewProduct && !isEditing && <><Button type="button" variant="secondary" icon={<Edit3 size={17} />} disabled={busy} onClick={() => setIsEditing(true)}>{t("Edit")}</Button><Button type="button" variant="danger" icon={<Trash2 size={17} />} disabled={busy} onClick={() => setDeleteConfirmationOpen(true)}>{t("Delete")}</Button></>}</div>}>
       <form ref={formRef} className={`admin-form admin-product-form ${isEditing ? "is-editing" : "is-readonly"}`} onSubmit={handleSubmit}>
         {errors.length > 0 && (
           <Alert

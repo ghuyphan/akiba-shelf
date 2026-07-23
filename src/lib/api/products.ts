@@ -1,4 +1,7 @@
-import { LIMITED_STOCK_THRESHOLD } from "../constants";
+import {
+  LIMITED_STOCK_THRESHOLD,
+  MAX_FEATURED_PRODUCTS,
+} from "../constants";
 import { safePublicUrl } from "../branding";
 import { PUBLIC_PRODUCT_COLUMNS } from "../catalogQueries";
 import type { PublicProductSort } from "../catalogQueries";
@@ -171,7 +174,7 @@ export async function getPublicProducts(
 
 export async function getPublicFeaturedProducts(
   shopId: string,
-  limit = 8,
+  limit = MAX_FEATURED_PRODUCTS,
 ): Promise<Product[]> {
   const { data, error } = await requireSupabase()
     .from("products")
