@@ -22,14 +22,6 @@ assert.ok(
 	`${descriptionPath} must not render event banner data through {@html}`
 );
 
-for (const path of [
-	'src/routes/_phonograph/_controller.svelte',
-	'src/routes/_phonograph/_modal-track.svelte'
-]) {
-	const source = await readFile(resolve(root, path), 'utf8');
-	assert.ok(!source.includes('{@html'), `${path} must not render persisted text through {@html}`);
-}
-
 const helperSource = (await readFile(helperPath, 'utf8')).replace('export const', 'const');
 const componentSource = (await readFile(componentPath, 'utf8')).replace(
 	"import { splitHighlightedText } from '$lib/helpers/highlighted-text';",

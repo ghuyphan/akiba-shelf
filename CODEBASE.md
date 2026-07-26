@@ -216,7 +216,6 @@ Edge Functions:
 - `create-order`: request/rate boundary for checkout.
 - `invite-shop-member`: owner invitation lifecycle.
 - `notify-new-order`: push delivery and deduplication.
-- `gacha-music-proxy`: origin-restricted HSR media proxy.
 
 ## Fast session loop
 

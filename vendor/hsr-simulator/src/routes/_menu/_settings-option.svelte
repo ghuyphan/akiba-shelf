@@ -7,10 +7,8 @@
 	import { cookie } from '$lib/helpers/dataAPI/api-cookie';
 	import { flags, localeName } from '$lib/data/country.json';
 	import { localConfig } from '$lib/helpers/dataAPI/api-localstorage';
-	import { activeBacksound } from '$lib/stores/phonograph-store';
 	import { playSfx, setSfxVolume } from '$lib/helpers/sounds/audiofx';
 	import { userCurrencies } from '$lib/helpers/shop-price';
-	import { setTrackVolume } from '$lib/helpers/sounds/phonograph';
 	import Range from '$lib/components/Range.svelte';
 
 	export let showOption = false;
@@ -36,15 +34,13 @@
 	};
 
 	// Range Input
-	const phonoVal = cookie.get('trackVolume') * 100 || 20;
 	const sfxVal = cookie.get('sfxVolume') * 100 || 100;
-	let rangeVal = optionName === 'phonoVolume' ? phonoVal : sfxVal;
+	let rangeVal = sfxVal;
 	const setValue = (val) => (rangeVal = val);
 	setContext('setValue', setValue);
 
 	const changeValue = (e) => {
 		const { value } = e.detail;
-		if (optionName === 'phonoVolume') return setTrackVolume(value);
 		setSfxVolume(value);
 	};
 
@@ -71,19 +67,6 @@
 		showModal({ title: $t('menu.promptTitle') });
 	};
 
-	const navigate = getContext('navigate');
-
-
-	// Phonograph
-	const openPhonograph = () => {
-		playSfx();
-		navigate('phonograph');
-	};
-
-	const dontShowAlbum = ['more-ost', 'custom-musics'];
-	$: backsound = $activeBacksound || {};
-	$: dontShow = dontShowAlbum.includes(backsound.album);
-	$: activeAlbum = !backsound.album || dontShow ? '' : ' - ' + $t(`phonograph.${backsound.album}`);
 </script>
 
 <div class="setting-item" class:sub>
@@ -123,22 +106,6 @@
 			<button class="selected-option" on:click={clearStorage}>
 				{$t('menu.clearNow')} <i class="hsr-trash"></i>
 			</button>
-
-			<!-- Choose Backsound -->
-		{:else if optionName === 'backsound'}
-			<button
-				class="selected-option"
-				style="text-align: left; padding-left: 5%"
-				on:click={openPhonograph}
-			>
-				<!-- svelte-ignore a11y-distracting-elements -->
-				<marquee style="width: 75%;">
-					{backsound.title || ''}{activeAlbum}
-				</marquee>
-				<i class="hsr-music"></i>
-			</button>
-
-
 
 			<!-- Number of Warps -->
 		{:else if optionName === 'warpnumber'}

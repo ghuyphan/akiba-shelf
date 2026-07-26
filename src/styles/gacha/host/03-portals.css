@@ -1,6 +1,17 @@
 .gacha-game-portals {
+  --gacha-seam-shift: 0vw;
   overflow: hidden;
   background: #070b16;
+}
+
+.gacha-game-portals:has(.is-genshin:hover),
+.gacha-game-portals:has(.is-genshin:focus-visible) {
+  --gacha-seam-shift: 12vw;
+}
+
+.gacha-game-portals:has(.is-hsr:hover),
+.gacha-game-portals:has(.is-hsr:focus-visible) {
+  --gacha-seam-shift: -12vw;
 }
 
 .gacha-game-portals::before {
@@ -9,7 +20,7 @@
   z-index: 7;
   top: -18%;
   bottom: -18%;
-  left: 50%;
+  left: calc(50% + var(--gacha-seam-shift));
   width: clamp(70px, 8vw, 132px);
   pointer-events: none;
   opacity: 0;
@@ -19,6 +30,7 @@
   filter: blur(5px) drop-shadow(0 0 30px rgb(151 213 255 / 72%));
   transform: translateX(-50%) skewX(-8deg) scaleX(0.12);
   transition:
+    left 650ms var(--portal-ease),
     opacity 260ms ease,
     transform 580ms var(--portal-ease),
     filter 260ms ease;
@@ -30,13 +42,16 @@
   z-index: 6;
   top: 0;
   bottom: 0;
-  left: 50%;
-  width: 2px;
+  left: calc(45% + var(--gacha-seam-shift));
+  width: calc(10vw + 2px);
   pointer-events: none;
   background: linear-gradient(transparent 7%, rgb(255 255 255 / 70%) 42%, rgb(176 214 255 / 80%) 58%, transparent 94%);
-  box-shadow: 0 0 30px rgb(153 202 255 / 52%);
-  transform: skewX(-8deg) translateX(-50%);
-  transition: opacity 240ms ease;
+  clip-path: polygon(calc(100% - 2px) 0, 100% 0, 2px 100%, 0 100%);
+  filter: drop-shadow(0 0 14px rgb(153 202 255 / 72%));
+  transform-origin: center;
+  transition:
+    left 650ms var(--portal-ease),
+    opacity 240ms ease;
   animation: gacha-seam-arrive 1100ms var(--portal-ease) both;
 }
 
@@ -408,4 +423,3 @@
 .gacha-game-portal:focus-visible .gacha-portal-enter::before {
   transform: translateX(130%);
 }
-

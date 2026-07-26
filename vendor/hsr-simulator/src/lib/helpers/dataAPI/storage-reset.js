@@ -8,7 +8,6 @@ import {
 	activeBanner,
 	activePhase,
 	activeVersion,
-	animatedLC,
 	autoskip,
 	embers,
 	oneiric,
@@ -20,9 +19,9 @@ import {
 	starlight,
 	starterRemaining,
 	stellarJade,
+	muted,
 	warpAmount
 } from '$lib/stores/app-store';
-import { muted } from '$lib/stores/phonograph-store';
 import { HistoryManager } from '$lib/helpers/dataAPI/api-indexeddb';
 import { localConfig, storageLocal } from '$lib/helpers/dataAPI/api-localstorage';
 
@@ -51,8 +50,6 @@ export const storageReset = async ({ keepSetting = false, clearCache = false } =
 	starterRemaining.set(50);
 	showStarterBanner.set(true);
 	regReward.set({ rollcount: 0, isClaimed: false });
-	const customTracks = storageLocal.get('customTracks');
-
 	if (keepSetting) {
 		const config = storageLocal.get('config');
 		const pity = storageLocal.get('pity');
@@ -64,14 +61,11 @@ export const storageReset = async ({ keepSetting = false, clearCache = false } =
 		storageLocal.set('config', config);
 		storageLocal.set('pity', pity);
 		storageLocal.set('balance', balance);
-		storageLocal.set('customTracks', customTracks);
 		storageLocal.set('probabilityRates', probabilityRates);
 		return;
 	}
 
 	localStorage.removeItem('WarpSimulator');
-	storageLocal.set('customTracks', customTracks);
-
 	stellarJade.set(balance.stellarJade);
 	specialPass.set(balance.ticketPass);
 	regularPass.set(balance.ticketPass);
@@ -85,9 +79,8 @@ export const storageReset = async ({ keepSetting = false, clearCache = false } =
 	activePhase.set(warpPhase);
 	activeBanner.set(0);
 
-	animatedLC.set(false);
 	warpAmount.set('default');
 	autoskip.set({ express: false, art: true });
-	muted.set({ bgm: false, sfx: false });
+	muted.set({ sfx: false });
 	probEdit.set(false);
 };

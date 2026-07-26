@@ -38,8 +38,8 @@ Matsuri creates VietQR payloads and SVG images locally. It does not require a
 VietQR API secret.
 
 The public frontend key may be a current publishable key or a legacy anon JWT.
-`create-order` and `gacha-music-proxy` use `verify_jwt = false` and enforce
-their own request bounds, origin policy, and rate limits. `notify-new-order`
+`create-order` uses `verify_jwt = false` and enforces its own request bounds,
+origin policy, and rate limits. `notify-new-order`
 also uses `verify_jwt = false`, but accepts only the Vault-backed worker secret
 and a drain action; browsers cannot initiate delivery. `invite-shop-member`
 and `push-subscriptions` use `verify_jwt = true` because they require the
@@ -198,20 +198,19 @@ without a device ID. Apply the migration first, deploy functions second, and
 deploy the frontend last. Remove the compatibility overload only in a later
 migration after the previous Pages and Edge Function rollback window closes.
 
-Deploy all five functions explicitly after required migrations:
+Deploy all four functions explicitly after required migrations:
 
 ```bash
 npx supabase functions deploy create-order
 npx supabase functions deploy invite-shop-member
 npx supabase functions deploy notify-new-order
 npx supabase functions deploy push-subscriptions
-npx supabase functions deploy gacha-music-proxy
 ```
 
 Deploy from the repository configuration so each function receives the
-intended `verify_jwt` setting. After deployment, smoke-test public checkout and
-HSR music with the configured publishable/anon key, then test invitations with
-an authenticated owner session.
+intended `verify_jwt` setting. After deployment, smoke-test public checkout
+with the configured publishable/anon key, then test invitations with an
+authenticated owner session.
 
 Responsibilities:
 
@@ -220,7 +219,6 @@ Responsibilities:
 - `notify-new-order`: token-gated durable queue drain and Web Push delivery.
 - `push-subscriptions`: authenticated registration, status, and removal through
   the protected subscription RPCs.
-- `gacha-music-proxy`: `PUBLIC_SITE_URL`-restricted HSR metadata proxy.
 
 Run `npm run test:functions` whenever a function changes. Do not expose the
 service-role key to frontend code; Supabase provides it only to the function

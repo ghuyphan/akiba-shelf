@@ -9,8 +9,6 @@
 	import { storageReset } from '$lib/helpers/dataAPI/storage-reset';
 	import { localConfig } from '$lib/helpers/dataAPI/api-localstorage';
 	import { playSfx } from '$lib/helpers/sounds/audiofx';
-	import { initTrack, isPlaying } from '$lib/helpers/sounds/phonograph';
-	import { activeBacksound, muted } from '$lib/stores/phonograph-store';
 	import { check as checkExpress } from '$lib/helpers/express-loader';
 
 	import Modal from '$lib/components/Modal.svelte';
@@ -46,13 +44,6 @@
 		showMenu = !showMenu;
 	};
 	setContext('toggleMenu', toggleShowMenu);
-
-	// Show Modal
-	const navigate = getContext('navigate');
-	const openPhonograph = () => {
-		playSfx();
-		navigate('phonograph');
-	};
 
 	// Modal
 	let isModalOpen = false;
@@ -91,8 +82,6 @@
 
 		if (keepSetting) return;
 
-		const soundOn = isPlaying($activeBacksound?.sourceID);
-		if (!soundOn) initTrack();
 		readyToPull.set(await checkExpress());
 		localConfig.set('litemode', $liteMode);
 	};
@@ -138,12 +127,6 @@
 		<button title="Options" aria-label="Settings" on:click={toggleShowMenu}>
 			<i class="hsr-cog"></i>
 		</button>
-
-		{#if !$muted.bgm}
-			<button title="PhonoGraph" aria-label="Phonograph" on:click={openPhonograph}>
-				<i class="hsr-phonograph"></i>
-			</button>
-		{/if}
 
 		<button on:click={handleFullscreen} aria-label="Fullscreen" title="Fullscreen">
 			<i class="hsr-{!fullscreen ? 'fullscreen' : 'shrink'}"></i>

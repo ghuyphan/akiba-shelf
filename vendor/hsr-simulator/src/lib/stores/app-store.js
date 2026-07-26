@@ -25,8 +25,6 @@ export const isMobile = writable(false);
 export const viewportWidth = writable(0);
 export const viewportHeight = writable(0);
 
-export const animatedLC = writable(false); // animated LC
-export const liveconeList = writable({}); // animated lc List
 export const assets = writable([]);
 export const probEdit = writable(false);
 
@@ -35,3 +33,4 @@ export const warpAmount = writable('default');
 export const autoskip = writable({ express: false, art: true });
 export const liteMode = writable(false);
 export const isPWA = writable(false);
+export const muted = writable({ sfx: false });

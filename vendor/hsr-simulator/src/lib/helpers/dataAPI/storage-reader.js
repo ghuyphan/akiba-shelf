@@ -7,7 +7,6 @@ import {
 import {
 	activePhase,
 	activeVersion,
-	animatedLC,
 	autoskip,
 	embers,
 	liteMode,
@@ -19,15 +18,10 @@ import {
 	starlight,
 	starterRemaining,
 	stellarJade,
+	muted,
 	warpAmount
 } from '$lib/stores/app-store';
-import {
-	customTracks,
-	localBalance,
-	localConfig,
-	rollCounter
-} from '$lib/helpers/dataAPI/api-localstorage';
-import { musics, muted } from '$lib/stores/phonograph-store';
+import { localBalance, localConfig, rollCounter } from '$lib/helpers/dataAPI/api-localstorage';
 
 const importLocalConfig = () => {
 	const { stellarJade: isj, ticketPass: pass, oneiric: ios } = initialAmount;
@@ -53,9 +47,6 @@ const importLocalConfig = () => {
 	const llitemode = localConfig.get('litemode') || false;
 	liteMode.set(llitemode);
 
-	const llivecone = localConfig.get('livecone') || false;
-	animatedLC.set(llivecone);
-
 	const lWarpAmount = localConfig.get('warpAmount') || 'default';
 	warpAmount.set(lWarpAmount);
 
@@ -67,17 +58,8 @@ const importLocalConfig = () => {
 	regReward.set({ rollcount: regularRollCount, isClaimed: isRegRewardClaimed });
 
 	// Sounds
-	const { sfx = false, bgm = false } = localConfig.get('mutedSounds') || {};
-	muted.set({ bgm, sfx });
-
-	// Custom Music
-	const customBGM = customTracks.getAll();
-	musics.update((m) => {
-		customBGM.forEach(({ sourceID, title, description }) => {
-			m.push({ album: 'custom-musics', sourceID, title, description });
-		});
-		return m;
-	});
+	const { sfx = false } = localConfig.get('mutedSounds') || {};
+	muted.set({ sfx });
 };
 
 const setBannerVersionAndPhase = () => {

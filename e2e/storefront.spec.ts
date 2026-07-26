@@ -832,6 +832,20 @@ test("offers native game portals when both gacha games are active", async ({
   ).toBeVisible();
 });
 
+test("launches HSR without forwarding Supabase credentials", async ({ page }) => {
+  await page.unrouteAll({ behavior: "wait" });
+  await mockSupabase(page, { dualGacha: true });
+  await page.goto("./s/akiba-shelf/play?game=hsr");
+
+  const iframeSource = await page.locator(".gacha-host iframe").getAttribute("src");
+  expect(iframeSource).not.toBeNull();
+  const iframeUrl = new URL(iframeSource!, page.url());
+  expect(iframeUrl.pathname).toBe("/hsr-simulator/");
+  expect(iframeUrl.searchParams.get("shop")).toBe("akiba-shelf");
+  expect(iframeUrl.searchParams.has("supabase_url")).toBe(false);
+  expect(iframeUrl.searchParams.has("supabase_anon")).toBe(false);
+});
+
 test("keeps the phone game selector full-screen during launch", async ({
   page,
 }, testInfo) => {

@@ -104,6 +104,8 @@
   }
 
   .gacha-game-portals {
+    --gacha-mobile-seam-depth: 13.92%;
+    --gacha-mobile-seam-top: 42%;
     position: relative;
     width: 100%;
     height: 100dvh;
@@ -115,33 +117,25 @@
   }
 
   .gacha-game-portals::before {
-    display: block;
-    top: calc(50% - 48px);
-    right: -18%;
-    bottom: auto;
-    left: -18%;
-    width: auto;
-    height: 96px;
-    opacity: 0.38;
-    background: radial-gradient(ellipse at center, rgb(198 226 255 / 62%), transparent 68%);
-    transform: rotate(-8deg);
-    animation: gacha-mobile-rift-breathe 3.2s ease-in-out 600ms infinite alternate;
+    display: none;
   }
 
   .gacha-game-portals::after {
     display: block;
-    top: 50%;
-    right: -10%;
+    top: var(--gacha-mobile-seam-top);
+    right: auto;
     bottom: auto;
-    left: -10%;
-    width: auto;
-    height: 2px;
+    left: 0;
+    width: 100%;
+    height: calc(var(--gacha-mobile-seam-depth) + 2px);
     opacity: 0.88;
     background: linear-gradient(90deg, transparent, #ffffff 22% 78%, transparent);
     box-shadow:
       0 0 14px rgb(180 220 255 / 86%),
       0 0 34px rgb(115 176 255 / 62%);
-    transform: rotate(-8deg);
+    clip-path: polygon(calc(100% - 2px) 0, 100% 0, 2px 100%, 0 100%);
+    filter: drop-shadow(0 0 14px rgb(180 220 255 / 86%));
+    transform: none;
     animation: gacha-mobile-seam-breathe 3.2s ease-in-out 600ms infinite alternate;
   }
 
@@ -325,4 +319,3 @@
     animation: none;
   }
 }
-

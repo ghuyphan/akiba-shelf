@@ -3,7 +3,7 @@
 	import { fade, scale } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { t } from 'svelte-i18n';
-	import { animatedLC, assets, liteMode, viewportWidth } from '$lib/stores/app-store';
+	import { assets, liteMode, viewportWidth } from '$lib/stores/app-store';
 	import { playSfx, stopSfx } from '$lib/helpers/sounds/audiofx';
 	import { lazyLoad } from '$lib/helpers/lazyload';
 	import { createLink } from '$lib/helpers/shareable-link';
@@ -144,11 +144,7 @@
 										in:scale|global={{ start: 1.05, duration: 2500, opacity: 1 }}
 									>
 										<div class="lightcone-item">
-											<LightCones
-												item={name}
-												animate={!$liteMode}
-												animationID={!$liteMode && $animatedLC ? animationID : null}
-											/>
+											<LightCones item={name} animate={!$liteMode} />
 										</div>
 									</div>
 								</div>

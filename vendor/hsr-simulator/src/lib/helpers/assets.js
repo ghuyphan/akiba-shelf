@@ -93,7 +93,6 @@ const images = [
 			'departure-bg.webp',
 			'gachainfo-bg.webp',
 			'gachainfo-bg2.webp',
-			'phonograph-bg.webp',
 			'stellar-bg.webp',
 			'warp-bg.webp'
 		]
@@ -102,15 +101,6 @@ const images = [
 		dir: 'utils',
 		paths: [
 			'additional-reward.svg',
-			'album_of-snow-and-ember.webp',
-			'album_out-of-control.webp',
-			'album_svah-sanishyu.webp',
-			'album_the-flapper-sinthome.webp',
-			'album_experience-the-paths-1.webp',
-			'album_experience-the-paths-2.webp',
-			'album_inside.webp',
-			'album_more-ost.webp',
-			'album_custom-musics.webp',
 			'circle-ornament1.svg',
 			'circle-ornament2.svg',
 			'combat-fire.webp',
@@ -128,8 +118,6 @@ const images = [
 			'method-imaginary-money.webp',
 			'method-tears.webp',
 			'method-firefly-savings.webp',
-			'music.svg',
-			'music-disc.webp',
 			'oneiric-shard.webp',
 			'oneiric-60.webp',
 			'oneiric-300.webp',
@@ -150,7 +138,6 @@ const images = [
 	}
 ];
 
-const videos = ['phonograph1.mp4', 'phonograph2.mp4'];
 const expressVideos = [
 	'regular-3star.mp4',
 	'regular-4star.mp4',
@@ -179,12 +166,6 @@ export const listingAssets = () => {
 			const item = { path: pathdir, asset: path };
 			arr.push(item);
 		});
-	});
-
-	videos.forEach((v) => {
-		const pathdir = `${base}/videos/${v}`;
-		const item = { path: pathdir, asset: v };
-		arr.push(item);
 	});
 
 	return arr;

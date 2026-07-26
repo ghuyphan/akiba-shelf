@@ -13,7 +13,6 @@
 		showStarterBanner
 	} from '$lib/stores/app-store';
 	import { rollCounter } from '$lib/helpers/dataAPI/api-localstorage';
-	import { pauseTrack, resumeTrack } from '$lib/helpers/sounds/phonograph';
 	import { playSfx } from '$lib/helpers/sounds/audiofx.js';
 	import { getElementPalette } from '$lib/helpers/element-palette';
 
@@ -72,19 +71,12 @@
 	};
 	setContext('showSplashArt', showSplashArt);
 
-	// Prevent phonograph playing when warping
-	const onWarp = getContext('onWarp');
 	const closeResult = () => {
 		showWarpResult = false;
-		onWarp.set(false);
-		resumeTrack();
 	};
 	setContext('closeResult', closeResult);
 
 	const handleGachaAnimation = (result, source = 'warp') => {
-		onWarp.set(true);
-		pauseTrack({ stop: false });
-
 		warpResult = result;
 		const { express: skipExpress, art: skipArt } = $autoskip;
 		const skipAll = skipExpress && skipArt;

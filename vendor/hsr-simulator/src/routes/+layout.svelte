@@ -20,7 +20,6 @@
 	import { IDBUpdater } from '$lib/helpers/migrator/idbUpdater';
 	import { disposeWakeLock, wakeLock } from '$lib/helpers/wakelock';
 	import { mobileDetect } from '$lib/helpers/mobile-detect';
-	import { loadTracks } from '$lib/helpers/sounds/media-session';
 	import { mountLocale } from '$lib/helpers/i18n';
 
 	import InitialLoader from './_index/InitialLoader.svelte';
@@ -78,7 +77,6 @@
 
 		window.addEventListener('orientationchange', handleOrientationChange);
 
-		loadTracks(); // Load Phonograph Tracks
 		wakeLock(); // Prevent screen off while open the app
 		await IDBUpdater(); // update site data to the newer version
 

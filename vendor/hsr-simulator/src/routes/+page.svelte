@@ -9,7 +9,6 @@
 		showStarterBanner
 	} from '$lib/stores/app-store';
 	import { playSfx } from '$lib/helpers/sounds/audiofx';
-	import { initTrack, pauseTrack, resumeTrack } from '$lib/helpers/sounds/phonograph';
 	import { importLocalConfig, setBannerVersionAndPhase } from '$lib/helpers/dataAPI/storage-reader';
 	import { browserState } from '$lib/helpers/page-navigation';
 	import { handleShowStarter, initializeBanner } from '$lib/helpers/banner-loader';
@@ -20,7 +19,7 @@
 	import Banners from './_warp/index.svelte';
 	import Menu from './_menu/index.svelte';
 
-	let Collection, Shop, GachaInfo, Phonograph, ObtainedItem, ModalConvert;
+	let Collection, Shop, GachaInfo, ObtainedItem, ModalConvert;
 	const asyncLoadComponent = async () => {
 		ObtainedItem = (await import('$lib/components/ObtainedItem.svelte')).default;
 		ModalConvert = (await import('$lib/components/ModalConvert.svelte')).default;
@@ -28,7 +27,6 @@
 		Collection = (await import('./_collection/index.svelte')).default;
 		Shop = (await import('./_shop/index.svelte')).default;
 		GachaInfo = (await import('./_gachainfo/index.svelte')).default;
-		Phonograph = (await import('./_phonograph/index.svelte')).default;
 	};
 
 	let status;
@@ -55,16 +53,6 @@
 		}
 	};
 
-	const onWarp = writable(false);
-	setContext('onWarp', onWarp);
-
-	const handleTrack = () => {
-		if ($onWarp) return;
-
-		const mode = document.visibilityState;
-		if (mode === 'visible') return resumeTrack();
-		pauseTrack({ stop: false });
-	};
 	const handlePopState = (event) => {
 		if (event.state?.page) return;
 		if (pageActive === 'index') return;
@@ -84,18 +72,11 @@
 		// Detect Currencies
 		userCurrencies.init();
 
-		// Play track
-		initTrack();
-		handleTrack();
-
 		window.addEventListener('popstate', handlePopState);
-		document.addEventListener('visibilitychange', handleTrack);
 	});
 
 	onDestroy(() => {
 		window.removeEventListener('popstate', handlePopState);
-		document.removeEventListener('visibilitychange', handleTrack);
-		pauseTrack({ stop: true });
 	});
 
 	// Convert Modal
@@ -148,9 +129,6 @@
 {:else if pageActive === 'details'}
 	<svelte:component this={GachaInfo} />
 
-	<!-- Phonograph -->
-{:else if pageActive === 'phonograph'}
-	<svelte:component this={Phonograph} />
 {/if}
 
 {#if showObtained}

@@ -3,17 +3,14 @@
 	import { fade, fly } from 'svelte/transition';
 	import {
 		activeBanner,
-		animatedLC,
 		assets,
 		bannerList,
-		liteMode,
 		probEdit
 	} from '$lib/stores/app-store';
 	import { setActiveWarp } from '$lib/helpers/banner-loader';
 	import { data } from '$lib/data/characters.json';
 	import { diagonalSlide } from '$lib/helpers/transition';
 	import { bezier } from '$lib/helpers/easing';
-	import { getLCDetails } from '$lib/helpers/gacha/gacha-base';
 	import positionToStyle from '$lib/helpers/css-transformer';
 	import ButtonBanner from '../button/_button-banner.svelte';
 	import BannerDuration from '$lib/components/BannerDuration.svelte';
@@ -111,10 +108,7 @@
 			{#if bannertype === 'lightcone'}
 				{#key featured}
 					<div class="featured-lightcone" in:fly={{ x: -30, duration: 500 }}>
-						<LightCones
-							item={featured}
-							animationID={$animatedLC && !$liteMode ? getLCDetails(featured)?.animationID : null}
-						/>
+					<LightCones item={featured} />
 					</div>
 				{/key}
 			{/if}

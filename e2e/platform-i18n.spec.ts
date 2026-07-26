@@ -46,7 +46,7 @@ test("landing header keeps stable geometry without horizontal overflow", async (
 });
 
 async function expectStableLandingHero(page: import("@playwright/test").Page) {
-  const title = page.locator(".platform-landing-hero h1");
+  const title = page.locator(".platform-home-hero h1");
   const underline = page.locator(".platform-landing-title-underline");
 
   await expect(underline).toBeVisible();
@@ -65,8 +65,8 @@ async function expectStableLandingHero(page: import("@playwright/test").Page) {
 
   if ((page.viewportSize()?.width ?? 1000) <= 760) {
     const [artBox, phoneBox] = await Promise.all([
-      page.locator(".platform-landing-art").boundingBox(),
-      page.locator(".platform-landing-phone").boundingBox(),
+      page.locator(".platform-home-hero-preview").boundingBox(),
+      page.locator(".platform-home-preview-phone").boundingBox(),
     ]);
     expect(artBox).not.toBeNull();
     expect(phoneBox).not.toBeNull();

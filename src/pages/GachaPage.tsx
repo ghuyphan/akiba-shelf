@@ -321,12 +321,6 @@ export function GachaPage() {
   if (lightweightMode) {
     queryParams.set("lightweight", "1");
   }
-  if (import.meta.env.VITE_SUPABASE_URL) {
-    queryParams.set("supabase_url", import.meta.env.VITE_SUPABASE_URL);
-  }
-  if (import.meta.env.VITE_SUPABASE_ANON_KEY) {
-    queryParams.set("supabase_anon", import.meta.env.VITE_SUPABASE_ANON_KEY);
-  }
 
   const copy = translations[state?.booth.catalog_locale ?? "en"];
 

@@ -1,25 +1,27 @@
+import "@fontsource-variable/outfit/wght.css";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
   ClipboardCheck,
   LogIn,
-  Palette,
   PackageCheck,
+  Palette,
   ScanLine,
   ShoppingBag,
   Store,
 } from "lucide-react";
-import { PLATFORM_BRAND } from "../lib/branding";
 import { AppHeader } from "../components/ui/AppHeader";
 import { PlatformHeaderBrand } from "../components/ui/PlatformHeaderBrand";
 import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";
+import { PLATFORM_BRAND } from "../lib/branding";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
 import "../styles/admin/admin.css";
 
 export function HomePage() {
   const { t } = usePlatformI18n();
+
   return (
-    <div className="admin-shell platform-home-shell">
+    <div className="admin-shell platform-home-shell platform-home-landing">
       <AppHeader
         brand={<PlatformHeaderBrand subtitle={t(PLATFORM_BRAND.descriptor)} />}
         actions={
@@ -37,28 +39,27 @@ export function HomePage() {
       />
 
       <main className="admin-container platform-home-container">
-        <section className="platform-landing-hero">
-          <div className="platform-landing-hero-copy">
-            <span className="platform-landing-kicker">
-              <span aria-hidden="true">✦</span>{" "}
+        <section className="platform-home-hero">
+          <div className="platform-home-hero-copy">
+            <span className="platform-home-kicker">
               {t("Storefront and order desk for artist booths")}
             </span>
             <h1>
               {t("Run your merch booth.")}{" "}
-              <span className="platform-landing-title-accent">
+              <span>
                 {t("Stay in sync.")}
+                <span
+                  className="platform-landing-title-underline"
+                  aria-hidden="true"
+                />
               </span>
-              <i
-                className="platform-landing-title-underline"
-                aria-hidden="true"
-              />
             </h1>
             <p>
               {t(
-                "Fans browse and order from their phones. Matsuri reserves the stock and gives your team one live queue to fulfil from behind the booth.",
+                "Fans order on their phones. Matsuri reserves stock and keeps one live queue for your team.",
               )}
             </p>
-            <div className="platform-landing-actions">
+            <div className="platform-home-hero-actions">
               <Link
                 to="/auth"
                 className="button button-primary platform-home-cta"
@@ -69,171 +70,108 @@ export function HomePage() {
                 <Store size={17} /> {t("See the demo booth")}
               </Link>
             </div>
-            <small className="platform-landing-note">
-              <strong>{t("Made for Artist Alley.")}</strong>{" "}
-              {t("Your brand stays in front; the busywork stays behind it.")}
-            </small>
           </div>
 
-          <div className="platform-landing-art" aria-hidden="true">
-            <div className="platform-landing-desk-shadow" />
-            <span className="platform-landing-tape platform-landing-tape-one" />
-            <span className="platform-landing-tape platform-landing-tape-two" />
-            <div className="platform-landing-sketchbook">
-              <div className="platform-landing-sketch-title">
-                <span>
-                  <strong>{t("Matsuri booth desk")}</strong>
-                  <small>{t("Artist Alley · Table B12")}</small>
-                </span>
-                <b>{t("7 open orders")}</b>
-              </div>
-              <div className="platform-landing-mini-shop">
-                <div className="platform-landing-poster">
-                  <small>{t("Your storefront")}</small>
-                  <strong>{t("your art takes the spotlight")}</strong>
-                </div>
-                <div className="platform-landing-product-stack">
-                  <article>
-                    <div className="pink">{t("ACRYLIC STAND")}</div>
-                    <footer>
-                      <b>{t("Moonlight Girl")}</b>
-                      <span>120k</span>
-                    </footer>
-                  </article>
-                  <article>
-                    <div className="mint">{t("STICKER SHEET")}</div>
-                    <footer>
-                      <b>{t("Festival Cats")}</b>
-                      <span>65k</span>
-                    </footer>
-                  </article>
-                </div>
-              </div>
+          <figure className="platform-home-hero-preview">
+            <span className="platform-home-preview-tape" aria-hidden="true" />
+            <div className="platform-home-preview-desktop">
+              <img
+                src="/landing/demo-storefront-desktop.jpg"
+                alt={t(
+                  "Matsuri demo storefront with product collections and booth information",
+                )}
+                width="1280"
+                height="900"
+                fetchPriority="high"
+              />
             </div>
-            <div className="platform-landing-phone">
-              <div className="platform-landing-phone-notch" />
-              <div className="platform-landing-phone-head">
-                <span>{t("Order ready")}</span>
-                <span>♡</span>
-              </div>
-              <div className="platform-landing-phone-list">
-                {[
-                  t("Moonlight Stand"),
-                  t("Festival Cats"),
-                  t("Postcard Pack"),
-                ].map((name, index) => (
-                  <div className="platform-landing-phone-row" key={name}>
-                    <i />
-                    <span>
-                      <strong>{name}</strong>
-                      <small>
-                        {t("Qty {{count}}", { count: index === 1 ? 2 : 1 })}
-                      </small>
-                    </span>
-                    <b>{["120k", "130k", "50k"][index]}</b>
-                  </div>
-                ))}
-              </div>
-              <div className="platform-landing-qr">
-                <svg
-                  viewBox="0 0 21 21"
-                  role="img"
-                  aria-label={t("Decorative checkout QR code")}
-                  shapeRendering="crispEdges"
-                >
-                  <rect width="21" height="21" fill="#fff" />
-                  <path
-                    fill="currentColor"
-                    d="M1 1h6v6H1V1Zm2 2v2h2V3H3Zm11-2h6v6h-6V1Zm2 2v2h2V3h-2ZM1 14h6v6H1v-6Zm2 2v2h2v-2H3ZM9 1h2v2H9V1Zm3 1h1v3h-2V4H9V3h3V2ZM8 6h2v2h2v1H9v2H7V9h1V6Zm4 0h1v2h-1V6Zm3 2h2v1h2v2h-1v2h-2v-2h-2V9h1V8ZM1 9h2v1h2v2H3v1H1V9Zm5 3h2v2H6v-2Zm3-2h2v2h2v2h-2v-1H9v-3Zm5 4h2v2h2v-2h2v3h-1v3h-3v-2h-2v-4Zm-5 1h2v1h2v2h-1v2H9v-2H8v-2h1v-1Z"
-                  />
-                </svg>
-              </div>
+            <div className="platform-home-preview-phone">
+              <img
+                src="/landing/demo-storefront-mobile.jpg"
+                alt={t("Matsuri demo storefront shown on a phone")}
+                width="430"
+                height="900"
+              />
             </div>
-            <span className="platform-landing-sticker star">✦</span>
-            <span className="platform-landing-sticker heart">♡</span>
-            <span className="platform-landing-sticker pencil">
-              {t("DRAW MORE")}
-            </span>
-          </div>
+          </figure>
         </section>
 
         <section
-          className="platform-landing-ribbon"
+          className="platform-home-benefits"
           aria-label={t("Who Matsuri helps")}
         >
-          <span>
+          <article>
             <b>{t("Scan to shop")}</b>
-            {t("A quick storefront on every phone")}
-          </span>
-          <span>
+            <span>{t("A quick storefront on every phone")}</span>
+          </article>
+          <article>
             <b>{t("Stock stays honest")}</b>
-            {t("Items are reserved when an order is placed")}
-          </span>
-          <span>
+            <span>{t("Items are reserved when an order is placed")}</span>
+          </article>
+          <article>
             <b>{t("One live queue")}</b>
-            {t("Everyone sees what needs packing next")}
-          </span>
-          <span>
+            <span>{t("Everyone sees what needs packing next")}</span>
+          </article>
+          <article>
             <b>{t("Still your booth")}</b>
-            {t("Use your colors, artwork, and sections")}
-          </span>
+            <span>{t("Use your colors, artwork, and sections")}</span>
+          </article>
         </section>
 
-        <section className="platform-landing-section" id="how">
-          <div className="platform-landing-section-head">
-            <small>{t("A calmer booth flow")}</small>
+        <section className="platform-home-flow" id="how">
+          <header>
             <h2>{t("From QR scan to handover, without the paper trail.")}</h2>
             <p>
               {t(
                 "A short customer flow in front, with the order detail your team needs behind the table.",
               )}
             </p>
-          </div>
-          <div className="platform-landing-zine-grid">
+          </header>
+          <div className="platform-home-flow-list">
             <article>
-              <span>01</span>
+              <span>
+                <ScanLine size={25} strokeWidth={1.8} />
+              </span>
               <div>
-                <ScanLine size={27} />
+                <h3>{t("Fans scan and browse")}</h3>
+                <p>
+                  {t(
+                    "Your storefront opens on their phone with your collections, product details, and booth identity.",
+                  )}
+                </p>
               </div>
-              <h3>{t("Fans scan and browse")}</h3>
-              <p>
-                {t(
-                  "Your storefront opens on their phone with your collections, product details, and booth identity.",
-                )}
-              </p>
             </article>
             <article>
-              <span>02</span>
+              <span>
+                <ShoppingBag size={25} strokeWidth={1.8} />
+              </span>
               <div>
-                <ShoppingBag size={27} />
+                <h3>{t("Stock is reserved")}</h3>
+                <p>
+                  {t(
+                    "Matsuri checks the current price and availability, reserves the items, and shows the order total with VietQR.",
+                  )}
+                </p>
               </div>
-              <h3>{t("Stock is reserved")}</h3>
-              <p>
-                {t(
-                  "Matsuri checks the current price and availability, reserves the items, and shows the order total with VietQR.",
-                )}
-              </p>
             </article>
             <article>
-              <span>03</span>
+              <span>
+                <ClipboardCheck size={25} strokeWidth={1.8} />
+              </span>
               <div>
-                <ClipboardCheck size={27} />
+                <h3>{t("Your team fulfils it")}</h3>
+                <p>
+                  {t(
+                    "The order appears in one live queue, ready to verify, pack, and hand to the right customer.",
+                  )}
+                </p>
               </div>
-              <h3>{t("Your team fulfils it")}</h3>
-              <p>
-                {t(
-                  "The order appears in one live queue, ready to verify, pack, and hand to the right customer.",
-                )}
-              </p>
             </article>
           </div>
         </section>
 
-        <section
-          className="platform-landing-section platform-landing-toolkit"
-          id="tools"
-        >
-          <div className="platform-landing-toolkit-copy">
+        <section className="platform-home-toolkit" id="tools">
+          <div className="platform-home-toolkit-copy">
             <span>{t("Two sides, one booth")}</span>
             <h2>
               {t("A storefront for fans. A clear order desk for your team.")}
@@ -244,67 +182,142 @@ export function HomePage() {
               )}
             </p>
             <ul>
-              <li>{t("Design the storefront with your own visual identity")}</li>
+              <li>
+                {t("Design the storefront with your own visual identity")}
+              </li>
               <li>
                 {t("Keep the current order status visible to the whole team")}
               </li>
               <li>{t("Protect stock from being sold twice during a rush")}</li>
             </ul>
           </div>
-          <div
-            className="platform-landing-pinboard"
+          <aside
+            className="platform-home-pinboard"
             aria-label={t("Matsuri workspace preview")}
           >
-            <article className="orders-note">
-              <small>
-                <ClipboardCheck size={13} /> {t("Live orders")}
-              </small>
-              <strong>{t("3 fans waiting")}</strong>
-              <div>
-                <span>
-                  <b>#A104</b>
-                  <i>{t("Moon Stand × 2")}</i>
-                </span>
-                <span>
-                  <b>#A103</b>
-                  <i>{t("Sticker Pack × 1")}</i>
-                </span>
-                <span>
-                  <b>#A102</b>
-                  <i>{t("Print Set × 1")}</i>
-                </span>
-              </div>
-            </article>
-            <article className="palette-note">
-              <small>
-                <PackageCheck size={13} /> {t("Inventory")}
-              </small>
-              <strong>{t("Reserved as orders arrive")}</strong>
-              <div>
-                <i />
-                <i />
-                <i />
-                <i />
-              </div>
-            </article>
-            <article className="sections-note">
-              <small>
-                <Palette size={13} /> {t("Storefront design")}
-              </small>
+            <article className="platform-home-pinboard-orders">
+              <span>
+                <ClipboardCheck size={15} strokeWidth={1.8} />
+                {t("Live orders")}
+              </span>
               <strong>
-                {t("Your colors · Your products · Your booth information")}
+                {t("See pending, paid, and completed orders in one place")}
               </strong>
             </article>
+            <article className="platform-home-pinboard-stock">
+              <span>
+                <PackageCheck size={15} strokeWidth={1.8} />
+                {t("Inventory")}
+              </span>
+              <strong>{t("Reserved as orders arrive")}</strong>
+            </article>
+            <article className="platform-home-pinboard-design">
+              <span>
+                <Palette size={15} strokeWidth={1.8} />
+                {t("Storefront design")}
+              </span>
+              <strong>
+                {t("Use your own colors, logo, and visual style")}
+              </strong>
+            </article>
+          </aside>
+        </section>
+
+        <section className="platform-home-surfaces" id="demo">
+          <header>
+            <span>{t("From fan to fulfilment")}</span>
+            <h2>{t("One artist booth, three working surfaces.")}</h2>
+            <p>
+              {t(
+                "A public catalog, a packing desk, and an optional event game—connected by the same products and stock.",
+              )}
+            </p>
+          </header>
+          <div className="platform-home-demo-table">
+            <Link
+              to="/auth?mode=signin"
+              className="platform-home-demo-piece platform-home-demo-admin"
+            >
+              <div className="platform-home-demo-heading">
+                <span>01 · {t("Packing desk")}</span>
+                <h3>{t("Orders ready to hand over")}</h3>
+              </div>
+              <div className="platform-home-demo-media">
+                <img
+                  src="/landing/demo-admin.png"
+                  alt={t("Matsuri admin order queue with fulfilment details")}
+                  width="1280"
+                  height="640"
+                  loading="lazy"
+                />
+              </div>
+              <footer>
+                <p>{t("Track stock, payment, and fulfilment without losing the booth rush.")}</p>
+                <b>
+                  {t("Open admin")} <ArrowRight size={15} />
+                </b>
+              </footer>
+            </Link>
+
+            <Link
+              to="/s/demo-booth"
+              className="platform-home-demo-piece platform-home-demo-store"
+            >
+              <span className="platform-home-demo-tape" aria-hidden="true" />
+              <div className="platform-home-demo-heading">
+                <span>02 · {t("Digital catalog")}</span>
+                <h3>{t("Your art stays in front")}</h3>
+              </div>
+              <div className="platform-home-demo-media">
+                <img
+                  src="/landing/demo-storefront-desktop.jpg"
+                  alt={t(
+                    "Matsuri demo storefront with product collections and booth information",
+                  )}
+                  width="1280"
+                  height="900"
+                  loading="lazy"
+                />
+              </div>
+              <footer>
+                <b>
+                  {t("See the demo booth")} <ArrowRight size={15} />
+                </b>
+              </footer>
+            </Link>
+
+            <Link
+              to="/s/demo-booth/play"
+              className="platform-home-demo-piece platform-home-demo-gacha"
+            >
+              <div className="platform-home-demo-heading">
+                <span>03 · {t("Event extra")}</span>
+                <h3>{t("A playful reason to stop by")}</h3>
+              </div>
+              <div className="platform-home-demo-media">
+                <img
+                  src="/landing/demo-gacha.jpg"
+                  alt={t(
+                    "Matsuri gacha selector for Genshin and Honkai Star Rail",
+                  )}
+                  width="1280"
+                  height="720"
+                  loading="lazy"
+                />
+              </div>
+              <footer>
+                <b>
+                  {t("Play the demo gacha")} <ArrowRight size={15} />
+                </b>
+              </footer>
+            </Link>
           </div>
         </section>
 
-        <section className="platform-landing-final">
-          <div>
-            <small>{t("Ready for your next event?")}</small>
-            <h2>{t("Give your booth one place to sell and stay organized.")}</h2>
-          </div>
+        <section className="platform-home-final">
+          <h2>{t("Give your booth one place to sell and stay organized.")}</h2>
           <Link to="/auth" className="button button-primary platform-home-cta">
-            {t("Create your shop")} <ArrowRight size={17} />
+            {t("Create your storefront")} <ArrowRight size={17} />
           </Link>
         </section>
       </main>
