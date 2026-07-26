@@ -2,6 +2,7 @@ import {
   getSimulatorMediaKey,
   getSimulatorMediaRange,
   isSimulatorMediaPath,
+  parseSimulatorMediaRange,
 } from "./media-route";
 
 function setObjectHeaders(object: R2Object, headers: Headers): void {
@@ -15,8 +16,12 @@ function hasBody(object: R2Object): object is R2ObjectBody {
   return "body" in object;
 }
 
-function setRangeHeaders(object: R2ObjectBody, headers: Headers): number {
-  const range = getSimulatorMediaRange(object.size, object.range);
+function setRangeHeaders(
+  object: R2ObjectBody,
+  headers: Headers,
+  requestedRange?: R2Range,
+): number {
+  const range = getSimulatorMediaRange(object.size, requestedRange);
   headers.set("content-length", String(range.length));
   if (range.contentRange) headers.set("content-range", range.contentRange);
   return range.status;
@@ -36,12 +41,15 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   }
 
   try {
+    const requestedRange = parseSimulatorMediaRange(
+      context.request.headers.get("range"),
+    );
     const object =
       context.request.method === "HEAD"
         ? await context.env.SIMULATOR_MEDIA.head(key)
         : await context.env.SIMULATOR_MEDIA.get(key, {
             onlyIf: context.request.headers,
-            range: context.request.headers,
+            range: requestedRange,
           });
     if (!object) return new Response("Not found", { status: 404 });
 
@@ -56,7 +64,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       return new Response(null, { status, headers });
     }
 
-    const status = setRangeHeaders(object, headers);
+    const status = setRangeHeaders(object, headers, requestedRange);
     return new Response(object.body, { status, headers });
   } catch (error) {
     console.error(

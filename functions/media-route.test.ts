@@ -3,6 +3,7 @@ import {
   getSimulatorMediaKey,
   getSimulatorMediaRange,
   isSimulatorMediaPath,
+  parseSimulatorMediaRange,
 } from "./media-route";
 
 describe("simulator media route", () => {
@@ -46,5 +47,19 @@ describe("simulator media route", () => {
       length: 3,
       status: 206,
     });
+  });
+
+  it("parses HTTP byte range headers before calling R2", () => {
+    expect(parseSimulatorMediaRange("bytes=0-0")).toEqual({
+      offset: 0,
+      length: 1,
+    });
+    expect(parseSimulatorMediaRange("bytes=100-")).toEqual({ offset: 100 });
+    expect(parseSimulatorMediaRange("bytes=-512")).toEqual({ suffix: 512 });
+    expect(parseSimulatorMediaRange("bytes=0-0,2-3")).toEqual({
+      offset: 0,
+      length: 1,
+    });
+    expect(parseSimulatorMediaRange("bytes=abc-def")).toBeUndefined();
   });
 });

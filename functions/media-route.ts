@@ -6,6 +6,35 @@ export interface SimulatorMediaRange {
   status: 200 | 206;
 }
 
+export function parseSimulatorMediaRange(
+  header: string | null,
+): R2Range | undefined {
+  if (!header?.startsWith("bytes=")) return undefined;
+
+  const value = header.slice("bytes=".length).split(",", 1)[0]?.trim();
+  if (!value) return undefined;
+
+  const separator = value.indexOf("-");
+  if (separator < 0) return undefined;
+
+  const startText = value.slice(0, separator).trim();
+  const endText = value.slice(separator + 1).trim();
+  if (!startText && !endText) return undefined;
+
+  if (!startText) {
+    const suffix = Number(endText);
+    return Number.isSafeInteger(suffix) && suffix > 0 ? { suffix } : undefined;
+  }
+
+  const offset = Number(startText);
+  if (!Number.isSafeInteger(offset) || offset < 0) return undefined;
+  if (!endText) return { offset };
+
+  const end = Number(endText);
+  if (!Number.isSafeInteger(end) || end < offset) return undefined;
+  return { offset, length: end - offset + 1 };
+}
+
 export function isSimulatorMediaPath(pathname: string): boolean {
   return MEDIA_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
