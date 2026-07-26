@@ -70,6 +70,7 @@ type DropEdge = "before" | "after";
 type DropTarget = { section: StorefrontSection; edge: DropEdge };
 type DesignerSnapshot = { booth: BoothSettings; payment: PaymentSettings };
 type SelectedSection = StorefrontSection;
+type CanvasPan = { pointerId: number; x: number; y: number; scrollLeft: number; scrollTop: number; source: "stage" | "preview" };
 
 const allowedSections: StorefrontSection[] = ["featured", "booth", "controls", "products", "cart"];
 const sectionMeta: Record<StorefrontSection, { title: string; description: string; size: string }> = {
@@ -124,12 +125,17 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   const [fitScale, setFitScale] = useState(0.5);
   const [previewZoom, setPreviewZoom] = useState<PreviewZoom>("fit");
   const previewStageRef = useRef<HTMLDivElement>(null);
+  const previewIframeRef = useRef<HTMLIFrameElement>(null);
   const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
   const draggedRef = useRef<StorefrontSection | null>(null);
   const zoomRef = useRef(50);
   const pinchPointsRef = useRef(new Map<number, { x: number; y: number }>());
   const pinchStartRef = useRef<{ distance: number; zoom: number } | null>(null);
-  const canvasPanRef = useRef<{ pointerId: number; x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null);
+  const canvasPanRef = useRef<CanvasPan | null>(null);
+  const spacePressedRef = useRef(false);
+  const canvasHoverRef = useRef(false);
+  const [spacePressed, setSpacePressed] = useState(false);
+  const [canvasPanning, setCanvasPanning] = useState(false);
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewSort, setPreviewSort] = useState<PublicProductSort>("recommended");
   const [previewView, setPreviewView] = useState<"grid" | "list">("grid");
@@ -174,8 +180,10 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
     if (!stage) return undefined;
     const previewWidth = device === "phone" ? 390 : 1380;
     const updateScale = () => {
-      const availableWidth = Math.max(0, stage.clientWidth - 28);
-      setFitScale(Math.min(1, availableWidth / previewWidth));
+      const availableWidth = Math.max(0, stage.clientWidth - 56);
+      const availableHeight = Math.max(0, stage.clientHeight - 56);
+      const previewHeight = device === "phone" ? 844 : 1120;
+      setFitScale(Math.min(1, availableWidth / previewWidth, availableHeight / previewHeight));
     };
     updateScale();
     const observer = new ResizeObserver(updateScale);
@@ -186,33 +194,43 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   useEffect(() => {
     if (!previewDocument) return undefined;
     previewDocument.body.className = `designer-preview-document device-${device}`;
+    previewDocument.body.classList.toggle("is-canvas-pan-ready", spacePressedRef.current);
     previewDocument.body.style.setProperty("--preview-width", `${device === "phone" ? 390 : 1380}px`);
 
     const wheel = (event: WheelEvent) => {
       if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
-      adjustZoom(event.deltaY > 0 ? -5 : 5);
+      const iframe = previewIframeRef.current;
+      const stage = previewStageRef.current;
+      if (!iframe || !stage) return;
+      const iframeRect = iframe.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+      adjustZoom(event.deltaY > 0 ? -5 : 5, { x: iframeRect.left - stageRect.left + event.clientX * previewScale, y: iframeRect.top - stageRect.top + event.clientY * previewScale });
     };
     const pointerDown = (event: PointerEvent) => {
-      if (event.pointerType !== "touch") return;
+      if (event.pointerType !== "touch" && event.button !== 1 && !spacePressedRef.current) return;
+      if (event.pointerType !== "touch") { event.preventDefault(); event.stopPropagation(); }
+      (event.target as { setPointerCapture?: (pointerId: number) => void } | null)?.setPointerCapture?.(event.pointerId);
       pinchPointsRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (pinchPointsRef.current.size === 1) {
         const stage = previewStageRef.current;
-        canvasPanRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, scrollLeft: stage?.scrollLeft ?? 0, scrollTop: stage?.scrollTop ?? 0 };
+        canvasPanRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, scrollLeft: stage?.scrollLeft ?? 0, scrollTop: stage?.scrollTop ?? 0, source: "preview" };
+        setCanvasPanning(true);
+        previewDocument.body.classList.add("is-canvas-panning");
       } else {
         updatePinchCoordinates(event);
       }
     };
-    const pointerMove = (event: PointerEvent) => updatePinchCoordinates(event);
+    const pointerMove = (event: PointerEvent) => event.pointerType === "touch" ? updatePinchCoordinates(event) : moveCanvasPan(event.pointerId, event.clientX, event.clientY, "preview");
     const pointerEnd = (event: PointerEvent) => endPinchCoordinates(event);
     previewDocument.addEventListener("wheel", wheel, { passive: false });
-    previewDocument.addEventListener("pointerdown", pointerDown);
+    previewDocument.addEventListener("pointerdown", pointerDown, true);
     previewDocument.addEventListener("pointermove", pointerMove);
     previewDocument.addEventListener("pointerup", pointerEnd);
     previewDocument.addEventListener("pointercancel", pointerEnd);
     return () => {
       previewDocument.removeEventListener("wheel", wheel);
-      previewDocument.removeEventListener("pointerdown", pointerDown);
+      previewDocument.removeEventListener("pointerdown", pointerDown, true);
       previewDocument.removeEventListener("pointermove", pointerMove);
       previewDocument.removeEventListener("pointerup", pointerEnd);
       previewDocument.removeEventListener("pointercancel", pointerEnd);
@@ -220,6 +238,38 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
   // Gesture helpers intentionally read current refs; rebinding on every render would interrupt an active pinch.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewDocument, device]);
+
+  useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null) => Boolean((target as { closest?: (selector: string) => Element | null } | null)?.closest?.("input, textarea, select, [contenteditable='true']"));
+    const updateSpace = (pressed: boolean) => {
+      spacePressedRef.current = pressed;
+      setSpacePressed(pressed);
+      previewDocument?.body.classList.toggle("is-canvas-pan-ready", pressed);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== "Space" || (isEditableTarget(event.target) && !canvasHoverRef.current && event.currentTarget !== previewDocument)) return;
+      if (canvasHoverRef.current || event.currentTarget === previewDocument) event.preventDefault();
+      updateSpace(true);
+    };
+    const onKeyUp = (event: KeyboardEvent) => { if (event.code === "Space") updateSpace(false); };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keyup", onKeyUp);
+    previewDocument?.addEventListener("keydown", onKeyDown);
+    previewDocument?.addEventListener("keyup", onKeyUp);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keyup", onKeyUp);
+      previewDocument?.removeEventListener("keydown", onKeyDown);
+      previewDocument?.removeEventListener("keyup", onKeyUp);
+    };
+  }, [previewDocument]);
+
+  useEffect(() => {
+    if (previewZoom !== "fit") return;
+    const frame = window.requestAnimationFrame(() => centerPreview());
+    return () => window.cancelAnimationFrame(frame);
+  // centerPreview reads the current canvas dimensions after fitScale settles.
+  }, [device, fitScale, previewZoom, sidebarOpen]);
 
   const previewScale = previewZoom === "fit" ? fitScale : previewZoom / 100;
   const displayedZoom = Math.round(previewScale * 100);
@@ -386,35 +436,92 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
     setDropTarget((current) => current?.section === section && current.edge === edge ? current : { section, edge });
   }
 
-  function applyZoom(nextZoom: number) {
+  function applyZoom(nextZoom: number, focus?: { x: number; y: number }) {
     const clamped = Math.max(20, Math.min(150, nextZoom));
     const stage = previewStageRef.current;
     const oldScale = Math.max(.2, zoomRef.current / 100);
-    const focusX = stage ? (stage.scrollLeft + stage.clientWidth / 2) / oldScale : 0;
-    const focusY = stage ? (stage.scrollTop + stage.clientHeight / 2) / oldScale : 0;
+    const focusX = focus?.x ?? (stage?.clientWidth ?? 0) / 2;
+    const focusY = focus?.y ?? (stage?.clientHeight ?? 0) / 2;
+    const anchorX = stage ? stage.scrollLeft + focusX : focusX;
+    const anchorY = stage ? stage.scrollTop + focusY : focusY;
     zoomRef.current = clamped;
     setPreviewZoom(clamped);
     window.requestAnimationFrame(() => {
       if (!stage) return;
       const nextScale = clamped / 100;
-      stage.scrollLeft = Math.max(0, focusX * nextScale - stage.clientWidth / 2);
-      stage.scrollTop = Math.max(0, focusY * nextScale - stage.clientHeight / 2);
+      stage.scrollLeft = Math.max(0, anchorX * nextScale / oldScale - focusX);
+      stage.scrollTop = Math.max(0, anchorY * nextScale / oldScale - focusY);
     });
   }
 
-  function adjustZoom(delta: number) {
-    applyZoom(Math.round(zoomRef.current / 5) * 5 + delta);
+  function adjustZoom(delta: number, focus?: { x: number; y: number }) {
+    applyZoom(Math.round(zoomRef.current / 5) * 5 + delta, focus);
   }
 
   function fitPreview() {
     setPreviewZoom("fit");
-    window.requestAnimationFrame(() => previewStageRef.current?.scrollTo({ top: 0, left: 0, behavior: "smooth" }));
+    window.requestAnimationFrame(() => centerPreview("smooth"));
   }
 
   function changeDevice(nextDevice: PreviewDevice) {
     setDevice(nextDevice);
     setPreviewZoom("fit");
-    window.requestAnimationFrame(() => previewStageRef.current?.scrollTo({ top: 0, left: 0, behavior: "smooth" }));
+    window.requestAnimationFrame(() => centerPreview("smooth"));
+  }
+
+  function centerPreview(behavior: ScrollBehavior = "auto") {
+    const stage = previewStageRef.current;
+    if (!stage) return;
+    const left = Math.max(0, (stage.scrollWidth - stage.clientWidth) / 2);
+    const top = Math.max(0, (stage.scrollHeight - stage.clientHeight) / 2);
+    if (typeof stage.scrollTo === "function") stage.scrollTo({ left, top, behavior });
+    else { stage.scrollLeft = left; stage.scrollTop = top; }
+  }
+
+  function beginCanvasPan(pointerId: number, x: number, y: number, source: CanvasPan["source"]) {
+    const stage = previewStageRef.current;
+    canvasPanRef.current = { pointerId, x, y, scrollLeft: stage?.scrollLeft ?? 0, scrollTop: stage?.scrollTop ?? 0, source };
+    setCanvasPanning(true);
+    previewDocument?.body.classList.add("is-canvas-panning");
+  }
+
+  function moveCanvasPan(pointerId: number, x: number, y: number, source: CanvasPan["source"]) {
+    const pan = canvasPanRef.current;
+    const stage = previewStageRef.current;
+    if (!pan || pan.pointerId !== pointerId || pan.source !== source || !stage) return;
+    stage.scrollLeft = pan.scrollLeft - (x - pan.x);
+    stage.scrollTop = pan.scrollTop - (y - pan.y);
+  }
+
+  function endCanvasPan(pointerId: number) {
+    if (canvasPanRef.current?.pointerId !== pointerId) return;
+    canvasPanRef.current = null;
+    setCanvasPanning(false);
+    previewDocument?.body.classList.remove("is-canvas-panning");
+  }
+
+  function handleStagePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    const isCanvasSurface = event.target === event.currentTarget;
+    if (event.pointerType !== "touch" && event.button !== 1 && !(spacePressedRef.current || isCanvasSurface)) return;
+    event.preventDefault();
+    beginCanvasPan(event.pointerId, event.clientX, event.clientY, "stage");
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleStagePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    moveCanvasPan(event.pointerId, event.clientX, event.clientY, "stage");
+  }
+
+  function handleStagePointerEnd(event: React.PointerEvent<HTMLDivElement>) {
+    endCanvasPan(event.pointerId);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  }
+
+  function handleStageWheel(event: React.WheelEvent<HTMLDivElement>) {
+    if (!event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    const rect = event.currentTarget.getBoundingClientRect();
+    adjustZoom(event.deltaY > 0 ? -5 : 5, { x: event.clientX - rect.left, y: event.clientY - rect.top });
   }
 
   function updatePinchCoordinates(event: Pick<PointerEvent, "pointerType" | "pointerId" | "clientX" | "clientY">) {
@@ -430,6 +537,7 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
     }
     if (pinchPointsRef.current.size !== 2) return;
     canvasPanRef.current = null;
+    setCanvasPanning(false);
     const [first, second] = [...pinchPointsRef.current.values()];
     const distance = Math.hypot(second.x - first.x, second.y - first.y);
     if (!pinchStartRef.current) {
@@ -437,13 +545,16 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
       return;
     }
     const nextZoom = pinchStartRef.current.zoom * distance / Math.max(1, pinchStartRef.current.distance);
-    applyZoom(Math.round(nextZoom));
+    const iframe = previewIframeRef.current;
+    const stage = previewStageRef.current;
+    const point = iframe && stage ? { x: iframe.getBoundingClientRect().left - stage.getBoundingClientRect().left + (first.x + second.x) / 2 * previewScale, y: iframe.getBoundingClientRect().top - stage.getBoundingClientRect().top + (first.y + second.y) / 2 * previewScale } : undefined;
+    applyZoom(Math.round(nextZoom), point);
   }
 
   function endPinchCoordinates(event: Pick<PointerEvent, "pointerId">) {
     pinchPointsRef.current.delete(event.pointerId);
     if (pinchPointsRef.current.size < 2) pinchStartRef.current = null;
-    if (canvasPanRef.current?.pointerId === event.pointerId) canvasPanRef.current = null;
+    endCanvasPan(event.pointerId);
   }
 
   function selectModule(section: StorefrontSection) {
@@ -723,10 +834,19 @@ export function StorefrontDesigner({ shopId, settings, products, payment, onSave
         </div>
         <div
           ref={previewStageRef}
-          className={`designer-preview-stage device-${device}`}
+          className={`designer-preview-stage device-${device} ${spacePressed ? "is-pan-ready" : ""} ${canvasPanning ? "is-panning" : ""}`}
+          onPointerDown={handleStagePointerDown}
+          onPointerMove={handleStagePointerMove}
+          onPointerUp={handleStagePointerEnd}
+          onPointerCancel={handleStagePointerEnd}
+          onWheel={handleStageWheel}
+          onPointerEnter={() => { canvasHoverRef.current = true; }}
+          onPointerLeave={() => { canvasHoverRef.current = false; }}
+          aria-label={t("Storefront preview canvas")}
         >
           <div className="designer-preview-frame" style={{ width: `${(device === "phone" ? 390 : 1380) * previewScale}px`, minHeight: `${(device === "phone" ? 844 : 1120) * previewScale}px` }}>
             <iframe
+              ref={previewIframeRef}
               className="designer-preview-iframe"
               title={t("{{device}} storefront preview", { device: t(device) })}
               srcDoc={`<!doctype html><html lang="${draft.catalog_locale ?? "en"}"><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="designer-preview-root"></div></body></html>`}

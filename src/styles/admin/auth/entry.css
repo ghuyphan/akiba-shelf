@@ -9,16 +9,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--page-bg, #f6f8fb);
+  font-family: "Outfit Variable", Outfit, ui-sans-serif, system-ui, sans-serif;
+  background: var(--page-bg, #f5f0e8);
 }
 
 .admin-access-card {
   position: relative;
   width: min(100%, 470px);
   overflow: hidden;
-  border: 1px solid rgb(205 216 229 / 78%);
+  border: 1px solid color-mix(in srgb, var(--line) 88%, var(--ink) 6%);
   border-radius: 24px;
   background: rgb(255 255 255 / 94%);
-  box-shadow: 0 24px 64px rgb(15 23 42 / 11%);
+  box-shadow: 0 24px 64px rgb(80 58 38 / 11%);
 }
 .admin-login-panel { display: flex; flex-direction: column; min-width: 0; padding: 28px 32px 26px; }

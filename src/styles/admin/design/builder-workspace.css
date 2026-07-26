@@ -21,6 +21,7 @@
   box-shadow: none !important;
 }
 .admin-container .storefront-builder .builder-canvas {
+  position: relative;
   padding: 0 !important;
   overflow: visible;
   border: 0 !important;
@@ -56,9 +57,12 @@
 .admin-container .storefront-builder .builder-field-group:first-of-type { padding-top: 0 !important; }
 .admin-container .storefront-builder .builder-field-group:last-child { border-bottom: 0 !important; }
 .admin-container .storefront-builder .builder-field-group + .builder-toggle { border-top: 0; }
-.designer-preview-iframe { display: block; border: 0; background: #fff; box-shadow: 0 18px 50px rgb(20 33 53 / 12%); transform-origin: top left; }
+.designer-preview-iframe { position: absolute; top: 0; left: 0; display: block; overflow: hidden; border: 0; border-radius: 18px; outline: 1px solid rgb(20 33 53 / 12%); background: #fff; box-shadow: 0 24px 60px rgb(20 33 53 / 18%), 0 4px 12px rgb(20 33 53 / 8%); transform-origin: top left; }
 
-.designer-preview-document { width: var(--preview-width); min-width: var(--preview-width); background: var(--page-bg, #f8fafc); }
+.designer-preview-document.is-canvas-pan-ready,.designer-preview-document.is-canvas-pan-ready *,.designer-preview-document.is-canvas-panning,.designer-preview-document.is-canvas-panning * { cursor: grab !important; user-select: none !important; }
+.designer-preview-document.is-canvas-panning,.designer-preview-document.is-canvas-panning * { cursor: grabbing !important; }
+
+.designer-preview-document { width: var(--preview-width); min-width: var(--preview-width); background: var(--page-bg, #f5f0e8); }
 .designer-preview-document .designer-live-storefront { width: var(--preview-width) !important; min-height: 100vh; margin: 0 !important; transform: none !important; box-shadow: none !important; }
 .designer-preview-document.device-desktop .designer-live-storefront .storefront-module-products .product-grid:not(.product-grid-list) { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; justify-content: stretch; }
 .designer-preview-document.device-phone .designer-header-trigger-wrapper { width: 100%; min-width: 0; }
@@ -96,10 +100,10 @@
 
 /* Canva-like neutral canvas; kept last to override the retired checkerboard preview. */
 .storefront-builder .designer-preview-stage {
-  background-color: #f8fafc;
-  background-image: radial-gradient(circle, #c7d0dc 1.25px, transparent 1.35px);
+  background-color: var(--admin-inset-bg, #faf7f1);
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--line) 62%, transparent) 1px, transparent 1.15px);
   background-position: 0 0;
-  background-size: 18px 18px;
+  background-size: 20px 20px;
 }
 
 /* Storefront builder rhythm: one command-bar height and one spacing scale. */
@@ -140,6 +144,11 @@
     height: auto;
     min-height: var(--builder-command-height);
   }
+
+  .storefront-builder :is(.designer-identity-card,.designer-payment-card) { overflow: visible; border: 0; border-radius: 0; background: transparent; }
+  .storefront-builder :is(.designer-identity-preview,.designer-payment-preview) { padding-inline: 0; border-radius: 0; background: transparent; }
+  .storefront-builder .designer-card-fields { padding-inline: 0; }
+  .storefront-builder .designer-preview-stage { padding: 80px; }
 }
 
 /* Mobile builder must remain available and never require horizontal scrolling. */
@@ -147,4 +156,3 @@
   .storefront-builder,.storefront-builder.sidebar-closed { width: 100%; max-width: 100%; grid-template-columns: minmax(0, 1fr); overflow-x: hidden; }
   .storefront-builder :is(.builder-sidebar,.builder-canvas,.designer-preview-stage) { min-width: 0; max-width: 100%; }
 }
-

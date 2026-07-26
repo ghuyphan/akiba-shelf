@@ -67,7 +67,13 @@ export function Modal({
     const dialog = dialogRef.current;
     const focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const focusable = () => Array.from(dialog?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
-    window.requestAnimationFrame(() => (focusable()[0] ?? dialog)?.focus());
+    const focusFrame = window.requestAnimationFrame(() => {
+      const activeElement = document.activeElement;
+      if (activeElement instanceof HTMLElement && dialog?.contains(activeElement)) {
+        return;
+      }
+      (focusable()[0] ?? dialog)?.focus();
+    });
 
     const handleKeyDown = (event: KeyboardEvent) => {
       const dialogs = document.querySelectorAll<HTMLElement>('[role="dialog"]');
@@ -97,6 +103,7 @@ export function Modal({
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       document.removeEventListener("keydown", handleKeyDown);
       previousFocusRef.current?.focus();
     };

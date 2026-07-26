@@ -7,7 +7,6 @@ import {
   ClipboardList,
   EllipsisVertical,
   Gamepad2,
-  Languages,
   LayoutTemplate,
   LogOut,
   Package,
@@ -27,14 +26,12 @@ import {
   enableOrderNotifications,
   getPushEnabled,
 } from "../../../lib/offline/pwa";
-import {
-  usePlatformI18n,
-  type PlatformLocale,
-} from "../../../lib/i18n/platformI18n";
+import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import { safePublicUrl } from "../../../lib/branding";
 import type { BoothSettings, ShopMembership } from "../../../types/catalog";
 import type { AdminViewTab } from "./adminWorkspaceTypes";
 import { useAdminNavigationGuard } from "./AdminUnsavedChanges";
+import { PlatformLanguageToggle } from "../../ui/PlatformLanguageToggle";
 
 type AdminWorkspaceHeaderProps = {
   booth: BoothSettings;
@@ -67,7 +64,7 @@ export function AdminWorkspaceHeader({
 }: AdminWorkspaceHeaderProps) {
   const navigate = useNavigate();
   const toast = useToast();
-  const { t, locale, setLocale } = usePlatformI18n();
+  const { t } = usePlatformI18n();
   const requestNavigation = useAdminNavigationGuard();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -306,6 +303,7 @@ export function AdminWorkspaceHeader({
               });
             }}
           />
+          <PlatformLanguageToggle />
           <div className="admin-overflow-menu" ref={overflowRef}>
             <button
               ref={overflowToggleRef}
@@ -321,26 +319,6 @@ export function AdminWorkspaceHeader({
             </button>
             {overflowOpen && (
               <div className="admin-overflow-popover" id="admin-overflow-popover">
-                <div className="admin-overflow-item">
-                  <Languages size={15} />
-                  <span>{t("Language")}</span>
-                  <div className="admin-overflow-lang-pills">
-                    {(["en", "vi"] as PlatformLocale[]).map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        className={locale === item ? "active" : ""}
-                        aria-pressed={locale === item}
-                        onClick={() => {
-                          setLocale(item);
-                          setOverflowOpen(false);
-                        }}
-                      >
-                        {item.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
                 {canManageCatalog && (
                   <button
                     type="button"

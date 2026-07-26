@@ -14,7 +14,7 @@
 .social-channel-field-head { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 7px; min-width: 0; }
 .social-channel-field-head>span:first-child { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 8px; color: #fff; background: var(--social-channel-color); }
 .social-channel-field-head strong { overflow: hidden; color: var(--ink); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.social-channel-visibility { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; color: var(--muted); cursor: pointer; font-size: 8px; font-weight: 850; }
+.social-channel-visibility { display: inline-flex; align-items: center; gap: 5px; min-height: 40px; color: var(--muted); cursor: pointer; font-size: 10px; font-weight: 850; }
 .social-channel-visibility input { width: 16px; height: 16px; margin: 0; accent-color: var(--coral); }
 .social-channel-field .input { min-width: 0; min-height: 40px; padding-inline: 10px; font-size: 10px; }
 .builder-field-group .social-channel-grid { grid-template-columns: 1fr; }
@@ -31,4 +31,3 @@
 .admin-settings-switcher { grid-template-columns: repeat(2, minmax(0, 220px)); width: max-content; max-width: 100%; }
 .admin-settings-panel { padding: 0 !important; border: 0 !important; background: transparent !important; }
 .admin-settings-panel .admin-card { max-width: none !important; }
-

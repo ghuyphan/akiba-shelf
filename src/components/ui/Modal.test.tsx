@@ -3,6 +3,20 @@ import { describe, expect, it, vi } from "vitest";
 import { Modal } from "./Modal";
 
 describe("Modal", () => {
+  it("preserves deliberate focus inside the dialog", () => {
+    vi.useFakeTimers();
+    const { getByRole } = render(
+      <Modal title="Example" isOpen onClose={() => undefined}>
+        <input aria-label="Name" />
+      </Modal>,
+    );
+    const input = getByRole("textbox", { name: "Name" });
+    act(() => input.focus());
+    act(() => vi.runAllTimers());
+    expect(input).toHaveFocus();
+    vi.useRealTimers();
+  });
+
   it("restores focus after the exit animation", () => {
     vi.useFakeTimers();
     const trigger = document.createElement("button"); trigger.textContent = "Trigger"; document.body.append(trigger); trigger.focus();

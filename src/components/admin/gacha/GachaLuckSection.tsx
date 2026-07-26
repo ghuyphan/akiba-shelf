@@ -6,7 +6,8 @@ import {
 } from "../../../lib/gacha/gachaGames";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaSettings } from "../../../types/gacha";
-import { Field, FieldLabel, TextInput } from "../../ui/Field";
+import { Field, FieldLabel } from "../../ui/Field";
+import { NumberInput } from "../../ui/NumberInput";
 import { Alert } from "../../ui/Alert";
 import { AdminCard } from "../shell/AdminCard";
 
@@ -55,6 +56,7 @@ export function GachaLuckSection({
   return (
     <AdminCard
       className="gacha-luck-card"
+      variant="flush"
       icon={<Sparkles size={18} />}
       title={t("3 · Luck & guarantees")}
       description={t(
@@ -204,18 +206,14 @@ export function GachaLuckSection({
                 label={t("4-star base rate")}
                 hint={t("Chance per pull before luck starts improving.")}
               >
-                <TextInput
-                  type="number"
+                <NumberInput
                   min={0.01}
                   max={99.99}
                   step={0.1}
                   value={settings.rare_base_rate}
                   onFocus={onTextFocus}
-                  onChange={(event) =>
-                    onUpdateSettings(
-                      { rare_base_rate: Number(event.target.value) },
-                      true,
-                    )
+                  onChange={(value) =>
+                    onUpdateSettings({ rare_base_rate: value }, true)
                   }
                 />
               </Field>
@@ -227,18 +225,14 @@ export function GachaLuckSection({
                 )}
                 hint={t("Chance per pull before luck starts improving.")}
               >
-                <TextInput
-                  type="number"
+                <NumberInput
                   min={0.01}
                   max={99.99}
                   step={0.1}
                   value={settings.legendary_base_rate}
                   onFocus={onTextFocus}
-                  onChange={(event) =>
-                    onUpdateSettings(
-                      { legendary_base_rate: Number(event.target.value) },
-                      true,
-                    )
+                  onChange={(value) =>
+                    onUpdateSettings({ legendary_base_rate: value }, true)
                   }
                 />
               </Field>
@@ -247,19 +241,16 @@ export function GachaLuckSection({
                   label={t("Light Cone 5-star base rate")}
                   hint={t("Chance per pull before luck starts improving.")}
                 >
-                  <TextInput
-                    type="number"
+                  <NumberInput
                     min={0.01}
                     max={99.99}
                     step={0.1}
                     value={settings.lightcone_legendary_base_rate}
                     onFocus={onTextFocus}
-                    onChange={(event) =>
+                    onChange={(value) =>
                       onUpdateSettings(
                         {
-                          lightcone_legendary_base_rate: Number(
-                            event.target.value,
-                          ),
+                          lightcone_legendary_base_rate: value,
                         },
                         true,
                       )
@@ -271,14 +262,12 @@ export function GachaLuckSection({
                 label={t("4★ guaranteed within N pulls")}
                 hint={t("Guarantee a 4-star or higher within this many pulls.")}
               >
-                <TextInput
-                  type="number"
+                <NumberInput
                   min={2}
                   max={30}
                   value={settings.rare_pity}
                   onFocus={onTextFocus}
-                  onChange={(event) => {
-                    const rarePity = Number(event.target.value);
+                  onChange={(rarePity) => {
                     onUpdateSettings(
                       {
                         rare_pity: rarePity,
@@ -296,17 +285,13 @@ export function GachaLuckSection({
                 label={t("4★ luck improves after pull #")}
                 hint={t("Start increasing the 4-star rate from this pull.")}
               >
-                <TextInput
-                  type="number"
+                <NumberInput
                   min={1}
                   max={settings.rare_pity - 1}
                   value={settings.rare_soft_pity}
                   onFocus={onTextFocus}
-                  onChange={(event) =>
-                    onUpdateSettings(
-                      { rare_soft_pity: Number(event.target.value) },
-                      true,
-                    )
+                  onChange={(value) =>
+                    onUpdateSettings({ rare_soft_pity: value }, true)
                   }
                 />
               </Field>
@@ -318,14 +303,12 @@ export function GachaLuckSection({
                 )}
                 hint={t("Guarantee a 5-star within this many pulls.")}
               >
-                <TextInput
-                  type="number"
+                <NumberInput
                   min={10}
                   max={100}
                   value={settings.legendary_pity}
                   onFocus={onTextFocus}
-                  onChange={(event) => {
-                    const legendaryPity = Number(event.target.value);
+                  onChange={(legendaryPity) => {
                     onUpdateSettings(
                       {
                         legendary_pity: legendaryPity,
@@ -347,17 +330,13 @@ export function GachaLuckSection({
                 )}
                 hint={t("Start increasing the 5-star rate from this pull.")}
               >
-                <TextInput
-                  type="number"
+                <NumberInput
                   min={1}
                   max={settings.legendary_pity - 1}
                   value={settings.legendary_soft_pity}
                   onFocus={onTextFocus}
-                  onChange={(event) =>
-                    onUpdateSettings(
-                      { legendary_soft_pity: Number(event.target.value) },
-                      true,
-                    )
+                  onChange={(value) =>
+                    onUpdateSettings({ legendary_soft_pity: value }, true)
                   }
                 />
               </Field>
@@ -367,14 +346,12 @@ export function GachaLuckSection({
                     label={t("Light Cone 5★ guaranteed within N pulls")}
                     hint={t("Guarantee a 5-star within this many pulls.")}
                   >
-                    <TextInput
-                      type="number"
+                    <NumberInput
                       min={10}
                       max={100}
                       value={settings.lightcone_legendary_pity}
                       onFocus={onTextFocus}
-                      onChange={(event) => {
-                        const lightconePity = Number(event.target.value);
+                      onChange={(lightconePity) => {
                         onUpdateSettings(
                           {
                             lightcone_legendary_pity: lightconePity,
@@ -392,18 +369,15 @@ export function GachaLuckSection({
                     label={t("Light Cone 5★ luck improves after pull #")}
                     hint={t("Start increasing the 5-star rate from this pull.")}
                   >
-                    <TextInput
-                      type="number"
+                    <NumberInput
                       min={1}
                       max={settings.lightcone_legendary_pity - 1}
                       value={settings.lightcone_legendary_soft_pity}
                       onFocus={onTextFocus}
-                      onChange={(event) =>
+                      onChange={(value) =>
                         onUpdateSettings(
                           {
-                            lightcone_legendary_soft_pity: Number(
-                              event.target.value,
-                            ),
+                            lightcone_legendary_soft_pity: value,
                           },
                           true,
                         )
@@ -418,18 +392,14 @@ export function GachaLuckSection({
                   "Chance that a 4★ or 5★ pull lands on a promoted prize.",
                 )}
               >
-                <TextInput
-                  type="number"
+                <NumberInput
                   min={0}
                   max={100}
                   step={1}
                   value={settings.featured_item_rate}
                   onFocus={onTextFocus}
-                  onChange={(event) =>
-                    onUpdateSettings(
-                      { featured_item_rate: Number(event.target.value) },
-                      true,
-                    )
+                  onChange={(value) =>
+                    onUpdateSettings({ featured_item_rate: value }, true)
                   }
                 />
               </Field>

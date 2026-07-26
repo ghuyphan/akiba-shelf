@@ -181,8 +181,3 @@
   padding: 14px;
   background: var(--admin-inner-bg, #f8fafc);
 }
-
-.gacha-pity-fields input[type="number"] {
-  font-variant-numeric: tabular-nums;
-}
-

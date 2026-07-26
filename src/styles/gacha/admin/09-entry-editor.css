@@ -29,11 +29,11 @@
 }
 
 .gacha-item-editor .select-menu-trigger {
-  min-height: 42px;
+  min-height: var(--admin-control-height, 44px);
 }
 
 .gacha-item-editor .input {
-  min-height: 42px;
+  min-height: var(--admin-control-height, 44px);
 }
 
 .gacha-item-editor .select-menu-popover {
@@ -100,4 +100,3 @@
   cursor: not-allowed;
   opacity: 0.55;
 }
-

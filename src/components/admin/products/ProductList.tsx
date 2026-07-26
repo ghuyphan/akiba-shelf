@@ -30,7 +30,7 @@ export function ProductList({ products, selectedId, onSelect, onCreate, loading 
   }, [filter, products, query]);
 
   return (
-    <AdminCard title={t("Products")} description={t("{{count}} catalog items", { count: products.length })} icon={<Boxes size={18} />} className="product-manager-list">
+    <AdminCard title={t("Products")} description={t("{{count}} catalog items", { count: products.length })} icon={<Boxes size={18} />} className="product-manager-list" density="compact">
       <div className="admin-list-toolbar">
         <label className="admin-list-search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search products")} aria-label={t("Search products")} /></label>
         <button type="button" className="admin-new-item-button" onClick={onCreate}><Plus size={17} /> {t("New item")}</button>

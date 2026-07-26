@@ -62,16 +62,17 @@ export function TextInput({
   "aria-describedby": ariaDescribedBy,
   "aria-labelledby": ariaLabelledBy,
   "aria-invalid": ariaInvalid,
+  className = "",
   ...props
 }: InputHTMLAttributes<HTMLInputElement>) {
   const field = useContext(FieldDescriptionContext);
   return (
     <input
-      className="input"
+      {...props}
+      className={`input ${className}`.trim()}
       aria-describedby={ariaDescribedBy ?? field.describedBy}
       aria-labelledby={ariaLabelledBy ?? field.labelledBy}
       aria-invalid={(ariaInvalid ?? field.invalid) || undefined}
-      {...props}
     />
   );
 }
@@ -80,16 +81,17 @@ export function TextArea({
   "aria-describedby": ariaDescribedBy,
   "aria-labelledby": ariaLabelledBy,
   "aria-invalid": ariaInvalid,
+  className = "",
   ...props
 }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const field = useContext(FieldDescriptionContext);
   return (
     <textarea
-      className="input textarea"
+      {...props}
+      className={`input textarea ${className}`.trim()}
       aria-describedby={ariaDescribedBy ?? field.describedBy}
       aria-labelledby={ariaLabelledBy ?? field.labelledBy}
       aria-invalid={(ariaInvalid ?? field.invalid) || undefined}
-      {...props}
     />
   );
 }

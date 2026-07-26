@@ -59,6 +59,7 @@ import { Button } from "../../ui/Button";
 import { Field, TextInput } from "../../ui/Field";
 import { DateTimeInput } from "../../ui/DateTimeInput";
 import { Modal } from "../../ui/Modal";
+import { NumberInput } from "../../ui/NumberInput";
 import { useToast } from "../../ui/ToastProvider";
 import { ConfirmationDialog } from "../../ui/ConfirmationDialog";
 import { EmptyState } from "../../ui/EmptyState";
@@ -883,25 +884,21 @@ export function OfflineEventManager({
                             </div>
                             <label className="offline-event-allocation-quantity">
                               <span>{t("Quantity")}</span>
-                              <TextInput
-                                type="number"
+                              <NumberInput
                                 min={1}
                                 max={product.quantity_available}
                                 disabled={!selected || Boolean(busy)}
-                                value={selected ? quantity : ""}
+                                value={selected ? quantity : 0}
                                 aria-label={t("{{product}} quantity", {
                                   product: product.name,
                                 })}
-                                onChange={(event) => {
+                                onChange={(value) => {
                                   markFormEdited();
                                   setAllocationQuantities((current) => ({
                                     ...current,
                                     [product.id]: Math.min(
                                       product.quantity_available,
-                                      Math.max(
-                                        0,
-                                        Number(event.target.value) || 0,
-                                      ),
+                                      Math.max(0, value),
                                     ),
                                   }));
                                 }}

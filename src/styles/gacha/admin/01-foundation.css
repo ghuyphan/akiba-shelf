@@ -21,6 +21,18 @@
   display: block;
 }
 
+.gacha-workflow-surface {
+  overflow: hidden;
+  border: 1px solid var(--admin-surface-border, #cdd8e5);
+  border-radius: var(--admin-surface-radius, 18px);
+  background: rgb(255 255 255 / 94%);
+  box-shadow: var(--admin-surface-shadow, 0 12px 34px rgb(20 33 53 / 6%));
+}
+
+.gacha-workflow-surface .gacha-section-anchor + .gacha-section-anchor {
+  border-top: 1px solid var(--soft-line, #eee9e1);
+}
+
 .gacha-section-error {
   grid-column: 1 / -1;
   margin: 0;
@@ -50,4 +62,3 @@
   outline: 3px solid color-mix(in srgb, var(--red, #b42318) 22%, transparent);
   outline-offset: 2px;
 }
-

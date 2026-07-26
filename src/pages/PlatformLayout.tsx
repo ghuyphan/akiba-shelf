@@ -1,3 +1,4 @@
+import "@fontsource-variable/outfit/wght.css";
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { ToastLocalization } from "../components/ui/ToastProvider";

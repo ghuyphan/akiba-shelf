@@ -24,4 +24,19 @@ describe("platform translations", () => {
     expect(copy).toContain("staff");
     expect(copy).not.toMatch(/nghệ sĩ|nhân viên|người hâm mộ/i);
   });
+
+  it("translates gacha odds presets", () => {
+    expect(
+      getPlatformTranslation("Convention Booth Mode", "vi"),
+    ).toBe("Chế độ gian hàng sự kiện");
+    expect(
+      getPlatformTranslation("Official Genshin Replica", "vi"),
+    ).toBe("Mô phỏng Genshin chính thức");
+    expect(
+      getPlatformTranslation(
+        "Exact official game rates (90 character pity, 80 Light Cone pity).",
+        "vi",
+      ),
+    ).toContain("Light Cone 80 lượt");
+  });
 });

@@ -41,7 +41,9 @@ export function DashboardShopCard({
           </div>
           <code className="shop-card-slug">/s/{shop.shop_slug}</code>
         </div>
-        <span className={`role-pill ${available ? `role-${shop.role}` : "role-unavailable"}`}>
+        <span
+          className={`role-pill ${available ? `role-${shop.role}` : "role-unavailable"}`}
+        >
           {available
             ? t(shop.role)
             : shop.shop_active

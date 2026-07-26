@@ -25,6 +25,7 @@ export function GachaGeneralSection({
   return (
     <AdminCard
       className="gacha-setup-card"
+      variant="flush"
       icon={<Gamepad2 size={18} />}
       title={t("1 · Status & copy")}
       description={t(

@@ -3,17 +3,22 @@
 .gacha-setup-grid {
   display: grid;
   grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
-  gap: 12px;
+  gap: 0;
 }
 
 .gacha-panel {
   display: grid;
   align-content: start;
   gap: 14px;
-  padding: 14px;
-  border: 1px solid var(--soft-line, #eee9e1);
-  border-radius: 14px;
-  background: var(--admin-inner-bg, #f8fafc);
+  padding: 0 18px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.gacha-panel + .gacha-panel {
+  padding: 0 0 0 18px;
+  border-left: 1px solid var(--soft-line, #eee9e1);
 }
 
 .gacha-panel-heading h3,
@@ -84,4 +89,3 @@
   align-content: start;
   gap: 12px;
 }
-

@@ -123,7 +123,7 @@ export function DashboardPage() {
   const canCreateShop = ownedShopCount < MAX_OWNED_SHOPS;
 
   return (
-    <div className="admin-shell">
+    <div className="admin-shell dashboard-account-shell">
       <AppHeader
         brand={
           <PlatformHeaderBrand

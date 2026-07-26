@@ -307,218 +307,227 @@ export function OrderQueue({
 
   return (
     <section className="admin-orders-view" aria-busy={loading}>
-      <div className="admin-filter-bar">
-        <div
-          className="admin-filter-tabs"
-          ref={filterTabsRef}
-          role="group"
-          aria-label={t("Order status")}
-        >
-          {filters.map((item) => (
-            <button
-              key={item}
-              type="button"
-              aria-pressed={filter === item}
-              disabled={loading}
-              className={`${filter === item ? "active" : ""} ${item === "event" ? "admin-event-filter" : ""}`}
-              onClick={() => onFilterChange(item)}
-            >
-              {item === "event" && <CloudOff size={13} />}
-              <span>{t(item)}</span>
-              <b>
-                {compactFilterCount(
-                  item === "event" ? eventCount : counts[item],
-                )}
-              </b>
-            </button>
-          ))}
-        </div>
-        <div className="admin-queue-utilities">
-          <SelectMenu
-            className="admin-event-select"
-            value={selectedEventId}
-            label={t("Event")}
-            onChange={(eventId) => {
-              onSelectedEventChange(eventId);
-              if (filter !== "event") onFilterChange("event");
-            }}
-            options={eventFilterOptions}
-          />
-          {eventControl}
-          <button
-            type="button"
-            className={`admin-toolbar-control admin-today-toggle ${todayOnly ? "active" : ""}`}
-            aria-pressed={todayOnly}
-            disabled={loading}
-            onClick={() => onTodayOnlyChange(!todayOnly)}
+      <div className="admin-orders-workspace">
+        <div className="admin-filter-bar">
+          <div
+            className="admin-filter-tabs"
+            ref={filterTabsRef}
+            role="group"
+            aria-label={t("Order status")}
           >
-            <CalendarDays size={14} />
-            <span>{t("Today")}</span>
-          </button>
-        </div>
-      </div>
-
-      {orders.length > 0 && (
-        <div className="admin-order-metrics">
-          <article>
-            <span className="admin-metric-icon coral">
-              <ReceiptText size={17} />
-            </span>
-            <div>
-              <small>{t("Orders shown")}</small>
-              <strong>{orders.length}</strong>
-              <p>{t("{{count}} matching orders", { count: total })}</p>
-            </div>
-          </article>
-          <article>
-            <span className="admin-metric-icon teal">
-              <WalletCards size={17} />
-            </span>
-            <div>
-              <small>{t("Order value")}</small>
-              <strong>{formatVnd(totalMoney)}</strong>
-              <p>{t("Current page total")}</p>
-            </div>
-          </article>
-          <article>
-            <span className="admin-metric-icon mustard">
-              <PackageCheck size={17} />
-            </span>
-            <div>
-              <small>{t("Units requested")}</small>
-              <strong>{totalUnits}</strong>
-              <p>
-                {t("{{count}} unique products", {
-                  count: uniqueProductCount,
-                })}
-              </p>
-            </div>
-          </article>
-        </div>
-      )}
-
-      {itemSummary.length > 0 && (
-        <section className="admin-items-summary">
-          <div className="admin-section-heading">
-            <div>
-              <span>{t("Fulfilment overview")}</span>
-              <h2>{t("What needs to be packed")}</h2>
-            </div>
-            <small>{t("{{count}} total units", { count: packingUnits })}</small>
-          </div>
-          <div className="admin-items-summary-grid admin-scroll-list">
-            {itemSummary.map((item) => (
-              <article key={`${item.name}-${item.code}`}>
-                {item.imageUrl ? (
-                  <img src={item.imageUrl} alt="" />
-                ) : (
-                  <span className="admin-item-placeholder">
-                    <ShoppingBag size={17} />
-                  </span>
-                )}
-                <div>
-                  <strong>{item.name}</strong>
-                  <small>{item.code || t("No item code")}</small>
-                </div>
-                <b>{item.quantity}×</b>
-              </article>
+            {filters.map((item) => (
+              <button
+                key={item}
+                type="button"
+                aria-pressed={filter === item}
+                disabled={loading}
+                className={`${filter === item ? "active" : ""} ${item === "event" ? "admin-event-filter" : ""}`}
+                onClick={() => onFilterChange(item)}
+              >
+                {item === "event" && <CloudOff size={13} />}
+                <span>{t(item)}</span>
+                <b>
+                  {compactFilterCount(
+                    item === "event" ? eventCount : counts[item],
+                  )}
+                </b>
+              </button>
             ))}
           </div>
-        </section>
-      )}
-
-      <div className="admin-section-heading">
-        <div>
-          <span>{t("Order queue")}</span>
-          <h2>
-            {filter === "event"
-              ? t("Event orders")
-              : filter === "all"
-                ? t("All orders")
-                : t("{{status}} orders", { status: t(filter) })}
-          </h2>
-        </div>
-        <small aria-live="polite">
-          {loading
-            ? t("Refreshing…")
-            : t("{{first}}–{{last}} of {{total}} · newest first", {
-                first: firstOrder,
-                last: lastOrder,
-                total,
-              })}
-        </small>
-      </div>
-      {orders.length === 0 ? (
-        <EmptyState
-          tone={loading ? "loading" : "neutral"}
-          icon={loading ? undefined : <Inbox size={27} />}
-          title={emptyTitle}
-          message={
-            loading
-              ? t("Fetching the latest queue from the server.")
-              : filter === "event"
-                ? t(
-                    "Event orders appear here after they sync, or directly from this device while offline.",
-                  )
-                : filter === "pending"
-                  ? t("New orders appear here automatically.")
-                  : t("There are no orders with this status yet.")
-          }
-          action={
-            !loading && (filter !== "all" || todayOnly) ? (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  onFilterChange("all");
-                  onTodayOnlyChange(false);
-                }}
-              >
-                {t("View all orders")}
-              </Button>
-            ) : undefined
-          }
-        />
-      ) : (
-        <div
-          className={`admin-orders-grid admin-scroll-list ${loading ? "is-loading" : ""}`}
-        >
-          {orders.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              isConfirming={loading || confirmingId === order.id}
-              isCancelling={loading || cancellingId === order.id}
-              isFulfillmentBusy={loading || fulfillmentBusyId === order.id}
-              onConfirm={() => handleConfirm(order.id)}
-              onCancel={() => setOrderToCancel(order)}
-              onDetails={() => setSelectedOrder(order)}
-              onFulfillment={(status) => handleFulfillment(order, status)}
+          <div className="admin-queue-utilities">
+            <SelectMenu
+              className="admin-event-select"
+              value={selectedEventId}
+              label={t("Event")}
+              onChange={(eventId) => {
+                onSelectedEventChange(eventId);
+                if (filter !== "event") onFilterChange("event");
+              }}
+              options={eventFilterOptions}
             />
-          ))}
+            {eventControl}
+            <button
+              type="button"
+              className={`admin-toolbar-control admin-today-toggle ${todayOnly ? "active" : ""}`}
+              aria-pressed={todayOnly}
+              disabled={loading}
+              onClick={() => onTodayOnlyChange(!todayOnly)}
+            >
+              <CalendarDays size={14} />
+              <span>{t("Today")}</span>
+            </button>
+          </div>
         </div>
-      )}
-      {totalPages > 1 && (
-        <nav className="admin-orders-pagination" aria-label={t("Order pages")}>
-          <button
-            type="button"
-            disabled={page <= 1 || loading}
-            onClick={() => onPageChange(page - 1)}
-          >
-            <ChevronLeft size={16} /> {t("Previous")}
-          </button>
-          <span>
-            {t("Page")} <b>{page}</b> {t("of")} {totalPages}
-          </span>
-          <button
-            type="button"
-            disabled={page >= totalPages || loading}
-            onClick={() => onPageChange(page + 1)}
-          >
-            {t("Next")} <ChevronRight size={16} />
-          </button>
-        </nav>
-      )}
+
+        {orders.length > 0 && (
+          <div className="admin-order-metrics">
+            <article>
+              <span className="admin-metric-icon coral">
+                <ReceiptText size={17} />
+              </span>
+              <div>
+                <small>{t("Orders shown")}</small>
+                <strong>{orders.length}</strong>
+                <p>{t("{{count}} matching orders", { count: total })}</p>
+              </div>
+            </article>
+            <article>
+              <span className="admin-metric-icon teal">
+                <WalletCards size={17} />
+              </span>
+              <div>
+                <small>{t("Order value")}</small>
+                <strong>{formatVnd(totalMoney)}</strong>
+                <p>{t("Current page total")}</p>
+              </div>
+            </article>
+            <article>
+              <span className="admin-metric-icon mustard">
+                <PackageCheck size={17} />
+              </span>
+              <div>
+                <small>{t("Units requested")}</small>
+                <strong>{totalUnits}</strong>
+                <p>
+                  {t("{{count}} unique products", {
+                    count: uniqueProductCount,
+                  })}
+                </p>
+              </div>
+            </article>
+          </div>
+        )}
+
+        {itemSummary.length > 0 && (
+          <section className="admin-items-summary">
+            <div className="admin-section-heading">
+              <div>
+                <span>{t("Fulfilment overview")}</span>
+                <h2>{t("What needs to be packed")}</h2>
+              </div>
+              <small>
+                {t("{{count}} total units", { count: packingUnits })}
+              </small>
+            </div>
+            <div className="admin-items-summary-grid admin-scroll-list">
+              {itemSummary.map((item) => (
+                <article key={`${item.name}-${item.code}`}>
+                  {item.imageUrl ? (
+                    <img src={item.imageUrl} alt="" />
+                  ) : (
+                    <span className="admin-item-placeholder">
+                      <ShoppingBag size={17} />
+                    </span>
+                  )}
+                  <div>
+                    <strong>{item.name}</strong>
+                    <small>{item.code || t("No item code")}</small>
+                  </div>
+                  <b>{item.quantity}×</b>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <div className="admin-order-results">
+          <div className="admin-section-heading">
+            <div>
+              <span>{t("Order queue")}</span>
+              <h2>
+                {filter === "event"
+                  ? t("Event orders")
+                  : filter === "all"
+                    ? t("All orders")
+                    : t("{{status}} orders", { status: t(filter) })}
+              </h2>
+            </div>
+            <small aria-live="polite">
+              {loading
+                ? t("Refreshing…")
+                : t("{{first}}–{{last}} of {{total}} · newest first", {
+                    first: firstOrder,
+                    last: lastOrder,
+                    total,
+                  })}
+            </small>
+          </div>
+          {orders.length === 0 ? (
+            <EmptyState
+              tone={loading ? "loading" : "neutral"}
+              icon={loading ? undefined : <Inbox size={27} />}
+              title={emptyTitle}
+              message={
+                loading
+                  ? t("Fetching the latest queue from the server.")
+                  : filter === "event"
+                    ? t(
+                        "Event orders appear here after they sync, or directly from this device while offline.",
+                      )
+                    : filter === "pending"
+                      ? t("New orders appear here automatically.")
+                      : t("There are no orders with this status yet.")
+              }
+              action={
+                !loading && (filter !== "all" || todayOnly) ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      onFilterChange("all");
+                      onTodayOnlyChange(false);
+                    }}
+                  >
+                    {t("View all orders")}
+                  </Button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <div
+              className={`admin-orders-grid admin-scroll-list ${loading ? "is-loading" : ""}`}
+            >
+              {orders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  isConfirming={loading || confirmingId === order.id}
+                  isCancelling={loading || cancellingId === order.id}
+                  isFulfillmentBusy={loading || fulfillmentBusyId === order.id}
+                  onConfirm={() => handleConfirm(order.id)}
+                  onCancel={() => setOrderToCancel(order)}
+                  onDetails={() => setSelectedOrder(order)}
+                  onFulfillment={(status) => handleFulfillment(order, status)}
+                />
+              ))}
+            </div>
+          )}
+          {totalPages > 1 && (
+            <nav
+              className="admin-orders-pagination"
+              aria-label={t("Order pages")}
+            >
+              <button
+                type="button"
+                disabled={page <= 1 || loading}
+                onClick={() => onPageChange(page - 1)}
+              >
+                <ChevronLeft size={16} /> {t("Previous")}
+              </button>
+              <span>
+                {t("Page")} <b>{page}</b> {t("of")} {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page >= totalPages || loading}
+                onClick={() => onPageChange(page + 1)}
+              >
+                {t("Next")} <ChevronRight size={16} />
+              </button>
+            </nav>
+          )}
+        </div>
+      </div>
       <OrderDetailsModal
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}

@@ -25,7 +25,7 @@
     gap: clamp(10px, 1.4vw, 20px);
   }
   .admin-workspace-header :is(.app-header-brand,.app-header-navigation,.app-header-actions) {
-    min-height: 46px;
+    min-height: var(--admin-control-height, 44px);
   }
   .admin-workspace-header .app-header-navigation {
     grid-column: auto;
@@ -50,10 +50,10 @@
   margin: 0;
   padding: 10px 10px 10px 11px;
   overflow: hidden;
-  border: 1px solid rgb(203 213 225 / 82%);
+  border: 1px solid var(--line);
   border-radius: 13px;
   background: rgb(255 255 255 / 96%);
-  box-shadow: 0 12px 30px rgb(15 23 42 / 13%);
+  box-shadow: 0 12px 30px rgb(80 58 38 / 13%);
   backdrop-filter: blur(14px);
   animation: staff-install-banner-enter 240ms var(--ease-out) both;
 }
@@ -76,24 +76,24 @@
 .staff-install-banner-copy { display: grid; gap: 3px; min-width: 0; }
 .staff-install-banner-copy strong { color: var(--ink); font-size: 13px; line-height: 1.25; }
 .staff-install-banner-copy>span { color: var(--muted); font-size: 10px; line-height: 1.4; }
-.staff-install-banner-copy small { display: flex; align-items: center; gap: 5px; margin-top: 3px; color: var(--pwa-accent-strong); font-size: 9px; font-weight: 800; }
+.staff-install-banner-copy small { display: flex; align-items: center; gap: 5px; margin-top: 3px; color: var(--pwa-accent-strong); font-size: 10px; font-weight: 800; }
 .staff-install-banner-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 42px;
+  min-height: var(--admin-control-height, 44px);
   padding: 0 14px;
   border: 0;
   border-radius: 12px;
   color: #fff;
-  background: var(--pwa-accent);
+  background: var(--admin-action, var(--coral));
   cursor: pointer;
   font: inherit;
   font-size: 11px;
   font-weight: 850;
 }
-.staff-install-banner-action:hover { background: var(--pwa-accent-strong); }
+.staff-install-banner-action:hover { background: color-mix(in srgb, var(--admin-action, var(--coral)) 88%, #000); }
 .staff-install-banner-action:disabled { opacity: .65; cursor: wait; }
 .staff-install-banner-dismiss {
   display: grid;
@@ -153,34 +153,6 @@ body:has(.admin-sticky-actions) .staff-install-banner {
 button.admin-overflow-item:hover { background: var(--surface-soft); }
 .admin-overflow-item > svg { flex: 0 0 auto; color: var(--muted); }
 .admin-overflow-item > span { flex: 1; min-width: 0; }
-.admin-overflow-lang-pills {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
-}
-.admin-overflow-lang-pills button {
-  min-width: 38px;
-  height: 30px;
-  border: 1px solid var(--soft-line);
-  border-radius: 8px;
-  color: var(--muted);
-  background: var(--surface-soft);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: 900;
-  transition: all 160ms ease;
-}
-.admin-overflow-lang-pills button:hover {
-  border-color: var(--line);
-  background: #fff;
-}
-.admin-overflow-lang-pills button.active {
-  color: var(--coral);
-  border-color: color-mix(in srgb, var(--coral) 25%, var(--line));
-  background: color-mix(in srgb, var(--coral) 8%, #fff);
-}
-
 .admin-notification-button {
   min-height: auto;
 }
@@ -241,7 +213,7 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
   align-items: center;
   gap: 4px;
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: .06em;
   line-height: 1;

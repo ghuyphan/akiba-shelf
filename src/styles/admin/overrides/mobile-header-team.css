@@ -1,10 +1,11 @@
 /* Mobile admin header: preserve the pill header while letting workspaces breathe. */
 @media (max-width:760px) {
   .admin-team-card .staff-members-panel {
-    padding: 14px;
-    border: 1px solid var(--soft-line);
-    border-radius: 16px;
-    background: var(--admin-inner-bg,#f8fafc);
+    padding: 18px 0 0;
+    border: 0;
+    border-top: 1px solid var(--soft-line);
+    border-radius: 0;
+    background: transparent;
   }
   .admin-team-card .staff-members-panel .staff-section-heading { margin-bottom: 14px; }
   .admin-team-card .admin-staff-list { gap: 0; margin-top: 0; border-top: 1px solid var(--soft-line); }
@@ -66,4 +67,3 @@
   .app-header .admin-nav-tabs::after { content:""; flex:0 0 3px; }
   .admin-workspace-identity .app-header-title { display: none; }
 }
-

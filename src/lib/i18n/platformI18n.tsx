@@ -89,6 +89,8 @@ const vi: Record<string, string> = {
   "Stay in sync.": "Luôn đồng bộ.",
   "Fans browse and order from their phones. Matsuri reserves the stock and gives your team one live queue to fulfil from behind the booth.":
     "Fan xem và đặt hàng trên điện thoại. Matsuri giữ tồn kho và cung cấp cho đội ngũ một hàng đợi trực tiếp để xử lý phía sau gian hàng.",
+  "Fans order on their phones. Matsuri reserves stock and keeps one live queue for your team.":
+    "Fan đặt hàng trên điện thoại. Matsuri giữ tồn kho và gom mọi đơn vào một hàng đợi trực tiếp cho đội ngũ.",
   "Create your storefront": "Tạo cửa hàng của bạn",
   "Made for Artist Alley.": "Dành cho Artist Alley.",
   "Your brand stays in front; the busywork stays behind it.":
@@ -203,6 +205,40 @@ const vi: Record<string, string> = {
   "Qty {{count}}": "SL {{count}}",
   "Decorative checkout QR code": "Mã QR thanh toán minh họa",
   "DRAW MORE": "VẼ THÊM",
+  "Matsuri demo storefront shown on a phone":
+    "Cửa hàng demo Matsuri hiển thị trên điện thoại",
+  "Matsuri demo storefront with product collections and booth information":
+    "Cửa hàng demo Matsuri với bộ sưu tập sản phẩm và thông tin gian hàng",
+  "One booth, three connected views.": "Một gian hàng, ba góc nhìn kết nối.",
+  "From fan to fulfilment": "Từ fan đến lúc giao hàng",
+  "One artist booth, three working surfaces.":
+    "Một gian hàng artist, ba không gian phối hợp.",
+  "A public catalog, a packing desk, and an optional event game—connected by the same products and stock.":
+    "Một catalog công khai, một bàn đóng gói và một trò chơi sự kiện tùy chọn—cùng kết nối với sản phẩm và tồn kho.",
+  "Packing desk": "Bàn đóng gói",
+  "Orders ready to hand over": "Đơn sẵn sàng để giao",
+  "Digital catalog": "Catalog trực tuyến",
+  "Your art stays in front": "Tác phẩm của bạn luôn nổi bật",
+  "Event extra": "Tiện ích sự kiện",
+  "A playful reason to stop by": "Một lý do vui để ghé gian hàng",
+  "Fans shop, your team fulfils, and gacha turns merch into a playable event moment.":
+    "Fan mua sắm, đội ngũ xử lý đơn, còn gacha biến merch thành một khoảnh khắc tương tác tại sự kiện.",
+  "Matsuri admin order queue with fulfilment details":
+    "Hàng đợi đơn admin Matsuri với chi tiết giao hàng",
+  "Admin order desk": "Bàn xử lý đơn admin",
+  "Keep every handover in one live workspace.":
+    "Giữ mọi lượt giao hàng trong một không gian trực tiếp.",
+  "Track stock, payment, and fulfilment without losing the booth rush.":
+    "Theo dõi tồn kho, thanh toán và giao hàng ngay cả lúc gian hàng đông.",
+  "Branded storefront": "Cửa hàng mang thương hiệu riêng",
+  "Let fans browse and order from their phones.":
+    "Để fan xem và đặt hàng trên điện thoại.",
+  "Matsuri gacha selector for Genshin and Honkai Star Rail":
+    "Màn chọn gacha Matsuri cho Genshin và Honkai Star Rail",
+  "Merch gacha": "Gacha merch",
+  "Publish a free minigame from the same catalog.":
+    "Xuất bản minigame miễn phí từ cùng một catalog.",
+  "Play the demo gacha": "Chơi gacha demo",
   "Who Matsuri helps": "Matsuri hỗ trợ những ai",
   "For fans": "Cho fan",
   "Browse and order from their phone": "Xem và đặt hàng bằng điện thoại",
@@ -1009,6 +1045,7 @@ const vi: Record<string, string> = {
   Desktop: "Máy tính",
   Phone: "Điện thoại",
   "Preview zoom": "Thu phóng xem trước",
+  "Storefront preview canvas": "Vùng xem trước cửa hàng",
   "Zoom out": "Thu nhỏ",
   "Fit preview": "Vừa khung xem trước",
   "Zoom in": "Phóng to",
@@ -1494,6 +1531,15 @@ const vi: Record<string, string> = {
   "3 · Luck & guarantees": "3 · May mắn & bảo hiểm",
   "Start with a simple preset. Advanced odds stay out of the way until needed.":
     "Bắt đầu bằng thiết lập đơn giản. Tỷ lệ nâng cao chỉ hiện khi cần.",
+  "Convention Booth Mode": "Chế độ gian hàng sự kiện",
+  "Fast 50 pity with generous odds for physical event visitors.":
+    "Bảo hiểm 50 lượt nhanh với tỷ lệ hào phóng cho khách tham quan sự kiện.",
+  "Official Genshin Replica": "Mô phỏng Genshin chính thức",
+  "Exact official game rates (90 hard pity, 74 soft pity).":
+    "Đúng theo tỷ lệ game chính thức (bảo hiểm cứng 90 lượt, mềm 74 lượt).",
+  "Official Star Rail Replica": "Mô phỏng Star Rail chính thức",
+  "Exact official game rates (90 character pity, 80 Light Cone pity).":
+    "Đúng theo tỷ lệ game chính thức (bảo hiểm nhân vật 90 lượt, Light Cone 80 lượt).",
   "Review luck settings": "Xem thiết lập may mắn",
   "Choose a preset": "Chọn thiết lập có sẵn",
   Availability: "Trạng thái hoạt động",

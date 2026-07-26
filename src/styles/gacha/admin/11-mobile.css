@@ -1,4 +1,31 @@
 @media (max-width: 760px) {
+  .gacha-workflow-surface {
+    border-radius: 16px;
+  }
+
+  .gacha-workflow-surface .admin-card {
+    padding-inline: 15px !important;
+  }
+
+  .gacha-workflow-surface .gacha-banner-editor {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .gacha-workflow-surface .gacha-banner-editor-head,
+  .gacha-workflow-surface .gacha-banner-fields {
+    padding-inline: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .gacha-workflow-surface .gacha-shared-pool-tab {
+    padding-inline: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
   body:has(.gacha-admin-page) .toast-region {
     top: max(10px, env(safe-area-inset-top));
     bottom: auto;
@@ -204,4 +231,3 @@
     min-height: 48px;
   }
 }
-

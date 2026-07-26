@@ -1,13 +1,18 @@
-/* Admin button overrides to ensure readability and follow design language */
+/* Admin actions: shop accent primary, neutral secondary, red destructive. */
+.admin-shell .button,
+.modal-admin .button {
+  border-radius: var(--admin-control-radius, 11px);
+}
+
 .admin-shell .button-primary {
   color: #fff;
-  background: var(--coral);
-  border-color: var(--coral);
+  background: var(--admin-action, var(--coral));
+  border-color: var(--admin-action, var(--coral));
 }
 
 .admin-shell .button-primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--coral) 88%, black);
-  border-color: color-mix(in srgb, var(--coral) 88%, black);
+  background: color-mix(in srgb, var(--admin-action, var(--coral)) 88%, black);
+  border-color: color-mix(in srgb, var(--admin-action, var(--coral)) 88%, black);
   box-shadow: 0 8px 18px rgb(23 32 51 / 10%);
 }
 
@@ -19,7 +24,7 @@
 }
 
 .admin-shell .button-secondary:hover:not(:disabled) {
-  background: var(--admin-inner-bg, #f8fafc);
+  background: var(--admin-inner-bg, var(--surface-soft));
   border-color: color-mix(in srgb, var(--admin-surface-border, #cdd8e5) 85%, black);
   box-shadow: 0 8px 18px rgb(23 32 51 / 10%);
 }
@@ -44,7 +49,7 @@
 }
 
 .modal-admin .button-secondary:hover:not(:disabled) {
-  background: var(--admin-inner-bg, #f8fafc);
+  background: var(--admin-inner-bg, var(--surface-soft));
 }
 
 .confirmation-modal { width: min(92vw, 520px); border-radius: 18px; }
@@ -59,4 +64,3 @@
   .confirmation-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .confirmation-dialog-actions .button { width: 100%; min-width: 0; }
 }
-

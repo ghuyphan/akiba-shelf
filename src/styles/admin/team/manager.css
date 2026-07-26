@@ -11,8 +11,8 @@
 @media(max-width:760px){.staff-overview{grid-template-columns:1fr}.staff-overview>div{grid-template-columns:auto 1fr;align-items:baseline;gap:8px}.staff-role-options{grid-template-columns:1fr}.staff-invitation-row{align-items:flex-start;flex-wrap:wrap}.staff-invitation-row .button{width:100%}}
 
 .admin-team-card :is(.staff-invite-panel,.staff-members-panel,.staff-invitations) {
-  border-radius: 16px;
-  background: var(--admin-inner-bg, #f8fafc);
+  border-radius: var(--admin-inset-radius, 12px);
+  background: var(--admin-inner-bg, var(--surface-soft));
 }
 .admin-team-card .staff-section-heading { gap: 11px; margin-bottom: 16px; }
 .admin-team-card .staff-section-heading>span { width: 30px; height: 30px; border-radius: 9px; }
@@ -20,4 +20,36 @@
 .admin-team-card .staff-section-heading p { font-size: 11px; }
 .admin-team-card .staff-role-field { gap: 5px; }
 .admin-team-card .staff-role-field>.field-label { color: #314159; font-size: 12px; font-weight: 800; }
+.admin-team-card .staff-invite-fields .field-label { font-size: 12px; }
 
+.admin-team-card .admin-staff-row.inactive { background: var(--admin-inner-bg, var(--surface-soft)); }
+.admin-team-card .staff-access-toggle>span { background: color-mix(in srgb, var(--muted) 35%, var(--surface)); }
+.admin-team-card :is(.staff-status,.staff-access-toggle b,.staff-invitation-row small,.staff-limit-note) { font-size: 10px; }
+.admin-team-card .staff-overview span { font-size: 10px; letter-spacing: .04em; }
+.admin-team-card .staff-role-options small { font-size: 10px; line-height: 1.4; }
+.admin-team-card .staff-invitation-status { font-size: 9px; }
+
+/* One team workflow surface; use dividers for its task groups. */
+.admin-team-card .staff-manager-layout { gap: 0; }
+.admin-team-card :is(.staff-invite-panel,.staff-members-panel,.staff-invitations) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.admin-team-card .staff-invite-panel { padding-right: 24px; }
+.admin-team-card .staff-members-panel { padding-left: 24px; border-left: 1px solid var(--soft-line); }
+.admin-team-card .staff-invitations { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--soft-line); }
+
+@media (max-width: 1100px) {
+  .admin-team-card .staff-invite-panel { padding-right: 0; }
+  .admin-team-card .staff-members-panel { margin-top: 22px; padding: 22px 0 0; border-top: 1px solid var(--soft-line); border-left: 0; }
+}
+
+@media (max-width: 760px) {
+  .admin-team-card .staff-overview { gap: 0; border-top: 1px solid var(--soft-line); border-bottom: 1px solid var(--soft-line); }
+  .admin-team-card .staff-overview > div { padding: 10px 0; border: 0; border-radius: 0; background: transparent; }
+  .admin-team-card .staff-overview > div + div { border-top: 1px solid var(--soft-line); }
+  .admin-team-card .staff-members-panel { margin-top: 18px; padding-top: 18px; }
+  .admin-team-card .staff-invitations { margin-top: 20px; padding-top: 20px; }
+}

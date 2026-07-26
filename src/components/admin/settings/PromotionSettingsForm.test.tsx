@@ -1,10 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PlatformI18nProvider } from "../../../lib/i18n/platformI18n";
 import type { PromotionSettings } from "../../../types/catalog";
 import { ToastProvider } from "../../ui/ToastProvider";
 import { PromotionSettingsForm } from "./PromotionSettingsForm";
+
+afterEach(cleanup);
 
 const promotion: PromotionSettings = {
   enabled: false,
@@ -39,5 +41,44 @@ describe("PromotionSettingsForm", () => {
         "Add products before choosing which items qualify for this promotion.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("lets staff replace promotion quantities without fighting the input", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(
+      <PlatformI18nProvider>
+        <ToastProvider>
+          <PromotionSettingsForm
+            promotion={promotion}
+            products={[]}
+            onSave={onSave}
+          />
+        </ToastProvider>
+      </PlatformI18nProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const buyQuantity = screen.getByRole("textbox", {
+      name: "Customer buys",
+    });
+    const freeQuantity = screen.getByRole("textbox", {
+      name: "Customer gets free",
+    });
+
+    await user.click(buyQuantity);
+    await user.keyboard("3");
+    expect(buyQuantity).toHaveValue("3");
+    await user.click(freeQuantity);
+    await user.keyboard("2");
+    expect(freeQuantity).toHaveValue("2");
+    expect(buyQuantity).toHaveValue("3");
+    await user.click(screen.getByRole("button", { name: "Save promotion" }));
+
+    expect(onSave).toHaveBeenCalledWith({
+      ...promotion,
+      buy_quantity: 3,
+      free_quantity: 2,
+    });
   });
 });

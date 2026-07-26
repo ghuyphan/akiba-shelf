@@ -39,6 +39,7 @@
     "preview:perf": "vite preview --host 127.0.0.1 --outDir .perf-dist --port 4174 --strictPort"
   },
   "dependencies": {
+    "@fontsource-variable/outfit": "^5.3.0",
     "@sentry/react": "^10.67.0",
     "@supabase/supabase-js": "^2.45.4",
     "lucide-react": "^0.468.0",

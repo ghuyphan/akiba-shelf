@@ -17,7 +17,7 @@
 .admin-switch-row label { display: flex !important; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; min-height: 68px !important; padding: 12px 14px !important; border: 1px solid var(--soft-line) !important; border-radius: 13px !important; cursor: pointer; }
 .admin-switch-row label>span { display: grid; gap: 3px; min-width: 0; }
 .admin-switch-row strong { color: var(--ink); font-size: 11px; }
-.admin-switch-row small { color: var(--muted); font-size: 9px; line-height: 1.35; }
+.admin-switch-row small { color: var(--muted); font-size: 10px; line-height: 1.4; }
 .admin-switch-row input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--coral); }
 .admin-gallery-error { padding: 9px 11px; border-radius: 9px; background: #fff0f2; }
 
@@ -27,4 +27,3 @@
   .admin-switch-row label { min-height: 64px !important; }
   .admin-product-form .admin-sticky-actions { padding-bottom: max(10px,env(safe-area-inset-bottom)); }
 }
-

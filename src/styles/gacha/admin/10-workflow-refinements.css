@@ -4,6 +4,16 @@
   .gacha-setup-grid {
     grid-template-columns: 1fr;
   }
+
+  .gacha-panel {
+    padding: 0 0 18px;
+  }
+
+  .gacha-panel + .gacha-panel {
+    padding: 18px 0 0;
+    border-top: 1px solid var(--soft-line, #eee9e1);
+    border-left: 0;
+  }
 }
 
 /* Simplified three-card workflow. */
@@ -29,10 +39,10 @@
 }
 
 .gacha-luck-disclosure {
-  overflow: hidden;
-  border: 1px solid var(--soft-line, #eee9e1);
-  border-radius: 14px;
-  background: #fff;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .gacha-luck-disclosure > summary {
@@ -41,7 +51,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 16px;
+  padding: 0;
   cursor: pointer;
   list-style: none;
 }
@@ -107,6 +117,7 @@
 }
 
 .gacha-luck-disclosure[open] > summary {
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--soft-line, #eee9e1);
 }
 
@@ -117,14 +128,26 @@
 .gacha-luck-content {
   display: grid;
   gap: 12px;
-  padding: 14px;
-  background: var(--admin-inner-bg, #f8fafc);
+  padding: 14px 0 0;
+  background: transparent;
 }
 
 .gacha-luck-content .gacha-presets-section {
-  border: 1px solid var(--soft-line, #eee9e1);
-  border-radius: 13px;
+  padding: 0 0 14px;
+  border: 0;
+  border-bottom: 1px solid var(--soft-line, #eee9e1);
+  border-radius: 0;
+  background: transparent;
 }
+
+.gacha-luck-content .gacha-pity {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.gacha-luck-content .gacha-pity > summary { padding-inline: 0; }
+.gacha-luck-content .gacha-pity-fields { padding: 14px 0 0; background: transparent; }
 
 .gacha-banner-menu {
   position: relative;
@@ -212,4 +235,3 @@
   width: auto;
   min-width: 0;
 }
-

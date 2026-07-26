@@ -3,10 +3,10 @@
   --builder-text-title: 13px;
   --builder-text-section: 11px;
   --builder-text-control: 13px;
-  --builder-text-label: 10px;
-  --builder-text-help: 9px;
-  --builder-control-height: 46px;
-  --builder-control-radius: 10px;
+  --builder-text-label: 11px;
+  --builder-text-help: 10px;
+  --builder-control-height: var(--admin-control-height, 44px);
+  --builder-control-radius: var(--admin-control-radius, 11px);
 }
 .storefront-builder .builder-tabs button { font-size: 10px; }
 .storefront-builder .builder-section-heading strong {
@@ -67,7 +67,7 @@
 .storefront-builder .designer-identity-copy small,
 .storefront-builder .designer-payment-preview :is(small,code) { font-size: var(--builder-text-help); }
 .storefront-builder .designer-identity-preview em,
-.storefront-builder .designer-payment-preview em { font-size: 8px; }
+.storefront-builder .designer-payment-preview em { font-size: 9px; }
 .storefront-builder .designer-asset-field .upload-button-face {
   min-height: var(--builder-control-height);
   gap: 7px;
@@ -79,13 +79,13 @@
 .storefront-builder .social-channel-field-head strong { font-size: var(--builder-text-label); }
 .storefront-builder .social-channel-visibility { font-size: var(--builder-text-help); }
 .storefront-builder .social-channel-field .input {
-  min-height: 42px !important;
-  font-size: 11px !important;
+  min-height: var(--builder-control-height) !important;
+  font-size: 12px !important;
 }
 .storefront-builder .designer-palette-grid strong,
 .storefront-builder .designer-card-style-grid strong { font-size: 10px; }
 .storefront-builder .designer-palette-grid small,
-.storefront-builder .designer-card-style-grid small { font-size: 8px; line-height: 1.35; }
+.storefront-builder .designer-card-style-grid small { font-size: var(--builder-text-help); line-height: 1.35; }
 .storefront-builder .designer-color-field>span { font-size: var(--builder-text-help); }
 .storefront-builder .designer-color-field code { font-size: 10px; }
 .storefront-builder .designer-setting-group strong,
@@ -93,4 +93,3 @@
 .storefront-builder .designer-setting-group small,
 .storefront-builder .designer-locale small { font-size: var(--builder-text-help); line-height: 1.4; }
 .storefront-builder .designer-locale button { font-size: 10px; }
-

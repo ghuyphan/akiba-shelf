@@ -14,7 +14,8 @@ import type {
   GachaRarity,
   GachaWeaponType,
 } from "../../../types/gacha";
-import { Field, TextInput } from "../../ui/Field";
+import { Field } from "../../ui/Field";
+import { NumberInput } from "../../ui/NumberInput";
 import type { SelectMenuOption } from "../../ui/SelectMenu";
 import { DropdownField } from "./DropdownField";
 import { GachaElementIcon } from "./GachaElementIcon";
@@ -171,16 +172,15 @@ export function GachaEntryEditor({
         />
       )}
       <Field label={t("Weight")}>
-        <TextInput
-          type="number"
+        <NumberInput
           min={1}
           max={1000}
           value={entry.weight}
           disabled={!productActive}
           onFocus={onTextFocus}
-          onChange={(event) =>
+          onChange={(value) =>
             onUpdateEntry({
-              weight: Number(event.target.value),
+              weight: value,
             })
           }
         />

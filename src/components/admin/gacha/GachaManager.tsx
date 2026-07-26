@@ -1259,93 +1259,100 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
           </button>
         </AdminCard>
       )}
-      <div id="gacha-validation-general" className="gacha-section-anchor">
-        <GachaGeneralSection
-          settings={settings}
-          titleError={
-            validationIssue?.target === "general" ? validationIssue.message : ""
-          }
-          onUpdateSettings={updateSettings}
-          onTextFocus={beginTextSession}
-        />
-      </div>
-      <div id="gacha-validation-banner" className="gacha-section-anchor">
-        <AdminCard
-          className="gacha-banners-card"
-          icon={<Layers3 size={18} />}
-          title={t("2 · Prizes & banners")}
-          description={t(
-            "Choose one banner, then manage its prizes without leaving this card.",
-          )}
-        >
-          <GachaBannerList
-            banners={banners}
-            entries={entries}
-            selectedBannerId={selectedBannerId}
-            canMoveUp={bannerIndex > 0}
-            canMoveDown={bannerIndex >= 0 && bannerIndex < banners.length - 1}
-            canDelete={banners.length > 1}
-            onSelect={setSelectedBannerId}
-            onAdd={() => addBanner()}
-            onDuplicate={() => addBanner(selectedBanner)}
-            onDelete={removeBanner}
-            onMove={moveBanner}
-          />
-          <GachaBannerEditor
-            banner={selectedBanner}
-            descriptor={descriptor}
-            error={
-              validationIssue?.target === "banner"
+      <div className="gacha-workflow-surface">
+        <div id="gacha-validation-general" className="gacha-section-anchor">
+          <GachaGeneralSection
+            settings={settings}
+            titleError={
+              validationIssue?.target === "general"
                 ? validationIssue.message
                 : ""
             }
-            errorField={
-              validationIssue?.target === "banner"
-                ? validationIssue.field
-                : undefined
-            }
-            onUpdateBanner={updateBanner}
-            onUpdateDisplayLimit={updateDisplayLimit}
+            onUpdateSettings={updateSettings}
             onTextFocus={beginTextSession}
           />
-          <div id="gacha-validation-pool">
-            <GachaPoolEditor
-              products={products}
-              banner={selectedBanner}
+        </div>
+        <div id="gacha-validation-banner" className="gacha-section-anchor">
+          <AdminCard
+            className="gacha-banners-card"
+            variant="flush"
+            icon={<Layers3 size={18} />}
+            title={t("2 · Prizes & banners")}
+            description={t(
+              "Choose one banner, then manage its prizes without leaving this card.",
+            )}
+          >
+            <GachaBannerList
               banners={banners}
               entries={entries}
+              selectedBannerId={selectedBannerId}
+              canMoveUp={bannerIndex > 0}
+              canMoveDown={bannerIndex >= 0 && bannerIndex < banners.length - 1}
+              canDelete={banners.length > 1}
+              onSelect={setSelectedBannerId}
+              onAdd={() => addBanner()}
+              onDuplicate={() => addBanner(selectedBanner)}
+              onDelete={removeBanner}
+              onMove={moveBanner}
+            />
+            <GachaBannerEditor
+              banner={selectedBanner}
               descriptor={descriptor}
               error={
-                validationIssue?.target === "pool"
+                validationIssue?.target === "banner"
                   ? validationIssue.message
                   : ""
               }
-              onToggleProduct={toggleProduct}
-              onUpdateEntry={updateEntry}
-              onToggleFeatured={updateFeatured}
-              onTextFocus={beginTextSession}
-              sharedCount={entries.filter((entry) => entry.rarity === 3).length}
-              sharedPool={
-                <GachaShared3StarEditor
-                  products={products}
-                  entries={entries}
-                  onToggleProduct={toggleShared3StarProduct}
-                />
+              errorField={
+                validationIssue?.target === "banner"
+                  ? validationIssue.field
+                  : undefined
               }
+              onUpdateBanner={updateBanner}
+              onUpdateDisplayLimit={updateDisplayLimit}
+              onTextFocus={beginTextSession}
             />
-          </div>
-        </AdminCard>
-      </div>
-      <div id="gacha-validation-luck" className="gacha-section-anchor">
-        <GachaLuckSection
-          settings={settings}
-          descriptor={descriptor}
-          error={
-            validationIssue?.target === "luck" ? validationIssue.message : ""
-          }
-          onUpdateSettings={updateSettings}
-          onTextFocus={beginTextSession}
-        />
+            <div id="gacha-validation-pool">
+              <GachaPoolEditor
+                products={products}
+                banner={selectedBanner}
+                banners={banners}
+                entries={entries}
+                descriptor={descriptor}
+                error={
+                  validationIssue?.target === "pool"
+                    ? validationIssue.message
+                    : ""
+                }
+                onToggleProduct={toggleProduct}
+                onUpdateEntry={updateEntry}
+                onToggleFeatured={updateFeatured}
+                onTextFocus={beginTextSession}
+                sharedCount={
+                  entries.filter((entry) => entry.rarity === 3).length
+                }
+                sharedPool={
+                  <GachaShared3StarEditor
+                    products={products}
+                    entries={entries}
+                    onToggleProduct={toggleShared3StarProduct}
+                  />
+                }
+              />
+            </div>
+          </AdminCard>
+        </div>
+        <div id="gacha-validation-luck" className="gacha-section-anchor">
+          <GachaLuckSection
+            settings={settings}
+            descriptor={descriptor}
+            error={
+              validationIssue?.target === "luck" ? validationIssue.message : ""
+            }
+            onUpdateSettings={updateSettings}
+            onTextFocus={beginTextSession}
+          />
+        </div>
       </div>
       {(autosaveError || publishError) && (
         <div className="gacha-persistent-feedback">

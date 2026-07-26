@@ -749,12 +749,21 @@ test("inherits the shop accent across workspace and portaled admin actions", asy
   await page.getByPlaceholder("Enter your password").fill("password123");
   await page.getByRole("button", { name: "Open admin" }).click();
 
-  const shopAccent = await page
-    .locator(".admin-shell")
-    .evaluate((shell) =>
-      getComputedStyle(shell).getPropertyValue("--coral").trim(),
-    );
-  expect(shopAccent).toBe("#5f8d55");
+  const shopTheme = await page.locator(".admin-shell").evaluate((shell) => {
+    const style = getComputedStyle(shell);
+    return {
+      primary: style.getPropertyValue("--admin-primary").trim(),
+      secondary: style.getPropertyValue("--admin-secondary").trim(),
+      accent: style.getPropertyValue("--admin-accent").trim(),
+      page: style.getPropertyValue("--admin-page-bg").trim(),
+    };
+  });
+  expect(shopTheme).toEqual({
+    primary: "#5f8d55",
+    secondary: "#17233c",
+    accent: "#5f8d55",
+    page: "#fff8f2",
+  });
 
   await page.getByRole("button", { name: /Products/ }).click();
   await page.getByRole("button", { name: /Moon Stand/ }).click();
@@ -1014,6 +1023,29 @@ test("admin edit controls share one action grammar", async ({ page }) => {
 
   const productEditBar = productFormColumn.locator(".admin-edit-bar");
   await expect(productEditBar).toContainText("No changes");
+  const productControls = productFormColumn.locator(
+    ".admin-product-form :is(input.input, select.input, .select-menu-trigger)",
+  );
+  const productControlCount = await productControls.count();
+  expect(productControlCount).toBeGreaterThan(0);
+  const productControlStyles = await productControls.evaluateAll((controls) =>
+    controls.flatMap((control) => {
+      const element = control as HTMLElement;
+      const bounds = element.getBoundingClientRect();
+      if (bounds.width === 0 || bounds.height === 0) return [];
+      const style = getComputedStyle(element);
+      return [{ height: style.height, radius: style.borderRadius }];
+    }),
+  );
+  for (const style of productControlStyles) {
+    expect(style.height).toBe("44px");
+    expect(style.radius).toBe("11px");
+  }
+  const productCard = productFormColumn.locator(".admin-card");
+  await expect(productCard).toHaveCSS(
+    "border-radius",
+    page.viewportSize()!.width <= 760 ? "16px" : "18px",
+  );
   const cancelButton = productEditBar.getByRole("button", {
     name: "Cancel",
     exact: true,
@@ -1251,6 +1283,107 @@ test("dashboard presents the storefront slug as immutable", async ({
   );
 });
 
+test("dashboard uses the unified account surface and control contract", async ({
+  page,
+}) => {
+  await mockSupabase(page, { staffRole: "owner" });
+  await page.goto("./dashboard");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+
+  const shell = page.locator(".dashboard-account-shell");
+  await expect(shell).toHaveCSS("--admin-action", "#d95c64");
+
+  const expectedRadius = page.viewportSize()!.width <= 760 ? "16px" : "18px";
+  await expect(page.locator(".dashboard-shop-card")).toHaveCSS(
+    "border-radius",
+    expectedRadius,
+  );
+  await expect(page.locator(".dashboard-create-card")).toHaveCSS(
+    "border-radius",
+    expectedRadius,
+  );
+  await expect(page.getByRole("button", { name: "Manage shop" })).toHaveCSS(
+    "min-height",
+    "44px",
+  );
+  await expect(
+    page.getByRole("link", { name: "Storefront", exact: true }),
+  ).toHaveCSS("min-height", "44px");
+  await expect(page.getByTitle("Edit shop details")).toHaveCSS(
+    "height",
+    "44px",
+  );
+
+  const overflow = await page.evaluate(
+    () =>
+      Math.max(
+        document.documentElement.scrollWidth,
+        document.body.scrollWidth,
+      ) - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+
+  await page.getByTitle("Edit shop details").click();
+  const dialog = page.getByRole("dialog", { name: "Edit shop details" });
+  await expect(dialog.getByLabel("Shop name")).toHaveCSS("height", "44px");
+  await expect(dialog.getByLabel("Shop name")).toHaveCSS(
+    "border-radius",
+    "11px",
+  );
+  for (const button of await dialog.getByRole("button").all()) {
+    await expect(button).toHaveCSS("min-height", "44px");
+  }
+});
+
+test("workspace and dashboard headers share locale and selector surfaces", async ({
+  page,
+}) => {
+  await mockSupabase(page, { staffRole: "owner" });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+
+  const headerButton = page.locator(".admin-overflow-toggle");
+  const shopSelector = page.locator(
+    ".admin-shop-switcher-menu > .select-menu-trigger",
+  );
+  const localeSelector = page.locator(
+    ".platform-language-menu > .select-menu-trigger",
+  );
+  const headerButtonBackground = await headerButton.evaluate(
+    (element) => getComputedStyle(element).backgroundColor,
+  );
+
+  await expect(shopSelector).toBeVisible();
+  await expect(localeSelector).toBeVisible();
+  await expect(shopSelector).toHaveCSS("height", "44px");
+  await expect(localeSelector).toHaveCSS("height", "44px");
+  await expect(shopSelector).toHaveCSS("border-radius", "12px");
+  await expect(localeSelector).toHaveCSS("border-radius", "12px");
+  await expect(shopSelector).toHaveCSS(
+    "background-color",
+    headerButtonBackground,
+  );
+  await expect(localeSelector).toHaveCSS(
+    "background-color",
+    headerButtonBackground,
+  );
+
+  await page.goto("./dashboard");
+  await expect(
+    page.getByRole("heading", { name: "Your shops", exact: true }),
+  ).toBeVisible();
+  const dashboardLocale = page.getByRole("button", {
+    name: "Language: English",
+  });
+  await expect(dashboardLocale).toBeVisible();
+  await expect(dashboardLocale).toHaveCSS("height", "44px");
+  await expect(dashboardLocale).toHaveCSS("border-radius", "12px");
+});
+
 test("shop switcher keeps a compact scrollable list and fixed actions", async ({
   page,
 }) => {
@@ -1299,6 +1432,80 @@ test("designer phone rules apply inside the preview iframe", async ({
     'iframe[title="desktop storefront preview"]',
   );
   await expect(desktopPreview.locator(".product-grid")).toBeVisible();
+  const previewCanvas = page.getByLabel("Storefront preview canvas");
+  await expect
+    .poll(() =>
+      previewCanvas.evaluate((element) => ({
+        horizontal: element.scrollWidth > element.clientWidth,
+        vertical: element.scrollHeight > element.clientHeight,
+      })),
+    )
+    .toEqual({ horizontal: true, vertical: true });
+
+  const canvasBox = await previewCanvas.boundingBox();
+  expect(canvasBox).not.toBeNull();
+  const initialCanvasScroll = await previewCanvas.evaluate((element) => ({
+    left: element.scrollLeft,
+    top: element.scrollTop,
+  }));
+  await page.mouse.move(
+    canvasBox!.x + 18,
+    canvasBox!.y + canvasBox!.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    canvasBox!.x + 78,
+    canvasBox!.y + canvasBox!.height / 2,
+  );
+  await page.mouse.up();
+  await expect
+    .poll(() => previewCanvas.evaluate((element) => element.scrollLeft))
+    .toBeLessThan(initialCanvasScroll.left);
+
+  await previewCanvas.hover({ position: { x: 18, y: 18 } });
+  await page.keyboard.down("Space");
+  await expect(previewCanvas).toHaveClass(/is-pan-ready/);
+  await page.keyboard.up("Space");
+  await expect(previewCanvas).not.toHaveClass(/is-pan-ready/);
+
+  const zoomValue = page.locator(".builder-zoom-controls span");
+  const initialZoom = Number((await zoomValue.textContent())?.replace("%", ""));
+  await previewCanvas.dispatchEvent("wheel", {
+    deltaY: -100,
+    ctrlKey: true,
+    clientX: canvasBox!.width / 2,
+    clientY: canvasBox!.height / 2,
+  });
+  await expect
+    .poll(async () => Number((await zoomValue.textContent())?.replace("%", "")))
+    .toBeGreaterThan(initialZoom);
+  await page.getByRole("button", { name: "Fit preview" }).click();
+  await expect(page.getByRole("button", { name: "Fit preview" })).toHaveClass(
+    /active/,
+  );
+
+  const iframeBox = await page
+    .locator('iframe[title="desktop storefront preview"]')
+    .boundingBox();
+  expect(iframeBox).not.toBeNull();
+  const beforeSpacePan = await previewCanvas.evaluate(
+    (element) => element.scrollLeft,
+  );
+  await page.mouse.move(
+    iframeBox!.x + iframeBox!.width / 2,
+    iframeBox!.y + iframeBox!.height / 2,
+  );
+  await page.keyboard.down("Space");
+  await page.mouse.down();
+  await page.mouse.move(
+    iframeBox!.x + iframeBox!.width / 2 + 50,
+    iframeBox!.y + iframeBox!.height / 2,
+  );
+  await page.mouse.up();
+  await page.keyboard.up("Space");
+  await expect
+    .poll(() => previewCanvas.evaluate((element) => element.scrollLeft))
+    .toBeLessThan(beforeSpacePan);
   await expect
     .poll(() =>
       desktopPreview
