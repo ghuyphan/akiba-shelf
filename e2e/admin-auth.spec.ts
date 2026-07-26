@@ -865,6 +865,34 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
   );
   await page.keyboard.press("Escape");
 
+  await page.evaluate(() =>
+    window.scrollTo({ top: document.documentElement.scrollHeight }),
+  );
+  const productWorkspaceNavigation = page.getByRole("toolbar", {
+    name: "Product workspace",
+  });
+  await expect(productWorkspaceNavigation).toBeVisible();
+  const productNavigationGeometry = await productWorkspaceNavigation.evaluate(
+    (navigation) => {
+      const navigationBounds = navigation.getBoundingClientRect();
+      const headerBounds = document
+        .querySelector<HTMLElement>(".admin-workspace-header")!
+        .getBoundingClientRect();
+      return {
+        navigationTop: navigationBounds.top,
+        headerBottom: headerBounds.bottom,
+      };
+    },
+  );
+  expect(productNavigationGeometry.navigationTop).toBeGreaterThanOrEqual(
+    productNavigationGeometry.headerBottom - 1,
+  );
+  await productWorkspaceNavigation
+    .getByRole("button", { name: /Products List/ })
+    .click();
+  await expect(page.locator(".admin-grid-col-list")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
   await page.getByRole("button", { name: "Gacha", exact: true }).click();
   await expect(page.locator(".gacha-admin-page")).toBeVisible();
   await expectTouchTargetsAtLeast(

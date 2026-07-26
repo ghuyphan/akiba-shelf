@@ -8,7 +8,7 @@
   --admin-inner-radius: 13px;
   --admin-inner-bg: #f8fafc;
 }
-.admin-container :is(.admin-card,.admin-surface,.admin-order-metrics article,.admin-items-summary,.admin-order-card) { border: 1px solid var(--admin-surface-border) !important; border-radius: var(--admin-surface-radius) !important; background: rgb(255 255 255 / 94%) !important; box-shadow: var(--admin-surface-shadow) !important; }
+.admin-container :is(.admin-card,.admin-surface,.admin-items-summary,.admin-order-card) { border: 1px solid var(--admin-surface-border) !important; border-radius: var(--admin-surface-radius) !important; background: rgb(255 255 255 / 94%) !important; box-shadow: var(--admin-surface-shadow) !important; }
 .admin-container .admin-card { padding: 20px !important; }
 .admin-card-header { min-height: 44px; margin-bottom: 18px !important; padding-bottom: 16px !important; border-bottom: 1px solid var(--soft-line) !important; }
 .admin-card-icon { width: 40px !important; height: 40px !important; border-radius: 12px !important; }
@@ -16,7 +16,7 @@
 .admin-card-header p { max-width: 62ch; font-size: 10px !important; line-height: 1.45; }
 .admin-container :is(.admin-form-section,.admin-readout,.admin-social-preview,.admin-bank-card,.admin-fallback-qr,.admin-product,.designer-setting-group,.designer-locale) { border: 1px solid var(--soft-line) !important; border-radius: var(--admin-inner-radius) !important; background: var(--admin-inner-bg) !important; box-shadow: none !important; }
 .admin-form-section { padding: 18px; }
-.admin-order-metrics article { min-height: 100px; padding: 16px; }
+.admin-order-metrics article { min-height: 72px; padding: 11px 13px; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
 .admin-items-summary { padding: 18px; }
 .admin-order-card { padding: 16px; }
 .admin-settings-switcher { border: 1px solid var(--admin-surface-border); border-radius: 15px; background: #fff; box-shadow: var(--admin-surface-shadow); }

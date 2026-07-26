@@ -29,7 +29,7 @@ const product: Product = {
 
 function renderForm(
   onDelete = vi.fn().mockResolvedValue(undefined),
-  onBack = vi.fn(),
+  featuredCount = 0,
 ) {
   render(
     <PlatformI18nProvider>
@@ -37,9 +37,9 @@ function renderForm(
         <ProductForm
           shopId="shop-1"
           product={product}
+          featuredCount={featuredCount}
           onSave={vi.fn().mockResolvedValue(undefined)}
           onDelete={onDelete}
-          onBack={onBack}
         />
       </ToastProvider>
     </PlatformI18nProvider>,
@@ -79,13 +79,26 @@ describe("ProductForm", () => {
     expect(itemCode).toHaveAttribute("aria-invalid", "true");
   });
 
-  it("provides a direct return to the product list", async () => {
+  it("shows and enforces the featured product cap", async () => {
     const user = userEvent.setup();
-    const onBack = vi.fn();
-    renderForm(undefined, onBack);
+    renderForm(undefined, 8);
 
-    await user.click(screen.getByRole("button", { name: "Back to products" }));
+    await user.click(screen.getByRole("button", { name: "Edit" }));
 
-    expect(onBack).toHaveBeenCalledOnce();
+    expect(screen.getByText("All 8 featured slots are used."))
+      .toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /Feature this item/ }))
+      .toBeDisabled();
+  });
+
+  it("updates the featured slot count before saving", async () => {
+    const user = userEvent.setup();
+    renderForm(undefined, 7);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByRole("checkbox", { name: /Feature this item/ }));
+
+    expect(screen.getByText("All 8 featured slots are used."))
+      .toBeInTheDocument();
   });
 });

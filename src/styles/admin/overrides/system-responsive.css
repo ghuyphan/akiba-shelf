@@ -7,12 +7,10 @@
 
 @media (max-width: 760px) {
   .admin-shell { overflow-x: hidden !important; }
-  .admin-container { width: min(100% - 16px, 1400px) !important; min-width: 0 !important; margin-top: 10px !important; padding: 16px !important; border-radius: 18px !important; gap: 16px !important; }
+  .admin-container { width: min(100% - 16px, 1400px) !important; min-width: 0 !important; margin-top: 10px !important; padding: 0 !important; gap: 14px !important; }
   .admin-container>* { min-width: 0; }
-  .admin-view-hero { align-items: start; flex-direction: column; gap: 14px; padding-inline: 4px; }
-  .admin-view-hero-actions { align-items: stretch; flex-direction: column; width: 100%; }
-  .admin-view-hero h1 { font-size: 34px; }
-  .admin-view-chips { justify-content: flex-start; }
+  .admin-view-hero { padding-inline: 2px; }
+  .admin-view-hero h1 { font-size: 28px; }
   .admin-container .admin-card { padding: 16px !important; border-radius: 16px !important; }
   .admin-card-header { align-items: flex-start !important; margin-bottom: 16px !important; padding-bottom: 14px !important; }
   .admin-card-title { align-items: flex-start !important; }
@@ -46,8 +44,8 @@
   .admin-filter-tabs .admin-event-filter::before { display: none; }
   .admin-queue-utilities { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 8px; }
   .admin-toolbar-control { width: 100%; min-width: 0; }
-  .admin-order-metrics { grid-template-columns: 1fr; gap: 8px; }
-  .admin-order-metrics article { min-height: 88px; padding: 14px; }
+  .admin-order-metrics { grid-template-columns: 1fr; gap: 1px; }
+  .admin-order-metrics article { min-height: 68px; padding: 11px 13px; }
   .admin-items-summary { padding: 15px; }
   .admin-items-summary-grid { grid-template-columns: 1fr; }
   .admin-orders-grid { grid-template-columns: 1fr; }
@@ -73,4 +71,3 @@
   .admin-product-form .admin-edit-actions .button-secondary { padding: 0; }
   .admin-product-form .admin-edit-actions .button-secondary > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
-

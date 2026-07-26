@@ -1,6 +1,5 @@
 import {
   BellRing,
-  CheckCircle2,
   CircleAlert,
   Clock3,
   PackageSearch,
@@ -118,7 +117,7 @@ function AttentionItem({
 }: {
   icon: ReactNode;
   title: string;
-  hint: string;
+  hint?: string;
   onClick?: () => void;
 }) {
   const content = (
@@ -126,7 +125,7 @@ function AttentionItem({
       {icon}
       <span>
         <strong>{title}</strong>
-        <small>{hint}</small>
+        {hint && <small>{hint}</small>}
       </span>
     </>
   );
@@ -192,11 +191,6 @@ export function AdminAttentionPanel({
         </span>
         <div>
           <strong>{t("Attention needed")}</strong>
-          <small>
-            {t(
-              "Resolve the time-sensitive items first, then finish shop setup.",
-            )}
-          </small>
         </div>
       </div>
 
@@ -204,20 +198,28 @@ export function AdminAttentionPanel({
         {expiringOrderCount > 0 && (
           <AttentionItem
             icon={<Clock3 size={18} />}
-            title={t("{{count}} visible reservations expire soon", {
-              count: expiringOrderCount,
-            })}
-            hint={t("Confirm received payments before stock is released.")}
+            title={
+              expiringOrderCount === 1
+                ? t("1 visible reservation expires soon")
+                : t("{{count}} visible reservations expire soon", {
+                    count: expiringOrderCount,
+                  })
+            }
+            hint={t("Confirm payment before stock is released.")}
             onClick={onOpenOrders}
           />
         )}
         {lowStockCount > 0 && (
           <AttentionItem
             icon={<PackageSearch size={18} />}
-            title={t("{{count}} products are low or sold out", {
-              count: lowStockCount,
-            })}
-            hint={t("Review availability before the next rush.")}
+            title={
+              lowStockCount === 1
+                ? t("1 product is low or sold out")
+                : t("{{count}} products are low or sold out", {
+                    count: lowStockCount,
+                  })
+            }
+            hint={t("Review stock before the next rush.")}
             onClick={canManageCatalog ? onOpenProducts : undefined}
           />
         )}
@@ -226,25 +228,35 @@ export function AdminAttentionPanel({
             icon={<BellRing size={18} />}
             title={
               notifications.deadLetterCount > 0
-                ? t("{{count}} order alerts need manual review", {
-                    count: notificationIssueCount,
-                  })
+                ? notificationIssueCount === 1
+                  ? t("1 order alert needs manual review")
+                  : t("{{count}} order alerts need manual review", {
+                      count: notificationIssueCount,
+                    })
                 : notifications.retryingCount > 0
-                  ? t("{{count}} order alerts are retrying", {
-                      count: notifications.retryingCount,
-                    })
-                  : t("{{count}} order alerts are delayed", {
-                      count: notifications.overdueCount,
-                    })
+                  ? notifications.retryingCount === 1
+                    ? t("1 order alert is retrying")
+                    : t("{{count}} order alerts are retrying", {
+                        count: notifications.retryingCount,
+                      })
+                  : notifications.overdueCount === 1
+                    ? t("1 order alert is delayed")
+                    : t("{{count}} order alerts are delayed", {
+                        count: notifications.overdueCount,
+                      })
             }
             hint={
               notifications.deadLetterCount > 0
-                ? t(
-                    "{{count}} stopped after all retries. Check staff notification devices.",
-                    {
-                      count: notifications.deadLetterCount,
-                    },
-                  )
+                ? notifications.deadLetterCount === 1
+                  ? t(
+                      "1 alert stopped after all retries. Check staff notification devices.",
+                    )
+                  : t(
+                      "{{count}} stopped after all retries. Check staff notification devices.",
+                      {
+                        count: notifications.deadLetterCount,
+                      },
+                    )
                 : notifications.oldestDueAt
                   ? t("The oldest alert became due {{time}}.", {
                       time: formatRelativeTime(
@@ -263,7 +275,7 @@ export function AdminAttentionPanel({
         {incomplete.length > 0 && (
           <AttentionItem
             icon={<Settings2 size={18} />}
-            title={t("Production checklist · {{done}}/{{total}} ready", {
+            title={t("Shop setup · {{done}}/{{total}} ready", {
               done: readiness.length - incomplete.length,
               total: readiness.length,
             })}
@@ -280,9 +292,7 @@ export function AdminAttentionPanel({
           <span>
             <strong>{t("Retry notification delivery")}</strong>
             <small>
-              {t(
-                "Retry one alert after checking that staff notification devices are ready.",
-              )}
+              {t("Check staff alerts, then retry delivery.")}
             </small>
           </span>
           <Button
@@ -302,20 +312,6 @@ export function AdminAttentionPanel({
         </div>
       )}
 
-      {incomplete.length > 0 && (
-        <ul className="admin-readiness-list">
-          {readiness.map((item) => (
-            <li className={item.complete ? "is-complete" : ""} key={item.key}>
-              {item.complete ? (
-                <CheckCircle2 size={14} />
-              ) : (
-                <CircleAlert size={14} />
-              )}
-              <span>{t(item.label)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import type { Product } from "../types/catalog";
+import { MAX_FEATURED_PRODUCTS } from "./constants";
 
 export type PublicProductSort =
   | "recommended"
@@ -12,6 +13,20 @@ export type LocalCatalogQuery = {
   search: string;
   sort: PublicProductSort;
 };
+
+export function selectStorefrontFeaturedProducts(
+  products: Product[],
+  limit = MAX_FEATURED_PRODUCTS,
+) {
+  return products
+    .filter(
+      (product) =>
+        product.featured &&
+        product.active !== false &&
+        product.quantity_available > 0,
+    )
+    .slice(0, limit);
+}
 
 export function queryLocalCatalog(
   products: Product[],

@@ -53,7 +53,7 @@ describe("AdminAttentionPanel", () => {
       screen.getByText("3 products are low or sold out"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Production checklist · 0/4 ready"),
+      screen.getByText("Shop setup · 0/4 ready"),
     ).toBeInTheDocument();
   });
 
@@ -152,11 +152,11 @@ describe("AdminAttentionPanel", () => {
     );
 
     expect(
-      screen.getByText("1 order alerts need manual review"),
+      screen.getByText("1 order alert needs manual review"),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "1 stopped after all retries. Check staff notification devices.",
+        "1 alert stopped after all retries. Check staff notification devices.",
       ),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Retry alert" }));

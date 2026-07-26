@@ -741,6 +741,8 @@ const vi: Record<string, string> = {
     "Đang tải hàng đợi mới nhất từ máy chủ.",
   "You’re all caught up. New orders will appear here automatically.":
     "Bạn đã xử lý hết. Đơn mới sẽ tự động xuất hiện tại đây.",
+  "New orders appear here automatically.":
+    "Đơn mới sẽ tự động xuất hiện tại đây.",
   "There are no orders with this status yet.":
     "Chưa có đơn hàng ở trạng thái này.",
   "All statuses": "Tất cả trạng thái",
@@ -1072,20 +1074,33 @@ const vi: Record<string, string> = {
     "Xử lý các mục sắp hết hạn trước, sau đó hoàn tất thiết lập gian hàng.",
   "{{count}} visible reservations expire soon":
     "{{count}} đơn giữ hàng đang hiển thị sắp hết hạn",
+  "1 visible reservation expires soon":
+    "1 đơn giữ hàng đang hiển thị sắp hết hạn",
   "Confirm received payments before stock is released.":
     "Xác nhận khoản thanh toán đã nhận trước khi tồn kho được trả lại.",
+  "Confirm payment before stock is released.":
+    "Xác nhận thanh toán trước khi tồn kho được trả lại.",
   "{{count}} products are low or sold out":
     "{{count}} sản phẩm sắp hết hoặc đã hết hàng",
+  "1 product is low or sold out": "1 sản phẩm sắp hết hoặc đã hết hàng",
   "Review availability before the next rush.":
     "Kiểm tra lại tồn kho trước đợt khách tiếp theo.",
+  "Review stock before the next rush.":
+    "Kiểm tra tồn kho trước đợt khách tiếp theo.",
   "{{count}} order alerts need manual review":
     "{{count}} cảnh báo đơn hàng cần kiểm tra thủ công",
+  "1 order alert needs manual review":
+    "1 cảnh báo đơn hàng cần kiểm tra thủ công",
   "{{count}} order alerts are retrying":
     "{{count}} cảnh báo đơn hàng đang được gửi lại",
+  "1 order alert is retrying": "1 cảnh báo đơn hàng đang được gửi lại",
   "{{count}} order alerts are delayed":
     "{{count}} cảnh báo đơn hàng đang bị chậm",
+  "1 order alert is delayed": "1 cảnh báo đơn hàng đang bị chậm",
   "{{count}} stopped after all retries. Check staff notification devices.":
     "{{count}} cảnh báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của staff.",
+  "1 alert stopped after all retries. Check staff notification devices.":
+    "1 cảnh báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của nhân viên.",
   "The oldest alert became due {{time}}.":
     "Cảnh báo lâu nhất đã đến hạn {{time}}.",
   "Automatic retries are running; orders remain safe in the queue.":
@@ -1093,6 +1108,8 @@ const vi: Record<string, string> = {
   "Retry notification delivery": "Thử gửi lại thông báo",
   "Retry one alert after checking that staff notification devices are ready.":
     "Thử gửi lại một cảnh báo sau khi kiểm tra thiết bị nhận thông báo của staff đã sẵn sàng.",
+  "Check staff alerts, then retry delivery.":
+    "Kiểm tra thông báo của nhân viên rồi thử gửi lại.",
   "Retry alert": "Thử gửi lại",
   "Queuing retry…": "Đang xếp hàng gửi lại…",
   "Order alert queued for another delivery attempt.":
@@ -1104,6 +1121,8 @@ const vi: Record<string, string> = {
   "Retry unavailable": "Không thể gửi lại",
   "Production checklist · {{done}}/{{total}} ready":
     "Danh sách sẵn sàng · {{done}}/{{total}} hoàn tất",
+  "Shop setup · {{done}}/{{total}} ready":
+    "Thiết lập gian hàng · {{done}}/{{total}} sẵn sàng",
   "Publish at least one active product":
     "Đăng ít nhất một sản phẩm đang hoạt động",
   "Add customer-ready payment details":
@@ -1119,7 +1138,11 @@ const vi: Record<string, string> = {
     "Không thể tải không gian của gian hàng này. Hãy kiểm tra kết nối và thử lại.",
   "Retry loading": "Tải lại",
   "Products List ({{count}})": "Danh sách sản phẩm ({{count}})",
-  "Back to products": "Quay lại danh sách sản phẩm",
+  "Product workspace": "Không gian sản phẩm",
+  "{{count}} of {{limit}} featured slots used.":
+    "Đã dùng {{count}}/{{limit}} vị trí nổi bật.",
+  "All {{limit}} featured slots are used.":
+    "Đã dùng hết {{limit}} vị trí nổi bật.",
   "Edit Product": "Sửa sản phẩm",
   "No product selected": "Chưa chọn sản phẩm",
   "Choose a product from the list to edit it, or start a fresh listing.":

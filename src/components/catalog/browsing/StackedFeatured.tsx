@@ -7,7 +7,7 @@ import {
   Star,
 } from "lucide-react";
 import type { Product } from "../../../types/catalog";
-import { MAX_FEATURED_PRODUCTS } from "../../../lib/constants";
+import { selectStorefrontFeaturedProducts } from "../../../lib/catalogQueries";
 import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
 import { EmptyState } from "../../ui/EmptyState";
 import { ProductPrice } from "./ProductPrice";
@@ -34,12 +34,7 @@ export function StackedFeatured({
   const touchStartRef = useRef<number | null>(null);
   const autoScrollPausedRef = useRef(false);
   const autoScrollResumeAtRef = useRef(0);
-  const featured = products.filter(
-    (product) =>
-      product.featured &&
-      product.quantity_available > 0 &&
-      product.active !== false,
-  ).slice(0, MAX_FEATURED_PRODUCTS);
+  const featured = selectStorefrontFeaturedProducts(products);
 
   useEffect(() => {
     if (active >= featured.length) setActive(0);

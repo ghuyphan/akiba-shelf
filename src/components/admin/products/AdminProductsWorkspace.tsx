@@ -69,6 +69,10 @@ export function AdminProductsWorkspace({
     () => Math.max(0, ...products.map((product) => product.sort_order)) + 1,
     [products],
   );
+  const featuredCount = useMemo(
+    () => products.filter((product) => product.featured).length,
+    [products],
+  );
 
   function createProduct() {
     requestNavigation(() => {
@@ -84,11 +88,17 @@ export function AdminProductsWorkspace({
         products={products}
         onSave={onSavePromotion}
       />
-      <div className="category-row admin-mobile-tabs-row" ref={containerRef}>
+      <div
+        className="category-row admin-mobile-tabs-row"
+        ref={containerRef}
+        role="toolbar"
+        aria-label={t("Product workspace")}
+      >
         <button
           type="button"
           ref={registerItem("list")}
           className={`chip ${activeTab === "list" ? "chip-active" : ""}`}
+          aria-pressed={activeTab === "list"}
           onClick={() => requestNavigation(() => setActiveTab("list"))}
         >
           {t("Products List ({{count}})", { count: products.length })}
@@ -97,6 +107,7 @@ export function AdminProductsWorkspace({
           type="button"
           ref={registerItem("form")}
           className={`chip ${activeTab === "form" ? "chip-active" : ""}`}
+          aria-pressed={activeTab === "form"}
           onClick={() => setActiveTab("form")}
         >
           {t("Edit Product")}
@@ -130,9 +141,9 @@ export function AdminProductsWorkspace({
             <ProductForm
               shopId={shopId}
               product={selectedProduct}
+              featuredCount={featuredCount}
               onSave={onSaveProduct}
               onDelete={onDeleteProduct}
-              onBack={() => requestNavigation(() => setActiveTab("list"))}
             />
           </div>
         ) : (

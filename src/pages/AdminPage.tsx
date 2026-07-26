@@ -173,10 +173,6 @@ export function AdminPage() {
       ).length,
     [products],
   );
-  const hiddenCount = useMemo(
-    () => products.filter((product) => !product.active).length,
-    [products],
-  );
   const expiringOrderCount = useMemo(() => {
     const cutoff = Date.now() + 10 * 60 * 1000;
     return orders.filter((order) => {
@@ -929,15 +925,7 @@ export function AdminPage() {
 
         <div className="admin-container">
           <PwaInstallBanner />
-          <AdminViewHero
-            viewTab={viewTab}
-            booth={booth}
-            productsCount={products.length}
-            lowStockCount={lowStockCount}
-            hiddenCount={hiddenCount}
-            pendingOrderCount={orderCounts.pending}
-            matchingOrderCount={orderTotal}
-          />
+          <AdminViewHero viewTab={viewTab} />
           {viewTab === "orders" && (
             <AdminAttentionPanel
               booth={booth}

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { queryLocalCatalog } from "../catalogQueries";
+import {
+  queryLocalCatalog,
+  selectStorefrontFeaturedProducts,
+} from "../catalogQueries";
 import type { Product } from "../../types/catalog";
 
 function product(overrides: Partial<Product>): Product {
@@ -49,5 +52,32 @@ describe("queryLocalCatalog", () => {
         1,
       ),
     ).toMatchObject({ products: [products[0]], hasMore: false });
+  });
+});
+
+describe("selectStorefrontFeaturedProducts", () => {
+  it("keeps only available featured products and applies the display cap", () => {
+    const products = Array.from({ length: 10 }, (_, index) =>
+      product({ id: `featured-${index}`, featured: true }),
+    );
+    products[1] = product({ id: "hidden", featured: true, active: false });
+    products[2] = product({
+      id: "sold-out",
+      featured: true,
+      quantity_available: 0,
+    });
+
+    expect(
+      selectStorefrontFeaturedProducts(products).map((item) => item.id),
+    ).toEqual([
+      "featured-0",
+      "featured-3",
+      "featured-4",
+      "featured-5",
+      "featured-6",
+      "featured-7",
+      "featured-8",
+      "featured-9",
+    ]);
   });
 });

@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  defaultPayment,
-  defaultPromotion,
-  MAX_FEATURED_PRODUCTS,
-} from "../../lib/constants";
+import { defaultPayment, defaultPromotion } from "../../lib/constants";
+import { selectStorefrontFeaturedProducts } from "../../lib/catalogQueries";
 import { getStorefrontBootstrap } from "../../lib/api/catalog";
 import { getPublicGachaEnabled } from "../../lib/api/gachaPublic";
 import {
@@ -42,12 +39,6 @@ const INITIAL_LOAD_STATE: BootstrapLoadState = {
   productPage: null,
 };
 
-function selectFeaturedProducts(products: Product[]) {
-  return products
-    .filter((product) => product.featured)
-    .slice(0, MAX_FEATURED_PRODUCTS);
-}
-
 export function useStorefrontBootstrap(
   shopId: string | undefined,
   shopSlug: string,
@@ -61,7 +52,7 @@ export function useStorefrontBootstrap(
 ) {
   const [booth, setBooth] = useState(initialBooth);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>(
-    selectFeaturedProducts(initialProducts),
+    selectStorefrontFeaturedProducts(initialProducts),
   );
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const [payment, setPayment] = useState<PaymentSettings>(
@@ -90,7 +81,7 @@ export function useStorefrontBootstrap(
     paymentRequestRef.current = null;
     paymentLoadedRef.current = false;
     setBooth(initialBooth);
-    setFeaturedProducts(selectFeaturedProducts(initialProducts));
+    setFeaturedProducts(selectStorefrontFeaturedProducts(initialProducts));
     setCategories(initialCategories);
     setPayment(initialPayment ?? defaultPayment);
     setPaymentResolved(initialPayment !== undefined);
@@ -131,7 +122,7 @@ export function useStorefrontBootstrap(
   const loadFeatured = useCallback(async () => {
     if (!shopId) return;
     if (!navigator.onLine) {
-      setFeaturedProducts(selectFeaturedProducts(initialProducts));
+      setFeaturedProducts(selectStorefrontFeaturedProducts(initialProducts));
       return;
     }
     const identity = shopIdentityRef.current;
@@ -141,7 +132,7 @@ export function useStorefrontBootstrap(
         setFeaturedProducts(nextFeatured);
     } catch {
       if (identity === shopIdentityRef.current)
-        setFeaturedProducts(selectFeaturedProducts(initialProducts));
+        setFeaturedProducts(selectStorefrontFeaturedProducts(initialProducts));
     }
   }, [shopId, initialProducts]);
 
@@ -238,7 +229,7 @@ export function useStorefrontBootstrap(
     if (initialBootstrap === undefined) return;
     const applyBootstrap = (bootstrap: StorefrontBootstrap) => {
       setBooth(bootstrap.booth);
-      setFeaturedProducts(selectFeaturedProducts(bootstrap.products));
+      setFeaturedProducts(selectStorefrontFeaturedProducts(bootstrap.products));
       setCategories(bootstrap.categories);
       setPromotion(bootstrap.promotion);
       setGachaEnabled(bootstrap.gachaEnabled);

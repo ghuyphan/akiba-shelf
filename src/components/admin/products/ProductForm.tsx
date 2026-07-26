@@ -1,8 +1,8 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Boxes, Edit3, Eye, ImageIcon, PackagePlus, Redo2, RotateCcw, Sparkles, Tags, Trash2, Undo2, X } from "lucide-react";
+import { Boxes, Edit3, Eye, ImageIcon, PackagePlus, Redo2, RotateCcw, Sparkles, Tags, Trash2, Undo2, X } from "lucide-react";
 import type { Product, StockStatus } from "../../../types/catalog";
 import { formatNumber, formatVnd, normalizeSlug } from "../../../utils/format";
-import { LIMITED_STOCK_THRESHOLD, productBadges } from "../../../lib/constants";
+import { LIMITED_STOCK_THRESHOLD, MAX_FEATURED_PRODUCTS, productBadges } from "../../../lib/constants";
 import { validateProduct } from "../../../utils/validation";
 import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { useToast } from "../../ui/ToastProvider";
@@ -26,9 +26,9 @@ function formatDisplayPrice(value: number | string): string {
   return digits ? new Intl.NumberFormat("vi-VN").format(Number(digits)) : "";
 }
 
-type ProductFormProps = { shopId: string; product: Product; onSave: (product: Product) => Promise<void>; onDelete: (id: string) => Promise<void>; onBack: () => void };
+type ProductFormProps = { shopId: string; product: Product; featuredCount: number; onSave: (product: Product) => Promise<void>; onDelete: (id: string) => Promise<void> };
 
-export function ProductForm({ shopId, product, onSave, onDelete, onBack }: ProductFormProps) {
+export function ProductForm({ shopId, product, featuredCount, onSave, onDelete }: ProductFormProps) {
   const [draft, setDraft] = useState(product);
   const [isEditing, setIsEditing] = useState(!product.name);
   const [errors, setErrors] = useState<string[]>([]);
@@ -48,6 +48,14 @@ export function ProductForm({ shopId, product, onSave, onDelete, onBack }: Produ
   const { t } = usePlatformI18n();
   useEffect(() => { const message = saveError || deleteError; if (message) { toast.error(t(getUserFacingErrorMessage(message, "Could not update item")), t("Could not update item")); setSaveError(""); setDeleteError(""); } }, [saveError, deleteError, setDeleteError, setSaveError, t, toast]);
   const isNewProduct = !product.name && !product.item_code;
+  const selectedFeaturedCount = featuredCount - Number(product.featured) + Number(draft.featured);
+  const featuredLimitReached = featuredCount >= MAX_FEATURED_PRODUCTS && !product.featured;
+  const featuredHint = selectedFeaturedCount >= MAX_FEATURED_PRODUCTS
+    ? t("All {{limit}} featured slots are used.", { limit: MAX_FEATURED_PRODUCTS })
+    : t("{{count}} of {{limit}} featured slots used.", {
+        count: selectedFeaturedCount,
+        limit: MAX_FEATURED_PRODUCTS,
+      });
   const hasLegacyBadge = Boolean(draft.badge) && !productBadges.includes(draft.badge ?? "");
   const images = draft.images.filter(Boolean);
 
@@ -231,7 +239,7 @@ export function ProductForm({ shopId, product, onSave, onDelete, onBack }: Produ
   }
 
   return (
-    <AdminCard title={isNewProduct ? t("Create product") : draft.name || t("Product details")} description={isNewProduct ? t("Add the essentials first. You can refine the listing later.") : `${draft.item_code} · ${draft.category}`} icon={isNewProduct ? <PackagePlus size={18} /> : <Tags size={18} />} action={<div className="admin-card-actions"><Button type="button" variant="secondary" icon={<ArrowLeft size={17} />} disabled={busy} onClick={onBack}>{t("Back to products")}</Button>{!isNewProduct && !isEditing && <><Button type="button" variant="secondary" icon={<Edit3 size={17} />} disabled={busy} onClick={() => setIsEditing(true)}>{t("Edit")}</Button><Button type="button" variant="danger" icon={<Trash2 size={17} />} disabled={busy} onClick={() => setDeleteConfirmationOpen(true)}>{t("Delete")}</Button></>}</div>}>
+    <AdminCard title={isNewProduct ? t("Create product") : draft.name || t("Product details")} description={isNewProduct ? t("Add the essentials first. You can refine the listing later.") : `${draft.item_code} · ${draft.category}`} icon={isNewProduct ? <PackagePlus size={18} /> : <Tags size={18} />} action={!isNewProduct && !isEditing ? <div className="admin-card-actions"><Button type="button" variant="secondary" icon={<Edit3 size={17} />} disabled={busy} onClick={() => setIsEditing(true)}>{t("Edit")}</Button><Button type="button" variant="danger" icon={<Trash2 size={17} />} disabled={busy} onClick={() => setDeleteConfirmationOpen(true)}>{t("Delete")}</Button></div> : undefined}>
       <form ref={formRef} className={`admin-form admin-product-form ${isEditing ? "is-editing" : "is-readonly"}`} onSubmit={handleSubmit}>
         {errors.length > 0 && (
           <Alert
@@ -263,7 +271,7 @@ export function ProductForm({ shopId, product, onSave, onDelete, onBack }: Produ
             <Field label={t("Quantity")} error={getFieldError("quantity_available") ? t(getFieldError("quantity_available")!) : undefined}><QuantityInput value={draft.quantity_available} disabled={!isEditing} invalid={Boolean(getFieldError("quantity_available"))} onChange={setQuantity} /></Field>
             <Field label={t("Customer badge")} hint={t("Optional label shown on product artwork.")}><SelectMenu label={t("Customer badge")} value={draft.badge ?? ""} disabled={!isEditing} onChange={(value) => setField("badge", value)} options={[{ value: "", label: t("No badge") }, ...(hasLegacyBadge ? [{ value: draft.badge ?? "", label: draft.badge ?? "" }] : []), ...productBadges.map((badge) => ({ value: badge, label: t(badge), icon: <Sparkles size={14} /> }))]} />{draft.badge && <div className="admin-badge-customizer"><ColorPicker compact label={t("Badge color")} value={draft.badge_color || "#5f8d55"} disabled={!isEditing} onChange={(value) => setField("badge_color", value)} /><span className="admin-badge-preview" style={{ background: draft.badge_color || "#5f8d55" }}><Sparkles size={12} />{t(draft.badge)}</span></div>}</Field>
           </div>
-          <div className="admin-switch-row"><label><span><strong>{t("Put this item on sale")}</strong><small>{t("Show a lower price while keeping the regular price visible.")}</small></span><input type="checkbox" checked={draft.sale_price_vnd != null} disabled={!isEditing} onChange={(event) => setField("sale_price_vnd", event.target.checked ? Math.max(0, draft.price_vnd - 10_000) : null)} /></label><label><span><strong>{t("Feature this item")}</strong><small>{t("Give it extra prominence on the storefront.")}</small></span><input type="checkbox" checked={draft.featured} disabled={!isEditing} onChange={(event) => setField("featured", event.target.checked)} /></label><label><span><strong>{t("Visible in catalog")}</strong><small>{t("Customers can find and purchase this item.")}</small></span><input type="checkbox" checked={draft.active} disabled={!isEditing} onChange={(event) => setField("active", event.target.checked)} /></label></div>
+          <div className="admin-switch-row"><label><span><strong>{t("Put this item on sale")}</strong><small>{t("Show a lower price while keeping the regular price visible.")}</small></span><input type="checkbox" checked={draft.sale_price_vnd != null} disabled={!isEditing} onChange={(event) => setField("sale_price_vnd", event.target.checked ? Math.max(0, draft.price_vnd - 10_000) : null)} /></label><label><span><strong>{t("Feature this item")}</strong><small>{featuredHint}</small></span><input type="checkbox" checked={draft.featured} disabled={!isEditing || featuredLimitReached} onChange={(event) => setField("featured", event.target.checked)} /></label><label><span><strong>{t("Visible in catalog")}</strong><small>{t("Customers can find and purchase this item.")}</small></span><input type="checkbox" checked={draft.active} disabled={!isEditing} onChange={(event) => setField("active", event.target.checked)} /></label></div>
         </section>
 
         <section className="admin-form-section">

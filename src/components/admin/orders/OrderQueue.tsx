@@ -358,40 +358,44 @@ export function OrderQueue({
         </div>
       </div>
 
-      <div className="admin-order-metrics">
-        <article>
-          <span className="admin-metric-icon coral">
-            <ReceiptText size={19} />
-          </span>
-          <div>
-            <small>{t("Orders shown")}</small>
-            <strong>{orders.length}</strong>
-            <p>{t("{{count}} matching orders", { count: total })}</p>
-          </div>
-        </article>
-        <article>
-          <span className="admin-metric-icon teal">
-            <WalletCards size={19} />
-          </span>
-          <div>
-            <small>{t("Order value")}</small>
-            <strong>{formatVnd(totalMoney)}</strong>
-            <p>{t("Current page total")}</p>
-          </div>
-        </article>
-        <article>
-          <span className="admin-metric-icon mustard">
-            <PackageCheck size={19} />
-          </span>
-          <div>
-            <small>{t("Units requested")}</small>
-            <strong>{totalUnits}</strong>
-            <p>
-              {t("{{count}} unique products", { count: uniqueProductCount })}
-            </p>
-          </div>
-        </article>
-      </div>
+      {orders.length > 0 && (
+        <div className="admin-order-metrics">
+          <article>
+            <span className="admin-metric-icon coral">
+              <ReceiptText size={17} />
+            </span>
+            <div>
+              <small>{t("Orders shown")}</small>
+              <strong>{orders.length}</strong>
+              <p>{t("{{count}} matching orders", { count: total })}</p>
+            </div>
+          </article>
+          <article>
+            <span className="admin-metric-icon teal">
+              <WalletCards size={17} />
+            </span>
+            <div>
+              <small>{t("Order value")}</small>
+              <strong>{formatVnd(totalMoney)}</strong>
+              <p>{t("Current page total")}</p>
+            </div>
+          </article>
+          <article>
+            <span className="admin-metric-icon mustard">
+              <PackageCheck size={17} />
+            </span>
+            <div>
+              <small>{t("Units requested")}</small>
+              <strong>{totalUnits}</strong>
+              <p>
+                {t("{{count}} unique products", {
+                  count: uniqueProductCount,
+                })}
+              </p>
+            </div>
+          </article>
+        </div>
+      )}
 
       {itemSummary.length > 0 && (
         <section className="admin-items-summary">
@@ -457,23 +461,8 @@ export function OrderQueue({
                     "Event orders appear here after they sync, or directly from this device while offline.",
                   )
                 : filter === "pending"
-                  ? t(
-                      "You’re all caught up. New orders will appear here automatically.",
-                    )
+                  ? t("New orders appear here automatically.")
                   : t("There are no orders with this status yet.")
-          }
-          meta={
-            loading
-              ? []
-              : [
-                  ...(todayOnly ? [t("Today")] : []),
-                  filter === "event"
-                    ? t("Event sales")
-                    : filter === "all"
-                      ? t("All statuses")
-                      : t(filter),
-                  t("Live updates on"),
-                ]
           }
           action={
             !loading && (filter !== "all" || todayOnly) ? (

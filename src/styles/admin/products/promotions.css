@@ -13,13 +13,14 @@
 .admin-promotion-form { gap: 0 !important; }
 .admin-promotion-summary {
   display: grid;
-  grid-template-columns: minmax(230px,2fr) repeat(3,minmax(96px,.7fr));
+  grid-template-columns: minmax(230px,1fr) auto;
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--soft-line);
   border-radius: 13px;
   background: var(--admin-inner-bg);
 }
+.admin-promotion-summary > :nth-child(n + 3) { display: none; }
 .admin-promotion-summary > div { min-width: 0; padding: 11px 14px; }
 .admin-promotion-summary > div + div { border-left: 1px solid var(--soft-line); }
 .admin-promotion-offer { display: flex; align-items: center; gap: 10px; }
@@ -142,28 +143,23 @@
 }
 
 @media (max-width: 760px) {
-  .admin-container .admin-promotion-card { padding: 14px !important; }
-  .admin-promotion-card .admin-card-header { align-items: center !important; margin-bottom: 10px !important; padding-bottom: 10px !important; }
+  .admin-container .admin-promotion-card { padding: 12px !important; }
+  .admin-promotion-card .admin-card-header { align-items: center !important; margin-bottom: 4px !important; padding-bottom: 4px !important; border-bottom: 0 !important; }
   .admin-promotion-card .admin-card-title { align-items: center !important; }
   .admin-promotion-card .admin-card-header p { display: none; }
-  .admin-promotion-summary { grid-template-columns: repeat(3,minmax(0,1fr)); }
-  .admin-promotion-summary > div { padding: 10px; }
-  .admin-promotion-summary > div + div { border-left: 1px solid var(--soft-line); }
-  .admin-promotion-offer { grid-column: 1 / -1; border-bottom: 1px solid var(--soft-line); }
-  .admin-promotion-stat:nth-child(2) { border-left: 0; }
+  .admin-promotion-summary { grid-template-columns: minmax(0,1fr) auto; border: 0; background: transparent; }
+  .admin-promotion-summary > div { padding: 6px; }
+  .admin-promotion-summary > div + div { border-left: 0; }
   .admin-promotion-summary strong { font-size: 12px; }
   .admin-promotion-offer strong { font-size: 14px; }
   .admin-promotion-summary small { font-size: 8px; }
+  .admin-promotion-card .admin-form-help { display: none; }
   .admin-promotion-switches-group {
     grid-template-columns: 1fr;
     gap: 8px;
   }
 }
 
-@media (max-width: 420px) {
-  .admin-promotion-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .admin-promotion-stat:last-child { grid-column: 1 / -1; border-top: 1px solid var(--soft-line); border-left: 0; }
-}
 .admin-order-card footer .admin-order-discount { margin-right: auto; color: var(--green); font-size: 10px; font-weight: 800; }
 
 .promotion-products-selection {
@@ -368,4 +364,3 @@
     color: var(--ink);
   }
 }
-
