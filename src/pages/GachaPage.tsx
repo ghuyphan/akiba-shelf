@@ -12,7 +12,7 @@ import {
   useNavigate,
   useParams,
   useSearchParams,
-} from "react-router-dom";
+} from "react-router";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PageLoading } from "../components/ui/PageLoading";
 import {

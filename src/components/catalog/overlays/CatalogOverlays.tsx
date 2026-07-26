@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 import type { CSSProperties, ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   Check,
   Clock,

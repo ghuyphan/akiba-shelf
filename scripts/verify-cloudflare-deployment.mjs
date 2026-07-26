@@ -30,6 +30,7 @@ async function requestWithRetry(
     attempts = DEFAULT_ATTEMPTS,
     delayMs = DEFAULT_DELAY_MS,
     fetchImpl = fetch,
+    requestInit = {},
     sleep = (milliseconds) =>
       new Promise((resolve) => setTimeout(resolve, milliseconds)),
   } = {},
@@ -39,7 +40,8 @@ async function requestWithRetry(
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
       const response = await fetchImpl(url, {
-        headers: { accept: "text/html" },
+        ...requestInit,
+        headers: { accept: "text/html", ...(requestInit.headers ?? {}) },
         redirect: "manual",
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
@@ -53,6 +55,56 @@ async function requestWithRetry(
   const detail =
     lastError instanceof Error ? lastError.message : String(lastError);
   throw new Error(`Deployment check failed for ${url}: ${detail}`);
+}
+
+async function fetchSimulatorMedia(origin, options) {
+  const manifest = await requestWithRetry(
+    `${origin}/offline-assets.json`,
+    async (response) => {
+      if (response.status !== 200)
+        throw new Error(`expected HTTP 200, received ${response.status}`);
+      const value = await response.json();
+      const assets = Object.values(value?.packs ?? {}).flatMap(
+        (pack) => pack?.assets ?? [],
+      );
+      const media = assets.find(
+        (asset) =>
+          typeof asset?.path === "string" &&
+          /^\/(?:gacha-simulator|hsr-simulator)\/videos\/[a-f0-9]{20}\/[A-Za-z0-9._-]+\.(?:mp4|webm)$/.test(
+            asset.path,
+          ),
+      );
+      if (!media) throw new Error("offline manifest has no versioned media");
+      return media.path;
+    },
+    {
+      ...options,
+      requestInit: { headers: { accept: "application/json" } },
+    },
+  );
+
+  await requestWithRetry(
+    new URL(manifest, origin).href,
+    async (response) => {
+      if (response.status !== 206) {
+        throw new Error(`expected HTTP 206, received ${response.status}`);
+      }
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.startsWith("video/"))
+        throw new Error(
+          `expected video, received ${contentType || "no content type"}`,
+        );
+      if (!/^bytes 0-0\/\d+$/.test(response.headers.get("content-range") ?? ""))
+        throw new Error("missing single-byte Content-Range response");
+    },
+    {
+      ...options,
+      requestInit: {
+        headers: { accept: "video/*", range: "bytes=0-0" },
+      },
+    },
+  );
+  return manifest;
 }
 
 async function fetchAppHtml(url, options, expectedEntryAsset) {
@@ -192,6 +244,10 @@ export async function verifyCloudflareDeployment({
   );
   await fetchAppHtml(`${canonicalOrigin}/`, canonicalOptions, entryAsset);
   await fetchEntryAsset(canonicalOrigin, entryAsset, canonicalOptions);
+  const simulatorMedia = await fetchSimulatorMedia(
+    canonicalOrigin,
+    canonicalOptions,
+  );
 
   const wwwCheckUrl = new URL(deploymentCheckPath, wwwOrigin);
   const expectedLocation = new URL(deploymentCheckPath, canonicalOrigin).href;
@@ -216,6 +272,7 @@ export async function verifyCloudflareDeployment({
     canonicalOrigin,
     entryAsset,
     release: metadata.release,
+    simulatorMedia,
   };
 }
 

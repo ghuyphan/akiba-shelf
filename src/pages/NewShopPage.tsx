@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { ArrowLeft, Plus } from "lucide-react";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { PlatformMark } from "../components/ui/PlatformMark";

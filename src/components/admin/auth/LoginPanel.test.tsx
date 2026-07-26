@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router";
 import { ToastProvider } from "../../ui/ToastProvider";
 import { PlatformI18nProvider } from "../../../lib/i18n/platformI18n";
 

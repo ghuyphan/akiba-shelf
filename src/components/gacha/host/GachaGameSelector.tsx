@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, Check, Download } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import type { CSSProperties, MouseEvent } from "react";
 import type { CatalogCopy } from "../../../lib/i18n/catalogI18n";
 import type { GachaLaunchData } from "../../../lib/gacha/gachaLaunch";

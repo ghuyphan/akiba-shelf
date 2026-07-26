@@ -1,5 +1,5 @@
 import { Home, LogIn, MapPinOff, Store } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { AppHeader } from "../components/ui/AppHeader";
 import { PlatformHeaderBrand } from "../components/ui/PlatformHeaderBrand";
 import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";

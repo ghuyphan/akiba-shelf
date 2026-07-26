@@ -1,6 +1,9 @@
 <script context="module">
+	import { base } from '$app/paths';
 	import { outfits } from '$lib/data/outfits.json';
 	import { getMerchItems } from '$lib/helpers/merch';
+
+	const videoBase = import.meta.env.VITE_SIMULATOR_MEDIA_BASE_URL || `${base}/videos`;
 
 	const images = [
 		{
@@ -148,7 +151,7 @@
 		if (param === 'preview') return arr;
 
 		videos.forEach((v) => {
-			const pathdir = `/videos/${v}`;
+			const pathdir = `${videoBase}/${v}`;
 			const item = { path: pathdir, asset: v };
 			arr.push(item);
 		});

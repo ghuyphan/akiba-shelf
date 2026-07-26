@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { CatalogLocaleProvider } from "../lib/i18n/catalogI18n";
 import { ShopUnavailablePage } from "./ShopUnavailablePage";

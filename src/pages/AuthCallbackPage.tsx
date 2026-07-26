@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import "../styles/admin/admin.css";
 import { PageLoading } from "../components/ui/PageLoading";
 import { getAuthSession } from "../lib/api/auth";

@@ -5,7 +5,7 @@ import {
   Routes,
   useLocation,
   useParams,
-} from "react-router-dom";
+} from "react-router";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { lazyWithRetry } from "./utils/lazyWithRetry";

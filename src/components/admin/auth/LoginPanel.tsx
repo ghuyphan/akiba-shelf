@@ -1,6 +1,6 @@
 import { FormEvent, useRef, useState } from "react";
 import { ArrowRight, Mail, LoaderCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { isSupabaseConfigured } from "../../../lib/supabase";
 import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { Alert } from "../../ui/Alert";

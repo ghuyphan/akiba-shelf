@@ -2,6 +2,8 @@
 import { base } from '$app/paths';
 import { getMerchItems } from './merch';
 
+const videoBase = import.meta.env.VITE_SIMULATOR_MEDIA_BASE_URL || `${base}/videos`;
+
 const utils = import.meta.glob(
 	[
 		'@images/utils/**/*',
@@ -172,4 +174,4 @@ export const listingAssets = () => {
 };
 
 export const expressVideoAssets = () =>
-	Object.fromEntries(expressVideos.map((video) => [video, `${base}/videos/${video}`]));
+	Object.fromEntries(expressVideos.map((video) => [video, `${videoBase}/${video}`]));

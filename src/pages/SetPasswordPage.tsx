@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { ArrowRight, LoaderCircle, RotateCw } from "lucide-react";
 import { useToast } from "../components/ui/ToastProvider";
 import { PageLoading } from "../components/ui/PageLoading";

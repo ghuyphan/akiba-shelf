@@ -26,6 +26,33 @@ function releaseResponse(release) {
   );
 }
 
+function offlineManifestResponse() {
+  return Response.json({
+    version: 2,
+    packs: {
+      genshin: {
+        id: "pack-1",
+        assets: [
+          {
+            path: "/gacha-simulator/videos/0123456789abcdef0123/bg.webm",
+            size: 10,
+          },
+        ],
+      },
+    },
+  });
+}
+
+function simulatorMediaResponse() {
+  return new Response(new Uint8Array([0]), {
+    status: 206,
+    headers: {
+      "content-type": "video/webm",
+      "content-range": "bytes 0-0/10",
+    },
+  });
+}
+
 test("waits for the canonical domain and verifies the www redirect", async () => {
   let canonicalRequests = 0;
   const requestedUrls = [];
@@ -50,6 +77,13 @@ test("waits for the canonical domain and verifies the www redirect", async () =>
       return new Response("export {};", {
         headers: { "content-type": "application/javascript" },
       });
+    if (url === "https://matsuri.pro/offline-assets.json")
+      return offlineManifestResponse();
+    if (
+      url ===
+      "https://matsuri.pro/gacha-simulator/videos/0123456789abcdef0123/bg.webm"
+    )
+      return simulatorMediaResponse();
     if (
       url === "https://www.matsuri.pro/__deployment-check?source=github-actions"
     ) {
@@ -86,6 +120,8 @@ test("waits for the canonical domain and verifies the www redirect", async () =>
     "https://matsuri.pro/",
     "https://matsuri.pro/",
     "https://matsuri.pro/assets/index-new12345.js",
+    "https://matsuri.pro/offline-assets.json",
+    "https://matsuri.pro/gacha-simulator/videos/0123456789abcdef0123/bg.webm",
     "https://www.matsuri.pro/__deployment-check?source=github-actions",
   ]);
 });
@@ -105,6 +141,13 @@ test("allows canonical hashed assets to outlast the normal retry budget", async 
     if (url === "https://matsuri.pro/release.json")
       return releaseResponse("release-1");
     if (url === "https://matsuri.pro/") return htmlResponse(currentHtml);
+    if (url === "https://matsuri.pro/offline-assets.json")
+      return offlineManifestResponse();
+    if (
+      url ===
+      "https://matsuri.pro/gacha-simulator/videos/0123456789abcdef0123/bg.webm"
+    )
+      return simulatorMediaResponse();
     if (url === "https://matsuri.pro/assets/index-new12345.js") {
       canonicalAssetRequests += 1;
       return canonicalAssetRequests <= 10

@@ -1,5 +1,5 @@
 import { Edit3, ExternalLink, Store } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { ShopMembership } from "../../../types/catalog";
 import { Button } from "../../ui/Button";

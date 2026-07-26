@@ -178,8 +178,22 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Restore Genshin simulator build
+        uses: actions/cache@v5
+        with:
+          path: .gacha-dist
+          key: matsuri-genshin-r2-${{ runner.os }}-${{ hashFiles('vendor/gacha-simulator/**', 'scripts/build-simulators.mjs', 'scripts/simulator-cache-version.mjs', 'scripts/simulator-media.mjs', 'package-lock.json') }}
+      - name: Restore HSR simulator build
+        uses: actions/cache@v5
+        with:
+          path: .hsr-gacha-dist
+          key: matsuri-hsr-r2-${{ runner.os }}-${{ hashFiles('vendor/hsr-simulator/**', 'scripts/build-simulators.mjs', 'scripts/simulator-cache-version.mjs', 'scripts/simulator-media.mjs', 'package-lock.json') }}
       - run: npm ci
-      - run: npm run build
+      - name: Build Pages artifact and publish simulator media
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run build:cloudflare
       - name: Preserve clean deployment build
         uses: actions/upload-artifact@v7
         with:

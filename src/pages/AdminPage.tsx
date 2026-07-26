@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin/admin.css";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { getAdminCatalogData } from "../lib/api/catalog";
 import {
   getOrderStatusCounts,

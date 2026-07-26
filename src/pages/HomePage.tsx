@@ -1,5 +1,5 @@
 import "@fontsource-variable/outfit/wght.css";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   ArrowRight,
   ClipboardCheck,

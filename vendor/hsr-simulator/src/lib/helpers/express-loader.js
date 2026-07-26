@@ -3,6 +3,8 @@ import { AssetManager } from '$lib/helpers/dataAPI/api-indexeddb';
 import { writable } from 'svelte/store';
 import { base } from '$app/paths';
 
+const videoBase = import.meta.env.VITE_SIMULATOR_MEDIA_BASE_URL || `${base}/videos`;
+
 const expressList = [
 	'regular-3star.mp4',
 	'regular-4star.mp4',
@@ -43,7 +45,7 @@ export const loadAnimation = async () => {
 	const totalItem = expressList.length;
 	for (let i = 0; i < totalItem; i++) {
 		loadProggress.set({ item: expressList[i], progress: 0, totalItem, itemIndex: i });
-		const response = await fetch(`${base}/videos/${expressList[i]}`);
+		const response = await fetch(`${videoBase}/${expressList[i]}`);
 		if (!response.ok || !response.body) {
 			throw new Error(`Could not load ${expressList[i]} (${response.status}).`);
 		}

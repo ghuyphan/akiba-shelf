@@ -12,6 +12,7 @@
     "build:gacha:dev": "node scripts/build-simulator-dev.mjs genshin",
     "build:hsr:dev": "node scripts/build-simulator-dev.mjs hsr",
     "build:simulators": "node scripts/build-simulators.mjs",
+    "publish:simulator-media": "node scripts/publish-simulator-media.mjs",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint --max-warnings 0 src e2e vite.config.ts vitest.config.ts playwright.config.ts playwright.perf.config.ts",
     "lint:fix": "npm run lint -- --fix",
@@ -21,7 +22,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:security": "node vendor/gacha-simulator/scripts/xss-regression.mjs && node vendor/hsr-simulator/scripts/xss-regression.mjs",
-    "test:deployment": "node --test scripts/retain-previous-assets.node-test.mjs scripts/verify-cloudflare-deployment.node-test.mjs scripts/operations.node-test.mjs",
+    "test:deployment": "node --test scripts/retain-previous-assets.node-test.mjs scripts/verify-cloudflare-deployment.node-test.mjs scripts/operations.node-test.mjs scripts/simulator-media.node-test.mjs",
     "check:architecture": "node scripts/check-architecture.mjs",
     "smoke:production": "node scripts/smoke-production.mjs",
     "test:simulators": "node vendor/shared/gacha-policy.test.mjs",
@@ -34,6 +35,7 @@
     "build:app": "tsc -b && vite build",
     "build:perf": "tsc -b && vite build --outDir .perf-dist",
     "build": "npm run build:app && npm run build:simulators && node scripts/build-offline-assets.mjs && node scripts/build-release-metadata.mjs",
+    "build:cloudflare": "npm run build:app && node scripts/build-simulators.mjs --external-media && npm run publish:simulator-media && node scripts/build-offline-assets.mjs --external-media && node scripts/build-release-metadata.mjs",
     "preview:cloudflare": "wrangler pages dev dist",
     "preview": "vite preview --host ::",
     "preview:perf": "vite preview --host 127.0.0.1 --outDir .perf-dist --port 4174 --strictPort"
@@ -46,7 +48,7 @@
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.1.1",
+    "react-router": "^8.3.0",
     "web-vitals": "^6.0.0",
     "zod": "4.4.3"
   },

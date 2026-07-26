@@ -1,5 +1,5 @@
 import { ChevronRight, Gamepad2, Info, ShoppingBag } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 import type { BoothSettings } from "../../../types/catalog";
 import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
 import { safePublicUrl } from "../../../lib/branding";

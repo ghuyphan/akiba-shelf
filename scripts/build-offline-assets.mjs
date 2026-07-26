@@ -1,8 +1,10 @@
 import { readdir, stat, writeFile } from "node:fs/promises";
 import { extname, join, relative, resolve, sep } from "node:path";
 import { createOfflinePack } from "./offline-pack-identity.mjs";
+import { createSimulatorMediaPacks } from "./simulator-media.mjs";
 
 const distRoot = resolve(process.cwd(), "dist");
+const externalMedia = process.argv.includes("--external-media");
 const packRoots = {
   genshin: resolve(distRoot, "gacha-simulator"),
   hsr: resolve(distRoot, "hsr-simulator"),
@@ -27,11 +29,19 @@ async function listFiles(root, directory = root) {
   return files;
 }
 
+const mediaPacks = externalMedia ? await createSimulatorMediaPacks() : {};
 const packs = Object.fromEntries(
   await Promise.all(
     Object.entries(packRoots).map(async ([game, root]) => {
-      const assets = (await listFiles(root)).sort((a, b) =>
-        a.path.localeCompare(b.path),
+      const externalAssets = externalMedia
+        ? mediaPacks[game].assets.map(({ publicPath, size, sourcePath }) => ({
+            path: publicPath,
+            size,
+            sourcePath,
+          }))
+        : [];
+      const assets = [...(await listFiles(root)), ...externalAssets].sort(
+        (a, b) => a.path.localeCompare(b.path),
       );
       return [game, createOfflinePack(assets)];
     }),

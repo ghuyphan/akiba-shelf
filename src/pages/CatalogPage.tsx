@@ -56,7 +56,7 @@ import {
   RecoverCheckoutBar,
 } from "../components/catalog/overlays/CatalogOverlays";
 import { layoutOrderSchema } from "../lib/schemas";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { getStorefrontBootstrap } from "../lib/api/catalog";
 import { getPublicShop } from "../lib/api/shops";
 import type { PublicProductSort } from "../lib/catalogQueries";

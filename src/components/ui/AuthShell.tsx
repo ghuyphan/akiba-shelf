@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { PLATFORM_BRAND } from "../../lib/branding";
 import { PlatformMark } from "./PlatformMark";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";

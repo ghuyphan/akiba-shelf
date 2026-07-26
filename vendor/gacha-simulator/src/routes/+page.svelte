@@ -20,6 +20,9 @@
 	import beginnerConfig from '$lib/data/banners/beginner.json';
 	import { getMerchConfig, getMerchItems } from '$lib/helpers/merch';
 	import { checkLightweight } from '$lib/helpers/lightweight';
+	import { base } from '$app/paths';
+
+	const videoBase = import.meta.env.VITE_SIMULATOR_MEDIA_BASE_URL || `${base}/videos`;
 
 	// Components
 	import MainWish from '$lib/components/wish/MainWish.svelte';
@@ -232,7 +235,7 @@
 		poster={$assets['wish-background.webp']}
 		class:hide={$pageActive !== 'index' || hideBG}
 	>
-		<source src="/videos/bg.webm" type="video/webm" />
+		<source src={`${videoBase}/bg.webm`} type="video/webm" />
 		<track kind="captions" />
 	</video>
 {/if}

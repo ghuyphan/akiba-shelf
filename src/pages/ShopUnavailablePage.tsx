@@ -1,5 +1,5 @@
 import { ArrowRight, LogIn, RotateCw, Store } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { AppHeader } from "../components/ui/AppHeader";
 import { PlatformHeaderBrand } from "../components/ui/PlatformHeaderBrand";
 import { PLATFORM_BRAND } from "../lib/branding";
