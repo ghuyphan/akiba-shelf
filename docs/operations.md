@@ -332,8 +332,17 @@ deployment workflow requires the `cloudflare-pages` GitHub environment to
 provide `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`,
 `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`, plus the public environment
 variable `VITE_TURNSTILE_SITE_KEY`. Scope the Cloudflare token to
-Account > Cloudflare Pages > Edit for the account that owns the `matsuri`
-project. Every `VITE_*` value is public in the built application.
+Account > Cloudflare Pages > Edit and Account > Workers R2 Storage > Edit for
+the account that owns the `matsuri` project and the
+`matsuri-simulator-media` bucket. Every `VITE_*` value is public in the built
+application.
+
+Simulator video is stored in the R2 bucket `matsuri-simulator-media` and served
+through the Pages Function at the same-origin `/gacha-simulator/videos/*` and
+`/hsr-simulator/videos/*` paths. Keep the R2 binding name
+`SIMULATOR_MEDIA` in `wrangler.jsonc`; the bucket must exist before the first
+production release. If the binding is changed in the Cloudflare dashboard,
+redeploy the Pages project before validating media range requests.
 
 To enable production observability, also configure `VITE_SENTRY_DSN`,
 `VITE_APP_ENV`, and `VITE_RUM_SAMPLE_RATE` in that protected environment and
