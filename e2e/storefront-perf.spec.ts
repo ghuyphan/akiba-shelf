@@ -151,11 +151,14 @@ test("production storefront stays within mobile-class performance budgets", asyn
       lcpParent: target.__storefrontPerf.lcpParent,
       lcpUrl: target.__storefrontPerf.lcpUrl,
       cls: target.__storefrontPerf.cls,
+      longestTask: target.__storefrontPerf.longestTask,
       fcp:
         paints.find((entry) => entry.name === "first-contentful-paint")
           ?.startTime ?? 0,
     };
   });
+  const pageLoadRequestCount = requestCount;
+  const pageLoadEncodedBytes = encodedBytes;
   const lcpIsLoadingShell = [
     pageLoadMetrics.lcpElement,
     pageLoadMetrics.lcpParent,
@@ -182,7 +185,7 @@ test("production storefront stays within mobile-class performance budgets", asyn
   });
 
   console.log(
-    `[Perf Test:${testInfo.project.name}] contentReady=${Math.round(contentReady)}ms fcp=${Math.round(pageLoadMetrics.fcp)}ms browserLcp=${Math.round(pageLoadMetrics.lcp)}ms lcpSource=${lcpIsLoadingShell ? "loading-shell" : "storefront"} lcpElement=${pageLoadMetrics.lcpElement} lcpText=${pageLoadMetrics.lcpText} lcpParent=${pageLoadMetrics.lcpParent} lcpUrl=${pageLoadMetrics.lcpUrl || "text"} cls=${pageLoadMetrics.cls.toFixed(4)} longestTask=${Math.round(metrics.longestTask)}ms interaction=${Math.round(Math.max(interactionDuration, metrics.maxInteraction))}ms requests=${requestCount} encoded=${Math.round(encodedBytes / 1024)}KiB`,
+    `[Perf Test:${testInfo.project.name}] contentReady=${Math.round(contentReady)}ms fcp=${Math.round(pageLoadMetrics.fcp)}ms browserLcp=${Math.round(pageLoadMetrics.lcp)}ms lcpSource=${lcpIsLoadingShell ? "loading-shell" : "storefront"} lcpElement=${pageLoadMetrics.lcpElement} lcpText=${pageLoadMetrics.lcpText} lcpParent=${pageLoadMetrics.lcpParent} lcpUrl=${pageLoadMetrics.lcpUrl || "text"} cls=${pageLoadMetrics.cls.toFixed(4)} longestTask=${Math.round(pageLoadMetrics.longestTask)}ms interaction=${Math.round(Math.max(interactionDuration, metrics.maxInteraction))}ms requests=${pageLoadRequestCount} encoded=${Math.round(pageLoadEncodedBytes / 1024)}KiB`,
   );
 
   // Browser LCP can legitimately select the loading shell. This separate gate
@@ -193,12 +196,12 @@ test("production storefront stays within mobile-class performance budgets", asyn
   expect(pageLoadMetrics.lcp).toBeGreaterThan(0);
   expect(pageLoadMetrics.lcp).toBeLessThan(2500);
   expect(pageLoadMetrics.cls).toBeLessThan(0.1);
-  expect(metrics.longestTask).toBeLessThan(300);
+  expect(pageLoadMetrics.longestTask).toBeLessThan(300);
   expect(Math.max(interactionDuration, metrics.maxInteraction)).toBeLessThan(
     500,
   );
-  expect(requestCount).toBeLessThan(45);
-  expect(encodedBytes).toBeLessThan(450 * 1024);
+  expect(pageLoadRequestCount).toBeLessThan(45);
+  expect(pageLoadEncodedBytes).toBeLessThan(450 * 1024);
 
   expect(
     initialDataRequests.filter((path) =>
