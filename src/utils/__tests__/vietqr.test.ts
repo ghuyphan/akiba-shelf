@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CartItem, PaymentSettings, Product } from "../../types/catalog";
 import {
   generateVietQr,
+  generateVietQrForAmount,
   generateVietQrForCart,
   getPaymentQrFallbackUrl,
   hasUsablePayment,
@@ -59,6 +60,17 @@ describe("VietQR image generation", () => {
       cart,
       "ORDER-123456789",
     );
+    expect(result?.src).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
+  });
+
+  it("generates a fixed-amount QR for optional project support", async () => {
+    const result = await generateVietQrForAmount(
+      payment,
+      50_000,
+      "SUPPORT MATSURI",
+    );
+
+    expect(result?.source).toBe("local");
     expect(result?.src).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
   });
 

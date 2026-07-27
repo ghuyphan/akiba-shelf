@@ -1,5 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import "@fontsource/be-vietnam-pro/400.css";
+import "@fontsource/be-vietnam-pro/500.css";
+import "@fontsource/be-vietnam-pro/600.css";
+import "@fontsource/be-vietnam-pro/700.css";
+import "@fontsource/be-vietnam-pro/800.css";
+import "@fontsource/be-vietnam-pro/900.css";
 import "./styles/base/global.css";
 import "./styles/legacy.css";
 import { resetDocumentBranding } from "./lib/branding";
@@ -16,7 +22,10 @@ initObservability();
 
 // Route-aware page chunk prefetching
 const pathname = window.location.pathname;
-const prefetchTarget = getRoutePrefetchTarget(pathname, import.meta.env.BASE_URL);
+const prefetchTarget = getRoutePrefetchTarget(
+  pathname,
+  import.meta.env.BASE_URL,
+);
 
 if (prefetchTarget === "catalog") {
   void import("./pages/CatalogPage").catch(() => {});

@@ -1,8 +1,8 @@
-import "@fontsource-variable/outfit/wght.css";
 import { Link } from "react-router";
 import {
   ArrowRight,
   ClipboardCheck,
+  Heart,
   LogIn,
   PackageCheck,
   Palette,
@@ -42,12 +42,12 @@ export function HomePage() {
         <section className="platform-home-hero">
           <div className="platform-home-hero-copy">
             <span className="platform-home-kicker">
-              {t("Storefront and order desk for artist booths")}
+              {t("A storefront built for artist booths")}
             </span>
             <h1>
-              {t("Run your merch booth.")}{" "}
+              {t("Sell merch.")}{" "}
               <span>
-                {t("Stay in sync.")}
+                {t("Keep orders under control.")}
                 <span
                   className="platform-landing-title-underline"
                   aria-hidden="true"
@@ -56,7 +56,7 @@ export function HomePage() {
             </h1>
             <p>
               {t(
-                "Fans order on their phones. Matsuri reserves stock and keeps one live queue for your team.",
+                "Fans order on their phones. Your team sees stock, payment, and pickup status in one place.",
               )}
             </p>
             <div className="platform-home-hero-actions">
@@ -64,7 +64,7 @@ export function HomePage() {
                 to="/auth"
                 className="button button-primary platform-home-cta"
               >
-                {t("Create your storefront")} <ArrowRight size={17} />
+                {t("Set up your booth")} <ArrowRight size={17} />
               </Link>
               <Link to="/s/demo-booth" className="button platform-home-demo">
                 <Store size={17} /> {t("See the demo booth")}
@@ -98,32 +98,32 @@ export function HomePage() {
 
         <section
           className="platform-home-benefits"
-          aria-label={t("Who Matsuri helps")}
+          aria-label={t("Why artists use Matsuri")}
         >
           <article>
             <b>{t("Scan to shop")}</b>
-            <span>{t("A quick storefront on every phone")}</span>
+            <span>{t("Fans browse and order from their phones")}</span>
           </article>
           <article>
-            <b>{t("Stock stays honest")}</b>
-            <span>{t("Items are reserved when an order is placed")}</span>
+            <b>{t("Accurate stock")}</b>
+            <span>{t("Items are held as soon as an order is placed")}</span>
           </article>
           <article>
-            <b>{t("One live queue")}</b>
-            <span>{t("Everyone sees what needs packing next")}</span>
+            <b>{t("One order list")}</b>
+            <span>{t("Your team always knows what to pack next")}</span>
           </article>
           <article>
-            <b>{t("Still your booth")}</b>
+            <b>{t("Your booth, your style")}</b>
             <span>{t("Use your colors, artwork, and sections")}</span>
           </article>
         </section>
 
         <section className="platform-home-flow" id="how">
           <header>
-            <h2>{t("From QR scan to handover, without the paper trail.")}</h2>
+            <h2>{t("From QR scan to pickup, all in one flow.")}</h2>
             <p>
               {t(
-                "A short customer flow in front, with the order detail your team needs behind the table.",
+                "Simple for customers. Clear for whoever is packing orders behind the table.",
               )}
             </p>
           </header>
@@ -133,10 +133,10 @@ export function HomePage() {
                 <ScanLine size={25} strokeWidth={1.8} />
               </span>
               <div>
-                <h3>{t("Fans scan and browse")}</h3>
+                <h3>{t("Scan and shop")}</h3>
                 <p>
                   {t(
-                    "Your storefront opens on their phone with your collections, product details, and booth identity.",
+                    "Customers open your catalog, browse products, and order from their phone.",
                   )}
                 </p>
               </div>
@@ -146,10 +146,10 @@ export function HomePage() {
                 <ShoppingBag size={25} strokeWidth={1.8} />
               </span>
               <div>
-                <h3>{t("Stock is reserved")}</h3>
+                <h3>{t("Reserve stock")}</h3>
                 <p>
                   {t(
-                    "Matsuri checks the current price and availability, reserves the items, and shows the order total with VietQR.",
+                    "Matsuri checks the latest price and stock before holding items and showing VietQR.",
                   )}
                 </p>
               </div>
@@ -159,10 +159,10 @@ export function HomePage() {
                 <ClipboardCheck size={25} strokeWidth={1.8} />
               </span>
               <div>
-                <h3>{t("Your team fulfils it")}</h3>
+                <h3>{t("Pack and hand over")}</h3>
                 <p>
                   {t(
-                    "The order appears in one live queue, ready to verify, pack, and hand to the right customer.",
+                    "Every order appears in the same live list, ready for payment checks, packing, and pickup.",
                   )}
                 </p>
               </div>
@@ -172,23 +172,21 @@ export function HomePage() {
 
         <section className="platform-home-toolkit" id="tools">
           <div className="platform-home-toolkit-copy">
-            <span>{t("Two sides, one booth")}</span>
+            <span>{t("For both sides of the table")}</span>
             <h2>
-              {t("A storefront for fans. A clear order desk for your team.")}
+              {t("A storefront for customers. One order screen for your team.")}
             </h2>
             <p>
               {t(
-                "Shape the public booth around your art, then run orders from a focused workspace that keeps payment, stock, and fulfilment status together.",
+                "Make the storefront feel like your booth. Behind the table, keep payment, stock, and pickup details together.",
               )}
             </p>
             <ul>
+              <li>{t("Use your own artwork, colors, and booth style")}</li>
+              <li>{t("Let everyone see the latest order status")}</li>
               <li>
-                {t("Design the storefront with your own visual identity")}
+                {t("Stop the same item from being sold twice during a rush")}
               </li>
-              <li>
-                {t("Keep the current order status visible to the whole team")}
-              </li>
-              <li>{t("Protect stock from being sold twice during a rush")}</li>
             </ul>
           </div>
           <aside
@@ -198,38 +196,36 @@ export function HomePage() {
             <article className="platform-home-pinboard-orders">
               <span>
                 <ClipboardCheck size={15} strokeWidth={1.8} />
-                {t("Live orders")}
+                {t("Orders")}
               </span>
               <strong>
-                {t("See pending, paid, and completed orders in one place")}
+                {t("Pending, paid, and completed orders in one list")}
               </strong>
             </article>
             <article className="platform-home-pinboard-stock">
               <span>
                 <PackageCheck size={15} strokeWidth={1.8} />
-                {t("Inventory")}
+                {t("Stock")}
               </span>
-              <strong>{t("Reserved as orders arrive")}</strong>
+              <strong>{t("Held as soon as an order comes in")}</strong>
             </article>
             <article className="platform-home-pinboard-design">
               <span>
                 <Palette size={15} strokeWidth={1.8} />
-                {t("Storefront design")}
+                {t("Storefront")}
               </span>
-              <strong>
-                {t("Use your own colors, logo, and visual style")}
-              </strong>
+              <strong>{t("Your colors, logo, and layout")}</strong>
             </article>
           </aside>
         </section>
 
         <section className="platform-home-surfaces" id="demo">
           <header>
-            <span>{t("From fan to fulfilment")}</span>
-            <h2>{t("One artist booth, three working surfaces.")}</h2>
+            <span>{t("See Matsuri in action")}</span>
+            <h2>{t("One booth, three ways to use it.")}</h2>
             <p>
               {t(
-                "A public catalog, a packing desk, and an optional event game—connected by the same products and stock.",
+                "Sell from a public catalog, manage pickups in admin, and add an optional gacha game using the same products.",
               )}
             </p>
           </header>
@@ -239,22 +235,28 @@ export function HomePage() {
               className="platform-home-demo-piece platform-home-demo-admin"
             >
               <div className="platform-home-demo-heading">
-                <span>01 · {t("Packing desk")}</span>
-                <h3>{t("Orders ready to hand over")}</h3>
+                <span>{t("Order desk")}</span>
+                <h3>{t("Everything ready for pickup")}</h3>
               </div>
               <div className="platform-home-demo-media">
                 <img
                   src="/landing/demo-admin.png"
-                  alt={t("Matsuri admin order queue with fulfilment details")}
+                  alt={t(
+                    "Matsuri order screen with payment and pickup details",
+                  )}
                   width="1280"
                   height="640"
                   loading="lazy"
                 />
               </div>
               <footer>
-                <p>{t("Track stock, payment, and fulfilment without losing the booth rush.")}</p>
+                <p>
+                  {t(
+                    "Check payment, stock, and pickup status even when the booth gets busy.",
+                  )}
+                </p>
                 <b>
-                  {t("Open admin")} <ArrowRight size={15} />
+                  {t("Open the order desk")} <ArrowRight size={15} />
                 </b>
               </footer>
             </Link>
@@ -265,8 +267,8 @@ export function HomePage() {
             >
               <span className="platform-home-demo-tape" aria-hidden="true" />
               <div className="platform-home-demo-heading">
-                <span>02 · {t("Digital catalog")}</span>
-                <h3>{t("Your art stays in front")}</h3>
+                <span>{t("Online catalog")}</span>
+                <h3>{t("Your art stays front and center")}</h3>
               </div>
               <div className="platform-home-demo-media">
                 <img
@@ -291,8 +293,8 @@ export function HomePage() {
               className="platform-home-demo-piece platform-home-demo-gacha"
             >
               <div className="platform-home-demo-heading">
-                <span>03 · {t("Event extra")}</span>
-                <h3>{t("A playful reason to stop by")}</h3>
+                <span>{t("Event minigame")}</span>
+                <h3>{t("Give fans one more reason to stop by")}</h3>
               </div>
               <div className="platform-home-demo-media">
                 <img
@@ -315,11 +317,39 @@ export function HomePage() {
         </section>
 
         <section className="platform-home-final">
-          <h2>{t("Give your booth one place to sell and stay organized.")}</h2>
+          <h2>{t("Ready to put your booth online?")}</h2>
           <Link to="/auth" className="button button-primary platform-home-cta">
-            {t("Create your storefront")} <ArrowRight size={17} />
+            {t("Set up your booth")} <ArrowRight size={17} />
           </Link>
         </section>
+
+        <aside
+          className="platform-home-support"
+          aria-label={t("Support Matsuri")}
+        >
+          <div className="platform-home-support-art" aria-hidden="true">
+            <span className="platform-home-support-palette">
+              <Palette size={43} strokeWidth={1.65} />
+            </span>
+            <span className="platform-home-support-brush" />
+          </div>
+          <div className="platform-home-support-copy">
+            <span className="platform-home-support-label">
+              <Heart size={13} fill="currentColor" />
+              {t("Community supported")}
+            </span>
+            <h2>{t("Keep Matsuri free for artists.")}</h2>
+            <p>
+              {t(
+                "Matsuri is free for artists. Optional support covers hosting and maintenance.",
+              )}
+            </p>
+          </div>
+          <Link to="/support" className="platform-home-support-button">
+            {t("Support Matsuri")}
+            <ArrowRight size={17} aria-hidden="true" />
+          </Link>
+        </aside>
       </main>
 
       <footer className="platform-home-footer">

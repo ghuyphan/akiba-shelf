@@ -1,0 +1,20 @@
+<svg role="img" viewBox="0 0 126 112" xmlns="http://www.w3.org/2000/svg">
+  <title>TPBank mark</title>
+  <defs>
+    <linearGradient id="tpbank-orange" x1="-411.17" y1="272.68" x2="-317.44" y2="291.45" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1.03763 0 0 1.03763 437.66 -281.98)">
+      <stop stop-color="#FBB413"/>
+      <stop offset="1" stop-color="#DE5D27"/>
+    </linearGradient>
+    <linearGradient id="tpbank-gold" x1="-302.69" y1="321.39" x2="-370.16" y2="352.83" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1.03763 0 0 1.03763 437.66 -281.98)">
+      <stop stop-color="#FBB413"/>
+      <stop offset="1" stop-color="#DE5D27"/>
+    </linearGradient>
+    <linearGradient id="tpbank-sun" x1="-413.4" y1="360.36" x2="-395.1" y2="280.92" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1.03763 0 0 1.03763 437.66 -281.98)">
+      <stop stop-color="#FBB413"/>
+      <stop offset="1" stop-color="#DE5D27"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#tpbank-orange)" d="M116.77.95c-.15.005-.231.012-.231.012H11.018l97.123 41.765 15.895-27.54c1.713-3.597 1.76-7.078.774-8.98-2.644-5.102-6.994-5.29-8.04-5.257Z"/>
+  <path fill="url(#tpbank-gold)" d="M124.31 14.538 39.802 78.553l16.628 28.638s1.912 3.82 7.203 3.82c5.29 0 7.642-4.408 7.642-4.408l52.761-91.415c.104-.218.182-.433.274-.65Z"/>
+  <path fill="url(#tpbank-sun)" d="M44.538 15.379 11.018.964S4.111.965 2.054 6.813c-1.79 5.086 1.469 9.26 1.469 9.26l52.882 91.076-11.867-91.77Z"/>
+</svg>

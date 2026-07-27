@@ -44,7 +44,7 @@
   color: var(--admin-primary);
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: .075em;
+  letter-spacing: 0.075em;
   text-transform: uppercase;
 }
 
@@ -81,7 +81,7 @@
   line-height: 1.2;
 }
 
-.dashboard-shop-capacity span {
+.dashboard-shop-capacity > span {
   color: var(--muted);
   font-size: 11px;
   line-height: 1.45;
@@ -129,7 +129,7 @@
   margin: 0 0 4px;
   color: var(--admin-secondary);
   font-size: 15px;
-  letter-spacing: -.012em;
+  letter-spacing: -0.012em;
 }
 
 .dashboard-empty-welcome p {
@@ -138,6 +138,29 @@
   font-size: 12px;
   line-height: 1.5;
   text-wrap: pretty;
+}
+
+.dashboard-support-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  margin-left: auto;
+  padding: 4px 2px;
+  color: var(--admin-primary);
+  font-size: 10px;
+  font-weight: 750;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.dashboard-support-link:hover {
+  color: var(--admin-primary-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dashboard-support-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--admin-primary) 22%, transparent);
+  outline-offset: 2px;
 }
 
 .dashboard-shop-card,
@@ -171,7 +194,7 @@
 .dashboard-shop-card.inactive {
   background: color-mix(in srgb, var(--surface-soft) 88%, var(--page-bg));
   box-shadow: none;
-  opacity: .78;
+  opacity: 0.78;
 }
 
 .dashboard-shop-card.inactive:hover {
@@ -219,7 +242,7 @@
   color: var(--admin-secondary);
   font-size: 17px;
   font-weight: 800;
-  letter-spacing: -.018em;
+  letter-spacing: -0.018em;
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -250,7 +273,7 @@
 }
 
 .shop-card-edit-btn:active {
-  transform: scale(.96);
+  transform: scale(0.96);
 }
 
 .shop-card-edit-btn:focus-visible,
@@ -282,7 +305,7 @@
   border-radius: 999px;
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: .045em;
+  letter-spacing: 0.045em;
   line-height: 1;
   text-transform: uppercase;
   white-space: nowrap;
@@ -361,12 +384,12 @@
 }
 
 .dashboard-create-card:active {
-  transform: translateY(0) scale(.99);
+  transform: translateY(0) scale(0.99);
 }
 
 .dashboard-create-card.is-disabled {
   cursor: not-allowed;
-  opacity: .7;
+  opacity: 0.7;
   background: var(--surface-soft);
 }
 
@@ -418,7 +441,7 @@
   color: var(--admin-secondary);
   font-size: 16px;
   font-weight: 800;
-  letter-spacing: -.015em;
+  letter-spacing: -0.015em;
 }
 
 .dashboard-create-card p {
@@ -528,7 +551,7 @@
   background: #fff;
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: .04em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -600,6 +623,10 @@
   .dashboard-empty-welcome {
     align-items: flex-start;
     padding: 14px;
+  }
+
+  .dashboard-support-link {
+    margin-left: 0;
   }
 
   .dashboard-shop-card,

@@ -50,9 +50,7 @@ function buildVietQrPayload(
   const accountNo = settings.bank_account_no?.replace(/\s/g, "") ?? "";
   const beneficiary = tlv("00", acqId) + tlv("01", accountNo);
   const merchantAccount =
-    tlv("00", VIETQR_GUID) +
-    tlv("01", beneficiary) +
-    tlv("02", VIETQR_SERVICE);
+    tlv("00", VIETQR_GUID) + tlv("01", beneficiary) + tlv("02", VIETQR_SERVICE);
   let payload =
     tlv("00", "01") +
     tlv("01", amount > 0 ? "12" : "11") +
@@ -130,6 +128,20 @@ export async function generateVietQr(
     settings,
     amount,
     fillTemplate(settings.bank_add_info_template, product),
+  );
+}
+
+export async function generateVietQrForAmount(
+  settings: PaymentSettings,
+  amount: number,
+  addInfo: string,
+): Promise<GeneratedVietQr | null> {
+  if (!canGenerateVietQr(settings)) return null;
+  const normalizedAmount = Math.max(0, Math.round(amount));
+  return renderVietQr(
+    settings,
+    normalizedAmount,
+    truncateUtf8(addInfo.trim(), 50),
   );
 }
 

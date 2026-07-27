@@ -89,10 +89,30 @@ test("landing title accent and mobile artwork stay stable across locales", async
   await page.getByRole("option", { name: "Tiếng Việt" }).click();
   await expect(
     page.getByRole("heading", {
-      name: "Vận hành gian hàng merch. Luôn đồng bộ.",
+      name: "Bán merch gọn hơn. Không bỏ sót đơn nào.",
     }),
   ).toBeVisible();
   await expectStableLandingHero(page);
+});
+
+test("support page offers one-time community support methods", async ({
+  page,
+}) => {
+  await page.goto("./support");
+
+  await expect(
+    page.getByRole("heading", {
+      name: "Keep Matsuri free for artists.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /Buy me a coffee/i }),
+  ).toHaveAttribute("href", "https://buymeacoffee.com/ghuyphan");
+  await expect(page.getByText("Phan Gia Huy")).toBeVisible();
+  await expect(page.getByText("Pha Gia Huy")).toBeVisible();
+  await expect(
+    page.getByAltText("TPBank QR code to support Matsuri"),
+  ).toHaveAttribute("src", /^data:image\/svg\+xml/);
 });
 
 test("platform locale menu persists without horizontal overflow", async ({
@@ -105,7 +125,7 @@ test("platform locale menu persists without horizontal overflow", async ({
 
   await expect(
     page.getByRole("heading", {
-      name: "Vận hành gian hàng merch. Luôn đồng bộ.",
+      name: "Bán merch gọn hơn. Không bỏ sót đơn nào.",
     }),
   ).toBeVisible();
   await expect(

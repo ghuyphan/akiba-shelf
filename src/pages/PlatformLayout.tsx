@@ -1,4 +1,3 @@
-import "@fontsource-variable/outfit/wght.css";
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router";
 import { ToastLocalization } from "../components/ui/ToastProvider";
@@ -28,7 +27,7 @@ function PlatformRouteBranding() {
     resetPageTheme();
     let title: string = PLATFORM_BRAND.name;
     let description = t(
-      "Matsuri helps independent artists run a branded merch storefront with reliable stock reservation and a live order queue for event teams.",
+      "Matsuri gives independent artists an online storefront, accurate stock, and one live order list for event days.",
     );
     let robots: "index, follow" | "noindex, nofollow" = "noindex, nofollow";
 
@@ -36,7 +35,13 @@ function PlatformRouteBranding() {
       const mode = new URLSearchParams(search).get("mode");
       title = `${mode === "signup" ? t("Create account") : mode === "forgot" ? t("Reset password") : t("Sign in")} · ${PLATFORM_BRAND.name}`;
     } else if (pathname === "/") {
-      title = `${PLATFORM_BRAND.name} · ${t("Artist booth storefront and live orders")}`;
+      title = `${PLATFORM_BRAND.name} · ${t("Online storefront and live orders for artist booths")}`;
+      robots = "index, follow";
+    } else if (pathname === "/support") {
+      title = `${t("Support Matsuri")} · ${PLATFORM_BRAND.name}`;
+      description = t(
+        "Help keep Matsuri free for independent artists through optional one-time support.",
+      );
       robots = "index, follow";
     } else if (pathname === "/dashboard") {
       title = `${t("Your shops")} · ${PLATFORM_BRAND.name}`;

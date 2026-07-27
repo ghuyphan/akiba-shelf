@@ -4,7 +4,7 @@ test("storefront and protected routes render", async ({ page }) => {
   await page.goto("./");
   await expect(
     page.getByRole("heading", {
-      name: "Run your merch booth. Stay in sync.",
+      name: "Sell merch. Keep orders under control.",
     }),
   ).toBeVisible();
 

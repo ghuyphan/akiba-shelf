@@ -83,6 +83,114 @@ const vi: Record<string, string> = {
   Vietnamese: "Tiếng Việt",
   Language: "Ngôn ngữ",
   "More actions": "Thêm thao tác",
+  "A storefront built for artist booths":
+    "Cửa hàng online dành riêng cho gian artist",
+  "Sell merch.": "Bán merch gọn hơn.",
+  "Keep orders under control.": "Không bỏ sót đơn nào.",
+  "Fans order on their phones. Your team sees stock, payment, and pickup status in one place.":
+    "Khách đặt hàng ngay trên điện thoại. Cả team theo dõi tồn kho, thanh toán và nhận hàng tại một nơi.",
+  "Set up your booth": "Tạo gian hàng",
+  "Why artists use Matsuri": "Vì sao artist dùng Matsuri",
+  "Fans browse and order from their phones":
+    "Khách xem và đặt hàng trên điện thoại",
+  "Accurate stock": "Tồn kho rõ ràng",
+  "Items are held as soon as an order is placed":
+    "Có đơn là sản phẩm được giữ ngay",
+  "One order list": "Một danh sách đơn chung",
+  "Your team always knows what to pack next":
+    "Cả team biết đơn nào cần đóng tiếp",
+  "Your booth, your style": "Gian hàng đúng chất của bạn",
+  "From QR scan to pickup, all in one flow.":
+    "Từ quét mã đến nhận hàng, gói gọn trong một quy trình.",
+  "Simple for customers. Clear for whoever is packing orders behind the table.":
+    "Khách dễ đặt. Người đứng quầy cũng dễ kiểm tra và đóng đơn.",
+  "Scan and shop": "Quét mã và chọn merch",
+  "Customers open your catalog, browse products, and order from their phone.":
+    "Khách mở catalog, xem sản phẩm và đặt ngay trên điện thoại.",
+  "Reserve stock": "Giữ hàng đúng tồn kho",
+  "Matsuri checks the latest price and stock before holding items and showing VietQR.":
+    "Matsuri kiểm tra giá và tồn kho mới nhất trước khi giữ sản phẩm và tạo VietQR.",
+  "Pack and hand over": "Đóng đơn và giao khách",
+  "Every order appears in the same live list, ready for payment checks, packing, and pickup.":
+    "Mọi đơn về chung một danh sách để kiểm tra thanh toán, đóng gói và giao đúng người.",
+  "For both sides of the table": "Cho cả khách lẫn người đứng quầy",
+  "A storefront for customers. One order screen for your team.":
+    "Một cửa hàng cho khách. Một màn hình đơn hàng cho team.",
+  "Make the storefront feel like your booth. Behind the table, keep payment, stock, and pickup details together.":
+    "Tùy chỉnh cửa hàng theo đúng chất gian của bạn. Phía sau quầy, thanh toán, tồn kho và thông tin nhận hàng nằm cùng một chỗ.",
+  "Use your own artwork, colors, and booth style":
+    "Dùng tác phẩm, màu sắc và phong cách riêng của gian hàng",
+  "Let everyone see the latest order status":
+    "Để cả team cùng thấy trạng thái đơn mới nhất",
+  "Stop the same item from being sold twice during a rush":
+    "Tránh bán trùng một món khi gian hàng đông khách",
+  "Pending, paid, and completed orders in one list":
+    "Đơn chờ, đã thanh toán và hoàn tất nằm trong cùng một danh sách",
+  "Held as soon as an order comes in": "Có đơn là giữ hàng ngay",
+  "Your colors, logo, and layout": "Màu sắc, logo và bố cục của bạn",
+  "See Matsuri in action": "Xem Matsuri hoạt động",
+  "One booth, three ways to use it.": "Một gian hàng, ba cách sử dụng.",
+  "Sell from a public catalog, manage pickups in admin, and add an optional gacha game using the same products.":
+    "Bán hàng bằng catalog công khai, xử lý đơn trong trang quản lý và thêm gacha tùy chọn từ cùng bộ sản phẩm.",
+  "Order desk": "Quầy xử lý đơn",
+  "Everything ready for pickup": "Mọi thứ sẵn sàng để giao khách",
+  "Matsuri order screen with payment and pickup details":
+    "Màn hình đơn hàng Matsuri với thông tin thanh toán và nhận hàng",
+  "Check payment, stock, and pickup status even when the booth gets busy.":
+    "Kiểm tra thanh toán, tồn kho và trạng thái nhận hàng ngay cả lúc đông khách.",
+  "Open the order desk": "Mở quầy xử lý đơn",
+  "Online catalog": "Catalog online",
+  "Your art stays front and center": "Tác phẩm của bạn luôn là tâm điểm",
+  "Event minigame": "Minigame tại sự kiện",
+  "Give fans one more reason to stop by": "Thêm một lý do để fan ghé gian hàng",
+  "Ready to put your booth online?": "Sẵn sàng đưa gian hàng lên online?",
+  "Community supported": "Được ủng hộ",
+  "Keep Matsuri independent.": "Giữ Matsuri độc lập.",
+  "Optional support helps keep the booth running.":
+    "Ủng hộ để Matsuri hoạt động.",
+  "Support Matsuri": "Ủng hộ Matsuri",
+  "One-time support": "Ủng hộ một lần",
+  "Keep Matsuri free for artists.": "Giữ Matsuri miễn phí cho artist.",
+  "Matsuri is free for artists. Optional support covers hosting and maintenance.":
+    "Matsuri miễn phí cho artist. Ủng hộ giúp chi trả hosting và bảo trì.",
+  "Matsuri has no artist subscription and takes no cut from booth sales. Optional support helps cover hosting, maintenance, and event-day reliability.":
+    "Matsuri không thu phí đăng ký từ artist và không lấy phần doanh thu gian hàng. Sự ủng hộ tự nguyện giúp chi trả hosting, bảo trì và độ ổn định trong ngày sự kiện.",
+  "Buy me a coffee": "Mời mình một ly cà phê",
+  "Artist first": "Artist trước tiên",
+  "of booth sales stays with the artist": "doanh thu gian hàng thuộc về artist",
+  "No artist subscription": "Không thu phí artist",
+  "No sales cut": "Không lấy phần trăm doanh thu",
+  "Pick a way to support.": "Chọn cách ủng hộ.",
+  "Bank QR, MoMo, or coffee.": "QR ngân hàng, MoMo hoặc cà phê.",
+  "From anywhere": "Từ mọi nơi",
+  "Open Buy Me a Coffee": "Mở Buy Me a Coffee",
+  "One-time support is enough. There is no automatic renewal.":
+    "Ủng hộ một lần là đủ. Không có gia hạn tự động.",
+  "Direct bank transfer": "Chuyển khoản ngân hàng",
+  "TPBank QR code to support Matsuri": "Mã QR TPBank để ủng hộ Matsuri",
+  "Preparing QR code…": "Đang tạo mã QR…",
+  "Copy TPBank account number": "Sao chép số tài khoản TPBank",
+  "Choose an amount": "Chọn số tiền",
+  "Custom amount": "Số tiền khác",
+  "Enter VND amount": "Nhập số tiền VND",
+  "Mobile wallet": "Ví điện tử",
+  "Phone number": "Số điện thoại",
+  "Copy MoMo phone number": "Sao chép số điện thoại MoMo",
+  "Open MoMo": "Mở MoMo",
+  "The promise": "Cam kết",
+  "Artists remain the community, not the product.":
+    "Artist là cộng đồng của Matsuri, không phải sản phẩm.",
+  "No subscription for independent artists":
+    "Không thu phí đăng ký từ artist độc lập",
+  "No percentage taken from booth sales":
+    "Không lấy phần trăm doanh thu gian hàng",
+  "No ads inside artist storefronts": "Không quảng cáo trong cửa hàng artist",
+  "Support is always optional. Using Matsuri, creating a shop, and running booth orders do not require a contribution.":
+    "Ủng hộ luôn là tự nguyện. Bạn không cần đóng góp để dùng Matsuri, tạo gian hàng hay xử lý đơn.",
+  "Support is optional. Matsuri stays free to use.":
+    "Ủng hộ là tự nguyện. Matsuri vẫn miễn phí.",
+  "Help keep Matsuri free for independent artists through optional one-time support.":
+    "Giúp Matsuri tiếp tục miễn phí cho artist độc lập bằng sự ủng hộ một lần hoàn toàn tự nguyện.",
   "Storefront and order desk for artist booths":
     "Cửa hàng và bàn xử lý đơn cho gian hàng artist",
   "Run your merch booth.": "Vận hành gian hàng merch.",
@@ -176,10 +284,10 @@ const vi: Record<string, string> = {
   "You tried": "Bạn đã mở",
   "Artist storefronts and live booth orders.":
     "Cửa hàng artist và đơn hàng gian hàng trực tiếp.",
-  "Artist booth storefront and live orders":
-    "Cửa hàng artist và đơn hàng trực tiếp",
-  "Matsuri helps independent artists run a branded merch storefront with reliable stock reservation and a live order queue for event teams.":
-    "Matsuri giúp artist độc lập vận hành cửa hàng merch mang thương hiệu riêng, giữ tồn kho đáng tin cậy và theo dõi hàng đợi đơn trực tiếp cho đội ngũ sự kiện.",
+  "Online storefront and live orders for artist booths":
+    "Cửa hàng online và đơn hàng trực tiếp cho gian artist",
+  "Matsuri gives independent artists an online storefront, accurate stock, and one live order list for event days.":
+    "Matsuri giúp artist độc lập mở cửa hàng online, giữ tồn kho chính xác và quản lý đơn sự kiện trong một danh sách chung.",
   "Page not found": "Không tìm thấy trang",
   "This Matsuri page could not be found. Return home or visit the demo artist booth.":
     "Không tìm thấy trang Matsuri này. Hãy về trang chủ hoặc ghé gian hàng artist demo.",

@@ -17,6 +17,9 @@ const PlatformLayout = lazyWithRetry("platform-layout", () =>
 const HomePage = lazyWithRetry("home", () =>
   import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
 );
+const SupportPage = lazyWithRetry("support", () =>
+  import("./pages/SupportPage").then((m) => ({ default: m.SupportPage })),
+);
 const DashboardPage = lazyWithRetry("dashboard", () =>
   import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })),
 );
@@ -122,7 +125,9 @@ function RouteLoading() {
         />
       </div>
       <div className="page-loading-copy">
-        <strong>{storefront ? "Opening the shop…" : "Preparing Matsuri"}</strong>
+        <strong>
+          {storefront ? "Opening the shop…" : "Preparing Matsuri"}
+        </strong>
         <span>
           {storefront
             ? "Getting the shelves ready for you."
@@ -161,6 +166,7 @@ export function App() {
               <Route path="/s/:shopSlug" element={<KeyedCatalogPage />} />
               <Route element={<PlatformLayout />}>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/support" element={<SupportPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/shops/new" element={<NewShopPage />} />
                 <Route path="/auth" element={<AuthPage />} />

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Plus, LogOut, MailCheck } from "lucide-react";
+import { ArrowRight, Heart, Plus, LogOut, MailCheck } from "lucide-react";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { AppHeader } from "../components/ui/AppHeader";
 import { PlatformHeaderBrand } from "../components/ui/PlatformHeaderBrand";
@@ -46,9 +46,7 @@ export function DashboardPage() {
   async function handleSignOut() {
     setSignOutBusy(true);
     try {
-      let offlineRisk: Awaited<
-        ReturnType<typeof getOfflineEventSignOutRisk>
-      >;
+      let offlineRisk: Awaited<ReturnType<typeof getOfflineEventSignOutRisk>>;
       try {
         offlineRisk = await getOfflineEventSignOutRisk();
       } catch {
@@ -180,6 +178,11 @@ export function DashboardPage() {
                     { joined: joinedShopCount },
                   )}
                 </span>
+                <Link to="/support" className="dashboard-support-link">
+                  <Heart size={13} aria-hidden="true" />
+                  <span>{t("Support Matsuri")}</span>
+                  <ArrowRight size={13} aria-hidden="true" />
+                </Link>
               </div>
             )}
           </div>
