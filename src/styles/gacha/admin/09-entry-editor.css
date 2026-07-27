@@ -37,7 +37,7 @@
 }
 
 .gacha-item-editor .select-menu-popover {
-  width: 100%;
+  width: var(--floating-reference-width, 100%);
   min-width: 0;
 }
 

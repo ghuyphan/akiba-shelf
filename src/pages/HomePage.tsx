@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { useEffect, useRef } from "react";
 import {
   ArrowRight,
   ClipboardCheck,
@@ -19,6 +20,35 @@ import "../styles/admin/admin.css";
 
 export function HomePage() {
   const { t } = usePlatformI18n();
+  const landingContentRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const root = landingContentRef.current;
+    if (!root) return;
+    const sections = Array.from(
+      root.querySelectorAll<HTMLElement>("[data-home-reveal]"),
+    );
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduceMotion || !("IntersectionObserver" in window)) {
+      sections.forEach((section) => section.classList.add("is-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.12 },
+    );
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="admin-shell platform-home-shell platform-home-landing">
@@ -38,7 +68,10 @@ export function HomePage() {
         }
       />
 
-      <main className="admin-container platform-home-container">
+      <main
+        ref={landingContentRef}
+        className="admin-container platform-home-container"
+      >
         <section className="platform-home-hero">
           <div className="platform-home-hero-copy">
             <span className="platform-home-kicker">
@@ -98,6 +131,7 @@ export function HomePage() {
 
         <section
           className="platform-home-benefits"
+          data-home-reveal
           aria-label={t("Why artists use Matsuri")}
         >
           <article>
@@ -118,7 +152,7 @@ export function HomePage() {
           </article>
         </section>
 
-        <section className="platform-home-flow" id="how">
+        <section className="platform-home-flow" id="how" data-home-reveal>
           <header>
             <h2>{t("From QR scan to pickup, all in one flow.")}</h2>
             <p>
@@ -170,7 +204,7 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="platform-home-toolkit" id="tools">
+        <section className="platform-home-toolkit" id="tools" data-home-reveal>
           <div className="platform-home-toolkit-copy">
             <span>{t("For both sides of the table")}</span>
             <h2>
@@ -219,7 +253,7 @@ export function HomePage() {
           </aside>
         </section>
 
-        <section className="platform-home-surfaces" id="demo">
+        <section className="platform-home-surfaces" id="demo" data-home-reveal>
           <header>
             <span>{t("See Matsuri in action")}</span>
             <h2>{t("One booth, three ways to use it.")}</h2>
@@ -316,7 +350,7 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="platform-home-final">
+        <section className="platform-home-final" data-home-reveal>
           <h2>{t("Ready to put your booth online?")}</h2>
           <Link to="/auth" className="button button-primary platform-home-cta">
             {t("Set up your booth")} <ArrowRight size={17} />
@@ -325,6 +359,7 @@ export function HomePage() {
 
         <aside
           className="platform-home-support"
+          data-home-reveal
           aria-label={t("Support Matsuri")}
         >
           <div className="platform-home-support-art" aria-hidden="true">

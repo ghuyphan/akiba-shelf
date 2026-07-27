@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CatalogLocaleProvider } from "../../../lib/i18n/catalogI18n";
@@ -31,16 +31,19 @@ describe("CatalogToolbar", () => {
   it("selects a sort option with the shared listbox keyboard behavior", async () => {
     const user = userEvent.setup();
     const props = renderToolbar();
-    const trigger = screen.getByRole("button", {
+    const trigger = screen.getByRole("combobox", {
       name: "Sort by: Recommended",
     });
 
     trigger.focus();
-    await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
+    await user.keyboard("{ArrowDown}");
+    await user.keyboard("{ArrowDown}{Enter}");
 
     expect(props.onSortChange).toHaveBeenCalledWith("price-asc");
     expect(trigger).toHaveFocus();
-    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument(),
+    );
   });
 
   it("exposes the selected grid or list view as a pressed state", async () => {

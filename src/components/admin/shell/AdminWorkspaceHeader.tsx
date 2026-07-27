@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   ArrowLeft,
@@ -16,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { AppHeader } from "../../ui/AppHeader";
+import { ActionMenu } from "../../ui/ActionMenu";
 import { SelectMenu } from "../../ui/SelectMenu";
 import { useToast } from "../../ui/ToastProvider";
 import { useTabIndicator } from "../../../hooks/shared/useTabIndicator";
@@ -68,9 +69,6 @@ export function AdminWorkspaceHeader({
   const requestNavigation = useAdminNavigationGuard();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
-  const [overflowOpen, setOverflowOpen] = useState(false);
-  const overflowRef = useRef<HTMLDivElement>(null);
-  const overflowToggleRef = useRef<HTMLButtonElement>(null);
   const { containerRef, registerItem } = useTabIndicator<
     AdminViewTab,
     HTMLDivElement
@@ -81,32 +79,6 @@ export function AdminWorkspaceHeader({
       .then(setPushEnabled)
       .catch(() => setPushEnabled(false));
   }, [access.shop_id]);
-
-  useEffect(() => {
-    if (!overflowOpen) return;
-    const close = (event: MouseEvent) => {
-      if (!overflowRef.current?.contains(event.target as Node)) {
-        setOverflowOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", close);
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      setOverflowOpen(false);
-      overflowToggleRef.current?.focus();
-    };
-    document.addEventListener("keydown", closeOnEscape);
-    window.requestAnimationFrame(() => {
-      overflowRef.current
-        ?.querySelector<HTMLButtonElement>(".admin-overflow-popover button")
-        ?.focus();
-    });
-    return () => {
-      document.removeEventListener("mousedown", close);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [overflowOpen]);
 
   async function togglePushNotifications() {
     setPushBusy(true);
@@ -180,7 +152,12 @@ export function AdminWorkspaceHeader({
         </>
       }
       navigation={
-        <div className="admin-nav-tabs" ref={containerRef} role="toolbar" aria-label={t("Admin sections")}>
+        <div
+          className="admin-nav-tabs"
+          ref={containerRef}
+          role="toolbar"
+          aria-label={t("Admin sections")}
+        >
           {canManageCatalog && (
             <button
               type="button"
@@ -215,7 +192,9 @@ export function AdminWorkspaceHeader({
               className={`admin-nav-tab ${viewTab === "products" ? "active" : ""}`}
               aria-label={t("Products ({{count}})", { count: productsCount })}
               aria-pressed={viewTab === "products"}
-              onClick={() => requestNavigation(() => onViewTabChange("products"))}
+              onClick={() =>
+                requestNavigation(() => onViewTabChange("products"))
+              }
             >
               <Package size={15} />
               <span>{t("Products")}</span>
@@ -256,7 +235,9 @@ export function AdminWorkspaceHeader({
               ref={registerItem("settings")}
               className={`admin-nav-tab admin-nav-mobile-settings ${viewTab === "settings" ? "active" : ""}`}
               aria-pressed={viewTab === "settings"}
-              onClick={() => requestNavigation(() => onViewTabChange("settings"))}
+              onClick={() =>
+                requestNavigation(() => onViewTabChange("settings"))
+              }
             >
               <Settings2 size={15} /> {t("Settings")}
             </button>
@@ -304,65 +285,39 @@ export function AdminWorkspaceHeader({
             }}
           />
           <PlatformLanguageToggle />
-          <div className="admin-overflow-menu" ref={overflowRef}>
-            <button
-              ref={overflowToggleRef}
-              type="button"
-              className="app-header-button admin-overflow-toggle"
-              onClick={() => setOverflowOpen((open) => !open)}
-              aria-label={t("More actions")}
-              aria-expanded={overflowOpen}
-              aria-controls="admin-overflow-popover"
-              title={t("More actions")}
-            >
-              <EllipsisVertical size={15} />
-            </button>
-            {overflowOpen && (
-              <div className="admin-overflow-popover" id="admin-overflow-popover">
-                {canManageCatalog && (
-                  <button
-                    type="button"
-                    className="admin-overflow-item"
-                    onClick={() => {
-                      setOverflowOpen(false);
-                      requestNavigation(() => onViewTabChange("settings"));
-                    }}
-                  >
-                    <Settings2 size={15} />
-                    <span>{t("Settings")}</span>
-                  </button>
-                )}
-                {canUsePush() && (
-                  <button
-                    type="button"
-                    className="admin-overflow-item"
-                    disabled={pushBusy}
-                    onClick={() => {
-                      void togglePushNotifications();
-                      setOverflowOpen(false);
-                    }}
-                  >
-                    {pushEnabled ? <Bell size={15} /> : <BellOff size={15} />}
-                    <span>
-                      {t(pushEnabled ? "Alerts on" : "Enable alerts")}
-                    </span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="admin-overflow-item admin-overflow-signout"
-                  disabled={signOutBusy}
-                  onClick={() => {
-                    setOverflowOpen(false);
-                    requestNavigation(onRequestSignOut);
-                  }}
-                >
-                  <LogOut size={15} />
-                  <span>{t("Sign out")}</span>
-                </button>
-              </div>
-            )}
-          </div>
+          <ActionMenu
+            className="admin-overflow-menu"
+            label={t("More actions")}
+            triggerIcon={<EllipsisVertical size={15} />}
+            triggerClassName="app-header-button admin-overflow-toggle"
+            popoverClassName="admin-overflow-popover"
+            itemClassName="admin-overflow-item"
+            items={[
+              ...(canUsePush()
+                ? [
+                    {
+                      id: "notifications",
+                      label: t(pushEnabled ? "Alerts on" : "Enable alerts"),
+                      icon: pushEnabled ? (
+                        <Bell size={15} />
+                      ) : (
+                        <BellOff size={15} />
+                      ),
+                      disabled: pushBusy,
+                      onSelect: () => void togglePushNotifications(),
+                    },
+                  ]
+                : []),
+              {
+                id: "sign-out",
+                label: t("Sign out"),
+                icon: <LogOut size={15} />,
+                danger: true,
+                disabled: signOutBusy,
+                onSelect: () => requestNavigation(onRequestSignOut),
+              },
+            ]}
+          />
         </>
       }
     />

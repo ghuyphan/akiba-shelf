@@ -4,7 +4,9 @@ test("landing locale control matches the other header actions", async ({
   page,
 }) => {
   await page.goto("./");
-  const localeButton = page.getByRole("button", { name: "Language: English" });
+  const localeButton = page.getByRole("combobox", {
+    name: "Language: English",
+  });
   const signInButton = page.locator(".platform-home-signin-btn");
   await expect(localeButton).toHaveCSS("border-top-width", "0px");
   const [localeBackground, signInBackground] = await Promise.all([
@@ -85,7 +87,7 @@ test("landing title accent and mobile artwork stay stable across locales", async
   await page.goto("./");
   await expectStableLandingHero(page);
 
-  await page.getByRole("button", { name: "Language: English" }).click();
+  await page.getByRole("combobox", { name: "Language: English" }).click();
   await page.getByRole("option", { name: "Tiếng Việt" }).click();
   await expect(
     page.getByRole("heading", {
@@ -93,6 +95,27 @@ test("landing title accent and mobile artwork stay stable across locales", async
     }),
   ).toBeVisible();
   await expectStableLandingHero(page);
+});
+
+test("landing sections reveal once they enter the viewport", async ({
+  page,
+}) => {
+  await page.goto("./");
+
+  const surfaces = page.locator(".platform-home-surfaces");
+  await expect(surfaces).not.toHaveClass(/is-visible/);
+  await surfaces.scrollIntoViewIfNeeded();
+  await expect(surfaces).toHaveClass(/is-visible/);
+});
+
+test("landing content stays visible with reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("./");
+
+  await expect(page.locator("[data-home-reveal]")).toHaveCount(6);
+  await expect(page.locator("[data-home-reveal]:not(.is-visible)")).toHaveCount(
+    0,
+  );
 });
 
 test("support page offers one-time community support methods", async ({
@@ -120,7 +143,7 @@ test("platform locale menu persists without horizontal overflow", async ({
 }) => {
   await page.goto("./");
 
-  await page.getByRole("button", { name: "Language: English" }).click();
+  await page.getByRole("combobox", { name: "Language: English" }).click();
   await page.getByRole("option", { name: "Tiếng Việt" }).click();
 
   await expect(
@@ -129,7 +152,7 @@ test("platform locale menu persists without horizontal overflow", async ({
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Ngôn ngữ: Tiếng Việt" }),
+    page.getByRole("combobox", { name: "Ngôn ngữ: Tiếng Việt" }),
   ).toBeVisible();
   expect(
     await page.evaluate(

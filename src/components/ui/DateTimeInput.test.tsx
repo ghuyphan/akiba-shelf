@@ -29,7 +29,7 @@ describe("DateTimeInput", () => {
     expect(container.querySelector('input[type="datetime-local"]')).toBeNull();
     await user.click(screen.getByRole("button", { name: /Event starts:/ }));
     await user.click(screen.getByRole("button", { name: "23" }));
-    await user.click(screen.getByRole("button", { name: "Hour: 10" }));
+    await user.click(screen.getByRole("combobox", { name: "Hour: 10" }));
     await user.click(screen.getByRole("option", { name: "11" }));
     await user.click(screen.getByRole("button", { name: "Done" }));
 

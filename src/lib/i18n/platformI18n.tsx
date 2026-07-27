@@ -949,10 +949,17 @@ const vi: Record<string, string> = {
   "Enter a valid email address.": "Nhập địa chỉ email hợp lệ.",
   "Enter your password.": "Nhập mật khẩu.",
   "Choose color for {{label}}": "Chọn màu cho {{label}}",
-  "Choose a preset or enter a hex color.":
-    "Chọn màu có sẵn hoặc nhập mã màu hex.",
+  "Choose a color, then fine-tune its hex value.":
+    "Chọn màu rồi tinh chỉnh bằng mã hex.",
+  "Saturation and brightness": "Độ bão hòa và độ sáng",
+  saturation: "độ bão hòa",
+  brightness: "độ sáng",
+  Hue: "Sắc độ",
   "Color presets": "Màu có sẵn",
   "Hex color": "Mã màu hex",
+  "System picker": "Bảng màu hệ thống",
+  "Open system color picker": "Mở bảng chọn màu của hệ thống",
+  "Use a 3 or 6 digit hex color.": "Dùng mã màu hex gồm 3 hoặc 6 ký tự.",
   "Choose date and time": "Chọn ngày và giờ",
   "Clear {{label}}": "Xóa {{label}}",
   "Previous month": "Tháng trước",
@@ -1192,11 +1199,11 @@ const vi: Record<string, string> = {
   "All shops": "Tất cả gian hàng",
   "Open platform dashboard": "Mở bảng điều khiển nền tảng",
   "Set up a new storefront": "Thiết lập cửa hàng mới",
-  "Disable alerts": "Tắt cảnh báo",
-  "Enable alerts": "Bật cảnh báo",
+  "Disable alerts": "Tắt thông báo",
+  "Enable alerts": "Bật thông báo",
   "Disable order notifications": "Tắt thông báo đơn hàng",
   "Enable order notifications": "Bật thông báo đơn hàng",
-  "Alerts on": "Đã bật cảnh báo",
+  "Alerts on": "Đã bật thông báo",
   "Live operations": "Vận hành trực tiếp",
   "Catalog management": "Quản lý danh mục",
   "Shop configuration": "Cấu hình gian hàng",
@@ -1233,36 +1240,36 @@ const vi: Record<string, string> = {
   "Review stock before the next rush.":
     "Kiểm tra tồn kho trước đợt khách tiếp theo.",
   "{{count}} order alerts need manual review":
-    "{{count}} cảnh báo đơn hàng cần kiểm tra thủ công",
+    "{{count}} thông báo đơn hàng cần kiểm tra thủ công",
   "1 order alert needs manual review":
-    "1 cảnh báo đơn hàng cần kiểm tra thủ công",
+    "1 thông báo đơn hàng cần kiểm tra thủ công",
   "{{count}} order alerts are retrying":
-    "{{count}} cảnh báo đơn hàng đang được gửi lại",
-  "1 order alert is retrying": "1 cảnh báo đơn hàng đang được gửi lại",
+    "{{count}} thông báo đơn hàng đang được gửi lại",
+  "1 order alert is retrying": "1 thông báo đơn hàng đang được gửi lại",
   "{{count}} order alerts are delayed":
-    "{{count}} cảnh báo đơn hàng đang bị chậm",
-  "1 order alert is delayed": "1 cảnh báo đơn hàng đang bị chậm",
+    "{{count}} thông báo đơn hàng đang bị chậm",
+  "1 order alert is delayed": "1 thông báo đơn hàng đang bị chậm",
   "{{count}} stopped after all retries. Check staff notification devices.":
-    "{{count}} cảnh báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của staff.",
+    "{{count}} thông báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của staff.",
   "1 alert stopped after all retries. Check staff notification devices.":
-    "1 cảnh báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của nhân viên.",
+    "1 thông báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của nhân viên.",
   "The oldest alert became due {{time}}.":
-    "Cảnh báo lâu nhất đã đến hạn {{time}}.",
+    "Thông báo lâu nhất đã đến hạn {{time}}.",
   "Automatic retries are running; orders remain safe in the queue.":
     "Hệ thống đang tự gửi lại; đơn hàng vẫn an toàn trong hàng đợi.",
   "Retry notification delivery": "Thử gửi lại thông báo",
   "Retry one alert after checking that staff notification devices are ready.":
-    "Thử gửi lại một cảnh báo sau khi kiểm tra thiết bị nhận thông báo của staff đã sẵn sàng.",
+    "Thử gửi lại một thông báo sau khi kiểm tra thiết bị nhận thông báo của staff đã sẵn sàng.",
   "Check staff alerts, then retry delivery.":
     "Kiểm tra thông báo của nhân viên rồi thử gửi lại.",
   "Retry alert": "Thử gửi lại",
   "Queuing retry…": "Đang xếp hàng gửi lại…",
   "Order alert queued for another delivery attempt.":
-    "Cảnh báo đơn hàng đã được xếp hàng để gửi lại.",
+    "Thông báo đơn hàng đã được xếp hàng để gửi lại.",
   "This alert is no longer eligible for retry. Its status was refreshed.":
-    "Cảnh báo này không còn đủ điều kiện gửi lại. Trạng thái đã được làm mới.",
+    "Thông báo này không còn đủ điều kiện gửi lại. Trạng thái đã được làm mới.",
   "Could not retry this order alert.":
-    "Không thể thử gửi lại cảnh báo đơn hàng này.",
+    "Không thể thử gửi lại thông báo đơn hàng này.",
   "Retry unavailable": "Không thể gửi lại",
   "Production checklist · {{done}}/{{total}} ready":
     "Danh sách sẵn sàng · {{done}}/{{total}} hoàn tất",

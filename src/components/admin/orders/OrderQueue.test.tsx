@@ -405,7 +405,7 @@ describe("OrderQueue", () => {
     const user = userEvent.setup();
 
     await user.click(
-      await screen.findByRole("button", { name: "Event: All events" }),
+      await screen.findByRole("combobox", { name: "Event: All events" }),
     );
     await user.click(screen.getByRole("option", { name: /Artist alley/ }));
 

@@ -120,11 +120,8 @@ body:has(.admin-sticky-actions) .staff-install-banner {
   justify-content: center;
 }
 .admin-overflow-popover {
-  position: absolute;
   z-index: 120;
-  top: calc(100% + 7px);
-  right: 0;
-  width: 220px;
+  width: min(220px, var(--floating-available-width));
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -151,6 +148,13 @@ body:has(.admin-sticky-actions) .staff-install-banner {
   text-align: left;
 }
 button.admin-overflow-item:hover { background: var(--surface-soft); }
+button.admin-overflow-item:active:not(:disabled) {
+  transform: translateY(1px);
+}
+button.admin-overflow-item:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--coral) 22%, transparent);
+  outline-offset: -2px;
+}
 .admin-overflow-item > svg { flex: 0 0 auto; color: var(--muted); }
 .admin-overflow-item > span { flex: 1; min-width: 0; }
 .admin-notification-button {
@@ -169,7 +173,7 @@ button.admin-overflow-item:hover { background: var(--surface-soft); }
   color: var(--red);
   background: color-mix(in srgb, var(--red) 8%, var(--surface-soft));
 }
-.admin-overflow-signout { display: flex; color: var(--red); }
+.admin-overflow-item.danger { color: var(--red); }
 
 .admin-shop-switcher {
   display: flex;

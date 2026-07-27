@@ -11,6 +11,7 @@ import {
 import { useMemo } from "react";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaBanner, GachaPoolEntry } from "../../../types/gacha";
+import { ActionMenu } from "../../ui/ActionMenu";
 
 type Props = {
   banners: GachaBanner[];
@@ -121,39 +122,44 @@ export function GachaBannerList({
         >
           <Plus size={16} /> {t("Add banner")}
         </button>
-        <details className="gacha-banner-menu">
-          <summary className="icon-button" aria-label={t("Banner actions")}>
-            <Ellipsis size={18} />
-          </summary>
-          <div className="gacha-banner-menu-popover">
-            <button
-              type="button"
-              onClick={() => onMove(-1)}
-              disabled={!canMoveUp}
-            >
-              <ArrowUp size={16} /> {t("Move earlier")}
-            </button>
-            <button
-              type="button"
-              onClick={() => onMove(1)}
-              disabled={!canMoveDown}
-            >
-              <ArrowDown size={16} /> {t("Move later")}
-            </button>
-            <button type="button" onClick={onDuplicate}>
-              <Copy size={16} /> {t("Duplicate banner")}
-            </button>
-            <button
-              type="button"
-              className="danger"
-              onClick={onDelete}
-              disabled={!canDelete}
-              title={!canDelete ? t("Keep at least one banner.") : undefined}
-            >
-              <Trash2 size={16} /> {t("Delete banner")}
-            </button>
-          </div>
-        </details>
+        <ActionMenu
+          className="gacha-banner-menu"
+          label={t("Banner actions")}
+          triggerIcon={<Ellipsis size={18} />}
+          triggerClassName="icon-button"
+          popoverClassName="gacha-banner-menu-popover"
+          items={[
+            {
+              id: "move-earlier",
+              label: t("Move earlier"),
+              icon: <ArrowUp size={16} />,
+              disabled: !canMoveUp,
+              onSelect: () => onMove(-1),
+            },
+            {
+              id: "move-later",
+              label: t("Move later"),
+              icon: <ArrowDown size={16} />,
+              disabled: !canMoveDown,
+              onSelect: () => onMove(1),
+            },
+            {
+              id: "duplicate",
+              label: t("Duplicate banner"),
+              icon: <Copy size={16} />,
+              onSelect: onDuplicate,
+            },
+            {
+              id: "delete",
+              label: t("Delete banner"),
+              icon: <Trash2 size={16} />,
+              danger: true,
+              disabled: !canDelete,
+              title: !canDelete ? t("Keep at least one banner.") : undefined,
+              onSelect: onDelete,
+            },
+          ]}
+        />
       </div>
     </>
   );

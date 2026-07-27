@@ -154,17 +154,10 @@
   z-index: 20;
 }
 
-.gacha-banner-menu > summary {
-  list-style: none;
-}
-
 .gacha-banner-menu-popover {
-  position: absolute;
   z-index: 40;
-  top: calc(100% + 6px);
-  right: 0;
   display: grid;
-  width: 190px;
+  width: min(190px, var(--floating-available-width));
   padding: 6px;
   border: 1px solid var(--line, #ded9cf);
   border-radius: 12px;
@@ -191,6 +184,15 @@
 
 .gacha-banner-menu-popover button:hover:not(:disabled) {
   background: var(--admin-inner-bg, #f8fafc);
+}
+
+.gacha-banner-menu-popover button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.gacha-banner-menu-popover button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent, #5f8d55) 22%, transparent);
+  outline-offset: -2px;
 }
 
 .gacha-banner-menu-popover button.danger {

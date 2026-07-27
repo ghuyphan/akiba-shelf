@@ -1,5 +1,12 @@
+import {
+  FloatingFocusManager,
+  useInteractions,
+  useListNavigation,
+  useTypeahead,
+} from "@floating-ui/react";
 import { Check, ChevronDown } from "lucide-react";
-import { ReactNode, useEffect, useId, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import { useAnchoredPopover } from "./useAnchoredPopover";
 
 export type SelectMenuOption = {
   value: string;
@@ -9,6 +16,7 @@ export type SelectMenuOption = {
   disabled?: boolean;
   fixed?: boolean;
 };
+
 type Props = {
   value: string;
   options: SelectMenuOption[];
@@ -29,16 +37,15 @@ export function SelectMenu({
   triggerIcon,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const listboxId = useId();
-  const selected =
-    options.find((option) => option.value === value) ?? options[0];
-  const enabledIndexes = options.flatMap((option, index) =>
-    option.disabled ? [] : [index],
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const itemLabels = useRef<Array<string | null>>([]);
+  const selectedIndex = options.findIndex((option) => option.value === value);
+  const selected = selectedIndex >= 0 ? options[selectedIndex] : options[0];
+  const disabledIndices = options.flatMap((option, index) =>
+    option.disabled ? [index] : [],
   );
+  const hasEnabledOptions = disabledIndices.length < options.length;
   const scrollingOptions = options.flatMap((option, index) =>
     option.fixed ? [] : [{ option, index }],
   );
@@ -46,68 +53,66 @@ export function SelectMenu({
     option.fixed ? [{ option, index }] : [],
   );
 
-  function focusOption(index: number) {
-    setActiveIndex(index);
-  }
+  itemLabels.current = options.map((option) =>
+    option.disabled ? null : option.label,
+  );
 
-  function openMenu(preferred?: "first" | "last") {
-    if (disabled || !enabledIndexes.length) return;
-    setOpen(true);
-    const selectedIndex = options.findIndex(
-      (option) => option.value === value && !option.disabled,
-    );
-    focusOption(
-      preferred === "first"
-        ? enabledIndexes[0]
-        : preferred === "last"
-          ? enabledIndexes.at(-1)!
-          : selectedIndex >= 0
-            ? selectedIndex
-            : enabledIndexes[0],
-    );
-  }
+  const {
+    refs,
+    floatingStyles,
+    context,
+    placement,
+    baseInteractions,
+    isMounted,
+    transitionStyles,
+  } = useAnchoredPopover({
+    open,
+    onOpenChange(nextOpen) {
+      setOpen(nextOpen);
+      if (!nextOpen) setActiveIndex(null);
+    },
+    role: "listbox",
+    maxHeight: 360,
+  });
+  const navigation = useListNavigation(context, {
+    listRef: itemRefs,
+    activeIndex,
+    selectedIndex: selectedIndex >= 0 ? selectedIndex : null,
+    disabledIndices,
+    loop: true,
+    focusItemOnOpen: "auto",
+    scrollItemIntoView: { block: "nearest" },
+    onNavigate: setActiveIndex,
+  });
+  const typeahead = useTypeahead(context, {
+    listRef: itemLabels,
+    activeIndex,
+    selectedIndex: selectedIndex >= 0 ? selectedIndex : null,
+    enabled: open,
+    onMatch: setActiveIndex,
+  });
+  const { getReferenceProps, getFloatingProps, getItemProps } = useInteractions([
+    ...baseInteractions,
+    navigation,
+    typeahead,
+  ]);
 
-  function closeMenu(restoreFocus = false) {
-    setOpen(false);
-    setActiveIndex(-1);
-    if (restoreFocus) trigger.current?.focus();
-  }
-
-  function move(delta: number) {
-    const position = Math.max(0, enabledIndexes.indexOf(activeIndex));
-    focusOption(
-      enabledIndexes[
-        (position + delta + enabledIndexes.length) % enabledIndexes.length
-      ],
-    );
-  }
-
-  function handleOptionKeyDown(
-    event: React.KeyboardEvent<HTMLButtonElement>,
-    option: SelectMenuOption,
-  ) {
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      move(1);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      move(-1);
-    } else if (event.key === "Home") {
-      event.preventDefault();
-      focusOption(enabledIndexes[0]);
-    } else if (event.key === "End") {
-      event.preventDefault();
-      focusOption(enabledIndexes.at(-1)!);
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      closeMenu(true);
-    } else if (event.key === "Tab") {
-      closeMenu();
-    } else if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onChange(option.value);
-      closeMenu(true);
+  useEffect(() => {
+    itemRefs.current = itemRefs.current.slice(0, options.length);
+    if (open && activeIndex != null && options[activeIndex]?.disabled) {
+      setActiveIndex(null);
     }
+  }, [activeIndex, open, options]);
+
+  function choose(option: SelectMenuOption) {
+    if (option.disabled) return;
+    onChange(option.value);
+    setOpen(false);
+    setActiveIndex(null);
+    queueMicrotask(() => {
+      const reference = refs.domReference.current;
+      if (reference instanceof HTMLElement) reference.focus();
+    });
   }
 
   function renderOption(option: SelectMenuOption, index: number) {
@@ -115,7 +120,7 @@ export function SelectMenu({
       <button
         key={option.value}
         ref={(node) => {
-          optionRefs.current[index] = node;
+          itemRefs.current[index] = node;
         }}
         type="button"
         role="option"
@@ -123,63 +128,30 @@ export function SelectMenu({
         aria-selected={option.value === value}
         disabled={option.disabled}
         className={option.value === value ? "active" : ""}
-        onFocus={() => setActiveIndex(index)}
-        onClick={() => {
-          onChange(option.value);
-          closeMenu(true);
-        }}
-        onKeyDown={(event) => handleOptionKeyDown(event, option)}
+        {...getItemProps({
+          onClick: () => choose(option),
+          onFocus: () => setActiveIndex(index),
+        })}
       >
         {option.icon && <span className="select-menu-icon">{option.icon}</span>}
         <span className="select-menu-copy">
           <strong>{option.label}</strong>
           {option.description && <small>{option.description}</small>}
         </span>
-        {option.value === value && <Check size={15} />}
+        {option.value === value && <Check size={15} aria-hidden="true" />}
       </button>
     );
   }
 
-  useEffect(() => {
-    const closeOutside = (event: MouseEvent) => {
-      if (!root.current?.contains(event.target as Node)) closeMenu();
-    };
-    document.addEventListener("mousedown", closeOutside);
-    return () => document.removeEventListener("mousedown", closeOutside);
-  });
-  useEffect(() => {
-    if (open && activeIndex >= 0) optionRefs.current[activeIndex]?.focus();
-  }, [activeIndex, open]);
-
   return (
-    <div
-      ref={root}
-      className={`select-menu ${open ? "open" : ""} ${className}`}
-    >
+    <div className={`select-menu ${open ? "open" : ""} ${className}`.trim()}>
       <button
-        ref={trigger}
+        ref={refs.setReference}
         type="button"
         className="select-menu-trigger"
-        disabled={disabled}
+        disabled={disabled || !hasEnabledOptions}
         aria-label={`${label}: ${selected?.label ?? ""}`}
-        aria-haspopup="listbox"
-        aria-controls={listboxId}
-        aria-expanded={open}
-        onClick={() => (open ? closeMenu() : openMenu())}
-        onKeyDown={(event) => {
-          if (
-            event.key === "ArrowDown" ||
-            event.key === "ArrowUp" ||
-            event.key === "Home" ||
-            event.key === "End" ||
-            event.key === " "
-          ) {
-            event.preventDefault();
-            openMenu(
-              event.key === "ArrowUp" || event.key === "End" ? "last" : "first",
-            );
-          }
-        }}
+        {...getReferenceProps()}
       >
         {triggerIcon && <span className="select-menu-icon">{triggerIcon}</span>}
         {selected?.icon && (
@@ -189,28 +161,36 @@ export function SelectMenu({
           <strong>{selected?.label}</strong>
           {selected?.description && <small>{selected.description}</small>}
         </span>
-        <ChevronDown size={15} />
+        <ChevronDown size={15} aria-hidden="true" />
       </button>
-      {open && (
-        <div
-          id={listboxId}
-          className="select-menu-popover"
-          role="listbox"
-          aria-label={label}
+      {isMounted && (
+        <FloatingFocusManager
+          context={context}
+          modal={false}
+          initialFocus={-1}
+          returnFocus
         >
-          <div className="select-menu-options" role="presentation">
-            {scrollingOptions.map(({ option, index }) =>
-              renderOption(option, index),
-            )}
-          </div>
-          {fixedOptions.length > 0 && (
-            <div className="select-menu-fixed-options" role="presentation">
-              {fixedOptions.map(({ option, index }) =>
+          <div
+            ref={refs.setFloating}
+            className="select-menu-popover"
+            data-placement={placement}
+            style={{ ...floatingStyles, ...transitionStyles }}
+            {...getFloatingProps({ "aria-label": label })}
+          >
+            <div className="select-menu-options" role="presentation">
+              {scrollingOptions.map(({ option, index }) =>
                 renderOption(option, index),
               )}
             </div>
-          )}
-        </div>
+            {fixedOptions.length > 0 && (
+              <div className="select-menu-fixed-options" role="presentation">
+                {fixedOptions.map(({ option, index }) =>
+                  renderOption(option, index),
+                )}
+              </div>
+            )}
+          </div>
+        </FloatingFocusManager>
       )}
     </div>
   );

@@ -332,7 +332,7 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
   const eventFilter = toolbar.getByRole("button", { name: /event 0/i });
   await expect(eventFilter).toBeVisible();
   const eventMenu = toolbar.locator(".admin-event-select");
-  const eventSelect = eventMenu.getByRole("button", {
+  const eventSelect = eventMenu.getByRole("combobox", {
     name: "Event: All events",
     exact: true,
   });
@@ -830,24 +830,41 @@ test("admin header stays contained across responsive viewports", async ({
     expect(
       Math.abs(actionsBox!.y + actionsBox!.height / 2 - navigationCenter),
     ).toBeLessThan(2);
+  }
 
+  const moreActions = page.getByRole("button", { name: "More actions" });
+  await moreActions.click();
+  const overflowMenu = page.getByRole("menu", { name: "More actions" });
+  await expect(overflowMenu).toBeVisible();
+  const overflowBox = await overflowMenu.boundingBox();
+  const viewport = page.viewportSize();
+  expect(overflowBox).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(overflowBox!.x).toBeGreaterThanOrEqual(11);
+  expect(overflowBox!.y).toBeGreaterThanOrEqual(11);
+  expect(overflowBox!.x + overflowBox!.width).toBeLessThanOrEqual(
+    viewport!.width - 11,
+  );
+  expect(overflowBox!.y + overflowBox!.height).toBeLessThanOrEqual(
+    viewport!.height - 11,
+  );
+  await page.keyboard.press("Escape");
+  await expect(overflowMenu).toHaveCount(0);
+  await expect(moreActions).toBeFocused();
+
+  if (testInfo.project.name === "desktop-chromium") {
     await expect(page.locator(".admin-dashboard-button")).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: "Go to dashboard" }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "More actions" }).click();
-    const settingsAction = page
-      .locator(".admin-overflow-popover")
-      .getByRole("button", { name: "Settings", exact: true });
-    await expect(settingsAction).toBeVisible();
+    await moreActions.click();
     await expect(
-      page.getByRole("button", { name: "Sign out", exact: true }),
-    ).toBeVisible();
-    await settingsAction.click();
+      page.getByRole("menuitem", { name: "Settings", exact: true }),
+    ).toHaveCount(0);
     await expect(
-      page.getByRole("heading", { name: "Settings", exact: true }),
+      page.getByRole("menuitem", { name: "Sign out", exact: true }),
     ).toBeVisible();
-    await expect(page.locator(".admin-mobile-settings-page")).toBeVisible();
+    await page.keyboard.press("Escape");
   }
 });
 
@@ -918,7 +935,7 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
     page.getByRole("link", { name: "Back to catalog" }),
   );
   await expectTouchTargetsAtLeast(
-    page.getByRole("button", { name: "Active shop: Fixture Booth" }),
+    page.getByRole("combobox", { name: "Active shop: Fixture Booth" }),
   );
   await expectTouchTargetsAtLeast(
     page.getByRole("button", { name: "More actions" }),
@@ -941,6 +958,30 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
   await expect(page.getByRole("button", { name: /Storefront/ })).toHaveCount(0);
   await page.getByRole("button", { name: /Settings/ }).click();
   await expect(page.locator(".admin-mobile-settings-page")).toBeVisible();
+  const boothSettings = page.getByRole("region", { name: "Booth info" });
+  await expect(
+    boothSettings.getByRole("heading", { name: "Custom colors" }),
+  ).toBeVisible();
+  const primaryColor = boothSettings.getByRole("button", {
+    name: "Primary: #5f8d55",
+  });
+  const boothName = boothSettings.getByRole("textbox", { name: "Booth name" });
+  await expect(boothName).toBeDisabled();
+  const disabledInputBackground = await boothName.evaluate(
+    (input) => getComputedStyle(input).backgroundColor,
+  );
+  await expect(primaryColor).toBeDisabled();
+  await boothSettings
+    .getByRole("button", { name: "Edit", exact: true })
+    .click();
+  await expect(boothName).toBeEnabled();
+  await expect
+    .poll(() =>
+      boothName.evaluate((input) => getComputedStyle(input).backgroundColor),
+    )
+    .not.toBe(disabledInputBackground);
+  await primaryColor.scrollIntoViewIfNeeded();
+  await expect(primaryColor).toBeEnabled();
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole("button", { name: /Products/ }).click();
@@ -976,13 +1017,31 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
       const bounds = popover.getBoundingClientRect();
       return {
         left: bounds.left,
+        top: bounds.top,
         right: bounds.right,
+        bottom: bounds.bottom,
         viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        placement: popover.getAttribute("data-placement"),
       };
     });
-  expect(colorPickerBounds.left).toBeGreaterThanOrEqual(0);
+  expect(colorPickerBounds.left).toBeGreaterThanOrEqual(8);
   expect(colorPickerBounds.right).toBeLessThanOrEqual(
-    colorPickerBounds.viewportWidth,
+    colorPickerBounds.viewportWidth - 8,
+  );
+  expect(colorPickerBounds.top).toBeGreaterThanOrEqual(8);
+  expect(colorPickerBounds.bottom).toBeLessThanOrEqual(
+    colorPickerBounds.viewportHeight - 8,
+  );
+  expect(colorPickerBounds.placement).toMatch(/^(top|bottom)-(start|end)$/);
+  const colorPlane = page.getByRole("slider", {
+    name: "Saturation and brightness",
+  });
+  await expect(colorPlane).toBeVisible();
+  await expect(colorPlane).toHaveCSS("border-top-color", "rgb(222, 217, 207)");
+  await expect(page.getByLabel("Open system color picker")).toHaveAttribute(
+    "type",
+    "color",
   );
   await page.keyboard.press("Escape");
 
@@ -1488,7 +1547,7 @@ test("workspace and dashboard headers share locale and selector surfaces", async
   await expect(
     page.getByRole("heading", { name: "Your shops", exact: true }),
   ).toBeVisible();
-  const dashboardLocale = page.getByRole("button", {
+  const dashboardLocale = page.getByRole("combobox", {
     name: "Language: English",
   });
   await expect(dashboardLocale).toBeVisible();
@@ -1506,7 +1565,7 @@ test("shop switcher keeps a compact scrollable list and fixed actions", async ({
   await page.getByRole("button", { name: "Open admin" }).click();
 
   await page
-    .getByRole("button", { name: "Active shop: Fixture Booth" })
+    .getByRole("combobox", { name: "Active shop: Fixture Booth" })
     .click();
   const selectedShopMeta = page.locator(
     ".admin-shop-switcher-menu > .select-menu-trigger .select-menu-copy small",
@@ -1517,6 +1576,27 @@ test("shop switcher keeps a compact scrollable list and fixed actions", async ({
     ".admin-shop-switcher-menu .select-menu-options",
   );
   await expect(shopList).toBeVisible();
+  const switcherBounds = await page
+    .getByRole("listbox", { name: "Active shop" })
+    .evaluate((popover) => {
+      const bounds = popover.getBoundingClientRect();
+      return {
+        left: bounds.left,
+        top: bounds.top,
+        right: bounds.right,
+        bottom: bounds.bottom,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+      };
+    });
+  expect(switcherBounds.left).toBeGreaterThanOrEqual(8);
+  expect(switcherBounds.top).toBeGreaterThanOrEqual(8);
+  expect(switcherBounds.right).toBeLessThanOrEqual(
+    switcherBounds.viewportWidth - 8,
+  );
+  expect(switcherBounds.bottom).toBeLessThanOrEqual(
+    switcherBounds.viewportHeight - 8,
+  );
   await expect
     .poll(() =>
       shopList.evaluate(

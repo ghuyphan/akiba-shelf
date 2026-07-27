@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Clock3, Edit3, Link2, MapPin, Store, Type, X } from "lucide-react";
+import { Clock3, Edit3, Link2, MapPin, Palette, Store, Type, X } from "lucide-react";
 import type { BoothSettings } from "../../../types/catalog";
+import { DEFAULT_STOREFRONT_PALETTE } from "../../../lib/constants";
 import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { useToast } from "../../ui/ToastProvider";
 import { Button } from "../../ui/Button";
@@ -13,8 +14,16 @@ import { SocialLinkFields } from "./SocialLinkFields";
 import { SocialBrandIcon } from "../../ui/SocialBrandIcon";
 import { useAdminUnsavedChanges } from "../shell/AdminUnsavedChanges";
 import { getUserFacingErrorMessage } from "../../../lib/errors";
+import { ColorPicker } from "../../ui/ColorPicker";
 
 type SettingsFormProps = { shopId: string; settings: BoothSettings; onSave: (settings: BoothSettings) => Promise<void> };
+
+const THEME_COLOR_FIELDS = [
+  ["theme_primary", "Primary", DEFAULT_STOREFRONT_PALETTE.primary],
+  ["theme_secondary", "Dark", DEFAULT_STOREFRONT_PALETTE.secondary],
+  ["theme_accent", "Accent", DEFAULT_STOREFRONT_PALETTE.accent],
+  ["theme_background", "Page", DEFAULT_STOREFRONT_PALETTE.background],
+] as const;
 
 export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
   const [draft, setDraft] = useState(settings);
@@ -43,6 +52,23 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
         <section className="admin-form-section">
           <div className="admin-form-section-heading"><span><Type size={15} /></span><div><h3>{t("Store copy")}</h3><p>{t("Customer-facing title and description.")}</p></div></div>
           <Field label={t("Subtitle")}><TextInput value={draft.subtitle} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, subtitle: event.target.value })} /></Field>
+        </section>
+
+        <section className="admin-form-section">
+          <div className="admin-form-section-heading"><span><Palette size={15} /></span><div><h3>{t("Custom colors")}</h3><p>{t("Make this palette completely yours.")}</p></div></div>
+          <div className="admin-settings-color-grid">
+            {THEME_COLOR_FIELDS.map(([key, label, fallback]) => (
+              <div className="admin-settings-color-field" key={key}>
+                <span>{t(label)}</span>
+                <ColorPicker
+                  label={t(label)}
+                  value={draft[key] ?? fallback}
+                  disabled={!isEditing}
+                  onChange={(value) => setDraft({ ...draft, [key]: value })}
+                />
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="admin-form-section">

@@ -134,16 +134,13 @@
 .storefront-content-main .sort-control-select {
   display: block;
   min-width: 0;
+  --select-menu-width: 176px;
 }
 
 .storefront-content-main .sort-control-select > .select-menu-trigger {
   width: 100%;
   padding-inline: 10px;
   border-radius: 14px;
-}
-
-.storefront-content-main .sort-control-select .select-menu-popover {
-  width: max(100%, 176px);
 }
 
 .storefront-content-main .view-toggle {
@@ -275,4 +272,3 @@
     transition: none !important;
   }
 }
-
