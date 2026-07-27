@@ -55,10 +55,10 @@ VITE_VAPID_PUBLIC_KEY=your-public-vapid-key
 ```
 
 Both current `sb_publishable_...` keys and legacy JWT-based anon keys are
-supported. Public checkout, order-notification, and gacha-music Edge Functions
-perform their own bounded request or recovery-token validation and therefore
-deploy with gateway JWT verification disabled. Staff invitation functions keep
-gateway JWT verification enabled and require a signed-in user session.
+supported. Public checkout and order-notification Edge Functions perform their
+own bounded request or recovery-token validation and therefore deploy with
+gateway JWT verification disabled. Staff invitation functions keep gateway JWT
+verification enabled and require a signed-in user session.
 
 Every `VITE_*` value is public browser configuration. The Turnstile site key is
 public; its secret belongs in Supabase Auth and Edge Function secrets. Never put
@@ -75,6 +75,7 @@ Useful commands:
 | `npm run test:functions` | Edge Function tests                                                             |
 | `npm run test:db`        | Local pgTAP database tests                                                      |
 | `npm run test:perf`      | Storefront performance suite                                                    |
+| `npm run test:pwa`       | Production-build service-worker/offline reload smoke                            |
 
 ## Correctness boundaries
 

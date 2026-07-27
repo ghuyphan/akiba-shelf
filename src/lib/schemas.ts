@@ -340,6 +340,52 @@ export const shopSchema = z
   })
   .passthrough();
 
+export const shopMembershipSchema = z
+  .object({
+    shop_id: z.string().min(1),
+    shop_name: z.string(),
+    shop_slug: z.string(),
+    role: z.enum(["owner", "admin", "staff"]),
+    active: z.boolean(),
+    shop_active: z.boolean(),
+  })
+  .passthrough();
+
+const cachedOrderItemSchema = z
+  .object({
+    id: z.string().min(1),
+    order_id: z.string().min(1),
+    product_id: z.string().min(1),
+    quantity: z.coerce.number().int().positive(),
+    unit_price: z.coerce.number().int().nonnegative(),
+    discount_amount: z.coerce.number().int().nonnegative().optional(),
+    free_quantity: z.coerce.number().int().nonnegative().optional(),
+    product: orderItemProductSchema.optional(),
+  })
+  .passthrough();
+
+export const cachedAdminOrderSchema = orderSchema
+  .extend({
+    id: z.string().min(1),
+    updated_at: z.string(),
+    expires_at: z.string().nullable(),
+    confirmed_at: z.string().nullable(),
+    cancelled_at: z.string().nullable(),
+    expired_at: z.string().nullable(),
+    order_items: z.array(cachedOrderItemSchema).optional(),
+    source: z.enum(["online", "offline_event"]).optional(),
+    payment_method: z.enum(["cash", "vietqr"]).optional(),
+    payment_state: z
+      .enum([
+        "awaiting_payment",
+        "cash_confirmed",
+        "bank_verification_pending",
+        "bank_confirmed",
+      ])
+      .optional(),
+  })
+  .passthrough();
+
 export const storefrontBootstrapSchema = z.object({
   shop: shopSchema,
   catalog_shop_id: z.string().min(1),

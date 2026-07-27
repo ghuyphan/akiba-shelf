@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import {
+  parseCloudflareApiResponse,
+  waitForPagesDeployment,
+} from "./cloudflare-pages-api.mjs";
 import { verifyCloudflareDeployment } from "./verify-cloudflare-deployment.mjs";
 
 const oldHtml =
@@ -14,7 +18,7 @@ function htmlResponse(html) {
       "content-type": "text/html; charset=utf-8",
       "x-content-type-options": "nosniff",
       "referrer-policy": "strict-origin-when-cross-origin",
-      "content-security-policy-report-only": "default-src 'self'",
+      "content-security-policy": "default-src 'self'",
     },
   });
 }
@@ -194,4 +198,36 @@ test("rejects non-HTTPS deployment origins", async () => {
     }),
     /Deployment URL must use HTTPS/,
   );
+});
+
+test("rejects unsuccessful Cloudflare API envelopes", () => {
+  assert.throws(
+    () =>
+      parseCloudflareApiResponse(
+        { success: false, errors: [{ message: "rollback denied" }] },
+        "rollback",
+      ),
+    /rollback failed: rollback denied/,
+  );
+});
+
+test("waits until the requested Pages deployment is active", async () => {
+  const ids = ["failed-release", "previous-release"];
+  const authorizations = [];
+  const deployment = await waitForPagesDeployment({
+    accountId: "account-1",
+    apiToken: "token-1",
+    projectName: "matsuri",
+    deploymentId: "previous-release",
+    attempts: 2,
+    delayMs: 0,
+    sleep: async () => undefined,
+    fetchImpl: async (_url, init) => {
+      authorizations.push(init.headers.Authorization);
+      return Response.json({ success: true, result: [{ id: ids.shift() }] });
+    },
+  });
+
+  assert.equal(deployment.id, "previous-release");
+  assert.deepEqual(authorizations, ["Bearer token-1", "Bearer token-1"]);
 });

@@ -1,4 +1,3 @@
-import { defaultBooth } from "../constants";
 import { storefrontBootstrapSchema } from "../schemas";
 import type {
   CatalogData,
@@ -8,7 +7,6 @@ import type {
 import {
   getAdminProducts,
   getPublicProducts,
-  normalizeProduct,
 } from "./products";
 import {
   getAdminBoothSettings,
@@ -17,10 +15,9 @@ import {
   getPublicBoothSettings,
   getPublicPaymentSettings,
   getPublicPromotionSettings,
-  normalizeBooth,
-  normalizePromotion,
 } from "./settings";
 import { requireSupabase } from "./shared";
+import { normalizeStorefrontBootstrap } from "./storefrontBootstrapNormalization";
 
 export async function getStorefrontBootstrap(
   shopSlug: string,
@@ -31,18 +28,7 @@ export async function getStorefrontBootstrap(
   );
   if (error) throw error;
   const parsed = storefrontBootstrapSchema.parse(data);
-  return {
-    shop: parsed.shop,
-    catalogShopId: parsed.catalog_shop_id,
-    products: parsed.products.map((product) => normalizeProduct(product)),
-    hasMore: parsed.has_more,
-    booth: normalizeBooth(
-      parsed.booth ?? { ...defaultBooth, shop_id: parsed.catalog_shop_id },
-    ),
-    categories: parsed.categories,
-    promotion: normalizePromotion(parsed.promotion),
-    gachaEnabled: parsed.gacha_enabled,
-  };
+  return normalizeStorefrontBootstrap(parsed);
 }
 
 export async function getCatalogCoreData(

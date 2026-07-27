@@ -6,9 +6,7 @@ import {
 } from "../catalogQueries";
 import { safePublicUrl } from "../branding";
 import {
-  boothSettingsSchema,
   paymentSettingsSchema,
-  promotionSettingsSchema,
 } from "../schemas";
 import type {
   BoothSettings,
@@ -16,26 +14,14 @@ import type {
   PromotionSettings,
 } from "../../types/catalog";
 import {
-  booleanValue,
-  numberValue,
   requireSupabase,
-  textArray,
 } from "./shared";
+import {
+  normalizeBooth,
+  normalizePromotion,
+} from "./settingsNormalization";
 
-export function normalizePromotion(
-  promotion: Partial<PromotionSettings>,
-): PromotionSettings {
-  return promotionSettingsSchema.parse({
-    ...defaultPromotion,
-    ...promotion,
-    enabled: booleanValue(promotion.enabled),
-    repeatable: booleanValue(promotion.repeatable, true),
-    buy_quantity: numberValue(promotion.buy_quantity, 3),
-    free_quantity: numberValue(promotion.free_quantity, 1),
-    qualifying_product_ids: textArray(promotion.qualifying_product_ids),
-    reward_product_ids: textArray(promotion.reward_product_ids),
-  });
-}
+export { normalizeBooth, normalizePromotion } from "./settingsNormalization";
 
 export function normalizePayment(payment: unknown): PaymentSettings {
   const normalized = {
@@ -47,10 +33,6 @@ export function normalizePayment(payment: unknown): PaymentSettings {
     momo_qr_url: safePublicUrl(normalized.momo_qr_url) ?? "",
     bank_qr_url: safePublicUrl(normalized.bank_qr_url) ?? "",
   };
-}
-
-export function normalizeBooth(booth: unknown): BoothSettings {
-  return { ...defaultBooth, ...boothSettingsSchema.parse(booth) };
 }
 
 export async function getPublicBoothSettings(

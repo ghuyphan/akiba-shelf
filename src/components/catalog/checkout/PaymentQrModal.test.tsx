@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   cleanup,
+  act,
   fireEvent,
   render,
   screen,
@@ -383,6 +384,54 @@ describe("PaymentQrModal", () => {
     expect(
       screen.getByRole("button", { name: "Retry status check" }),
     ).toBeEnabled();
+  });
+
+  it("does not let a stale status poll restore a cancelled order", async () => {
+    const pending = makeOrder("pending");
+    const cancelled = makeOrder("cancelled");
+    checkoutStorage.current = {
+      version: 2,
+      shopSlug: "test-shop",
+      clientRequestId: "11111111-1111-4111-8111-111111111111",
+      recoveryToken: "0123456789abcdef0123456789abcdef",
+      order: pending,
+      cart,
+      customerName: "Huy",
+      state: "reserved",
+      createdAt: "2026-07-17T10:00:00.000Z",
+      updatedAt: "2026-07-17T10:00:00.000Z",
+    };
+    let resolvePoll!: (order: Order) => void;
+    apiMocks.getCustomerOrder.mockReturnValue(
+      new Promise<Order>((resolve) => {
+        resolvePoll = resolve;
+      }),
+    );
+    apiMocks.cancelCustomerOrder.mockResolvedValue({
+      outcome: "cancelled",
+      order: cancelled,
+    });
+
+    renderModal();
+    await waitFor(() => expect(apiMocks.getCustomerOrder).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: "Cancel order" }));
+    const confirmation = screen.getByRole("dialog", {
+      name: "Cancel this reservation?",
+    });
+    fireEvent.click(
+      confirmation.querySelector<HTMLButtonElement>(".button-danger")!,
+    );
+
+    expect(
+      await screen.findByRole("dialog", { name: "Order cancelled" }),
+    ).toBeInTheDocument();
+    await act(async () => {
+      resolvePoll(pending);
+      await Promise.resolve();
+    });
+    expect(
+      screen.getByRole("dialog", { name: "Order cancelled" }),
+    ).toBeInTheDocument();
   });
 
   it("announces clipboard copy success with an accessible action name", async () => {

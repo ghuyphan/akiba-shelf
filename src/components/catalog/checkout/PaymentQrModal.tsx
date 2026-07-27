@@ -52,6 +52,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
   const checkout = useCheckoutSession({
     shopSlug,
     cart,
+    copy,
     onOrderChange,
     onSessionChange,
     onConfirmed: onSuccess,

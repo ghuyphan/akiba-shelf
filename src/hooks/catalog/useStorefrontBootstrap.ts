@@ -1,18 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { defaultPayment, defaultPromotion } from "../../lib/constants";
 import { selectStorefrontFeaturedProducts } from "../../lib/catalogQueries";
-import { getStorefrontBootstrap } from "../../lib/api/catalog";
-import { getPublicGachaEnabled } from "../../lib/api/gachaPublic";
-import {
-  getPublicBoothSettings,
-  getPublicPaymentSettings,
-  getPublicPromotionSettings,
-} from "../../lib/api/settings";
-import {
-  getPublicFeaturedProducts,
-  getPublicProductCategories,
-} from "../../lib/api/products";
 import { getErrorMessage, isSessionNoise } from "../../lib/errors";
+import { translations } from "../../lib/i18n/catalogI18n";
 import type {
   BoothSettings,
   PaymentSettings,
@@ -99,10 +89,15 @@ export function useStorefrontBootstrap(
     shopSlug,
   ]);
 
-  const captureError = useCallback((requestError: unknown) => {
-    if (!isSessionNoise(requestError))
-      setError(getErrorMessage(requestError, "Could not load catalog."));
-  }, []);
+  const captureError = useCallback(
+    (requestError: unknown) => {
+      if (!isSessionNoise(requestError)) {
+        const copy = translations[initialBooth.catalog_locale ?? "en"];
+        setError(getErrorMessage(requestError, copy.catalogUnavailableHint));
+      }
+    },
+    [initialBooth.catalog_locale],
+  );
 
   const loadBooth = useCallback(async () => {
     if (!shopId) return;
@@ -112,6 +107,7 @@ export function useStorefrontBootstrap(
     }
     const identity = shopIdentityRef.current;
     try {
+      const { getPublicBoothSettings } = await import("../../lib/api/settings");
       const nextBooth = await getPublicBoothSettings(shopId);
       if (identity === shopIdentityRef.current) setBooth(nextBooth);
     } catch {
@@ -127,6 +123,9 @@ export function useStorefrontBootstrap(
     }
     const identity = shopIdentityRef.current;
     try {
+      const { getPublicFeaturedProducts } = await import(
+        "../../lib/api/products"
+      );
       const nextFeatured = await getPublicFeaturedProducts(shopId);
       if (identity === shopIdentityRef.current)
         setFeaturedProducts(nextFeatured);
@@ -144,6 +143,9 @@ export function useStorefrontBootstrap(
     }
     const identity = shopIdentityRef.current;
     try {
+      const { getPublicProductCategories } = await import(
+        "../../lib/api/products"
+      );
       const nextCategories = await getPublicProductCategories(shopId);
       if (identity === shopIdentityRef.current) setCategories(nextCategories);
     } catch {
@@ -160,6 +162,9 @@ export function useStorefrontBootstrap(
     }
     const identity = shopIdentityRef.current;
     try {
+      const { getPublicPromotionSettings } = await import(
+        "../../lib/api/settings"
+      );
       const nextPromotion = await getPublicPromotionSettings(shopId);
       if (identity === shopIdentityRef.current) setPromotion(nextPromotion);
     } catch {
@@ -169,10 +174,15 @@ export function useStorefrontBootstrap(
 
   const loadGacha = useCallback(async () => {
     if (!shopId || !navigator.onLine) return;
+    const identity = shopIdentityRef.current;
     try {
-      setGachaEnabled(await getPublicGachaEnabled(shopId));
+      const { getPublicGachaEnabled } = await import(
+        "../../lib/api/gachaPublic"
+      );
+      const enabled = await getPublicGachaEnabled(shopId);
+      if (identity === shopIdentityRef.current) setGachaEnabled(enabled);
     } catch {
-      setGachaEnabled(null);
+      if (identity === shopIdentityRef.current) setGachaEnabled(null);
     }
   }, [shopId]);
 
@@ -184,7 +194,8 @@ export function useStorefrontBootstrap(
     if (!navigator.onLine && initialPayment)
       return Promise.resolve(initialPayment);
     const identity = shopIdentityRef.current;
-    const request = getPublicPaymentSettings(shopId)
+    const request = import("../../lib/api/settings")
+      .then(({ getPublicPaymentSettings }) => getPublicPaymentSettings(shopId))
       .then((nextPayment) => {
         if (identity === shopIdentityRef.current) {
           paymentLoadedRef.current = true;
@@ -270,6 +281,7 @@ export function useStorefrontBootstrap(
     }
     const identity = shopIdentityRef.current;
     try {
+      const { getStorefrontBootstrap } = await import("../../lib/api/catalog");
       const bootstrap = await getStorefrontBootstrap(shopSlug);
       if (identity !== shopIdentityRef.current) return;
       setLoadState({

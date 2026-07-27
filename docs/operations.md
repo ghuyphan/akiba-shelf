@@ -53,7 +53,7 @@ npx supabase secrets set \
   CHECKOUT_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173 \
   CHECKOUT_RATE_LIMIT_SALT=independent-random-value \
   TURNSTILE_SECRET=cloudflare-turnstile-secret \
-  TURNSTILE_ENFORCEMENT=optional
+  TURNSTILE_ENFORCEMENT=required
 
 npx supabase secrets set \
   VAPID_PUBLIC_KEY=... \
@@ -88,18 +88,13 @@ The managed Turnstile widget must allow `matsuri.pro`, `localhost`, and
 token with Cloudflare Siteverify, including the `turnstile-spin-v2` action.
 Tokens are single-use and expire after five minutes.
 
-Use `TURNSTILE_ENFORCEMENT=optional` only for the short expand phase while the
-previous Pages artifact remains eligible for rollback. Deploy the token-aware
-frontend first, then deploy `create-order`, verify checkout on desktop and
-phone, and finally set:
-
-```bash
-npx supabase secrets set TURNSTILE_ENFORCEMENT=required
-```
-
-After enforcement becomes required, do not roll back to a frontend build that
-does not submit `turnstileToken`. Remove the compatibility setting only after
-the retained rollback artifact is also Turnstile-aware.
+Keep `TURNSTILE_ENFORCEMENT=required` in production. The Edge Function fails
+closed when the setting is missing or has any value other than the explicitly
+temporary `optional` rollout value. Deploy the token-aware frontend first, then
+deploy `create-order`, and verify checkout on desktop and phone. Do not use the
+optional rollout value in a production environment or in the normal release
+secrets command above. Remove the compatibility path only after the retained
+rollback artifact is also Turnstile-aware.
 
 Checkout hashes the first `X-Forwarded-For` value as one supplemental abuse
 signal, alongside shop, device, and checkout-identity limits. Supabase's
@@ -367,6 +362,9 @@ media into the next release. The allowlist lives in
 without an equivalent stale-client compatibility strategy.
 
 Cloudflare Pages reads `public/_headers` for browser security and cache policy.
+The Content Security Policy is enforced (not report-only). Keep inline scripts
+out unless their exact body is pinned by a tested CSP hash, and update the
+deployment header check when adding a new third-party origin.
 Do not attach immutable wildcard headers to asset paths while Cloudflare's SPA
 fallback can serve HTML for a missing file; that can poison-cache a stale chunk
 as HTML. `sw.js`, `offline-assets.json`, and `release.json` must always
@@ -377,7 +375,11 @@ After Wrangler uploads the artifact, the workflow verifies the deployment URL
 and a deep application route, waits up to two minutes for `matsuri.pro` to serve
 the same entry asset from every checked edge, and confirms that
 `www.matsuri.pro` preserves path and query parameters while redirecting
-permanently to the apex. This longer canonical-only retry window covers the
+permanently to the apex. If verification fails, the rollback API envelope is
+validated and the previously active deployment is polled until it is active
+again. The workflow then reruns release verification and the read-only
+production smoke against the restored deployment before the job is failed.
+This longer canonical-only retry window covers the
 brief state where new HTML is visible before its hashed JavaScript reaches the
 same edge. A failed verification or smoke check rolls production back to the
 deployment that was active before the upload and then fails the release job.
@@ -424,8 +426,10 @@ VITE_SUPABASE_ANON_KEY=publishable-or-anon-key \
 The smoke checks the SPA shell at the homepage, a storefront route, and Auth
 callback; verifies static bank/payment branding; calls the read-only storefront
 bootstrap RPC for `MATSURI_SMOKE_SHOP_SLUG` (default `demo-booth`); and sends a
-CORS `OPTIONS` request to `create-order`. It never submits a cart or creates an
-order. Run it every five minutes from one region and from a second region after
+CORS `OPTIONS` request plus missing-token and invalid-token rejection probes to
+`create-order`. The invalid-token probe verifies that Siteverify recognizes the
+configured secret; both requests stop before the order RPC and cannot reserve
+stock. Run it every five minutes from one region and from a second region after
 DNS, TLS, or Cloudflare changes.
 
 ## Retention and recovery
@@ -477,6 +481,20 @@ Record each accepted warning with an owner and review date. New security errors
 block release. New performance warnings require a query/index review or a
 written deferral. Also review migration history and dry-run output; advisors do
 not detect deployment drift.
+
+Current reviewed warnings (2026-07-27):
+
+- `anon_security_definer_function_executable` and
+  `authenticated_security_definer_function_executable` are expected for the
+  public recovery/storefront and signed-in privileged RPC contracts. Each
+  function must retain a safe `search_path`, explicit role grants, and its
+  caller, recovery-token, or shop-membership check. Owner: backend. Review by
+  2026-10-27 or whenever an RPC signature/grant changes.
+- `auth_leaked_password_protection` remains an external provider limitation on
+  the current Supabase Free plan. Minimum length and mixed-character rules stay
+  enforced, but the warning is not closed until the project is upgraded and
+  **Prevent use of leaked passwords** is enabled. Owner: platform. Review before
+  the next billing-plan or Auth configuration change.
 
 Configure alerts for:
 
@@ -563,3 +581,7 @@ git diff --check
 Also run `npm run test:e2e` for data-path or page-flow changes and the database
 workflow above for migrations. Report unavailable local/linked validation
 plainly instead of claiming deployment or verification.
+
+Run `npm run test:pwa` for changes to the service worker, Vite PWA config, or
+offline caching. It builds the production artifact, serves `dist/`, and reloads
+a storefront with the browser offline.

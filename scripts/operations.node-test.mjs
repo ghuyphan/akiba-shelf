@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
@@ -6,6 +7,7 @@ import test from "node:test";
 import { architectureViolations } from "./check-architecture.mjs";
 import { buildReleaseMetadata } from "./build-release-metadata.mjs";
 import { normalizeReleaseId } from "./release-identity.mjs";
+import { STOREFRONT_ROUTE_PRELOAD_SCRIPT } from "./storefront-route-preload.mjs";
 import { createSimulatorCacheVersion } from "./simulator-cache-version.mjs";
 import { smokeProduction } from "./smoke-production.mjs";
 
@@ -81,6 +83,31 @@ test("normalizes safe release identifiers", () => {
   assert.throws(() => normalizeReleaseId("release with spaces"));
 });
 
+test("pins the structured-data script to the enforced CSP hash", async () => {
+  const index = await readFile(
+    new URL("../index.html", import.meta.url),
+    "utf8",
+  );
+  const headers = await readFile(
+    new URL("../public/_headers", import.meta.url),
+    "utf8",
+  );
+  const body = index.match(
+    /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+  )?.[1];
+  assert.ok(body);
+  const hash = createHash("sha256").update(body).digest("base64");
+  assert.ok(headers.includes(`'sha256-${hash}'`));
+  const routePreloadHash = createHash("sha256")
+    .update(STOREFRONT_ROUTE_PRELOAD_SCRIPT)
+    .digest("base64");
+  assert.ok(headers.includes(`'sha256-${routePreloadHash}'`));
+  assert.doesNotMatch(
+    index,
+    /<script(?![^>]+\bsrc=)(?![^>]+application\/ld\+json)/i,
+  );
+});
+
 test("writes deterministic release metadata", () =>
   withTempDirectory(async (root) => {
     await write(
@@ -132,6 +159,12 @@ test("smoke checks routes, assets, storefront data, and checkout preflight", asy
       headers: init.headers,
       body: init.body,
     });
+    if (
+      String(url).includes("/functions/v1/create-order") &&
+      (init.method ?? "GET") === "POST"
+    ) {
+      return new Response(null, { status: 403 });
+    }
     if (String(url).includes("/functions/v1/create-order")) {
       return new Response(null, {
         status: 204,
@@ -161,12 +194,12 @@ test("smoke checks routes, assets, storefront data, and checkout preflight", asy
     supabaseAnonKey: "public-anon-key",
     fetchImpl,
   });
-  assert.equal(result.checks, 8);
+  assert.equal(result.checks, 10);
   assert.equal(
     requests.at(-1).url,
     "https://project.supabase.co/functions/v1/create-order",
   );
-  assert.equal(requests.at(-1).method, "OPTIONS");
+  assert.equal(requests.at(-1).method, "POST");
   const bootstrapRequest = requests.find((request) =>
     request.url.endsWith("/rest/v1/rpc/get_storefront_bootstrap"),
   );
@@ -179,7 +212,15 @@ test("smoke checks routes, assets, storefront data, and checkout preflight", asy
   assert.equal("authorization" in bootstrapRequest.headers, false);
   assert.equal(
     requests.filter((request) => request.method === "POST").length,
-    1,
+    3,
+  );
+  const checkoutRequests = requests.filter((request) =>
+    request.url.endsWith("/functions/v1/create-order"),
+  );
+  assert.equal(checkoutRequests.length, 3);
+  assert.equal(
+    JSON.parse(checkoutRequests.at(-1).body).turnstileToken,
+    "production-smoke-invalid-token",
   );
 });
 

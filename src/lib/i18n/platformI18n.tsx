@@ -1869,6 +1869,10 @@ const vi: Record<string, string> = {
     "Xử lý các khoản thanh toán ngoại tuyến đang chờ trước khi đóng sự kiện.",
   "Offline Event Mode requires IndexedDB on this device.":
     "Chế độ Sự kiện Ngoại tuyến yêu cầu IndexedDB trên thiết bị này.",
+  "Persistent storage is unavailable on this device. Offline Event Mode cannot start safely.":
+    "Bộ nhớ lâu dài không khả dụng trên thiết bị này. Không thể khởi động Chế độ Sự kiện Ngoại tuyến một cách an toàn.",
+  "Could not save the event catalog for offline use on this device.":
+    "Không thể lưu danh mục sự kiện để sử dụng ngoại tuyến trên thiết bị này.",
   "Offline Event storage is busy in another tab.":
     "Bộ nhớ Sự kiện Ngoại tuyến đang được sử dụng ở một thẻ khác.",
   "Offline event session is no longer available.":

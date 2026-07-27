@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getPublicProducts } from "../../lib/api/products";
 import type { PublicProductSort } from "../../lib/catalogQueries";
 import {
   getErrorMessage,
@@ -9,6 +8,8 @@ import {
 import { queryLocalCatalog } from "../../lib/catalogQueries";
 import type { Product } from "../../types/catalog";
 import { loadOfflineEventSession } from "../../lib/offline/offlineEvents";
+import { translations } from "../../lib/i18n/catalogI18n";
+import type { CatalogLocale } from "../../types/catalog";
 
 const PRODUCT_PAGE_SIZE = 24;
 
@@ -46,6 +47,7 @@ export function useCatalogProducts(
     pending: boolean;
     page: { shopId: string; products: Product[]; hasMore: boolean } | null;
   },
+  locale: CatalogLocale = "en",
 ) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [hasMore, setHasMore] = useState(false);
@@ -166,6 +168,7 @@ export function useCatalogProducts(
       }
 
       try {
+        const { getPublicProducts } = await import("../../lib/api/products");
         const page = await getPublicProducts(shopId, {
           offset,
           pageSize,
@@ -198,7 +201,12 @@ export function useCatalogProducts(
           if (isTransportError(requestError) && initialProducts.length > 0) {
             applyLocalFallback();
           } else {
-            setError(getErrorMessage(requestError, "Could not load catalog."));
+            setError(
+              getErrorMessage(
+                requestError,
+                translations[locale].catalogUnavailableHint,
+              ),
+            );
           }
         }
       } finally {
@@ -216,6 +224,7 @@ export function useCatalogProducts(
       query.search,
       query.sort,
       shopId,
+      locale,
     ],
   );
 

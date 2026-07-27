@@ -1,5 +1,5 @@
 -- Publish ONLY the current banner definitions and banner item pools for both
--- Genshin and HSR. Rates, pity, enabled state, pricing, music, and every other
+-- Genshin and HSR. Rates, pity, enabled state, pricing, and every other
 -- setting are copied from the already-published configuration unchanged.
 --
 -- Banner source: public.gacha_game_configs (the drafts saved by Gacha Manager)

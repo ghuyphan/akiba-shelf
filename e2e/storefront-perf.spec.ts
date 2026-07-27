@@ -13,7 +13,31 @@ type BrowserPerfMetrics = {
   maxInteraction: number;
 };
 
+declare global {
+  interface Window {
+    __storefrontPerf: BrowserPerfMetrics;
+  }
+}
+
 const STOREFRONT_CONTENT_READY_BUDGET_MS = 5000;
+
+test("shared production shell avoids catalog preload outside storefront", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-chromium");
+  const catalogRequests: string[] = [];
+  page.on("request", (request) => {
+    if (/\/assets\/CatalogPage-.*\.js$/.test(request.url()))
+      catalogRequests.push(request.url());
+  });
+
+  await page.goto("./");
+  await expect(
+    page.locator("link[data-storefront-modulepreload]"),
+  ).toHaveCount(0);
+  await page.waitForTimeout(250);
+  expect(catalogRequests).toEqual([]);
+});
 
 test("production storefront stays within mobile-class performance budgets", async ({
   page,
@@ -31,7 +55,7 @@ test("production storefront stays within mobile-class performance budgets", asyn
   await context.clearCookies();
   await page.addInitScript(() => {
     localStorage.clear();
-    const target = window as Window & { __storefrontPerf: BrowserPerfMetrics };
+    const target = window;
     target.__storefrontPerf = {
       lcp: 0,
       lcpElement: "",
@@ -142,7 +166,7 @@ test("production storefront stays within mobile-class performance budgets", asyn
   const contentReady = await page.evaluate(() => performance.now());
   await page.waitForTimeout(250);
   const pageLoadMetrics = await page.evaluate(() => {
-    const target = window as Window & { __storefrontPerf: BrowserPerfMetrics };
+    const target = window;
     const paints = performance.getEntriesByType("paint");
     return {
       lcp: target.__storefrontPerf.lcp,
@@ -180,12 +204,12 @@ test("production storefront stays within mobile-class performance budgets", asyn
   await page.waitForTimeout(250);
 
   const metrics = await page.evaluate(() => {
-    const target = window as Window & { __storefrontPerf: BrowserPerfMetrics };
+    const target = window;
     return target.__storefrontPerf;
   });
 
   console.log(
-    `[Perf Test:${testInfo.project.name}] contentReady=${Math.round(contentReady)}ms fcp=${Math.round(pageLoadMetrics.fcp)}ms browserLcp=${Math.round(pageLoadMetrics.lcp)}ms lcpSource=${lcpIsLoadingShell ? "loading-shell" : "storefront"} lcpElement=${pageLoadMetrics.lcpElement} lcpText=${pageLoadMetrics.lcpText} lcpParent=${pageLoadMetrics.lcpParent} lcpUrl=${pageLoadMetrics.lcpUrl || "text"} cls=${pageLoadMetrics.cls.toFixed(4)} longestTask=${Math.round(pageLoadMetrics.longestTask)}ms interaction=${Math.round(Math.max(interactionDuration, metrics.maxInteraction))}ms requests=${pageLoadRequestCount} encoded=${Math.round(pageLoadEncodedBytes / 1024)}KiB`,
+    `[Perf Test:${testInfo.project.name}] contentReady=${Math.round(contentReady)}ms fcp=${Math.round(pageLoadMetrics.fcp)}ms browserLcp=${Math.round(pageLoadMetrics.lcp)}ms lcpSource=${lcpIsLoadingShell ? "loading-shell" : "storefront"} lcpElement=${pageLoadMetrics.lcpElement} lcpText=${pageLoadMetrics.lcpText} lcpParent=${pageLoadMetrics.lcpParent} lcpUrl=${pageLoadMetrics.lcpUrl || "text"} cls=${pageLoadMetrics.cls.toFixed(4)} longestTask=${Math.round(pageLoadMetrics.longestTask)}ms interaction=${Math.round(Math.max(interactionDuration, metrics.maxInteraction))}ms requests=${pageLoadRequestCount} bootstrapRequests=${initialDataRequests.filter((path) => path.endsWith("/rest/v1/rpc/get_storefront_bootstrap")).length} encoded=${Math.round(pageLoadEncodedBytes / 1024)}KiB`,
   );
 
   // Browser LCP can legitimately select the loading shell. This separate gate
@@ -223,6 +247,9 @@ test("production storefront stays within mobile-class performance budgets", asyn
   }
 
   await expect(page.locator("script[src*='src/main.tsx']")).toHaveCount(0);
+  await expect(
+    page.locator("link[data-storefront-modulepreload]"),
+  ).toHaveAttribute("rel", "modulepreload");
 
   const modulePreloadLink = page.locator(
     "link[rel='modulepreload'][href*='/assets/App-']",

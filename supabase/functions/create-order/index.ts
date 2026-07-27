@@ -26,6 +26,29 @@ type TurnstileVerification = {
   unavailable?: boolean;
 };
 
+const unavailableTurnstileErrors = new Set([
+  "missing-input-secret",
+  "invalid-input-secret",
+  "internal-error",
+]);
+
+export function parseTurnstileVerification(
+  result: Record<string, unknown>,
+): TurnstileVerification {
+  const errorCodes = Array.isArray(result["error-codes"])
+    ? result["error-codes"].filter(
+        (value): value is string => typeof value === "string",
+      )
+    : [];
+  return {
+    success: result.success === true,
+    action: typeof result.action === "string" ? result.action : undefined,
+    unavailable: errorCodes.some((code) =>
+      unavailableTurnstileErrors.has(code),
+    ),
+  };
+}
+
 export const clientFactory = {
   createClient(
     url: string,
@@ -208,10 +231,7 @@ export const turnstileVerifier = {
       );
       if (!response.ok) return { success: false, unavailable: true };
       const result = (await response.json()) as Record<string, unknown>;
-      return {
-        success: result.success === true,
-        action: typeof result.action === "string" ? result.action : undefined,
-      };
+      return parseTurnstileVerification(result);
     } catch {
       return { success: false, unavailable: true };
     }
@@ -254,13 +274,21 @@ export async function handleCreateOrderRequest(
     Deno.env.get("TURNSTILE_ENFORCEMENT") !== "optional";
   const items = body?.items;
   if (
+    turnstileRequired &&
+    body !== null &&
+    typeof body === "object" &&
+    !Array.isArray(body) &&
+    turnstileToken.length < 1
+  ) {
+    return jsonFailure("Turnstile verification is required.", 403, cors);
+  }
+  if (
     !slugPattern.test(shopSlug) ||
     customerName.length > 30 ||
     !uuidPattern.test(clientRequestId) ||
     (deviceId !== null && !uuidPattern.test(deviceId)) ||
     recoveryToken.length < 32 ||
     recoveryToken.length > 160 ||
-    (turnstileRequired && turnstileToken.length < 1) ||
     turnstileToken.length > maxTurnstileTokenLength ||
     !validItems(items)
   ) {

@@ -55,10 +55,8 @@ import {
   PendingOrderBar,
   RecoverCheckoutBar,
 } from "../components/catalog/overlays/CatalogOverlays";
-import { layoutOrderSchema } from "../lib/schemas";
 import { useParams } from "react-router";
-import { getStorefrontBootstrap } from "../lib/api/catalog";
-import { getPublicShop } from "../lib/api/shops";
+import { getStorefrontBootstrapFast } from "../lib/api/storefrontBootstrap";
 import type { PublicProductSort } from "../lib/catalogQueries";
 import type { Shop } from "../types/catalog";
 import {
@@ -280,7 +278,7 @@ export function CatalogPage() {
     }
     setShopLoadError("");
     try {
-      const bootstrap = await getStorefrontBootstrap(shopSlug);
+      const bootstrap = await getStorefrontBootstrapFast(shopSlug);
       const freshShop = bootstrap.shop;
       setOnline(true);
       setInitialBootstrap(bootstrap);
@@ -292,12 +290,11 @@ export function CatalogPage() {
       try {
         // Keep rolling deployments compatible while the bootstrap RPC migration
         // is being applied; the catalog hook will use the existing public reads.
+        const { getPublicShop } = await import("../lib/api/shops");
         const legacyShop = await getPublicShop(shopSlug);
         if (!legacyShop) throw bootstrapError;
         setOnline(true);
-        setCatalogShopId(
-          legacyShop.catalog_source_shop_id ?? legacyShop.id,
-        );
+        setCatalogShopId(legacyShop.catalog_source_shop_id ?? legacyShop.id);
         setShop(legacyShop);
         saveShopSnapshot(legacyShop, shopSlug);
       } catch (fallbackError) {
@@ -689,8 +686,11 @@ export function CatalogPage() {
       "products",
       "cart",
     ];
-    const saved = layoutOrderSchema.safeParse(booth.layout_order);
-    return saved.success ? saved.data : fallback;
+    const saved = booth.layout_order;
+    return saved?.length === fallback.length &&
+      fallback.every((section) => saved.includes(section))
+      ? saved
+      : fallback;
   }, [booth.layout_order]);
 
   const storefrontBlocks = useMemo<Record<StorefrontSection, React.ReactNode>>(

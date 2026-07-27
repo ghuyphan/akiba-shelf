@@ -6,6 +6,7 @@ import {
   MobileSheetShell,
   SHEET_EXIT_DURATION_MS,
   SheetHandle,
+  inertOutsideSurface,
 } from "./MobileSheetShell";
 import { useOverlayHistory } from "../../hooks/shared/useOverlayHistory";
 
@@ -61,10 +62,12 @@ export function Modal({
   }, [isOpen, mobileSheet, shouldRender]);
 
   useEffect(() => {
-    if (!shouldRender) return;
+    if (!isOpen || !shouldRender) return;
 
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const dialog = dialogRef.current;
+    if (!dialog) return;
+    const restoreInert = inertOutsideSurface(dialog);
     const focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const focusable = () => Array.from(dialog?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
     const focusFrame = window.requestAnimationFrame(() => {
@@ -105,9 +108,10 @@ export function Modal({
     return () => {
       window.cancelAnimationFrame(focusFrame);
       document.removeEventListener("keydown", handleKeyDown);
+      restoreInert();
       previousFocusRef.current?.focus();
     };
-  }, [shouldRender]);
+  }, [isOpen, shouldRender]);
 
   if (!shouldRender) return null;
 

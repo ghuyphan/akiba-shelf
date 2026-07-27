@@ -147,8 +147,7 @@
 		object-position: center;
 	}
 
-	.close,
-	.tanda-air {
+	.close {
 		position: absolute;
 		top: 0;
 		right: 0;
@@ -208,31 +207,6 @@
 		transform: rotate(8deg);
 	}
 
-	:global(.mobileLandscape) .tanda-air {
-		font-size: 150%;
-	}
-
-	.tanda-air {
-		top: unset;
-		text-align: right;
-		bottom: 0;
-		font-size: 200%;
-		z-index: +1;
-		color: #fff;
-		display: none;
-	}
-	.via {
-		font-size: 90%;
-		font-family: var(--hsr-neue);
-	}
-	.site {
-		text-shadow: 0 0 0.15rem #000;
-	}
-
-	.preview .tanda-air {
-		display: unset;
-	}
-
 	.detail {
 		position: absolute;
 		left: 0;
@@ -269,10 +243,6 @@
 	}
 
 	@media screen and (max-width: 600px) {
-		.tanda-air {
-			bottom: 7.5%;
-		}
-
 		.detail {
 			font-size: 100%;
 		}

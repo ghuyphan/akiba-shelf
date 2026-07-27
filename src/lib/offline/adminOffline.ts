@@ -1,4 +1,6 @@
 import type { Order, ShopMembership } from "../../types/catalog";
+import { z } from "zod";
+import { cachedAdminOrderSchema, shopMembershipSchema } from "../schemas";
 
 const ACCESS_KEY = "matsuri-admin-access-v1";
 const ORDERS_KEY = "matsuri-admin-orders-v1";
@@ -43,20 +45,19 @@ export function saveAdminAccessSnapshot(
 export function loadAdminAccessSnapshot(userId: string): CachedAccess | null {
   const key = `${ACCESS_KEY}:${userId}`;
   try {
-    const value = JSON.parse(
-      localStorage.getItem(key) || "null",
-    ) as CachedAccess | null;
+    const value = JSON.parse(localStorage.getItem(key) || "null") as unknown;
+    const parsed = zCachedAccess.safeParse(value);
     if (
-      value?.version !== 1 ||
-      value.userId !== userId ||
-      !Array.isArray(value.memberships) ||
-      Date.now() - new Date(value.savedAt).getTime() > MAX_ACCESS_AGE_MS
+      !parsed.success ||
+      parsed.data.userId !== userId ||
+      Date.now() - new Date(parsed.data.savedAt).getTime() > MAX_ACCESS_AGE_MS
     ) {
       localStorage.removeItem(key);
       return null;
     }
-    return value;
+    return parsed.data;
   } catch {
+    localStorage.removeItem(key);
     return null;
   }
 }
@@ -108,21 +109,43 @@ export function loadAdminOrdersSnapshot(
 ): Order[] {
   const key = `${ORDERS_KEY}:${userId}:${shopId}:${source}`;
   try {
-    const value = JSON.parse(
-      localStorage.getItem(key) || "null",
-    ) as CachedOrders | null;
+    const value = JSON.parse(localStorage.getItem(key) || "null") as unknown;
+    const parsed = zCachedOrders.safeParse(value);
     const isValid =
-      value?.version === 1 &&
-      value.shopId === shopId &&
-      (value.source === source || (source === "online" && !value.source)) &&
-      Array.isArray(value.orders) &&
-      Date.now() - new Date(value.savedAt).getTime() <= MAX_ORDER_AGE_MS;
+      parsed.success &&
+      parsed.data.shopId === shopId &&
+      (parsed.data.source === source ||
+        (source === "online" && !parsed.data.source)) &&
+      Date.now() - new Date(parsed.data.savedAt).getTime() <= MAX_ORDER_AGE_MS;
     if (!isValid) {
       localStorage.removeItem(key);
       return [];
     }
-    return value.orders;
+    return parsed.data.orders as unknown as Order[];
   } catch {
+    localStorage.removeItem(key);
     return [];
   }
 }
+
+const zCachedAccess = z.object({
+  version: z.literal(1),
+  userId: z.string().min(1),
+  email: z.string().optional(),
+  memberships: z.array(shopMembershipSchema),
+  savedAt: z.string().datetime(),
+});
+
+const zCachedOrders = z.object({
+  version: z.literal(1),
+  shopId: z.string().min(1),
+  source: z
+    .union([
+      z.literal("online"),
+      z.literal("event"),
+      z.string().startsWith("event:"),
+    ])
+    .optional(),
+  orders: z.array(cachedAdminOrderSchema),
+  savedAt: z.string().datetime(),
+});

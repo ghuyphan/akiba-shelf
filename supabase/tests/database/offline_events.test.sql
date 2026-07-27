@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(39);
+select plan(43);
 
 insert into auth.users(
   id, instance_id, aud, role, email, encrypted_password,
@@ -76,6 +76,27 @@ select public.start_offline_event_session(
 ) as payload;
 
 set local role postgres;
+update public.offline_event_sessions
+set started_at = '2026-07-21T00:00:00Z',
+    created_at = '2026-07-21T00:00:00Z'
+where id = (select (payload #>> '{session,id}')::uuid from event_result);
+select lives_ok(
+  format(
+    $$insert into public.offline_event_orders(
+      id, session_id, shop_id, order_code, total_amount, status,
+      payment_method, payment_state, created_at, updated_at
+    ) values (
+      '76000000-0000-4000-8000-000000000010', %L, %L,
+      'EVT-BOUNDARY', 0, 'pending', 'cash', 'awaiting_payment',
+      '2026-07-20T23:50:00Z', '2026-07-20T23:50:00Z'
+    )$$,
+    (select payload -> 'session' ->> 'id' from event_result),
+    '74000000-0000-4000-8000-000000000001'
+  ),
+  'offline order timestamp accepts the exact pre-event skew boundary'
+);
+delete from public.offline_event_orders
+where id = '76000000-0000-4000-8000-000000000010';
 select is(
   (select quantity_available from public.products where id = 'offline-event-product'),
   1,
@@ -202,6 +223,30 @@ select lives_ok(
 
 set local role postgres;
 select is((select quantity_sold from public.offline_event_allocations), 2, 'idempotent update preserves sold quantity');
+
+set local role authenticated;
+set local request.jwt.claim.sub = '73000000-0000-4000-8000-000000000001';
+select throws_ok(
+  format(
+    $$select public.sync_offline_event_orders(%L,%L,%L::jsonb)$$,
+    (select payload -> 'session' ->> 'id' from event_result),
+    '75000000-0000-4000-8000-000000000001',
+    '[{"id":"76000000-0000-4000-8000-000000000002","order_code":"EVT-OLD01","customer_name":"Customer","total_amount":10000,"status":"pending","payment_method":"cash","payment_state":"awaiting_payment","client_revision":1,"created_at":"2000-01-01T00:00:00Z","updated_at":"2000-01-01T00:00:00Z","items":[{"product_id":"offline-event-product","quantity":1,"unit_price":10000,"discount_amount":0}]}]'
+  ),
+  'Offline order timestamps are outside the event window',
+  'offline sync rejects orders backdated beyond the event window'
+);
+select throws_ok(
+  format(
+    $$select public.sync_offline_event_orders(%L,%L,%L::jsonb)$$,
+    (select payload -> 'session' ->> 'id' from event_result),
+    '75000000-0000-4000-8000-000000000001',
+    '[{"id":"76000000-0000-4000-8000-000000000003","order_code":"EVT-FUT01","customer_name":"Customer","total_amount":10000,"status":"pending","payment_method":"cash","payment_state":"awaiting_payment","client_revision":1,"created_at":"2099-01-01T00:00:00Z","updated_at":"2099-01-01T00:00:00Z","items":[{"product_id":"offline-event-product","quantity":1,"unit_price":10000,"discount_amount":0}]}]'
+  ),
+  'Offline order timestamps are outside the event window',
+  'offline sync rejects orders dated in the future'
+);
+set local role postgres;
 select is((select fulfillment_status from public.offline_event_orders), 'ready', 'offline fulfilment syncs to the server');
 select is((select client_revision from public.offline_event_orders),2::bigint,'server acknowledges the latest offline client revision');
 select is(
@@ -218,6 +263,15 @@ select is(
   ) #>> '{orders,0,confirmed_at}',
   '2026-07-21T00:05:00+00:00',
   'event order list returns the stored confirmation timestamp'
+);
+select is(
+  (
+    public.get_offline_event_orders(
+      '74000000-0000-4000-8000-000000000001', 1, 12, 'pending', null, null
+    ) ->> 'total'
+  )::integer,
+  0,
+  'event order list total respects the requested status filter'
 );
 
 select lives_ok(
@@ -296,14 +350,15 @@ from (
 set local role postgres;
 insert into public.offline_event_sessions(
   id, shop_id, device_id, name, status, payment_snapshot,
-  promotion_snapshot, created_by, integrity_version
+  promotion_snapshot, created_by, integrity_version, started_at, created_at
 ) values (
   '71000000-0000-4000-8000-000000000099',
   '74000000-0000-4000-8000-000000000001',
   '75000000-0000-4000-8000-000000000099',
   'Legacy convention', 'active', '{}',
   '{"enabled":false,"buy_quantity":3,"free_quantity":1,"repeatable":true,"qualifying_product_ids":[],"reward_product_ids":[]}',
-  '73000000-0000-4000-8000-000000000001', 1
+  '73000000-0000-4000-8000-000000000001', 1,
+  '2026-07-20T00:00:00Z', '2026-07-20T00:00:00Z'
 );
 insert into public.offline_event_allocations(
   session_id, shop_id, product_id, quantity_allocated, quantity_sold,
@@ -336,6 +391,11 @@ insert into public.offline_event_order_items(
   '74000000-0000-4000-8000-000000000001',
   'offline-event-product', 1, 1, 0
 );
+-- Simulate an integrity-v1 row whose historical client timestamp predates the
+-- server event window. Finalization must preserve, not rewrite, created_at.
+update public.offline_event_sessions
+set started_at = '2026-07-20T01:00:00Z'
+where id = '71000000-0000-4000-8000-000000000099';
 
 set local role authenticated;
 set local request.jwt.claim.sub = '73000000-0000-4000-8000-000000000001';

@@ -4,7 +4,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import { t } from 'svelte-i18n';
 	import { assets, liteMode, viewportWidth } from '$lib/stores/app-store';
-	import { playSfx, stopSfx } from '$lib/helpers/sounds/audiofx';
+	import { playSfx } from '$lib/helpers/sounds/audiofx';
 	import { lazyLoad } from '$lib/helpers/lazyload';
 	import { createLink } from '$lib/helpers/shareable-link';
 	import positionToStyle from '$lib/helpers/css-transformer';
@@ -79,13 +79,11 @@
 
 	onMount(() => {
 		showItem('start');
-		if (!standalone) playSfx('warp-backsound');
 		if (skip || standalone) return (showResultList = true);
 	});
 
 	onDestroy(() => {
 		if (standalone) return;
-		stopSfx('warp-backsound');
 	});
 </script>
 
@@ -214,8 +212,7 @@
 	}
 
 	.close,
-	.skip,
-	.tanda-air {
+	.skip {
 		position: absolute;
 		top: 0;
 		right: 0;
@@ -275,34 +272,7 @@
 		width: 22.5%;
 	}
 
-	:global(.mobileLandscape) .tanda-air {
-		font-size: 150%;
-	}
-	.tanda-air {
-		top: unset;
-		text-align: right;
-		bottom: 0;
-		font-size: 200%;
-		z-index: +1;
-		color: #fff;
-		display: none;
-	}
-	.via {
-		font-size: 90%;
-		font-family: var(--hsr-neue);
-	}
-	.get-yours {
-		font-size: 80%;
-	}
-	.site {
-		text-shadow: 0 0 0.15rem #000;
-	}
-	.site a:hover {
-		text-decoration: underline;
-	}
-
-	.preview .starrail-logo,
-	.preview .tanda-air {
+	.preview .starrail-logo {
 		display: unset;
 	}
 </style>

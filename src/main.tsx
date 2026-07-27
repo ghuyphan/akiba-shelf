@@ -1,27 +1,56 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "@fontsource/be-vietnam-pro/400.css";
-import "@fontsource/be-vietnam-pro/500.css";
-import "@fontsource/be-vietnam-pro/600.css";
-import "@fontsource/be-vietnam-pro/700.css";
-import "@fontsource/be-vietnam-pro/800.css";
-import "@fontsource/be-vietnam-pro/900.css";
+import "./styles/base/fonts.css";
 import "./styles/base/global.css";
 import "./styles/legacy.css";
 import { resetDocumentBranding } from "./lib/branding";
-import { hydrateInitialPageTheme } from "./utils/theme";
 import { restoreRedirect } from "./lib/auth/authUrls";
 import { getRoutePrefetchTarget } from "./lib/routePrefetch";
 import { reloadForAppUpdate } from "./utils/lazyWithRetry";
 import { initObservability, reportError } from "./lib/observability";
+import { prefetchStorefrontBootstrapFromPath } from "./lib/api/storefrontBootstrapRequest";
 
 restoreRedirect();
-hydrateInitialPageTheme();
 resetDocumentBranding();
 initObservability();
 
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const appPathname = window.location.pathname.startsWith(basePath)
+  ? window.location.pathname.slice(basePath.length) || "/"
+  : window.location.pathname;
+const storefrontTheme = appPathname.match(/^\/s\/([^/?#]+)/);
+let initialThemeScope: string | undefined;
+try {
+  const adminShopId =
+    appPathname === "/admin"
+      ? localStorage.getItem("akiba-active-shop")?.trim()
+      : undefined;
+  initialThemeScope = storefrontTheme
+    ? `slug:${decodeURIComponent(storefrontTheme[1])}`
+    : adminShopId
+      ? `id:${adminShopId}`
+      : undefined;
+} catch {
+  // Theme hydration is optional when storage or route decoding is unavailable.
+}
+let hasStoredTheme = false;
+try {
+  hasStoredTheme = Boolean(
+    initialThemeScope &&
+      localStorage.getItem(`merch-booth-theme:${initialThemeScope}`),
+  );
+} catch {
+  // Continue with platform defaults when browser storage is unavailable.
+}
+if (hasStoredTheme) {
+  void import("./utils/themeStorage").then(({ hydrateInitialPageTheme }) =>
+    hydrateInitialPageTheme(),
+  );
+}
+
 // Route-aware page chunk prefetching
 const pathname = window.location.pathname;
+prefetchStorefrontBootstrapFromPath(pathname, import.meta.env.BASE_URL);
 const prefetchTarget = getRoutePrefetchTarget(
   pathname,
   import.meta.env.BASE_URL,

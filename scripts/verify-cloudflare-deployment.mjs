@@ -129,8 +129,8 @@ async function fetchAppHtml(url, options, expectedEntryAsset) {
       ) {
         throw new Error("missing Referrer-Policy security header");
       }
-      if (!response.headers.get("content-security-policy-report-only")) {
-        throw new Error("missing report-only Content-Security-Policy header");
+      if (!response.headers.get("content-security-policy")) {
+        throw new Error("missing enforced Content-Security-Policy header");
       }
       const html = await response.text();
       const entryAsset = extractEntryAsset(html);

@@ -32,6 +32,7 @@ import { prepareStorefrontOffline } from "../../../lib/offline/storefrontOffline
 import { refreshGachaLaunch } from "../../../lib/gacha/gachaLaunch";
 import {
   closeLocalOfflineEvent,
+  assertOfflineEventSessionStored,
   assertOfflineEventStorageAvailable,
   freezeOfflineEventSession,
   getOfflineEventDeviceId,
@@ -435,6 +436,10 @@ export function OfflineEventManager({
       const draft = await persistDraft(false);
       if (!draft) return;
       await assertOfflineEventStorageAvailable();
+      if (!(await requestDurableOfflineStorage()))
+        throw new Error(
+          "Persistent storage is unavailable on this device. Offline Event Mode cannot start safely.",
+        );
       await prepareStorefrontOffline({
         id: shopId,
         name: booth.booth_name || shopSlug,
@@ -465,8 +470,8 @@ export function OfflineEventManager({
         shopSlug,
       );
       await saveOfflineEventSession(created);
-      await requestDurableOfflineStorage();
-      saveCatalogSnapshot(
+      await assertOfflineEventSessionStored(created);
+      const snapshotSaved = saveCatalogSnapshot(
         {
           products: created.allocations.map((allocation) => ({
             ...allocation.product,
@@ -480,6 +485,10 @@ export function OfflineEventManager({
         shopId,
         { replaceProducts: true, complete: true },
       );
+      if (!snapshotSaved)
+        throw new Error(
+          "Could not save the event catalog for offline use on this device.",
+        );
       setSession(created);
       setOrders([]);
       toast.success(t("This device is ready for offline sales."));

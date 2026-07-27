@@ -30,12 +30,8 @@ import {
   isTransportError,
 } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
-import {
-  applyPageTheme,
-  getStoredBoothTheme,
-  getThemeStyle,
-  resetPageTheme,
-} from "../utils/theme";
+import { applyPageTheme, getThemeStyle, resetPageTheme } from "../utils/theme";
+import { getStoredBoothTheme } from "../utils/themeStorage";
 import { getAdminBranding, useDocumentBranding } from "../lib/branding";
 import type {
   BoothSettings,
@@ -249,7 +245,9 @@ export function AdminPage() {
           toast.success(t("Order alert queued for another delivery attempt."));
         } else {
           toast.info(
-            t("This alert is no longer eligible for retry. Its status was refreshed."),
+            t(
+              "This alert is no longer eligible for retry. Its status was refreshed.",
+            ),
           );
         }
         return retried;

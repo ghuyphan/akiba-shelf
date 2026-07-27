@@ -1,6 +1,6 @@
 /* Storefront section personalities */
 .style-featured-editorial .featured-banner { background: linear-gradient(115deg,#fff 0 64%,color-mix(in srgb,var(--blue) 9%,#fff) 64% 100%); }
-.style-featured-editorial .featured-banner::after { content: "DROP"; color: color-mix(in srgb,var(--navy) 5%,transparent); }
+.style-featured-editorial .featured-banner::after { border-color: color-mix(in srgb,var(--navy) 5%,transparent); box-shadow: 0 0 0 18px color-mix(in srgb,var(--navy) 2.5%,transparent); }
 .style-featured-editorial .featured-banner-orbit { display: none; }
 .style-featured-editorial .featured-banner-image-main { border-radius: calc(var(--store-radius,16px) * .8); transform: none; }
 .style-featured-editorial .featured-banner-image-secondary { right: 0; bottom: 2%; transform: rotate(3deg); }
@@ -12,7 +12,7 @@
 .style-featured-minimal .featured-banner-swipe-hint { display: none; }
 
 .style-featured-poster .featured-banner { border-color: color-mix(in srgb,var(--coral) 58%,var(--navy)) !important; background: radial-gradient(circle at 80% 12%,color-mix(in srgb,var(--blue) 65%,transparent),transparent 28%),linear-gradient(135deg,var(--navy),color-mix(in srgb,var(--coral) 78%,var(--navy))); }
-.style-featured-poster .featured-banner::after { color: rgb(255 255 255 / 6%); }
+.style-featured-poster .featured-banner::after { border-color: rgb(255 255 255 / 7%); box-shadow: 0 0 0 18px rgb(255 255 255 / 3%); }
 .style-featured-poster :is(.featured-banner-copy h2,.featured-banner-count) { color: #fff; }
 .style-featured-poster .featured-banner-copy>p { color: rgb(255 255 255 / 74%); }
 .style-featured-poster .featured-banner-kicker { color: var(--blue); }
@@ -52,4 +52,3 @@
   .style-featured-minimal .featured-banner-image-main { width: 170px; }
   .style-controls-floating .catalog-toolbar { padding: 6px; }
 }
-

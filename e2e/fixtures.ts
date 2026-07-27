@@ -176,6 +176,15 @@ const payment = {
   bank_add_info_template: "ORDER {orderCode}",
   payment_instructions: "Pay exactly",
 };
+const promotion = {
+  shop_id: "00000000-0000-4000-8000-000000000001",
+  enabled: true,
+  buy_quantity: 3,
+  free_quantity: 1,
+  repeatable: true,
+  qualifying_product_ids: products.map((product) => product.id),
+  reward_product_ids: products.map((product) => product.id),
+};
 
 function json(
   route: Route,
@@ -221,32 +230,33 @@ export async function mockSupabase(
     }),
   );
 
-  const requestedProductCount = options.productCount ??
-    (options.manyProducts ? 30 : 0);
-  const catalogProducts = requestedProductCount > 0
-    ? Array.from({ length: requestedProductCount }, (_, index) => ({
-        ...products[index % products.length],
-        id: `product-${index + 1}`,
-        name: `Product ${String(index + 1).padStart(2, "0")}`,
-        item_code: `PRODUCT-${index + 1}`,
-        featured: index < 2,
-        sort_order: index + 1,
-      }))
-    : options.manyCategories
-      ? [
-          ...products,
-          ...["Badge", "Sticker pack", "Apparel", "Charm", "Stationery"].map(
-            (category, index) => ({
-              ...products[1],
-              id: `category-${index}`,
-              name: `${category} fixture`,
-              item_code: `CATEGORY-${index}`,
-              category,
-              sort_order: index + 3,
-            }),
-          ),
-        ]
-      : products;
+  const requestedProductCount =
+    options.productCount ?? (options.manyProducts ? 30 : 0);
+  const catalogProducts =
+    requestedProductCount > 0
+      ? Array.from({ length: requestedProductCount }, (_, index) => ({
+          ...products[index % products.length],
+          id: `product-${index + 1}`,
+          name: `Product ${String(index + 1).padStart(2, "0")}`,
+          item_code: `PRODUCT-${index + 1}`,
+          featured: index < 2,
+          sort_order: index + 1,
+        }))
+      : options.manyCategories
+        ? [
+            ...products,
+            ...["Badge", "Sticker pack", "Apparel", "Charm", "Stationery"].map(
+              (category, index) => ({
+                ...products[1],
+                id: `category-${index}`,
+                name: `${category} fixture`,
+                item_code: `CATEGORY-${index}`,
+                category,
+                sort_order: index + 3,
+              }),
+            ),
+          ]
+        : products;
   const fixtureOrderStatus = options.orderStatus ?? "confirmed";
   let fixtureFulfillmentStatus: "preparing" | "ready" | "picked_up" =
     "preparing";
@@ -535,9 +545,10 @@ export async function mockSupabase(
       }
       const payload = JSON.parse(request.postData() || "{}");
       const slug = String(payload.p_shop_slug || "akiba-shelf");
-      const id = slug === "shop-b"
-        ? "00000000-0000-4000-8000-000000000002"
-        : "00000000-0000-4000-8000-000000000001";
+      const id =
+        slug === "shop-b"
+          ? "00000000-0000-4000-8000-000000000002"
+          : "00000000-0000-4000-8000-000000000001";
       const displayId = options.multiShop ? `id-${slug}` : "main";
       const bootstrapProducts = options.multiShop
         ? catalogProducts.map((product) => ({

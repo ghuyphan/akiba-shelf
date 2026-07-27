@@ -14,6 +14,7 @@ import { createOfflinePack } from "./scripts/offline-pack-identity.mjs";
 import OFFLINE_CACHE_NAMES from "./config/offline-cache-names.json";
 import { resolveReleaseId } from "./scripts/release-identity.mjs";
 import { createSimulatorCacheVersion } from "./scripts/simulator-cache-version.mjs";
+import { STOREFRONT_ROUTE_PRELOAD_SCRIPT } from "./scripts/storefront-route-preload.mjs";
 
 const gachaDevRoot = resolve(process.cwd(), ".gacha-dist");
 const hsrDevRoot = resolve(process.cwd(), ".hsr-gacha-dist");
@@ -66,9 +67,11 @@ const contentTypes: Record<string, string> = {
 
 function injectModulePreloadAndPreconnect(): Plugin {
   let supabaseUrl = "";
+  let base = "/";
   return {
     name: "inject-module-preload-and-preconnect",
     configResolved(config) {
+      base = config.base;
       supabaseUrl =
         config.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
     },
@@ -76,7 +79,7 @@ function injectModulePreloadAndPreconnect(): Plugin {
       order: "post",
       handler(html, ctx) {
         let AppChunkFileName = "";
-        let catalogChunkFileName = "";
+        let CatalogChunkFileName = "";
         if (ctx.bundle) {
           for (const [, chunk] of Object.entries(ctx.bundle)) {
             if (
@@ -93,7 +96,7 @@ function injectModulePreloadAndPreconnect(): Plugin {
                 chunk.fileName.startsWith("assets/CatalogPage-") ||
                 chunk.fileName.includes("/CatalogPage-"))
             ) {
-              catalogChunkFileName = chunk.fileName;
+              CatalogChunkFileName = chunk.fileName;
             }
           }
         }
@@ -112,13 +115,25 @@ function injectModulePreloadAndPreconnect(): Plugin {
           });
         }
 
-        if (catalogChunkFileName) {
-          const catalogHref = `/${catalogChunkFileName}`;
-          tags.push({
-            tag: "script",
-            children: `if (/^\\/s\\/[^/]+\\/?$/.test(location.pathname)) { const link = document.createElement("link"); link.rel = "modulepreload"; link.href = ${JSON.stringify(catalogHref)}; document.head.appendChild(link); }`,
-            injectTo: "head" as const,
-          });
+        // Keep the hashed route chunk in markup without fetching it on platform
+        // routes. The CSP-pinned probe promotes it only for storefront URLs.
+        if (CatalogChunkFileName) {
+          tags.push(
+            {
+              tag: "link",
+              attrs: {
+                href: `${ctx.server ? "" : "/"}${CatalogChunkFileName}`,
+                "data-storefront-modulepreload": "",
+                "data-storefront-prefix": `${base}s/`,
+              },
+              injectTo: "head" as const,
+            },
+            {
+              tag: "script",
+              children: STOREFRONT_ROUTE_PRELOAD_SCRIPT,
+              injectTo: "head" as const,
+            },
+          );
         }
 
         // 2. Preconnect to Supabase if URL is set
@@ -360,9 +375,10 @@ export default defineConfig(async ({ command }) => {
     build: {
       rollupOptions: {
         output: {
-          experimentalMinChunkSize: 4_000,
+          experimentalMinChunkSize: 12_000,
           manualChunks(id: string) {
             if (id.includes("node_modules/@supabase/")) return "supabase";
+            if (id.includes("node_modules/lucide-react/")) return "icons";
           },
         },
       },

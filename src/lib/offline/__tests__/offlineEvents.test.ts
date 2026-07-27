@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { OfflineEventSession, Product } from "../../../types/catalog";
 import {
+  assertOfflineEventStorageAvailable,
   createOfflineEventOrder,
   freezeOfflineEventSession,
   getOfflineEventSignOutRisk,
@@ -157,6 +158,53 @@ describe("offline event ledger", () => {
     await expect(getOfflineEventSignOutRisk()).rejects.toThrow(
       /keep this account signed in/i,
     );
+  });
+
+  it("fails closed when Event Mode storage cannot be written", async () => {
+    resetLedger();
+    resetLedger = useMemoryOfflineEventLedgerForTests({
+      probeWriteError: new Error("IndexedDB write failed"),
+    });
+
+    await expect(assertOfflineEventStorageAvailable()).rejects.toThrow(
+      /storage could not be read/i,
+    );
+  });
+
+  it("fails closed when local orders cannot be read", async () => {
+    resetLedger();
+    resetLedger = useMemoryOfflineEventLedgerForTests({
+      getOrdersError: new Error("IndexedDB unavailable"),
+    });
+
+    await expect(
+      listOfflineEventOrders("71000000-0000-4000-8000-000000000001"),
+    ).rejects.toThrow(/storage could not be read/i);
+  });
+
+  it("rejects malformed persisted orders instead of treating them as empty", async () => {
+    resetLedger();
+    resetLedger = useMemoryOfflineEventLedgerForTests({
+      unsafeOrders: [
+        {
+          version: 1,
+          id: "not-a-valid-order-id",
+          sessionId: "71000000-0000-4000-8000-000000000001",
+          quantity: -1,
+        },
+      ],
+    });
+
+    await expect(
+      listOfflineEventOrders("71000000-0000-4000-8000-000000000001"),
+    ).rejects.toThrow(/storage could not be read/i);
+  });
+
+  it("preserves a valid empty event ledger", async () => {
+    const active = session();
+    await saveOfflineEventSession(active);
+
+    await expect(listOfflineEventOrders(active.id)).resolves.toEqual([]);
   });
 
   it("rejects overselling without mutating the allocation", async () => {

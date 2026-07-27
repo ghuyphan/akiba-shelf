@@ -23,6 +23,7 @@ import {
 } from "../../lib/offline/offlineEvents";
 import type { CartItem, CheckoutSession, Order } from "../../types/catalog";
 import { trackClientEvent } from "../../lib/observability";
+import type { CatalogCopy } from "../../lib/i18n/catalogI18n";
 
 type CheckoutConnectionState =
   | "online"
@@ -39,6 +40,7 @@ type CheckoutMode =
 type UseCheckoutSessionOptions = {
   shopSlug: string;
   cart: CartItem[];
+  copy: CatalogCopy;
   onOrderChange?: (order: Order | null) => void;
   onSessionChange?: (session: CheckoutSession | null) => void;
   onConfirmed?: () => void;
@@ -60,6 +62,7 @@ function sessionWithOrder(
 export function useCheckoutSession({
   shopSlug,
   cart,
+  copy,
   onOrderChange,
   onSessionChange,
   onConfirmed,
@@ -78,6 +81,8 @@ export function useCheckoutSession({
   const sessionRef = useRef(session);
   const submissionRef = useRef<Promise<Order | null> | null>(null);
   const refreshRef = useRef<Promise<void> | null>(null);
+  // Invalidate in-flight recovery requests when the checkout lifecycle changes.
+  const checkoutGenerationRef = useRef(0);
   const confirmedHandledRef = useRef(false);
   const resumedShopRef = useRef("");
   const onOrderChangeRef = useRef(onOrderChange);
@@ -126,9 +131,7 @@ export function useCheckoutSession({
             throw new TypeError("Failed to fetch");
           }
           if (!turnstileToken) {
-            throw new Error(
-              "Complete the security check before continuing.",
-            );
+            throw new Error(copy.securityFailed);
           }
           return createOrder(
             shopSlug,
@@ -169,10 +172,10 @@ export function useCheckoutSession({
             lastError: eventStorageUnavailable
               ? undefined
               : queued
-                ? "Reconnect to verify stock and reserve these items."
+                ? copy.offlineSecurityQueued
                 : getErrorMessage(
                     error,
-                    "Stock or pricing changed. Review your cart and try again.",
+                    copy.checkoutRecoveryReviewHint,
                   ),
             lastErrorCode: eventStorageUnavailable
               ? "offline_event_storage_unavailable"
@@ -204,11 +207,12 @@ export function useCheckoutSession({
       submissionRef.current = request;
       return request;
     },
-    [persist, shopSlug],
+    [copy, persist, shopSlug],
   );
 
   const start = useCallback(
     async (customerName: string, turnstileToken: string | null) => {
+      checkoutGenerationRef.current += 1;
       const existing = sessionRef.current;
       const next =
         existing && !existing.order
@@ -243,6 +247,8 @@ export function useCheckoutSession({
       return Promise.resolve();
     }
     if (refreshRef.current) return refreshRef.current;
+    const generation = checkoutGenerationRef.current;
+    const orderId = current.order.id;
 
     const request = (
       current.order.source === "offline_event"
@@ -257,7 +263,13 @@ export function useCheckoutSession({
         : getCustomerOrder(current.order.id, current.recoveryToken)
     )
       .then((order) => {
-        if (!order) throw new Error("Order recovery details are no longer valid.");
+        // A poll started before cancellation/new checkout must never restore
+        // stale pending state over the newer local session.
+        if (
+          generation !== checkoutGenerationRef.current ||
+          sessionRef.current?.order?.id !== orderId
+        ) return;
+        if (!order) throw new Error(copy.checkoutRecoveryReviewHint);
         const next = sessionWithOrder(current, order);
         persist(next);
         setConnectionState(
@@ -272,6 +284,10 @@ export function useCheckoutSession({
         }
       })
       .catch((error: unknown) => {
+        if (
+          generation !== checkoutGenerationRef.current ||
+          sessionRef.current?.order?.id !== orderId
+        ) return;
         setConnectionState(
           isTransportError(error)
             ? navigator.onLine
@@ -294,13 +310,14 @@ export function useCheckoutSession({
       });
     refreshRef.current = request;
     return request;
-  }, [persist, shopSlug]);
+  }, [copy.checkoutRecoveryReviewHint, persist, shopSlug]);
 
   const cancel = useCallback(async () => {
     const current = sessionRef.current;
     if (!current?.order) return null;
     if (current.order.source !== "offline_event" && !navigator.onLine)
       return null;
+    checkoutGenerationRef.current += 1;
     setIsCancelling(true);
     try {
       if (current.order.source === "offline_event") {
@@ -332,6 +349,7 @@ export function useCheckoutSession({
   }, [persist, shopSlug]);
 
   const clear = useCallback(() => {
+    checkoutGenerationRef.current += 1;
     persist(null);
     onOrderChangeRef.current?.(null);
   }, [persist]);

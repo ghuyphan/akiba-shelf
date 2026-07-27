@@ -21,6 +21,18 @@ describe("offline cart persistence", () => {
   it("round-trips valid carts", () => { const items: CartItem[] = [{ product, quantity: 2 }]; saveCart(items); expect(loadCart()).toEqual(items); });
   it("clears invalid or over-trusting stored data", () => { localStorage.setItem("akiba-shelf-cart-v1", JSON.stringify({ version: 1, items: [{ product, quantity: 0 }] })); expect(loadCart()).toEqual([]); expect(localStorage.getItem("akiba-shelf-cart-v1")).toBeNull(); });
 
+  it("reports when a complete offline snapshot cannot be persisted", () => {
+    const setItem = vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
+      throw new DOMException("Quota exceeded", "QuotaExceededError");
+    });
+    expect(saveCatalogSnapshot(
+      { products: [product], booth: defaultBooth },
+      "quota-shop",
+      { replaceProducts: true, complete: true },
+    )).toBe(false);
+    setItem.mockRestore();
+  });
+
   it("replaces a complete catalog so deleted products do not survive offline", () => {
     const removedProduct = { ...product, id: "removed", item_code: "REMOVED" };
     saveCatalogSnapshot(

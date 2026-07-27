@@ -32,8 +32,23 @@ const apiMocks = vi.hoisted(() => ({
   saveOfflineEventDraft: vi.fn(),
   syncOfflineEventOrders: vi.fn(),
 }));
+const preparationMocks = vi.hoisted(() => ({
+  prepareStorefrontOffline: vi.fn(),
+  refreshGachaLaunch: vi.fn(),
+  downloadGachaOfflinePacks: vi.fn(),
+}));
 
 vi.mock("../../../lib/api/offlineEvents", () => apiMocks);
+vi.mock("../../../lib/offline/storefrontOffline", () => ({
+  prepareStorefrontOffline: preparationMocks.prepareStorefrontOffline,
+}));
+vi.mock("../../../lib/gacha/gachaLaunch", () => ({
+  refreshGachaLaunch: preparationMocks.refreshGachaLaunch,
+}));
+vi.mock("../../../lib/offline/offlinePack", () => ({
+  downloadGachaOfflinePacks: preparationMocks.downloadGachaOfflinePacks,
+  gachaCatalogOfflineUrls: vi.fn(() => []),
+}));
 
 import { OfflineEventManager } from "./OfflineEventManager";
 
@@ -90,6 +105,15 @@ describe("OfflineEventManager", () => {
     apiMocks.recoverOfflineEventSession.mockReset().mockResolvedValue(null);
     apiMocks.saveOfflineEventDraft.mockReset();
     apiMocks.syncOfflineEventOrders.mockReset();
+    preparationMocks.prepareStorefrontOffline
+      .mockReset()
+      .mockResolvedValue(undefined);
+    preparationMocks.refreshGachaLaunch.mockReset().mockResolvedValue({
+      catalogs: {},
+    });
+    preparationMocks.downloadGachaOfflinePacks
+      .mockReset()
+      .mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -169,6 +193,59 @@ describe("OfflineEventManager", () => {
       expect((await loadOfflineEventSession(frozen.shopId))?.status).toBe(
         "closed",
       ),
+    );
+  });
+
+  it("does not finalize a frozen event when its local orders cannot be read", async () => {
+    resetLedger();
+    const orderReadFailure: { current?: Error } = {};
+    resetLedger = useMemoryOfflineEventLedgerForTests({
+      getOrdersError: () => orderReadFailure.current,
+    });
+    const frozen = closingSession();
+    await saveOfflineEventSession(frozen);
+
+    render(
+      <PlatformI18nProvider>
+        <ToastProvider>
+          <OfflineEventManager
+            shopId={frozen.shopId}
+            shopSlug={frozen.shopSlug}
+            products={[product]}
+            booth={defaultBooth}
+            payment={defaultPayment}
+            promotion={defaultPromotion}
+          />
+        </ToastProvider>
+      </PlatformI18nProvider>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: "Event mode: Convention day",
+      }),
+    );
+    orderReadFailure.current = new Error("IndexedDB read failed");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Retry sync and close event" }),
+    );
+    const closeDialog = screen.getByRole("dialog", {
+      name: "Close offline event?",
+    });
+    await userEvent.click(
+      within(closeDialog).getByRole("button", {
+        name: "Retry sync and close event",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/storage could not be read on this device/i),
+      ).toBeInTheDocument(),
+    );
+    expect(apiMocks.finalizeOfflineEventSession).not.toHaveBeenCalled();
+    expect((await loadOfflineEventSession(frozen.shopId))?.status).toBe(
+      "closing",
     );
   });
 
@@ -254,6 +331,102 @@ describe("OfflineEventManager", () => {
         "Add stock to an active product before preparing Event Mode.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("does not reserve stock when durable device storage is unavailable", async () => {
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      language: "en-US",
+      onLine: true,
+      storage: {
+        persisted: vi.fn().mockResolvedValue(false),
+        persist: vi.fn().mockResolvedValue(false),
+      },
+    });
+    apiMocks.saveOfflineEventDraft.mockResolvedValue({
+      id: "71000000-0000-4000-8000-000000000002",
+    });
+
+    render(
+      <PlatformI18nProvider>
+        <ToastProvider>
+          <OfflineEventManager
+            shopId="70000000-0000-4000-8000-000000000001"
+            shopSlug="event-shop"
+            products={[product]}
+            booth={defaultBooth}
+            payment={defaultPayment}
+            promotion={defaultPromotion}
+          />
+        </ToastProvider>
+      </PlatformI18nProvider>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Event mode: Set up" }),
+    );
+    fireEvent.change(screen.getByLabelText("Event name"), {
+      target: { value: "Artist alley" },
+    });
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: "Allocate Event Print" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "Prepare device and reserve stock",
+      }),
+    );
+
+    expect(
+      await screen.findByText(/Persistent storage is unavailable/i),
+    ).toBeInTheDocument();
+    expect(preparationMocks.prepareStorefrontOffline).not.toHaveBeenCalled();
+    expect(apiMocks.activateOfflineEventSession).not.toHaveBeenCalled();
+  });
+
+  it("does not reserve stock when the local event ledger is read-only", async () => {
+    resetLedger();
+    resetLedger = useMemoryOfflineEventLedgerForTests({
+      probeWriteError: new Error("IndexedDB write failed"),
+    });
+    apiMocks.saveOfflineEventDraft.mockResolvedValue({
+      id: "71000000-0000-4000-8000-000000000002",
+    });
+
+    render(
+      <PlatformI18nProvider>
+        <ToastProvider>
+          <OfflineEventManager
+            shopId="70000000-0000-4000-8000-000000000001"
+            shopSlug="event-shop"
+            products={[product]}
+            booth={defaultBooth}
+            payment={defaultPayment}
+            promotion={defaultPromotion}
+          />
+        </ToastProvider>
+      </PlatformI18nProvider>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Event mode: Set up" }),
+    );
+    fireEvent.change(screen.getByLabelText("Event name"), {
+      target: { value: "Artist alley" },
+    });
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: "Allocate Event Print" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "Prepare device and reserve stock",
+      }),
+    );
+
+    expect(
+      await screen.findByText(/storage could not be read on this device/i),
+    ).toBeInTheDocument();
+    expect(apiMocks.activateOfflineEventSession).not.toHaveBeenCalled();
   });
 
   it("ignores a delayed draft response after switching shops", async () => {

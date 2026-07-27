@@ -62,18 +62,14 @@ describe("admin order snapshots", () => {
     );
 
     expect(
-      loadAdminOrdersSnapshot(
-        "user-1",
-        "shop-1",
-        "event:session-1",
-      ).map(({ id }) => id),
+      loadAdminOrdersSnapshot("user-1", "shop-1", "event:session-1").map(
+        ({ id }) => id,
+      ),
     ).toEqual(["event-1"]);
     expect(
-      loadAdminOrdersSnapshot(
-        "user-1",
-        "shop-1",
-        "event:session-2",
-      ).map(({ id }) => id),
+      loadAdminOrdersSnapshot("user-1", "shop-1", "event:session-2").map(
+        ({ id }) => id,
+      ),
     ).toEqual(["event-2"]);
   });
 
@@ -96,6 +92,39 @@ describe("admin order snapshots", () => {
 
     vi.setSystemTime(new Date("2026-07-08T00:00:00.001Z"));
     expect(loadAdminOrdersSnapshot("user-1", "shop-1")).toEqual([]);
+  });
+
+  it("purges malformed cached memberships", () => {
+    const key = "matsuri-admin-access-v1:user-1";
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        version: 1,
+        userId: "user-1",
+        memberships: [{ shop_id: "shop-1", role: "super-admin" }],
+        savedAt: new Date().toISOString(),
+      }),
+    );
+
+    expect(loadAdminAccessSnapshot("user-1")).toBeNull();
+    expect(localStorage.getItem(key)).toBeNull();
+  });
+
+  it("purges malformed cached orders", () => {
+    const key = "matsuri-admin-orders-v1:user-1:shop-1:online";
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        version: 1,
+        shopId: "shop-1",
+        source: "online",
+        orders: [{ ...order("bad", "online"), status: "paid" }],
+        savedAt: new Date().toISOString(),
+      }),
+    );
+
+    expect(loadAdminOrdersSnapshot("user-1", "shop-1")).toEqual([]);
+    expect(localStorage.getItem(key)).toBeNull();
   });
 
   it("purges only the signing-out user's offline admin data", () => {

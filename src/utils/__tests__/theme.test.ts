@@ -3,9 +3,9 @@ import { defaultBooth } from "../../lib/constants";
 import {
   getStorefrontSectionStyleClass,
   getThemeStyle,
-  hydrateInitialPageTheme,
   resetPageTheme,
 } from "../theme";
+import { hydrateInitialPageTheme } from "../themeStorage";
 
 afterEach(() => {
   resetPageTheme();
@@ -24,10 +24,21 @@ describe("storefront card styles", () => {
   });
 
   it("maps section presets to scoped storefront classes", () => {
-    const booth = { ...defaultBooth, featured_style: "poster" as const, controls_style: "compact" as const, product_style: "framed" as const };
-    expect(getStorefrontSectionStyleClass("featured", booth)).toBe("style-featured-poster");
-    expect(getStorefrontSectionStyleClass("controls", booth)).toBe("style-controls-compact");
-    expect(getStorefrontSectionStyleClass("products", booth)).toBe("style-product-framed");
+    const booth = {
+      ...defaultBooth,
+      featured_style: "poster" as const,
+      controls_style: "compact" as const,
+      product_style: "framed" as const,
+    };
+    expect(getStorefrontSectionStyleClass("featured", booth)).toBe(
+      "style-featured-poster",
+    );
+    expect(getStorefrontSectionStyleClass("controls", booth)).toBe(
+      "style-controls-compact",
+    );
+    expect(getStorefrontSectionStyleClass("products", booth)).toBe(
+      "style-product-framed",
+    );
     expect(getStorefrontSectionStyleClass("booth", booth)).toBe("");
   });
 

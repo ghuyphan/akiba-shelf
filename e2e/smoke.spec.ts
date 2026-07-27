@@ -48,7 +48,12 @@ test("phone interactions suppress the native blue tap flash", async ({
   ]) {
     await expect(locator).toBeVisible();
     const tapColor = await locator.evaluate(
-      (element) => getComputedStyle(element).webkitTapHighlightColor,
+      (element) =>
+        (
+          getComputedStyle(element) as CSSStyleDeclaration & {
+            webkitTapHighlightColor?: string;
+          }
+        ).webkitTapHighlightColor,
     );
     expect(["transparent", "rgba(0, 0, 0, 0)"]).toContain(tapColor);
   }

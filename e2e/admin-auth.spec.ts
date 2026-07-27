@@ -591,6 +591,118 @@ test("keeps Event Mode locked while device preparation is running", async ({
   }
 });
 
+test("probes real IndexedDB before reserving Event Mode stock", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-chromium");
+  await page.addInitScript(() => {
+    const operations: string[] = [];
+    Object.defineProperty(window, "__offlineStorageProbeOperations", {
+      configurable: false,
+      value: operations,
+    });
+    for (const method of ["put", "get", "delete"] as const) {
+      const original = IDBObjectStore.prototype[method];
+      Object.defineProperty(IDBObjectStore.prototype, method, {
+        configurable: true,
+        value: function (...args: unknown[]) {
+          const marker = args[0];
+          if (
+            (typeof marker === "string" &&
+              marker.startsWith("storage-probe:")) ||
+            (marker &&
+              typeof marker === "object" &&
+              "probeId" in marker &&
+              typeof marker.probeId === "string" &&
+              marker.probeId.startsWith("storage-probe:"))
+          ) {
+            operations.push(`${this.name}:${method}`);
+          }
+          return Reflect.apply(original, this, args);
+        },
+      });
+    }
+    const originalPersist = navigator.storage?.persist?.bind(navigator.storage);
+    if (originalPersist) {
+      Object.defineProperty(navigator.storage, "persist", {
+        configurable: true,
+        value: async () => {
+          operations.push("storage:persist");
+          return originalPersist();
+        },
+      });
+    }
+  });
+  await mockSupabase(page, { staffRole: "owner" });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.locator(".offline-event-launcher").click();
+
+  const dialog = page.getByRole("dialog", { name: "Offline event mode" });
+  await dialog.getByLabel("Event name").fill("Storage probe");
+  await dialog.getByLabel("Allocate Moon Stand").check();
+  await dialog
+    .getByRole("button", {
+      name: "Prepare device and reserve stock",
+      exact: true,
+    })
+    .click();
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __offlineStorageProbeOperations?: string[];
+            }
+          ).__offlineStorageProbeOperations ?? [],
+      ),
+    )
+    .toEqual([
+      "sessions:put",
+      "orders:put",
+      "sessions:get",
+      "orders:get",
+      "sessions:delete",
+      "orders:delete",
+      "storage:persist",
+    ]);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise<number>((resolve, reject) => {
+            const request = indexedDB.open("matsuri-offline-events-v1", 1);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+              const database = request.result;
+              const transaction = database.transaction(
+                ["sessions", "orders"],
+                "readonly",
+              );
+              const sessions = transaction.objectStore("sessions").getAllKeys();
+              const orders = transaction.objectStore("orders").getAllKeys();
+              transaction.oncomplete = () => {
+                database.close();
+                resolve(
+                  [...(sessions.result ?? []), ...(orders.result ?? [])].filter(
+                    (key) =>
+                      typeof key === "string" &&
+                      key.startsWith("storage-probe:"),
+                  ).length,
+                );
+              };
+              transaction.onerror = () => reject(transaction.error);
+            };
+          }),
+      ),
+    )
+    .toBe(0);
+});
+
 test("loads the initial owner workspace without duplicate requests", async ({
   page,
 }, testInfo) => {

@@ -1,0 +1,2 @@
+export const STOREFRONT_ROUTE_PRELOAD_SCRIPT =
+  '(()=>{const link=document.querySelector("link[data-storefront-modulepreload]");if(!link)return;const prefix=link.dataset.storefrontPrefix||"/s/";const route=location.pathname.startsWith(prefix)?location.pathname.slice(prefix.length):"";const slug=route.endsWith("/")?route.slice(0,-1):route;if(slug&&!slug.includes("/"))link.rel="modulepreload";else link.remove()})();';

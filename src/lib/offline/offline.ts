@@ -85,6 +85,7 @@ export function saveCatalogSnapshot(
 ) {
   try {
     const previous = loadCatalogSnapshot(shopId);
+    const savedAt = new Date().toISOString();
     const products = options.replaceProducts
       ? data.products
       : (() => {
@@ -96,7 +97,7 @@ export function saveCatalogSnapshot(
         })();
     localStorage.setItem(scopedKey(SNAPSHOT_KEY, shopId), JSON.stringify({
       version: 3,
-      savedAt: new Date().toISOString(),
+      savedAt,
       complete: options.complete ?? previous?.complete ?? false,
       products,
       booth: data.booth,
@@ -105,8 +106,10 @@ export function saveCatalogSnapshot(
       categories: data.categories ?? previous?.categories,
       gachaEnabled: data.gachaEnabled ?? previous?.gachaEnabled,
     }));
+    return loadCatalogSnapshot(shopId)?.savedAt === savedAt;
   } catch {
     // Offline caching is best-effort.
+    return false;
   }
 }
 
@@ -116,7 +119,7 @@ export function replaceCompleteCatalogSnapshot(
 ) {
   const previous = loadCatalogSnapshot(shopId);
   if (!previous?.complete) return false;
-  saveCatalogSnapshot(
+  return saveCatalogSnapshot(
     {
       ...previous,
       ...data,
@@ -124,7 +127,6 @@ export function replaceCompleteCatalogSnapshot(
     shopId,
     { replaceProducts: true, complete: true },
   );
-  return true;
 }
 
 export function loadCart(shopId?: string): CartItem[] {

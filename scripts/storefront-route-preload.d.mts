@@ -1,0 +1,1 @@
+export const STOREFRONT_ROUTE_PRELOAD_SCRIPT: string;

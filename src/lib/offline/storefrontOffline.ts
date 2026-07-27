@@ -113,7 +113,7 @@ export async function prepareStorefrontOffline(shop: Shop) {
   }
 
   saveShopSnapshot(shop, shop.slug);
-  saveCatalogSnapshot(
+  const snapshotSaved = saveCatalogSnapshot(
     {
       ...catalog,
       payment,
@@ -128,6 +128,11 @@ export async function prepareStorefrontOffline(shop: Shop) {
     shopId,
     { replaceProducts: true, complete: true },
   );
+  if (!snapshotSaved || loadCatalogSnapshot(shopId)?.complete !== true) {
+    throw new Error(
+      "Could not save the storefront catalog for offline use on this device.",
+    );
+  }
 
   const imageUrls = new Set(
     [

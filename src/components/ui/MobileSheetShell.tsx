@@ -39,7 +39,7 @@ function getFocusableElements(surface: HTMLElement) {
   );
 }
 
-function inertOutsideSurface(surface: HTMLElement) {
+export function inertOutsideSurface(surface: HTMLElement) {
   const changes: Array<{
     element: HTMLElement;
     inert: boolean;

@@ -7,8 +7,14 @@ import type {
   OfflineEventSyncAcknowledgement,
   Order,
 } from "../../types/catalog";
+import { z } from "zod";
 import { safeUuid } from "../../utils/id";
 import { calculateCartPricing, getPricingLine } from "../../utils/pricing";
+import {
+  paymentSettingsSchema,
+  productRowSchema,
+  promotionSettingsSchema,
+} from "../schemas";
 
 const DB_NAME = "matsuri-offline-events-v1";
 const DB_VERSION = 1;
@@ -48,6 +54,7 @@ type OfflineEventLedger = {
   getSession: (shopId: string) => Promise<OfflineEventSession | null>;
   getSessions: () => Promise<OfflineEventSession[]>;
   getOrders: (sessionId: string) => Promise<OfflineEventOrder[]>;
+  probeWrite: () => Promise<void>;
   mutate: <T>(
     shopId: string,
     sessionId: string,
@@ -57,6 +64,98 @@ type OfflineEventLedger = {
 
 let updateChannel: BroadcastChannel | null = null;
 let ledgerOverride: OfflineEventLedger | null = null;
+
+const storedSessionSchema = z
+  .object({
+    version: z.literal(1),
+    id: z.string().uuid(),
+    // Shop ids are opaque at the local-storage boundary; the server validates
+    // their UUID shape when an event is created or synchronized.
+    shopId: z.string().min(1),
+    shopSlug: z.string().min(1),
+    deviceId: z.string().uuid(),
+    name: z.string(),
+    status: z.enum(["active", "closing", "closed"]),
+    scheduledStartAt: z.string().datetime().optional(),
+    scheduledEndAt: z.string().datetime().optional(),
+    startedAt: z.string().datetime().optional(),
+    closedAt: z.string().datetime().optional(),
+    allocations: z.array(
+      z
+        .object({
+          product: productRowSchema,
+          quantityAllocated: z.number().int().nonnegative(),
+          quantitySold: z.number().int().nonnegative(),
+        })
+        .refine(
+          ({ quantityAllocated, quantitySold }) =>
+            quantitySold <= quantityAllocated,
+          "Sold quantity exceeds the device allocation.",
+        ),
+    ),
+    payment: paymentSettingsSchema,
+    promotion: promotionSettingsSchema,
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+  })
+  .strict();
+
+const storedOrderSchema = z
+  .object({
+    version: z.literal(1),
+    id: z.string().uuid(),
+    sessionId: z.string().uuid(),
+    shopId: z.string().min(1),
+    orderCode: z.string().min(1),
+    customerName: z.string(),
+    totalAmount: z.number().int().nonnegative(),
+    status: z.enum(["pending", "confirmed", "cancelled"]),
+    paymentMethod: z.enum(["cash", "vietqr"]),
+    paymentState: z.enum([
+      "awaiting_payment",
+      "cash_confirmed",
+      "bank_verification_pending",
+      "bank_confirmed",
+    ]),
+    clientRevision: z.number().int().positive().optional(),
+    fulfillmentStatus: z
+      .enum(["unfulfilled", "preparing", "ready", "picked_up"])
+      .optional(),
+    fulfillmentUpdatedAt: z.string().datetime().optional(),
+    confirmedAt: z.string().datetime().optional(),
+    cancelledAt: z.string().datetime().optional(),
+    confirmedByLabel: z.string().optional(),
+    cancelledByLabel: z.string().optional(),
+    fulfillmentUpdatedByLabel: z.string().optional(),
+    items: z.array(
+      z.object({
+        product_id: z.string().min(1),
+        quantity: z.number().int().positive(),
+        unit_price: z.number().int().nonnegative(),
+        discount_amount: z.number().int().nonnegative(),
+      }),
+    ),
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+    syncedAt: z.string().datetime().optional(),
+  })
+  .strict();
+
+function parseStoredSession(value: unknown) {
+  const parsed = storedSessionSchema.safeParse(value);
+  if (!parsed.success) throw new OfflineEventStorageUnavailableError();
+  return parsed.data as OfflineEventSession;
+}
+
+function parseStoredOrders(value: unknown, sessionId?: string) {
+  const parsed = z.array(storedOrderSchema).safeParse(value);
+  if (
+    !parsed.success ||
+    (sessionId && parsed.data.some((order) => order.sessionId !== sessionId))
+  )
+    throw new OfflineEventStorageUnavailableError();
+  return sortOrders(parsed.data as OfflineEventOrder[]);
+}
 
 function normalizeOrder(order: OfflineEventOrder): OfflineEventOrder {
   const status = order.status;
@@ -151,28 +250,65 @@ const indexedDbLedger: OfflineEventLedger = {
   async getSession(shopId) {
     const database = await openDatabase();
     const transaction = database.transaction(SESSION_STORE, "readonly");
-    return ((await requestResult(
+    const stored = (await requestResult(
       transaction.objectStore(SESSION_STORE).get(shopId),
-    )) ?? null) as OfflineEventSession | null;
+    )) as unknown;
+    return stored === undefined ? null : parseStoredSession(stored);
   },
   async getSessions() {
     const database = await openDatabase();
     const transaction = database.transaction(SESSION_STORE, "readonly");
-    return requestResult<OfflineEventSession[]>(
+    const stored = await requestResult<unknown[]>(
       transaction.objectStore(SESSION_STORE).getAll(),
     );
+    return stored.map(parseStoredSession);
   },
   async getOrders(sessionId) {
     const database = await openDatabase();
     const transaction = database.transaction(ORDER_STORE, "readonly");
-    return sortOrders(
-      await requestResult<OfflineEventOrder[]>(
+    return parseStoredOrders(
+      await requestResult<unknown[]>(
         transaction
           .objectStore(ORDER_STORE)
           .index("sessionId")
           .getAll(sessionId),
       ),
+      sessionId,
     );
+  },
+  async probeWrite() {
+    const database = await openDatabase();
+    const transaction = database.transaction(
+      [SESSION_STORE, ORDER_STORE],
+      "readwrite",
+    );
+    const probeId = `storage-probe:${safeUuid()}`;
+    const sessions = transaction.objectStore(SESSION_STORE);
+    const orders = transaction.objectStore(ORDER_STORE);
+    const sessionMarker = { shopId: probeId, probeId };
+    const orderMarker = { id: probeId, sessionId: probeId, probeId };
+    const sessionWrite = requestResult(sessions.put(sessionMarker));
+    const orderWrite = requestResult(orders.put(orderMarker));
+    const sessionRead = requestResult<unknown>(sessions.get(probeId));
+    const orderRead = requestResult<unknown>(orders.get(probeId));
+    const sessionDelete = requestResult(sessions.delete(probeId));
+    const orderDelete = requestResult(orders.delete(probeId));
+    const [, , storedSession, storedOrder] = await Promise.all([
+      sessionWrite,
+      orderWrite,
+      sessionRead,
+      orderRead,
+      sessionDelete,
+      orderDelete,
+      transactionDone(transaction),
+    ]);
+    if (
+      (storedSession as { probeId?: unknown } | undefined)?.probeId !==
+        probeId ||
+      (storedOrder as { probeId?: unknown } | undefined)?.probeId !== probeId
+    ) {
+      throw new Error("Offline Event storage write verification failed.");
+    }
   },
   async mutate<T>(
     shopId: string,
@@ -186,15 +322,16 @@ const indexedDbLedger: OfflineEventLedger = {
     );
     const sessions = transaction.objectStore(SESSION_STORE);
     const orders = transaction.objectStore(ORDER_STORE);
-    const [session, currentOrders] = await Promise.all([
-      requestResult<OfflineEventSession | undefined>(sessions.get(shopId)),
-      requestResult<OfflineEventOrder[]>(
-        orders.index("sessionId").getAll(sessionId),
-      ),
+    const [storedSession, storedOrders] = await Promise.all([
+      requestResult<unknown>(sessions.get(shopId)),
+      requestResult<unknown[]>(orders.index("sessionId").getAll(sessionId)),
     ]);
+    const session =
+      storedSession === undefined ? null : parseStoredSession(storedSession);
+    const currentOrders = parseStoredOrders(storedOrders, sessionId);
     const next = mutation({
-      session: session ?? null,
-      orders: sortOrders(currentOrders),
+      session,
+      orders: currentOrders,
     });
     sessions.put(next.session);
     next.orders.forEach((order) => orders.put(order));
@@ -209,7 +346,15 @@ function ledger() {
 
 export function useMemoryOfflineEventLedgerForTests({
   getSessionsError,
-}: { getSessionsError?: Error } = {}) {
+  getOrdersError,
+  probeWriteError,
+  unsafeOrders,
+}: {
+  getSessionsError?: Error;
+  getOrdersError?: Error | (() => Error | undefined);
+  probeWriteError?: Error;
+  unsafeOrders?: unknown[];
+} = {}) {
   const sessions = new Map<string, OfflineEventSession>();
   const orders = new Map<string, OfflineEventOrder>();
   let queue = Promise.resolve();
@@ -222,9 +367,18 @@ export function useMemoryOfflineEventLedgerForTests({
       return [...sessions.values()];
     },
     async getOrders(sessionId) {
+      const orderReadError =
+        typeof getOrdersError === "function"
+          ? getOrdersError()
+          : getOrdersError;
+      if (orderReadError) throw orderReadError;
+      if (unsafeOrders) return unsafeOrders as OfflineEventOrder[];
       return sortOrders(
         [...orders.values()].filter((order) => order.sessionId === sessionId),
       );
+    },
+    async probeWrite() {
+      if (probeWriteError) throw probeWriteError;
     },
     mutate<T>(shopId: string, sessionId: string, mutation: LedgerMutation<T>) {
       const operation = queue.then(() => {
@@ -276,7 +430,12 @@ async function migrateLegacySession(session: OfflineEventSession) {
 }
 
 export async function assertOfflineEventStorageAvailable() {
-  await ledger().getSessions();
+  try {
+    await ledger().getSessions();
+    await ledger().probeWrite();
+  } catch {
+    throw new OfflineEventStorageUnavailableError();
+  }
 }
 
 export function getOfflineEventDeviceId() {
@@ -298,12 +457,32 @@ export async function requestDurableOfflineStorage() {
 }
 
 export async function saveOfflineEventSession(session: OfflineEventSession) {
+  parseStoredSession(session);
   await ledger().mutate(session.shopId, session.id, (state) => ({
     session,
     orders: state.orders,
     result: undefined,
   }));
   notifyUpdated(session.shopId);
+}
+
+export async function assertOfflineEventSessionStored(
+  expected: OfflineEventSession,
+) {
+  try {
+    const stored = await ledger().getSession(expected.shopId);
+    if (
+      !stored ||
+      stored.id !== expected.id ||
+      stored.deviceId !== expected.deviceId ||
+      stored.status !== expected.status
+    )
+      throw new OfflineEventStorageUnavailableError();
+    await ledger().getOrders(expected.id);
+  } catch (error) {
+    if (isOfflineEventStorageUnavailableError(error)) throw error;
+    throw new OfflineEventStorageUnavailableError();
+  }
 }
 
 export async function mergeRecoveredOfflineEventSession(
@@ -396,9 +575,9 @@ export async function loadOfflineEventSessionBySlug(shopSlug: string) {
 
 export async function listOfflineEventOrders(sessionId: string) {
   try {
-    return await ledger().getOrders(sessionId);
+    return parseStoredOrders(await ledger().getOrders(sessionId), sessionId);
   } catch {
-    return [];
+    throw new OfflineEventStorageUnavailableError();
   }
 }
 

@@ -30,6 +30,22 @@ describe("Modal", () => {
 
   it("requests close on Escape", () => { const close = vi.fn(); render(<Modal title="Example" isOpen onClose={close}><button>Inside</button></Modal>); fireEvent.keyDown(document, { key: "Escape" }); expect(close).toHaveBeenCalled(); });
 
+  it("isolates background content only while the dialog is open", () => {
+    const { container, rerender } = render(
+      <Modal title="Example" isOpen onClose={() => undefined}>
+        <button>Inside</button>
+      </Modal>,
+    );
+    expect(container.inert).toBe(true);
+
+    rerender(
+      <Modal title="Example" isOpen={false} onClose={() => undefined}>
+        <button>Inside</button>
+      </Modal>,
+    );
+    expect(container).not.toHaveAttribute("inert");
+  });
+
   it("locks every dismissal control when it is not dismissible", () => {
     const close = vi.fn();
     render(

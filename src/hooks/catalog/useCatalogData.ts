@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultBooth } from "../../lib/constants";
-import { getCatalogCoreData } from "../../lib/api/catalog";
-import { getPublicProductsByIds } from "../../lib/api/products";
 import { getErrorMessage, isSessionNoise } from "../../lib/errors";
 import {
   loadCatalogSnapshot,
   replaceCompleteCatalogSnapshot,
   saveCatalogSnapshot,
 } from "../../lib/offline/offline";
-import { subscribeToCatalogChanges } from "../../lib/realtime";
-import type { CartItem, Product, StorefrontBootstrap } from "../../types/catalog";
+import type {
+  CartItem,
+  Product,
+  StorefrontBootstrap,
+} from "../../types/catalog";
 import { useCatalogProducts, type CatalogQuery } from "./useCatalogProducts";
 import { useStorefrontBootstrap } from "./useStorefrontBootstrap";
 import { OFFLINE_EVENT_UPDATED } from "../../lib/offline/offlineEvents";
@@ -59,6 +60,7 @@ export function useCatalogData(
       pending: storefront.isInitialLoading,
       page: storefront.initialProductPage,
     },
+    storefront.booth.catalog_locale ?? initialBooth.catalog_locale ?? "en",
   );
   const gachaEnabled = storefront.gachaEnabled ?? cached?.gachaEnabled ?? false;
   const cartProductIds = useMemo(
@@ -76,8 +78,10 @@ export function useCatalogData(
   const refreshBooth = storefront.refreshBooth;
   const refreshPayment = storefront.refreshPayment;
   const refreshPromotion = storefront.refreshPromotion;
+  const offlineSnapshotRefreshAtRef = useRef(0);
   const liveRefreshError =
     translations[storefront.booth.catalog_locale ?? "en"].liveRefreshFailed;
+  const catalogCopy = translations[storefront.booth.catalog_locale ?? "en"];
 
   useEffect(() => {
     if (!shopId) return;
@@ -92,7 +96,11 @@ export function useCatalogData(
 
   const refreshCompleteOfflineSnapshot = useCallback(async () => {
     if (!shopId || loadCatalogSnapshot(shopId)?.complete !== true) return;
+    const now = Date.now();
+    if (now - offlineSnapshotRefreshAtRef.current < 5_000) return;
+    offlineSnapshotRefreshAtRef.current = now;
     try {
+      const { getCatalogCoreData } = await import("../../lib/api/catalog");
       const completeCatalog = await getCatalogCoreData(shopId);
       replaceCompleteCatalogSnapshot(completeCatalog, shopId);
     } catch {
@@ -127,7 +135,10 @@ export function useCatalogData(
           ? requestedIds
           : requestedIds.filter((id) => !cached.has(id));
         const fetched = missingIds.length
-          ? await getPublicProductsByIds(shopId, missingIds)
+          ? await import("../../lib/api/products").then(
+              ({ getPublicProductsByIds }) =>
+                getPublicProductsByIds(shopId, missingIds),
+            )
           : [];
         const fetchedById = new Map(
           fetched.map((product) => [product.id, product]),
@@ -140,10 +151,12 @@ export function useCatalogData(
         setCartError("");
       } catch (error) {
         if (!isSessionNoise(error))
-          setCartError(getErrorMessage(error, "Could not refresh your cart."));
+          setCartError(
+            getErrorMessage(error, catalogCopy.catalogUnavailableHint),
+          );
       }
     },
-    [onProductsLoaded, shopId],
+    [catalogCopy.catalogUnavailableHint, onProductsLoaded, shopId],
   );
 
   const reloadAll = useCallback(async () => {
@@ -192,7 +205,10 @@ export function useCatalogData(
     const missingIds = rewardIds.filter((id) => !availableById.has(id));
     if (missingIds.length === 0) return;
     let active = true;
-    void getPublicProductsByIds(shopId, missingIds)
+    void import("../../lib/api/products")
+      .then(({ getPublicProductsByIds }) =>
+        getPublicProductsByIds(shopId, missingIds),
+      )
       .then((next) => {
         if (!active) return;
         const fetchedById = new Map(
@@ -263,6 +279,8 @@ export function useCatalogData(
     refreshProductMetadata,
     refreshVisibleProducts,
   });
+  const realtimeConnectedRef = useRef(false);
+  const realtimeSubscribedRef = useRef(false);
   realtimeHandlersRef.current = {
     loadCartProducts,
     refreshBooth,
@@ -274,42 +292,97 @@ export function useCatalogData(
 
   useEffect(() => {
     const timers = new Map<string, number>();
-    if (!shopId) return;
-    const unsubscribe = subscribeToCatalogChanges(shopId, {
-      onChange: (table) => {
-        window.clearTimeout(timers.get(table));
-        timers.set(
-          table,
-          window.setTimeout(() => {
-            const handlers = realtimeHandlersRef.current;
-            const request =
-              table === "products"
-                ? Promise.all([
-                    handlers.refreshVisibleProducts(),
-                    handlers.refreshProductMetadata(),
-                    handlers.loadCartProducts({ forceRefresh: true }),
-                    refreshCompleteOfflineSnapshot(),
-                  ])
-                : table === "booth_settings"
-                  ? handlers.refreshBooth()
-                  : table === "payment_settings"
-                    ? handlers.refreshPayment()
-                    : handlers.refreshPromotion();
-            void request
-              .then(() => setRefreshError(""))
-              .catch((error: unknown) => {
+    if (
+      !shopId ||
+      productCatalog.isInitialLoading ||
+      storefront.isInitialLoading
+    )
+      return;
+    let disposed = false;
+    let unsubscribe: () => void = () => undefined;
+    realtimeConnectedRef.current = false;
+    const subscribeTimer = window.setTimeout(() => {
+      void import("../../lib/realtime")
+        .then(({ subscribeToCatalogChanges }) => {
+          if (disposed) return;
+          unsubscribe = subscribeToCatalogChanges(shopId, {
+            onStatus: (status, error) => {
+              if (status === "SUBSCRIBED") {
+                const needsCatchUp =
+                  !realtimeSubscribedRef.current ||
+                  !realtimeConnectedRef.current;
+                realtimeSubscribedRef.current = true;
+                realtimeConnectedRef.current = true;
+                if (needsCatchUp) {
+                  // Cover both the deferred initial subscription window and any
+                  // writes missed while a Realtime channel was disconnected.
+                  void reloadAll().catch((refreshError: unknown) => {
+                    if (!isSessionNoise(refreshError))
+                      setRefreshError(
+                        getErrorMessage(refreshError, liveRefreshError),
+                      );
+                  });
+                }
+                return;
+              }
+              if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+                realtimeConnectedRef.current = false;
                 if (!isSessionNoise(error))
                   setRefreshError(getErrorMessage(error, liveRefreshError));
-              });
-          }, 150),
-        );
-      },
-    });
+              }
+            },
+            onChange: (table) => {
+              window.clearTimeout(timers.get(table));
+              timers.set(
+                table,
+                window.setTimeout(() => {
+                  const handlers = realtimeHandlersRef.current;
+                  const request =
+                    table === "products"
+                      ? Promise.all([
+                          handlers.refreshVisibleProducts(),
+                          handlers.refreshProductMetadata(),
+                          handlers.loadCartProducts({ forceRefresh: true }),
+                          refreshCompleteOfflineSnapshot(),
+                        ])
+                      : table === "booth_settings"
+                        ? handlers.refreshBooth()
+                        : table === "payment_settings"
+                          ? handlers.refreshPayment()
+                          : handlers.refreshPromotion();
+                  void request
+                    .then(() => setRefreshError(""))
+                    .catch((error: unknown) => {
+                      if (!isSessionNoise(error))
+                        setRefreshError(
+                          getErrorMessage(error, liveRefreshError),
+                        );
+                    });
+                }, 150),
+              );
+            },
+          });
+        })
+        .catch((error: unknown) => {
+          if (!disposed && !isSessionNoise(error)) {
+            setRefreshError(getErrorMessage(error, liveRefreshError));
+          }
+        });
+    }, 1_000);
     return () => {
+      disposed = true;
+      window.clearTimeout(subscribeTimer);
       timers.forEach((timer) => window.clearTimeout(timer));
       unsubscribe();
     };
-  }, [liveRefreshError, refreshCompleteOfflineSnapshot, shopId]);
+  }, [
+    liveRefreshError,
+    productCatalog.isInitialLoading,
+    refreshCompleteOfflineSnapshot,
+    reloadAll,
+    shopId,
+    storefront.isInitialLoading,
+  ]);
 
   return {
     products: productCatalog.products,

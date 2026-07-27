@@ -30,7 +30,6 @@ const sfxList = [
 	'shop-open',
 	'switch-banner',
 	'sidebar-click',
-	'warp-backsound',
 	'warpresult-close',
 	'warpresult-list-4',
 	'warpresult-list-5'
@@ -50,7 +49,6 @@ const initSFX = () => {
 		const sfx = prev || {};
 		sfx[current] = new Howl({
 			src: [`${base}/audiofx/${current}.ogg`],
-			loop: current === 'warp-backsound',
 			onplayerror: (_soundId, error) => {
 				console.warn(`Unable to play HSR sound effect "${current}".`, error);
 			},
@@ -69,11 +67,6 @@ export const playSfx = (nameOfSoundfx = 'click') => {
 		if (!sounds[nameOfSoundfx]) throw new Error('No Sound effect for ' + nameOfSoundfx);
 		if (isMuted()) return;
 		sfxids[nameOfSoundfx] = sounds[nameOfSoundfx].play();
-
-		if (nameOfSoundfx === 'warp-backsound') {
-			const volume = cookie.get('sfxVolume') || 1;
-			sounds[nameOfSoundfx].fade(0, volume, 1000, sfxids[nameOfSoundfx]);
-		}
 	} catch (e) {
 		console.error('Unable to Play Sfx : ', e.message);
 	}

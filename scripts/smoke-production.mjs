@@ -169,10 +169,65 @@ export async function smokeProduction({
     },
   );
 
+  await expectResponse(
+    fetchImpl,
+    checkoutUrl,
+    {
+      method: "POST",
+      headers: {
+        origin,
+        apikey: supabaseAnonKey,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        shopSlug: storefrontSlug,
+        customerName: "Production smoke",
+        clientRequestId: "00000000-0000-4000-8000-000000000001",
+        recoveryToken: "production-smoke-recovery-token-000000000001",
+        items: [{ product_id: "smoke-product", quantity: 1 }],
+      }),
+    },
+    async (response) => {
+      if (response.status !== 403) {
+        throw new Error(
+          `checkout missing Turnstile token expected HTTP 403, received ${response.status}`,
+        );
+      }
+    },
+  );
+
+  await expectResponse(
+    fetchImpl,
+    checkoutUrl,
+    {
+      method: "POST",
+      headers: {
+        origin,
+        apikey: supabaseAnonKey,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        shopSlug: storefrontSlug,
+        customerName: "Production smoke",
+        clientRequestId: "00000000-0000-4000-8000-000000000002",
+        recoveryToken: "production-smoke-recovery-token-000000000002",
+        turnstileToken: "production-smoke-invalid-token",
+        items: [{ product_id: "smoke-product", quantity: 1 }],
+      }),
+    },
+    async (response) => {
+      if (response.status !== 403) {
+        throw new Error(
+          `checkout invalid Turnstile token expected HTTP 403, received ${response.status}`,
+        );
+      }
+    },
+  );
+
   return {
     origin,
     supabaseOrigin,
-    checks: htmlPaths.length + staticAssets.length + 2,
+    checks: htmlPaths.length + staticAssets.length + 4,
   };
 }
 
