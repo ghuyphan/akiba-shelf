@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import QRCode from "qrcode";
-import { CatalogLocaleProvider } from "../../../lib/i18n/catalogI18n";
+import { CatalogLocaleProvider } from "../../../lib/i18n/catalogLocale";
 import { SocialQrCard } from "./SocialQrCard";
 
 vi.mock("qrcode", () => ({

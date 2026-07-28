@@ -68,17 +68,15 @@ through new migrations, never by editing their historical definitions.
   `public.start_offline_event_session(uuid, uuid, text, jsonb, jsonb, jsonb)`.
 - Current grant: `EXECUTE` to `authenticated`; the function still performs its
   own owner/admin authorization.
-- Current callers: the exported `startOfflineEventSession()` wrapper in
-  `src/lib/api/offlineEvents.ts`, its contract expectation in
-  `src/lib/api/__tests__/contracts.test.ts`, the HTTP fixture in
-  `e2e/fixtures.ts`, and the legacy lifecycle coverage in
-  `supabase/tests/database/offline_events.test.sql`. The active admin UI uses
-  `save_offline_event_draft` followed by `activate_offline_event_session`.
+- Current supported callers: none. The TypeScript wrapper and HTTP fixture have
+  been removed, and lifecycle coverage now uses `save_offline_event_draft`
+  followed by `activate_offline_event_session`. The signature remains granted
+  only for retained production rollback artifacts.
 
 Retirement sequence:
 
-1. Move the API contract, fixture, and remaining database coverage to the
-   draft-then-activate flow; remove the unused TypeScript wrapper.
+1. Completed: move the API contract, fixture, and database lifecycle coverage
+   to the draft-then-activate flow; remove the unused TypeScript wrapper.
 2. Deploy and observe at least one full frontend rollback window. The previous
    retained Pages artifact must no longer call the signature, and production
    PostgREST/function logs must show zero calls from supported clients.

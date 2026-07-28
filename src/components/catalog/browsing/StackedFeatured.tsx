@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import type { Product } from "../../../types/catalog";
 import { selectStorefrontFeaturedProducts } from "../../../lib/catalogQueries";
-import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
+import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { EmptyState } from "../../ui/EmptyState";
 import { ProductPrice } from "./ProductPrice";
 

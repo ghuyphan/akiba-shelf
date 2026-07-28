@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin/admin.css";
-import { Navigate, useSearchParams } from "react-router";
+import { Navigate } from "react-router";
 import { getAdminCatalogData } from "../lib/api/catalog";
 import {
   getOrderStatusCounts,
@@ -62,7 +62,6 @@ import { AdminAttentionPanel } from "../components/admin/shell/AdminAttentionPan
 import { AdminWorkspaceContent } from "../components/admin/shell/AdminWorkspaceContent";
 import { AdminUnsavedChangesProvider } from "../components/admin/shell/AdminUnsavedChanges";
 import type { OrderViewFilter } from "../components/admin/orders/OrderQueue";
-import type { AdminViewTab } from "../components/admin/shell/adminWorkspaceTypes";
 import { SignOutDialog } from "../components/ui/SignOutDialog";
 import {
   loadAdminOrdersSnapshot,
@@ -80,6 +79,7 @@ import {
 } from "../lib/offline/offlineEvents";
 import { reportError } from "../lib/observability";
 import { useMediaQuery } from "../hooks/shared/useMediaQuery";
+import { useAdminViewRoute } from "../hooks/admin/useAdminViewRoute";
 
 const orderPageSize = 12;
 // Realtime events caused by this tab's own writes are ignored inside this
@@ -92,21 +92,6 @@ const emptyOrderCounts: OrderStatusCounts = {
   cancelled: 0,
   expired: 0,
 };
-
-const adminViewTabs = new Set<AdminViewTab>([
-  "orders",
-  "products",
-  "gacha",
-  "design",
-  "settings",
-  "team",
-]);
-
-function parseAdminViewTab(value: string | null): AdminViewTab {
-  return value && adminViewTabs.has(value as AdminViewTab)
-    ? (value as AdminViewTab)
-    : "orders";
-}
 
 export function AdminPage() {
   const {
@@ -136,23 +121,7 @@ export function AdminPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [workspaceLoadFailed, setWorkspaceLoadFailed] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const requestedView = searchParams.get("view");
-  const viewTab = parseAdminViewTab(requestedView);
-  const setViewTab = useCallback(
-    (nextView: AdminViewTab, replace = false) => {
-      setSearchParams(
-        (current) => {
-          const next = new URLSearchParams(current);
-          if (nextView === "orders") next.delete("view");
-          else next.set("view", nextView);
-          return next;
-        },
-        { replace },
-      );
-    },
-    [setSearchParams],
-  );
+  const { viewTab, setViewTab } = useAdminViewRoute();
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [signOutBusy, setSignOutBusy] = useState(false);
   const [booth, setBooth] = useState<BoothSettings>(() => {
@@ -167,12 +136,6 @@ export function AdminPage() {
   const toast = useToast();
   const { t } = usePlatformI18n();
   const compactAdminLayout = useMediaQuery("(max-width: 1100px)");
-
-  useEffect(() => {
-    if (requestedView && !adminViewTabs.has(requestedView as AdminViewTab)) {
-      setViewTab("orders", true);
-    }
-  }, [requestedView, setViewTab]);
 
   const verifiedBranding =
     isAuthed && booth.shop_id === shopId && !isInitialLoading && !catalogLoading

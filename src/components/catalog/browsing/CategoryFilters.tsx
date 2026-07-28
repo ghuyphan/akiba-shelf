@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
+import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { useTabIndicator } from "../../../hooks/shared/useTabIndicator";
 
 type CategoryFiltersProps = {

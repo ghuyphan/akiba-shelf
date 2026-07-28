@@ -844,7 +844,6 @@ describe("Playwright Supabase request inventory", () => {
       "/rest/v1/rpc/publish_gacha_configuration_v6",
       "/rest/v1/rpc/retry_order_notification",
       "/rest/v1/rpc/save_offline_event_draft",
-      "/rest/v1/rpc/start_offline_event_session",
       "/rest/v1/rpc/sync_offline_event_orders",
       "/rest/v1/rpc/update_order_fulfillment",
       "/rest/v1/shops",

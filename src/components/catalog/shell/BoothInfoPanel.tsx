@@ -5,7 +5,7 @@ import { configuredSocialPlatforms } from "../../../utils/social";
 import { SocialQrCard } from "../social/SocialQrCard";
 import { SocialBrandIcon } from "../../ui/SocialBrandIcon";
 import { safePublicUrl } from "../../../lib/branding";
-import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
+import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { getOpeningStatus } from "../../../utils/openingHours";
 
 type BoothInfoPanelProps = {

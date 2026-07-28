@@ -24,11 +24,8 @@ import type {
   StorefrontBootstrap,
   StorefrontSection,
 } from "../types/catalog";
-import {
-  CatalogLocaleProvider,
-  translations,
-  useCatalogCopy,
-} from "../lib/i18n/catalogI18n";
+import { translations } from "../lib/i18n/catalogI18n";
+import { CatalogLocaleProvider } from "../lib/i18n/catalogLocale";
 import { PromotionProvider } from "../lib/promotionContext";
 import { CatalogHeader } from "../components/catalog/shell/CatalogHeader";
 import { CatalogToolbar } from "../components/catalog/browsing/CatalogToolbar";
@@ -38,7 +35,7 @@ import { ProductGrid } from "../components/catalog/browsing/ProductGrid";
 import { ProductDetailModal } from "../components/catalog/browsing/ProductDetailModal";
 import { SelectedItemPanel } from "../components/catalog/cart/SelectedItemPanel";
 import { StackedFeatured } from "../components/catalog/browsing/StackedFeatured";
-import { ToastLocalization, useToast } from "../components/ui/ToastProvider";
+import { useToast } from "../components/ui/ToastProvider";
 import { loadCheckoutSession } from "../lib/offline/checkoutSession";
 import {
   loadShopSnapshot,
@@ -69,7 +66,7 @@ import { lazyWithRetry } from "../utils/lazyWithRetry";
 import { hasUsablePayment } from "../utils/vietqr";
 import { getUserFacingErrorMessage } from "../lib/errors";
 import { Alert } from "../components/ui/Alert";
-import { AppUpdateNotice } from "../components/ui/AppUpdateNotice";
+import { CatalogAppChrome } from "../components/catalog/shell/CatalogAppChrome";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -82,37 +79,6 @@ const PaymentQrModal = lazyWithRetry("PaymentQrModal", () =>
     default: module.PaymentQrModal,
   })),
 );
-
-function CatalogToastLocalization() {
-  const copy = useCatalogCopy();
-  return (
-    <ToastLocalization
-      labels={{
-        successTitle: copy.toastSuccessTitle,
-        errorTitle: copy.toastErrorTitle,
-        infoTitle: copy.toastInfoTitle,
-        dismiss: copy.dismissNotification,
-      }}
-    />
-  );
-}
-
-function CatalogUpdateNotice() {
-  const copy = useCatalogCopy();
-  return (
-    <AppUpdateNotice
-      copy={{
-        ariaLabel: copy.updateAvailableLabel,
-        title: copy.updateReadyTitle,
-        message: copy.updateReadyHint,
-        updateLabel: copy.updateNow,
-        updatingLabel: copy.updatingApp,
-        laterLabel: copy.updateLater,
-        dismissLabel: copy.dismissUpdateNotice,
-      }}
-    />
-  );
-}
 
 function StorefrontLoading({
   title,
@@ -891,13 +857,13 @@ export function CatalogPage() {
   if (shop === null)
     return (
       <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
-        <CatalogToastLocalization />
-        <CatalogUpdateNotice />
-        <ShopUnavailablePage
-          hasLoadError={Boolean(shopLoadError)}
-          showDemoLink={shopSlug !== "demo-booth"}
-          onRetry={() => void loadShop()}
-        />
+        <CatalogAppChrome>
+          <ShopUnavailablePage
+            hasLoadError={Boolean(shopLoadError)}
+            showDemoLink={shopSlug !== "demo-booth"}
+            onRetry={() => void loadShop()}
+          />
+        </CatalogAppChrome>
       </CatalogLocaleProvider>
     );
 
@@ -940,121 +906,121 @@ export function CatalogPage() {
 
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
-      <CatalogToastLocalization />
-      <CatalogUpdateNotice />
-      <PromotionProvider promotion={promotion}>
-        <ErrorBoundary
-          title={catalogCopy.crashTitle}
-          message={catalogCopy.crashHint}
-          reloadLabel={catalogCopy.crashReload}
-          resetKey={shopSlug}
-        >
-          <main
-            className={`app-shell${lightweightMode ? " catalog-lightweight" : ""}${storefrontDockClasses}`}
-            style={getThemeStyle(booth)}
-            onPointerDown={handleStorefrontBackgroundClick}
+      <CatalogAppChrome>
+        <PromotionProvider promotion={promotion}>
+          <ErrorBoundary
+            title={catalogCopy.crashTitle}
+            message={catalogCopy.crashHint}
+            reloadLabel={catalogCopy.crashReload}
+            resetKey={shopSlug}
           >
-            <CatalogHeader
-              booth={booth}
-              showGacha={gachaEnabled}
-              onPrepareGacha={prepareGacha}
-              onOpenInfo={() => setIsInfoOpen(true)}
-            />
-            {!online && (
-              <div className="offline-status-banner" role="alert">
-                <CloudOff size={15} />
-                <span>
-                  <strong>{catalogCopy.offlineTitle}</strong>{" "}
-                  {catalogCopy.offlineHint}
-                </span>
-              </div>
-            )}
-            {reconciliationNotice && (
-              <Alert
-                className="catalog-reconciliation-alert"
-                title={catalogCopy.cartUpdatedTitle}
-                onClose={clearReconciliationNotice}
-                closeLabel={catalogCopy.dismissNotification}
-              >
-                {catalogCopy.cartUpdatedHint(
-                  reconciliationNotice.removed,
-                  reconciliationNotice.quantityAdjusted,
-                  reconciliationNotice.priceChanged,
-                )}
-              </Alert>
-            )}
-            <div className="catalog-layout storefront-layout-grid">
-              <div className="storefront-hero-grid">
-                {heroStorefrontSections.map((section) => (
-                  <div
-                    className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
-                    key={section}
-                  >
-                    {storefrontBlocks[section]}
-                  </div>
-                ))}
-              </div>
-              <div className="storefront-content-grid">
-                {contentStorefrontColumns.map((column) => column.node)}
-              </div>
-            </div>
-            {showOrderDock && visibleOrder && (
-              <PendingOrderBar
-                order={visibleOrder}
-                style={getThemeStyle(booth)}
-                onOpen={() => openPaymentFlow()}
+            <main
+              className={`app-shell${lightweightMode ? " catalog-lightweight" : ""}${storefrontDockClasses}`}
+              style={getThemeStyle(booth)}
+              onPointerDown={handleStorefrontBackgroundClick}
+            >
+              <CatalogHeader
+                booth={booth}
+                showGacha={gachaEnabled}
+                onPrepareGacha={prepareGacha}
+                onOpenInfo={() => setIsInfoOpen(true)}
               />
-            )}
-            {showCheckoutRecoveryDock && checkoutRecovery && (
-              <RecoverCheckoutBar
-                session={checkoutRecovery}
-                total={checkoutRecoveryTotal}
-                style={getThemeStyle(booth)}
-                onOpen={() => openPaymentFlow()}
-              />
-            )}
-            {showFloatingCartDock && (
-              <FloatingCartBar
-                itemCount={cartItemCount}
-                total={cartPricing.total}
-                style={getThemeStyle(booth)}
-                onOpen={handleRevealCart}
-              />
-            )}
-            {orderingEnabled && paymentModalRequested && (
-              <Suspense fallback={null}>
-                <PaymentQrModal
-                  shopSlug={shop.slug}
-                  isOpen={isQrOpen}
-                  payment={payment}
-                  cart={cart}
-                  promotion={promotion}
-                  booth={booth}
-                  onClose={() => setIsQrOpen(false)}
-                  onSuccess={() => void loadCatalog()}
-                  onOrderChange={handleOrderChange}
-                  onSessionChange={setRecoverableCheckout}
+              {!online && (
+                <div className="offline-status-banner" role="alert">
+                  <CloudOff size={15} />
+                  <span>
+                    <strong>{catalogCopy.offlineTitle}</strong>{" "}
+                    {catalogCopy.offlineHint}
+                  </span>
+                </div>
+              )}
+              {reconciliationNotice && (
+                <Alert
+                  className="catalog-reconciliation-alert"
+                  title={catalogCopy.cartUpdatedTitle}
+                  onClose={clearReconciliationNotice}
+                  closeLabel={catalogCopy.dismissNotification}
+                >
+                  {catalogCopy.cartUpdatedHint(
+                    reconciliationNotice.removed,
+                    reconciliationNotice.quantityAdjusted,
+                    reconciliationNotice.priceChanged,
+                  )}
+                </Alert>
+              )}
+              <div className="catalog-layout storefront-layout-grid">
+                <div className="storefront-hero-grid">
+                  {heroStorefrontSections.map((section) => (
+                    <div
+                      className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
+                      key={section}
+                    >
+                      {storefrontBlocks[section]}
+                    </div>
+                  ))}
+                </div>
+                <div className="storefront-content-grid">
+                  {contentStorefrontColumns.map((column) => column.node)}
+                </div>
+              </div>
+              {showOrderDock && visibleOrder && (
+                <PendingOrderBar
+                  order={visibleOrder}
+                  style={getThemeStyle(booth)}
+                  onOpen={() => openPaymentFlow()}
                 />
-              </Suspense>
-            )}
-            <ProductDetailModal
-              product={detailProduct}
-              onClose={() => {
-                setDetailProduct(null);
-                setSelectedProductId(null);
-              }}
-              onAddToCart={handleAddToCart}
-            />
-            <BoothDetailsModal
-              booth={booth}
-              payment={payment}
-              open={isInfoOpen}
-              onClose={() => setIsInfoOpen(false)}
-            />
-            <FlyingItemsLayer items={flyingItems} />
-          </main>
-        </ErrorBoundary>
-      </PromotionProvider>
+              )}
+              {showCheckoutRecoveryDock && checkoutRecovery && (
+                <RecoverCheckoutBar
+                  session={checkoutRecovery}
+                  total={checkoutRecoveryTotal}
+                  style={getThemeStyle(booth)}
+                  onOpen={() => openPaymentFlow()}
+                />
+              )}
+              {showFloatingCartDock && (
+                <FloatingCartBar
+                  itemCount={cartItemCount}
+                  total={cartPricing.total}
+                  style={getThemeStyle(booth)}
+                  onOpen={handleRevealCart}
+                />
+              )}
+              {orderingEnabled && paymentModalRequested && (
+                <Suspense fallback={null}>
+                  <PaymentQrModal
+                    shopSlug={shop.slug}
+                    isOpen={isQrOpen}
+                    payment={payment}
+                    cart={cart}
+                    promotion={promotion}
+                    booth={booth}
+                    onClose={() => setIsQrOpen(false)}
+                    onSuccess={() => void loadCatalog()}
+                    onOrderChange={handleOrderChange}
+                    onSessionChange={setRecoverableCheckout}
+                  />
+                </Suspense>
+              )}
+              <ProductDetailModal
+                product={detailProduct}
+                onClose={() => {
+                  setDetailProduct(null);
+                  setSelectedProductId(null);
+                }}
+                onAddToCart={handleAddToCart}
+              />
+              <BoothDetailsModal
+                booth={booth}
+                payment={payment}
+                open={isInfoOpen}
+                onClose={() => setIsInfoOpen(false)}
+              />
+              <FlyingItemsLayer items={flyingItems} />
+            </main>
+          </ErrorBoundary>
+        </PromotionProvider>
+      </CatalogAppChrome>
     </CatalogLocaleProvider>
   );
 }

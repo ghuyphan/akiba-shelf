@@ -1,6 +1,6 @@
 import { act, fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { CatalogLocaleProvider } from "../../../lib/i18n/catalogI18n";
+import { CatalogLocaleProvider } from "../../../lib/i18n/catalogLocale";
 import type { Product } from "../../../types/catalog";
 import { StackedFeatured } from "./StackedFeatured";
 

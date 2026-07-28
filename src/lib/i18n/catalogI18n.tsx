@@ -1,6 +1,3 @@
-import { createContext, useContext, useEffect, type ReactNode } from "react";
-import type { CatalogLocale } from "../../types/catalog";
-
 export const translations = {
   en: {
     all: "All", officialShop: "Official Shop", boothInfo: "Booth info", boothInfoHint: "Hours, location & socials",
@@ -77,28 +74,3 @@ export const translations = {
 } as const;
 
 export type CatalogCopy = (typeof translations)["en"] | (typeof translations)["vi"];
-const CatalogLocaleContext = createContext<CatalogCopy>(translations.en);
-
-export function CatalogLocaleProvider({
-  locale,
-  children,
-  targetDocument,
-}: {
-  locale: CatalogLocale;
-  children: ReactNode;
-  targetDocument?: Document;
-}) {
-  useEffect(() => {
-    const root = (targetDocument ?? document).documentElement;
-    const previousLanguage = root.lang;
-    root.lang = locale;
-    return () => {
-      root.lang = previousLanguage || "en";
-    };
-  }, [locale, targetDocument]);
-  return <CatalogLocaleContext.Provider value={translations[locale]}>{children}</CatalogLocaleContext.Provider>;
-}
-
-export function useCatalogCopy() {
-  return useContext(CatalogLocaleContext);
-}

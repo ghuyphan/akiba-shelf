@@ -1,5 +1,5 @@
 import { ArrowDownUp, Grid2X2, List, Search, X } from "lucide-react";
-import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
+import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import type { PublicProductSort } from "../../../lib/catalogQueries";
 import { SelectMenu } from "../../ui/SelectMenu";
 

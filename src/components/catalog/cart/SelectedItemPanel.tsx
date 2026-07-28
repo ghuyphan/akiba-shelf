@@ -4,7 +4,7 @@ import { formatVnd } from "../../../utils/format";
 import { calculateCartPricing, getPricingLine } from "../../../utils/pricing";
 import { Button } from "../../ui/Button";
 import { EmptyState } from "../../ui/EmptyState";
-import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
+import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { MobileSheetShell, SheetHandle } from "../../ui/MobileSheetShell";
 import { useOverlayHistory } from "../../../hooks/shared/useOverlayHistory";
 

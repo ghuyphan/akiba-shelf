@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { CatalogLocaleProvider } from "./catalogI18n";
+import { CatalogLocaleProvider } from "./catalogLocale";
 
 describe("CatalogLocaleProvider", () => {
   it("owns the language of its target document without changing the parent", () => {

@@ -14,7 +14,7 @@ import { SocialBrandIcon } from "../../ui/SocialBrandIcon";
 import { SocialQrCard } from "../social/SocialQrCard";
 import { configuredSocialPlatforms } from "../../../utils/social";
 import { formatVnd } from "../../../utils/format";
-import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
+import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import type {
   BoothSettings,
   CheckoutSession,

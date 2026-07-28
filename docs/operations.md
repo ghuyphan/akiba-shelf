@@ -349,6 +349,27 @@ diagnostics expose only `disabled`, `listening`, `initializing`, `ready`, or
 files, and GitHub Actions do not transfer environment values between one
 another automatically.
 
+### Sentry production completion
+
+The repository can wire the browser reporter, but Sentry alert ownership and
+delivery are provider-side controls. Complete this checklist before treating
+observability as production-ready:
+
+1. Create or select the Sentry browser project for Matsuri and record its
+   project/team owner and escalation contact.
+2. Add the public DSN as the protected GitHub environment secret
+   `VITE_SENTRY_DSN`; never add an auth token or client secret to Vite.
+3. Keep `VITE_APP_ENV=production` and choose an intentional
+   `VITE_RUM_SAMPLE_RATE` (start at `0.1`, then tune from volume and cost).
+4. Configure Sentry alert rules for unhandled errors, checkout failures, and
+   sustained Web Vitals regressions. Route alerts to the owned notification
+   channel and verify at least one on-call recipient receives a test alert.
+5. Trigger a controlled test error after deployment, confirm the event has the
+   `production` environment and release SHA, then remove or suppress the test
+   issue and record the verification date.
+6. Review alert ownership and escalation after team changes; a green deploy
+   does not prove that alert delivery is configured.
+
 The `CI and Deploy` workflow runs checks, database tests, e2e tests, and
 performance tests before building. A newer run cancels superseded validation
 jobs for the same ref, but production deployment steps are serialized and are

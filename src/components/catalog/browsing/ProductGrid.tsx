@@ -3,7 +3,7 @@ import type { Product } from "../../../types/catalog";
 import { Button } from "../../ui/Button";
 import { EmptyState } from "../../ui/EmptyState";
 import { ProductCard } from "./ProductCard";
-import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
+import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 
 type ProductGridProps = {
   products: Product[];

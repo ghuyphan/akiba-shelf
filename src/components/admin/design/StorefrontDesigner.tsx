@@ -37,7 +37,7 @@ import {
   getStorefrontSectionStyleClass,
   getThemeStyle,
 } from "../../../utils/theme";
-import { CatalogLocaleProvider } from "../../../lib/i18n/catalogI18n";
+import { CatalogLocaleProvider } from "../../../lib/i18n/catalogLocale";
 import type { PublicProductSort } from "../../../lib/catalogQueries";
 import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { useToast } from "../../ui/ToastProvider";

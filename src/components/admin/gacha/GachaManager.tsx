@@ -18,10 +18,7 @@ import {
 } from "../../../lib/gacha/gachaLaunch";
 import {
   capGachaFeaturedEntries,
-  getGachaFeaturedComposition,
   getRecommendedGachaEntryPlan,
-  hasGachaBannerRarities,
-  isGachaFeaturedCompositionComplete,
   matchesGachaBannerKind,
   normalizeGachaDisplayLimit,
 } from "../../../lib/gacha/gachaLimits";
@@ -59,15 +56,13 @@ import {
   type GachaStatesByGame,
 } from "./gachaState";
 import { useGachaHistory } from "./useGachaHistory";
+import {
+  validateGachaBasics,
+  validateGachaGoLive,
+  type GachaValidationIssue,
+} from "./gachaValidation";
 
 type Props = { shopId: string; shopSlug: string; products: Product[] };
-
-type ValidationIssue = {
-  message: string;
-  target: "general" | "banner" | "pool" | "luck";
-  field?: "title" | "schedule";
-  bannerId?: string;
-};
 
 type ConfirmationState =
   | { type: "discard" }
@@ -103,7 +98,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   } | null>(null);
   const [publishError, setPublishError] = useState("");
   const [validationIssue, setValidationIssue] =
-    useState<ValidationIssue | null>(null);
+    useState<GachaValidationIssue | null>(null);
   const [confirmation, setConfirmation] = useState<ConfirmationState>(null);
   const validationFocusFrame = useRef<number | null>(null);
   const { busy: saving, run: runSave } = useAsyncAction();
@@ -255,7 +250,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   ]);
 
   const focusValidationIssue = useCallback(
-    (issue: ValidationIssue) => {
+    (issue: GachaValidationIssue) => {
       if (issue.bannerId && issue.bannerId !== selectedBannerId) {
         update(
           (state) => ({ ...state, selectedBannerId: issue.bannerId! }),
@@ -285,7 +280,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   );
 
   const reportValidationIssue = useCallback(
-    (issue: ValidationIssue, title: string) => {
+    (issue: GachaValidationIssue, title: string) => {
       setValidationIssue(issue);
       setPublishError("");
       toast.error(issue.message, title);
@@ -298,294 +293,15 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
     if (validationIssue) focusValidationIssue(validationIssue);
   }, [focusValidationIssue, validationIssue]);
 
-  function validateBasics(state: GachaState): boolean {
-    const { settings: stateSettings, banners: stateBanners } = state;
-    if (!stateSettings.title.trim()) {
-      return reportValidationIssue(
-        {
-          message: t("Give the minigame a title."),
-          target: "general",
-          field: "title",
-        },
-        t("Check gacha settings"),
-      );
-    }
-    const untitledBanner = stateBanners.find((banner) => !banner.name.trim());
-    if (untitledBanner) {
-      return reportValidationIssue(
-        {
-          message: t("Give every banner a title."),
-          target: "banner",
-          field: "title",
-          bannerId: untitledBanner.id,
-        },
-        t("Check gacha settings"),
-      );
-    }
-    if (
-      stateSettings.rare_base_rate + stateSettings.legendary_base_rate >=
-      100
-    ) {
-      return reportValidationIssue(
-        {
-          message: t(
-            "The 4-star and 5-star base rates must total less than 100%.",
-          ),
-          target: "luck",
-        },
-        t("Check gacha settings"),
-      );
-    }
-    if (
-      descriptor.hasLightconePity &&
-      stateSettings.rare_base_rate +
-        stateSettings.lightcone_legendary_base_rate >=
-        100
-    ) {
-      return reportValidationIssue(
-        {
-          message: t(
-            "The 4-star and Light Cone 5-star base rates must total less than 100%.",
-          ),
-          target: "luck",
-        },
-        t("Check warp settings"),
-      );
-    }
-    if (stateSettings.legendary_pity <= stateSettings.rare_pity) {
-      return reportValidationIssue(
-        {
-          message: t("The 5-star pity must be higher than the 4-star pity."),
-          target: "luck",
-        },
-        t("Check gacha settings"),
-      );
-    }
-    if (
-      descriptor.hasLightconePity &&
-      stateSettings.lightcone_legendary_pity <= stateSettings.rare_pity
-    ) {
-      return reportValidationIssue(
-        {
-          message: t(
-            "The Light Cone 5-star pity must be higher than the 4-star pity.",
-          ),
-          target: "luck",
-        },
-        t("Check warp settings"),
-      );
-    }
-    if (
-      stateSettings.rare_soft_pity < 1 ||
-      stateSettings.rare_soft_pity >= stateSettings.rare_pity ||
-      stateSettings.legendary_soft_pity < 1 ||
-      stateSettings.legendary_soft_pity >= stateSettings.legendary_pity ||
-      (descriptor.hasLightconePity &&
-        (stateSettings.lightcone_legendary_soft_pity < 1 ||
-          stateSettings.lightcone_legendary_soft_pity >=
-            stateSettings.lightcone_legendary_pity))
-    ) {
-      return reportValidationIssue(
-        {
-          message: t(
-            "Each soft pity must be at least 1 and lower than its hard pity.",
-          ),
-          target: "luck",
-        },
-        t("Check gacha settings"),
-      );
-    }
-    if (
-      stateSettings.featured_item_rate < 0 ||
-      stateSettings.featured_item_rate > 100
-    ) {
-      return reportValidationIssue(
-        {
-          message: t("The featured-item rate must be between 0% and 100%."),
-          target: "luck",
-        },
-        t("Check gacha settings"),
-      );
-    }
-    const invalidSchedule = stateBanners.find((banner) => {
-      if (!banner.starts_at || !banner.ends_at) return false;
-      return Date.parse(banner.ends_at) <= Date.parse(banner.starts_at);
-    });
-    if (invalidSchedule) {
-      return reportValidationIssue(
-        {
-          message: t('Banner "{{name}}" must end after it starts.', {
-            name: invalidSchedule.name,
-          }),
-          target: "banner",
-          field: "schedule",
-          bannerId: invalidSchedule.id,
-        },
-        t("Check banner schedule"),
-      );
-    }
-    return true;
-  }
-
-  function validateGoLive(state: GachaState): boolean {
-    const {
-      settings: stateSettings,
-      banners: stateBanners,
-      entries: stateEntries,
-    } = state;
-    if (!stateSettings.enabled) return true;
-    const activeBanners = stateBanners.filter((banner) => banner.active);
-    if (activeBanners.length === 0) {
-      return reportValidationIssue(
-        {
-          message: t(
-            "Enable at least one banner before publishing the minigame.",
-          ),
-          target: "banner",
-        },
-        t("No active banner"),
-      );
-    }
-    const emptyBanner = activeBanners.find(
-      (banner) =>
-        !stateEntries.some(
-          (entry) => entry.banner_id === banner.id && entry.active,
-        ),
-    );
-    if (emptyBanner) {
-      return reportValidationIssue(
-        {
-          message: t(
-            'The active banner "{{name}}" needs at least one active merch item.',
-            { name: emptyBanner.name },
-          ),
-          target: "pool",
-          bannerId: emptyBanner.id,
-        },
-        t("Wish pool is empty"),
-      );
-    }
-    const activeBannerIds = new Set(activeBanners.map((banner) => banner.id));
-    const activeRarities = new Set(
-      stateEntries
-        .filter((entry) => entry.active && activeBannerIds.has(entry.banner_id))
-        .map((entry) => entry.rarity),
-    );
-    // 3-star pulls fall back to the shared souvenir pool (see migration
-    // 20260720080000_allow_gacha_publish_without_3star.sql), so only 4- and
-    // 5-star items are required here, matching the server-side check.
-    const missingRarity = ([4, 5] as const).find(
-      (rarity) => !activeRarities.has(rarity),
-    );
-    if (missingRarity) {
-      return reportValidationIssue(
-        {
-          message: t(
-            "The active game needs at least one active {{rarity}}-star item across its banners.",
-            { rarity: missingRarity },
-          ),
-          target: "pool",
-        },
-        t("Incomplete prize pool"),
-      );
-    }
-
-    for (const banner of activeBanners) {
-      const rule = getGachaBannerFeaturedRule(activeGame, banner.kind);
-      const composition = getGachaFeaturedComposition(stateEntries, banner);
-      if (composition.invalidCount > 0) {
-        return reportValidationIssue(
-          {
-            message: t(
-              'Featured items in "{{name}}" must match its banner type and use 4★ or 5★ rarity.',
-              { name: banner.name },
-            ),
-            target: "pool",
-            bannerId: banner.id,
-          },
-          t("Check featured items"),
-        );
-      }
-      if (composition.totalCount === 0 && rule.allowEmptyComposition) {
-        if (!hasGachaBannerRarities(stateEntries, banner, false)) {
-          return reportValidationIssue(
-            {
-              message: t(
-                'The standard banner "{{name}}" needs active non-featured 4★ and 5★ items.',
-                { name: banner.name },
-              ),
-              target: "pool",
-              bannerId: banner.id,
-            },
-            t("Incomplete standard pool"),
-          );
-        }
-        continue;
-      }
-      if (rule.requireCompleteComposition) {
-        if (
-          !isGachaFeaturedCompositionComplete(stateEntries, banner, activeGame)
-        ) {
-          return reportValidationIssue(
-            {
-              message: t(
-                'The active banner "{{name}}" needs exactly {{five}} featured 5★ and {{four}} featured 4★ items.',
-                {
-                  name: banner.name,
-                  five: rule.fiveStarLimit,
-                  four: rule.fourStarLimit,
-                },
-              ),
-              target: "pool",
-              bannerId: banner.id,
-            },
-            t("Incomplete featured lineup"),
-          );
-        }
-      } else if (
-        composition.totalCount > 0 &&
-        (composition.fiveStarCount !== rule.fiveStarLimit ||
-          composition.fourStarCount > rule.fourStarLimit)
-      ) {
-        return reportValidationIssue(
-          {
-            message: t(
-              'The active banner "{{name}}" supports {{five}} featured 5★ and up to {{four}} featured 4★ items.',
-              {
-                name: banner.name,
-                five: rule.fiveStarLimit,
-                four: rule.fourStarLimit,
-              },
-            ),
-            target: "pool",
-            bannerId: banner.id,
-          },
-          t("Check warp settings"),
-        );
-      }
-      if (
-        stateSettings.featured_item_rate < 100 &&
-        !hasGachaBannerRarities(stateEntries, banner, false)
-      ) {
-        return reportValidationIssue(
-          {
-            message: t(
-              'The active banner "{{name}}" needs non-featured 4★ and 5★ items for possible featured-rate losses.',
-              { name: banner.name },
-            ),
-            target: "pool",
-            bannerId: banner.id,
-          },
-          t("Missing loss candidates"),
-        );
-      }
-    }
-    return true;
-  }
-
   async function publish() {
-    if (!current || !validateBasics(current) || !validateGoLive(current))
+    if (!current) return;
+    const validation =
+      validateGachaBasics(current, activeGame, t) ??
+      validateGachaGoLive(current, activeGame, t);
+    if (validation) {
+      reportValidationIssue(validation.issue, validation.title);
       return;
+    }
     setValidationIssue(null);
     setPublishError("");
     const config = persistedGameState(current);

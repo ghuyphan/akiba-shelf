@@ -3,7 +3,7 @@ import { Ban, CheckCircle2, CircleAlert, CloudOff, Copy, Loader2, ReceiptText, R
 import type { CartItem, PaymentSettings, PromotionSettings, Order, BoothSettings, CheckoutSession } from "../../../types/catalog";
 import { formatVnd } from "../../../utils/format";
 import { calculateCartPricing, getPricingLine } from "../../../utils/pricing";
-import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
+import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { canGenerateVietQr, hasUsablePayment } from "../../../utils/vietqr";
 import { Modal } from "../../ui/Modal";
 import { useOrderCountdown, usePaymentQrSource } from "../../../hooks/catalog/useCheckoutPresentation";

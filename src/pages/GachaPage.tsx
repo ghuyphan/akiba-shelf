@@ -11,7 +11,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PageLoading } from "../components/ui/PageLoading";
-import { AppUpdateNotice } from "../components/ui/AppUpdateNotice";
+import { CatalogUpdateNotice } from "../components/catalog/shell/CatalogAppChrome";
 import {
   GachaGameSelector,
   type GachaPackDownloadState,
@@ -72,17 +72,7 @@ function GachaUpdateSurface({
 }) {
   return (
     <>
-      <AppUpdateNotice
-        copy={{
-          ariaLabel: copy.updateAvailableLabel,
-          title: copy.updateReadyTitle,
-          message: copy.updateReadyHint,
-          updateLabel: copy.updateNow,
-          updatingLabel: copy.updatingApp,
-          laterLabel: copy.updateLater,
-          dismissLabel: copy.dismissUpdateNotice,
-        }}
-      />
+      <CatalogUpdateNotice copy={copy} />
       {children}
     </>
   );

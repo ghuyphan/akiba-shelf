@@ -65,14 +65,20 @@ select ok(
 
 set local role authenticated;
 set local request.jwt.claim.sub = '73000000-0000-4000-8000-000000000001';
-create temporary table event_result as
-select public.start_offline_event_session(
+create temporary table event_draft_result as
+select public.save_offline_event_draft(
   '74000000-0000-4000-8000-000000000001',
-  '75000000-0000-4000-8000-000000000001',
+  null,
   'Convention day',
-  '[{"product_id":"offline-event-product","quantity":4}]',
-  '{}',
-  '{}'
+  '2026-07-21T00:00:00Z',
+  '2026-07-22T00:00:00Z',
+  '[{"product_id":"offline-event-product","quantity":4}]'
+) as payload;
+
+create temporary table event_result as
+select public.activate_offline_event_session(
+  (select (payload #>> '{session,id}')::uuid from event_draft_result),
+  '75000000-0000-4000-8000-000000000001'
 ) as payload;
 
 set local role postgres;

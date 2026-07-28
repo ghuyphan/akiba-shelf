@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CatalogLocaleProvider } from "../../../lib/i18n/catalogI18n";
+import { CatalogLocaleProvider } from "../../../lib/i18n/catalogLocale";
 import { CatalogToolbar } from "./CatalogToolbar";
 
 function renderToolbar(

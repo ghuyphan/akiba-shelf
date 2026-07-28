@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { PackageCheck, ShoppingCart, Tag } from "lucide-react";
 import type { Product } from "../../../types/catalog";
 import { Modal } from "../../ui/Modal";
-import { useCatalogCopy } from "../../../lib/i18n/catalogI18n";
+import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { ProductPrice } from "./ProductPrice";
 
 type ProductDetailModalProps = {

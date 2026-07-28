@@ -329,41 +329,6 @@ export async function getOfflineEventDraft(
   return normalizeDraftBundle(data, shopSlug);
 }
 
-export async function startOfflineEventSession({
-  shopId,
-  shopSlug,
-  deviceId,
-  name,
-  products,
-  payment,
-  promotion,
-}: {
-  shopId: string;
-  shopSlug: string;
-  deviceId: string;
-  name: string;
-  products: Array<{ id: string; quantity: number }>;
-  payment: PaymentSettings;
-  promotion: PromotionSettings;
-}): Promise<OfflineEventSession> {
-  const { data, error } = await requireSupabase().rpc(
-    "start_offline_event_session",
-    {
-      p_shop_id: shopId,
-      p_device_id: deviceId,
-      p_name: name,
-      p_allocations: products.map((product) => ({
-        product_id: product.id,
-        quantity: product.quantity,
-      })),
-      p_payment_snapshot: payment,
-      p_promotion_snapshot: promotion,
-    },
-  );
-  if (error) throw error;
-  return normalizeBundle(data, shopSlug);
-}
-
 export async function recoverOfflineEventSession(
   shopId: string,
   shopSlug: string,
