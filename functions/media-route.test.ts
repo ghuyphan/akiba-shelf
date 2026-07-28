@@ -20,6 +20,9 @@ describe("simulator media route", () => {
     for (const [name, value] of Object.entries(FUNCTION_SECURITY_HEADERS)) {
       expect(headers.get(name)).toBe(value);
     }
+    const policy = headers.get("content-security-policy");
+    expect(policy).toContain("https://static.cloudflareinsights.com");
+    expect(policy).toMatch(/connect-src 'self'/);
   });
 
   it("maps both simulator prefixes to R2 keys", () => {

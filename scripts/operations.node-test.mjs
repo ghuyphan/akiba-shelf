@@ -242,6 +242,11 @@ test("keeps the static and function security-header contracts aligned", async ()
     staticPolicy,
     /frame-src 'self' https:\/\/challenges\.cloudflare\.com/,
   );
+  assert.match(
+    staticPolicy,
+    /script-src[^;]+https:\/\/static\.cloudflareinsights\.com/,
+  );
+  assert.match(staticPolicy, /connect-src 'self'/);
   assert.equal(functionPolicy, staticPolicy);
 });
 

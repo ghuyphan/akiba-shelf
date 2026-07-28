@@ -23,6 +23,12 @@ describe("PageLoading", () => {
       "platform-mark",
     );
     expect(loading.querySelector(".page-loading-track i")).toBeInTheDocument();
+    expect(loading.querySelector(".page-loading-copy")).not.toHaveClass(
+      "page-loading-copy-assistive",
+    );
     expect(screen.getByText("Opening the shop…")).toBeInTheDocument();
+    expect(
+      screen.getByText("Getting the shelves ready for you."),
+    ).toBeVisible();
   });
 });

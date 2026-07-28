@@ -18,12 +18,47 @@ function verifySecurityHeaders(response) {
   ) {
     throw new Error("missing Referrer-Policy security header");
   }
-  if (!response.headers.get("content-security-policy")) {
+  const policy = response.headers.get("content-security-policy");
+  if (!policy) {
     throw new Error("missing enforced Content-Security-Policy header");
+  }
+  const directives = new Map(
+    policy.split(";").map((directive) => {
+      const [name, ...sources] = directive.trim().split(/\s+/);
+      return [name, sources];
+    }),
+  );
+  if (
+    !directives
+      .get("script-src")
+      ?.includes("https://static.cloudflareinsights.com")
+  ) {
+    throw new Error("CSP does not permit the Cloudflare Web Analytics beacon");
+  }
+  if (!directives.get("connect-src")?.includes("'self'")) {
+    throw new Error("CSP does not permit same-origin analytics delivery");
   }
   if (response.headers.get("strict-transport-security") !== EXPECTED_HSTS) {
     throw new Error(`missing Strict-Transport-Security: ${EXPECTED_HSTS}`);
   }
+}
+
+function extractSimulatorBootstrap(html, simulatorPath) {
+  const bootstrapPath = `/${simulatorPath}/internal/matsuri-bootstrap.js`;
+  const escapedPath = bootstrapPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (!new RegExp(`<script\\b[^>]*\\bsrc=["']${escapedPath}["']`).test(html)) {
+    throw new Error(`Could not find ${simulatorPath} bootstrap asset.`);
+  }
+  if (
+    /<script(?![^>]*\bsrc=)(?![^>]*application\/ld\+json)[^>]*>\s*\S/i.test(
+      html,
+    )
+  ) {
+    throw new Error(
+      `${simulatorPath} still contains executable inline script.`,
+    );
+  }
+  return bootstrapPath;
 }
 
 function normalizeOrigin(value, label) {
@@ -224,6 +259,28 @@ async function fetchEntryAsset(origin, assetPath, options) {
   );
 }
 
+async function fetchSimulatorApp(origin, simulatorPath, options) {
+  const bootstrapPath = await requestWithRetry(
+    `${origin}/${simulatorPath}/`,
+    async (response) => {
+      if (response.status !== 200) {
+        throw new Error(`expected HTTP 200, received ${response.status}`);
+      }
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.includes("text/html")) {
+        throw new Error(
+          `expected HTML, received ${contentType || "no content type"}`,
+        );
+      }
+      verifySecurityHeaders(response);
+      return extractSimulatorBootstrap(await response.text(), simulatorPath);
+    },
+    options,
+  );
+  await fetchEntryAsset(origin, bootstrapPath, options);
+  return bootstrapPath;
+}
+
 export async function verifyCloudflareDeployment({
   deploymentUrl,
   canonicalUrl,
@@ -282,6 +339,10 @@ export async function verifyCloudflareDeployment({
   await fetchAppHtml(`${canonicalOrigin}/`, canonicalOptions, entryAsset);
   await fetchAppHtml(`${canonicalOrigin}/admin`, canonicalOptions, entryAsset);
   await fetchEntryAsset(canonicalOrigin, entryAsset, canonicalOptions);
+  const simulatorBootstraps = await Promise.all([
+    fetchSimulatorApp(canonicalOrigin, "gacha-simulator", canonicalOptions),
+    fetchSimulatorApp(canonicalOrigin, "hsr-simulator", canonicalOptions),
+  ]);
   const simulatorMedia = await fetchSimulatorMedia(
     canonicalOrigin,
     canonicalOptions,
@@ -310,6 +371,7 @@ export async function verifyCloudflareDeployment({
     canonicalOrigin,
     entryAsset,
     release: metadata.release,
+    simulatorBootstraps,
     simulatorMedia,
   };
 }

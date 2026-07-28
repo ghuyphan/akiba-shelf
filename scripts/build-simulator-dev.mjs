@@ -1,6 +1,7 @@
 import { existsSync, renameSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
+import { externalizeSimulatorBootstrap } from "./externalize-simulator-bootstrap.mjs";
 
 const game = process.argv[2];
 const ifMissing = process.argv.includes("--if-missing");
@@ -53,6 +54,10 @@ if (result.status !== 0) {
   process.exit(result.status ?? 1);
 }
 
+externalizeSimulatorBootstrap(
+  stagingPath,
+  `/${game === "genshin" ? "gacha-simulator" : "hsr-simulator"}`,
+);
 rmSync(previousPath, { recursive: true, force: true });
 if (existsSync(outputPath)) renameSync(outputPath, previousPath);
 renameSync(stagingPath, outputPath);

@@ -1,7 +1,7 @@
 const MEDIA_PREFIXES = ["/gacha-simulator/videos/", "/hsr-simulator/videos/"];
 
 const CONTENT_SECURITY_POLICY =
-  "default-src 'self'; script-src 'self' https://challenges.cloudflare.com 'sha256-7FFX34wE80rHafLf6rmb2DGlEh0ZYRRb8xkf6Zp3j+0=' 'sha256-Rx0iKcdR7hHd/ZLx3ZJ+mZzJmnDQFwfliBojPHmK5IM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io; font-src 'self' data:; frame-src 'self' https://challenges.cloudflare.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'";
+  "default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com 'sha256-7FFX34wE80rHafLf6rmb2DGlEh0ZYRRb8xkf6Zp3j+0=' 'sha256-Rx0iKcdR7hHd/ZLx3ZJ+mZzJmnDQFwfliBojPHmK5IM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io; font-src 'self' data:; frame-src 'self' https://challenges.cloudflare.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'";
 
 export const FUNCTION_SECURITY_HEADERS = {
   "content-security-policy": CONTENT_SECURITY_POLICY,

@@ -11,6 +11,7 @@ import { spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { createSimulatorCacheVersion } from "./simulator-cache-version.mjs";
 import { createSimulatorMediaPacks } from "./simulator-media.mjs";
+import { externalizeSimulatorBootstrap } from "./externalize-simulator-bootstrap.mjs";
 
 const externalMedia = process.argv.includes("--external-media");
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
@@ -105,6 +106,11 @@ async function buildSimulator(simulator, mediaPack) {
     renameSync(targetStaging, targetDev);
     writeFileSync(markerPath, `${JSON.stringify(expectedMarker)}\n`);
   }
+
+  externalizeSimulatorBootstrap(
+    targetDev,
+    `/${simulator.game === "genshin" ? "gacha-simulator" : "hsr-simulator"}`,
+  );
 
   rmSync(targetDist, { recursive: true, force: true });
   mkdirSync(dirname(targetDist), { recursive: true });

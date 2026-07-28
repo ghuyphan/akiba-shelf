@@ -23,7 +23,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:security": "node vendor/gacha-simulator/scripts/xss-regression.mjs && node vendor/hsr-simulator/scripts/xss-regression.mjs",
-    "test:deployment": "node --test scripts/retain-previous-assets.node-test.mjs scripts/verify-cloudflare-deployment.node-test.mjs scripts/operations.node-test.mjs scripts/simulator-media.node-test.mjs",
+    "test:deployment": "node --test scripts/externalize-simulator-bootstrap.node-test.mjs scripts/retain-previous-assets.node-test.mjs scripts/verify-cloudflare-deployment.node-test.mjs scripts/operations.node-test.mjs scripts/simulator-media.node-test.mjs",
     "check:architecture": "node scripts/check-architecture.mjs",
     "smoke:production": "node scripts/smoke-production.mjs",
     "test:simulators": "node vendor/shared/gacha-policy.test.mjs",

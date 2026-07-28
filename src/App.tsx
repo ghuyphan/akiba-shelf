@@ -9,6 +9,7 @@ import {
 } from "react-router";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
+import { PageLoading } from "./components/ui/PageLoading";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
 
 const PlatformLayout = lazyWithRetry("platform-layout", () =>
@@ -113,32 +114,14 @@ function RouteErrorBoundary({ children }: { children: ReactNode }) {
 function RouteLoading() {
   const storefront = /^\/s\/[^/]+\/?$/.test(window.location.pathname);
   return (
-    <main
-      className="page-loading"
-      aria-label="Loading Matsuri"
-      aria-busy="true"
-    >
-      <div className="page-loading-brand" aria-hidden="true">
-        <img
-          src={`${import.meta.env.BASE_URL}brand/matsuri-mark.svg`}
-          alt=""
-          className="platform-mark"
-        />
-      </div>
-      <div className="page-loading-copy page-loading-copy-assistive">
-        <strong>
-          {storefront ? "Opening the shop…" : "Preparing Matsuri"}
-        </strong>
-        <span>
-          {storefront
-            ? "Getting the shelves ready for you."
-            : "Getting everything ready…"}
-        </span>
-      </div>
-      <div className="page-loading-track" aria-hidden="true">
-        <i />
-      </div>
-    </main>
+    <PageLoading
+      title={storefront ? "Opening the shop…" : "Preparing Matsuri"}
+      message={
+        storefront
+          ? "Getting the shelves ready for you."
+          : "Getting everything ready…"
+      }
+    />
   );
 }
 

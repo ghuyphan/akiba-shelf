@@ -10,8 +10,11 @@ const oldHtml =
   '<script type="module" src="/assets/index-old12345.js"></script>';
 const currentHtml =
   '<!doctype html><script type="module" src="/assets/index-new12345.js"></script>';
+const simulatorHtml = (path) =>
+  `<!doctype html><script src="/${path}/internal/matsuri-bootstrap.js"></script>`;
 const securityHeaders = {
-  "content-security-policy": "default-src 'self'",
+  "content-security-policy":
+    "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self'",
   "referrer-policy": "strict-origin-when-cross-origin",
   "strict-transport-security": "max-age=31536000",
   "x-content-type-options": "nosniff",
@@ -69,6 +72,16 @@ function simulatorMediaNotFoundResponse() {
   });
 }
 
+function simulatorAppResponse(path) {
+  return htmlResponse(simulatorHtml(path));
+}
+
+function simulatorBootstrapResponse() {
+  return new Response("Promise.resolve();", {
+    headers: { "content-type": "application/javascript" },
+  });
+}
+
 test("waits for the canonical domain and verifies the www redirect", async () => {
   let canonicalRequests = 0;
   const requestedUrls = [];
@@ -97,6 +110,16 @@ test("waits for the canonical domain and verifies the www redirect", async () =>
       return new Response("export {};", {
         headers: { "content-type": "application/javascript" },
       });
+    if (url === "https://matsuri.pro/gacha-simulator/")
+      return simulatorAppResponse("gacha-simulator");
+    if (url === "https://matsuri.pro/hsr-simulator/")
+      return simulatorAppResponse("hsr-simulator");
+    if (
+      url ===
+        "https://matsuri.pro/gacha-simulator/internal/matsuri-bootstrap.js" ||
+      url === "https://matsuri.pro/hsr-simulator/internal/matsuri-bootstrap.js"
+    )
+      return simulatorBootstrapResponse();
     if (url === "https://matsuri.pro/offline-assets.json")
       return offlineManifestResponse();
     if (
@@ -146,6 +169,10 @@ test("waits for the canonical domain and verifies the www redirect", async () =>
     "https://matsuri.pro/",
     "https://matsuri.pro/admin",
     "https://matsuri.pro/assets/index-new12345.js",
+    "https://matsuri.pro/gacha-simulator/",
+    "https://matsuri.pro/hsr-simulator/",
+    "https://matsuri.pro/gacha-simulator/internal/matsuri-bootstrap.js",
+    "https://matsuri.pro/hsr-simulator/internal/matsuri-bootstrap.js",
     "https://matsuri.pro/offline-assets.json",
     "https://matsuri.pro/gacha-simulator/videos/0123456789abcdef0123/bg.webm",
     "https://matsuri.pro/gacha-simulator/videos/blocked%2Fasset.mp4",
@@ -180,6 +207,16 @@ test("allows the direct deployment to outlast the normal retry budget", async ()
       return new Response("export {};", {
         headers: { "content-type": "application/javascript" },
       });
+    if (url === "https://matsuri.pro/gacha-simulator/")
+      return simulatorAppResponse("gacha-simulator");
+    if (url === "https://matsuri.pro/hsr-simulator/")
+      return simulatorAppResponse("hsr-simulator");
+    if (
+      url ===
+        "https://matsuri.pro/gacha-simulator/internal/matsuri-bootstrap.js" ||
+      url === "https://matsuri.pro/hsr-simulator/internal/matsuri-bootstrap.js"
+    )
+      return simulatorBootstrapResponse();
     if (url === "https://matsuri.pro/offline-assets.json")
       return offlineManifestResponse();
     if (
@@ -238,6 +275,16 @@ test("allows canonical hashed assets to outlast the normal retry budget", async 
       return releaseResponse("release-1");
     if (url === "https://matsuri.pro/" || url === "https://matsuri.pro/admin")
       return htmlResponse(currentHtml);
+    if (url === "https://matsuri.pro/gacha-simulator/")
+      return simulatorAppResponse("gacha-simulator");
+    if (url === "https://matsuri.pro/hsr-simulator/")
+      return simulatorAppResponse("hsr-simulator");
+    if (
+      url ===
+        "https://matsuri.pro/gacha-simulator/internal/matsuri-bootstrap.js" ||
+      url === "https://matsuri.pro/hsr-simulator/internal/matsuri-bootstrap.js"
+    )
+      return simulatorBootstrapResponse();
     if (url === "https://matsuri.pro/offline-assets.json")
       return offlineManifestResponse();
     if (
@@ -323,6 +370,37 @@ test("rejects a deployment that omits HSTS", async () => {
       sleep: async () => undefined,
     }),
     /missing Strict-Transport-Security: max-age=31536000/,
+  );
+});
+
+test("rejects a deployment that blocks Cloudflare Web Analytics", async () => {
+  await assert.rejects(
+    verifyCloudflareDeployment({
+      deploymentUrl: "https://deploy.pages.dev",
+      canonicalUrl: "https://matsuri.pro",
+      wwwUrl: "https://www.matsuri.pro",
+      attempts: 1,
+      fetchImpl: async (url) => {
+        if (url === "https://deploy.pages.dev/release.json") {
+          return releaseResponse("release-1");
+        }
+        if (url === "https://deploy.pages.dev/") {
+          return new Response(currentHtml, {
+            headers: {
+              "content-security-policy":
+                "default-src 'self'; script-src 'self'; connect-src 'self'",
+              "content-type": "text/html; charset=utf-8",
+              "referrer-policy": "strict-origin-when-cross-origin",
+              "strict-transport-security": "max-age=31536000",
+              "x-content-type-options": "nosniff",
+            },
+          });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+      },
+      sleep: async () => undefined,
+    }),
+    /CSP does not permit the Cloudflare Web Analytics beacon/,
   );
 });
 

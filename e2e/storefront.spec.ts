@@ -348,6 +348,42 @@ test("uses the booth locale and derives its open status from local time", async 
   ).toContainText("Giờ mở cửa");
 });
 
+test("keeps storefront header actions inside the shell at responsive boundaries", async ({
+  page,
+}) => {
+  await page.unrouteAll({ behavior: "wait" });
+  await mockSupabase(page, { dualGacha: true });
+
+  for (const width of [921, 920, 761, 760]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("./s/akiba-shelf");
+    await expect(page.locator(".gacha-entry-trigger")).toBeVisible();
+
+    const bounds = await page.locator(".catalog-header").evaluate((header) => {
+      const headerRect = header.getBoundingClientRect();
+      const actions = Array.from(
+        header.querySelectorAll<HTMLElement>(
+          ".gacha-entry-trigger, .booth-info-trigger",
+        ),
+      ).map((element) => {
+        const rect = element.getBoundingClientRect();
+        return { left: rect.left, right: rect.right };
+      });
+      return {
+        actions,
+        headerLeft: headerRect.left,
+        headerRight: headerRect.right,
+      };
+    });
+
+    expect(bounds.actions).toHaveLength(2);
+    for (const action of bounds.actions) {
+      expect(action.left).toBeGreaterThanOrEqual(bounds.headerLeft - 1);
+      expect(action.right).toBeLessThanOrEqual(bounds.headerRight + 1);
+    }
+  }
+});
+
 test("browses, filters, searches, opens details, and enforces quantity limits", async ({
   page,
 }) => {
@@ -832,12 +868,16 @@ test("offers native game portals when both gacha games are active", async ({
   ).toBeVisible();
 });
 
-test("launches HSR without forwarding Supabase credentials", async ({ page }) => {
+test("launches HSR without forwarding Supabase credentials", async ({
+  page,
+}) => {
   await page.unrouteAll({ behavior: "wait" });
   await mockSupabase(page, { dualGacha: true });
   await page.goto("./s/akiba-shelf/play?game=hsr");
 
-  const iframeSource = await page.locator(".gacha-host iframe").getAttribute("src");
+  const iframeSource = await page
+    .locator(".gacha-host iframe")
+    .getAttribute("src");
   expect(iframeSource).not.toBeNull();
   const iframeUrl = new URL(iframeSource!, page.url());
   expect(iframeUrl.pathname).toBe("/hsr-simulator/");
