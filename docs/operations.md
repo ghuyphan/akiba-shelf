@@ -339,13 +339,15 @@ through the Pages Function at the same-origin `/gacha-simulator/videos/*` and
 production release. If the binding is changed in the Cloudflare dashboard,
 redeploy the Pages project before validating media range requests.
 
-Production releases require `VITE_SENTRY_DSN` in the protected environment;
-the deployment configuration gate fails when it is absent. Also configure
-`VITE_APP_ENV` and `VITE_RUM_SAMPLE_RATE` and explicitly map them into the build
-job. Runtime diagnostics expose only `disabled`, `listening`, `initializing`,
-`ready`, or `failed` through `data-observability-status`; they never expose the
-DSN. GitHub Pages, Cloudflare Pages, local Vite files, and GitHub Actions do not
-transfer environment values between one another automatically.
+Production releases support `VITE_SENTRY_DSN` in the protected environment but
+do not require it. Without a DSN, the application remains operational and
+reports `data-observability-status="disabled"`; the deployment job emits a
+warning. When Sentry is enabled, also configure `VITE_APP_ENV` and
+`VITE_RUM_SAMPLE_RATE` and explicitly map them into the build job. Runtime
+diagnostics expose only `disabled`, `listening`, `initializing`, `ready`, or
+`failed`; they never expose the DSN. GitHub Pages, Cloudflare Pages, local Vite
+files, and GitHub Actions do not transfer environment values between one
+another automatically.
 
 The `CI and Deploy` workflow runs checks, database tests, e2e tests, and
 performance tests before building. A newer run cancels superseded validation
@@ -576,8 +578,9 @@ the existing idempotent terminal contracts.
 - [ ] External uptime, provider capacity, Edge Function, CI, and TLS alerts reach
       an on-call owner; queue age, dead letters, and `pg_net` drain responses are
       monitored during events.
-- [ ] Production observability reports a configured startup state and a
-      controlled test event reaches the responsible alert channel.
+- [ ] If production observability is enabled, it reports a configured startup
+      state and a controlled test event reaches the responsible alert channel;
+      otherwise the runtime explicitly reports `disabled`.
 - [ ] Offline Event allocation/sync/close has a trained designated device and a
       documented lost-device recovery procedure.
 - [ ] Known advisor warnings, notification delivery incidents, performance/RUM

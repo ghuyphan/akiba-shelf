@@ -149,7 +149,12 @@ test("gates the serialized production deploy on the current main SHA", async () 
   );
   assert.match(workflow, /group: matsuri-\$\{\{ github\.workflow \}\}-e2e-/);
   assert.match(workflow, /group: matsuri-cloudflare-production/);
-  assert.match(workflow, /VITE_TURNSTILE_SITE_KEY VITE_SENTRY_DSN; do/);
+  assert.match(workflow, /VITE_SUPABASE_ANON_KEY VITE_TURNSTILE_SITE_KEY; do/);
+  assert.doesNotMatch(workflow, /VITE_TURNSTILE_SITE_KEY VITE_SENTRY_DSN; do/);
+  assert.match(
+    workflow,
+    /VITE_SENTRY_DSN is not configured; browser observability will report disabled/,
+  );
 });
 
 test("writes deterministic release metadata", () =>
