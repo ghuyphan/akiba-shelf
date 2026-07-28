@@ -238,6 +238,10 @@ test("keeps the static and function security-header contracts aligned", async ()
     /const CONTENT_SECURITY_POLICY =\n\s+"([^"]+)";/,
   )?.[1];
   assert.ok(staticPolicy);
+  assert.match(
+    staticPolicy,
+    /frame-src 'self' https:\/\/challenges\.cloudflare\.com/,
+  );
   assert.equal(functionPolicy, staticPolicy);
 });
 
