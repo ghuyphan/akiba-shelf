@@ -69,7 +69,7 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
     <AuthShell>
       <div className="admin-login-heading">
         <h1>{t("Staff sign in")}</h1>
-        <p>{t("Use your admin account to continue.")}</p>
+        <p>{t("Use your staff account to continue.")}</p>
       </div>
 
       <div className="auth-oauth-actions">
@@ -131,7 +131,7 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
               aria-hidden="true"
             />
           )}
-          <span>{busy ? t("Signing in…") : t("Open admin")}</span>
+          <span>{busy ? t("Signing in…") : t("Open workspace")}</span>
           {!busy && <ArrowRight size={18} aria-hidden="true" />}
         </button>
       </form>
@@ -140,7 +140,7 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
         <Link to="/auth?mode=signup">{t("Create account")}</Link>
       </div>
       <AuthSecurityNote>
-        {t("Only authorised staff can access this workspace.")}
+        {t("Only authorized staff can access this workspace.")}
       </AuthSecurityNote>
     </AuthShell>
   );
@@ -185,14 +185,18 @@ export function AdminAccessDenied({
                   : t("Staff access required")}
             </h1>
             <p>
-              {(message ? t(message) :
-                (kind === "inactive"
+              {message
+                ? t(message)
+                : kind === "inactive"
                   ? t("An owner must reactivate your staff membership.")
-                  : t("This signed-in account is not an authorized staff member.")))}
+                  : t(
+                      "This signed-in account is not an authorized staff member.",
+                    )}
             </p>
             {kind === "unauthorized" && userId && (
               <p className="admin-account-identity">
-                {t("Signed in as")} <strong>{email || userId}</strong>. {t("Ask an owner to grant this account access.")}
+                {t("Signed in as")} <strong>{email || userId}</strong>.{" "}
+                {t("Ask an owner to grant this account access.")}
               </p>
             )}
           </div>

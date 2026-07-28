@@ -2,8 +2,10 @@
 .admin-mobile-settings-page {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
   gap: 18px;
 }
+.admin-mobile-settings-page > .admin-card { height: 100%; }
 
 .admin-workspace-identity {
   display: flex;
@@ -35,8 +37,8 @@
   }
 }
 .staff-install-banner {
-  --pwa-accent: #d95c64;
-  --pwa-accent-strong: #a93945;
+  --pwa-accent: var(--coral);
+  --pwa-accent-strong: var(--coral-strong);
   position: fixed;
   z-index: 45;
   right: max(18px, env(safe-area-inset-right));
@@ -111,6 +113,11 @@
 .staff-install-banner :is(button):focus-visible { outline: 3px solid color-mix(in srgb,var(--pwa-accent) 25%,transparent); outline-offset: 2px; }
 body:has(.admin-sticky-actions) .staff-install-banner {
   bottom: max(92px, calc(74px + env(safe-area-inset-bottom)));
+}
+@media (max-width: 760px) {
+  body:has(.admin-sticky-actions) .staff-install-banner {
+    bottom: max(132px, calc(114px + env(safe-area-inset-bottom)));
+  }
 }
 .admin-overflow-menu { position: relative; }
 .admin-overflow-toggle {

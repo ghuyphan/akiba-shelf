@@ -19,8 +19,11 @@
   left: 0;
   width: var(--active-width);
   border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 5px 14px rgb(20 33 53 / 8%);
+  border: 1px solid
+    color-mix(in srgb, var(--admin-primary) 22%, var(--line));
+  background: color-mix(in srgb, var(--admin-primary) 9%, #fff);
+  box-shadow: 0 5px 14px
+    color-mix(in srgb, var(--admin-primary) 12%, transparent);
   transform: translateX(var(--active-left));
   transition:
     transform 260ms var(--ease-out),
@@ -42,6 +45,13 @@
 .admin-nav-count { display: grid; place-items: center; min-width: 19px; height: 19px; padding: 0 4px; border-radius: 999px; color: #fff; background: var(--red); font-size: 9px; font-weight: 900; line-height: 1; pointer-events: none; }
 .admin-nav-count-products { color: var(--muted); background: color-mix(in srgb, var(--ink) 8%, #fff); }
 
+@media (prefers-reduced-motion: reduce) {
+  .app-header .admin-nav-tabs::before,
+  .app-header .admin-nav-tab {
+    transition: none;
+  }
+}
+
 @media (max-width: 1280px) and (min-width: 761px) {
   .admin-workspace-identity .app-header-title { max-width: 132px; }
   .admin-workspace-identity .app-header-title small,
@@ -53,7 +63,7 @@
 
 @media (max-width: 1100px) {
   .admin-mobile-settings-page { grid-template-columns: minmax(0, 1fr); }
+  .admin-mobile-settings-page > .admin-card { height: auto; }
   .admin-workspace-header .admin-nav-storefront { display: none; }
   .admin-workspace-header .admin-nav-mobile-settings { display: inline-flex; }
 }
-

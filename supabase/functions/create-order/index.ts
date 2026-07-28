@@ -70,6 +70,7 @@ const siteOrigins = configuredOrigins(
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const maxShopSlugLength = 63;
 const maxBodyLength = 32 * 1024;
 const maxTurnstileTokenLength = 2048;
 const turnstileAction = "turnstile-spin-v2";
@@ -284,6 +285,7 @@ export async function handleCreateOrderRequest(
   }
   if (
     !slugPattern.test(shopSlug) ||
+    shopSlug.length > maxShopSlugLength ||
     customerName.length > 30 ||
     !uuidPattern.test(clientRequestId) ||
     (deviceId !== null && !uuidPattern.test(deviceId)) ||

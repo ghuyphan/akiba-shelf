@@ -3,6 +3,7 @@ import { AlertTriangle, RotateCcw } from "lucide-react";
 import { EmptyState } from "./EmptyState";
 import { Button } from "./Button";
 import { reportError } from "../../lib/observability";
+import { reloadForAppUpdate } from "../../utils/lazyWithRetry";
 
 type ErrorBoundaryProps = {
   children: ReactNode;
@@ -57,7 +58,7 @@ export class ErrorBoundary extends Component<
   }
 
   handleReload = () => {
-    window.location.reload();
+    void reloadForAppUpdate();
   };
 
   render() {

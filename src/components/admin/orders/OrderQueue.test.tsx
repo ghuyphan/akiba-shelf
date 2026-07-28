@@ -169,6 +169,23 @@ describe("OrderQueue", () => {
     ).not.toBeInTheDocument();
   });
 
+  it.each([
+    ["pending", "Pending 1", "Pending orders"],
+    ["confirmed", "Confirmed 0", "Confirmed orders"],
+    ["cancelled", "Cancelled 0", "Cancelled orders"],
+    ["expired", "Expired 0", "Expired orders"],
+  ] as const)(
+    "uses explicit title-case copy for the %s queue",
+    (filter, filterName, heading) => {
+      renderQueue({ filter, orders: [], total: 0 });
+
+      expect(
+        screen.getByRole("button", { name: filterName }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    },
+  );
+
   it("renders expired orders with the shared warning status", () => {
     renderQueue({
       orders: [

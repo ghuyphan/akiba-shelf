@@ -22,6 +22,7 @@ import { PwaInstallBanner } from "../components/admin/shell/PwaInstallBanner";
 import { DashboardShopCard } from "../components/admin/dashboard/DashboardShopCard";
 import { DashboardEditShopDialog } from "../components/admin/dashboard/DashboardEditShopDialog";
 import { getOfflineEventSignOutRisk } from "../lib/offline/offlineEvents";
+import { safeLocalStorageSet } from "../lib/offline/safeStorage";
 
 export function DashboardPage() {
   const { state: adminSession, refresh: refreshAdminSession } =
@@ -81,7 +82,7 @@ export function DashboardPage() {
   }
 
   function handleSelectShop(shopId: string) {
-    localStorage.setItem("akiba-active-shop", shopId);
+    safeLocalStorageSet("akiba-active-shop", shopId);
     navigate("/admin");
   }
 

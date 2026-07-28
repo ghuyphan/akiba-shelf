@@ -18,8 +18,8 @@
 .admin-card-header { align-items: center !important; min-height: var(--admin-control-height); margin-bottom: 18px !important; padding-bottom: 16px !important; border-bottom: 1px solid var(--soft-line) !important; }
 .admin-card-title { align-items: center !important; min-width: 0; }
 .admin-card-title>div { min-width: 0; }
-.admin-card-icon { width: 40px !important; height: 40px !important; border: 0 !important; border-radius: var(--admin-control-radius) !important; color: var(--admin-primary) !important; background: color-mix(in srgb, var(--admin-accent) 12%, var(--surface)) !important; }
-.admin-card h2 { color: var(--admin-secondary); font-size: 16px !important; letter-spacing: -.018em; text-wrap: balance; }
+.admin-card-icon { width: 40px !important; height: 40px !important; border: 0 !important; border-radius: var(--admin-control-radius) !important; color: var(--ink) !important; background: color-mix(in srgb, var(--admin-accent) 16%, var(--surface)) !important; }
+.admin-card h2 { color: var(--ink); font-size: 16px !important; letter-spacing: -.018em; text-wrap: balance; }
 .admin-card-header p { max-width: 62ch; margin-top: 4px !important; font-size: 11px !important; line-height: 1.45; text-wrap: pretty; }
 .admin-card-header-action { flex: 0 0 auto; }
 

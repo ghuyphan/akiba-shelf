@@ -1,7 +1,7 @@
 import { defaultBooth } from "../lib/constants";
 import { boothSettingsSchema } from "../lib/schemas";
 import type { BoothSettings } from "../types/catalog";
-import { applyPageTheme, resetPageTheme } from "./theme";
+import { applyAdminPageTheme, applyPageTheme, resetPageTheme } from "./theme";
 
 const THEME_STORAGE_KEY = "merch-booth-theme";
 
@@ -42,6 +42,8 @@ export function hydrateInitialPageTheme() {
       ? `id:${activeShopId}`
       : undefined;
 
-  if (scope) applyPageTheme(getStoredBoothTheme(scope), scope);
+  if (scope && pathname === "/admin")
+    applyAdminPageTheme(getStoredBoothTheme(scope), scope);
+  else if (scope) applyPageTheme(getStoredBoothTheme(scope), scope);
   else resetPageTheme();
 }

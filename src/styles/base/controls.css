@@ -465,16 +465,24 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .date-time-popover {
-  position: absolute;
   z-index: 140;
-  top: calc(100% + 7px);
-  left: 0;
-  width: min(320px, calc(100vw - 32px));
+  width: min(320px, var(--floating-available-width, calc(100vw - 24px)));
+  max-width: var(--floating-available-width, calc(100vw - 24px));
+  max-height: var(--floating-available-height, calc(100dvh - 24px));
   padding: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 20px 48px rgb(15 23 42 / 18%);
+  transform-origin: top left;
+  scrollbar-gutter: stable;
+  will-change: opacity;
+}
+
+.date-time-popover[data-placement^="top"] {
+  transform-origin: bottom left;
 }
 
 .color-picker-heading {
@@ -697,7 +705,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .date-time-trigger-wrap:has(.date-time-clear) .date-time-trigger {
-  padding-right: 45px;
+  padding-right: 52px;
 }
 
 .date-time-trigger > span {
@@ -720,8 +728,8 @@ input[type="number"]::-webkit-outer-spin-button {
   top: 50%;
   right: 7px;
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   flex: 0 0 auto;
   place-items: center;
   padding: 0;
@@ -742,7 +750,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .date-time-calendar-head {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 34px;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
   align-items: center;
   gap: 6px;
 }
@@ -765,8 +773,8 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .date-time-calendar-head button {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   place-items: center;
   border-radius: 9px;
 }
@@ -799,6 +807,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .date-time-days button {
   display: grid;
   min-width: 0;
+  min-height: 40px;
   aspect-ratio: 1;
   place-items: center;
   border-radius: 9px;
@@ -808,7 +817,9 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .date-time-days button:hover:not(:disabled),
 .date-time-days button:focus-visible {
-  outline: 0;
+  outline: 2px solid
+    color-mix(in srgb, var(--admin-primary, var(--green)) 60%, transparent);
+  outline-offset: -2px;
   background: var(--surface-soft);
 }
 
@@ -841,7 +852,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .date-time-clock .select-menu-trigger {
-  min-height: 38px;
+  min-height: 44px;
   padding: 5px 8px;
 }
 
@@ -855,12 +866,12 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .date-time-clock .select-menu-popover button {
-  min-height: 38px;
+  min-height: 44px;
 }
 
 .date-time-done {
   width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   margin-top: 10px;
   border-radius: 10px;
   color: #fff;
@@ -887,8 +898,7 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 
   .date-time-popover {
-    right: 0;
-    left: auto;
+    width: min(320px, var(--floating-available-width, calc(100vw - 20px)));
   }
 }
 
@@ -902,6 +912,8 @@ input[type="number"]::-webkit-outer-spin-button {
   .color-picker-trigger,
   .color-picker-trigger > svg,
   .color-picker-popover,
+  .date-time-trigger,
+  .date-time-popover,
   .color-picker-presets button {
     transition: none !important;
   }

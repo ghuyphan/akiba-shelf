@@ -1,9 +1,18 @@
 import {
+  applyFunctionSecurityHeaders,
   getSimulatorMediaKey,
   getSimulatorMediaRange,
   isSimulatorMediaPath,
   parseSimulatorMediaRange,
 } from "./media-route";
+
+function mediaResponse(
+  body: BodyInit | null,
+  init: ResponseInit = {},
+): Response {
+  const headers = applyFunctionSecurityHeaders(new Headers(init.headers));
+  return new Response(body, { ...init, headers });
+}
 
 function setObjectHeaders(object: R2Object, headers: Headers): void {
   object.writeHttpMetadata(headers);
@@ -32,9 +41,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   if (!isSimulatorMediaPath(requestUrl.pathname)) return context.next();
 
   const key = getSimulatorMediaKey(requestUrl.pathname);
-  if (!key) return new Response("Not found", { status: 404 });
+  if (!key) return mediaResponse("Not found", { status: 404 });
   if (context.request.method !== "GET" && context.request.method !== "HEAD") {
-    return new Response("Method Not Allowed", {
+    return mediaResponse("Method Not Allowed", {
       status: 405,
       headers: { allow: "GET, HEAD" },
     });
@@ -51,21 +60,21 @@ export const onRequest: PagesFunction<Env> = async (context) => {
             onlyIf: context.request.headers,
             range: requestedRange,
           });
-    if (!object) return new Response("Not found", { status: 404 });
+    if (!object) return mediaResponse("Not found", { status: 404 });
 
     const headers = new Headers();
     setObjectHeaders(object, headers);
     if (context.request.method === "HEAD") {
       headers.set("content-length", String(object.size));
-      return new Response(null, { headers });
+      return mediaResponse(null, { headers });
     }
     if (!hasBody(object)) {
       const status = context.request.headers.has("if-none-match") ? 304 : 412;
-      return new Response(null, { status, headers });
+      return mediaResponse(null, { status, headers });
     }
 
     const status = setRangeHeaders(object, headers, requestedRange);
-    return new Response(object.body, { status, headers });
+    return mediaResponse(object.body, { status, headers });
   } catch (error) {
     console.error(
       JSON.stringify({
@@ -74,6 +83,6 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         error: error instanceof Error ? error.message : String(error),
       }),
     );
-    return new Response("Media unavailable", { status: 500 });
+    return mediaResponse("Media unavailable", { status: 500 });
   }
 };

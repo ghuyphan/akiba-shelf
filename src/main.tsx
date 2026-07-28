@@ -9,6 +9,11 @@ import { getRoutePrefetchTarget } from "./lib/routePrefetch";
 import { reloadForAppUpdate } from "./utils/lazyWithRetry";
 import { initObservability, reportError } from "./lib/observability";
 import { prefetchStorefrontBootstrapFromPath } from "./lib/api/storefrontBootstrapRequest";
+import {
+  safeSessionStorageGet,
+  safeSessionStorageRemove,
+  safeSessionStorageSet,
+} from "./lib/offline/safeStorage";
 
 restoreRedirect();
 resetDocumentBranding();
@@ -69,7 +74,7 @@ if (prefetchTarget === "catalog") {
 const appChunkRetryKey = "chunk-reload:app";
 void import("./App")
   .then(({ App }) => {
-    sessionStorage.removeItem(appChunkRetryKey);
+    safeSessionStorageRemove(appChunkRetryKey);
     createRoot(document.getElementById("root")!).render(
       <StrictMode>
         <App />
@@ -78,11 +83,11 @@ void import("./App")
   })
   .catch(async (error: unknown) => {
     reportError(error, { stage: "app_bootstrap" });
-    if (!sessionStorage.getItem(appChunkRetryKey)) {
-      sessionStorage.setItem(appChunkRetryKey, "1");
+    if (!safeSessionStorageGet(appChunkRetryKey)) {
+      safeSessionStorageSet(appChunkRetryKey, "1");
       await reloadForAppUpdate();
     } else {
-      sessionStorage.removeItem(appChunkRetryKey);
+      safeSessionStorageRemove(appChunkRetryKey);
       document.body.textContent =
         "Failed to load the application. Please refresh the page.";
     }

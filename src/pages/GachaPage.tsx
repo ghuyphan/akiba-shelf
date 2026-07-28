@@ -5,16 +5,13 @@ import {
   useRef,
   useState,
   type MouseEvent,
+  type ReactNode,
 } from "react";
 import { ArrowLeft, Sparkles } from "lucide-react";
-import {
-  Link,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PageLoading } from "../components/ui/PageLoading";
+import { AppUpdateNotice } from "../components/ui/AppUpdateNotice";
 import {
   GachaGameSelector,
   type GachaPackDownloadState,
@@ -33,9 +30,12 @@ import {
   refreshGachaLaunch,
   runningGachaCatalog,
 } from "../lib/gacha/gachaLaunch";
-import { translations } from "../lib/i18n/catalogI18n";
+import { translations, type CatalogCopy } from "../lib/i18n/catalogI18n";
 import { getErrorMessage } from "../lib/errors";
 import { prefersLightweightCatalog } from "../lib/network";
+import { getShopBranding, useDocumentBranding } from "../lib/branding";
+import { applyDocumentSeo, resetDocumentSeo } from "../lib/seo";
+import { resetPageTheme } from "../utils/theme";
 import type { GachaLaunchData } from "../lib/gacha/gachaLaunch";
 import {
   downloadGachaOfflinePack,
@@ -46,6 +46,47 @@ import {
 } from "../lib/offline/offlinePack";
 import type { GachaCatalog, GachaGameType } from "../types/gacha";
 import "../styles/gacha/host.css";
+
+function readLocalStorage(key: string) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalStorage(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Storage is optional; the network launch remains authoritative.
+  }
+}
+
+function GachaUpdateSurface({
+  children,
+  copy,
+}: {
+  children: ReactNode;
+  copy: CatalogCopy;
+}) {
+  return (
+    <>
+      <AppUpdateNotice
+        copy={{
+          ariaLabel: copy.updateAvailableLabel,
+          title: copy.updateReadyTitle,
+          message: copy.updateReadyHint,
+          updateLabel: copy.updateNow,
+          updatingLabel: copy.updatingApp,
+          laterLabel: copy.updateLater,
+          dismissLabel: copy.dismissUpdateNotice,
+        }}
+      />
+      {children}
+    </>
+  );
+}
 
 export function GachaPage() {
   const { shopSlug = "" } = useParams();
@@ -71,11 +112,46 @@ export function GachaPage() {
     status: "idle",
     progress: 0,
   });
+  const initialLanguageRef = useRef<string | null>(null);
+  const catalogLocale = state?.booth.catalog_locale === "vi" ? "vi" : "en";
+  const copy = translations[catalogLocale];
+  const branding = state
+    ? getShopBranding(
+        state.shop.name,
+        state.booth.booth_name,
+        state.booth.logo_url,
+        state.booth.theme_background,
+      )
+    : null;
+  useDocumentBranding(branding);
+
+  useEffect(() => {
+    initialLanguageRef.current = document.documentElement.lang || "en";
+    return () => {
+      document.documentElement.lang = initialLanguageRef.current || "en";
+    };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = catalogLocale;
+  }, [catalogLocale]);
+
+  useEffect(() => {
+    const shopName =
+      state?.booth.booth_name.trim() || state?.shop.name.trim() || "Shop";
+    applyDocumentSeo({
+      description: `Play the free gacha minigame from ${shopName} on Matsuri.`,
+      canonicalPath: `/s/${encodeURIComponent(shopSlug)}/play`,
+      robots: "noindex, nofollow",
+    });
+    return () => resetDocumentSeo();
+  }, [shopSlug, state?.booth.booth_name, state?.shop.name]);
 
   useEffect(() => {
     document.body.classList.add("gacha-screen");
     return () => {
       document.body.classList.remove("gacha-screen");
+      resetPageTheme();
     };
   }, []);
 
@@ -100,10 +176,10 @@ export function GachaPage() {
         const previewCatalog =
           preview && selectedGame
             ? parseGachaPreviewConfig(
-                localStorage.getItem(
+                readLocalStorage(
                   `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${launch.shop.slug}:${selectedGame}`,
                 ) ??
-                  localStorage.getItem(
+                  readLocalStorage(
                     `${GACHA_PREVIEW_CONFIG_STORAGE_PREFIX}${launch.shop.slug}`,
                   ),
               )
@@ -133,7 +209,7 @@ export function GachaPage() {
               ? available[0]
               : null;
         if (launchGame) {
-          localStorage.setItem(
+          writeLocalStorage(
             `${GACHA_CONFIG_STORAGE_PREFIX}${launch.shop.slug}`,
             JSON.stringify(catalogs[launchGame]),
           );
@@ -215,7 +291,7 @@ export function GachaPage() {
 
   useEffect(() => {
     if (!state || !activeCatalog) return;
-    localStorage.setItem(
+    writeLocalStorage(
       `${GACHA_CONFIG_STORAGE_PREFIX}${state.shop.slug}`,
       JSON.stringify(activeCatalog),
     );
@@ -322,22 +398,22 @@ export function GachaPage() {
     queryParams.set("lightweight", "1");
   }
 
-  const copy = translations[state?.booth.catalog_locale ?? "en"];
-
   if (error) {
     return (
-      <main className="gacha-host-state">
-        <EmptyState
-          icon={<Sparkles size={28} />}
-          title={copy.wishLoadFailed}
-          message={error}
-          action={
-            <Link className="button button-primary" to={`/s/${shopSlug}`}>
-              <ArrowLeft size={17} /> {copy.backToStore}
-            </Link>
-          }
-        />
-      </main>
+      <GachaUpdateSurface copy={copy}>
+        <main className="gacha-host-state">
+          <EmptyState
+            icon={<Sparkles size={28} />}
+            title={copy.wishLoadFailed}
+            message={error}
+            action={
+              <Link className="button button-primary" to={`/s/${shopSlug}`}>
+                <ArrowLeft size={17} /> {copy.backToStore}
+              </Link>
+            }
+          />
+        </main>
+      </GachaUpdateSurface>
     );
   }
 
@@ -345,26 +421,30 @@ export function GachaPage() {
   // HSR stores would otherwise download Genshin first and then replace it.
   if (!state) {
     return (
-      <main className="gacha-host-state">
-        <PageLoading />
-      </main>
+      <GachaUpdateSurface copy={copy}>
+        <main className="gacha-host-state">
+          <PageLoading />
+        </main>
+      </GachaUpdateSurface>
     );
   }
 
   if (availableGames.length === 0) {
     return (
-      <main className="gacha-host-state">
-        <EmptyState
-          icon={<Sparkles size={28} />}
-          title={copy.wishUnavailable}
-          message={copy.wishPoolEmptyHint}
-          action={
-            <Link className="button button-primary" to={`/s/${shopSlug}`}>
-              <ArrowLeft size={17} /> {copy.backToStore}
-            </Link>
-          }
-        />
-      </main>
+      <GachaUpdateSurface copy={copy}>
+        <main className="gacha-host-state">
+          <EmptyState
+            icon={<Sparkles size={28} />}
+            title={copy.wishUnavailable}
+            message={copy.wishPoolEmptyHint}
+            action={
+              <Link className="button button-primary" to={`/s/${shopSlug}`}>
+                <ArrowLeft size={17} /> {copy.backToStore}
+              </Link>
+            }
+          />
+        </main>
+      </GachaUpdateSurface>
     );
   }
 
@@ -412,32 +492,36 @@ export function GachaPage() {
 
   if (!activeGame || !activeCatalog) {
     return (
-      <GachaGameSelector
-        shopSlug={shopSlug}
-        shopName={state.shop.name}
-        availableGames={availableGames}
-        catalogs={state.catalogs}
-        copy={copy}
-        launchingGame={launchingGame}
-        packDownload={packDownload}
-        skipIntro={skipSelectorIntroRef.current}
-        onSaveOffline={() => void saveAvailableGames()}
-        onLaunch={beginGachaLaunch}
-      />
+      <GachaUpdateSurface copy={copy}>
+        <GachaGameSelector
+          shopSlug={shopSlug}
+          shopName={state.shop.name}
+          availableGames={availableGames}
+          catalogs={state.catalogs}
+          copy={copy}
+          launchingGame={launchingGame}
+          packDownload={packDownload}
+          skipIntro={skipSelectorIntroRef.current}
+          onSaveOffline={() => void saveAvailableGames()}
+          onLaunch={beginGachaLaunch}
+        />
+      </GachaUpdateSurface>
     );
   }
 
   return (
-    <main className="gacha-host">
-      <iframe
-        key={activeGame}
-        ref={iframeRef}
-        title={activeGame === "hsr" ? copy.warpSimulator : copy.wishSimulator}
-        src={`${getGachaSimulatorPath(activeGame)}?${queryParams.toString()}`}
-        allow="fullscreen"
-        sandbox="allow-downloads allow-same-origin allow-scripts"
-        referrerPolicy="no-referrer"
-      />
-    </main>
+    <GachaUpdateSurface copy={copy}>
+      <main className="gacha-host">
+        <iframe
+          key={activeGame}
+          ref={iframeRef}
+          title={activeGame === "hsr" ? copy.warpSimulator : copy.wishSimulator}
+          src={`${getGachaSimulatorPath(activeGame)}?${queryParams.toString()}`}
+          allow="fullscreen"
+          sandbox="allow-downloads allow-same-origin allow-scripts"
+          referrerPolicy="no-referrer"
+        />
+      </main>
+    </GachaUpdateSurface>
   );
 }

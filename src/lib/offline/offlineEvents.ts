@@ -15,6 +15,11 @@ import {
   productRowSchema,
   promotionSettingsSchema,
 } from "../schemas";
+import {
+  safeLocalStorageGet,
+  safeLocalStorageRemove,
+  safeLocalStorageSet,
+} from "./safeStorage";
 
 const DB_NAME = "matsuri-offline-events-v1";
 const DB_VERSION = 1;
@@ -64,6 +69,7 @@ type OfflineEventLedger = {
 
 let updateChannel: BroadcastChannel | null = null;
 let ledgerOverride: OfflineEventLedger | null = null;
+let fallbackDeviceId: string | null = null;
 
 const storedSessionSchema = z
   .object({
@@ -221,6 +227,14 @@ function transactionDone(transaction: IDBTransaction): Promise<void> {
   });
 }
 
+function observeTransaction(transaction: IDBTransaction) {
+  const done = transactionDone(transaction);
+  // Request errors may return before the transaction settles; keep that later
+  // rejection observed while still allowing callers to await it on success.
+  void done.catch(() => undefined);
+  return done;
+}
+
 function openDatabase(): Promise<IDBDatabase> {
   if (!("indexedDB" in window))
     return Promise.reject(
@@ -249,65 +263,82 @@ function openDatabase(): Promise<IDBDatabase> {
 const indexedDbLedger: OfflineEventLedger = {
   async getSession(shopId) {
     const database = await openDatabase();
-    const transaction = database.transaction(SESSION_STORE, "readonly");
-    const stored = (await requestResult(
-      transaction.objectStore(SESSION_STORE).get(shopId),
-    )) as unknown;
-    return stored === undefined ? null : parseStoredSession(stored);
+    try {
+      const transaction = database.transaction(SESSION_STORE, "readonly");
+      const done = observeTransaction(transaction);
+      const stored = (await requestResult(
+        transaction.objectStore(SESSION_STORE).get(shopId),
+      )) as unknown;
+      await done;
+      return stored === undefined ? null : parseStoredSession(stored);
+    } finally {
+      database.close();
+    }
   },
   async getSessions() {
     const database = await openDatabase();
-    const transaction = database.transaction(SESSION_STORE, "readonly");
-    const stored = await requestResult<unknown[]>(
-      transaction.objectStore(SESSION_STORE).getAll(),
-    );
-    return stored.map(parseStoredSession);
+    try {
+      const transaction = database.transaction(SESSION_STORE, "readonly");
+      const done = observeTransaction(transaction);
+      const stored = await requestResult<unknown[]>(
+        transaction.objectStore(SESSION_STORE).getAll(),
+      );
+      await done;
+      return stored.map(parseStoredSession);
+    } finally {
+      database.close();
+    }
   },
   async getOrders(sessionId) {
     const database = await openDatabase();
-    const transaction = database.transaction(ORDER_STORE, "readonly");
-    return parseStoredOrders(
-      await requestResult<unknown[]>(
+    try {
+      const transaction = database.transaction(ORDER_STORE, "readonly");
+      const done = observeTransaction(transaction);
+      const stored = await requestResult<unknown[]>(
         transaction
           .objectStore(ORDER_STORE)
           .index("sessionId")
           .getAll(sessionId),
-      ),
-      sessionId,
-    );
+      );
+      await done;
+      return parseStoredOrders(stored, sessionId);
+    } finally {
+      database.close();
+    }
   },
   async probeWrite() {
     const database = await openDatabase();
-    const transaction = database.transaction(
-      [SESSION_STORE, ORDER_STORE],
-      "readwrite",
-    );
-    const probeId = `storage-probe:${safeUuid()}`;
-    const sessions = transaction.objectStore(SESSION_STORE);
-    const orders = transaction.objectStore(ORDER_STORE);
-    const sessionMarker = { shopId: probeId, probeId };
-    const orderMarker = { id: probeId, sessionId: probeId, probeId };
-    const sessionWrite = requestResult(sessions.put(sessionMarker));
-    const orderWrite = requestResult(orders.put(orderMarker));
-    const sessionRead = requestResult<unknown>(sessions.get(probeId));
-    const orderRead = requestResult<unknown>(orders.get(probeId));
-    const sessionDelete = requestResult(sessions.delete(probeId));
-    const orderDelete = requestResult(orders.delete(probeId));
-    const [, , storedSession, storedOrder] = await Promise.all([
-      sessionWrite,
-      orderWrite,
-      sessionRead,
-      orderRead,
-      sessionDelete,
-      orderDelete,
-      transactionDone(transaction),
-    ]);
-    if (
-      (storedSession as { probeId?: unknown } | undefined)?.probeId !==
-        probeId ||
-      (storedOrder as { probeId?: unknown } | undefined)?.probeId !== probeId
-    ) {
-      throw new Error("Offline Event storage write verification failed.");
+    try {
+      const transaction = database.transaction(
+        [SESSION_STORE, ORDER_STORE],
+        "readwrite",
+      );
+      const done = observeTransaction(transaction);
+      const probeId = `storage-probe:${safeUuid()}`;
+      const sessions = transaction.objectStore(SESSION_STORE);
+      const orders = transaction.objectStore(ORDER_STORE);
+      await Promise.all([
+        requestResult(sessions.put({ shopId: probeId, probeId })),
+        requestResult(orders.put({ id: probeId, sessionId: probeId, probeId })),
+      ]);
+      const [storedSession, storedOrder] = await Promise.all([
+        requestResult<unknown>(sessions.get(probeId)),
+        requestResult<unknown>(orders.get(probeId)),
+      ]);
+      await Promise.all([
+        requestResult(sessions.delete(probeId)),
+        requestResult(orders.delete(probeId)),
+      ]);
+      await done;
+      if (
+        (storedSession as { probeId?: unknown } | undefined)?.probeId !==
+          probeId ||
+        (storedOrder as { probeId?: unknown } | undefined)?.probeId !== probeId
+      ) {
+        throw new Error("Offline Event storage write verification failed.");
+      }
+    } finally {
+      database.close();
     }
   },
   async mutate<T>(
@@ -316,27 +347,31 @@ const indexedDbLedger: OfflineEventLedger = {
     mutation: LedgerMutation<T>,
   ) {
     const database = await openDatabase();
-    const transaction = database.transaction(
-      [SESSION_STORE, ORDER_STORE],
-      "readwrite",
-    );
-    const sessions = transaction.objectStore(SESSION_STORE);
-    const orders = transaction.objectStore(ORDER_STORE);
-    const [storedSession, storedOrders] = await Promise.all([
-      requestResult<unknown>(sessions.get(shopId)),
-      requestResult<unknown[]>(orders.index("sessionId").getAll(sessionId)),
-    ]);
-    const session =
-      storedSession === undefined ? null : parseStoredSession(storedSession);
-    const currentOrders = parseStoredOrders(storedOrders, sessionId);
-    const next = mutation({
-      session,
-      orders: currentOrders,
-    });
-    sessions.put(next.session);
-    next.orders.forEach((order) => orders.put(order));
-    await transactionDone(transaction);
-    return next.result;
+    try {
+      const transaction = database.transaction(
+        [SESSION_STORE, ORDER_STORE],
+        "readwrite",
+      );
+      const done = observeTransaction(transaction);
+      const sessions = transaction.objectStore(SESSION_STORE);
+      const orders = transaction.objectStore(ORDER_STORE);
+      const [storedSession, storedOrders] = await Promise.all([
+        requestResult<unknown>(sessions.get(shopId)),
+        requestResult<unknown[]>(orders.index("sessionId").getAll(sessionId)),
+      ]);
+      const session =
+        storedSession === undefined ? null : parseStoredSession(storedSession);
+      const currentOrders = parseStoredOrders(storedOrders, sessionId);
+      const next = mutation({ session, orders: currentOrders });
+      await Promise.all([
+        requestResult(sessions.put(next.session)),
+        ...next.orders.map((order) => requestResult(orders.put(order))),
+      ]);
+      await done;
+      return next.result;
+    } finally {
+      database.close();
+    }
   },
 };
 
@@ -416,16 +451,22 @@ function legacyOrdersKey(sessionId: string) {
 }
 
 async function migrateLegacySession(session: OfflineEventSession) {
-  const rawOrders = JSON.parse(
-    localStorage.getItem(legacyOrdersKey(session.id)) || "[]",
-  ) as OfflineEventOrder[];
+  let rawOrders: OfflineEventOrder[] = [];
+  const raw = safeLocalStorageGet(legacyOrdersKey(session.id));
+  if (raw) {
+    try {
+      rawOrders = parseStoredOrders(JSON.parse(raw), session.id);
+    } catch {
+      // Corrupt legacy data is discarded rather than blocking the new ledger.
+    }
+  }
   await ledger().mutate(session.shopId, session.id, () => ({
     session,
     orders: sortOrders(rawOrders),
     result: undefined,
   }));
-  localStorage.removeItem(legacySessionKey(session.shopId));
-  localStorage.removeItem(legacyOrdersKey(session.id));
+  safeLocalStorageRemove(legacySessionKey(session.shopId));
+  safeLocalStorageRemove(legacyOrdersKey(session.id));
   return session;
 }
 
@@ -439,11 +480,12 @@ export async function assertOfflineEventStorageAvailable() {
 }
 
 export function getOfflineEventDeviceId() {
-  const stored = localStorage.getItem(DEVICE_KEY);
+  const stored = safeLocalStorageGet(DEVICE_KEY);
   if (stored) return stored;
-  const id = safeUuid();
-  localStorage.setItem(DEVICE_KEY, id);
-  return id;
+  if (fallbackDeviceId) return fallbackDeviceId;
+  fallbackDeviceId = safeUuid();
+  safeLocalStorageSet(DEVICE_KEY, fallbackDeviceId);
+  return fallbackDeviceId;
 }
 
 export async function requestDurableOfflineStorage() {

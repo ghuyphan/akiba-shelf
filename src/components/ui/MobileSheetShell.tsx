@@ -120,20 +120,17 @@ function useSheetScrollLock(active: boolean) {
 }
 
 export function SheetHandle({ onClick, label }: { onClick?: () => void; label?: string }) {
+  if (onClick) {
+    return (
+      <button type="button" className="mobile-sheet-handle" aria-label={label} onClick={onClick}>
+        <span aria-hidden="true" />
+      </button>
+    );
+  }
   return (
     <div
       className="mobile-sheet-handle"
-      aria-hidden={onClick ? undefined : "true"}
-      aria-label={onClick ? label : undefined}
-      onClick={onClick}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onClick();
-        }
-      } : undefined}
+      aria-hidden="true"
     >
       <span />
     </div>
@@ -238,7 +235,6 @@ export function MobileSheetShell({
         aria-modal={phoneSheetLayout ? ariaModal : undefined}
         aria-label={ariaLabel}
         tabIndex={tabIndex}
-        onClick={(event) => event.stopPropagation()}
       >
         {children}
       </section>
@@ -249,7 +245,9 @@ export function MobileSheetShell({
       <div
         className={`sheet-backdrop ${backdropClassName} ${active ? "is-open" : "is-closing"}`}
         role="presentation"
-        onClick={onDismiss}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) onDismiss();
+        }}
       >
         {surface}
       </div>

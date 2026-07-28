@@ -15,6 +15,7 @@ const vi: Record<string, string> = {
   "Sign in": "Đăng nhập",
   "Sign out": "Đăng xuất",
   "Back to home": "Về trang chủ",
+  Back: "Quay lại",
   "Back to dashboard": "Về bảng điều khiển",
   "Create account": "Tạo tài khoản",
   "Reset password": "Đặt lại mật khẩu",
@@ -22,24 +23,33 @@ const vi: Record<string, string> = {
   "Finishing sign in": "Đang hoàn tất đăng nhập",
   "Your shops": "Gian hàng của bạn",
   "Create a shop": "Tạo gian hàng",
-  "Admin workspace": "Không gian quản trị",
-  "Install Matsuri staff app": "Cài đặt ứng dụng staff Matsuri",
+  "Shop workspace": "Khu vực quản lý gian hàng",
+  "Install Matsuri staff app": "Cài đặt ứng dụng nhân viên Matsuri",
   "Keep Matsuri close": "Luôn có Matsuri bên bạn",
   "Install the staff app for quicker access to shops and orders.":
-    "Cài ứng dụng staff để truy cập gian hàng và đơn hàng nhanh hơn.",
+    "Cài ứng dụng nhân viên để truy cập gian hàng và đơn hàng nhanh hơn.",
   "Tap Share, then Add to Home Screen.":
     "Chạm Chia sẻ, sau đó chọn Thêm vào Màn hình chính.",
   "How to install": "Cách cài đặt",
   "Opening…": "Đang mở…",
   Install: "Cài đặt",
   "Dismiss install suggestion": "Ẩn gợi ý cài đặt",
+  "Matsuri update available": "Có bản cập nhật Matsuri",
+  "A Matsuri update is ready": "Đã có bản cập nhật Matsuri",
+  "Refresh when you are ready. Finish edits or active orders first.":
+    "Hãy cập nhật khi bạn sẵn sàng. Hoàn tất chỉnh sửa hoặc đơn đang xử lý trước.",
+  "Update now": "Cập nhật ngay",
+  "Updating…": "Đang cập nhật…",
+  Later: "Để sau",
+  "Dismiss update notice": "Ẩn thông báo cập nhật",
   "Product name is required.": "Tên sản phẩm là bắt buộc.",
   "Item code is required.": "Mã sản phẩm là bắt buộc.",
   "Category is required.": "Danh mục là bắt buộc.",
-  "Price must be a positive number.": "Giá phải là số không âm.",
+  "Price must be a non-negative number.": "Giá phải là số không âm.",
   "Sale price must be lower than the regular price.":
     "Giá khuyến mãi phải thấp hơn giá thường.",
-  "Quantity must be a whole number.": "Số lượng phải là số nguyên không âm.",
+  "Quantity must be a non-negative whole number.":
+    "Số lượng phải là số nguyên không âm.",
   "At least one image URL is required.": "Cần ít nhất một URL hình ảnh.",
   "We could not verify your account access. Check your connection and try again.":
     "Không thể xác minh quyền truy cập tài khoản. Hãy kiểm tra kết nối và thử lại.",
@@ -84,7 +94,7 @@ const vi: Record<string, string> = {
   Language: "Ngôn ngữ",
   "More actions": "Thêm thao tác",
   "A storefront built for artist booths":
-    "Cửa hàng online dành riêng cho gian artist",
+    "Cửa hàng online dành riêng cho gian hàng artist",
   "Sell merch.": "Bán merch gọn hơn.",
   "Keep orders under control.": "Không bỏ sót đơn nào.",
   "Fans order on their phones. Your team sees stock, payment, and pickup status in one place.":
@@ -93,7 +103,7 @@ const vi: Record<string, string> = {
   "Why artists use Matsuri": "Vì sao artist dùng Matsuri",
   "Fans browse and order from their phones":
     "Khách xem và đặt hàng trên điện thoại",
-  "Accurate stock": "Tồn kho rõ ràng",
+  "Accurate stock": "Tồn kho chính xác",
   "Items are held as soon as an order is placed":
     "Có đơn là sản phẩm được giữ ngay",
   "One order list": "Một danh sách đơn chung",
@@ -107,7 +117,7 @@ const vi: Record<string, string> = {
   "Scan and shop": "Quét mã và chọn merch",
   "Customers open your catalog, browse products, and order from their phone.":
     "Khách mở catalog, xem sản phẩm và đặt ngay trên điện thoại.",
-  "Reserve stock": "Giữ hàng đúng tồn kho",
+  "Reserve stock": "Giữ hàng theo tồn kho thực tế",
   "Matsuri checks the latest price and stock before holding items and showing VietQR.":
     "Matsuri kiểm tra giá và tồn kho mới nhất trước khi giữ sản phẩm và tạo VietQR.",
   "Pack and hand over": "Đóng đơn và giao khách",
@@ -144,10 +154,10 @@ const vi: Record<string, string> = {
   "Event minigame": "Minigame tại sự kiện",
   "Give fans one more reason to stop by": "Thêm một lý do để fan ghé gian hàng",
   "Ready to put your booth online?": "Sẵn sàng đưa gian hàng lên online?",
-  "Community supported": "Được ủng hộ",
+  "Community supported": "Được cộng đồng ủng hộ",
   "Keep Matsuri independent.": "Giữ Matsuri độc lập.",
   "Optional support helps keep the booth running.":
-    "Ủng hộ để Matsuri hoạt động.",
+    "Sự ủng hộ tự nguyện giúp Matsuri duy trì hoạt động.",
   "Support Matsuri": "Ủng hộ Matsuri",
   "One-time support": "Ủng hộ một lần",
   "Keep Matsuri free for artists.": "Giữ Matsuri miễn phí cho artist.",
@@ -156,7 +166,7 @@ const vi: Record<string, string> = {
   "Matsuri has no artist subscription and takes no cut from booth sales. Optional support helps cover hosting, maintenance, and event-day reliability.":
     "Matsuri không thu phí đăng ký từ artist và không lấy phần doanh thu gian hàng. Sự ủng hộ tự nguyện giúp chi trả hosting, bảo trì và độ ổn định trong ngày sự kiện.",
   "Buy me a coffee": "Mời mình một ly cà phê",
-  "Artist first": "Artist trước tiên",
+  "Artist first": "Ưu tiên artist",
   "of booth sales stays with the artist": "doanh thu gian hàng thuộc về artist",
   "No artist subscription": "Không thu phí artist",
   "No sales cut": "Không lấy phần trăm doanh thu",
@@ -192,13 +202,13 @@ const vi: Record<string, string> = {
   "Help keep Matsuri free for independent artists through optional one-time support.":
     "Giúp Matsuri tiếp tục miễn phí cho artist độc lập bằng sự ủng hộ một lần hoàn toàn tự nguyện.",
   "Storefront and order desk for artist booths":
-    "Cửa hàng và bàn xử lý đơn cho gian hàng artist",
+    "Cửa hàng online và quầy xử lý đơn cho gian hàng artist",
   "Run your merch booth.": "Vận hành gian hàng merch.",
   "Stay in sync.": "Luôn đồng bộ.",
   "Fans browse and order from their phones. Matsuri reserves the stock and gives your team one live queue to fulfil from behind the booth.":
-    "Fan xem và đặt hàng trên điện thoại. Matsuri giữ tồn kho và cung cấp cho đội ngũ một hàng đợi trực tiếp để xử lý phía sau gian hàng.",
+    "Fan xem và đặt hàng trên điện thoại. Matsuri giữ hàng và cung cấp cho đội ngũ một danh sách đơn cập nhật theo thời gian thực để xử lý tại quầy.",
   "Fans order on their phones. Matsuri reserves stock and keeps one live queue for your team.":
-    "Fan đặt hàng trên điện thoại. Matsuri giữ tồn kho và gom mọi đơn vào một hàng đợi trực tiếp cho đội ngũ.",
+    "Fan đặt hàng trên điện thoại. Matsuri giữ hàng và gom mọi đơn vào một danh sách cập nhật theo thời gian thực cho đội ngũ.",
   "Create your storefront": "Tạo cửa hàng của bạn",
   "Made for Artist Alley.": "Dành cho Artist Alley.",
   "Your brand stays in front; the busywork stays behind it.":
@@ -213,7 +223,7 @@ const vi: Record<string, string> = {
   "Stock stays honest": "Tồn kho luôn chính xác",
   "Items are reserved when an order is placed":
     "Sản phẩm được giữ khi đơn hàng được tạo",
-  "One live queue": "Một hàng đợi trực tiếp",
+  "One live queue": "Một danh sách đơn chung",
   "Everyone sees what needs packing next":
     "Mọi người đều biết đơn nào cần đóng gói tiếp theo",
   "Still your booth": "Vẫn là gian hàng của bạn",
@@ -232,7 +242,7 @@ const vi: Record<string, string> = {
     "Matsuri kiểm tra giá và tồn kho hiện tại, giữ sản phẩm và hiển thị tổng đơn cùng VietQR.",
   "Your team fulfils it": "Đội ngũ xử lý đơn",
   "The order appears in one live queue, ready to verify, pack, and hand to the right customer.":
-    "Đơn xuất hiện trong một hàng đợi trực tiếp để xác minh, đóng gói và giao đúng khách.",
+    "Đơn xuất hiện trong danh sách cập nhật theo thời gian thực để xác minh, đóng gói và giao đúng khách.",
   "Two sides, one booth": "Hai mặt, một gian hàng",
   "A storefront for fans. A clear order desk for your team.":
     "Cửa hàng cho fan. Bàn xử lý đơn rõ ràng cho đội ngũ.",
@@ -285,7 +295,7 @@ const vi: Record<string, string> = {
   "Artist storefronts and live booth orders.":
     "Cửa hàng artist và đơn hàng gian hàng trực tiếp.",
   "Online storefront and live orders for artist booths":
-    "Cửa hàng online và đơn hàng trực tiếp cho gian artist",
+    "Cửa hàng online và đơn hàng trực tiếp cho gian hàng artist",
   "Matsuri gives independent artists an online storefront, accurate stock, and one live order list for event days.":
     "Matsuri giúp artist độc lập mở cửa hàng online, giữ tồn kho chính xác và quản lý đơn sự kiện trong một danh sách chung.",
   "Page not found": "Không tìm thấy trang",
@@ -400,10 +410,10 @@ const vi: Record<string, string> = {
   "Sign in to manage your shops.": "Đăng nhập để quản lý các gian hàng.",
   "Signing in…": "Đang đăng nhập…",
   "Secure access to your shops and staff workspaces.":
-    "Truy cập an toàn vào gian hàng và không gian làm việc của staff.",
+    "Truy cập an toàn vào gian hàng và không gian làm việc của nhân viên.",
   "Create your account": "Tạo tài khoản",
   "Start a storefront or accept a staff invitation.":
-    "Bắt đầu một cửa hàng hoặc chấp nhận lời mời staff.",
+    "Tạo cửa hàng mới hoặc chấp nhận lời mời tham gia đội ngũ.",
   "Creating account…": "Đang tạo tài khoản…",
   "Email confirmation protects every new account.":
     "Xác nhận email giúp bảo vệ mọi tài khoản mới.",
@@ -420,9 +430,9 @@ const vi: Record<string, string> = {
   "Email sent": "Đã gửi email",
   "Check your email": "Kiểm tra email",
   "We sent a confirmation link to {{email}}.":
-    "Chúng tôi đã gửi liên kết xác nhận đến {{email}}.",
+    "Đã gửi liên kết xác nhận đến {{email}}.",
   "If {{email}} can be recovered, a secure link is on its way.":
-    "Nếu có thể khôi phục {{email}}, một liên kết bảo mật đang được gửi.",
+    "Nếu tài khoản {{email}} có thể khôi phục, liên kết bảo mật sẽ được gửi đến địa chỉ này.",
   "Sending…": "Đang gửi…",
   "Send again in {{seconds}}s": "Gửi lại sau {{seconds}} giây",
   "Send another email": "Gửi email khác",
@@ -445,7 +455,7 @@ const vi: Record<string, string> = {
   "Use 10+ characters with uppercase, lowercase, and a number.":
     "Dùng ít nhất 10 ký tự gồm chữ hoa, chữ thường và số.",
   "Both passwords must match.": "Hai mật khẩu phải trùng khớp.",
-  "Please wait a moment": "Vui lòng chờ một chút",
+  "Please wait a moment": "Vui lòng đợi một lát",
   "Too many emails were requested. Wait a few minutes before trying again.":
     "Đã yêu cầu quá nhiều email. Vui lòng chờ vài phút rồi thử lại.",
   "Too many attempts were made. Wait a few minutes before trying again.":
@@ -511,25 +521,26 @@ const vi: Record<string, string> = {
   "New password": "Mật khẩu mới",
   "Saving…": "Đang lưu…",
   "Save password": "Lưu mật khẩu",
-  "Your password is encrypted and never shown to shop staff.":
-    "Mật khẩu được mã hóa và không bao giờ hiển thị cho staff gian hàng.",
-  "Staff sign in": "Đăng nhập staff",
-  "Use your admin account to continue.": "Dùng tài khoản quản trị để tiếp tục.",
+  "Your password is handled securely and never shown to shop staff.":
+    "Mật khẩu của bạn được xử lý an toàn và không hiển thị cho nhân viên gian hàng.",
+  "Staff sign in": "Đăng nhập dành cho nhân viên",
+  "Use your staff account to continue.":
+    "Dùng tài khoản nhân viên để tiếp tục.",
   "Supabase is not configured": "Chưa cấu hình Supabase",
   "Add the Supabase URL and public key before signing in.":
     "Thêm URL Supabase và khóa công khai trước khi đăng nhập.",
-  "Open admin": "Mở trang quản trị",
-  "Only authorised staff can access this workspace.":
-    "Chỉ staff được cấp quyền mới có thể truy cập không gian này.",
+  "Open workspace": "Mở khu vực quản lý",
+  "Only authorized staff can access this workspace.":
+    "Chỉ nhân viên được cấp quyền mới có thể truy cập khu vực này.",
   "Checking your access": "Đang kiểm tra quyền truy cập",
   "Loading your workspace…": "Đang tải không gian làm việc…",
-  "Staff access inactive": "Quyền staff đang tạm ngưng",
+  "Staff access inactive": "Quyền nhân viên đang tạm ngưng",
   "Access check failed": "Kiểm tra quyền truy cập thất bại",
-  "Staff access required": "Cần quyền staff",
+  "Staff access required": "Cần quyền nhân viên",
   "An owner must reactivate your staff membership.":
-    "Chủ gian hàng cần kích hoạt lại quyền staff của bạn.",
+    "Chủ gian hàng cần kích hoạt lại quyền của bạn.",
   "This signed-in account is not an authorized staff member.":
-    "Tài khoản đang đăng nhập chưa được cấp quyền staff.",
+    "Tài khoản đang đăng nhập chưa được cấp quyền nhân viên.",
   "Signed in as": "Đang đăng nhập bằng",
   "Ask an owner to grant this account access.":
     "Hãy nhờ chủ gian hàng cấp quyền cho tài khoản này.",
@@ -572,7 +583,7 @@ const vi: Record<string, string> = {
   "Edit shop details": "Sửa thông tin gian hàng",
   owner: "chủ sở hữu",
   admin: "quản trị viên",
-  staff: "staff",
+  staff: "nhân viên",
   "Access disabled": "Quyền truy cập đã tắt",
   "Shop unavailable": "Gian hàng không khả dụng",
   "Manage shop": "Quản lý gian hàng",
@@ -625,6 +636,7 @@ const vi: Record<string, string> = {
   "Search products": "Tìm sản phẩm",
   "New item": "Sản phẩm mới",
   "Product filters": "Bộ lọc sản phẩm",
+  "Well stocked": "Đủ hàng",
   all: "tất cả",
   live: "đang bán",
   low: "sắp hết",
@@ -667,16 +679,16 @@ const vi: Record<string, string> = {
   "Choose a bank": "Chọn ngân hàng",
   "No bank is configured yet": "Chưa cấu hình ngân hàng",
   "Account not set": "Chưa thiết lập tài khoản",
-  "Payment label": "Nhãn thanh toán",
+  "Payment display name": "Tên hiển thị thanh toán",
   "Select bank": "Chọn ngân hàng",
   "Account number": "Số tài khoản",
   "Account name": "Tên tài khoản",
   "Transfer message": "Nội dung chuyển khoản",
   "Match payments to orders with tokens.":
-    "Đối chiếu thanh toán với đơn hàng bằng biến.",
+    "Dùng các biến để đối chiếu khoản thanh toán với đơn hàng.",
   "Transfer message template": "Mẫu nội dung chuyển khoản",
   "Available tokens: {code}, {item}, {amount}":
-    "Biến có thể dùng: {code}, {item}, {amount}",
+    "Các biến có thể dùng: {code}, {item}, {amount}",
   "Customer payment instructions": "Hướng dẫn thanh toán cho khách",
   "Backup QR": "QR dự phòng",
   "Used if VietQR is unavailable.": "Dùng khi VietQR không khả dụng.",
@@ -706,7 +718,7 @@ const vi: Record<string, string> = {
   "Store copy": "Nội dung cửa hàng",
   "Customer-facing title and description.":
     "Tiêu đề và mô tả hiển thị cho khách hàng.",
-  Subtitle: "Tiêu đề phụ",
+  Subtitle: "Mô tả ngắn",
   "Social links": "Liên kết mạng xã hội",
   "Links shown in booth information.":
     "Các liên kết hiển thị trong thông tin gian hàng.",
@@ -739,7 +751,8 @@ const vi: Record<string, string> = {
   "Product name · Required": "Tên sản phẩm · Bắt buộc",
   "e.g. Moonlight acrylic stand": "VD: Standee acrylic Ánh Trăng",
   "Item code · Required": "Mã sản phẩm · Bắt buộc",
-  "A short unique code used by staff.": "Mã ngắn duy nhất để staff sử dụng.",
+  "A short unique code used by staff.":
+    "Mã ngắn duy nhất để nhân viên sử dụng.",
   Collection: "Bộ sưu tập",
   "Optional grouping, such as Spring 2026.": "Nhóm tùy chọn, ví dụ Xuân 2026.",
   "e.g. Starry Days": "VD: Những ngày đầy sao",
@@ -763,7 +776,7 @@ const vi: Record<string, string> = {
   "{{count}} items in stock": "{{count}} sản phẩm trong kho",
   "Large quantity — double-check this number.":
     "Số lượng lớn — hãy kiểm tra lại con số này.",
-  "Customer badge": "Nhãn sản phẩm",
+  "Product badge": "Nhãn sản phẩm",
   "Optional label shown on product artwork.":
     "Nhãn tùy chọn hiển thị trên hình sản phẩm.",
   "No badge": "Không có nhãn",
@@ -795,7 +808,8 @@ const vi: Record<string, string> = {
   "Customer buys": "Khách mua",
   "Paid items required in each offer group.":
     "Số sản phẩm trả tiền cần có trong mỗi nhóm ưu đãi.",
-  "Customer gets free": "Khách được tặng",
+  "Free quantity": "Số lượng tặng",
+  "Free item": "Sản phẩm tặng",
   "Cheapest eligible items become free.":
     "Sản phẩm đủ điều kiện có giá thấp nhất sẽ được miễn phí.",
   "Customers choose free items from the selected reward products.":
@@ -826,11 +840,11 @@ const vi: Record<string, string> = {
   "Products customers can choose free": "Sản phẩm khách có thể chọn miễn phí",
   "Customers choose free items from this reward group.":
     "Khách chọn sản phẩm miễn phí từ nhóm quà tặng này.",
-  "Buy any {{buy}} from {{qualifying}} selected products, then choose {{free}} free from {{reward}} reward products.":
-    "Mua bất kỳ {{buy}} trong {{qualifying}} sản phẩm đã chọn, sau đó chọn miễn phí {{free}} trong {{reward}} sản phẩm tặng.",
+  "Choose {{free}} free items from {{reward}} reward products after buying {{buy}} from {{qualifying}} eligible products.":
+    "Sau khi mua {{buy}} trong {{qualifying}} sản phẩm đủ điều kiện, hãy chọn {{free}} sản phẩm miễn phí từ {{reward}} sản phẩm tặng.",
   "Select at least one buy product and one reward product before publishing this offer.":
     "Chọn ít nhất một sản phẩm mua và một sản phẩm tặng trước khi bật ưu đãi.",
-  "Visible in catalog": "Hiển thị trong danh mục",
+  "Visible in storefront": "Hiển thị trên cửa hàng",
   "Customers can find and purchase this item.":
     "Khách hàng có thể tìm và mua sản phẩm này.",
   "Product gallery": "Thư viện ảnh sản phẩm",
@@ -845,7 +859,7 @@ const vi: Record<string, string> = {
   Clear: "Xóa nội dung",
   "Unknown product": "Sản phẩm không xác định",
   "This order was already handled by another staff member.":
-    "Đơn này đã được staff khác xử lý.",
+    "Đơn này đã được nhân viên khác xử lý.",
   "Payment confirmed.": "Đã xác nhận thanh toán.",
   "Failed to confirm payment.": "Xác nhận thanh toán thất bại.",
   "Could not confirm order": "Không thể xác nhận đơn",
@@ -855,22 +869,29 @@ const vi: Record<string, string> = {
   "Failed to cancel order.": "Hủy đơn thất bại.",
   "Could not cancel order": "Không thể hủy đơn",
   "Order status": "Trạng thái đơn",
+  Pending: "Đang chờ",
+  Expired: "Đã hết hạn",
+  All: "Tất cả",
   pending: "đang chờ",
   confirmed: "đã xác nhận",
   cancelled: "đã hủy",
   expired: "đã hết hạn",
   "Orders shown": "Số đơn hiển thị",
   "{{count}} matching orders": "{{count}} đơn phù hợp",
-  "Order value": "Giá trị đơn",
+  "Order value": "Tổng giá trị đơn hàng",
   "Current page total": "Tổng của trang hiện tại",
-  "Units requested": "Số sản phẩm yêu cầu",
+  "Units requested": "Tổng số lượng đặt",
   "{{count}} unique products": "{{count}} sản phẩm khác nhau",
   "Fulfilment overview": "Tổng quan chuẩn bị hàng",
   "What needs to be packed": "Các sản phẩm cần đóng gói",
-  "{{count}} total units": "Tổng {{count}} sản phẩm",
+  "{{count}} total units": "Tổng số lượng: {{count}}",
   "No item code": "Chưa có mã sản phẩm",
-  "Order queue": "Hàng đợi đơn",
+  "Order queue": "Danh sách đơn hàng",
   "All orders": "Tất cả đơn hàng",
+  "Pending orders": "Đơn đang chờ",
+  "Confirmed orders": "Đơn đã xác nhận",
+  "Cancelled orders": "Đơn đã hủy",
+  "Expired orders": "Đơn đã hết hạn",
   "{{status}} orders": "Đơn {{status}}",
   "Refreshing…": "Đang làm mới…",
   "{{first}}–{{last}} of {{total}} · newest first":
@@ -909,19 +930,20 @@ const vi: Record<string, string> = {
   "Order marked ready.": "Đơn hàng đã sẵn sàng.",
   "Order marked picked up.": "Đơn hàng đã được nhận.",
   "Update Event Mode fulfilment on the designated device.":
-    "Hãy cập nhật trạng thái giao hàng trên thiết bị Event Mode được chỉ định.",
+    "Cập nhật trạng thái xử lý đơn trên thiết bị Chế độ sự kiện được chỉ định.",
   "This fulfilment update is no longer available.":
-    "Cập nhật giao hàng này không còn khả dụng.",
-  "Could not update fulfilment.": "Không thể cập nhật giao hàng.",
+    "Không thể cập nhật trạng thái xử lý đơn này nữa.",
+  "Could not update fulfilment.": "Không thể cập nhật trạng thái xử lý đơn.",
   "Confirm payment before updating fulfilment.":
-    "Hãy xác nhận thanh toán trước khi cập nhật giao hàng.",
-  "Fulfilment cannot move backward.": "Trạng thái giao hàng không thể lùi lại.",
+    "Hãy xác nhận thanh toán trước khi cập nhật trạng thái xử lý đơn.",
+  "Fulfilment cannot move backward.":
+    "Không thể đưa trạng thái xử lý đơn về bước trước.",
   "Order details": "Chi tiết đơn hàng",
   Created: "Đã tạo",
   "Handled by": "Xử lý bởi",
   "Payment updated": "Cập nhật thanh toán",
-  "Fulfilment updated": "Cập nhật giao hàng",
-  "Fulfilment handled by": "Người xử lý giao hàng",
+  "Fulfilment updated": "Cập nhật trạng thái xử lý đơn",
+  "Fulfilment handled by": "Người xử lý đơn",
   "Online QR checkout": "Thanh toán QR trực tuyến",
   "System expiry": "Hệ thống hết hạn",
   "Not recorded": "Chưa ghi nhận",
@@ -938,14 +960,14 @@ const vi: Record<string, string> = {
   "Payment confirmed and stock updated":
     "Đã xác nhận thanh toán và cập nhật tồn kho",
   "Confirmation failed. Try again.": "Xác nhận thất bại. Hãy thử lại.",
-  Staff: "staff",
+  Staff: "Nhân viên",
   Admin: "Quản trị viên",
   Owner: "Chủ sở hữu",
-  "Process and fulfil orders": "Xử lý và hoàn tất đơn hàng",
+  "Process and fulfil orders": "Xử lý và bàn giao đơn hàng",
   "Manage catalog, settings, and orders":
     "Quản lý danh mục, cài đặt và đơn hàng",
   "Full shop and team access": "Toàn quyền gian hàng và đội ngũ",
-  "Could not load staff": "Không thể tải danh sách staff",
+  "Could not load staff": "Không thể tải danh sách nhân viên",
   "Enter a valid email address.": "Nhập địa chỉ email hợp lệ.",
   "Enter your password.": "Nhập mật khẩu.",
   "Choose color for {{label}}": "Chọn màu cho {{label}}",
@@ -968,9 +990,9 @@ const vi: Record<string, string> = {
   Minute: "Phút",
   "Could not send invitation": "Không thể gửi lời mời",
   "Invite processed. The team list is up to date.":
-    "Đã xử lý lời mời. Danh sách đội ngũ đã được cập nhật.",
-  "Staff access updated.": "Đã cập nhật quyền staff.",
-  "Could not update staff": "Không thể cập nhật staff",
+    "Đã gửi hoặc cập nhật lời mời. Danh sách đội ngũ đã được làm mới.",
+  "Staff access updated.": "Đã cập nhật quyền nhân viên.",
+  "Could not update staff": "Không thể cập nhật quyền nhân viên",
   "Shop access removed.": "Đã xóa quyền truy cập gian hàng.",
   "Could not remove access": "Không thể xóa quyền truy cập",
   "Invitation revoked.": "Đã thu hồi lời mời.",
@@ -982,18 +1004,17 @@ const vi: Record<string, string> = {
   "Team overview": "Tổng quan đội ngũ",
   "Active members": "Thành viên đang hoạt động",
   "Pending invites": "Lời mời đang chờ",
-  "Team places used": "Vị trí đã dùng",
+  "Team seats used": "Số chỗ trong đội ngũ đã dùng",
   "Choose what they can do. You can change or remove access later.":
-    "Chọn quyền họ có thể sử dụng. Bạn có thể thay đổi hoặc xóa quyền sau.",
+    "Chọn những thao tác họ được phép thực hiện. Bạn có thể thay đổi hoặc thu hồi quyền sau.",
   "Track who still needs to accept their email invitation.":
     "Theo dõi những người vẫn cần chấp nhận lời mời qua email.",
   "They’ll receive secure access for this shop only.":
     "Họ sẽ nhận quyền truy cập an toàn chỉ dành cho gian hàng này.",
-  "{{used}} of {{limit}} team places used":
-    "Đã dùng {{used}} / {{limit}} vị trí trong đội ngũ",
+  "{{used}} of {{limit}} team seats used":
+    "Đã dùng {{used}}/{{limit}} chỗ trong đội ngũ",
   "Team limit reached": "Đã đạt giới hạn đội ngũ",
-  "Shop team limit reached.":
-    "Gian hàng đã đạt giới hạn 10 thành viên và lời mời đang chờ.",
+  "Shop team limit reached.": "Đội ngũ của gian hàng đã đạt giới hạn.",
   "Revoke a pending invitation or remove a member before inviting someone new.":
     "Hãy thu hồi một lời mời đang chờ hoặc xóa một thành viên trước khi mời người mới.",
   Email: "Email",
@@ -1003,14 +1024,15 @@ const vi: Record<string, string> = {
   Members: "Thành viên",
   "{{count}} people with shop access":
     "{{count}} người có quyền truy cập gian hàng",
-  "Loading staff…": "Đang tải staff…",
+  "Loading staff…": "Đang tải danh sách nhân viên…",
   "No members yet": "Chưa có thành viên",
   Retry: "Thử lại",
-  "Invite a staff member above.": "Mời một staff ở phía trên.",
+  "Invite a staff member above.": "Mời một thành viên ở phần trên.",
   "Shop member": "Thành viên gian hàng",
   Active: "Đang hoạt động",
   Inactive: "Không hoạt động",
   "Role for {{email}}": "Vai trò của {{email}}",
+  "Access for {{email}}": "Quyền truy cập của {{email}}",
   Enabled: "Đã bật",
   Disabled: "Đã tắt",
   "Remove {{email}}": "Xóa {{email}}",
@@ -1041,11 +1063,11 @@ const vi: Record<string, string> = {
   "Add products before choosing which items qualify for this promotion.":
     "Hãy thêm sản phẩm trước khi chọn các mặt hàng áp dụng khuyến mãi này.",
   "Featured spotlight": "Điểm nhấn nổi bật",
-  "Promoted products and swipe deck": "Sản phẩm quảng bá và bộ thẻ vuốt",
+  "Promoted products and swipe deck": "Sản phẩm nổi bật và bộ thẻ vuốt",
   "Booth information": "Thông tin gian hàng",
   "Location, hours, and social QR codes":
     "Vị trí, giờ mở cửa và mã QR mạng xã hội",
-  "Browse controls": "Điều khiển duyệt",
+  "Browse controls": "Công cụ duyệt sản phẩm",
   "Categories, search, sort, and view mode":
     "Danh mục, tìm kiếm, sắp xếp và kiểu xem",
   "Shopping cart": "Giỏ hàng",
@@ -1071,7 +1093,7 @@ const vi: Record<string, string> = {
   "Move {{section}} up": "Di chuyển {{section}} lên",
   "Move {{section}} down": "Di chuyển {{section}} xuống",
   "Wide and side modules keep safe column widths. Dragging changes their order within those responsive lanes.":
-    "Mô-đun rộng và bên cạnh luôn giữ chiều rộng cột an toàn. Kéo để đổi thứ tự trong các vùng đáp ứng tương ứng.",
+    "Các mô-đun chính và mô-đun bên giữ chiều rộng cột phù hợp. Kéo để đổi thứ tự trong từng vùng của bố cục đáp ứng.",
   "Only settings for the selected section are shown.":
     "Chỉ hiển thị cài đặt của phần đang chọn.",
   "The Featured banner displays details directly from active featured products. Mark products as Featured in the Products workspace.":
@@ -1090,11 +1112,11 @@ const vi: Record<string, string> = {
   "Bold color and energy": "Màu sắc mạnh mẽ và năng động",
   "Control style": "Kiểu điều khiển",
   Panel: "Bảng điều khiển",
-  "Everything in one surface": "Tất cả trong một bề mặt",
+  "Everything in one surface": "Gom tất cả trong một khung",
   Floating: "Nổi",
   "Light and open": "Nhẹ và thoáng",
   Compact: "Gọn",
-  "More catalog, less chrome": "Nhiều nội dung, ít khung điều khiển",
+  "More catalog, less chrome": "Ưu tiên sản phẩm, giảm chi tiết giao diện",
   "Tinted with an offset shadow": "Nền màu nhẹ với bóng lệch",
   "Product card style": "Kiểu thẻ sản phẩm",
   Classic: "Cổ điển",
@@ -1109,7 +1131,7 @@ const vi: Record<string, string> = {
   "Payment account": "Tài khoản thanh toán",
   "No account configured": "Chưa cấu hình tài khoản",
   "Account holder not set": "Chưa nhập tên chủ tài khoản",
-  "Customer ready": "Sẵn sàng cho khách",
+  "Payment ready": "Sẵn sàng nhận thanh toán",
   "Needs setup": "Cần thiết lập",
   "Backup payment QR": "QR thanh toán dự phòng",
   "Upload backup QR": "Tải QR dự phòng lên",
@@ -1187,10 +1209,9 @@ const vi: Record<string, string> = {
   "Notifications unavailable": "Thông báo không khả dụng",
   "Item saved.": "Đã lưu sản phẩm.",
   "Item deleted.": "Đã xóa sản phẩm.",
-  "Back to catalog": "Về danh mục",
+  "Back to storefront": "Về cửa hàng",
   "Go to dashboard": "Đến bảng điều khiển",
   "Merch desk": "Quầy merch",
-  "Orders Queue": "Hàng đợi đơn",
   "Products ({{count}})": "Sản phẩm ({{count}})",
   Team: "Đội ngũ",
   Settings: "Cài đặt",
@@ -1212,7 +1233,7 @@ const vi: Record<string, string> = {
   Orders: "Đơn hàng",
   "Storefront designer": "Trình thiết kế cửa hàng",
   "Confirm payments and fulfil orders.":
-    "Xác nhận thanh toán và hoàn tất đơn hàng.",
+    "Xác nhận thanh toán và bàn giao đơn hàng.",
   "Manage products, prices, and stock.": "Quản lý sản phẩm, giá và tồn kho.",
   "Update booth and payment details.":
     "Cập nhật thông tin gian hàng và thanh toán.",
@@ -1250,20 +1271,20 @@ const vi: Record<string, string> = {
     "{{count}} thông báo đơn hàng đang bị chậm",
   "1 order alert is delayed": "1 thông báo đơn hàng đang bị chậm",
   "{{count}} stopped after all retries. Check staff notification devices.":
-    "{{count}} thông báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của staff.",
+    "{{count}} thông báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của nhân viên.",
   "1 alert stopped after all retries. Check staff notification devices.":
     "1 thông báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của nhân viên.",
   "The oldest alert became due {{time}}.":
-    "Thông báo lâu nhất đã đến hạn {{time}}.",
+    "Thông báo cũ nhất đã đến hạn {{time}}.",
   "Automatic retries are running; orders remain safe in the queue.":
     "Hệ thống đang tự gửi lại; đơn hàng vẫn an toàn trong hàng đợi.",
   "Retry notification delivery": "Thử gửi lại thông báo",
   "Retry one alert after checking that staff notification devices are ready.":
-    "Thử gửi lại một thông báo sau khi kiểm tra thiết bị nhận thông báo của staff đã sẵn sàng.",
+    "Thử gửi lại một thông báo sau khi kiểm tra thiết bị nhận thông báo của nhân viên đã sẵn sàng.",
   "Check staff alerts, then retry delivery.":
     "Kiểm tra thông báo của nhân viên rồi thử gửi lại.",
   "Retry alert": "Thử gửi lại",
-  "Queuing retry…": "Đang xếp hàng gửi lại…",
+  "Queuing retry…": "Đang lên lịch gửi lại…",
   "Order alert queued for another delivery attempt.":
     "Thông báo đơn hàng đã được xếp hàng để gửi lại.",
   "This alert is no longer eligible for retry. Its status was refreshed.":
@@ -1272,13 +1293,12 @@ const vi: Record<string, string> = {
     "Không thể thử gửi lại thông báo đơn hàng này.",
   "Retry unavailable": "Không thể gửi lại",
   "Production checklist · {{done}}/{{total}} ready":
-    "Danh sách sẵn sàng · {{done}}/{{total}} hoàn tất",
+    "Danh sách kiểm tra vận hành · {{done}}/{{total}} hoàn tất",
   "Shop setup · {{done}}/{{total}} ready":
     "Thiết lập gian hàng · {{done}}/{{total}} sẵn sàng",
-  "Publish at least one active product":
-    "Đăng ít nhất một sản phẩm đang hoạt động",
+  "Publish at least one active product": "Bật bán ít nhất một sản phẩm",
   "Add customer-ready payment details":
-    "Thêm thông tin thanh toán sẵn sàng cho khách",
+    "Thêm đầy đủ thông tin thanh toán cho khách",
   "Complete the storefront name and description":
     "Hoàn tất tên và mô tả cửa hàng",
   "Add booth location and opening hours":
@@ -1289,13 +1309,12 @@ const vi: Record<string, string> = {
   "We could not load this shop's workspace. Check your connection and retry.":
     "Không thể tải không gian của gian hàng này. Hãy kiểm tra kết nối và thử lại.",
   "Retry loading": "Tải lại",
-  "Products List ({{count}})": "Danh sách sản phẩm ({{count}})",
-  "Product workspace": "Không gian sản phẩm",
+  "Product workspace": "Khu vực quản lý sản phẩm",
   "{{count}} of {{limit}} featured slots used.":
     "Đã dùng {{count}}/{{limit}} vị trí nổi bật.",
   "All {{limit}} featured slots are used.":
     "Đã dùng hết {{limit}} vị trí nổi bật.",
-  "Edit Product": "Sửa sản phẩm",
+  "Edit product": "Sửa sản phẩm",
   "No product selected": "Chưa chọn sản phẩm",
   "Choose a product from the list to edit it, or start a fresh listing.":
     "Chọn sản phẩm trong danh sách để chỉnh sửa hoặc tạo sản phẩm mới.",
@@ -1304,19 +1323,19 @@ const vi: Record<string, string> = {
   "Booth settings saved.": "Đã lưu cài đặt gian hàng.",
   "Sign out of admin?": "Đăng xuất khỏi trang quản trị?",
   "You’ll return to the staff login screen. The public catalog stays open for customers.":
-    "Bạn sẽ quay lại màn hình đăng nhập staff. Danh mục công khai vẫn mở cho khách hàng.",
+    "Bạn sẽ quay lại màn hình đăng nhập dành cho nhân viên. Danh mục công khai vẫn mở cho khách hàng.",
   "Stay signed in": "Tiếp tục đăng nhập",
   Gacha: "Gacha",
   "Gacha setup": "Thiết lập gacha",
   "Gacha setup steps": "Các bước thiết lập gacha",
   "Game setup": "Thiết lập game",
-  "Prize pool": "Pool phần thưởng",
+  "Prize pool": "Kho phần thưởng",
   "Choose the game, public copy, and advanced pity rules.":
     "Chọn game, nội dung công khai và quy tắc bảo hiểm nâng cao.",
   "Public minigame open": "Minigame công khai đang mở",
   "Public minigame closed": "Minigame công khai đang đóng",
   "Live banners": "Banner đang bật",
-  "Pool items": "Vật phẩm trong pool",
+  "Pool items": "Vật phẩm trong kho",
   "{{count}} featured on this banner":
     "{{count}} vật phẩm nổi bật trên banner này",
   "Gacha workflow": "Quy trình gacha",
@@ -1324,12 +1343,12 @@ const vi: Record<string, string> = {
   "Choose what each banner shows.": "Chọn nội dung hiển thị trên từng banner.",
   "Add and configure prize items.": "Thêm và cấu hình vật phẩm phần thưởng.",
   Preview: "Xem thử",
-  "Filter pool items": "Lọc vật phẩm trong pool",
-  "Pool items ({{count}})": "Vật phẩm trong pool ({{count}})",
+  "Filter pool items": "Lọc vật phẩm trong kho",
+  "Pool items ({{count}})": "Vật phẩm trong kho ({{count}})",
   "Add products ({{count}})": "Thêm sản phẩm ({{count}})",
-  "Added to pool.": "Đã thêm vào pool.",
-  "Removed from pool.": "Đã xóa khỏi pool.",
-  "Remove from pool": "Xóa khỏi pool",
+  "Added to pool.": "Đã thêm vào kho.",
+  "Removed from pool.": "Đã xóa khỏi kho.",
+  "Remove from pool": "Xóa khỏi kho",
   "Pity rules": "Quy tắc bảo hiểm",
   "Rates and pity rules": "Tỷ lệ và quy tắc bảo hiểm",
   "Base odds and maximum pulls before each guarantee.":
@@ -1338,12 +1357,13 @@ const vi: Record<string, string> = {
   "Pull guarantees": "Mốc bảo hiểm",
   "Maximum pulls before each rarity is guaranteed.":
     "Số lượt tối đa trước khi đảm bảo nhận được từng độ hiếm.",
+  "{{count}}-star rarity": "Độ hiếm {{count}} sao",
   "All products": "Tất cả sản phẩm",
-  "In pool": "Trong pool",
+  "In pool": "Trong kho",
   "Not added": "Chưa thêm",
   "Gacha banners": "Banner gacha",
   "Build merch pools, preview changes, then publish.":
-    "Tạo pool merch, xem thử thay đổi rồi xuất bản.",
+    "Tạo kho phần thưởng từ merch, xem thử thay đổi rồi xuất bản.",
   Banners: "Banner",
   "Add, order, duplicate, or disable banners.":
     "Thêm, sắp xếp, nhân bản hoặc tắt banner.",
@@ -1353,7 +1373,7 @@ const vi: Record<string, string> = {
   "Duplicate banner": "Nhân bản banner",
   "Delete banner": "Xóa banner",
   "Banner presentation, pool, and item stats.":
-    "Giao diện banner, pool và chỉ số vật phẩm.",
+    "Giao diện banner, kho phần thưởng và chỉ số vật phẩm.",
   "Banner title": "Tên banner",
   "Bilingual: English | Tiếng Việt or [en]English[vi]Tiếng Việt":
     "Song ngữ: Tiếng Anh | Tiếng Việt hoặc [en]English[vi]Tiếng Việt",
@@ -1361,7 +1381,7 @@ const vi: Record<string, string> = {
   "Banner copy": "Nội dung banner",
   "Featured items shown": "Số vật phẩm nổi bật",
   "Featured banner slots": "Vị trí nổi bật trên banner",
-  "Official lineup": "Đội hình chính thức",
+  "Official lineup": "Đội hình yêu cầu",
   "{{count}} slots: {{five}}×5★ + {{four}}×4★":
     "{{count}} vị trí: {{five}}×5★ + {{four}}×4★",
   "1 primary item": "1 vật phẩm chính",
@@ -1369,11 +1389,11 @@ const vi: Record<string, string> = {
   "1 featured item": "1 vật phẩm nổi bật",
   "{{count}} featured items": "{{count}} vật phẩm nổi bật",
   "HSR event banners show exactly one 5-star primary and three 4-star rate-ups. Leave every featured slot empty for a standard warp.":
-    "Banner sự kiện HSR cần chính xác một vật phẩm 5 sao chính và ba vật phẩm 4 sao tăng tỉ lệ. Để trống toàn bộ vị trí nổi bật nếu đây là banner thường.",
+    "Banner sự kiện HSR cần chính xác một vật phẩm 5 sao chính và ba vật phẩm 4 sao tăng tỷ lệ. Để trống toàn bộ vị trí nổi bật nếu đây là banner thường.",
   "HSR banners support one primary 5-star item.":
     "Banner HSR hỗ trợ một vật phẩm 5 sao chính.",
   "This HSR banner has filled its 4-star rate-up slots.":
-    "Banner HSR này đã đủ vị trí tăng tỉ lệ 4 sao.",
+    "Banner HSR này đã đủ vị trí tăng tỷ lệ 4 sao.",
   "Only 5-star primary and 4-star secondary items can be featured.":
     "Chỉ vật phẩm 5 sao chính và vật phẩm 4 sao phụ mới có thể được đặt làm nổi bật.",
   "Choose a featured rarity": "Chọn độ hiếm nổi bật",
@@ -1387,16 +1407,16 @@ const vi: Record<string, string> = {
   "This banner has filled its 5★ featured slots.":
     "Banner này đã đủ vị trí nổi bật 5★.",
   "This banner has filled its 4★ rate-up slots.":
-    "Banner này đã đủ vị trí tăng tỉ lệ 4★.",
+    "Banner này đã đủ vị trí tăng tỷ lệ 4★.",
   "Every active HSR banner needs one featured 5-star item.":
     "Mỗi banner HSR đang bật cần một vật phẩm 5 sao nổi bật.",
   'The active banner "{{name}}" needs exactly one featured 5-star item.':
     'Banner đang hoạt động "{{name}}" cần chính xác một vật phẩm 5 sao nổi bật.',
-  "Rate-up": "Tăng tỉ lệ",
+  "Rate-up": "Tăng tỷ lệ",
   "5★ featured": "Nổi bật 5★",
-  "4★ rate-up": "Tăng tỉ lệ 4★",
+  "4★ rate-up": "Tăng tỷ lệ 4★",
   "Primary featured": "Nổi bật chính",
-  "Secondary rate-up": "Tăng tỉ lệ phụ",
+  "Secondary rate-up": "Tăng tỷ lệ phụ",
   "Banner theme": "Chủ đề banner",
   "Banner element": "Nguyên tố banner",
   "Banner active": "Bật banner",
@@ -1461,7 +1481,7 @@ const vi: Record<string, string> = {
     "Thêm merch, sau đó điều chỉnh độ hiếm, vai trò và vị trí nổi bật.",
   "Customers can play from the storefront.": "Khách có thể chơi từ cửa hàng.",
   "Only staff can preview it until you open it.":
-    "Chỉ staff có thể xem thử cho đến khi bạn mở minigame.",
+    "Chỉ nhân viên có thể xem thử cho đến khi bạn mở minigame.",
   Open: "Đang mở",
   Closed: "Đã đóng",
   "Minigame title": "Tên minigame",
@@ -1482,6 +1502,9 @@ const vi: Record<string, string> = {
     "Đảm bảo nhận 4 sao trở lên trong số lượt này.",
   "Guarantee a 5-star within this many pulls.":
     "Đảm bảo nhận 5 sao trong số lượt này.",
+  "Character 5★ guaranteed within N pulls":
+    "Đảm bảo nhận nhân vật 5★ trong N lượt",
+  "5★ guaranteed within N pulls": "Đảm bảo nhận 5★ trong N lượt",
   "4-star soft pity": "Mốc tăng tỷ lệ 4 sao",
   "5-star soft pity": "Mốc tăng tỷ lệ 5 sao",
   "Character 5-star soft pity": "Mốc tăng tỷ lệ nhân vật 5 sao",
@@ -1490,9 +1513,12 @@ const vi: Record<string, string> = {
     "Bắt đầu tăng tỷ lệ 4 sao từ lượt này.",
   "Start increasing the 5-star rate from this pull.":
     "Bắt đầu tăng tỷ lệ 5 sao từ lượt này.",
+  "Character 5★ luck improves after pull #":
+    "Tỷ lệ nhân vật 5★ tăng sau lượt #",
+  "5★ luck improves after pull #": "Tỷ lệ 5★ tăng sau lượt #",
   "Featured-item rate": "Tỷ lệ vật phẩm nổi bật",
   "Chance that a 4-star or 5-star pull uses its featured pool.":
-    "Xác suất lượt 4 hoặc 5 sao lấy vật phẩm từ pool nổi bật.",
+    "Xác suất lượt 4 hoặc 5 sao nhận vật phẩm từ nhóm nổi bật.",
   "Featured guarantee": "Bảo hiểm vật phẩm nổi bật",
   "After a non-featured pull, guarantee the next item of that rarity is featured.":
     "Sau khi trượt vật phẩm nổi bật, đảm bảo vật phẩm tiếp theo cùng độ hiếm sẽ là vật phẩm nổi bật.",
@@ -1500,7 +1526,7 @@ const vi: Record<string, string> = {
     "Mỗi mốc tăng tỷ lệ phải từ 1 trở lên và thấp hơn mốc bảo hiểm cứng.",
   "The featured-item rate must be between 0% and 100%.":
     "Tỷ lệ vật phẩm nổi bật phải nằm trong khoảng 0% đến 100%.",
-  "Merch wish pool": "Pool điều ước merch",
+  "Merch wish pool": "Kho phần thưởng Wish",
   "Choose products, present them as characters or weapons, and tune their rarity.":
     "Chọn sản phẩm, đặt vai trò nhân vật hoặc vũ khí và điều chỉnh độ hiếm.",
   "Publishing…": "Đang xuất bản…",
@@ -1513,9 +1539,9 @@ const vi: Record<string, string> = {
   "Search merch…": "Tìm merch…",
   "Hidden product": "Sản phẩm bị ẩn",
   "This product is hidden and won't show up in the storefront wish pool.":
-    "Sản phẩm này đang bị ẩn và sẽ không xuất hiện trong pool ước của cửa hàng.",
+    "Sản phẩm này đang bị ẩn và sẽ không xuất hiện trong kho phần thưởng Wish của cửa hàng.",
   Included: "Đã thêm",
-  "Add to pool": "Thêm vào pool",
+  "Add to pool": "Thêm vào kho",
   Character: "Nhân vật",
   Weapon: "Vũ khí",
   Rarity: "Độ hiếm",
@@ -1524,7 +1550,8 @@ const vi: Record<string, string> = {
   "Try another product name, code, or category.":
     "Hãy thử tên, mã hoặc danh mục sản phẩm khác.",
   "Loading gacha settings…": "Đang tải cài đặt gacha…",
-  "Preparing the shop’s merch pool.": "Đang chuẩn bị pool merch của gian hàng.",
+  "Preparing the shop’s merch pool.":
+    "Đang chuẩn bị kho phần thưởng của gian hàng.",
   "Could not load the minigame.": "Không thể tải minigame.",
   "Gacha unavailable": "Gacha không khả dụng",
   "Give the minigame a title.": "Hãy đặt tên cho minigame.",
@@ -1538,13 +1565,13 @@ const vi: Record<string, string> = {
     "Tổng tỷ lệ cơ bản 4 sao và 5 sao phải nhỏ hơn 100%.",
   "The 4-star and Light Cone 5-star base rates must total less than 100%.":
     "Tổng tỷ lệ cơ bản 4 sao và Nón Ánh Sáng 5 sao phải nhỏ hơn 100%.",
-  "Incomplete prize pool": "Pool phần thưởng chưa đầy đủ",
+  "Incomplete prize pool": "Kho phần thưởng chưa đầy đủ",
   'The active banner "{{name}}" needs at least one active 3-star, 4-star, and 5-star item.':
     'Banner đang bật "{{name}}" cần ít nhất một vật phẩm 3 sao, 4 sao và 5 sao đang hoạt động.',
   "Check warp settings": "Kiểm tra cài đặt Warp",
   "Add at least one active merch item before opening the minigame.":
     "Thêm ít nhất một merch đang hoạt động trước khi mở minigame.",
-  "Wish pool is empty": "Pool điều ước đang trống",
+  "Wish pool is empty": "Kho phần thưởng Wish đang trống",
   "Gacha settings published.": "Đã xuất bản cài đặt gacha.",
   "Could not save the minigame.": "Không thể lưu minigame.",
   "Could not publish gacha": "Không thể xuất bản gacha",
@@ -1557,7 +1584,7 @@ const vi: Record<string, string> = {
   "Print Set × 1": "Bộ tranh in × 1",
   "Game Theme": "Chủ đề game",
   "Game editor": "Trình chỉnh sửa game",
-  "Availability & game": "Trạng thái & game",
+  "Availability & game": "Trạng thái mở & trò chơi",
   "Choose the simulator and whether customers can play it.":
     "Chọn trình mô phỏng và quyết định khách hàng có thể chơi hay không.",
   "Public copy": "Nội dung công khai",
@@ -1569,19 +1596,19 @@ const vi: Record<string, string> = {
   "Title shown on the storefront banner.":
     "Tiêu đề hiển thị trên banner cửa hàng.",
   "Brief description of rewards.": "Mô tả ngắn gọn về phần thưởng.",
-  "Warp pool": "Pool Warp",
+  "Warp pool": "Kho phần thưởng Warp",
   "Current banner": "Banner hiện tại",
   "Reward setup": "Thiết lập phần thưởng",
   Configure: "Cấu hình",
   "Select a banner, edit its public copy, then choose its featured rewards.":
     "Chọn banner, chỉnh sửa nội dung công khai, rồi chọn phần thưởng nổi bật.",
-  "Banners & pool": "Banner & pool",
+  "Banners & pool": "Banner & kho phần thưởng",
   "Gacha status": "Trạng thái gacha",
   "Each game keeps its own banners and prize pool.":
-    "Mỗi game giữ banner và pool phần thưởng riêng.",
+    "Mỗi game có banner và kho phần thưởng riêng.",
   "Banner duplicated": "Đã nhân bản banner",
   "Pool items are not copied — each merch item can only belong to one banner.":
-    "Các vật phẩm trong pool không được sao chép — mỗi merch chỉ có thể thuộc về một banner.",
+    "Các vật phẩm trong kho không được sao chép — mỗi merch chỉ có thể thuộc về một banner.",
   "Already in another banner": "Đã có trong banner khác",
   "This item is already in “{{banner}}”. Remove it there first.":
     "Vật phẩm này đã có trong “{{banner}}”. Hãy xóa nó ở đó trước.",
@@ -1608,10 +1635,10 @@ const vi: Record<string, string> = {
   "Retry saving": "Thử lưu lại",
   "Gacha draft saved.": "Đã lưu bản nháp gacha.",
   "Add at least three active products so the pool can include 3-star, 4-star, and 5-star rewards.":
-    "Hãy thêm ít nhất ba sản phẩm đang hoạt động để pool có phần thưởng 3 sao, 4 sao và 5 sao.",
+    "Hãy thêm ít nhất ba sản phẩm đang hoạt động để kho có phần thưởng 3 sao, 4 sao và 5 sao.",
   "More merch needed": "Cần thêm merch",
   "Recommended pool created. Review it, then publish when ready.":
-    "Đã tạo pool đề xuất. Hãy kiểm tra rồi xuất bản khi sẵn sàng.",
+    "Đã tạo kho phần thưởng đề xuất. Hãy kiểm tra rồi xuất bản khi sẵn sàng.",
   "The featured lineup was created, but the minigame stays off until you add non-featured 4★ and 5★ loss candidates.":
     "Đã tạo đội hình nổi bật, nhưng minigame vẫn tắt cho đến khi bạn thêm vật phẩm 4★ và 5★ không nổi bật cho trường hợp trượt rate-up.",
   "Loss candidates needed": "Cần vật phẩm cho trường hợp trượt rate-up",
@@ -1620,80 +1647,84 @@ const vi: Record<string, string> = {
   "Missing loss candidates": "Thiếu vật phẩm cho trường hợp trượt rate-up",
   'The standard banner "{{name}}" needs active non-featured 4★ and 5★ items.':
     'Banner thường "{{name}}" cần vật phẩm 4★ và 5★ không nổi bật đang hoạt động.',
-  "Incomplete standard pool": "Pool thường chưa đầy đủ",
+  "Incomplete standard pool": "Kho phần thưởng banner thường chưa đầy đủ",
   "Quick setup": "Thiết lập nhanh",
   "Create a playable pool from your active merch, using safe recommended defaults. Everything remains editable and undoable.":
-    "Tạo pool chơi được từ merch đang hoạt động bằng thiết lập đề xuất an toàn. Bạn vẫn có thể chỉnh sửa hoặc hoàn tác mọi thứ.",
+    "Tạo kho phần thưởng có thể chơi từ merch đang hoạt động bằng thiết lập đề xuất an toàn. Bạn vẫn có thể chỉnh sửa hoặc hoàn tác mọi thứ.",
   "Use recommended setup": "Dùng thiết lập đề xuất",
-  "Minigame availability": "Trạng thái hoạt động của minigame",
+  "Minigame availability": "Trạng thái mở minigame",
   "Publishing switches the public minigame to {{game}}. Continue?":
     "Xuất bản sẽ chuyển minigame công khai sang {{game}}. Tiếp tục?",
   "Switch the live minigame?": "Chuyển minigame đang hoạt động?",
   "Delete banner “{{name}}”? Its pool items will be removed too.":
-    "Xóa banner “{{name}}”? Các vật phẩm trong pool của nó cũng sẽ bị xóa theo.",
+    "Xóa banner “{{name}}”? Các vật phẩm trong kho của banner này cũng sẽ bị xóa.",
   "Delete banner?": "Xóa banner?",
   "Keep at least one banner.": "Hãy giữ lại ít nhất một banner.",
   "Availability, public copy, and pity rules for this game.":
-    "Trạng thái hoạt động, nội dung công khai và luật bảo hiểm của game này.",
+    "Trạng thái mở, nội dung công khai và quy tắc bảo hiểm của game này.",
   "Availability, public copy, rates, and pity rules for this game.":
-    "Trạng thái hoạt động, nội dung công khai, tỷ lệ và luật bảo hiểm của game này.",
+    "Trạng thái mở, nội dung công khai, tỷ lệ và quy tắc bảo hiểm của game này.",
   "1 · Status & copy": "1 · Trạng thái & nội dung",
   "Choose whether customers can play and what they see before starting.":
     "Chọn việc khách có thể chơi hay không và nội dung họ thấy trước khi bắt đầu.",
   "2 · Prizes & banners": "2 · Phần thưởng & banner",
   "Choose one banner, then manage its prizes without leaving this card.":
     "Chọn một banner rồi quản lý phần thưởng ngay trong khu vực này.",
-  "3 · Luck & guarantees": "3 · May mắn & bảo hiểm",
+  "3 · Luck & guarantees": "3 · Tỷ lệ & bảo hiểm",
   "Start with a simple preset. Advanced odds stay out of the way until needed.":
     "Bắt đầu bằng thiết lập đơn giản. Tỷ lệ nâng cao chỉ hiện khi cần.",
   "Convention Booth Mode": "Chế độ gian hàng sự kiện",
   "Fast 50 pity with generous odds for physical event visitors.":
     "Bảo hiểm 50 lượt nhanh với tỷ lệ hào phóng cho khách tham quan sự kiện.",
-  "Official Genshin Replica": "Mô phỏng Genshin chính thức",
+  "Official Genshin Replica": "Mô phỏng tỷ lệ Genshin gốc",
   "Exact official game rates (90 hard pity, 74 soft pity).":
-    "Đúng theo tỷ lệ game chính thức (bảo hiểm cứng 90 lượt, mềm 74 lượt).",
-  "Official Star Rail Replica": "Mô phỏng Star Rail chính thức",
+    "Mô phỏng đúng tỷ lệ trong game: bảo hiểm cứng ở lượt 90, tăng tỷ lệ từ lượt 74.",
+  "Official Star Rail Replica": "Mô phỏng tỷ lệ Star Rail gốc",
   "Exact official game rates (90 character pity, 80 Light Cone pity).":
-    "Đúng theo tỷ lệ game chính thức (bảo hiểm nhân vật 90 lượt, Light Cone 80 lượt).",
-  "Review luck settings": "Xem thiết lập may mắn",
+    "Mô phỏng đúng tỷ lệ trong game: bảo hiểm nhân vật ở lượt 90, Nón Ánh Sáng ở lượt 80.",
+  "Review luck settings": "Xem thiết lập tỷ lệ",
   "Choose a preset": "Chọn thiết lập có sẵn",
-  Availability: "Trạng thái hoạt động",
+  Availability: "Trạng thái mở",
   "Live now": "Đang hoạt động",
   Unsaved: "Chưa lưu",
   Draft: "Bản nháp",
   "{{banners}} banners · {{items}} items":
     "{{banners}} banner · {{items}} vật phẩm",
+  "Not live": "Chưa hoạt động",
+  "Not published yet": "Chưa xuất bản",
   "Save draft": "Lưu bản nháp",
   "Enable at least one banner before publishing the minigame.":
     "Hãy bật ít nhất một banner trước khi xuất bản minigame.",
-  "No active banner": "Không có banner đang hoạt động",
+  "No active banner": "Chưa có banner nào được bật",
   "Luck & guarantees": "Tỷ lệ & bảo hiểm",
   "Pick a preset, or fine-tune the odds yourself.":
     "Chọn thiết lập có sẵn hoặc tự điều chỉnh tỷ lệ.",
   "Odds presets": "Mẫu tỷ lệ",
-  "4★ guaranteed by pull #{{count}}": "Bảo hiểm 4★ ở lượt #{{count}}",
-  "5★ guaranteed by pull #{{count}}": "Bảo hiểm 5★ ở lượt #{{count}}",
+  "4★ guaranteed by pull #{{count}}":
+    "Chắc chắn nhận 4★ chậm nhất ở lượt #{{count}}",
+  "5★ guaranteed by pull #{{count}}":
+    "Chắc chắn nhận 5★ chậm nhất ở lượt #{{count}}",
   "Light Cone 5★ guaranteed by pull #{{count}}":
-    "Bảo hiểm Nón Ánh Sáng 5★ ở lượt #{{count}}",
+    "Chắc chắn nhận Nón Ánh Sáng 5★ chậm nhất ở lượt #{{count}}",
   "Customize odds": "Tùy chỉnh tỷ lệ",
   "Custom odds active": "Đang dùng tỷ lệ tùy chỉnh",
   "Fine-tune base rates, luck ramps, and promoted-prize rules.":
-    "Điều chỉnh tỷ lệ cơ bản, mốc tăng tỷ lệ và luật phần thưởng quảng bá.",
+    "Điều chỉnh tỷ lệ cơ bản, mốc tăng tỷ lệ và quy tắc phần thưởng nổi bật.",
   "Chance per pull before luck starts improving.":
-    "Tỷ lệ mỗi lượt trước khi bắt đầu tăng may mắn.",
+    "Tỷ lệ mỗi lượt trước mốc bắt đầu tăng xác suất.",
   "4★ guaranteed within N pulls": "Bảo hiểm 4★ trong N lượt",
-  "4★ luck improves after pull #": "May mắn 4★ tăng sau lượt #",
+  "4★ luck improves after pull #": "Tỷ lệ 4★ tăng sau lượt #",
   "Light Cone 5★ guaranteed within N pulls":
     "Bảo hiểm Nón Ánh Sáng 5★ trong N lượt",
   "Light Cone 5★ luck improves after pull #":
-    "May mắn Nón Ánh Sáng 5★ tăng sau lượt #",
-  "Promoted-prize chance": "Tỷ lệ phần thưởng quảng bá",
+    "Tỷ lệ Nón Ánh Sáng 5★ tăng sau lượt #",
+  "Promoted-prize chance": "Tỷ lệ trúng phần thưởng nổi bật",
   "Chance that a 4★ or 5★ pull lands on a promoted prize.":
-    "Tỷ lệ lượt quay 4★ hoặc 5★ nhận được phần thưởng quảng bá.",
+    "Xác suất lượt quay 4★ hoặc 5★ trúng phần thưởng nổi bật.",
   "Guarantee promoted prize after a miss":
-    "Đảm bảo phần thưởng quảng bá sau lượt trật",
+    "Bảo đảm phần thưởng nổi bật sau một lần trượt",
   "After a 4★ or 5★ pull misses the promoted prize, the next one is guaranteed.":
-    "Sau khi lượt 4★ hoặc 5★ trật phần thưởng quảng bá, lượt tiếp theo chắc chắn nhận.",
+    "Nếu một lượt 4★ hoặc 5★ không trúng phần thưởng nổi bật, lượt cùng độ hiếm tiếp theo sẽ được bảo đảm.",
   "Assign 4★ and 5★ merch prizes for this specific banner. 3★ pulls use the shared souvenir pool.":
     "Gán phần thưởng merch 4★ và 5★ cho banner này. Lượt quay 3★ sẽ dùng kho quà lưu niệm chung.",
   "Character wishes go live with exactly 1 featured 5★ character and 3 featured 4★ characters.":
@@ -1701,10 +1732,14 @@ const vi: Record<string, string> = {
   "Weapon wishes go live with exactly 2 featured 5★ weapons and 5 featured 4★ weapons.":
     "Banner vũ khí cần chính xác 2 vũ khí 5★ và 5 vũ khí 4★ nổi bật trước khi phát hành.",
   "HSR event banners go live with exactly 1 featured 5★ primary and 3 featured 4★ rate-ups. Leave all featured slots empty for a standard warp; 3★ pulls use the shared souvenir pool.":
-    "Banner sự kiện HSR cần chính xác 1 vật phẩm 5★ chính và 3 vật phẩm 4★ tăng tỉ lệ trước khi phát hành. Để trống toàn bộ vị trí nổi bật cho banner thường; lượt quay 3★ dùng kho quà lưu niệm chung.",
+    "Banner sự kiện HSR cần chính xác 1 vật phẩm 5★ chính và 3 vật phẩm 4★ tăng tỷ lệ trước khi phát hành. Để trống toàn bộ vị trí nổi bật cho banner thường; lượt quay 3★ dùng kho quà lưu niệm chung.",
   "Add at least {{count}} active products to fill this banner's featured lineup.":
     "Hãy thêm ít nhất {{count}} sản phẩm đang hoạt động để điền đủ đội hình nổi bật của banner này.",
   "Banner Prizes ({{count}})": "Phần thưởng banner ({{count}})",
+  "Warp Banner Prizes (4★ & 5★)": "Phần thưởng Warp (4★ và 5★)",
+  "Wish Banner Prizes (4★ & 5★)": "Phần thưởng Wish (4★ và 5★)",
+  "Prizes: {{items}} · Display limit: {{shown}}":
+    "Phần thưởng: {{items}} · Giới hạn hiển thị: {{shown}}",
   "Add merch ({{count}})": "Thêm merch ({{count}})",
   "Included ({{count}})": "Đã thêm ({{count}})",
   "3★ filler ({{count}})": "Phần thưởng phụ 3★ ({{count}})",
@@ -1712,7 +1747,7 @@ const vi: Record<string, string> = {
   "Filter 3★ filler prizes": "Lọc phần thưởng phụ 3★",
   "These prizes are shared by every banner in this game.":
     "Các phần thưởng này được dùng chung cho mọi banner trong game.",
-  Promoted: "Quảng bá",
+  Promoted: "Nổi bật",
   "Banner actions": "Thao tác banner",
   "Move earlier": "Chuyển lên trước",
   "Move later": "Chuyển xuống sau",
@@ -1727,17 +1762,17 @@ const vi: Record<string, string> = {
   "Hidden merch cannot be added until it is active in the catalog.":
     "Không thể thêm merch đang ẩn cho đến khi sản phẩm được bật trong danh mục.",
   "Hidden merch cannot be promoted until it is active in the catalog.":
-    "Không thể quảng bá merch đang ẩn cho đến khi sản phẩm được bật trong danh mục.",
+    "Không thể đặt merch đang ẩn làm phần thưởng nổi bật cho đến khi sản phẩm được bật trong danh mục.",
   "This prize role does not match the selected banner type.":
     "Vai trò phần thưởng này không phù hợp với loại banner đã chọn.",
   "Only 4★ and 5★ prizes can be promoted.":
-    "Chỉ phần thưởng 4★ và 5★ mới có thể được quảng bá.",
+    "Chỉ phần thưởng 4★ và 5★ mới có thể được đặt làm nổi bật.",
   "This banner already has all of its promoted 5★ prizes.":
-    "Banner này đã đủ phần thưởng 5★ quảng bá.",
+    "Banner này đã đủ số phần thưởng nổi bật 5★.",
   "This banner already has all of its promoted 4★ prizes.":
-    "Banner này đã đủ phần thưởng 4★ quảng bá.",
+    "Banner này đã đủ số phần thưởng nổi bật 4★.",
   "This banner has filled every promoted-prize slot.":
-    "Banner này đã lấp đầy mọi vị trí phần thưởng quảng bá.",
+    "Banner này đã đủ tất cả vị trí phần thưởng nổi bật.",
   "Shared 3★ Souvenir Pool": "Kho quà lưu niệm 3★ chung",
   "Items awarded for 3★ pulls across all banners in this game.":
     "Các vật phẩm trao cho lượt 3★ ở tất cả banner trong game này.",
@@ -1759,7 +1794,7 @@ const vi: Record<string, string> = {
   "Keep order": "Giữ đơn hàng",
   "Try again": "Thử lại",
   "Admin sections": "Các mục quản trị",
-  "Offline event mode": "Chế độ sự kiện ngoại tuyến",
+  "Offline Event Mode": "Chế độ sự kiện ngoại tuyến",
   "Loading event mode…": "Đang tải chế độ sự kiện…",
   Loading: "Đang tải",
   "Checking this device and the latest saved event.":
@@ -1779,7 +1814,7 @@ const vi: Record<string, string> = {
   "No stock available for an event": "Không có tồn kho cho sự kiện",
   "Add stock to an active product before preparing Event Mode.":
     "Hãy thêm tồn kho cho một sản phẩm đang hoạt động trước khi chuẩn bị Chế độ sự kiện.",
-  "Event mode": "Chế độ sự kiện",
+  "Event Mode": "Chế độ sự kiện",
   event: "sự kiện",
   "Event orders": "Đơn hàng sự kiện",
   "No event orders today": "Hôm nay chưa có đơn hàng sự kiện",
@@ -1799,20 +1834,26 @@ const vi: Record<string, string> = {
   "Preparing device…": "Đang chuẩn bị thiết bị…",
   "This device is ready for offline sales.":
     "Thiết bị này đã sẵn sàng bán hàng ngoại tuyến.",
-  "Event mode unavailable": "Không thể mở chế độ sự kiện",
+  "Event Mode unavailable": "Không thể mở chế độ sự kiện",
+  "Could not start offline event mode.":
+    "Không thể khởi động chế độ sự kiện ngoại tuyến.",
   "Offline orders synchronized.": "Đã đồng bộ đơn hàng ngoại tuyến.",
+  "Could not synchronize offline orders.":
+    "Không thể đồng bộ đơn hàng ngoại tuyến.",
   "Sync failed": "Đồng bộ thất bại",
+  "Could not update offline order.": "Không thể cập nhật đơn hàng ngoại tuyến.",
   "Offline event closed and unused stock returned.":
     "Đã đóng sự kiện ngoại tuyến và hoàn lại tồn kho chưa dùng.",
   "Close failed": "Không thể đóng sự kiện",
+  "Could not close the offline event.": "Không thể đóng sự kiện ngoại tuyến.",
   "Prepare this device for an offline event":
     "Chuẩn bị thiết bị này cho sự kiện ngoại tuyến",
   "Current active stock will be assigned to this device, removed from online availability, and safely returned when the event closes.":
-    "Tồn kho đang hoạt động sẽ được giao cho thiết bị này, gỡ khỏi lượng hàng trực tuyến và hoàn lại an toàn khi đóng sự kiện.",
+    "Tồn kho hiện có sẽ được phân bổ cho thiết bị này, tạm ngừng bán trực tuyến và được hoàn lại an toàn khi đóng sự kiện.",
   "Choose the stock for this event. It is removed from online availability only when this device starts the event.":
     "Chọn tồn kho cho sự kiện này. Hàng chỉ bị gỡ khỏi lượng bán trực tuyến khi thiết bị này bắt đầu sự kiện.",
   "Use one designated staff device while offline. The storefront and enabled gacha games are saved before stock is reserved.":
-    "Chỉ dùng một thiết bị staff được chỉ định khi ngoại tuyến. Cửa hàng và các game gacha đang bật sẽ được lưu trước khi giữ tồn kho.",
+    "Chỉ dùng một thiết bị nhân viên được chỉ định khi ngoại tuyến. Cửa hàng và các game gacha đang bật sẽ được lưu trước khi giữ tồn kho.",
   "Draft details are saved online. The storefront and enabled gacha games are downloaded before the selected stock is reserved.":
     "Thông tin bản nháp được lưu trực tuyến. Cửa hàng và các game gacha đang bật được tải xuống trước khi giữ tồn kho đã chọn.",
   "Preparing games… {{progress}}%": "Đang chuẩn bị game… {{progress}}%",
@@ -1839,7 +1880,7 @@ const vi: Record<string, string> = {
   Online: "Trực tuyến",
   "Offline ready": "Sẵn sàng ngoại tuyến",
   "This device is the inventory authority for the allocated event stock.":
-    "Thiết bị này là nguồn tồn kho chính xác cho lượng hàng đã phân bổ.",
+    "Thiết bị này là nguồn dữ liệu tồn kho chính thức cho lượng hàng sự kiện đã phân bổ.",
   "Sync now": "Đồng bộ ngay",
   "Export backup": "Xuất bản sao lưu",
   "Open storefront": "Mở cửa hàng",
@@ -1866,7 +1907,7 @@ const vi: Record<string, string> = {
   "Cancel {{code}}? Its reserved event stock will be returned on this device.":
     "Hủy {{code}}? Tồn kho sự kiện đã giữ cho đơn này sẽ được hoàn lại trên thiết bị.",
   "Synchronization is idempotent; retrying cannot duplicate an offline order.":
-    "Đồng bộ có tính lặp an toàn; thử lại sẽ không tạo trùng đơn ngoại tuyến.",
+    "Có thể đồng bộ lại an toàn; thao tác thử lại sẽ không tạo trùng đơn ngoại tuyến.",
   "This event is frozen. Retry closing to finish synchronization and return unused stock.":
     "Sự kiện đã tạm khóa. Hãy thử đóng lại để hoàn tất đồng bộ và hoàn trả tồn kho chưa dùng.",
   "Sales are safe on this device. Reconnect before closing the event or switching devices.":

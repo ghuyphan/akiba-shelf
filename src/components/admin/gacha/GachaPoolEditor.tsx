@@ -4,7 +4,6 @@ import {
   Gift,
   Plus,
   Search,
-  Star,
   Sword,
   Sparkles,
 } from "lucide-react";
@@ -20,6 +19,7 @@ import { EmptyState } from "../../ui/EmptyState";
 import { Alert } from "../../ui/Alert";
 import { GachaElementIcon } from "./GachaElementIcon";
 import { GachaEntryEditor } from "./GachaEntryEditor";
+import { GachaRarityStars } from "./GachaRarityStars";
 import { productImage } from "./gachaState";
 
 type Props = {
@@ -236,7 +236,7 @@ export function GachaPoolEditor({
         <header className="gacha-panel-heading">
           <h3>
             {t(
-              descriptor.gameType === "hsr"
+                descriptor.gameType === "hsr"
                 ? "Warp Banner Prizes (4★ & 5★)"
                 : "Wish Banner Prizes (4★ & 5★)",
             )}
@@ -253,11 +253,11 @@ export function GachaPoolEditor({
         </header>
         <div className="gacha-pool-slot-counts">
           <span className="gacha-chip rarity-5">
-            <Star size={13} aria-hidden="true" />
+            <GachaRarityStars gameType={descriptor.gameType} rarity={1} />
             {primaryFeaturedCount}/{featuredRule.fiveStarLimit} 5★
           </span>
           <span className="gacha-chip rarity-4">
-            <Star size={13} aria-hidden="true" />
+            <GachaRarityStars gameType={descriptor.gameType} rarity={1} />
             {secondaryFeaturedCount}/{featuredRule.fourStarLimit} 4★
           </span>
         </div>
@@ -390,7 +390,10 @@ export function GachaPoolEditor({
                     {identity}
                     <span className="gacha-item-config">
                       <b className={`rarity-${entry.rarity}`}>
-                        {entry.rarity}★
+                        <GachaRarityStars
+                          gameType={descriptor.gameType}
+                          rarity={entry.rarity}
+                        />
                       </b>
                       {entry.kind === "character" ? (
                         <GachaElementIcon

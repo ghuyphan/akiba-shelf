@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
 
@@ -42,8 +42,11 @@ export function ConfirmationDialog({
       closeLabel={cancelLabel}
     >
       <div className="confirmation-dialog">
-        <span className="confirmation-dialog-icon" aria-hidden="true">
-          <AlertTriangle size={22} />
+        <span
+          className={`confirmation-dialog-icon ${danger ? "is-danger" : "is-neutral"}`}
+          aria-hidden="true"
+        >
+          {danger ? <AlertTriangle size={22} /> : <Info size={22} />}
         </span>
         <div className="confirmation-dialog-message">{message}</div>
         <div className="confirmation-dialog-actions">

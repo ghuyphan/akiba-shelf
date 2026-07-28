@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { defaultBooth } from "../../lib/constants";
 import {
+  getAdminThemeStyle,
   getStorefrontSectionStyleClass,
   getThemeStyle,
   resetPageTheme,
@@ -14,6 +15,27 @@ afterEach(() => {
 });
 
 describe("storefront card styles", () => {
+  it("keeps the shop palette visible in admin with safe semantic colors", () => {
+    const admin = getAdminThemeStyle({
+      ...defaultBooth,
+      theme_primary: "#ffffff",
+      theme_secondary: "#f4f4f4",
+      theme_accent: "#fff000",
+      theme_background: "#101820",
+    });
+
+    expect(admin["--admin-brand-primary"]).toBe("#ffffff");
+    expect(admin["--admin-primary"]).not.toBe("#ffffff");
+    expect(admin["--admin-brand-interactive"]).toBe(admin["--admin-primary"]);
+    expect(admin["--admin-secondary"]).not.toBe("#f4f4f4");
+    expect(admin["--admin-secondary"]).toBe(admin["--navy"]);
+    expect(admin["--admin-accent"]).toBe("#fff000");
+    expect(admin["--coral"]).not.toBe("#ffffff");
+    expect(admin["--navy"]).not.toBe("#f4f4f4");
+    expect(admin["--page-bg"]).toContain("#101820");
+    expect(admin["--admin-action"]).toBe("#5c8657");
+  });
+
   it("maps persisted card personalities to distinct safe CSS tokens", () => {
     const outlined = getThemeStyle({ ...defaultBooth, card_style: "outlined" });
     const playful = getThemeStyle({ ...defaultBooth, card_style: "playful" });

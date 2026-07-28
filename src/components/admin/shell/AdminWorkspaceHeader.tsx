@@ -7,6 +7,7 @@ import {
   ClipboardList,
   EllipsisVertical,
   Gamepad2,
+  Heart,
   LayoutTemplate,
   LogOut,
   Package,
@@ -112,7 +113,7 @@ export function AdminWorkspaceHeader({
         <>
           <Link
             to={`/s/${access.shop_slug}`}
-            aria-label={t("Back to catalog")}
+            aria-label={t("Back to storefront")}
             className="app-header-icon-button"
             onClick={(event) => {
               event.preventDefault();
@@ -146,7 +147,7 @@ export function AdminWorkspaceHeader({
             </span>
             <span className="app-header-title">
               <strong>{booth.booth_name || t("Merch desk")}</strong>
-              <small>{t("Admin workspace")}</small>
+              <small>{t("Shop workspace")}</small>
             </span>
           </Link>
         </>
@@ -155,7 +156,7 @@ export function AdminWorkspaceHeader({
         <div
           className="admin-nav-tabs"
           ref={containerRef}
-          role="toolbar"
+          role="navigation"
           aria-label={t("Admin sections")}
         >
           {canManageCatalog && (
@@ -164,6 +165,7 @@ export function AdminWorkspaceHeader({
               ref={registerItem("design")}
               className={`admin-nav-tab admin-nav-storefront ${viewTab === "design" ? "active" : ""}`}
               aria-pressed={viewTab === "design"}
+              aria-current={viewTab === "design" ? "page" : undefined}
               onClick={() => requestNavigation(() => onViewTabChange("design"))}
             >
               <LayoutTemplate size={15} /> {t("Storefront")}
@@ -173,8 +175,9 @@ export function AdminWorkspaceHeader({
             type="button"
             ref={registerItem("orders")}
             className={`admin-nav-tab admin-nav-orders ${viewTab === "orders" ? "active" : ""}`}
-            aria-label={t("Orders Queue")}
+            aria-label={t("Order queue")}
             aria-pressed={viewTab === "orders"}
+            aria-current={viewTab === "orders" ? "page" : undefined}
             onClick={() => requestNavigation(() => onViewTabChange("orders"))}
           >
             <ClipboardList size={15} />
@@ -192,6 +195,7 @@ export function AdminWorkspaceHeader({
               className={`admin-nav-tab ${viewTab === "products" ? "active" : ""}`}
               aria-label={t("Products ({{count}})", { count: productsCount })}
               aria-pressed={viewTab === "products"}
+              aria-current={viewTab === "products" ? "page" : undefined}
               onClick={() =>
                 requestNavigation(() => onViewTabChange("products"))
               }
@@ -212,6 +216,7 @@ export function AdminWorkspaceHeader({
               ref={registerItem("gacha")}
               className={`admin-nav-tab ${viewTab === "gacha" ? "active" : ""}`}
               aria-pressed={viewTab === "gacha"}
+              aria-current={viewTab === "gacha" ? "page" : undefined}
               onClick={() => requestNavigation(() => onViewTabChange("gacha"))}
             >
               <Gamepad2 size={15} />
@@ -224,6 +229,7 @@ export function AdminWorkspaceHeader({
               ref={registerItem("team")}
               className={`admin-nav-tab ${viewTab === "team" ? "active" : ""}`}
               aria-pressed={viewTab === "team"}
+              aria-current={viewTab === "team" ? "page" : undefined}
               onClick={() => requestNavigation(() => onViewTabChange("team"))}
             >
               <Users size={15} /> {t("Team")}
@@ -235,6 +241,7 @@ export function AdminWorkspaceHeader({
               ref={registerItem("settings")}
               className={`admin-nav-tab admin-nav-mobile-settings ${viewTab === "settings" ? "active" : ""}`}
               aria-pressed={viewTab === "settings"}
+              aria-current={viewTab === "settings" ? "page" : undefined}
               onClick={() =>
                 requestNavigation(() => onViewTabChange("settings"))
               }
@@ -308,6 +315,13 @@ export function AdminWorkspaceHeader({
                     },
                   ]
                 : []),
+              {
+                id: "support",
+                label: t("Support Matsuri"),
+                icon: <Heart size={15} />,
+                onSelect: () =>
+                  requestNavigation(() => navigate("/support")),
+              },
               {
                 id: "sign-out",
                 label: t("Sign out"),

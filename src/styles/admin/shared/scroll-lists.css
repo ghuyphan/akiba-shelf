@@ -26,6 +26,11 @@
 
 @media (max-width: 760px) {
   .admin-scroll-list {
-    max-height: min(46dvh, 320px) !important;
+    /* Let the page or mobile sheet own scrolling; avoid a tiny nested viewport. */
+    max-height: none !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    overscroll-behavior-y: auto !important;
+    scrollbar-gutter: auto;
   }
 }

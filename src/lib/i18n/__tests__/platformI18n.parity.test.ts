@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import * as path from "node:path";
+import * as ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { platformVietnameseTranslations } from "../platformI18n";
 
@@ -21,12 +22,41 @@ function collectSourceFiles(dir: string): string[] {
 }
 
 function collectTranslationKeys() {
-  const keyPattern = /\bt\(\s*"((?:[^"\\])*)"/gs;
   const keys = new Set<string>();
   for (const file of collectSourceFiles(srcRoot)) {
-    for (const match of readFileSync(file, "utf8").matchAll(keyPattern)) {
-      keys.add(match[1]);
-    }
+    const source = ts.createSourceFile(
+      file,
+      readFileSync(file, "utf8"),
+      ts.ScriptTarget.Latest,
+      true,
+    );
+    const visit = (node: ts.Node) => {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === "t" &&
+        node.arguments.length > 0
+      ) {
+        const collectLiterals = (argument: ts.Node) => {
+          if (
+            ts.isStringLiteral(argument) ||
+            ts.isNoSubstitutionTemplateLiteral(argument)
+          ) {
+            keys.add(argument.text);
+            return;
+          }
+          if (ts.isConditionalExpression(argument)) {
+            collectLiterals(argument.whenTrue);
+            collectLiterals(argument.whenFalse);
+          } else if (ts.isParenthesizedExpression(argument)) {
+            collectLiterals(argument.expression);
+          }
+        };
+        collectLiterals(node.arguments[0]);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
   }
   return keys;
 }

@@ -166,7 +166,7 @@ test("platform locale menu persists without horizontal overflow", async ({
   ).toBeVisible();
   await expect(
     page.getByText(
-      "Truy cập an toàn vào gian hàng và không gian làm việc của staff.",
+      "Truy cập an toàn vào gian hàng và không gian làm việc của nhân viên.",
     ),
   ).toBeVisible();
   await expect(page.locator(".platform-language-menu")).toHaveCount(0);

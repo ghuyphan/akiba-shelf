@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
@@ -28,7 +28,9 @@ describe("DateTimeInput", () => {
 
     expect(container.querySelector('input[type="datetime-local"]')).toBeNull();
     await user.click(screen.getByRole("button", { name: /Event starts:/ }));
-    await user.click(screen.getByRole("button", { name: "23" }));
+    await user.click(
+      screen.getByRole("button", { name: /Thursday, July 23, 2026/ }),
+    );
     await user.click(screen.getByRole("combobox", { name: "Hour: 10" }));
     await user.click(screen.getByRole("option", { name: "11" }));
     await user.click(screen.getByRole("button", { name: "Done" }));
@@ -45,5 +47,56 @@ describe("DateTimeInput", () => {
     );
     await user.click(screen.getByRole("button", { name: "Clear Event starts" }));
     expect(screen.getByTestId("value")).toBeEmptyDOMElement();
+  });
+
+  it("uses the shared anchored dialog behavior", async () => {
+    const user = userEvent.setup();
+    render(
+      <PlatformI18nProvider>
+        <Harness />
+      </PlatformI18nProvider>,
+    );
+
+    const trigger = screen.getByRole("button", { name: /Event starts:/ });
+    await user.click(trigger);
+
+    const dialog = screen.getByRole("dialog", { name: "Event starts" });
+    expect(dialog).toHaveStyle({ position: "fixed" });
+    expect(dialog.style.transform).toBe("");
+    await user.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Event starts" }),
+      ).toBeNull(),
+    );
+    expect(trigger).toHaveFocus();
+  });
+
+  it("uses roving keyboard focus for calendar days", async () => {
+    const user = userEvent.setup();
+    render(
+      <PlatformI18nProvider>
+        <Harness />
+      </PlatformI18nProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Event starts:/ }));
+    const selectedDay = screen.getByRole("button", {
+      name: /Wednesday, July 22, 2026/,
+    });
+    selectedDay.focus();
+    await user.keyboard("{ArrowRight}");
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: /Thursday, July 23, 2026/ }),
+      ).toHaveFocus(),
+    );
+    expect(
+      screen
+        .getAllByRole("button")
+        .filter((button) => button.closest(".date-time-days"))
+        .filter((button) => button.tabIndex === 0),
+    ).toHaveLength(1);
   });
 });

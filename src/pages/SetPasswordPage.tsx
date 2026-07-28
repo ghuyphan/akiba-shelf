@@ -28,6 +28,7 @@ import {
 import { PasswordField } from "../components/ui/PasswordField";
 import { AuthSecurityNote, AuthShell } from "../components/ui/AuthShell";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
+import { safeLocalStorageSet } from "../lib/offline/safeStorage";
 
 type RouteState = "checking" | "ready" | "invalid";
 
@@ -46,10 +47,7 @@ export function SetPasswordPage() {
   const invitationId = getPendingInvitation();
 
   useEffect(() => {
-    if (
-      !flow ||
-      (flow === "invitation" && !invitationId)
-    ) {
+    if (!flow || (flow === "invitation" && !invitationId)) {
       setRouteState("invalid");
       return;
     }
@@ -77,7 +75,9 @@ export function SetPasswordPage() {
       setBusy(false);
       setAcceptanceFailed(true);
       toast.error(
-        t("Your password is saved, but shop access could not be completed. You can retry safely."),
+        t(
+          "Your password is saved, but shop access could not be completed. You can retry safely.",
+        ),
         t("Invitation not completed"),
       );
       return;
@@ -88,14 +88,16 @@ export function SetPasswordPage() {
       setBusy(false);
       setAcceptanceFailed(true);
       toast.error(
-        t("Shop access was accepted, but account cleanup could not finish. Retry to complete safely."),
+        t(
+          "Shop access was accepted, but account cleanup could not finish. Retry to complete safely.",
+        ),
         t("Invitation cleanup incomplete"),
       );
       return;
     }
     clearPendingInvitation();
     clearPasswordFlow();
-    localStorage.setItem("akiba-active-shop", shopId);
+    safeLocalStorageSet("akiba-active-shop", shopId);
     navigate("/admin", { replace: true });
   }, [invitationId, navigate, t, toast]);
 
@@ -109,7 +111,9 @@ export function SetPasswordPage() {
     } catch {
       setCompletionFailed(true);
       toast.error(
-        t("Your password was saved, but we could not open your account. Retry safely without changing it again."),
+        t(
+          "Your password was saved, but we could not open your account. Retry safely without changing it again.",
+        ),
         t("Could not finish recovery"),
       );
     } finally {
@@ -158,7 +162,7 @@ export function SetPasswordPage() {
     );
   if (routeState === "invalid")
     return (
-      <AuthShell>
+      <AuthShell showBack={false}>
         <div className="admin-login-heading">
           <h1>{t("Password link unavailable")}</h1>
           <p>{t("This password link is invalid or has expired.")}</p>
@@ -172,17 +176,21 @@ export function SetPasswordPage() {
           </Link>
         </div>
         <AuthSecurityNote>
-          {t("Password links are short-lived and protected by your email session.")}
+          {t(
+            "Password links are short-lived and protected by your email session.",
+          )}
         </AuthSecurityNote>
       </AuthShell>
     );
   if (passwordCompleted && acceptanceFailed)
     return (
-      <AuthShell>
+      <AuthShell showBack={false}>
         <div className="admin-login-heading">
           <h1>{t("Finish joining the shop")}</h1>
           <p>
-            {t("Your password is saved. Retry the invitation without changing it again.")}
+            {t(
+              "Your password is saved. Retry the invitation without changing it again.",
+            )}
           </p>
         </div>
         <Button
@@ -205,11 +213,13 @@ export function SetPasswordPage() {
     );
   if (passwordCompleted && completionFailed)
     return (
-      <AuthShell>
+      <AuthShell showBack={false}>
         <div className="admin-login-heading">
           <h1>{t("Password updated")}</h1>
           <p>
-            {t("Your new password is saved. Retry opening your account without changing it again.")}
+            {t(
+              "Your new password is saved. Retry opening your account without changing it again.",
+            )}
           </p>
         </div>
         <Button
@@ -232,7 +242,7 @@ export function SetPasswordPage() {
       </AuthShell>
     );
   return (
-    <AuthShell>
+    <AuthShell showBack={false}>
       <div className="admin-login-heading">
         <h1>{t("Set your password")}</h1>
         <p>{t("Choose a secure password to finish account setup.")}</p>
@@ -272,7 +282,7 @@ export function SetPasswordPage() {
         </button>
       </form>
       <AuthSecurityNote>
-        {t("Your password is encrypted and never shown to shop staff.")}
+        {t("Your password is handled securely and never shown to shop staff.")}
       </AuthSecurityNote>
     </AuthShell>
   );

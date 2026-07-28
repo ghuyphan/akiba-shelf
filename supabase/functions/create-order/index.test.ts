@@ -130,6 +130,32 @@ Deno.test(
 );
 
 Deno.test(
+  "create order rejects oversized shop slugs before verification",
+  async () => {
+    let rpcCalls = 0;
+    let verificationCalls = 0;
+    clientFactory.createClient = () => ({
+      rpc: () => {
+        rpcCalls += 1;
+        return Promise.resolve({ data: [], error: null });
+      },
+    });
+    turnstileVerifier.verify = () => {
+      verificationCalls += 1;
+      return allowTurnstile();
+    };
+
+    const response = await handleCreateOrderRequest(
+      request({ ...validBody, shopSlug: "a".repeat(64) }),
+    );
+    assertEquals(response.status, 400);
+    assertEquals(rpcCalls, 0);
+    assertEquals(verificationCalls, 0);
+    turnstileVerifier.verify = allowTurnstile;
+  },
+);
+
+Deno.test(
   "create order rejects failed or unavailable security checks",
   async () => {
     let rpcCalls = 0;

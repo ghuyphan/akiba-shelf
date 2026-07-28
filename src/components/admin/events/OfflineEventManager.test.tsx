@@ -145,7 +145,7 @@ describe("OfflineEventManager", () => {
     );
 
     const launcher = await screen.findByRole("button", {
-      name: "Event mode: Convention day",
+      name: "Event Mode: Convention day",
     });
     await userEvent.click(launcher);
 
@@ -222,7 +222,7 @@ describe("OfflineEventManager", () => {
 
     await userEvent.click(
       await screen.findByRole("button", {
-        name: "Event mode: Convention day",
+        name: "Event Mode: Convention day",
       }),
     );
     orderReadFailure.current = new Error("IndexedDB read failed");
@@ -281,7 +281,7 @@ describe("OfflineEventManager", () => {
     );
 
     await userEvent.click(
-      await screen.findByRole("button", { name: "Event mode: Set up" }),
+      await screen.findByRole("button", { name: "Event Mode: Set up" }),
     );
     fireEvent.change(screen.getByLabelText("Event name"), {
       target: { value: "Artist alley" },
@@ -320,7 +320,7 @@ describe("OfflineEventManager", () => {
     );
 
     await userEvent.click(
-      await screen.findByRole("button", { name: "Event mode: Set up" }),
+      await screen.findByRole("button", { name: "Event Mode: Set up" }),
     );
 
     expect(
@@ -363,7 +363,7 @@ describe("OfflineEventManager", () => {
     );
 
     await userEvent.click(
-      await screen.findByRole("button", { name: "Event mode: Set up" }),
+      await screen.findByRole("button", { name: "Event Mode: Set up" }),
     );
     fireEvent.change(screen.getByLabelText("Event name"), {
       target: { value: "Artist alley" },
@@ -409,7 +409,7 @@ describe("OfflineEventManager", () => {
     );
 
     await userEvent.click(
-      await screen.findByRole("button", { name: "Event mode: Set up" }),
+      await screen.findByRole("button", { name: "Event Mode: Set up" }),
     );
     fireEvent.change(screen.getByLabelText("Event name"), {
       target: { value: "Artist alley" },
@@ -454,7 +454,7 @@ describe("OfflineEventManager", () => {
     const view = render(ui("shop-old", "old-shop"));
 
     await userEvent.click(
-      await screen.findByRole("button", { name: "Event mode: Set up" }),
+      await screen.findByRole("button", { name: "Event Mode: Set up" }),
     );
     expect(screen.getByText("Loading saved event…")).toBeInTheDocument();
 
@@ -505,7 +505,7 @@ describe("OfflineEventManager", () => {
 
     await userEvent.click(
       await screen.findByRole("button", {
-        name: "Event mode: Convention day",
+        name: "Event Mode: Convention day",
       }),
     );
     expect(screen.getByText("Event Print")).toBeInTheDocument();

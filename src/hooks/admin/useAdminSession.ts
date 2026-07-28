@@ -8,6 +8,10 @@ import {
   loadAdminAccessSnapshot,
   saveAdminAccessSnapshot,
 } from "../../lib/offline/adminOffline";
+import {
+  safeLocalStorageGet,
+  safeLocalStorageSet,
+} from "../../lib/offline/safeStorage";
 
 const STORAGE_KEY = "akiba-active-shop";
 const ACCESS_ERROR_MESSAGE =
@@ -91,11 +95,11 @@ export function useAdminSession() {
         });
         return;
       }
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = safeLocalStorageGet(STORAGE_KEY);
       const access =
         activeMemberships.find((item) => item.shop_id === stored) ??
         activeMemberships[0];
-      localStorage.setItem(STORAGE_KEY, access.shop_id);
+      safeLocalStorageSet(STORAGE_KEY, access.shop_id);
       setState({
         status: "authorized",
         access,
@@ -113,7 +117,7 @@ export function useAdminSession() {
         (item) => item.active && item.shop_active,
       );
       if (cached && activeMemberships?.length) {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = safeLocalStorageGet(STORAGE_KEY);
         const access =
           activeMemberships.find((item) => item.shop_id === stored) ??
           activeMemberships[0];
@@ -173,7 +177,7 @@ export function useAdminSession() {
         (item) => item.shop_id === shopId,
       );
       if (!access || !access.active || !access.shop_active) return current;
-      localStorage.setItem(STORAGE_KEY, access.shop_id);
+      safeLocalStorageSet(STORAGE_KEY, access.shop_id);
       return { ...current, access };
     });
   }, []);

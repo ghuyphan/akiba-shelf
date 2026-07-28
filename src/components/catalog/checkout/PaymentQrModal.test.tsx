@@ -191,6 +191,7 @@ describe("PaymentQrModal", () => {
     expect(
       screen.getByPlaceholderText("e.g. Huy or Alice"),
     ).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Pickup name" })).toBeInTheDocument();
   });
 
   it("shows custom inline feedback instead of browser validation for a missing pickup name", () => {

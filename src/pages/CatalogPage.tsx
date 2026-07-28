@@ -69,6 +69,7 @@ import { lazyWithRetry } from "../utils/lazyWithRetry";
 import { hasUsablePayment } from "../utils/vietqr";
 import { getUserFacingErrorMessage } from "../lib/errors";
 import { Alert } from "../components/ui/Alert";
+import { AppUpdateNotice } from "../components/ui/AppUpdateNotice";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -91,6 +92,23 @@ function CatalogToastLocalization() {
         errorTitle: copy.toastErrorTitle,
         infoTitle: copy.toastInfoTitle,
         dismiss: copy.dismissNotification,
+      }}
+    />
+  );
+}
+
+function CatalogUpdateNotice() {
+  const copy = useCatalogCopy();
+  return (
+    <AppUpdateNotice
+      copy={{
+        ariaLabel: copy.updateAvailableLabel,
+        title: copy.updateReadyTitle,
+        message: copy.updateReadyHint,
+        updateLabel: copy.updateNow,
+        updatingLabel: copy.updatingApp,
+        laterLabel: copy.updateLater,
+        dismissLabel: copy.dismissUpdateNotice,
       }}
     />
   );
@@ -704,10 +722,7 @@ export function CatalogPage() {
         />
       ),
       controls: (
-        <div
-          className="catalog-controls"
-          onClick={(event) => event.stopPropagation()}
-        >
+        <div className="catalog-controls">
           <CategoryFilters
             categories={categories}
             activeCategory={activeCategory}
@@ -850,11 +865,7 @@ export function CatalogPage() {
       key: "side",
       position: storefrontOrder.indexOf("cart") - 0.01,
       node: (
-        <section
-          key="side"
-          className="storefront-content-side"
-          onClick={(event) => event.stopPropagation()}
-        >
+        <section key="side" className="storefront-content-side">
           {sideStorefrontSections.map((section) => (
             <div
               className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
@@ -881,6 +892,7 @@ export function CatalogPage() {
     return (
       <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
         <CatalogToastLocalization />
+        <CatalogUpdateNotice />
         <ShopUnavailablePage
           hasLoadError={Boolean(shopLoadError)}
           showDemoLink={shopSlug !== "demo-booth"}
@@ -913,10 +925,23 @@ export function CatalogPage() {
   const showFloatingCartDock =
     isFloatingCartVisible && reserveFloatingCartSpace;
   const storefrontDockClasses = `${showOrderDock || showCheckoutRecoveryDock ? " storefront-has-order-dock" : ""}${reserveFloatingCartSpace ? " storefront-has-cart-dock" : ""}`;
+  const handleStorefrontBackgroundClick = (
+    event: React.PointerEvent<HTMLElement>,
+  ) => {
+    const target = event.target as Element;
+    if (
+      target.closest(
+        ".catalog-controls, .storefront-content-side, .featured-banner, .storefront-module-booth",
+      )
+    )
+      return;
+    setSelectedProductId(null);
+  };
 
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
       <CatalogToastLocalization />
+      <CatalogUpdateNotice />
       <PromotionProvider promotion={promotion}>
         <ErrorBoundary
           title={catalogCopy.crashTitle}
@@ -927,7 +952,7 @@ export function CatalogPage() {
           <main
             className={`app-shell${lightweightMode ? " catalog-lightweight" : ""}${storefrontDockClasses}`}
             style={getThemeStyle(booth)}
-            onClick={() => setSelectedProductId(null)}
+            onPointerDown={handleStorefrontBackgroundClick}
           >
             <CatalogHeader
               booth={booth}
@@ -964,11 +989,6 @@ export function CatalogPage() {
                   <div
                     className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
                     key={section}
-                    onClick={
-                      section === "booth"
-                        ? (event) => event.stopPropagation()
-                        : undefined
-                    }
                   >
                     {storefrontBlocks[section]}
                   </div>

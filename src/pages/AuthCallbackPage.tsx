@@ -82,7 +82,7 @@ export function AuthCallbackPage() {
   if (!failed)
     return <PageLoading title={t("Finishing sign in")} message={message} />;
   return (
-    <AuthShell>
+    <AuthShell showBack={false}>
       <div className="admin-login-heading">
         <h1>{t("Could not finish sign in")}</h1>
         <p>{message}</p>

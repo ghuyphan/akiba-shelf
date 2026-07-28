@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(15);
 
 insert into auth.users(
   id, instance_id, aud, role, email, encrypted_password,
@@ -135,6 +135,19 @@ select is(
 select ok(
   (select started_at is not null from public.offline_event_sessions),
   'activation records the actual start time'
+);
+select throws_ok(
+  $$insert into public.offline_event_sessions(
+      shop_id, device_id, name, status, created_by
+    ) values (
+      '84000000-0000-4000-8000-000000000001',
+      '85000000-0000-4000-8000-000000000002',
+      'Competing active event', 'active',
+      '83000000-0000-4000-8000-000000000001'
+    )$$,
+  '23505',
+  null,
+  'database rejects a second active event for the same shop'
 );
 
 set local role authenticated;

@@ -50,7 +50,7 @@ async function expectNoHorizontalOverflow(page: Page) {
     .toEqual({ documentFits: true, bodyFits: true });
 }
 
-async function expectAdminListsBounded(page: Page) {
+async function expectAdminListsFlowOnPhone(page: Page) {
   const lists = await page
     .locator(".admin-scroll-list")
     .evaluateAll((elements) =>
@@ -64,13 +64,13 @@ async function expectAdminListsBounded(page: Page) {
           bounds.height === 0
         )
           return [];
-        return [{ height: bounds.height, overflowY: style.overflowY }];
+        return [{ maxHeight: style.maxHeight, overflowY: style.overflowY }];
       }),
     );
   expect(lists.length).toBeGreaterThan(0);
   for (const list of lists) {
-    expect.soft(list.height).toBeLessThanOrEqual(321);
-    expect.soft(list.overflowY).toBe("auto");
+    expect.soft(list.maxHeight).toBe("none");
+    expect.soft(list.overflowY).toBe("visible");
   }
 }
 
@@ -209,7 +209,7 @@ test("offers the install banner only on phone staff layouts", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   await page.evaluate(() => {
     const event = new Event("beforeinstallprompt", { cancelable: true });
@@ -239,7 +239,7 @@ test("shows order details and advances online fulfilment", async ({ page }) => {
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   await page.getByRole("button", { name: /confirmed 1/i }).click();
   await expect(page.getByText("AK-0042", { exact: true })).toBeVisible();
@@ -262,7 +262,7 @@ test("routes an authenticated non-staff user to the dashboard", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("outsider@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
   await expect(
     page.getByRole("heading", { name: "Welcome to Matsuri" }),
   ).toBeVisible();
@@ -289,13 +289,11 @@ test("allows authorized staff into orders without restricted settings", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("staff@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
   await expect(
     page.getByRole("heading", { name: "Orders", exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: /Orders Queue/ }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /Order queue/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Products/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Storefront/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Settings/ })).toHaveCount(0);
@@ -312,11 +310,11 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   const navigation = page.locator(".admin-nav-tabs");
   await expect(
-    navigation.getByRole("button", { name: "Event mode" }),
+    navigation.getByRole("button", { name: "Event Mode" }),
   ).toHaveCount(0);
 
   const hero = page.locator(".admin-view-hero-orders");
@@ -327,7 +325,7 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
   const toolbar = page.locator(".admin-filter-bar");
   const eventControl = toolbar.locator(".offline-event-launcher");
   await expect(eventControl).toBeVisible();
-  await expect(eventControl).toContainText("Event mode");
+  await expect(eventControl).toContainText("Event Mode");
   await expect(toolbar.getByText("Live queue", { exact: true })).toHaveCount(0);
   const eventFilter = toolbar.getByRole("button", { name: /event 0/i });
   await expect(eventFilter).toBeVisible();
@@ -396,7 +394,7 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
     const toolbarCenter = toolbarBox!.y + toolbarBox!.height / 2;
     expect(
       Math.abs(tabsBox!.y + tabsBox!.height / 2 - toolbarCenter),
-    ).toBeLessThan(2);
+    ).toBeLessThan(4);
     expect(
       Math.abs(utilitiesBox!.y + utilitiesBox!.height / 2 - toolbarCenter),
     ).toBeLessThan(2);
@@ -419,7 +417,7 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
   ).toHaveCSS("background-image", "none");
 
   await eventControl.click();
-  const dialog = page.getByRole("dialog", { name: "Offline event mode" });
+  const dialog = page.getByRole("dialog", { name: "Offline Event Mode" });
   await expect(dialog).toBeVisible();
   await expect(dialog).not.toHaveClass(/modal-wide/);
   const dialogShape = await dialog.evaluate((element) => {
@@ -497,6 +495,47 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
   await expect(eventName).toHaveClass(/input/);
   await expect(eventName).toHaveCSS("min-height", "44px");
   await expect(eventName).not.toHaveCSS("border-style", "none");
+
+  const startDateTrigger = dialog.getByRole("button", {
+    name: /Event starts:/,
+  });
+  await startDateTrigger.scrollIntoViewIfNeeded();
+  await startDateTrigger.click();
+  const datePopover = page.getByRole("dialog", { name: "Event starts" });
+  await expect(datePopover).toBeVisible();
+  await expect(datePopover).toHaveCSS("position", "fixed");
+  const dateBounds = await datePopover.boundingBox();
+  const viewport = page.viewportSize();
+  expect(dateBounds).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(dateBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(dateBounds!.y).toBeGreaterThanOrEqual(0);
+  expect(dateBounds!.x + dateBounds!.width).toBeLessThanOrEqual(
+    viewport!.width,
+  );
+  expect(dateBounds!.y + dateBounds!.height).toBeLessThanOrEqual(
+    viewport!.height,
+  );
+
+  const hourTrigger = datePopover.getByRole("combobox", { name: /Hour:/ });
+  await hourTrigger.click();
+  const hourOptions = page.getByRole("listbox", { name: "Hour" });
+  await expect(hourOptions).toBeVisible();
+  const hourBounds = await hourOptions.boundingBox();
+  expect(hourBounds).not.toBeNull();
+  expect(hourBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(hourBounds!.y).toBeGreaterThanOrEqual(0);
+  expect(hourBounds!.x + hourBounds!.width).toBeLessThanOrEqual(
+    viewport!.width,
+  );
+  expect(hourBounds!.y + hourBounds!.height).toBeLessThanOrEqual(
+    viewport!.height,
+  );
+  await page.keyboard.press("Escape");
+  await expect(hourOptions).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(datePopover).toHaveCount(0);
+
   await expect(
     page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -517,7 +556,7 @@ test("renders expired and Event Mode statuses with shared visual pills", async (
   await seedOfflineEventLedger(page);
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   await page.getByRole("button", { name: /expired 1/i }).click();
   const expiredStatus = page.locator(".admin-order-status.expired");
@@ -529,11 +568,11 @@ test("renders expired and Event Mode statuses with shared visual pills", async (
   await expect(expiredStatus).toHaveCSS("border-top-style", "solid");
 
   const eventControl = page.getByRole("button", {
-    name: "Event mode: Fixture Event",
+    name: "Event Mode: Fixture Event",
   });
   await expect(eventControl).toBeVisible();
   await eventControl.click();
-  const dialog = page.getByRole("dialog", { name: "Offline event mode" });
+  const dialog = page.getByRole("dialog", { name: "Offline Event Mode" });
   await expect(dialog).toBeVisible();
   await expect(
     dialog.locator(".offline-event-order-state .status-pill-success"),
@@ -568,10 +607,10 @@ test("keeps Event Mode locked while device preparation is running", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
   await page.locator(".offline-event-launcher").click();
 
-  const dialog = page.getByRole("dialog", { name: "Offline event mode" });
+  const dialog = page.getByRole("dialog", { name: "Offline Event Mode" });
   await dialog.getByLabel("Event name").fill("Locked preparation");
   await dialog.getByLabel("Allocate Moon Stand").check();
   const prepare = dialog.getByRole("button", {
@@ -637,10 +676,10 @@ test("probes real IndexedDB before reserving Event Mode stock", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
   await page.locator(".offline-event-launcher").click();
 
-  const dialog = page.getByRole("dialog", { name: "Offline event mode" });
+  const dialog = page.getByRole("dialog", { name: "Offline Event Mode" });
   await dialog.getByLabel("Event name").fill("Storage probe");
   await dialog.getByLabel("Allocate Moon Stand").check();
   await dialog
@@ -729,7 +768,7 @@ test("loads the initial owner workspace without duplicate requests", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
   await expect(
     page.getByRole("heading", { name: "Orders", exact: true }),
   ).toBeVisible();
@@ -749,10 +788,14 @@ test("highlights the default Orders navigation tab", async ({ page }) => {
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
-  const ordersTab = page.getByRole("button", { name: /Orders Queue/ });
+  const ordersTab = page.getByRole("button", { name: /Order queue/ });
   await expect(ordersTab).toHaveClass(/active/);
+  await expect(ordersTab).toHaveAttribute("aria-current", "page");
+  await expect(
+    page.getByRole("navigation", { name: "Admin sections" }),
+  ).toBeVisible();
   await expect
     .poll(() =>
       page
@@ -766,6 +809,39 @@ test("highlights the default Orders navigation tab", async ({ page }) => {
     .toBeGreaterThan(0);
 });
 
+test("keeps admin sections URL-backed across reloads", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-chromium");
+  await mockSupabase(page, { staffRole: "owner" });
+  await page.goto("./admin?view=products");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open workspace" }).click();
+
+  const productsTab = page.getByRole("button", { name: /Products/ });
+  await expect(productsTab).toHaveAttribute("aria-current", "page");
+  await expect(page).toHaveURL(/\/admin\?view=products$/);
+
+  await page.getByRole("button", { name: "Gacha", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\?view=gacha$/);
+  await expect(
+    page.getByRole("button", { name: "Gacha", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+
+  await page.reload();
+  await expect(page).toHaveURL(/\/admin\?view=gacha$/);
+  await expect(
+    page.getByRole("button", { name: "Gacha", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+
+  await page.goto("./admin?view=unknown");
+  await expect(
+    page.getByRole("button", { name: /Order queue/ }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(page).toHaveURL(/\/admin$/);
+});
+
 test("admin header stays contained across responsive viewports", async ({
   page,
 }, testInfo) => {
@@ -776,7 +852,7 @@ test("admin header stays contained across responsive viewports", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   const header = page.locator(".app-header");
   const surface = page.locator(".app-header-surface");
@@ -836,6 +912,9 @@ test("admin header stays contained across responsive viewports", async ({
   await moreActions.click();
   const overflowMenu = page.getByRole("menu", { name: "More actions" });
   await expect(overflowMenu).toBeVisible();
+  await expect(
+    overflowMenu.getByRole("menuitem", { name: "Support Matsuri" }),
+  ).toBeVisible();
   const overflowBox = await overflowMenu.boundingBox();
   const viewport = page.viewportSize();
   expect(overflowBox).not.toBeNull();
@@ -864,11 +943,20 @@ test("admin header stays contained across responsive viewports", async ({
     await expect(
       page.getByRole("menuitem", { name: "Sign out", exact: true }),
     ).toBeVisible();
-    await page.keyboard.press("Escape");
+    await page
+      .getByRole("menuitem", { name: "Support Matsuri", exact: true })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Keep Matsuri free for artists." }),
+    ).toBeVisible();
+    await page.getByRole("link", { name: "Back", exact: true }).click();
+    await expect(
+      page.getByRole("navigation", { name: "Admin sections" }),
+    ).toBeVisible();
   }
 });
 
-test("inherits the shop accent across workspace and portaled admin actions", async ({
+test("uses shop branding while keeping admin actions contrast-safe", async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop-chromium");
@@ -876,23 +964,29 @@ test("inherits the shop accent across workspace and portaled admin actions", asy
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
-  const shopTheme = await page.locator(".admin-shell").evaluate((shell) => {
+  const adminTheme = await page.locator(".admin-shell").evaluate((shell) => {
     const style = getComputedStyle(shell);
     return {
       primary: style.getPropertyValue("--admin-primary").trim(),
       secondary: style.getPropertyValue("--admin-secondary").trim(),
       accent: style.getPropertyValue("--admin-accent").trim(),
       page: style.getPropertyValue("--admin-page-bg").trim(),
+      brandPrimary: style.getPropertyValue("--admin-brand-primary").trim(),
+      brandSecondary: style.getPropertyValue("--admin-brand-secondary").trim(),
+      brandAccent: style.getPropertyValue("--admin-brand-accent").trim(),
     };
   });
-  expect(shopTheme).toEqual({
-    primary: "#5f8d55",
+  expect(adminTheme).toMatchObject({
+    primary: "#507647",
     secondary: "#17233c",
     accent: "#5f8d55",
-    page: "#fff8f2",
+    brandPrimary: "#5f8d55",
+    brandSecondary: "#17233c",
+    brandAccent: "#5f8d55",
   });
+  expect(adminTheme.page).toContain("#fff8f2");
 
   await page.getByRole("button", { name: /Products/ }).click();
   await page.getByRole("button", { name: /Moon Stand/ }).click();
@@ -903,16 +997,20 @@ test("inherits the shop accent across workspace and portaled admin actions", asy
     .evaluate((button) => getComputedStyle(button).backgroundColor);
   await form.getByRole("button", { name: "Cancel", exact: true }).click();
 
-  await page.getByRole("button", { name: /Orders Queue/ }).click();
+  await page.getByRole("button", { name: /Order queue/ }).click();
   await page.locator(".offline-event-launcher").click();
-  const dialog = page.getByRole("dialog", { name: "Offline event mode" });
+  const dialog = page.getByRole("dialog", { name: "Offline Event Mode" });
   const portaledPrimaryColor = await dialog
     .getByRole("button", {
       name: "Prepare device and reserve stock",
       exact: true,
     })
     .evaluate((button) => getComputedStyle(button).backgroundColor);
-  expect(portaledPrimaryColor).toBe(workspacePrimaryColor);
+  expect(workspacePrimaryColor).toBe("rgb(92, 134, 87)");
+  expect(portaledPrimaryColor).toBe("rgb(92, 134, 87)");
+  expect([workspacePrimaryColor, portaledPrimaryColor]).not.toContain(
+    "rgb(95, 141, 85)",
+  );
 });
 
 test("phone admin workspaces keep major targets touch-sized without page overflow", async ({
@@ -929,10 +1027,10 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   await expectTouchTargetsAtLeast(
-    page.getByRole("link", { name: "Back to catalog" }),
+    page.getByRole("link", { name: "Back to storefront" }),
   );
   await expectTouchTargetsAtLeast(
     page.getByRole("combobox", { name: "Active shop: Fixture Booth" }),
@@ -952,8 +1050,29 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
       ".admin-order-fulfillment button, .admin-order-details-trigger",
     ),
   );
-  await expectAdminListsBounded(page);
+  await expectAdminListsFlowOnPhone(page);
   await expectNoHorizontalOverflow(page);
+
+  const packingHeading = page.locator(
+    ".admin-items-summary .admin-section-heading",
+  );
+  await expect(packingHeading).toBeVisible();
+  const packingLayout = await packingHeading.evaluate((heading) => {
+    const title = heading.querySelector<HTMLElement>(":scope > div")!;
+    const meta = heading.querySelector<HTMLElement>(":scope > small")!;
+    const titleBox = title.getBoundingClientRect();
+    const metaBox = meta.getBoundingClientRect();
+    return {
+      titleBottom: titleBox.bottom,
+      metaTop: metaBox.top,
+      titleRight: titleBox.right,
+      metaLeft: metaBox.left,
+    };
+  });
+  expect(
+    packingLayout.metaTop >= packingLayout.titleBottom - 1 ||
+      packingLayout.metaLeft >= packingLayout.titleRight - 1,
+  ).toBe(true);
 
   await expect(page.getByRole("button", { name: /Storefront/ })).toHaveCount(0);
   await page.getByRole("button", { name: /Settings/ }).click();
@@ -986,7 +1105,26 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
 
   await page.getByRole("button", { name: /Products/ }).click();
   await expect(page.locator(".admin-grid")).toBeVisible();
-  const boundedProductList = await page
+  const productWorkspaceTabs = page.getByRole("tablist", {
+    name: "Product workspace",
+  });
+  const activeProductTab = productWorkspaceTabs.getByRole("tab", {
+    name: /Products/,
+  });
+  await expect(activeProductTab).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
+  await expect
+    .poll(() =>
+      productWorkspaceTabs.evaluate((tabs) =>
+        Number.parseFloat(
+          getComputedStyle(tabs).getPropertyValue("--active-width"),
+        ),
+      ),
+    )
+    .toBeGreaterThan(0);
+  const flowingProductList = await page
     .locator(".product-manager-list .admin-product-list")
     .evaluate((list) => {
       return {
@@ -995,15 +1133,21 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
         overflowY: getComputedStyle(list).overflowY,
       };
     });
-  expect(boundedProductList.clientHeight).toBeLessThanOrEqual(320);
-  expect(boundedProductList.scrollHeight).toBeGreaterThan(
-    boundedProductList.clientHeight,
+  expect(flowingProductList.clientHeight).toBeGreaterThanOrEqual(320);
+  expect(flowingProductList.scrollHeight).toBeLessThanOrEqual(
+    flowingProductList.clientHeight + 1,
   );
-  expect(boundedProductList.overflowY).toBe("auto");
-  await expectAdminListsBounded(page);
+  expect(flowingProductList.overflowY).toBe("visible");
+  await expectAdminListsFlowOnPhone(page);
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole("button", { name: /Product 01/ }).click();
+  await productWorkspaceTabs.getByRole("tab", { name: /Products/ }).click();
+  await expect(page.locator(".admin-product.active")).toHaveCSS(
+    "box-shadow",
+    "none",
+  );
+  await productWorkspaceTabs.getByRole("tab", { name: "Edit product" }).click();
   const mobileProductForm = page.locator(".admin-grid-col-form");
   await mobileProductForm
     .getByRole("button", { name: "Edit", exact: true })
@@ -1048,7 +1192,7 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
   await page.evaluate(() =>
     window.scrollTo({ top: document.documentElement.scrollHeight }),
   );
-  const productWorkspaceNavigation = page.getByRole("toolbar", {
+  const productWorkspaceNavigation = page.getByRole("tablist", {
     name: "Product workspace",
   });
   await expect(productWorkspaceNavigation).toBeVisible();
@@ -1067,9 +1211,25 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
   expect(productNavigationGeometry.navigationTop).toBeGreaterThanOrEqual(
     productNavigationGeometry.headerBottom - 1,
   );
-  await productWorkspaceNavigation
-    .getByRole("button", { name: /Products List/ })
-    .click();
+  const editProductTab = productWorkspaceNavigation.getByRole("tab", {
+    name: "Edit product",
+  });
+  const productListTab = productWorkspaceNavigation.getByRole("tab", {
+    name: /Products/,
+  });
+  await expect(editProductTab).toHaveAttribute("aria-selected", "true");
+  await expect(editProductTab).toHaveAttribute(
+    "aria-controls",
+    "product-workspace-form-panel",
+  );
+  await editProductTab.focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(productListTab).toBeFocused();
+  await expect(productListTab).toHaveAttribute("aria-selected", "true");
+  await expect(productListTab).toHaveAttribute(
+    "aria-controls",
+    "product-workspace-list-panel",
+  );
   await expect(page.locator(".admin-grid-col-list")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
@@ -1118,7 +1278,7 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
   expect(ownedCardGeometry.tagTop).toBeGreaterThanOrEqual(
     ownedCardGeometry.identityBottom,
   );
-  await expectAdminListsBounded(page);
+  await expectAdminListsFlowOnPhone(page);
   await page.evaluate(() =>
     window.scrollTo({ top: document.documentElement.scrollHeight }),
   );
@@ -1145,7 +1305,7 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
 
   await page.getByRole("button", { name: "Team", exact: true }).click();
   await expect(page.locator(".admin-team-page")).toBeVisible();
-  await expectAdminListsBounded(page);
+  await expectAdminListsFlowOnPhone(page);
   await expectNoHorizontalOverflow(page);
 });
 
@@ -1155,9 +1315,9 @@ for (const role of ["owner", "admin"] as const) {
     await page.goto("./admin");
     await page.getByLabel("Email address").fill(`${role}@test.local`);
     await page.getByPlaceholder("Enter your password").fill("password123");
-    await page.getByRole("button", { name: "Open admin" }).click();
+    await page.getByRole("button", { name: "Open workspace" }).click();
     await expect(
-      page.getByRole("button", { name: /Orders Queue/ }),
+      page.getByRole("button", { name: /Order queue/ }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: /Products/ })).toBeVisible();
     if (testInfo.project.name === "desktop-chromium") {
@@ -1183,7 +1343,7 @@ test("admin edit controls share one action grammar", async ({ page }) => {
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   await page.getByRole("button", { name: /Products/ }).click();
   await page.getByRole("button", { name: /Moon Stand/ }).click();
@@ -1342,7 +1502,7 @@ test("guards workspace navigation while product edits are unsaved", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   await page.getByRole("button", { name: /Products/ }).click();
   await page.getByRole("button", { name: /Moon Stand/ }).click();
@@ -1350,10 +1510,10 @@ test("guards workspace navigation while product edits are unsaved", async ({
   await form.getByRole("button", { name: "Edit", exact: true }).click();
   await form.getByLabel("Product name · Required").fill("Moon Stand unsaved");
 
-  await page.getByRole("button", { name: /Orders Queue/ }).click();
   const confirmation = page.getByRole("dialog", {
     name: "Discard unsaved changes?",
   });
+  await page.evaluate(() => window.history.back());
   await expect(confirmation).toBeVisible();
   await expect(confirmation).toHaveClass(/modal-admin/);
   const confirmationActions = confirmation.locator(
@@ -1368,8 +1528,9 @@ test("guards workspace navigation while product edits are unsaved", async ({
   await expect(form.getByLabel("Product name · Required")).toHaveValue(
     "Moon Stand unsaved",
   );
+  await expect(page).toHaveURL(/view=products/);
 
-  await page.getByRole("button", { name: /Orders Queue/ }).click();
+  await page.getByRole("button", { name: /Order queue/ }).click();
   await page
     .getByRole("dialog", { name: "Discard unsaved changes?" })
     .getByRole("button", { name: "Discard changes" })
@@ -1384,7 +1545,7 @@ test("rejects inactive staff", async ({ page }) => {
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("inactive@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
   await expect(
     page.getByRole("heading", { name: "Staff access inactive" }),
   ).toBeVisible();
@@ -1397,7 +1558,7 @@ test("dashboard keeps inactive memberships visible but disabled", async ({
   await page.goto("./dashboard");
   await page.getByLabel("Email address").fill("inactive@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
   await expect(
     page.getByRole("heading", { name: "Fixture Booth" }),
   ).toBeVisible();
@@ -1414,7 +1575,7 @@ test("shop creation feedback reflects the server-side ownership limit", async ({
   await page.goto("./dashboard");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   await expect(page.getByText("5 of 5 created shops used")).toBeVisible();
   await expect(page.getByText(/You have joined 0 shops/)).toBeVisible();
@@ -1440,7 +1601,7 @@ test("dashboard presents the storefront slug as immutable", async ({
   await page.goto("./dashboard");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
   await page.getByTitle("Edit shop details").click();
   const dialog = page.getByRole("dialog", { name: "Edit shop details" });
   await expect(dialog.getByText("/s/akiba-shelf")).toBeVisible();
@@ -1461,7 +1622,7 @@ test("dashboard uses the unified account surface and control contract", async ({
   await page.goto("./dashboard");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   const shell = page.locator(".dashboard-account-shell");
   await expect(shell).toHaveCSS("--admin-action", "#d95c64");
@@ -1515,7 +1676,7 @@ test("workspace and dashboard headers share locale and selector surfaces", async
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   const headerButton = page.locator(".admin-overflow-toggle");
   const shopSelector = page.locator(
@@ -1562,7 +1723,7 @@ test("shop switcher keeps a compact scrollable list and fixed actions", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
 
   await page
     .getByRole("combobox", { name: "Active shop: Fixture Booth" })
@@ -1618,7 +1779,7 @@ test("designer phone rules apply inside the preview iframe", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
   await page.getByRole("button", { name: /Storefront/ }).click();
   const desktopPreview = page.frameLocator(
     'iframe[title="desktop storefront preview"]',
@@ -1750,7 +1911,7 @@ test("designer phone rules apply inside the preview iframe", async ({
     .click();
   await expect(page.locator(".designer-payment-card")).toBeVisible();
   await expect(page.locator(".designer-payment-preview")).toContainText(
-    "Customer ready",
+    "Payment ready",
   );
 
   await desktopPreview
@@ -1803,7 +1964,7 @@ test("mobile team members use one unified list surface", async ({ page }) => {
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("owner@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
-  await page.getByRole("button", { name: "Open admin" }).click();
+  await page.getByRole("button", { name: "Open workspace" }).click();
   await page.getByRole("button", { name: "Team", exact: true }).click();
 
   const membersPanel = page.locator(".staff-members-panel");

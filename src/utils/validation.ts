@@ -7,7 +7,7 @@ export function validateProduct(product: Product) {
   if (!product.item_code.trim()) errors.push("Item code is required.");
   if (!product.category.trim()) errors.push("Category is required.");
   if (!Number.isFinite(product.price_vnd) || product.price_vnd < 0) {
-    errors.push("Price must be a positive number.");
+    errors.push("Price must be a non-negative number.");
   }
   if (
     product.sale_price_vnd != null &&
@@ -17,8 +17,11 @@ export function validateProduct(product: Product) {
   ) {
     errors.push("Sale price must be lower than the regular price.");
   }
-  if (!Number.isInteger(product.quantity_available) || product.quantity_available < 0) {
-    errors.push("Quantity must be a whole number.");
+  if (
+    !Number.isInteger(product.quantity_available) ||
+    product.quantity_available < 0
+  ) {
+    errors.push("Quantity must be a non-negative whole number.");
   }
   if (product.images.length === 0 || !product.images[0]) {
     errors.push("At least one image URL is required.");

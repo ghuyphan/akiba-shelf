@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router";
 import { PLATFORM_BRAND } from "../../lib/branding";
@@ -8,6 +8,7 @@ type PlatformHeaderBrandProps = {
   subtitle: string;
   backTo?: string;
   backLabel?: string;
+  onBack?: MouseEventHandler<HTMLAnchorElement>;
   mark?: ReactNode;
 };
 
@@ -15,6 +16,7 @@ export function PlatformHeaderBrand({
   subtitle,
   backTo,
   backLabel,
+  onBack,
   mark = <PlatformMark />,
 }: PlatformHeaderBrandProps) {
   return (
@@ -24,6 +26,7 @@ export function PlatformHeaderBrand({
           to={backTo}
           className="app-header-icon-button"
           aria-label={backLabel}
+          onClick={onBack}
         >
           <ArrowLeft size={19} />
         </Link>

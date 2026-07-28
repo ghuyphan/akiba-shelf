@@ -149,6 +149,24 @@ describe("set-password invitation completion", () => {
     expect(await screen.findByText("Set your password")).toBeInTheDocument();
   });
 
+  it("completes invitation acceptance when active-shop storage is blocked", async () => {
+    const invitationId = "20000000-0000-4000-8000-000000000001";
+    const shopId = "21000000-0000-4000-8000-000000000001";
+    storePendingInvitation(invitationId);
+    auth.rpc.mockResolvedValueOnce({ data: shopId, error: null });
+    vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
+      throw new DOMException("Storage blocked", "SecurityError");
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText("Set your password");
+    await user.type(screen.getByLabelText("New password"), "StrongPassword1");
+    await user.type(screen.getByLabelText("Confirm password"), "StrongPassword1");
+    await user.click(screen.getByRole("button", { name: "Save password" }));
+
+    expect(await screen.findByText("Admin reached")).toBeInTheDocument();
+  });
+
   it("retries account loading without changing a recovered password twice", async () => {
     storePasswordFlow("recovery");
     api.getShopMemberships

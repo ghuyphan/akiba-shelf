@@ -9,12 +9,14 @@ type AuthShellProps = {
   children: ReactNode;
   backTo?: string;
   backLabel?: string;
+  showBack?: boolean;
 };
 
 export function AuthShell({
   children,
   backTo = "/",
   backLabel,
+  showBack = true,
 }: AuthShellProps) {
   const { t } = usePlatformI18n();
   return (
@@ -32,10 +34,12 @@ export function AuthShell({
               </span>
             </div>
             <div className="admin-login-topbar-actions">
-              <Link to={backTo} className="admin-login-back">
-                <ArrowLeft size={16} />
-                <span>{backLabel ?? t("Back to home")}</span>
-              </Link>
+              {showBack && (
+                <Link to={backTo} className="admin-login-back">
+                  <ArrowLeft size={16} />
+                  <span>{backLabel ?? t("Back to home")}</span>
+                </Link>
+              )}
             </div>
           </header>
           {children}

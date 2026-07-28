@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router";
 import { ToastLocalization } from "../components/ui/ToastProvider";
+import { AppUpdateNotice } from "../components/ui/AppUpdateNotice";
 import { PLATFORM_BRAND, resetDocumentBranding } from "../lib/branding";
 import {
   PlatformI18nProvider,
@@ -80,6 +81,19 @@ function PlatformLayoutContent() {
           errorTitle: t("Something went wrong"),
           infoTitle: t("Notice"),
           dismiss: t("Dismiss notification"),
+        }}
+      />
+      <AppUpdateNotice
+        copy={{
+          ariaLabel: t("Matsuri update available"),
+          title: t("A Matsuri update is ready"),
+          message: t(
+            "Refresh when you are ready. Finish edits or active orders first.",
+          ),
+          updateLabel: t("Update now"),
+          updatingLabel: t("Updating…"),
+          laterLabel: t("Later"),
+          dismissLabel: t("Dismiss update notice"),
         }}
       />
       <PlatformRouteBranding />

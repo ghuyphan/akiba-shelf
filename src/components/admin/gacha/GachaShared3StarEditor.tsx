@@ -2,16 +2,20 @@ import { useMemo, useState } from "react";
 import { Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { Product } from "../../../types/catalog";
-import type { GachaPoolEntry } from "../../../types/gacha";
+import type { GachaGameType, GachaPoolEntry } from "../../../types/gacha";
 import { productImage } from "./gachaState";
+import { useTabIndicator } from "../../../hooks/shared/useTabIndicator";
+import { GachaRarityStars } from "./GachaRarityStars";
 
 type Props = {
+  gameType: GachaGameType;
   products: Product[];
   entries: GachaPoolEntry[];
   onToggleProduct: (productId: string) => void;
 };
 
 export function GachaShared3StarEditor({
+  gameType,
   products,
   entries,
   onToggleProduct,
@@ -21,7 +25,6 @@ export function GachaShared3StarEditor({
   const [activeTab, setActiveTab] = useState<"included" | "available">(
     "included",
   );
-
   // Custom 3-star items in pool (entries with rarity 3)
   const custom3StarEntries = useMemo(
     () => entries.filter((entry) => entry.rarity === 3),
@@ -51,6 +54,11 @@ export function GachaShared3StarEditor({
     );
   }, [entries, products, query]);
 
+  const { containerRef, registerItem } = useTabIndicator<
+    "included" | "available",
+    HTMLDivElement
+  >(activeTab, [custom3StarProducts.length, availableProducts.length]);
+
   return (
     <div className="gacha-shared-3star-body">
       <header className="gacha-panel-heading gacha-shared-heading">
@@ -59,12 +67,14 @@ export function GachaShared3StarEditor({
       </header>
       <div className="gacha-pool-toolbar">
         <div
-          className="gacha-segmented gacha-shared-filters"
+          className="gacha-segmented gacha-shared-filters admin-segmented-control admin-segmented-tabs"
+          ref={containerRef}
           role="group"
           aria-label={t("Filter 3★ filler prizes")}
         >
           <button
             type="button"
+            ref={registerItem("included")}
             className={activeTab === "included" ? "active" : ""}
             aria-pressed={activeTab === "included"}
             onClick={() => setActiveTab("included")}
@@ -75,6 +85,7 @@ export function GachaShared3StarEditor({
           </button>
           <button
             type="button"
+            ref={registerItem("available")}
             className={activeTab === "available" ? "active" : ""}
             aria-pressed={activeTab === "available"}
             onClick={() => setActiveTab("available")}
@@ -126,7 +137,9 @@ export function GachaShared3StarEditor({
                     </span>
                   </span>
                   <span className="gacha-item-tags">
-                    <span className="rarity-3">3★</span>
+                    <span className="rarity-3">
+                      <GachaRarityStars gameType={gameType} rarity={3} />
+                    </span>
                     <button
                       type="button"
                       className="gacha-item-remove-btn"

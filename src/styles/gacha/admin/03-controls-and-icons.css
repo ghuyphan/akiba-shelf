@@ -185,4 +185,51 @@
 .gacha-element-icon.is-genshin {
   color: var(--gacha-element-color, currentColor);
 }
+.gacha-rarity-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  color: currentColor;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+@font-face {
+  font-family: "Matsuri Genshin Icon";
+  src: url("../../../../vendor/gacha-simulator/static/fonts/genshin-icon.woff")
+    format("woff");
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Matsuri HSR Icon";
+  src: url("../../../../vendor/hsr-simulator/static/fonts/hsr-icon.woff")
+    format("woff");
+  font-display: block;
+}
+
+.gacha-rarity-star {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  font-size: 0;
+  font-style: normal;
+}
+
+.gacha-rarity-stars-genshin .gacha-rarity-star::before,
+.gacha-rarity-stars-hsr .gacha-rarity-star::before {
+  display: block;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.gacha-rarity-stars-genshin .gacha-rarity-star::before {
+  content: "E";
+  font-family: "Matsuri Genshin Icon";
+}
+
+.gacha-rarity-stars-hsr .gacha-rarity-star::before {
+  content: "b";
+  font-family: "Matsuri HSR Icon";
+}
 

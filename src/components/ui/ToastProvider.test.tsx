@@ -1,6 +1,13 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  ToastStackPortal,
   ToastLocalization,
   ToastProvider,
   useToast,
@@ -8,7 +15,21 @@ import {
 
 function ToastTrigger() {
   const toast = useToast();
-  return <button onClick={() => toast.success("Your changes are live.", "Published")}>Show toast</button>;
+  return (
+    <button
+      onClick={() => toast.success("Your changes are live.", "Published")}
+    >
+      Show toast
+    </button>
+  );
+}
+
+function PersistentNotice() {
+  return (
+    <ToastStackPortal>
+      <aside aria-label="Persistent update">Update ready</aside>
+    </ToastStackPortal>
+  );
 }
 
 function DefaultToastTrigger() {
@@ -21,16 +42,25 @@ function DefaultToastTrigger() {
 }
 
 describe("ToastProvider", () => {
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
 
   it("uses the short exit state before removing a toast", () => {
     vi.useFakeTimers();
-    render(<ToastProvider><ToastTrigger /></ToastProvider>);
+    render(
+      <ToastProvider>
+        <ToastTrigger />
+      </ToastProvider>,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Show toast" }));
     expect(screen.getByRole("status")).toHaveClass("is-open", "toast-success");
 
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss notification" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Dismiss notification" }),
+    );
     expect(screen.getByRole("status")).toHaveClass("is-closing");
 
     act(() => vi.advanceTimersByTime(179));
@@ -62,5 +92,21 @@ describe("ToastProvider", () => {
     expect(
       screen.getByRole("button", { name: "Đóng thông báo" }),
     ).toBeInTheDocument();
+  });
+
+  it("shares one stack between persistent notices and transient toasts", () => {
+    render(
+      <ToastProvider>
+        <PersistentNotice />
+        <ToastTrigger />
+      </ToastProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Show toast" }));
+
+    const region = screen.getByRole("status").closest(".toast-region");
+    expect(region).toContainElement(
+      screen.getByRole("complementary", { name: "Persistent update" }),
+    );
   });
 });

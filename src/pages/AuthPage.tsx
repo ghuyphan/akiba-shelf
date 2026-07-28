@@ -221,7 +221,7 @@ export function AuthPage() {
     setParams({ mode: next });
   };
   return (
-    <AuthShell>
+    <AuthShell showBack={mode === "signin" && !completion}>
       <div className="admin-login-heading">
         <h1>{completion ? t("Check your email") : copy.title}</h1>
         <p>

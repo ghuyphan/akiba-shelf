@@ -8,13 +8,27 @@ import type { BoothSettings } from "../../../types/catalog";
 import { ToastProvider } from "../../ui/ToastProvider";
 import { StorefrontDesigner } from "./StorefrontDesigner";
 
-vi.mock("../../catalog/shell/CatalogHeader", () => ({ CatalogHeader: () => null }));
-vi.mock("../../catalog/browsing/CategoryFilters", () => ({ CategoryFilters: () => null }));
-vi.mock("../../catalog/browsing/CatalogToolbar", () => ({ CatalogToolbar: () => null }));
-vi.mock("../../catalog/browsing/ProductGrid", () => ({ ProductGrid: () => null }));
-vi.mock("../../catalog/browsing/StackedFeatured", () => ({ StackedFeatured: () => null }));
-vi.mock("../../catalog/shell/BoothInfoPanel", () => ({ BoothInfoPanel: () => null }));
-vi.mock("../../catalog/cart/SelectedItemPanel", () => ({ SelectedItemPanel: () => null }));
+vi.mock("../../catalog/shell/CatalogHeader", () => ({
+  CatalogHeader: () => null,
+}));
+vi.mock("../../catalog/browsing/CategoryFilters", () => ({
+  CategoryFilters: () => null,
+}));
+vi.mock("../../catalog/browsing/CatalogToolbar", () => ({
+  CatalogToolbar: () => null,
+}));
+vi.mock("../../catalog/browsing/ProductGrid", () => ({
+  ProductGrid: () => null,
+}));
+vi.mock("../../catalog/browsing/StackedFeatured", () => ({
+  StackedFeatured: () => null,
+}));
+vi.mock("../../catalog/shell/BoothInfoPanel", () => ({
+  BoothInfoPanel: () => null,
+}));
+vi.mock("../../catalog/cart/SelectedItemPanel", () => ({
+  SelectedItemPanel: () => null,
+}));
 
 beforeAll(() => {
   class ResizeObserverMock {
@@ -55,7 +69,7 @@ describe("StorefrontDesigner", () => {
     await user.click(
       screen.getByRole("button", { name: "Edit Shopping cart" }),
     );
-    const paymentLabel = screen.getByLabelText("Payment label");
+    const paymentLabel = screen.getByLabelText("Payment display name");
     await user.clear(paymentLabel);
     await user.type(paymentLabel, "Event transfer");
     await user.click(screen.getByRole("button", { name: "Publish" }));
@@ -64,7 +78,7 @@ describe("StorefrontDesigner", () => {
       await screen.findByText("Could not publish all changes"),
     ).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.getByLabelText("Payment label")).toHaveValue(
+      expect(screen.getByLabelText("Payment display name")).toHaveValue(
         "Event transfer",
       ),
     );

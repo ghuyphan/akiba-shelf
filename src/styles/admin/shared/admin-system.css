@@ -1,10 +1,22 @@
 /* Authenticated admin system */
 .admin-shell {
-  --admin-primary: var(--coral, #d95c64);
-  --admin-secondary: var(--navy, #20304a);
-  --admin-accent: var(--blue, #f6c85f);
-  --admin-page-bg: var(--page-bg, #f5f0e8);
-  --admin-action: var(--admin-primary);
+  --coral: #d95c64;
+  --coral-strong: #a93945;
+  --navy: #20304a;
+  --teal-dark: #20304a;
+  --blue: #f6c85f;
+  --teal: #ef806d;
+  --page-bg: #f5f0e8;
+  --admin-primary: #d95c64;
+  --admin-secondary: #20304a;
+  --admin-accent: #f6c85f;
+  --admin-page-bg: #f5f0e8;
+  --admin-action: #5c8657;
+  --admin-brand-primary: var(--admin-primary);
+  --admin-brand-interactive: var(--admin-primary);
+  --admin-brand-secondary: var(--admin-secondary);
+  --admin-brand-accent: var(--admin-accent);
+  --admin-brand-page-bg: var(--admin-page-bg);
   --admin-control-height: 44px;
   --admin-control-height-compact: 40px;
   --admin-control-radius: 11px;
@@ -14,14 +26,31 @@
   --admin-inset-bg: color-mix(in srgb, #fff 58%, var(--admin-page-bg));
   --admin-panel-border: color-mix(in srgb, var(--line) 88%, var(--ink) 6%);
   --admin-panel-shadow: 0 14px 36px rgb(80 58 38 / 8%);
+  --admin-sticky-top: 102px;
   font-family: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
   background:
     radial-gradient(
       circle at 8% 0%,
-      color-mix(in srgb, var(--coral) 6%, transparent),
+      color-mix(in srgb, var(--admin-brand-primary) 8%, transparent),
       transparent 28rem
     ),
-    var(--admin-page-bg) !important;
+    radial-gradient(
+      circle at 94% 12%,
+      color-mix(in srgb, var(--admin-brand-accent) 6%, transparent),
+      transparent 24rem
+    ),
+    color-mix(in srgb, var(--admin-brand-page-bg) 14%, var(--admin-page-bg)) !important;
+}
+
+.admin-shell
+  :is(
+    .admin-order-code,
+    .admin-order-metrics strong,
+    .admin-order-card > footer strong,
+    .staff-overview strong,
+    .admin-nav-count
+  ) {
+  font-variant-numeric: tabular-nums;
 }
 
 .admin-container {
@@ -40,18 +69,105 @@
 
 .admin-view-hero h1 {
   margin: 0;
-  color: var(--admin-secondary);
+  color: var(--ink);
   font-size: clamp(26px, 3vw, 34px);
   line-height: 1.1;
   letter-spacing: -0.035em;
 }
 
 .admin-section-heading > div > span {
-  color: var(--admin-accent);
+  color: var(--ink);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.admin-segmented-control {
+  position: relative;
+  display: inline-grid;
+  min-width: 0;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, #fff 82%, var(--admin-inset-bg));
+}
+
+.admin-segmented-control > button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-width: 0;
+  min-height: var(--admin-control-height-compact);
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.admin-segmented-control > button:is(.active, .is-active) {
+  color: var(--ink);
+}
+
+.admin-segmented-control > button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--admin-primary) 24%, transparent);
+  outline-offset: -2px;
+}
+
+.admin-segmented-tabs {
+  grid-auto-flow: column;
+  --active-left: 4px;
+  --active-width: 0px;
+}
+
+.admin-segmented-tabs::before {
+  position: absolute;
+  z-index: 0;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: var(--active-width);
+  content: "";
+  border: 1px solid color-mix(in srgb, var(--admin-primary) 22%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--admin-primary) 9%, #fff);
+  box-shadow: 0 5px 14px
+    color-mix(in srgb, var(--admin-primary) 12%, transparent);
+  pointer-events: none;
+  transform: translateX(var(--active-left));
+  transition:
+    transform 260ms var(--ease-out),
+    width 260ms var(--ease-out);
+}
+
+.admin-segmented-view > button:is(.active, .is-active) {
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 8%);
+}
+
+.admin-segmented-view {
+  grid-auto-flow: column;
+}
+
+@media (max-width: 760px) {
+  .admin-segmented-control > button {
+    min-height: var(--admin-control-height);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-segmented-tabs::before {
+    transition: none;
+  }
 }
 
 .admin-attention-panel {
@@ -171,4 +287,10 @@
   grid-template-columns: minmax(320px, 370px) minmax(0, 1fr) !important;
   gap: 18px !important;
   margin-top: 0 !important;
+}
+
+@media (max-width: 1100px) {
+  .admin-shell {
+    --admin-sticky-top: 132px;
+  }
 }

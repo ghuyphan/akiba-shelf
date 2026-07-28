@@ -138,6 +138,8 @@ export function ColorPicker({
   const [draft, setDraft] = useState(value);
   const [hsv, setHsv] = useState(() => hexToHsv(activeColor));
   const errorId = useId();
+  const inputId = `${errorId}-hex`;
+  const systemInputId = `${errorId}-system`;
   const plane = useRef<HTMLDivElement>(null);
   const hue = useRef<HTMLDivElement>(null);
 
@@ -355,10 +357,12 @@ export function ColorPicker({
             </div>
 
             <div className="color-picker-value-row">
-              <label className="color-picker-value">
+              <label className="color-picker-value" htmlFor={inputId}>
                 <span>{t("Hex color")}</span>
                 <input
+                  id={inputId}
                   type="text"
+                  aria-label={t("Hex color")}
                   inputMode="text"
                   value={draft}
                   maxLength={7}
@@ -376,9 +380,10 @@ export function ColorPicker({
                   }}
                 />
               </label>
-              <label className="color-picker-system">
+              <label className="color-picker-system" htmlFor={systemInputId}>
                 <span>{t("System picker")}</span>
                 <input
+                  id={systemInputId}
                   type="color"
                   value={activeColor}
                   aria-label={t("Open system color picker")}

@@ -1,7 +1,8 @@
 import { Suspense, type ReactNode, useEffect } from "react";
 import {
-  BrowserRouter,
+  createBrowserRouter,
   Route,
+  RouterProvider,
   Routes,
   useLocation,
   useParams,
@@ -124,7 +125,7 @@ function RouteLoading() {
           className="platform-mark"
         />
       </div>
-      <div className="page-loading-copy">
+      <div className="page-loading-copy page-loading-copy-assistive">
         <strong>
           {storefront ? "Opening the shop…" : "Preparing Matsuri"}
         </strong>
@@ -141,9 +142,9 @@ function RouteLoading() {
   );
 }
 
-export function App() {
+function AppRoutes() {
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <>
       <RouteAwarePwa />
       <RouteAwareToastProvider>
         <RouteErrorBoundary>
@@ -189,6 +190,14 @@ export function App() {
           </Suspense>
         </RouteErrorBoundary>
       </RouteAwareToastProvider>
-    </BrowserRouter>
+    </>
   );
+}
+
+const router = createBrowserRouter([{ path: "*", element: <AppRoutes /> }], {
+  basename: import.meta.env.BASE_URL,
+});
+
+export function App() {
+  return <RouterProvider router={router} />;
 }

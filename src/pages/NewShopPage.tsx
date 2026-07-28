@@ -20,10 +20,13 @@ import {
   SHOP_SLUG_MAX_LENGTH,
   SHOP_SLUG_MIN_LENGTH,
 } from "../lib/constants";
+import { useBackNavigation } from "../hooks/shared/useBackNavigation";
+import { safeLocalStorageSet } from "../lib/offline/safeStorage";
 
 export function NewShopPage() {
   const { state: adminSession, refresh: refreshAdminSession } = useAdminSession();
   const navigate = useNavigate();
+  const goBack = useBackNavigation("/dashboard");
   const { busy, run, setError } = useAsyncAction();
   const toast = useToast();
   const { t } = usePlatformI18n();
@@ -111,7 +114,7 @@ export function NewShopPage() {
       // Wait for session to refresh membership list
       await refreshAdminSession();
       // Set as active shop
-      localStorage.setItem("akiba-active-shop", newShop.id);
+      safeLocalStorageSet("akiba-active-shop", newShop.id);
       navigate("/admin");
     }).catch((caught) => {
       toast.error(t(getErrorMessage(caught, "Could not create shop.")), t("Creation failed"));
@@ -148,7 +151,11 @@ export function NewShopPage() {
               <Link
                 to="/dashboard"
                 className="admin-login-back"
-                aria-label={t("Back to shops dashboard")}
+                aria-label={t("Back")}
+                onClick={(event) => {
+                  event.preventDefault();
+                  goBack();
+                }}
               >
                 <ArrowLeft size={17} />
               </Link>

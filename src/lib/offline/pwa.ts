@@ -9,6 +9,9 @@ import { OFFLINE_CACHE_NAMES } from "./cacheNames";
 const MANIFEST_MARKER = "data-matsuri-staff-pwa";
 let registrationPromise: Promise<ServiceWorkerRegistration | undefined> | null =
   null;
+let registrationUpdateTimer: number | undefined;
+let updateRegistration: ServiceWorkerRegistration | undefined;
+let updateLifecycleReady = false;
 type InstallOutcome = "accepted" | "dismissed" | "unavailable";
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -113,6 +116,42 @@ function removeManifest() {
   document.head.querySelector(`link[${MANIFEST_MARKER}]`)?.remove();
 }
 
+function requestRegistrationUpdate() {
+  if (document.visibilityState === "hidden") return;
+  void updateRegistration?.update().catch(() => undefined);
+}
+
+function ensureRegistrationUpdateLifecycle(
+  registration: ServiceWorkerRegistration,
+) {
+  updateRegistration = registration;
+  if (registrationUpdateTimer === undefined) {
+    registrationUpdateTimer = window.setInterval(
+      requestRegistrationUpdate,
+      60 * 60 * 1000,
+    );
+  }
+  if (updateLifecycleReady) return;
+  updateLifecycleReady = true;
+  document.addEventListener("visibilitychange", requestRegistrationUpdate);
+  window.addEventListener(
+    "pagehide",
+    () => {
+      if (registrationUpdateTimer !== undefined) {
+        window.clearInterval(registrationUpdateTimer);
+        registrationUpdateTimer = undefined;
+      }
+      updateRegistration = undefined;
+      document.removeEventListener(
+        "visibilitychange",
+        requestRegistrationUpdate,
+      );
+      updateLifecycleReady = false;
+    },
+    { once: true },
+  );
+}
+
 function performRegistration() {
   if (import.meta.env.DEV) {
     return navigator.serviceWorker.ready;
@@ -124,12 +163,7 @@ function performRegistration() {
     })
     .then((registration) => {
       void cleanupSupersededRuntimeCaches().catch(() => undefined);
-      window.setInterval(
-        () => {
-          void registration.update();
-        },
-        60 * 60 * 1000,
-      );
+      ensureRegistrationUpdateLifecycle(registration);
       return registration;
     })
     .catch(() => {

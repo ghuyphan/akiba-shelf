@@ -1,6 +1,19 @@
 import { getReleaseContext } from "./release";
 
 type EventLevel = "info" | "warning" | "error";
+export type ObservabilityStatus =
+  | "disabled"
+  | "idle"
+  | "listening"
+  | "initializing"
+  | "ready"
+  | "failed";
+export type ObservabilityHealth = {
+  configured: boolean;
+  status: ObservabilityStatus;
+  environment: string;
+  release: string;
+};
 type EventDetails = Record<
   string,
   string | number | boolean | null | undefined
@@ -17,6 +30,23 @@ let reporterPromise: Promise<typeof import("@sentry/react") | null> | null =
   null;
 let initialized = false;
 let removeEarlyErrorListeners: (() => void) | null = null;
+let observabilityStatus: ObservabilityStatus = dsn ? "idle" : "disabled";
+
+function setObservabilityStatus(status: ObservabilityStatus) {
+  observabilityStatus = status;
+  if (typeof document !== "undefined") {
+    document.documentElement.dataset.observabilityStatus = status;
+  }
+}
+
+export function getObservabilityHealth(): ObservabilityHealth {
+  return {
+    configured: Boolean(dsn),
+    status: observabilityStatus,
+    environment,
+    release: getReleaseContext().release,
+  };
+}
 
 const sensitiveHeaderNames = new Set([
   "authorization",
@@ -120,6 +150,7 @@ function context(details: EventDetails = {}) {
 function loadReporter() {
   if (!dsn) return Promise.resolve(null);
   if (!reporterPromise) {
+    setObservabilityStatus("initializing");
     reporterPromise = import("@sentry/react")
       .then((Sentry) => {
         removeEarlyErrorListeners?.();
@@ -134,9 +165,13 @@ function loadReporter() {
           beforeBreadcrumb: (breadcrumb) =>
             sanitizeTelemetryBreadcrumb(breadcrumb),
         });
+        setObservabilityStatus("ready");
         return Sentry;
       })
-      .catch(() => null);
+      .catch(() => {
+        setObservabilityStatus("failed");
+        return null;
+      });
   }
   return reporterPromise;
 }
@@ -172,8 +207,13 @@ export function trackClientEvent(
 }
 
 export function initObservability() {
-  if (initialized || !dsn) return;
+  if (initialized) return getObservabilityHealth();
+  if (!dsn) {
+    setObservabilityStatus("disabled");
+    return getObservabilityHealth();
+  }
   initialized = true;
+  setObservabilityStatus("listening");
   const onError = (event: ErrorEvent) =>
     reportError(event.error ?? event.message, { stage: "window_error" });
   const onUnhandledRejection = (event: PromiseRejectionEvent) =>
@@ -185,7 +225,7 @@ export function initObservability() {
     window.removeEventListener("unhandledrejection", onUnhandledRejection);
   };
 
-  if (Math.random() > rumSampleRate) return;
+  if (Math.random() > rumSampleRate) return getObservabilityHealth();
   const warmReporter = () => void loadReporter();
   if ("requestIdleCallback" in window) {
     window.requestIdleCallback(warmReporter, { timeout: 2_000 });
@@ -216,4 +256,5 @@ export function initObservability() {
       onLCP(reportMetric);
     })
     .catch(() => undefined);
+  return getObservabilityHealth();
 }

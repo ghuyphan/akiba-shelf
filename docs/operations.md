@@ -339,17 +339,21 @@ through the Pages Function at the same-origin `/gacha-simulator/videos/*` and
 production release. If the binding is changed in the Cloudflare dashboard,
 redeploy the Pages project before validating media range requests.
 
-To enable production observability, also configure `VITE_SENTRY_DSN`,
-`VITE_APP_ENV`, and `VITE_RUM_SAMPLE_RATE` in that protected environment and
-explicitly map them into the build job. GitHub Pages, Cloudflare Pages, local
-Vite files, and GitHub Actions do not transfer environment values between one
-another automatically.
+Production releases require `VITE_SENTRY_DSN` in the protected environment;
+the deployment configuration gate fails when it is absent. Also configure
+`VITE_APP_ENV` and `VITE_RUM_SAMPLE_RATE` and explicitly map them into the build
+job. Runtime diagnostics expose only `disabled`, `listening`, `initializing`,
+`ready`, or `failed` through `data-observability-status`; they never expose the
+DSN. GitHub Pages, Cloudflare Pages, local Vite files, and GitHub Actions do not
+transfer environment values between one another automatically.
 
 The `CI and Deploy` workflow runs checks, database tests, e2e tests, and
-performance tests before building. Production deployments are serialized so
-overlapping pushes cannot race, while superseded pull-request validation may be
-cancelled. A manual run is allowed only from `main` through
-`workflow_dispatch`.
+performance tests before building. A newer run cancels superseded validation
+jobs for the same ref, but production deployment steps are serialized and are
+never cancelled mid-release. Immediately before upload, the workflow reads the
+current `main` ref through the GitHub API and skips a run whose SHA has been
+superseded. API failure blocks deployment. A manual run is allowed only from
+`main` through `workflow_dispatch`.
 
 The workflow stores the clean `dist/` build for each production run and retains
 one generation of hashed Vite assets and simulator `internal/immutable` assets
@@ -365,6 +369,11 @@ Cloudflare Pages reads `public/_headers` for browser security and cache policy.
 The Content Security Policy is enforced (not report-only). Keep inline scripts
 out unless their exact body is pinned by a tested CSP hash, and update the
 deployment header check when adding a new third-party origin.
+Static and Pages Function responses send HSTS with a one-year lifetime. The
+policy intentionally omits `includeSubDomains` and `preload` until every current
+and future subdomain is covered by an explicit HTTPS inventory. Because Pages
+does not apply `_headers` rules to Function-generated responses, the simulator
+media Function attaches the same security baseline to success and error paths.
 Do not attach immutable wildcard headers to asset paths while Cloudflare's SPA
 fallback can serve HTML for a missing file; that can poison-cache a stale chunk
 as HTML. `sw.js`, `offline-assets.json`, and `release.json` must always
@@ -373,7 +382,9 @@ a content-type-aware Cache Rule is deployed and verified separately.
 
 After Wrangler uploads the artifact, the workflow waits up to two minutes for
 the deployment URL and `matsuri.pro` to serve the same release metadata, deep
-application route, and entry asset, then confirms that
+application route, admin route, entry asset, and simulator media. It verifies
+the security baseline on HTML, media success, and rejected media responses,
+then confirms that
 `www.matsuri.pro` preserves path and query parameters while redirecting
 permanently to the apex. If verification fails, the rollback API envelope is
 validated and the previously active deployment is polled until it is active
@@ -565,6 +576,8 @@ the existing idempotent terminal contracts.
 - [ ] External uptime, provider capacity, Edge Function, CI, and TLS alerts reach
       an on-call owner; queue age, dead letters, and `pg_net` drain responses are
       monitored during events.
+- [ ] Production observability reports a configured startup state and a
+      controlled test event reaches the responsible alert channel.
 - [ ] Offline Event allocation/sync/close has a trained designated device and a
       documented lost-device recovery procedure.
 - [ ] Known advisor warnings, notification delivery incidents, performance/RUM

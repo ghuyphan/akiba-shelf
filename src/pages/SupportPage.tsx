@@ -23,6 +23,7 @@ import {
 } from "../lib/support";
 import { formatVnd } from "../utils/format";
 import { generateVietQrForAmount } from "../utils/vietqr";
+import { useBackNavigation } from "../hooks/shared/useBackNavigation";
 import "../styles/admin/admin.css";
 
 const MAX_SUPPORT_AMOUNT = 100_000_000;
@@ -35,6 +36,7 @@ function normalizeAmount(value: string) {
 
 export function SupportPage() {
   const { t } = usePlatformI18n();
+  const goBack = useBackNavigation("/");
   const [amount, setAmount] = useState<number>(SUPPORT_PRESET_AMOUNTS[1]);
   const [customAmount, setCustomAmount] = useState("");
   const [qrSrc, setQrSrc] = useState("");
@@ -75,7 +77,11 @@ export function SupportPage() {
         brand={
           <PlatformHeaderBrand
             backTo="/"
-            backLabel={t("Back to home")}
+            backLabel={t("Back")}
+            onBack={(event) => {
+              event.preventDefault();
+              goBack();
+            }}
             subtitle={t(PLATFORM_BRAND.descriptor)}
           />
         }

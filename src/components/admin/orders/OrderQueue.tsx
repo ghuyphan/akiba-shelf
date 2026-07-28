@@ -111,6 +111,22 @@ export function OrderQueue({
     "all",
     "event",
   ];
+  const filterLabels: Record<OrderViewFilter, string> = {
+    pending: t("Pending"),
+    confirmed: t("Confirmed"),
+    cancelled: t("Cancelled"),
+    expired: t("Expired"),
+    all: t("All"),
+    event: t("Event"),
+  };
+  const queueTitles: Record<OrderViewFilter, string> = {
+    pending: t("Pending orders"),
+    confirmed: t("Confirmed orders"),
+    cancelled: t("Cancelled orders"),
+    expired: t("Expired orders"),
+    all: t("All orders"),
+    event: t("Event orders"),
+  };
 
   useEffect(() => {
     let active = true;
@@ -307,7 +323,7 @@ export function OrderQueue({
 
   return (
     <section className="admin-orders-view" aria-busy={loading}>
-      <div className="admin-orders-workspace">
+      <div className="admin-orders-workspace admin-surface">
         <div className="admin-filter-bar">
           <div
             className="admin-filter-tabs"
@@ -325,7 +341,7 @@ export function OrderQueue({
                 onClick={() => onFilterChange(item)}
               >
                 {item === "event" && <CloudOff size={13} />}
-                <span>{t(item)}</span>
+                <span>{filterLabels[item]}</span>
                 <b>
                   {compactFilterCount(
                     item === "event" ? eventCount : counts[item],
@@ -434,13 +450,7 @@ export function OrderQueue({
           <div className="admin-section-heading">
             <div>
               <span>{t("Order queue")}</span>
-              <h2>
-                {filter === "event"
-                  ? t("Event orders")
-                  : filter === "all"
-                    ? t("All orders")
-                    : t("{{status}} orders", { status: t(filter) })}
-              </h2>
+              <h2>{queueTitles[filter]}</h2>
             </div>
             <small aria-live="polite">
               {loading

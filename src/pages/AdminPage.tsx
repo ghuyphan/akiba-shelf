@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin/admin.css";
-import { Navigate } from "react-router";
+import { Navigate, useSearchParams } from "react-router";
 import { getAdminCatalogData } from "../lib/api/catalog";
 import {
   getOrderStatusCounts,
@@ -30,7 +30,11 @@ import {
   isTransportError,
 } from "../lib/errors";
 import { subscribeToCatalogChanges } from "../lib/realtime";
-import { applyPageTheme, getThemeStyle, resetPageTheme } from "../utils/theme";
+import {
+  applyAdminPageTheme,
+  getAdminThemeStyle,
+  resetPageTheme,
+} from "../utils/theme";
 import { getStoredBoothTheme } from "../utils/themeStorage";
 import { getAdminBranding, useDocumentBranding } from "../lib/branding";
 import type {
@@ -75,6 +79,7 @@ import {
   OFFLINE_EVENT_UPDATED,
 } from "../lib/offline/offlineEvents";
 import { reportError } from "../lib/observability";
+import { useMediaQuery } from "../hooks/shared/useMediaQuery";
 
 const orderPageSize = 12;
 // Realtime events caused by this tab's own writes are ignored inside this
@@ -87,6 +92,21 @@ const emptyOrderCounts: OrderStatusCounts = {
   cancelled: 0,
   expired: 0,
 };
+
+const adminViewTabs = new Set<AdminViewTab>([
+  "orders",
+  "products",
+  "gacha",
+  "design",
+  "settings",
+  "team",
+]);
+
+function parseAdminViewTab(value: string | null): AdminViewTab {
+  return value && adminViewTabs.has(value as AdminViewTab)
+    ? (value as AdminViewTab)
+    : "orders";
+}
 
 export function AdminPage() {
   const {
@@ -116,7 +136,23 @@ export function AdminPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [workspaceLoadFailed, setWorkspaceLoadFailed] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
-  const [viewTab, setViewTab] = useState<AdminViewTab>("orders");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedView = searchParams.get("view");
+  const viewTab = parseAdminViewTab(requestedView);
+  const setViewTab = useCallback(
+    (nextView: AdminViewTab, replace = false) => {
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (nextView === "orders") next.delete("view");
+          else next.set("view", nextView);
+          return next;
+        },
+        { replace },
+      );
+    },
+    [setSearchParams],
+  );
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [signOutBusy, setSignOutBusy] = useState(false);
   const [booth, setBooth] = useState<BoothSettings>(() => {
@@ -130,6 +166,13 @@ export function AdminPage() {
     useState<PromotionSettings>(defaultPromotion);
   const toast = useToast();
   const { t } = usePlatformI18n();
+  const compactAdminLayout = useMediaQuery("(max-width: 1100px)");
+
+  useEffect(() => {
+    if (requestedView && !adminViewTabs.has(requestedView as AdminViewTab)) {
+      setViewTab("orders", true);
+    }
+  }, [requestedView, setViewTab]);
 
   const verifiedBranding =
     isAuthed && booth.shop_id === shopId && !isInitialLoading && !catalogLoading
@@ -790,18 +833,18 @@ export function AdminPage() {
 
   useEffect(() => {
     if (!isAuthed || !shopId) return;
-    applyPageTheme(booth, `id:${shopId}`);
+    applyAdminPageTheme(booth, `id:${shopId}`);
     return () => resetPageTheme();
   }, [booth, isAuthed, shopId]);
 
   useEffect(() => {
     if (isAuthed && !canManageCatalog && viewTab !== "orders")
-      setViewTab("orders");
-  }, [isAuthed, canManageCatalog, viewTab]);
+      setViewTab("orders", true);
+  }, [isAuthed, canManageCatalog, setViewTab, viewTab]);
   useEffect(() => {
     if (isAuthed && viewTab === "team" && adminSession.access.role !== "owner")
-      setViewTab("orders");
-  }, [isAuthed, adminSession, viewTab]);
+      setViewTab("orders", true);
+  }, [isAuthed, adminSession, setViewTab, viewTab]);
 
   async function runAdminAction(action: () => Promise<void>, message: string) {
     await action();
@@ -905,7 +948,7 @@ export function AdminPage() {
       .length < MAX_OWNED_SHOPS;
   return (
     <AdminUnsavedChangesProvider>
-      <main className="admin-shell" style={getThemeStyle(booth)}>
+      <main className="admin-shell" style={getAdminThemeStyle(booth)}>
         <AdminWorkspaceHeader
           booth={booth}
           access={adminSession.access}
@@ -940,7 +983,9 @@ export function AdminPage() {
                 setOrderPage(1);
               }}
               onOpenProducts={() => setViewTab("products")}
-              onOpenSettings={() => setViewTab("settings")}
+              onOpenSettings={() =>
+                setViewTab(compactAdminLayout ? "settings" : "design")
+              }
               onRetryNotification={handleRetryNotification}
             />
           )}

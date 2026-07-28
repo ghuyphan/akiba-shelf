@@ -44,7 +44,26 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main
+        class="page-loading"
+        aria-label="Loading Matsuri"
+        aria-busy="true"
+      >
+        <div class="page-loading-brand" aria-hidden="true">
+          <img
+            src="/brand/matsuri-mark.svg"
+            alt=""
+            fetchpriority="high"
+          />
+        </div>
+        <div class="page-loading-copy">
+          <strong>Preparing your Matsuri storefront</strong>
+          <span>Getting products and live stock ready…</span>
+        </div>
+        <div class="page-loading-track" aria-hidden="true"><i></i></div>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

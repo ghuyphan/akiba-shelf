@@ -2,7 +2,7 @@
    .gacha-admin-page and prefer existing theme variables over hard-coded colors. */
 
 .gacha-admin-page {
-  --accent: var(--coral);
+  --accent: var(--admin-primary, var(--coral));
   display: grid;
   gap: 16px;
 }

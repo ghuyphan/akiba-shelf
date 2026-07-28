@@ -19,7 +19,6 @@ import {
   listOfflineEvents,
   recoverOfflineEventSession,
   saveOfflineEventDraft,
-  syncOfflineEventOrders,
 } from "../../../lib/api/offlineEvents";
 import { getErrorMessage } from "../../../lib/errors";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
@@ -65,6 +64,7 @@ import { useToast } from "../../ui/ToastProvider";
 import { ConfirmationDialog } from "../../ui/ConfirmationDialog";
 import { EmptyState } from "../../ui/EmptyState";
 import { StatusPill } from "../../ui/StatusPill";
+import { useOfflineEventSync } from "./useOfflineEventSync";
 
 type OfflineEventManagerProps = {
   shopId: string;
@@ -135,7 +135,6 @@ export function OfflineEventManager({
     null,
   );
   const [confirmClose, setConfirmClose] = useState(false);
-  const syncPromiseRef = useRef<Promise<boolean> | null>(null);
   const localRequestRef = useRef(0);
   const draftRequestRef = useRef(0);
   const formRevisionRef = useRef(0);
@@ -495,7 +494,7 @@ export function OfflineEventManager({
     } catch (error) {
       toast.error(
         t(getErrorMessage(error, "Could not start offline event mode.")),
-        t("Event mode unavailable"),
+        t("Event Mode unavailable"),
       );
     } finally {
       setGachaPreparationProgress(null);
@@ -503,49 +502,29 @@ export function OfflineEventManager({
     }
   }
 
-  const syncOrders = useCallback(async () => {
-    if (!session || session.status !== "active" || !online) return false;
-    if (syncPromiseRef.current) return syncPromiseRef.current;
-    const request = (async () => {
-      setBusy("sync");
-      try {
-        const latestOrders = await listOfflineEventOrders(session.id);
-        const pendingSync = latestOrders.filter((order) => !order.syncedAt);
-        if (!pendingSync.length) return true;
-        const acknowledgements = await syncOfflineEventOrders(
-          session,
-          pendingSync,
-        );
-        await markOfflineEventOrdersSynced(session, acknowledgements);
-        await reloadLocal();
-        toast.success(t("Offline orders synchronized."));
-        return true;
-      } catch (error) {
-        toast.error(
-          t(getErrorMessage(error, "Could not synchronize offline orders.")),
-          t("Sync failed"),
-        );
-        return false;
-      } finally {
-        syncPromiseRef.current = null;
-        setBusy(undefined);
-      }
-    })();
-    syncPromiseRef.current = request;
-    return request;
-  }, [online, reloadLocal, session, t, toast]);
-
-  useEffect(() => {
-    if (
-      !online ||
-      busy ||
-      !session ||
-      session.status !== "active" ||
-      !unsyncedCount
-    )
-      return;
-    void syncOrders();
-  }, [busy, online, session, syncOrders, unsyncedCount]);
+  const showSyncSuccess = useCallback(
+    (message: string) => toast.success(message),
+    [toast],
+  );
+  const showSyncError = useCallback(
+    (message: string, title: string) => toast.error(message, title),
+    [toast],
+  );
+  const setSyncBusy = useCallback(
+    (isBusy: boolean) => setBusy(isBusy ? "sync" : undefined),
+    [],
+  );
+  const { syncOrders, waitForSync } = useOfflineEventSync({
+    session,
+    online,
+    unsyncedCount,
+    busy: Boolean(busy),
+    reloadLocal,
+    translate: t,
+    showSuccess: showSyncSuccess,
+    showError: showSyncError,
+    setBusy: setSyncBusy,
+  });
 
   async function resolveOrder(
     order: OfflineEventOrder,
@@ -602,7 +581,7 @@ export function OfflineEventManager({
     let frozen: OfflineEventSession | null =
       session.status === "closing" ? session : null;
     try {
-      if (syncPromiseRef.current) await syncPromiseRef.current;
+      await waitForSync();
       setBusy("close");
       frozen ??= await freezeOfflineEventSession(session);
       setSession(frozen);
@@ -694,12 +673,12 @@ export function OfflineEventManager({
         className={`admin-toolbar-control offline-event-launcher ${eventActive ? "is-active" : ""}`}
         aria-label={
           eventDataLoading
-            ? `${t("Event mode")}: ${t("Loading")}`
+            ? `${t("Event Mode")}: ${t("Loading")}`
             : eventDataError
-              ? `${t("Event mode")}: ${t("Unavailable")}`
+              ? `${t("Event Mode")}: ${t("Unavailable")}`
               : eventActive
-                ? `${t("Event mode")}: ${currentSession?.name}`
-                : `${t("Event mode")}: ${t("Set up")}`
+                ? `${t("Event Mode")}: ${currentSession?.name}`
+                : `${t("Event Mode")}: ${t("Set up")}`
         }
         aria-busy={eventDataLoading}
         onClick={() => setIsOpen(true)}
@@ -711,12 +690,12 @@ export function OfflineEventManager({
         ) : (
           <CloudOff size={15} />
         )}
-        <span>{t("Event mode")}</span>
+        <span>{t("Event Mode")}</span>
         {eventActive && <i aria-hidden="true" />}
       </button>
 
       <Modal
-        title={t("Offline event mode")}
+        title={t("Offline Event Mode")}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         className="offline-event-modal"

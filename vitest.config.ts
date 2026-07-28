@@ -24,10 +24,13 @@ export default defineConfig({
       // Keep the ratchet scoped to application source, not generated builds,
       // vendored simulators, scripts, or Playwright infrastructure.
       thresholds: {
-        lines: 20,
-        functions: 25,
-        statements: 20,
-        branches: 55,
+        // Baseline on 2026-07-28: 58.68 statements/lines, 56.44 functions,
+        // and 74.07 branches. Keep headroom for small source additions while
+        // preventing a return to unmeasured route/coordination regressions.
+        lines: 55,
+        functions: 50,
+        statements: 55,
+        branches: 70,
       },
     },
   },

@@ -1259,7 +1259,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
           </button>
         </AdminCard>
       )}
-      <div className="gacha-workflow-surface">
+      <div className="gacha-workflow-surface admin-surface">
         <div id="gacha-validation-general" className="gacha-section-anchor">
           <GachaGeneralSection
             settings={settings}
@@ -1333,6 +1333,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
                 }
                 sharedPool={
                   <GachaShared3StarEditor
+                    gameType={descriptor.gameType}
                     products={products}
                     entries={entries}
                     onToggleProduct={toggleShared3StarProduct}

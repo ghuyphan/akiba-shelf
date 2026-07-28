@@ -1,3 +1,5 @@
+import { PLATFORM_BRAND } from "./branding";
+
 export const PLATFORM_SITE_URL = "https://matsuri.pro";
 export const PLATFORM_SOCIAL_IMAGE = `${PLATFORM_SITE_URL}/brand/matsuri-icon-512.png`;
 
@@ -48,4 +50,12 @@ export function applyDocumentSeo({
   setMeta('meta[name="twitter:title"]', "name", "twitter:title", document.title);
   setMeta('meta[name="twitter:description"]', "name", "twitter:description", description);
   setMeta('meta[name="twitter:image"]', "name", "twitter:image", PLATFORM_SOCIAL_IMAGE);
+}
+
+export function resetDocumentSeo() {
+  applyDocumentSeo({
+    description: PLATFORM_BRAND.description,
+    canonicalPath: "/",
+    robots: "noindex, nofollow",
+  });
 }

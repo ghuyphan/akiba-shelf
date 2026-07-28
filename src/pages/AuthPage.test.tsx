@@ -120,6 +120,9 @@ describe("AuthPage credential fields", () => {
     renderPage();
     const password = screen.getByLabelText("Password");
 
+    expect(
+      screen.getByRole("link", { name: "Back to home" }),
+    ).toBeInTheDocument();
     expect(password).toHaveAttribute("type", "password");
     expect(screen.getByLabelText("Email address")).toHaveAttribute(
       "placeholder",
@@ -188,6 +191,10 @@ describe("AuthPage credential fields", () => {
     const user = userEvent.setup();
     renderSignupPage();
 
+    expect(
+      screen.queryByRole("link", { name: "Back to home" }),
+    ).not.toBeInTheDocument();
+
     await user.type(
       screen.getByLabelText("Email address"),
       "artist@example.com",
@@ -239,6 +246,10 @@ describe("AuthPage credential fields", () => {
     const user = userEvent.setup();
     renderForgotPage();
 
+    expect(
+      screen.queryByRole("link", { name: "Back to home" }),
+    ).not.toBeInTheDocument();
+
     await user.type(
       screen.getByLabelText("Email address"),
       "artist@example.com",
@@ -248,6 +259,9 @@ describe("AuthPage credential fields", () => {
     );
 
     expect(await screen.findByText("Check your email")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Back to home" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByText(/If artist@example.com can be recovered/),
     ).toBeInTheDocument();

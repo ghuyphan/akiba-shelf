@@ -102,14 +102,18 @@ export function GachaBannerList({
                 <small>{t("Banner {{number}}", { number: index + 1 })}</small>
                 <strong>{banner.name}</strong>
                 <small>
-                  {activeEntryCounts.get(banner.id) ?? 0} {t("items")} ·{" "}
-                  {banner.display_limit} {t("shown")}
+                  {t("Prizes: {{items}} · Display limit: {{shown}}", {
+                    items: activeEntryCounts.get(banner.id) ?? 0,
+                    shown: banner.display_limit,
+                  })}
                 </small>
               </span>
-              <i
-                className={banner.active ? "is-live" : ""}
-                title={t(banner.active ? "Banner active" : "Banner inactive")}
-              />
+              <span
+                className={`gacha-banner-state ${banner.active ? "is-live" : ""}`}
+              >
+                <i aria-hidden="true" />
+                {t(banner.active ? "Active" : "Inactive")}
+              </span>
             </button>
           );
         })}

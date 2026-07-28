@@ -59,7 +59,7 @@ describe("admin login panel", () => {
       "artist@example.com",
     );
     await user.type(screen.getByLabelText("Password"), "password123");
-    await user.click(screen.getByRole("button", { name: "Open admin" }));
+    await user.click(screen.getByRole("button", { name: "Open workspace" }));
 
     expect(await screen.findByText("Confirm your email")).toBeInTheDocument();
     expect(onLogin).toHaveBeenCalledWith(

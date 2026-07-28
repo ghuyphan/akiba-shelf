@@ -8,10 +8,28 @@ import {
 import { defaultGachaSettings } from "../../../types/gacha";
 import { GachaGeneralSection } from "./GachaGeneralSection";
 import { GachaLuckSection } from "./GachaLuckSection";
+import { GachaRarityStars } from "./GachaRarityStars";
 
 const settings = defaultGachaSettings("shop-id");
 
 describe("gacha settings accessibility", () => {
+  it("keeps game-specific rarity stars accessible", () => {
+    const { container } = render(
+      <PlatformI18nProvider>
+        <GachaRarityStars gameType="genshin" rarity={5} />
+        <GachaRarityStars gameType="hsr" rarity={4} />
+      </PlatformI18nProvider>,
+    );
+
+    expect(
+      screen.getByRole("img", { name: "5-star rarity" }),
+    ).toHaveClass("gacha-rarity-stars-genshin");
+    expect(
+      screen.getByRole("img", { name: "4-star rarity" }),
+    ).toHaveClass("gacha-rarity-stars-hsr");
+    expect(container.querySelectorAll(".gacha-rarity-star")).toHaveLength(9);
+  });
+
   it("gives both toggle checkboxes explicit accessible names", () => {
     render(
       <PlatformI18nProvider>

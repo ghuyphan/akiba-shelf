@@ -1,13 +1,16 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { createMemoryRouter, RouterProvider } from "react-router";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PlatformI18nProvider } from "../../../lib/i18n/platformI18n";
 import {
   AdminUnsavedChangesProvider,
   useAdminNavigationGuard,
   useAdminUnsavedChanges,
 } from "./AdminUnsavedChanges";
+
+afterEach(cleanup);
 
 function DirtyEditor({ navigate }: { navigate: () => void }) {
   const [dirty, setDirty] = useState(true);
@@ -24,13 +27,19 @@ describe("AdminUnsavedChangesProvider", () => {
   it("requires confirmation before leaving a dirty editor", async () => {
     const user = userEvent.setup();
     const navigate = vi.fn();
-    render(
-      <PlatformI18nProvider>
-        <AdminUnsavedChangesProvider>
-          <DirtyEditor navigate={navigate} />
-        </AdminUnsavedChangesProvider>
-      </PlatformI18nProvider>,
-    );
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: (
+          <PlatformI18nProvider>
+            <AdminUnsavedChangesProvider>
+              <DirtyEditor navigate={navigate} />
+            </AdminUnsavedChangesProvider>
+          </PlatformI18nProvider>
+        ),
+      },
+    ]);
+    render(<RouterProvider router={router} />);
 
     await user.click(screen.getByRole("button", { name: "Leave editor" }));
     expect(navigate).not.toHaveBeenCalled();

@@ -1,9 +1,8 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Edit3, Gift, Package, X } from "lucide-react";
 import type { Product, PromotionSettings } from "../../../types/catalog";
 import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
-import { useToast } from "../../ui/ToastProvider";
 import { Button } from "../../ui/Button";
 import { Field } from "../../ui/Field";
 import { NumberInput } from "../../ui/NumberInput";
@@ -11,7 +10,11 @@ import { Modal } from "../../ui/Modal";
 import { AdminCard } from "../shell/AdminCard";
 import { AdminEditBar } from "../shell/AdminEditBar";
 import { EmptyState } from "../../ui/EmptyState";
-import { getUserFacingErrorMessage } from "../../../lib/errors";
+import {
+  useAdminNavigationGuard,
+  useAdminUnsavedChanges,
+} from "../shell/AdminUnsavedChanges";
+import { AdminFormError } from "../shared/AdminFormError";
 
 type PromotionSettingsFormProps = {
   promotion: PromotionSettings;
@@ -27,23 +30,14 @@ export function PromotionSettingsForm({
   const [draft, setDraft] = useState(promotion);
   const [isEditing, setIsEditing] = useState(false);
   const { busy, error, run, setError } = useAsyncAction();
-  const toast = useToast();
   const { t } = usePlatformI18n();
+  const requestNavigation = useAdminNavigationGuard();
 
   useEffect(() => {
     setDraft(promotion);
     setIsEditing(false);
     setError("");
   }, [promotion, setError]);
-
-  useEffect(() => {
-    if (!error) return;
-    toast.error(
-      t(getUserFacingErrorMessage(error, "Could not save promotion")),
-      t("Could not save promotion"),
-    );
-    setError("");
-  }, [error, setError, t, toast]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -55,11 +49,11 @@ export function PromotionSettingsForm({
     if (saved) setIsEditing(false);
   }
 
-  function reset() {
+  const reset = useCallback(() => {
     setDraft(promotion);
     setIsEditing(false);
     setError("");
-  }
+  }, [promotion, setError]);
 
   function toggleProduct(
     group: "qualifying_product_ids" | "reward_product_ids",
@@ -75,6 +69,7 @@ export function PromotionSettingsForm({
     draft.qualifying_product_ids.length > 0 &&
     draft.reward_product_ids.length > 0;
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(promotion);
+  useAdminUnsavedChanges("promotion-settings", isEditing && hasChanges, reset);
 
   return (
     <>
@@ -140,7 +135,7 @@ export function PromotionSettingsForm({
       <Modal
         title={t("Quantity promotion")}
         isOpen={isEditing}
-        onClose={reset}
+        onClose={() => requestNavigation(reset)}
         wide
         mobileSheet
         appearance="admin"
@@ -152,6 +147,12 @@ export function PromotionSettingsForm({
           className="admin-form admin-promotion-form"
           onSubmit={handleSubmit}
         >
+          <AdminFormError
+            error={error}
+            fallback="Could not save promotion"
+            title="Could not save promotion"
+            onDismiss={() => setError("")}
+          />
           <div className="admin-promotion-editor">
             <div className="admin-promotion-setup-grid">
               <div className="admin-promotion-fields-group">
@@ -169,7 +170,7 @@ export function PromotionSettingsForm({
                     }
                   />
                 </Field>
-                <Field label={t("Customer gets free")}>
+                <Field label={t("Free quantity")}>
                   <NumberInput
                     min={1}
                     max={99}
@@ -186,9 +187,11 @@ export function PromotionSettingsForm({
               </div>
 
               <div className="admin-promotion-switches-group">
-                <label className="compact-switch-label">
+                <label className="compact-switch-label" htmlFor="promotion-enabled">
                   <input
+                    id="promotion-enabled"
                     type="checkbox"
+                    aria-label={t("Promotion active")}
                     checked={draft.enabled}
                     disabled={busy}
                     onChange={(event) =>
@@ -202,9 +205,11 @@ export function PromotionSettingsForm({
                     </small>
                   </span>
                 </label>
-                <label className="compact-switch-label">
+                <label className="compact-switch-label" htmlFor="promotion-repeatable">
                   <input
+                    id="promotion-repeatable"
                     type="checkbox"
+                    aria-label={t("Repeat offer")}
                     checked={draft.repeatable}
                     disabled={busy}
                     onChange={(event) =>
@@ -227,7 +232,7 @@ export function PromotionSettingsForm({
               </span>
               <strong>
                 {t(
-                  "Buy any {{buy}} from {{qualifying}} selected products, then choose {{free}} free from {{reward}} reward products.",
+                  "Choose {{free}} free items from {{reward}} reward products after buying {{buy}} from {{qualifying}} eligible products.",
                   {
                     buy: draft.buy_quantity,
                     qualifying: draft.qualifying_product_ids.length,
@@ -261,7 +266,7 @@ export function PromotionSettingsForm({
                       </span>
                     </span>
                     <span className="col-action col-free-action">
-                      <span>{t("Customer gets free")}</span>
+                      <span>{t("Free item")}</span>
                       <span className="counter-badge">
                         {draft.reward_product_ids.length}/{products.length}
                       </span>
@@ -297,9 +302,11 @@ export function PromotionSettingsForm({
                             </span>
                           </div>
                           <div className="promotion-product-actions">
-                            <label className="checkbox-wrapper">
+                            <label className="checkbox-wrapper" htmlFor={`promotion-buy-${product.id}`}>
                               <input
+                                id={`promotion-buy-${product.id}`}
                                 type="checkbox"
+                                aria-label={`${product.name} · ${t("Customer buys")}`}
                                 checked={isBuySelected}
                                 disabled={busy}
                                 onChange={() =>
@@ -313,9 +320,11 @@ export function PromotionSettingsForm({
                                 {t("Customer buys")}
                               </span>
                             </label>
-                            <label className="checkbox-wrapper">
+                            <label className="checkbox-wrapper" htmlFor={`promotion-free-${product.id}`}>
                               <input
+                                id={`promotion-free-${product.id}`}
                                 type="checkbox"
+                                aria-label={`${product.name} · ${t("Free item")}`}
                                 checked={isFreeSelected}
                                 disabled={busy}
                                 onChange={() =>
@@ -326,7 +335,7 @@ export function PromotionSettingsForm({
                                 }
                               />
                               <span className="checkbox-label-text">
-                                {t("Customer gets free")}
+                                {t("Free item")}
                               </span>
                             </label>
                           </div>
@@ -356,7 +365,7 @@ export function PromotionSettingsForm({
               variant="secondary"
               icon={<X size={17} />}
               disabled={busy}
-              onClick={reset}
+              onClick={() => requestNavigation(reset)}
             >
               {t("Cancel")}
             </Button>

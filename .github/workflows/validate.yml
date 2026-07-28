@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: matsuri-${{ github.workflow }}-${{ github.ref }}
+  group: matsuri-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -18,6 +18,9 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: matsuri-${{ github.workflow }}-checks-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v7
         with:
@@ -35,6 +38,9 @@ jobs:
   database:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: matsuri-${{ github.workflow }}-database-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v7
         with:
@@ -63,6 +69,9 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: matsuri-${{ github.workflow }}-e2e-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v7
         with:
@@ -72,8 +81,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e
+      - run: npm run test:e2e:webkit
       - run: npm run test:perf
       - run: npm run test:pwa
       - if: failure()
@@ -120,7 +130,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           missing=0
-          for name in CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY VITE_TURNSTILE_SITE_KEY; do
+          for name in CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY VITE_TURNSTILE_SITE_KEY VITE_SENTRY_DSN; do
             if [[ -z "${!name}" ]]; then
               echo "::error::$name is not configured for the cloudflare-pages environment"
               missing=1
@@ -217,8 +227,26 @@ jobs:
       - name: Retain previous immutable assets
         if: steps.previous-deployment.outputs.artifact_id != ''
         run: node scripts/retain-previous-assets.mjs previous-deployment/dist dist
+      - name: Confirm release is still current main
+        id: release-freshness
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { data: mainRef } = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: "heads/main",
+            });
+            const mainSha = mainRef.object.sha;
+            const isCurrent = mainSha === context.sha;
+            core.setOutput("current", String(isCurrent));
+            core.setOutput("main_sha", mainSha);
+            if (!isCurrent) {
+              core.notice(`Skipping superseded release ${context.sha}; main is ${mainSha}.`);
+            }
       - name: Deploy to Cloudflare Pages
         id: deployment
+        if: steps.release-freshness.outputs.current == 'true'
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -229,6 +257,7 @@ jobs:
           wranglerVersion: 4.113.0
       - name: Verify deployed Cloudflare release
         id: verify-deployment
+        if: steps.release-freshness.outputs.current == 'true'
         continue-on-error: true
         env:
           DEPLOYMENT_URL: ${{ steps.deployment.outputs.deployment-url }}
@@ -239,7 +268,7 @@ jobs:
           https://www.matsuri.pro
       - name: Smoke production routes and checkout preflight
         id: smoke-production
-        if: steps.verify-deployment.outcome == 'success'
+        if: steps.release-freshness.outputs.current == 'true' && steps.verify-deployment.outcome == 'success'
         continue-on-error: true
         run: >-
           npm run smoke:production --
@@ -248,7 +277,7 @@ jobs:
           --supabase-anon-key "$VITE_SUPABASE_ANON_KEY"
           --storefront-slug "${{ vars.MATSURI_SMOKE_SHOP_SLUG || 'demo-booth' }}"
       - name: Roll back failed production release
-        if: always() && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
+        if: always() && steps.release-freshness.outputs.current == 'true' && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -259,14 +288,14 @@ jobs:
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/matsuri/deployments/$PREVIOUS_DEPLOYMENT_ID/rollback" > rollback-response.json
           node scripts/assert-cloudflare-api.mjs rollback-response.json "Cloudflare Pages rollback"
       - name: Verify rollback became active
-        if: always() && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
+        if: always() && steps.release-freshness.outputs.current == 'true' && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           PREVIOUS_DEPLOYMENT_ID: ${{ steps.active-deployment.outputs.id }}
         run: node scripts/verify-cloudflare-rollback.mjs
       - name: Verify rolled-back Cloudflare release
-        if: always() && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
+        if: always() && steps.release-freshness.outputs.current == 'true' && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
         env:
           MATSURI_RELEASE: ${{ steps.active-deployment.outputs.sha }}
           PREVIOUS_DEPLOYMENT_URL: ${{ steps.active-deployment.outputs.url }}
@@ -276,7 +305,7 @@ jobs:
           https://matsuri.pro
           https://www.matsuri.pro
       - name: Smoke rolled-back production routes and checkout preflight
-        if: always() && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
+        if: always() && steps.release-freshness.outputs.current == 'true' && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
         run: >-
           npm run smoke:production --
           --base-url https://matsuri.pro
@@ -284,5 +313,8 @@ jobs:
           --supabase-anon-key "$VITE_SUPABASE_ANON_KEY"
           --storefront-slug "${{ vars.MATSURI_SMOKE_SHOP_SLUG || 'demo-booth' }}"
       - name: Fail release after smoke rollback
-        if: always() && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure')
+        if: always() && steps.release-freshness.outputs.current == 'true' && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure')
         run: exit 1
+      - name: Report superseded release
+        if: steps.release-freshness.outputs.current == 'false'
+        run: echo "Release $GITHUB_SHA was superseded by ${{ steps.release-freshness.outputs.main_sha }}; deployment skipped."

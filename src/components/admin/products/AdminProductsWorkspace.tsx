@@ -11,6 +11,7 @@ import { ProductList } from "./ProductList";
 import { PromotionSettingsForm } from "../settings/PromotionSettingsForm";
 import type { ProductWorkspaceTab } from "../shell/adminWorkspaceTypes";
 import { useAdminNavigationGuard } from "../shell/AdminUnsavedChanges";
+import { useMediaQuery } from "../../../hooks/shared/useMediaQuery";
 
 type AdminProductsWorkspaceProps = {
   shopId: string;
@@ -60,6 +61,7 @@ export function AdminProductsWorkspace({
 }: AdminProductsWorkspaceProps) {
   const { t } = usePlatformI18n();
   const requestNavigation = useAdminNavigationGuard();
+  const singlePanelLayout = useMediaQuery("(max-width: 1100px)");
   const [activeTab, setActiveTab] = useState<ProductWorkspaceTab>("list");
   const { containerRef, registerItem } = useTabIndicator<
     ProductWorkspaceTab,
@@ -74,10 +76,25 @@ export function AdminProductsWorkspace({
     [products],
   );
 
+  function focusWorkspaceTab(next: ProductWorkspaceTab) {
+    window.requestAnimationFrame(() => {
+      document.getElementById(`product-workspace-${next}-tab`)?.focus();
+    });
+  }
+
   function createProduct() {
     requestNavigation(() => {
       onSelectProduct(createBlankProduct(nextSort));
       setActiveTab("form");
+      focusWorkspaceTab("form");
+    });
+  }
+
+  function activateTab(next: ProductWorkspaceTab) {
+    if (next === activeTab) return;
+    requestNavigation(() => {
+      setActiveTab(next);
+      focusWorkspaceTab(next);
     });
   }
 
@@ -89,32 +106,65 @@ export function AdminProductsWorkspace({
         onSave={onSavePromotion}
       />
       <div
-        className="category-row admin-mobile-tabs-row"
+        className="admin-mobile-tabs-row admin-segmented-control admin-segmented-tabs"
         ref={containerRef}
-        role="toolbar"
-        aria-label={t("Product workspace")}
+        role={singlePanelLayout ? "tablist" : undefined}
+        aria-label={singlePanelLayout ? t("Product workspace") : undefined}
       >
         <button
           type="button"
+          id="product-workspace-list-tab"
+          role={singlePanelLayout ? "tab" : undefined}
+          aria-controls={
+            singlePanelLayout ? "product-workspace-list-panel" : undefined
+          }
+          aria-selected={singlePanelLayout ? activeTab === "list" : undefined}
+          tabIndex={
+            singlePanelLayout ? (activeTab === "list" ? 0 : -1) : undefined
+          }
           ref={registerItem("list")}
-          className={`chip ${activeTab === "list" ? "chip-active" : ""}`}
-          aria-pressed={activeTab === "list"}
-          onClick={() => requestNavigation(() => setActiveTab("list"))}
+          className={`admin-workspace-tab ${activeTab === "list" ? "is-active" : ""}`}
+          onClick={() => activateTab("list")}
+          onKeyDown={(event) => {
+            if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+            event.preventDefault();
+            const next = activeTab === "list" ? "form" : "list";
+            activateTab(next);
+          }}
         >
-          {t("Products List ({{count}})", { count: products.length })}
+          {t("Products ({{count}})", { count: products.length })}
         </button>
         <button
           type="button"
+          id="product-workspace-form-tab"
+          role={singlePanelLayout ? "tab" : undefined}
+          aria-controls={
+            singlePanelLayout ? "product-workspace-form-panel" : undefined
+          }
+          aria-selected={singlePanelLayout ? activeTab === "form" : undefined}
+          tabIndex={
+            singlePanelLayout ? (activeTab === "form" ? 0 : -1) : undefined
+          }
           ref={registerItem("form")}
-          className={`chip ${activeTab === "form" ? "chip-active" : ""}`}
-          aria-pressed={activeTab === "form"}
-          onClick={() => setActiveTab("form")}
+          className={`admin-workspace-tab ${activeTab === "form" ? "is-active" : ""}`}
+          onClick={() => activateTab("form")}
+          onKeyDown={(event) => {
+            if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+            event.preventDefault();
+            const next = activeTab === "list" ? "form" : "list";
+            activateTab(next);
+          }}
         >
-          {t("Edit Product")}
+          {t("Edit product")}
         </button>
       </div>
       <div className="admin-grid">
         <div
+          id="product-workspace-list-panel"
+          role={singlePanelLayout ? "tabpanel" : undefined}
+          aria-labelledby={
+            singlePanelLayout ? "product-workspace-list-tab" : undefined
+          }
           className={`admin-grid-col-list ${activeTab === "list" ? "show" : "hide"}`}
         >
           <ProductList
@@ -123,11 +173,13 @@ export function AdminProductsWorkspace({
             onSelect={(product) => {
               if (product.id === selectedProduct?.id) {
                 setActiveTab("form");
+                focusWorkspaceTab("form");
                 return;
               }
               requestNavigation(() => {
                 onSelectProduct(product);
                 setActiveTab("form");
+                focusWorkspaceTab("form");
               });
             }}
             onCreate={createProduct}
@@ -136,6 +188,11 @@ export function AdminProductsWorkspace({
         </div>
         {selectedProduct ? (
           <div
+            id="product-workspace-form-panel"
+            role={singlePanelLayout ? "tabpanel" : undefined}
+            aria-labelledby={
+              singlePanelLayout ? "product-workspace-form-tab" : undefined
+            }
             className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}
           >
             <ProductForm
@@ -148,6 +205,11 @@ export function AdminProductsWorkspace({
           </div>
         ) : (
           <div
+            id="product-workspace-form-panel"
+            role={singlePanelLayout ? "tabpanel" : undefined}
+            aria-labelledby={
+              singlePanelLayout ? "product-workspace-form-tab" : undefined
+            }
             className={`admin-grid-col-form admin-form-empty ${activeTab === "form" ? "show" : "hide"}`}
           >
             <EmptyState

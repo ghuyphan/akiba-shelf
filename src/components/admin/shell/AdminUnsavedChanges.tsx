@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useBlocker, useLocation } from "react-router";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import { ConfirmationDialog } from "../../ui/ConfirmationDialog";
 
@@ -30,19 +31,25 @@ export function AdminUnsavedChangesProvider({
   children: ReactNode;
 }) {
   const { t } = usePlatformI18n();
+  const location = useLocation();
+  const stableLocation = useRef(location);
   const registrations = useRef(new Map<string, DirtyRegistration>());
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-
-  const register = useCallback((id: string, value: DirtyRegistration) => {
-    registrations.current.set(id, value);
-    return () => registrations.current.delete(id);
-  }, []);
 
   const hasUnsavedChanges = useCallback(
     () => [...registrations.current.values()].some((value) => value.dirty),
     [],
   );
+  const blocker = useBlocker(hasUnsavedChanges);
 
+  useEffect(() => {
+    if (blocker.state !== "blocked") stableLocation.current = location;
+  }, [blocker.state, location]);
+
+  const register = useCallback((id: string, value: DirtyRegistration) => {
+    registrations.current.set(id, value);
+    return () => registrations.current.delete(id);
+  }, []);
   const requestNavigation = useCallback(
     (action: () => void) => {
       if (!hasUnsavedChanges()) {
@@ -73,18 +80,44 @@ export function AdminUnsavedChangesProvider({
     <AdminUnsavedChangesContext.Provider value={value}>
       {children}
       <ConfirmationDialog
-        isOpen={Boolean(pendingAction)}
+        isOpen={Boolean(pendingAction) || blocker.state === "blocked"}
         title={t("Discard unsaved changes?")}
         message={t("Your current edits will be lost.")}
         cancelLabel={t("Keep editing")}
         confirmLabel={t("Discard changes")}
-        onClose={() => setPendingAction(null)}
+        onClose={() => {
+          setPendingAction(null);
+          if (blocker.state === "blocked") {
+            blocker.reset();
+            const currentHref = `${stableLocation.current.pathname}${stableLocation.current.search}${stableLocation.current.hash}`;
+            const restoreBrowserUrl = () => {
+              const browserHref = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+              if (browserHref !== currentHref) {
+                window.history.replaceState(
+                  window.history.state,
+                  "",
+                  currentHref,
+                );
+              }
+            };
+            window.requestAnimationFrame(() => {
+              restoreBrowserUrl();
+              window.setTimeout(restoreBrowserUrl, 50);
+            });
+          }
+        }}
         onConfirm={() => {
           for (const registration of registrations.current.values()) {
-            if (registration.dirty) registration.discard?.();
+            if (!registration.dirty) continue;
+            registration.dirty = false;
+            registration.discard?.();
           }
           const action = pendingAction;
           setPendingAction(null);
+          if (blocker.state === "blocked") {
+            blocker.proceed();
+            return;
+          }
           action?.();
         }}
       />

@@ -30,6 +30,7 @@ const product: Product = {
 function renderForm(
   onDelete = vi.fn().mockResolvedValue(undefined),
   featuredCount = 0,
+  onSave = vi.fn().mockResolvedValue(undefined),
 ) {
   render(
     <PlatformI18nProvider>
@@ -38,7 +39,7 @@ function renderForm(
           shopId="shop-1"
           product={product}
           featuredCount={featuredCount}
-          onSave={vi.fn().mockResolvedValue(undefined)}
+          onSave={onSave}
           onDelete={onDelete}
         />
       </ToastProvider>
@@ -55,7 +56,9 @@ describe("ProductForm", () => {
     const onDelete = renderForm();
 
     await user.click(screen.getByRole("button", { name: "Delete" }));
-    expect(screen.getByRole("dialog", { name: "Delete product?" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Delete product?" }),
+    ).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Delete product" }));
@@ -85,10 +88,12 @@ describe("ProductForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
 
-    expect(screen.getByText("All 8 featured slots are used."))
-      .toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: /Feature this item/ }))
-      .toBeDisabled();
+    expect(
+      screen.getByText("All 8 featured slots are used."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("checkbox", { name: /Feature this item/ }),
+    ).toBeDisabled();
   });
 
   it("updates the featured slot count before saving", async () => {
@@ -96,9 +101,35 @@ describe("ProductForm", () => {
     renderForm(undefined, 7);
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
-    await user.click(screen.getByRole("checkbox", { name: /Feature this item/ }));
+    await user.click(
+      screen.getByRole("checkbox", { name: /Feature this item/ }),
+    );
 
-    expect(screen.getByText("All 8 featured slots are used."))
-      .toBeInTheDocument();
+    expect(
+      screen.getByText("All 8 featured slots are used."),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps save failures in the form until staff dismisses them", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn().mockRejectedValue(new Error("Network unavailable"));
+    renderForm(undefined, 0, onSave);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.type(
+      screen.getByRole("textbox", { name: "Product name · Required" }),
+      " updated",
+    );
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    const error = await screen.findByRole("alert");
+    expect(error).toHaveTextContent("Could not update item");
+    expect(error).toHaveTextContent("Network unavailable");
+    expect(error).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Dismiss notification" }),
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

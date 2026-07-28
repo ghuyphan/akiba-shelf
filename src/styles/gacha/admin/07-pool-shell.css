@@ -123,6 +123,17 @@
   outline-offset: 1px;
 }
 
+.gacha-segmented.admin-segmented-control {
+  display: inline-grid;
+  background: var(--admin-inset-bg, #f8fafc);
+}
+
+.gacha-segmented.admin-segmented-tabs button.active {
+  color: var(--ink);
+  background: transparent;
+  box-shadow: none;
+}
+
 .gacha-search {
   display: flex;
   flex: 1 1 220px;
@@ -150,4 +161,3 @@
   font: inherit;
   background: transparent;
 }
-

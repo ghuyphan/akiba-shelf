@@ -1,5 +1,6 @@
 /* Core admin remediation: preserve readable, keyboard-safe editing on every viewport. */
 .admin-validation-summary { margin: 0 0 4px; }
+.admin-form-error { margin-bottom: 16px; }
 .admin-image-tile > button { width: 40px; height: 40px; }
 .role-pill.role-unavailable { color: #596579; background: #edf1f5; }
 .shop-card-edit-btn { min-width: 40px; min-height: 40px; }
@@ -77,4 +78,3 @@
 @media (max-height: 640px) {
   .admin-login > .admin-access-card { margin-block: 0; }
 }
-

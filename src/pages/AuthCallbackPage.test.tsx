@@ -201,6 +201,7 @@ describe("AuthCallbackPage regression tests", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("Back to sign in")).toBeInTheDocument();
+    expect(screen.queryByText("Back to home")).not.toBeInTheDocument();
     expect(api.getShopMemberships).not.toHaveBeenCalled();
 
     // Verify expected auth shell structure is rendered

@@ -36,6 +36,7 @@ export const translations = {
     reservationExpired: "Reservation expired", reservationExpiredHint: "Payment may have been sent after this reservation expired. Please ask booth staff for assistance.", cancelReservationTitle: "Cancel this reservation?", cancelReservationHint: "The reserved items will be released back to the shelf.", keepOrder: "Keep order", paymentQrAlt: "Payment QR code", orderSubmitError: "Failed to submit order. Please try again.",
     wishLoadFailed: "Couldn’t open the wish simulator", wishLoadError: "Could not load the minigame.",
     crashTitle: "Something went wrong at the booth", crashHint: "Please reload the page. Your cart is saved on this device.", crashReload: "Reload page",
+    updateAvailableLabel: "Matsuri update available", updateReadyTitle: "A new Matsuri update is ready", updateReadyHint: "Refresh when you are ready. Finish checkout first.", updateNow: "Update now", updatingApp: "Updating…", updateLater: "Later", dismissUpdateNotice: "Dismiss update notice",
   },
   vi: {
     all: "Tất cả", officialShop: "Gian hàng chính thức", boothInfo: "Thông tin gian hàng", boothInfoHint: "Giờ mở cửa, vị trí & mạng xã hội",
@@ -71,6 +72,7 @@ export const translations = {
     reservationExpired: "Đơn giữ hàng đã hết hạn", reservationExpiredHint: "Có thể bạn đã chuyển khoản sau khi đơn giữ hàng hết hạn. Vui lòng nhờ staff tại gian hàng hỗ trợ.", cancelReservationTitle: "Hủy đơn giữ hàng này?", cancelReservationHint: "Các sản phẩm đang giữ sẽ được trả lại kệ.", keepOrder: "Giữ đơn hàng", paymentQrAlt: "Mã QR thanh toán", orderSubmitError: "Không thể gửi đơn hàng. Vui lòng thử lại.",
     wishLoadFailed: "Không thể mở kệ điều ước", wishLoadError: "Không thể tải minigame.",
     crashTitle: "Gian hàng gặp lỗi bất ngờ", crashHint: "Hãy tải lại trang. Giỏ hàng vẫn được lưu trên thiết bị này.", crashReload: "Tải lại trang",
+    updateAvailableLabel: "Có bản cập nhật Matsuri", updateReadyTitle: "Đã có bản cập nhật Matsuri", updateReadyHint: "Hãy cập nhật khi bạn sẵn sàng. Hoàn tất thanh toán trước.", updateNow: "Cập nhật ngay", updatingApp: "Đang cập nhật…", updateLater: "Để sau", dismissUpdateNotice: "Ẩn thông báo cập nhật",
   },
 } as const;
 

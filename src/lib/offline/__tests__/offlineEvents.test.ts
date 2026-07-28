@@ -1,10 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OfflineEventSession, Product } from "../../../types/catalog";
 import {
   assertOfflineEventStorageAvailable,
   createOfflineEventOrder,
   freezeOfflineEventSession,
   getOfflineEventSignOutRisk,
+  getOfflineEventDeviceId,
   listOfflineEventOrders,
   loadOfflineEventSession,
   markOfflineEventOrdersSynced,
@@ -169,6 +170,34 @@ describe("offline event ledger", () => {
     await expect(assertOfflineEventStorageAvailable()).rejects.toThrow(
       /storage could not be read/i,
     );
+  });
+
+  it("discards corrupt legacy orders during migration", async () => {
+    const active = session();
+    localStorage.setItem(
+      `matsuri-offline-event-session-v1:${active.shopId}`,
+      JSON.stringify(active),
+    );
+    localStorage.setItem(
+      `matsuri-offline-event-orders-v1:${active.id}`,
+      "{not-json",
+    );
+
+    expect(await loadOfflineEventSession(active.shopId)).toMatchObject({
+      id: active.id,
+    });
+    expect(await listOfflineEventOrders(active.id)).toEqual([]);
+  });
+
+  it("keeps a generated device id stable when storage is blocked", () => {
+    vi.spyOn(window.localStorage, "getItem").mockImplementation(() => {
+      throw new DOMException("Storage blocked", "SecurityError");
+    });
+    vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
+      throw new DOMException("Storage blocked", "SecurityError");
+    });
+
+    expect(getOfflineEventDeviceId()).toBe(getOfflineEventDeviceId());
   });
 
   it("fails closed when local orders cannot be read", async () => {

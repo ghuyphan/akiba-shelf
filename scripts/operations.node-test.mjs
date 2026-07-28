@@ -108,6 +108,50 @@ test("pins the structured-data script to the enforced CSP hash", async () => {
   );
 });
 
+test("keeps the static and function security-header contracts aligned", async () => {
+  const [headers, mediaRoute] = await Promise.all([
+    readFile(new URL("../public/_headers", import.meta.url), "utf8"),
+    readFile(new URL("../functions/media-route.ts", import.meta.url), "utf8"),
+  ]);
+
+  for (const source of [headers, mediaRoute]) {
+    assert.match(source, /max-age=31536000/);
+    assert.doesNotMatch(source, /includeSubDomains|preload/i);
+  }
+  const staticPolicy = headers.match(/Content-Security-Policy: ([^\n]+)/)?.[1];
+  const functionPolicy = mediaRoute.match(
+    /const CONTENT_SECURITY_POLICY =\n\s+"([^"]+)";/,
+  )?.[1];
+  assert.ok(staticPolicy);
+  assert.equal(functionPolicy, staticPolicy);
+});
+
+test("gates the serialized production deploy on the current main SHA", async () => {
+  const workflow = await readFile(
+    new URL("../.github/workflows/validate.yml", import.meta.url),
+    "utf8",
+  );
+  const freshness = workflow.indexOf("Confirm release is still current main");
+  const deployment = workflow.indexOf("Deploy to Cloudflare Pages");
+
+  assert.ok(freshness >= 0);
+  assert.ok(deployment > freshness);
+  assert.match(workflow, /github\.rest\.git\.getRef/);
+  assert.match(workflow, /mainSha === context\.sha/);
+  assert.match(
+    workflow,
+    /if: steps\.release-freshness\.outputs\.current == 'true'/,
+  );
+  assert.match(workflow, /group: matsuri-\$\{\{ github\.workflow \}\}-checks-/);
+  assert.match(
+    workflow,
+    /group: matsuri-\$\{\{ github\.workflow \}\}-database-/,
+  );
+  assert.match(workflow, /group: matsuri-\$\{\{ github\.workflow \}\}-e2e-/);
+  assert.match(workflow, /group: matsuri-cloudflare-production/);
+  assert.match(workflow, /VITE_TURNSTILE_SITE_KEY VITE_SENTRY_DSN; do/);
+});
+
 test("writes deterministic release metadata", () =>
   withTempDirectory(async (root) => {
     await write(

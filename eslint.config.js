@@ -38,4 +38,77 @@ export default tseslint.config(
       "jsx-a11y/no-noninteractive-tabindex": "off",
     },
   },
+  {
+    files: [
+      "src/components/ui/MobileSheetShell.tsx",
+      "src/components/catalog/browsing/StackedFeatured.tsx",
+      "src/components/catalog/checkout/PaymentQrModal.tsx",
+      "src/pages/CatalogPage.tsx",
+    ],
+    rules: {
+      "jsx-a11y/click-events-have-key-events": "error",
+      "jsx-a11y/no-static-element-interactions": "error",
+      "jsx-a11y/no-noninteractive-element-to-interactive-role": "error",
+      "jsx-a11y/no-noninteractive-tabindex": "error",
+      "jsx-a11y/no-noninteractive-element-interactions": [
+        "error",
+        {
+          handlers: [
+            "onClick",
+            "onMouseDown",
+            "onMouseUp",
+            "onKeyPress",
+            "onKeyDown",
+            "onKeyUp",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      "src/components/admin/design/StorefrontDesigner.tsx",
+      "src/components/admin/settings/PromotionSettingsForm.tsx",
+      "src/components/admin/products/ProductForm.tsx",
+      "src/components/ui/ColorPicker.tsx",
+    ],
+    rules: {
+      "jsx-a11y/label-has-for": "error",
+      "jsx-a11y/control-has-associated-label": "error",
+      "jsx-a11y/label-has-associated-control": "error",
+      "jsx-a11y/no-autofocus": "error",
+    },
+  },
+  {
+    files: ["src/components/admin/design/StorefrontDesigner.tsx"],
+    rules: {
+      "jsx-a11y/no-static-element-interactions": [
+        "error",
+        {
+          handlers: [
+            "onClick",
+            "onMouseDown",
+            "onMouseUp",
+            "onKeyPress",
+            "onKeyDown",
+            "onKeyUp",
+          ],
+        },
+      ],
+      "jsx-a11y/no-noninteractive-element-interactions": [
+        "error",
+        {
+          handlers: [
+            "onClick",
+            "onMouseDown",
+            "onMouseUp",
+            "onKeyPress",
+            "onKeyDown",
+            "onKeyUp",
+          ],
+        },
+      ],
+      "jsx-a11y/no-noninteractive-tabindex": "error",
+    },
+  },
 );

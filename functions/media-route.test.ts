@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyFunctionSecurityHeaders,
+  FUNCTION_SECURITY_HEADERS,
   getSimulatorMediaKey,
   getSimulatorMediaRange,
   isSimulatorMediaPath,
@@ -7,6 +9,19 @@ import {
 } from "./media-route";
 
 describe("simulator media route", () => {
+  it("applies the shared security baseline without replacing response headers", () => {
+    const headers = applyFunctionSecurityHeaders(
+      new Headers({ "cache-control": "public, max-age=31536000, immutable" }),
+    );
+
+    expect(headers.get("cache-control")).toBe(
+      "public, max-age=31536000, immutable",
+    );
+    for (const [name, value] of Object.entries(FUNCTION_SECURITY_HEADERS)) {
+      expect(headers.get(name)).toBe(value);
+    }
+  });
+
   it("maps both simulator prefixes to R2 keys", () => {
     expect(
       getSimulatorMediaKey(

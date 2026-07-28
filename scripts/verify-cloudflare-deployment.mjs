@@ -6,6 +6,25 @@ const DEFAULT_CANONICAL_ATTEMPTS = 40;
 const DEFAULT_DELAY_MS = 3_000;
 const REQUEST_TIMEOUT_MS = 15_000;
 const deploymentCheckPath = "/__deployment-check?source=github-actions";
+const EXPECTED_HSTS = "max-age=31536000";
+
+function verifySecurityHeaders(response) {
+  if (response.headers.get("x-content-type-options") !== "nosniff") {
+    throw new Error("missing X-Content-Type-Options: nosniff");
+  }
+  if (
+    response.headers.get("referrer-policy") !==
+    "strict-origin-when-cross-origin"
+  ) {
+    throw new Error("missing Referrer-Policy security header");
+  }
+  if (!response.headers.get("content-security-policy")) {
+    throw new Error("missing enforced Content-Security-Policy header");
+  }
+  if (response.headers.get("strict-transport-security") !== EXPECTED_HSTS) {
+    throw new Error(`missing Strict-Transport-Security: ${EXPECTED_HSTS}`);
+  }
+}
 
 function normalizeOrigin(value, label) {
   if (!value) throw new Error(`${label} is required.`);
@@ -97,6 +116,7 @@ async function fetchSimulatorMedia(origin, options) {
         );
       if (!/^bytes 0-0\/\d+$/.test(response.headers.get("content-range") ?? ""))
         throw new Error("missing single-byte Content-Range response");
+      verifySecurityHeaders(response);
     },
     {
       ...options,
@@ -104,6 +124,17 @@ async function fetchSimulatorMedia(origin, options) {
         headers: { accept: "video/*", range: "bytes=0-0" },
       },
     },
+  );
+
+  await requestWithRetry(
+    `${origin}/gacha-simulator/videos/blocked%2Fasset.mp4`,
+    async (response) => {
+      if (response.status !== 404) {
+        throw new Error(`expected HTTP 404, received ${response.status}`);
+      }
+      verifySecurityHeaders(response);
+    },
+    options,
   );
   return manifest;
 }
@@ -121,18 +152,7 @@ async function fetchAppHtml(url, options, expectedEntryAsset) {
           `expected HTML, received ${contentType || "no content type"}`,
         );
       }
-      if (response.headers.get("x-content-type-options") !== "nosniff") {
-        throw new Error("missing X-Content-Type-Options: nosniff");
-      }
-      if (
-        response.headers.get("referrer-policy") !==
-        "strict-origin-when-cross-origin"
-      ) {
-        throw new Error("missing Referrer-Policy security header");
-      }
-      if (!response.headers.get("content-security-policy")) {
-        throw new Error("missing enforced Content-Security-Policy header");
-      }
+      verifySecurityHeaders(response);
       const html = await response.text();
       const entryAsset = extractEntryAsset(html);
       if (expectedEntryAsset && entryAsset !== expectedEntryAsset) {
@@ -239,6 +259,11 @@ export async function verifyCloudflareDeployment({
     );
   }
   await fetchAppHtml(`${deploymentOrigin}/auth`, deploymentOptions, entryAsset);
+  await fetchAppHtml(
+    `${deploymentOrigin}/admin`,
+    deploymentOptions,
+    entryAsset,
+  );
   await fetchEntryAsset(deploymentOrigin, entryAsset, deploymentOptions);
 
   // Custom-domain routing can briefly expose the new HTML before every edge
@@ -255,6 +280,7 @@ export async function verifyCloudflareDeployment({
     metadata.release,
   );
   await fetchAppHtml(`${canonicalOrigin}/`, canonicalOptions, entryAsset);
+  await fetchAppHtml(`${canonicalOrigin}/admin`, canonicalOptions, entryAsset);
   await fetchEntryAsset(canonicalOrigin, entryAsset, canonicalOptions);
   const simulatorMedia = await fetchSimulatorMedia(
     canonicalOrigin,

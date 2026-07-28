@@ -18,6 +18,7 @@ type AnchoredPopoverOptions = {
   role: "dialog" | "listbox" | "menu";
   maxHeight?: number;
   placement?: Placement;
+  scaleTransition?: boolean;
 };
 
 export function useAnchoredPopover({
@@ -26,6 +27,7 @@ export function useAnchoredPopover({
   role,
   maxHeight,
   placement = "bottom-start",
+  scaleTransition = true,
 }: AnchoredPopoverOptions) {
   const floating = useFloating({
     open,
@@ -65,9 +67,15 @@ export function useAnchoredPopover({
   const roleInteraction = useRole(floating.context, { role });
   const transition = useTransitionStyles(floating.context, {
     duration: { open: 150, close: 110 },
-    initial: { opacity: 0, transform: "scale(0.985)" },
-    open: { opacity: 1, transform: "scale(1)" },
-    close: { opacity: 0, transform: "scale(0.985)" },
+    initial: scaleTransition
+      ? { opacity: 0, transform: "scale(0.985)" }
+      : { opacity: 0 },
+    open: scaleTransition
+      ? { opacity: 1, transform: "scale(1)" }
+      : { opacity: 1 },
+    close: scaleTransition
+      ? { opacity: 0, transform: "scale(0.985)" }
+      : { opacity: 0 },
   });
 
   return {

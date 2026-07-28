@@ -85,7 +85,6 @@ export function StackedFeatured({
       return (
         <section
           className="booth-card booth-card-redesign featured-banner-empty"
-          onClick={(e) => e.stopPropagation()}
         >
           <EmptyState
             variant="compact"
@@ -130,11 +129,11 @@ export function StackedFeatured({
     <section
       className="featured-banner"
       aria-label={copy.featuredMerchandise}
-      onClick={(event) => event.stopPropagation()}
-      onMouseEnter={() => {
+      onPointerDown={(event) => event.stopPropagation()}
+      onPointerEnter={() => {
         autoScrollPausedRef.current = true;
       }}
-      onMouseLeave={() => {
+      onPointerLeave={() => {
         autoScrollPausedRef.current = false;
       }}
       onFocusCapture={() => {
@@ -237,14 +236,14 @@ export function StackedFeatured({
 
         <div
           className="featured-banner-media featured-banner-deck-media"
-          onMouseDown={(event) => {
+          onPointerDown={(event) => {
             dragStartRef.current = event.clientX;
           }}
-          onMouseUp={(event) => {
+          onPointerUp={(event) => {
             finishSwipe(event.clientX, dragStartRef.current);
             dragStartRef.current = null;
           }}
-          onMouseLeave={() => {
+          onPointerLeave={() => {
             dragStartRef.current = null;
           }}
         >
