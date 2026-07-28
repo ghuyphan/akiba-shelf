@@ -130,6 +130,64 @@ test("waits for the canonical domain and verifies the www redirect", async () =>
   ]);
 });
 
+test("allows the direct deployment to outlast the normal retry budget", async () => {
+  let deploymentReleaseRequests = 0;
+  const fetchImpl = async (url) => {
+    if (url === "https://deploy.pages.dev/release.json") {
+      deploymentReleaseRequests += 1;
+      return deploymentReleaseRequests <= 10
+        ? new Response("Not found", { status: 404 })
+        : releaseResponse("release-1");
+    }
+    if (url === "https://deploy.pages.dev/") return htmlResponse(currentHtml);
+    if (url === "https://deploy.pages.dev/auth")
+      return htmlResponse(currentHtml);
+    if (url === "https://deploy.pages.dev/assets/index-new12345.js")
+      return new Response("export {};", {
+        headers: { "content-type": "application/javascript" },
+      });
+    if (url === "https://matsuri.pro/release.json")
+      return releaseResponse("release-1");
+    if (url === "https://matsuri.pro/") return htmlResponse(currentHtml);
+    if (url === "https://matsuri.pro/assets/index-new12345.js")
+      return new Response("export {};", {
+        headers: { "content-type": "application/javascript" },
+      });
+    if (url === "https://matsuri.pro/offline-assets.json")
+      return offlineManifestResponse();
+    if (
+      url ===
+      "https://matsuri.pro/gacha-simulator/videos/0123456789abcdef0123/bg.webm"
+    )
+      return simulatorMediaResponse();
+    if (
+      url === "https://www.matsuri.pro/__deployment-check?source=github-actions"
+    ) {
+      return new Response(null, {
+        status: 301,
+        headers: {
+          location:
+            "https://matsuri.pro/__deployment-check?source=github-actions",
+        },
+      });
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  };
+
+  await verifyCloudflareDeployment({
+    deploymentUrl: "https://deploy.pages.dev",
+    canonicalUrl: "https://matsuri.pro",
+    wwwUrl: "https://www.matsuri.pro",
+    attempts: 1,
+    deploymentAttempts: 12,
+    delayMs: 0,
+    fetchImpl,
+    sleep: async () => undefined,
+  });
+
+  assert.equal(deploymentReleaseRequests, 11);
+});
+
 test("allows canonical hashed assets to outlast the normal retry budget", async () => {
   let canonicalAssetRequests = 0;
   const fetchImpl = async (url) => {

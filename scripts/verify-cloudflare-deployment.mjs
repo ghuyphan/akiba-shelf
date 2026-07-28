@@ -1,6 +1,7 @@
 import { pathToFileURL } from "node:url";
 
 const DEFAULT_ATTEMPTS = 10;
+const DEFAULT_DEPLOYMENT_ATTEMPTS = 40;
 const DEFAULT_CANONICAL_ATTEMPTS = 40;
 const DEFAULT_DELAY_MS = 3_000;
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -208,6 +209,7 @@ export async function verifyCloudflareDeployment({
   canonicalUrl,
   wwwUrl,
   expectedRelease,
+  deploymentAttempts,
   canonicalAttempts,
   ...options
 }) {
@@ -215,19 +217,29 @@ export async function verifyCloudflareDeployment({
   const canonicalOrigin = normalizeOrigin(canonicalUrl, "Canonical URL");
   const wwwOrigin = normalizeOrigin(wwwUrl, "WWW URL");
 
+  // Wrangler can report completion before every file on the immutable Pages
+  // URL is readable. Keep strict checks, but allow that deployment to settle.
+  const deploymentOptions = {
+    ...options,
+    attempts:
+      deploymentAttempts ?? options.attempts ?? DEFAULT_DEPLOYMENT_ATTEMPTS,
+  };
   const metadata = await fetchRelease(
     `${deploymentOrigin}/release.json`,
-    options,
+    deploymentOptions,
     expectedRelease,
   );
-  const entryAsset = await fetchAppHtml(`${deploymentOrigin}/`, options);
+  const entryAsset = await fetchAppHtml(
+    `${deploymentOrigin}/`,
+    deploymentOptions,
+  );
   if (entryAsset !== metadata.entryAsset) {
     throw new Error(
       `release metadata entry ${metadata.entryAsset} did not match HTML ${entryAsset}`,
     );
   }
-  await fetchAppHtml(`${deploymentOrigin}/auth`, options, entryAsset);
-  await fetchEntryAsset(deploymentOrigin, entryAsset, options);
+  await fetchAppHtml(`${deploymentOrigin}/auth`, deploymentOptions, entryAsset);
+  await fetchEntryAsset(deploymentOrigin, entryAsset, deploymentOptions);
 
   // Custom-domain routing can briefly expose the new HTML before every edge
   // serves its matching hashed assets. Give that propagation a longer budget

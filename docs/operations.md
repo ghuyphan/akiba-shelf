@@ -371,18 +371,19 @@ as HTML. `sw.js`, `offline-assets.json`, and `release.json` must always
 revalidate. Keep HTML and other assets on Cloudflare's default behavior unless
 a content-type-aware Cache Rule is deployed and verified separately.
 
-After Wrangler uploads the artifact, the workflow verifies the deployment URL
-and a deep application route, waits up to two minutes for `matsuri.pro` to serve
-the same entry asset from every checked edge, and confirms that
+After Wrangler uploads the artifact, the workflow waits up to two minutes for
+the deployment URL and `matsuri.pro` to serve the same release metadata, deep
+application route, and entry asset, then confirms that
 `www.matsuri.pro` preserves path and query parameters while redirecting
 permanently to the apex. If verification fails, the rollback API envelope is
 validated and the previously active deployment is polled until it is active
 again. The workflow then reruns release verification and the read-only
 production smoke against the restored deployment before the job is failed.
-This longer canonical-only retry window covers the
-brief state where new HTML is visible before its hashed JavaScript reaches the
-same edge. A failed verification or smoke check rolls production back to the
-deployment that was active before the upload and then fails the release job.
+These longer deployment and canonical retry windows cover the brief state where
+Wrangler reports completion before release metadata or matching hashed assets
+reach the checked edge. A failed verification or smoke check rolls production
+back to the deployment that was active before the upload and then fails the
+release job.
 
 Apply and verify any required linked Supabase migration before merging the
 frontend release to `main`. The production smoke calls the read-only storefront
