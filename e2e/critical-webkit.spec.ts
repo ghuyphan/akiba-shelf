@@ -31,7 +31,11 @@ test("auth remains usable when browser storage is blocked", async ({
   await page.goto("./admin");
   await page.getByLabel("Email address").fill("staff@test.local");
   await page.getByPlaceholder("Enter your password").fill("password123");
+  const tokenResponse = page.waitForResponse((response) =>
+    response.url().includes("/mock-supabase/auth/v1/token"),
+  );
   await page.getByRole("button", { name: "Open workspace" }).click();
+  expect((await tokenResponse).status()).toBe(200);
 
   await expect(
     page.getByRole("heading", { name: "Orders", exact: true }),
@@ -43,6 +47,16 @@ test("storefront cart persists across a WebKit reload", async ({ page }) => {
   await page.goto("./s/akiba-shelf");
 
   await page.getByRole("button", { name: /Add Moon Stand to cart/i }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          Object.entries(localStorage).find(([key]) =>
+            key.includes("-cart-v1:"),
+          )?.[1] ?? "",
+      ),
+    )
+    .toContain("moon-stand");
   const persistedCart = await page.evaluate(() =>
     Object.entries(localStorage).find(([key]) => key.includes("-cart-v1:")),
   );

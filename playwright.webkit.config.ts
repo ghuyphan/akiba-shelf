@@ -10,6 +10,7 @@ export default defineConfig({
   use: {
     ...devices["iPhone 13"],
     baseURL: "http://127.0.0.1:4174/",
+    serviceWorkers: "block",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
