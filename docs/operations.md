@@ -376,6 +376,9 @@ policy intentionally omits `includeSubDomains` and `preload` until every current
 and future subdomain is covered by an explicit HTTPS inventory. Because Pages
 does not apply `_headers` rules to Function-generated responses, the simulator
 media Function attaches the same security baseline to success and error paths.
+Media pack IDs also include a delivery-contract version from
+`scripts/simulator-media.mjs`; bump it when routing, cache, or response-header
+behavior changes so immutable CDN entries cannot retain an obsolete contract.
 Do not attach immutable wildcard headers to asset paths while Cloudflare's SPA
 fallback can serve HTML for a missing file; that can poison-cache a stale chunk
 as HTML. `sw.js`, `offline-assets.json`, and `release.json` must always
@@ -389,9 +392,10 @@ the security baseline on HTML, media success, and rejected media responses,
 then confirms that
 `www.matsuri.pro` preserves path and query parameters while redirecting
 permanently to the apex. If verification fails, the rollback API envelope is
-validated and the previously active deployment is polled until it is active
-again. The workflow then reruns release verification and the read-only
-production smoke against the restored deployment before the job is failed.
+validated and the Pages project's `canonical_deployment` is polled until the
+previously active deployment is canonical again. The workflow then reruns
+release verification and the read-only production smoke against the restored
+deployment before the job is failed.
 These longer deployment and canonical retry windows cover the brief state where
 Wrangler reports completion before release metadata or matching hashed assets
 reach the checked edge. A failed verification or smoke check rolls production

@@ -3,6 +3,7 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import { extname, join, relative, resolve, sep } from "node:path";
 
 export const SIMULATOR_MEDIA_BUCKET = "matsuri-simulator-media";
+export const SIMULATOR_MEDIA_DELIVERY_VERSION = "security-headers-v2";
 
 export const SIMULATOR_MEDIA_GAMES = {
   genshin: {
@@ -43,6 +44,7 @@ export async function createSimulatorMediaPack(game, cwd = process.cwd()) {
   if (!files.length) throw new Error(`${game} simulator has no media files.`);
 
   const hash = createHash("sha256");
+  hash.update(SIMULATOR_MEDIA_DELIVERY_VERSION);
   const assets = [];
   for (const sourcePath of files) {
     const relativePath = relative(sourceRoot, sourcePath).split(sep).join("/");

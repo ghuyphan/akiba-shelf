@@ -1,7 +1,7 @@
 const API_ROOT = "https://api.cloudflare.com/client/v4";
 
-export function pagesDeploymentsUrl(accountId, projectName) {
-  return `${API_ROOT}/accounts/${encodeURIComponent(accountId)}/pages/projects/${encodeURIComponent(projectName)}/deployments?env=production&per_page=1`;
+export function pagesProjectUrl(accountId, projectName) {
+  return `${API_ROOT}/accounts/${encodeURIComponent(accountId)}/pages/projects/${encodeURIComponent(projectName)}`;
 }
 
 export function pagesRollbackUrl(accountId, projectName, deploymentId) {
@@ -34,19 +34,16 @@ export async function waitForPagesDeployment({
 }) {
   let lastId = "";
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    const response = await fetchImpl(
-      pagesDeploymentsUrl(accountId, projectName),
-      {
-        headers: { Authorization: `Bearer ${apiToken}` },
-      },
-    );
+    const response = await fetchImpl(pagesProjectUrl(accountId, projectName), {
+      headers: { Authorization: `Bearer ${apiToken}` },
+    });
     if (!response.ok)
       throw new Error(`deployment lookup returned HTTP ${response.status}`);
-    const result = parseCloudflareApiResponse(
+    const project = parseCloudflareApiResponse(
       await response.json(),
       "deployment lookup",
     );
-    const current = Array.isArray(result) ? result[0] : result;
+    const current = project?.canonical_deployment;
     lastId = current?.id ?? "";
     if (lastId === deploymentId) return current;
     if (attempt < attempts) await sleep(delayMs);

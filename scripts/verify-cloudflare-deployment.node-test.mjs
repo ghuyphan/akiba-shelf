@@ -340,6 +340,7 @@ test("rejects unsuccessful Cloudflare API envelopes", () => {
 test("waits until the requested Pages deployment is active", async () => {
   const ids = ["failed-release", "previous-release"];
   const authorizations = [];
+  const requestedUrls = [];
   const deployment = await waitForPagesDeployment({
     accountId: "account-1",
     apiToken: "token-1",
@@ -348,12 +349,20 @@ test("waits until the requested Pages deployment is active", async () => {
     attempts: 2,
     delayMs: 0,
     sleep: async () => undefined,
-    fetchImpl: async (_url, init) => {
+    fetchImpl: async (url, init) => {
+      requestedUrls.push(url);
       authorizations.push(init.headers.Authorization);
-      return Response.json({ success: true, result: [{ id: ids.shift() }] });
+      return Response.json({
+        success: true,
+        result: { canonical_deployment: { id: ids.shift() } },
+      });
     },
   });
 
   assert.equal(deployment.id, "previous-release");
+  assert.deepEqual(requestedUrls, [
+    "https://api.cloudflare.com/client/v4/accounts/account-1/pages/projects/matsuri",
+    "https://api.cloudflare.com/client/v4/accounts/account-1/pages/projects/matsuri",
+  ]);
   assert.deepEqual(authorizations, ["Bearer token-1", "Bearer token-1"]);
 });
