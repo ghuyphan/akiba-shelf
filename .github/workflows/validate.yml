@@ -206,6 +206,8 @@ jobs:
           path: .hsr-gacha-dist
           key: matsuri-hsr-r2-${{ runner.os }}-${{ hashFiles('vendor/hsr-simulator/**', 'scripts/build-simulators.mjs', 'scripts/simulator-cache-version.mjs', 'scripts/simulator-media.mjs', 'package-lock.json') }}
       - run: npm ci
+      - name: Validate browser observability configuration
+        run: npm run validate:observability -- --production
       - name: Build Pages artifact and publish simulator media
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

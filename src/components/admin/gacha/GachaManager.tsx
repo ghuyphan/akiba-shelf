@@ -61,6 +61,7 @@ import {
   validateGachaGoLive,
   type GachaValidationIssue,
 } from "./gachaValidation";
+import { createGachaWorkspace, getGachaDirtyByGame } from "./gachaWorkspace";
 
 type Props = { shopId: string; shopSlug: string; products: Product[] };
 
@@ -112,21 +113,10 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   const entries = useMemo(() => current?.entries ?? [], [current?.entries]);
   const selectedBannerId = current?.selectedBannerId ?? "";
 
-  const dirtyByGame = useMemo(() => {
-    const result = {} as Record<GachaGameType, boolean>;
-    for (const gameType of GACHA_GAME_TYPES) {
-      const present = histories[gameType].present;
-      const baseline = baselines[gameType];
-      if (!present || !baseline) {
-        result[gameType] = Boolean(present || baseline);
-        continue;
-      }
-      result[gameType] =
-        JSON.stringify(persistedGameState(present)) !==
-        JSON.stringify(persistedGameState(baseline));
-    }
-    return result;
-  }, [histories, baselines]);
+  const dirtyByGame = useMemo(
+    () => getGachaDirtyByGame(histories, baselines),
+    [histories, baselines],
+  );
   const dirty = dirtyByGame[activeGame];
   const hasAnyDirtyGame = GACHA_GAME_TYPES.some(
     (gameType) => dirtyByGame[gameType],
@@ -148,13 +138,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
 
   const fetchWorkspace = useCallback(async () => {
     const next = await getAdminGachaConfiguration(shopId);
-    const states = Object.fromEntries(
-      GACHA_GAME_TYPES.map((gameType) => [
-        gameType,
-        createGameState(shopId, gameType, next.configurations[gameType]),
-      ]),
-    ) as Record<GachaGameType, GachaState>;
-    return { states, liveByGame: next.liveByGame };
+    return createGachaWorkspace(shopId, next);
   }, [shopId]);
 
   useEffect(() => {
@@ -349,12 +333,8 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   async function resetCurrentGame() {
     try {
       await runReset(async () => {
-        const next = await getAdminGachaConfiguration(shopId);
-        const fresh = createGameState(
-          shopId,
-          activeGame,
-          next.configurations[activeGame],
-        );
+        const next = await fetchWorkspace();
+        const fresh = next.states[activeGame];
         setLiveByGame(next.liveByGame);
         setBaselines((curr) => ({ ...curr, [activeGame]: fresh }));
         resetGame(activeGame, fresh);

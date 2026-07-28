@@ -12,7 +12,7 @@ VITE_SUPABASE_URL=https://PROJECT_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=publishable-or-anon-key
 VITE_TURNSTILE_SITE_KEY=public-turnstile-site-key
 VITE_VAPID_PUBLIC_KEY=public-vapid-key
-VITE_SENTRY_DSN=https://public-key@o0.ingest.sentry.io/project-id
+VITE_SENTRY_DSN=https://0123456789abcdef0123456789abcdef@o0.ingest.sentry.io/123456
 VITE_APP_ENV=production
 VITE_RUM_SAMPLE_RATE=0.1
 ```
@@ -342,7 +342,10 @@ redeploy the Pages project before validating media range requests.
 Production releases support `VITE_SENTRY_DSN` in the protected environment but
 do not require it. Without a DSN, the application remains operational and
 reports `data-observability-status="disabled"`; the deployment job emits a
-warning. When Sentry is enabled, also configure `VITE_APP_ENV` and
+warning. The deployment runs `npm run validate:observability -- --production`
+before building. This rejects malformed DSNs, invalid sample rates, a
+non-production environment label, or a missing release SHA without printing the
+DSN. When Sentry is enabled, also configure `VITE_APP_ENV` and
 `VITE_RUM_SAMPLE_RATE` and explicitly map them into the build job. Runtime
 diagnostics expose only `disabled`, `listening`, `initializing`, `ready`, or
 `failed`; they never expose the DSN. GitHub Pages, Cloudflare Pages, local Vite
@@ -369,6 +372,23 @@ observability as production-ready:
    issue and record the verification date.
 6. Review alert ownership and escalation after team changes; a green deploy
    does not prove that alert delivery is configured.
+
+Run the same credential-free configuration check before a manual release:
+
+```bash
+MATSURI_RELEASE="$(git rev-parse HEAD)" \
+VITE_APP_ENV=production \
+VITE_RUM_SAMPLE_RATE=0.1 \
+VITE_SENTRY_DSN=https://0123456789abcdef0123456789abcdef@o0.ingest.sentry.io/123456 \
+  npm run validate:observability -- --production
+```
+
+This validates repository compatibility only. Sentry project creation, alert
+recipients, ownership, escalation, and test delivery remain provider-side
+tasks. Source-map upload is not configured: it requires a separate repository
+change to generate production source maps and upload them in CI, plus a narrowly
+scoped Sentry auth token and organization/project identifiers. Never expose
+those credentials as `VITE_*` variables.
 
 The `CI and Deploy` workflow runs checks, database tests, e2e tests, and
 performance tests before building. A newer run cancels superseded validation

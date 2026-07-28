@@ -10,6 +10,7 @@ import { normalizeReleaseId } from "./release-identity.mjs";
 import { STOREFRONT_ROUTE_PRELOAD_SCRIPT } from "./storefront-route-preload.mjs";
 import { createSimulatorCacheVersion } from "./simulator-cache-version.mjs";
 import { smokeProduction } from "./smoke-production.mjs";
+import { validateObservabilityConfig } from "./validate-observability-config.mjs";
 
 async function withTempDirectory(run) {
   const root = await mkdtemp(join(tmpdir(), "matsuri-operations-"));
@@ -81,6 +82,120 @@ function fetchForBootstrapPayload(payload) {
 test("normalizes safe release identifiers", () => {
   assert.equal(normalizeReleaseId(" abc-123\n"), "abc-123");
   assert.throws(() => normalizeReleaseId("release with spaces"));
+});
+
+test("validates optional production observability configuration", () => {
+  const base = {
+    MATSURI_RELEASE: "abc-123",
+    VITE_APP_ENV: "production",
+    VITE_RUM_SAMPLE_RATE: "0.1",
+  };
+
+  assert.deepEqual(validateObservabilityConfig(base, { production: true }), {
+    configured: false,
+    environment: "production",
+    sampleRate: 0.1,
+    release: "abc-123",
+  });
+  assert.deepEqual(
+    validateObservabilityConfig(
+      {
+        ...base,
+        VITE_SENTRY_DSN:
+          "https://0123456789abcdef0123456789abcdef@o123.ingest.sentry.io/456789",
+        VITE_RUM_SAMPLE_RATE: "0",
+      },
+      { production: true },
+    ),
+    {
+      configured: true,
+      environment: "production",
+      sampleRate: 0,
+      release: "abc-123",
+    },
+  );
+
+  assert.throws(
+    () =>
+      validateObservabilityConfig(
+        { ...base, VITE_RUM_SAMPLE_RATE: "not-a-rate" },
+        { production: true },
+      ),
+    /VITE_RUM_SAMPLE_RATE/,
+  );
+  assert.throws(
+    () =>
+      validateObservabilityConfig(
+        { ...base, VITE_SENTRY_DSN: "https://example.com/project" },
+        { production: true },
+      ),
+    /public-key DSN/,
+  );
+  assert.throws(
+    () =>
+      validateObservabilityConfig(
+        {
+          ...base,
+          VITE_SENTRY_DSN:
+            "https://0123456789abcdef0123456789abcdef@o123.ingest.sentry.io/project-id",
+        },
+        { production: true },
+      ),
+    /numeric project ID/,
+  );
+  assert.throws(
+    () =>
+      validateObservabilityConfig(
+        {
+          ...base,
+          VITE_SENTRY_DSN:
+            "https://0123456789abcdef0123456789abcdef@example.com/456789",
+        },
+        { production: true },
+      ),
+    /Content Security Policy/,
+  );
+  assert.throws(
+    () =>
+      validateObservabilityConfig(
+        {
+          ...base,
+          VITE_SENTRY_DSN:
+            "https://0123456789abcdef0123456789abcdef@sentry.io/456789",
+        },
+        { production: true },
+      ),
+    /Content Security Policy/,
+  );
+  assert.throws(
+    () =>
+      validateObservabilityConfig(
+        { ...base, VITE_APP_ENV: "staging" },
+        { production: true },
+      ),
+    /production Pages build/,
+  );
+  assert.throws(
+    () =>
+      validateObservabilityConfig(
+        { ...base, MATSURI_RELEASE: "" },
+        { production: true },
+      ),
+    /MATSURI_RELEASE/,
+  );
+});
+
+test("keeps browser telemetry on the deployed release identity", async () => {
+  const [workflow, observability] = await Promise.all([
+    readFile(
+      new URL("../.github/workflows/validate.yml", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../src/lib/observability.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(workflow, /MATSURI_RELEASE: \$\{\{ github\.sha \}\}/);
+  assert.match(observability, /release: getReleaseContext\(\)\.release/);
 });
 
 test("pins the structured-data script to the enforced CSP hash", async () => {
@@ -155,6 +270,7 @@ test("gates the serialized production deploy on the current main SHA", async () 
     workflow,
     /VITE_SENTRY_DSN is not configured; browser observability will report disabled/,
   );
+  assert.match(workflow, /npm run validate:observability -- --production/);
 });
 
 test("writes deterministic release metadata", () =>

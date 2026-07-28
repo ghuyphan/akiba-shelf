@@ -80,6 +80,12 @@ import {
 import { reportError } from "../lib/observability";
 import { useMediaQuery } from "../hooks/shared/useMediaQuery";
 import { useAdminViewRoute } from "../hooks/admin/useAdminViewRoute";
+import {
+  getAdminOrderCountScopeKey,
+  getAdminOrderQueryKey,
+  getLocalOrderDateScope,
+  getLocalOrderDayBounds,
+} from "../hooks/admin/adminOrderQuery";
 
 const orderPageSize = 12;
 // Realtime events caused by this tab's own writes are ignored inside this
@@ -332,14 +338,14 @@ export function AdminPage() {
   const reloadOrders = useCallback(
     async (refreshCounts = false) => {
       const page = orderPageRef.current;
-      const loadKey = [
+      const queryKey = getAdminOrderQueryKey({
         shopId,
         page,
-        orderFilterRef.current,
-        selectedEventIdRef.current,
-        ordersTodayOnlyRef.current,
-        refreshCounts,
-      ].join(":");
+        filter: orderFilterRef.current,
+        selectedEventId: selectedEventIdRef.current,
+        todayOnly: ordersTodayOnlyRef.current,
+      });
+      const loadKey = `${queryKey}:${refreshCounts}`;
       if (orderLoadRef.current?.key === loadKey)
         return orderLoadRef.current.promise;
       const requestId = ++orderRequestRef.current;
@@ -347,18 +353,8 @@ export function AdminPage() {
       const promise = (async () => {
         // "Today" follows the staff's local day, recomputed on every fetch so an
         // open admin session rolls over correctly at midnight.
-        let createdAfter: string | undefined;
-        let createdBefore: string | undefined;
-        if (ordersTodayOnlyRef.current) {
-          const startOfToday = new Date();
-          startOfToday.setHours(0, 0, 0, 0);
-          const startOfTomorrow = new Date(startOfToday);
-          startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
-          createdAfter = startOfToday.toISOString();
-          createdBefore = startOfTomorrow.toISOString();
-        }
         const filter = orderFilterRef.current;
-        const dateScope = { createdAfter, createdBefore };
+        const dateScope = getLocalOrderDateScope(ordersTodayOnlyRef.current);
         const [result, countResult] =
           filter === "event"
             ? await Promise.all([
@@ -415,22 +411,16 @@ export function AdminPage() {
         }
         setOrders(result.orders);
         setOrderTotal(result.total);
-        loadedOrderQueryRef.current = [
-          shopId,
-          page,
-          orderFilterRef.current,
-          selectedEventIdRef.current,
-          ordersTodayOnlyRef.current,
-        ].join(":");
+        loadedOrderQueryRef.current = queryKey;
         if (filter === "event" && !selectedEventIdRef.current)
           setEventOrderCount(result.total);
         if (countResult) {
           setOrderCounts(countResult[0]);
           if (countResult[1] !== null) setEventOrderCount(countResult[1]);
-          loadedOrderCountScopeRef.current = [
+          loadedOrderCountScopeRef.current = getAdminOrderCountScopeKey(
             shopId,
             ordersTodayOnlyRef.current,
-          ].join(":");
+          );
         }
       })()
         .catch(async (error) => {
@@ -463,10 +453,7 @@ export function AdminPage() {
               );
           }
           if (!available.length && filter !== "event") throw error;
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const tomorrow = new Date(today);
-          tomorrow.setDate(tomorrow.getDate() + 1);
+          const { start: today, end: tomorrow } = getLocalOrderDayBounds();
           const scoped = available.filter((order) => {
             if (
               filter !== "event" &&
@@ -483,13 +470,7 @@ export function AdminPage() {
           const from = Math.max(0, page - 1) * orderPageSize;
           setOrders(scoped.slice(from, from + orderPageSize));
           setOrderTotal(scoped.length);
-          loadedOrderQueryRef.current = [
-            shopId,
-            page,
-            orderFilterRef.current,
-            selectedEventIdRef.current,
-            ordersTodayOnlyRef.current,
-          ].join(":");
+          loadedOrderQueryRef.current = queryKey;
           if (filter === "event" && !selectedEventIdRef.current)
             setEventOrderCount(scoped.length);
           const onlineCached = loadAdminOrdersSnapshot(
@@ -512,10 +493,10 @@ export function AdminPage() {
             { ...emptyOrderCounts },
           );
           setOrderCounts(counts);
-          loadedOrderCountScopeRef.current = [
+          loadedOrderCountScopeRef.current = getAdminOrderCountScopeKey(
             shopId,
             ordersTodayOnlyRef.current,
-          ].join(":");
+          );
         })
         .finally(() => {
           if (requestId === orderRequestRef.current) setOrdersLoading(false);
@@ -623,13 +604,13 @@ export function AdminPage() {
   useEffect(() => {
     if (!isAuthed) return;
     if (isInitialLoading) return;
-    const queryKey = [
+    const queryKey = getAdminOrderQueryKey({
       shopId,
-      orderPage,
-      orderFilter,
+      page: orderPage,
+      filter: orderFilter,
       selectedEventId,
-      ordersTodayOnly,
-    ].join(":");
+      todayOnly: ordersTodayOnly,
+    });
     if (loadedOrderQueryRef.current === queryKey) return;
 
     reloadOrders().catch((error) => {
@@ -655,20 +636,13 @@ export function AdminPage() {
   useEffect(() => {
     if (!isAuthed) return;
     if (isInitialLoading) return;
-    const countScope = [shopId, ordersTodayOnly].join(":");
+    const countScope = getAdminOrderCountScopeKey(shopId, ordersTodayOnly);
     if (loadedOrderCountScopeRef.current === countScope) return;
 
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const startOfTomorrow = new Date(startOfToday);
-    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
-
-    const dateScope = ordersTodayOnly
-      ? {
-          createdAfter: startOfToday.toISOString(),
-          createdBefore: startOfTomorrow.toISOString(),
-        }
-      : {};
+    const scopeNow = new Date();
+    const dateScope = getLocalOrderDateScope(ordersTodayOnly, scopeNow);
+    const { start: startOfToday, end: startOfTomorrow } =
+      getLocalOrderDayBounds(scopeNow);
 
     Promise.all([
       getOrderStatusCounts(shopId, dateScope),

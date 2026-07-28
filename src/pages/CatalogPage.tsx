@@ -67,6 +67,11 @@ import { hasUsablePayment } from "../utils/vietqr";
 import { getUserFacingErrorMessage } from "../lib/errors";
 import { Alert } from "../components/ui/Alert";
 import { CatalogAppChrome } from "../components/catalog/shell/CatalogAppChrome";
+import {
+  getStorefrontColumnPosition,
+  normalizeStorefrontOrder,
+  partitionStorefrontOrder,
+} from "../components/catalog/storefrontLayout";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -662,20 +667,10 @@ export function CatalogPage() {
     [catalogCategories],
   );
 
-  const storefrontOrder = useMemo<StorefrontSection[]>(() => {
-    const fallback: StorefrontSection[] = [
-      "featured",
-      "booth",
-      "controls",
-      "products",
-      "cart",
-    ];
-    const saved = booth.layout_order;
-    return saved?.length === fallback.length &&
-      fallback.every((section) => saved.includes(section))
-      ? saved
-      : fallback;
-  }, [booth.layout_order]);
+  const storefrontOrder = useMemo(
+    () => normalizeStorefrontOrder(booth.layout_order),
+    [booth.layout_order],
+  );
 
   const storefrontBlocks = useMemo<Record<StorefrontSection, React.ReactNode>>(
     () => ({
@@ -797,23 +792,18 @@ export function CatalogPage() {
     [handleClearCart],
   );
 
-  const heroStorefrontSections = storefrontOrder.filter(
-    (section) => section === "featured" || section === "booth",
-  );
-  const mainStorefrontSections = storefrontOrder.filter(
-    (section) => section === "controls" || section === "products",
-  );
-  const sideStorefrontSections = storefrontOrder.filter(
-    (section) => section === "cart",
-  );
+  const {
+    hero: heroStorefrontSections,
+    main: mainStorefrontSections,
+    side: sideStorefrontSections,
+  } = partitionStorefrontOrder(storefrontOrder);
   const contentStorefrontColumns = [
     {
       key: "main",
-      position:
-        mainStorefrontSections.reduce(
-          (sum, section) => sum + storefrontOrder.indexOf(section),
-          0,
-        ) / mainStorefrontSections.length,
+      position: getStorefrontColumnPosition(
+        storefrontOrder,
+        mainStorefrontSections,
+      ),
       node: (
         <section key="main" className="storefront-content-main">
           {mainStorefrontSections.map((section) => (
@@ -829,7 +819,11 @@ export function CatalogPage() {
     },
     {
       key: "side",
-      position: storefrontOrder.indexOf("cart") - 0.01,
+      position: getStorefrontColumnPosition(
+        storefrontOrder,
+        sideStorefrontSections,
+        -0.01,
+      ),
       node: (
         <section key="side" className="storefront-content-side">
           {sideStorefrontSections.map((section) => (

@@ -13,6 +13,7 @@
     "build:hsr:dev": "node scripts/build-simulator-dev.mjs hsr",
     "build:simulators": "node scripts/build-simulators.mjs",
     "publish:simulator-media": "node scripts/publish-simulator-media.mjs",
+    "validate:observability": "node scripts/validate-observability-config.mjs",
     "typecheck": "wrangler types functions/worker-configuration.d.ts --env-file config/wrangler-types.env --check && tsc -b --pretty false",
     "lint": "eslint --max-warnings 0 src 'functions/[[path]].ts' functions/media-route.ts functions/media-route.test.ts e2e vite.config.ts vitest.config.ts playwright.config.ts playwright.perf.config.ts playwright.pwa.config.ts playwright.webkit.config.ts",
     "lint:fix": "npm run lint -- --fix",

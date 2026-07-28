@@ -1,0 +1,1957 @@
+export type PlatformLocale = "en" | "vi";
+
+const vi: Record<string, string> = {
+  "Artist booth platform": "Nền tảng gian hàng artist",
+  "Sign in": "Đăng nhập",
+  "Sign out": "Đăng xuất",
+  "Back to home": "Về trang chủ",
+  Back: "Quay lại",
+  "Back to dashboard": "Về bảng điều khiển",
+  "Create account": "Tạo tài khoản",
+  "Reset password": "Đặt lại mật khẩu",
+  "Set password": "Đặt mật khẩu",
+  "Finishing sign in": "Đang hoàn tất đăng nhập",
+  "Your shops": "Gian hàng của bạn",
+  "Create a shop": "Tạo gian hàng",
+  "Shop workspace": "Khu vực quản lý gian hàng",
+  "Install Matsuri staff app": "Cài đặt ứng dụng nhân viên Matsuri",
+  "Keep Matsuri close": "Luôn có Matsuri bên bạn",
+  "Install the staff app for quicker access to shops and orders.":
+    "Cài ứng dụng nhân viên để truy cập gian hàng và đơn hàng nhanh hơn.",
+  "Tap Share, then Add to Home Screen.":
+    "Chạm Chia sẻ, sau đó chọn Thêm vào Màn hình chính.",
+  "How to install": "Cách cài đặt",
+  "Opening…": "Đang mở…",
+  Install: "Cài đặt",
+  "Dismiss install suggestion": "Ẩn gợi ý cài đặt",
+  "Matsuri update available": "Có bản cập nhật Matsuri",
+  "A Matsuri update is ready": "Đã có bản cập nhật Matsuri",
+  "Refresh when you are ready. Finish edits or active orders first.":
+    "Hãy cập nhật khi bạn sẵn sàng. Hoàn tất chỉnh sửa hoặc đơn đang xử lý trước.",
+  "Update now": "Cập nhật ngay",
+  "Updating…": "Đang cập nhật…",
+  Later: "Để sau",
+  "Dismiss update notice": "Ẩn thông báo cập nhật",
+  "Product name is required.": "Tên sản phẩm là bắt buộc.",
+  "Item code is required.": "Mã sản phẩm là bắt buộc.",
+  "Category is required.": "Danh mục là bắt buộc.",
+  "Price must be a non-negative number.": "Giá phải là số không âm.",
+  "Sale price must be lower than the regular price.":
+    "Giá khuyến mãi phải thấp hơn giá thường.",
+  "Quantity must be a non-negative whole number.":
+    "Số lượng phải là số nguyên không âm.",
+  "At least one image URL is required.": "Cần ít nhất một URL hình ảnh.",
+  "We could not verify your account access. Check your connection and try again.":
+    "Không thể xác minh quyền truy cập tài khoản. Hãy kiểm tra kết nối và thử lại.",
+  "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.":
+    "Supabase chưa được cấu hình. Hãy đặt VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY.",
+  "Product not found.": "Không tìm thấy sản phẩm.",
+  "Invitation response was invalid.": "Phản hồi lời mời không hợp lệ.",
+  "Use a JPEG, PNG, or WebP image.": "Hãy dùng ảnh JPEG, PNG hoặc WebP.",
+  "Images must be between 1 byte and 10 MB.":
+    "Ảnh phải có dung lượng từ 1 byte đến 10 MB.",
+  "The image has invalid dimensions.": "Kích thước ảnh không hợp lệ.",
+  "Image dimensions cannot exceed 8000 × 8000.":
+    "Kích thước ảnh không được vượt quá 8000 × 8000.",
+  "The image could not be decoded.": "Không thể giải mã ảnh.",
+  "This browser cannot process the image.":
+    "Trình duyệt này không thể xử lý ảnh.",
+  "This browser cannot encode WebP images.":
+    "Trình duyệt này không thể mã hóa ảnh WebP.",
+  "The image could not be encoded.": "Không thể mã hóa ảnh.",
+  "Product image variants must be WebP files.":
+    "Các phiên bản ảnh sản phẩm phải là tệp WebP.",
+  "The image could not be read.": "Không thể đọc ảnh.",
+  "Push notifications are not configured. Set VITE_VAPID_PUBLIC_KEY.":
+    "Thông báo đẩy chưa được cấu hình. Hãy đặt VITE_VAPID_PUBLIC_KEY.",
+  "Checking browser security…": "Đang kiểm tra bảo mật trình duyệt…",
+  "Security check could not load. Check your connection and try again.":
+    "Không thể tải bước kiểm tra bảo mật. Hãy kiểm tra kết nối và thử lại.",
+  "Security verification is not configured.":
+    "Xác minh bảo mật chưa được cấu hình.",
+  "Complete the security check before continuing.":
+    "Hãy hoàn tất bước kiểm tra bảo mật trước khi tiếp tục.",
+  "Security check required": "Cần kiểm tra bảo mật",
+  "Select a shop before enabling notifications.":
+    "Hãy chọn gian hàng trước khi bật thông báo.",
+  "Supabase is not configured.": "Supabase chưa được cấu hình.",
+  "Notification permission was not granted.":
+    "Quyền gửi thông báo chưa được cấp.",
+  "Sign in before enabling notifications.":
+    "Hãy đăng nhập trước khi bật thông báo.",
+  English: "Tiếng Anh",
+  Vietnamese: "Tiếng Việt",
+  Language: "Ngôn ngữ",
+  "More actions": "Thêm thao tác",
+  "A storefront built for artist booths":
+    "Cửa hàng online dành riêng cho gian hàng artist",
+  "Sell merch.": "Bán merch gọn hơn.",
+  "Keep orders under control.": "Không bỏ sót đơn nào.",
+  "Fans order on their phones. Your team sees stock, payment, and pickup status in one place.":
+    "Khách đặt hàng ngay trên điện thoại. Cả team theo dõi tồn kho, thanh toán và nhận hàng tại một nơi.",
+  "Set up your booth": "Tạo gian hàng",
+  "Why artists use Matsuri": "Vì sao artist dùng Matsuri",
+  "Fans browse and order from their phones":
+    "Khách xem và đặt hàng trên điện thoại",
+  "Accurate stock": "Tồn kho chính xác",
+  "Items are held as soon as an order is placed":
+    "Có đơn là sản phẩm được giữ ngay",
+  "One order list": "Một danh sách đơn chung",
+  "Your team always knows what to pack next":
+    "Cả team biết đơn nào cần đóng tiếp",
+  "Your booth, your style": "Gian hàng đúng chất của bạn",
+  "From QR scan to pickup, all in one flow.":
+    "Từ quét mã đến nhận hàng, gói gọn trong một quy trình.",
+  "Simple for customers. Clear for whoever is packing orders behind the table.":
+    "Khách dễ đặt. Người đứng quầy cũng dễ kiểm tra và đóng đơn.",
+  "Scan and shop": "Quét mã và chọn merch",
+  "Customers open your catalog, browse products, and order from their phone.":
+    "Khách mở catalog, xem sản phẩm và đặt ngay trên điện thoại.",
+  "Reserve stock": "Giữ hàng theo tồn kho thực tế",
+  "Matsuri checks the latest price and stock before holding items and showing VietQR.":
+    "Matsuri kiểm tra giá và tồn kho mới nhất trước khi giữ sản phẩm và tạo VietQR.",
+  "Pack and hand over": "Đóng đơn và giao khách",
+  "Every order appears in the same live list, ready for payment checks, packing, and pickup.":
+    "Mọi đơn về chung một danh sách để kiểm tra thanh toán, đóng gói và giao đúng người.",
+  "For both sides of the table": "Cho cả khách lẫn người đứng quầy",
+  "A storefront for customers. One order screen for your team.":
+    "Một cửa hàng cho khách. Một màn hình đơn hàng cho team.",
+  "Make the storefront feel like your booth. Behind the table, keep payment, stock, and pickup details together.":
+    "Tùy chỉnh cửa hàng theo đúng chất gian của bạn. Phía sau quầy, thanh toán, tồn kho và thông tin nhận hàng nằm cùng một chỗ.",
+  "Use your own artwork, colors, and booth style":
+    "Dùng tác phẩm, màu sắc và phong cách riêng của gian hàng",
+  "Let everyone see the latest order status":
+    "Để cả team cùng thấy trạng thái đơn mới nhất",
+  "Stop the same item from being sold twice during a rush":
+    "Tránh bán trùng một món khi gian hàng đông khách",
+  "Pending, paid, and completed orders in one list":
+    "Đơn chờ, đã thanh toán và hoàn tất nằm trong cùng một danh sách",
+  "Held as soon as an order comes in": "Có đơn là giữ hàng ngay",
+  "Your colors, logo, and layout": "Màu sắc, logo và bố cục của bạn",
+  "See Matsuri in action": "Xem Matsuri hoạt động",
+  "One booth, three ways to use it.": "Một gian hàng, ba cách sử dụng.",
+  "Sell from a public catalog, manage pickups in admin, and add an optional gacha game using the same products.":
+    "Bán hàng bằng catalog công khai, xử lý đơn trong trang quản lý và thêm gacha tùy chọn từ cùng bộ sản phẩm.",
+  "Order desk": "Quầy xử lý đơn",
+  "Everything ready for pickup": "Mọi thứ sẵn sàng để giao khách",
+  "Matsuri order screen with payment and pickup details":
+    "Màn hình đơn hàng Matsuri với thông tin thanh toán và nhận hàng",
+  "Check payment, stock, and pickup status even when the booth gets busy.":
+    "Kiểm tra thanh toán, tồn kho và trạng thái nhận hàng ngay cả lúc đông khách.",
+  "Open the order desk": "Mở quầy xử lý đơn",
+  "Online catalog": "Catalog online",
+  "Your art stays front and center": "Tác phẩm của bạn luôn là tâm điểm",
+  "Event minigame": "Minigame tại sự kiện",
+  "Give fans one more reason to stop by": "Thêm một lý do để fan ghé gian hàng",
+  "Ready to put your booth online?": "Sẵn sàng đưa gian hàng lên online?",
+  "Community supported": "Được cộng đồng ủng hộ",
+  "Keep Matsuri independent.": "Giữ Matsuri độc lập.",
+  "Optional support helps keep the booth running.":
+    "Sự ủng hộ tự nguyện giúp Matsuri duy trì hoạt động.",
+  "Support Matsuri": "Ủng hộ Matsuri",
+  "One-time support": "Ủng hộ một lần",
+  "Keep Matsuri free for artists.": "Giữ Matsuri miễn phí cho artist.",
+  "Matsuri is free for artists. Optional support covers hosting and maintenance.":
+    "Matsuri miễn phí cho artist. Ủng hộ giúp chi trả hosting và bảo trì.",
+  "Matsuri has no artist subscription and takes no cut from booth sales. Optional support helps cover hosting, maintenance, and event-day reliability.":
+    "Matsuri không thu phí đăng ký từ artist và không lấy phần doanh thu gian hàng. Sự ủng hộ tự nguyện giúp chi trả hosting, bảo trì và độ ổn định trong ngày sự kiện.",
+  "Buy me a coffee": "Mời mình một ly cà phê",
+  "Artist first": "Ưu tiên artist",
+  "of booth sales stays with the artist": "doanh thu gian hàng thuộc về artist",
+  "No artist subscription": "Không thu phí artist",
+  "No sales cut": "Không lấy phần trăm doanh thu",
+  "Pick a way to support.": "Chọn cách ủng hộ.",
+  "Bank QR, MoMo, or coffee.": "QR ngân hàng, MoMo hoặc cà phê.",
+  "From anywhere": "Từ mọi nơi",
+  "Open Buy Me a Coffee": "Mở Buy Me a Coffee",
+  "One-time support is enough. There is no automatic renewal.":
+    "Ủng hộ một lần là đủ. Không có gia hạn tự động.",
+  "Direct bank transfer": "Chuyển khoản ngân hàng",
+  "TPBank QR code to support Matsuri": "Mã QR TPBank để ủng hộ Matsuri",
+  "Preparing QR code…": "Đang tạo mã QR…",
+  "Copy TPBank account number": "Sao chép số tài khoản TPBank",
+  "Choose an amount": "Chọn số tiền",
+  "Custom amount": "Số tiền khác",
+  "Enter VND amount": "Nhập số tiền VND",
+  "Mobile wallet": "Ví điện tử",
+  "Phone number": "Số điện thoại",
+  "Copy MoMo phone number": "Sao chép số điện thoại MoMo",
+  "Open MoMo": "Mở MoMo",
+  "The promise": "Cam kết",
+  "Artists remain the community, not the product.":
+    "Artist là cộng đồng của Matsuri, không phải sản phẩm.",
+  "No subscription for independent artists":
+    "Không thu phí đăng ký từ artist độc lập",
+  "No percentage taken from booth sales":
+    "Không lấy phần trăm doanh thu gian hàng",
+  "No ads inside artist storefronts": "Không quảng cáo trong cửa hàng artist",
+  "Support is always optional. Using Matsuri, creating a shop, and running booth orders do not require a contribution.":
+    "Ủng hộ luôn là tự nguyện. Bạn không cần đóng góp để dùng Matsuri, tạo gian hàng hay xử lý đơn.",
+  "Support is optional. Matsuri stays free to use.":
+    "Ủng hộ là tự nguyện. Matsuri vẫn miễn phí.",
+  "Help keep Matsuri free for independent artists through optional one-time support.":
+    "Giúp Matsuri tiếp tục miễn phí cho artist độc lập bằng sự ủng hộ một lần hoàn toàn tự nguyện.",
+  "Storefront and order desk for artist booths":
+    "Cửa hàng online và quầy xử lý đơn cho gian hàng artist",
+  "Run your merch booth.": "Vận hành gian hàng merch.",
+  "Stay in sync.": "Luôn đồng bộ.",
+  "Fans browse and order from their phones. Matsuri reserves the stock and gives your team one live queue to fulfil from behind the booth.":
+    "Fan xem và đặt hàng trên điện thoại. Matsuri giữ hàng và cung cấp cho đội ngũ một danh sách đơn cập nhật theo thời gian thực để xử lý tại quầy.",
+  "Fans order on their phones. Matsuri reserves stock and keeps one live queue for your team.":
+    "Fan đặt hàng trên điện thoại. Matsuri giữ hàng và gom mọi đơn vào một danh sách cập nhật theo thời gian thực cho đội ngũ.",
+  "Create your storefront": "Tạo cửa hàng của bạn",
+  "Made for Artist Alley.": "Dành cho Artist Alley.",
+  "Your brand stays in front; the busywork stays behind it.":
+    "Thương hiệu của bạn luôn nổi bật; việc vận hành được xử lý gọn phía sau.",
+  "Matsuri booth desk": "Bàn điều hành Matsuri",
+  "7 open orders": "7 đơn đang mở",
+  "Your storefront": "Cửa hàng của bạn",
+  "your art takes the spotlight": "tác phẩm của bạn là tâm điểm",
+  "Order ready": "Đơn đã sẵn sàng",
+  "Scan to shop": "Quét để mua",
+  "A quick storefront on every phone": "Cửa hàng mở nhanh trên mọi điện thoại",
+  "Stock stays honest": "Tồn kho luôn chính xác",
+  "Items are reserved when an order is placed":
+    "Sản phẩm được giữ khi đơn hàng được tạo",
+  "One live queue": "Một danh sách đơn chung",
+  "Everyone sees what needs packing next":
+    "Mọi người đều biết đơn nào cần đóng gói tiếp theo",
+  "Still your booth": "Vẫn là gian hàng của bạn",
+  "Use your colors, artwork, and sections":
+    "Dùng màu sắc, tác phẩm và bố cục của bạn",
+  "A calmer booth flow": "Quy trình gian hàng nhẹ nhàng hơn",
+  "From QR scan to handover, without the paper trail.":
+    "Từ quét QR đến giao hàng, không cần giấy tờ rườm rà.",
+  "A short customer flow in front, with the order detail your team needs behind the table.":
+    "Quy trình ngắn gọn cho khách phía trước, cùng đầy đủ chi tiết đơn mà đội ngũ cần phía sau bàn.",
+  "Fans scan and browse": "Fan quét mã và xem sản phẩm",
+  "Your storefront opens on their phone with your collections, product details, and booth identity.":
+    "Cửa hàng mở trên điện thoại với bộ sưu tập, chi tiết sản phẩm và nhận diện gian hàng của bạn.",
+  "Stock is reserved": "Tồn kho được giữ",
+  "Matsuri checks the current price and availability, reserves the items, and shows the order total with VietQR.":
+    "Matsuri kiểm tra giá và tồn kho hiện tại, giữ sản phẩm và hiển thị tổng đơn cùng VietQR.",
+  "Your team fulfils it": "Đội ngũ xử lý đơn",
+  "The order appears in one live queue, ready to verify, pack, and hand to the right customer.":
+    "Đơn xuất hiện trong danh sách cập nhật theo thời gian thực để xác minh, đóng gói và giao đúng khách.",
+  "Two sides, one booth": "Hai mặt, một gian hàng",
+  "A storefront for fans. A clear order desk for your team.":
+    "Cửa hàng cho fan. Bàn xử lý đơn rõ ràng cho đội ngũ.",
+  "Shape the public booth around your art, then run orders from a focused workspace that keeps payment, stock, and fulfilment status together.":
+    "Tạo cửa hàng công khai theo phong cách tác phẩm của bạn, rồi xử lý đơn trong một không gian tập trung kết nối thanh toán, tồn kho và trạng thái giao hàng.",
+  "Design the storefront with your own visual identity":
+    "Thiết kế cửa hàng bằng nhận diện riêng của bạn",
+  "Keep the current order status visible to the whole team":
+    "Hiển thị trạng thái đơn hiện tại cho cả đội ngũ",
+  "Protect stock from being sold twice during a rush":
+    "Tránh bán trùng tồn kho trong giờ cao điểm",
+  Inventory: "Tồn kho",
+  "Reserved as orders arrive": "Được giữ khi đơn hàng đến",
+  "Storefront design": "Thiết kế cửa hàng",
+  "Your colors · Your products · Your booth information":
+    "Màu sắc · Sản phẩm · Thông tin gian hàng của bạn",
+  "Give your booth one place to sell and stay organized.":
+    "Cho gian hàng một nơi để bán hàng và luôn ngăn nắp.",
+  "Matsuri home": "Trang chủ Matsuri",
+  "Booth aisle not found": "Không tìm thấy lối gian hàng",
+  "This page wandered off.": "Trang này đã đi lạc.",
+  "Let’s get you back to the booth.": "Hãy quay lại gian hàng.",
+  "There is nothing at this address. The link may be old, mistyped, or moved to another part of Matsuri.":
+    "Không có nội dung tại địa chỉ này. Liên kết có thể đã cũ, bị nhập sai hoặc được chuyển sang phần khác của Matsuri.",
+  "Back to Matsuri": "Về Matsuri",
+  "Visit the demo booth": "Ghé gian hàng demo",
+  "Missing path:": "Đường dẫn không tồn tại:",
+  "Lost booth notice": "Thông báo gian hàng thất lạc",
+  "Artist Alley · Aisle 404": "Khu Artist Alley · Lối 404",
+  "not on this map": "không có trên bản đồ",
+  "Empty display": "Kệ trống",
+  "nothing is stocked here": "không có gì được trưng bày ở đây",
+  "Page missing": "Trang không tồn tại",
+  "Try the main aisle": "Thử quay lại lối chính",
+  "Booth directory": "Danh mục gian hàng",
+  "No page found": "Không tìm thấy trang",
+  "Try another link": "Hãy thử một liên kết khác",
+  "TURN BACK": "QUAY LẠI",
+  "Lost & found": "Quầy đồ thất lạc",
+  "Aisle not found": "Không tìm thấy lối",
+  "No booth assigned": "Không có gian hàng",
+  "Page 404": "Trang 404",
+  "Wrong aisle.": "Nhầm lối rồi.",
+  "There’s no booth here.": "Không có gian hàng ở đây.",
+  "This address does not lead anywhere in Matsuri. Head home or open the demo storefront instead.":
+    "Địa chỉ này không dẫn đến đâu trong Matsuri. Hãy về trang chủ hoặc mở cửa hàng demo.",
+  "Go home": "Về trang chủ",
+  "Open demo storefront": "Mở cửa hàng demo",
+  "You tried": "Bạn đã mở",
+  "Artist storefronts and live booth orders.":
+    "Cửa hàng artist và đơn hàng gian hàng trực tiếp.",
+  "Online storefront and live orders for artist booths":
+    "Cửa hàng online và đơn hàng trực tiếp cho gian hàng artist",
+  "Matsuri gives independent artists an online storefront, accurate stock, and one live order list for event days.":
+    "Matsuri giúp artist độc lập mở cửa hàng online, giữ tồn kho chính xác và quản lý đơn sự kiện trong một danh sách chung.",
+  "Page not found": "Không tìm thấy trang",
+  "This Matsuri page could not be found. Return home or visit the demo artist booth.":
+    "Không tìm thấy trang Matsuri này. Hãy về trang chủ hoặc ghé gian hàng artist demo.",
+  "Secure workspace for managing a Matsuri shop.":
+    "Không gian bảo mật để quản lý gian hàng Matsuri.",
+  "Made for artists, not spreadsheets": "Dành cho artist, không phải bảng tính",
+  "Your art. Your booth.": "Tác phẩm của bạn. Gian hàng của bạn.",
+  "Your little corner of the con.": "Góc nhỏ của bạn tại hội chợ.",
+  "Matsuri turns your merch table into a friendly digital storefront, with live orders and accurate stock while you focus on meeting fans.":
+    "Matsuri biến bàn merch của bạn thành một cửa hàng số thân thiện, với đơn hàng trực tiếp và tồn kho chính xác để bạn tập trung gặp gỡ fan.",
+  "Open your booth": "Mở gian hàng",
+  "See the demo booth": "Xem gian hàng demo",
+  "No generic marketplace vibe.": "Không mang cảm giác chợ trực tuyến đại trà.",
+  "Your colors, your sections, your merch.":
+    "Màu sắc, bố cục và merch đều là của bạn.",
+  "Artist Alley · Table B12": "Khu Artist Alley · Bàn B12",
+  "live today!": "đang mở hôm nay!",
+  "New festival drop": "Bộ sưu tập mới tại lễ hội",
+  "tiny things, big feelings": "những món nhỏ, cảm xúc lớn",
+  "ACRYLIC STAND": "STANDEE ACRYLIC",
+  "STICKER SHEET": "BỘ STICKER",
+  "Your order": "Đơn hàng của bạn",
+  "Qty {{count}}": "SL {{count}}",
+  "Decorative checkout QR code": "Mã QR thanh toán minh họa",
+  "DRAW MORE": "VẼ THÊM",
+  "Matsuri demo storefront shown on a phone":
+    "Cửa hàng demo Matsuri hiển thị trên điện thoại",
+  "Matsuri demo storefront with product collections and booth information":
+    "Cửa hàng demo Matsuri với bộ sưu tập sản phẩm và thông tin gian hàng",
+  "One booth, three connected views.": "Một gian hàng, ba góc nhìn kết nối.",
+  "From fan to fulfilment": "Từ fan đến lúc giao hàng",
+  "One artist booth, three working surfaces.":
+    "Một gian hàng artist, ba không gian phối hợp.",
+  "A public catalog, a packing desk, and an optional event game—connected by the same products and stock.":
+    "Một catalog công khai, một bàn đóng gói và một trò chơi sự kiện tùy chọn—cùng kết nối với sản phẩm và tồn kho.",
+  "Packing desk": "Bàn đóng gói",
+  "Orders ready to hand over": "Đơn sẵn sàng để giao",
+  "Digital catalog": "Catalog trực tuyến",
+  "Your art stays in front": "Tác phẩm của bạn luôn nổi bật",
+  "Event extra": "Tiện ích sự kiện",
+  "A playful reason to stop by": "Một lý do vui để ghé gian hàng",
+  "Fans shop, your team fulfils, and gacha turns merch into a playable event moment.":
+    "Fan mua sắm, đội ngũ xử lý đơn, còn gacha biến merch thành một khoảnh khắc tương tác tại sự kiện.",
+  "Matsuri admin order queue with fulfilment details":
+    "Hàng đợi đơn admin Matsuri với chi tiết giao hàng",
+  "Admin order desk": "Bàn xử lý đơn admin",
+  "Keep every handover in one live workspace.":
+    "Giữ mọi lượt giao hàng trong một không gian trực tiếp.",
+  "Track stock, payment, and fulfilment without losing the booth rush.":
+    "Theo dõi tồn kho, thanh toán và giao hàng ngay cả lúc gian hàng đông.",
+  "Branded storefront": "Cửa hàng mang thương hiệu riêng",
+  "Let fans browse and order from their phones.":
+    "Để fan xem và đặt hàng trên điện thoại.",
+  "Matsuri gacha selector for Genshin and Honkai Star Rail":
+    "Màn chọn gacha Matsuri cho Genshin và Honkai Star Rail",
+  "Merch gacha": "Gacha merch",
+  "Publish a free minigame from the same catalog.":
+    "Xuất bản minigame miễn phí từ cùng một catalog.",
+  "Play the demo gacha": "Chơi gacha demo",
+  "Who Matsuri helps": "Matsuri hỗ trợ những ai",
+  "For fans": "Cho fan",
+  "Browse and order from their phone": "Xem và đặt hàng bằng điện thoại",
+  "For artists": "Cho artist",
+  "Keep stock and payments together": "Quản lý tồn kho và thanh toán cùng nơi",
+  "For helpers": "Cho cộng sự",
+  "Share one clear live order queue": "Cùng theo dõi một hàng đợi đơn rõ ràng",
+  "For your brand": "Cho thương hiệu của bạn",
+  "Make the storefront feel like you": "Tạo cửa hàng mang đúng cá tính của bạn",
+  "How the booth flows": "Quy trình tại gian hàng",
+  "Less table chaos. More time talking about your art.":
+    "Bớt bối rối tại bàn. Thêm thời gian trò chuyện về tác phẩm.",
+  "A simple three-step flow that feels natural for customers and helpers.":
+    "Quy trình ba bước đơn giản, tự nhiên cho cả khách hàng và cộng sự.",
+  "Fans browse": "fan xem sản phẩm",
+  "They scan your booth QR, explore your collections, and add merch without blocking the table.":
+    "Họ quét QR của gian hàng, khám phá các bộ sưu tập và thêm merch mà không làm ùn bàn.",
+  "They order and pay": "Họ đặt hàng và thanh toán",
+  "Matsuri reserves the items, calculates the total, and shows your VietQR payment details.":
+    "Matsuri giữ sản phẩm, tính tổng tiền và hiển thị thông tin thanh toán VietQR.",
+  "You hand it over": "Bạn giao sản phẩm",
+  "The order appears live for your team, ready to confirm, pack, and give to the customer.":
+    "Đơn hàng xuất hiện trực tiếp cho đội ngũ để xác nhận, đóng gói và giao cho khách.",
+  "Your booth toolkit": "Bộ công cụ gian hàng",
+  "Designed like an artist’s workspace, not an enterprise dashboard.":
+    "Được thiết kế như không gian làm việc của artist, không phải bảng điều khiển doanh nghiệp.",
+  "Use a live storefront designer, keep a simple order queue, and invite helpers without giving everyone full control.":
+    "Thiết kế cửa hàng trực tiếp, quản lý hàng đợi đơn giản và mời cộng sự mà không cần trao toàn quyền.",
+  "Arrange banners, collections, and booth information":
+    "Sắp xếp banner, bộ sưu tập và thông tin gian hàng",
+  "Use your own colors, logo, and visual style":
+    "Dùng màu sắc, logo và phong cách riêng",
+  "See pending, paid, and completed orders in one place":
+    "Xem đơn chờ, đã thanh toán và hoàn tất tại một nơi",
+  "Give helpers only the access they need": "Chỉ cấp cho cộng sự quyền họ cần",
+  "Matsuri workspace preview": "Bản xem trước không gian Matsuri",
+  "Live orders": "Đơn hàng trực tiếp",
+  "3 fans waiting": "3 fan đang chờ",
+  Palette: "Bảng màu",
+  "Match your art": "Đồng điệu với tác phẩm",
+  "Storefront sections": "Các phần cửa hàng",
+  "Featured drop · Products · About the artist · Booth info":
+    "Sản phẩm nổi bật · Sản phẩm · Về artist · Thông tin gian hàng",
+  "Ready for your next event?": "Sẵn sàng cho sự kiện tiếp theo?",
+  "Make a booth your fans will remember.":
+    "Tạo một gian hàng khiến fan nhớ mãi.",
+  "Create your shop": "Tạo gian hàng",
+  "Made for independent artists, conventions, and pop-up booths.":
+    "Dành cho artist độc lập, hội chợ và gian hàng pop-up.",
+  "Welcome back": "Chào mừng bạn trở lại",
+  "Sign in to manage your shops.": "Đăng nhập để quản lý các gian hàng.",
+  "Signing in…": "Đang đăng nhập…",
+  "Secure access to your shops and staff workspaces.":
+    "Truy cập an toàn vào gian hàng và không gian làm việc của nhân viên.",
+  "Create your account": "Tạo tài khoản",
+  "Start a storefront or accept a staff invitation.":
+    "Tạo cửa hàng mới hoặc chấp nhận lời mời tham gia đội ngũ.",
+  "Creating account…": "Đang tạo tài khoản…",
+  "Email confirmation protects every new account.":
+    "Xác nhận email giúp bảo vệ mọi tài khoản mới.",
+  "Reset your password": "Đặt lại mật khẩu",
+  "We’ll email a secure recovery link.":
+    "Chúng tôi sẽ gửi liên kết khôi phục an toàn qua email.",
+  "Send recovery link": "Gửi liên kết khôi phục",
+  "Sending link…": "Đang gửi liên kết…",
+  "Recovery never reveals whether an account exists.":
+    "Quá trình khôi phục không tiết lộ tài khoản có tồn tại hay không.",
+  "Choose a stronger password": "Chọn mật khẩu mạnh hơn",
+  "Check your password": "Kiểm tra mật khẩu",
+  "A new secure link is on its way.": "Một liên kết bảo mật mới đang được gửi.",
+  "Email sent": "Đã gửi email",
+  "Check your email": "Kiểm tra email",
+  "We sent a confirmation link to {{email}}.":
+    "Đã gửi liên kết xác nhận đến {{email}}.",
+  "If {{email}} can be recovered, a secure link is on its way.":
+    "Nếu tài khoản {{email}} có thể khôi phục, liên kết bảo mật sẽ được gửi đến địa chỉ này.",
+  "Sending…": "Đang gửi…",
+  "Send again in {{seconds}}s": "Gửi lại sau {{seconds}} giây",
+  "Send another email": "Gửi email khác",
+  "Return to sign in": "Quay lại đăng nhập",
+  "Sign up with Google": "Đăng ký bằng Google",
+  "Continue with Google": "Tiếp tục với Google",
+  "Opening Google…": "Đang mở Google…",
+  or: "hoặc",
+  "Email address": "Địa chỉ email",
+  Password: "Mật khẩu",
+  "Choose a strong password": "Chọn mật khẩu mạnh",
+  "Enter your password": "Nhập mật khẩu",
+  "Confirm password": "Xác nhận mật khẩu",
+  "Repeat your password": "Nhập lại mật khẩu",
+  "Forgot password?": "Quên mật khẩu?",
+  "Secure links are short-lived and can only be used through your email.":
+    "Liên kết bảo mật chỉ có hiệu lực trong thời gian ngắn và chỉ dùng được qua email của bạn.",
+  "Show {{label}}": "Hiện {{label}}",
+  "Hide {{label}}": "Ẩn {{label}}",
+  "Use 10+ characters with uppercase, lowercase, and a number.":
+    "Dùng ít nhất 10 ký tự gồm chữ hoa, chữ thường và số.",
+  "Both passwords must match.": "Hai mật khẩu phải trùng khớp.",
+  "Please wait a moment": "Vui lòng đợi một lát",
+  "Too many emails were requested. Wait a few minutes before trying again.":
+    "Đã yêu cầu quá nhiều email. Vui lòng chờ vài phút rồi thử lại.",
+  "Too many attempts were made. Wait a few minutes before trying again.":
+    "Đã thử quá nhiều lần. Vui lòng chờ vài phút rồi thử lại.",
+  "Sign in failed": "Đăng nhập thất bại",
+  "The email address or password is incorrect.":
+    "Địa chỉ email hoặc mật khẩu không đúng.",
+  "Confirm your email": "Xác nhận email",
+  "Open the confirmation email before signing in.":
+    "Mở email xác nhận trước khi đăng nhập.",
+  "Use at least 10 characters with an uppercase letter, a lowercase letter, and a number.":
+    "Dùng ít nhất 10 ký tự gồm một chữ hoa, một chữ thường và một chữ số.",
+  "Link expired": "Liên kết đã hết hạn",
+  "This secure link is invalid or expired. Request a new one.":
+    "Liên kết bảo mật không hợp lệ hoặc đã hết hạn. Hãy yêu cầu liên kết mới.",
+  "We could not sign you in. Check your details and try again.":
+    "Không thể đăng nhập. Hãy kiểm tra thông tin và thử lại.",
+  "Could not create account": "Không thể tạo tài khoản",
+  "We could not create the account. Please try again.":
+    "Không thể tạo tài khoản. Vui lòng thử lại.",
+  "Could not send recovery email": "Không thể gửi email khôi phục",
+  "We could not send the recovery email. Please try again later.":
+    "Không thể gửi email khôi phục. Vui lòng thử lại sau.",
+  "Could not finish sign in": "Không thể hoàn tất đăng nhập",
+  "Could not set password": "Không thể đặt mật khẩu",
+  "We could not save the password. Request a new secure link.":
+    "Không thể lưu mật khẩu. Hãy yêu cầu liên kết bảo mật mới.",
+  "Confirming your secure link…": "Đang xác nhận liên kết bảo mật…",
+  "Back to sign in": "Về trang đăng nhập",
+  "Expired or used secure links cannot be reopened.":
+    "Không thể mở lại liên kết bảo mật đã hết hạn hoặc đã sử dụng.",
+  "Your password is saved, but shop access could not be completed. You can retry safely.":
+    "Mật khẩu đã được lưu nhưng chưa thể hoàn tất quyền truy cập gian hàng. Bạn có thể thử lại an toàn.",
+  "Invitation not completed": "Chưa hoàn tất lời mời",
+  "Shop access was accepted, but account cleanup could not finish. Retry to complete safely.":
+    "Quyền truy cập gian hàng đã được chấp nhận nhưng chưa thể hoàn tất tài khoản. Hãy thử lại an toàn.",
+  "Invitation cleanup incomplete": "Chưa hoàn tất lời mời",
+  "Your password was saved, but we could not open your account. Retry safely without changing it again.":
+    "Mật khẩu đã được lưu nhưng không thể mở tài khoản. Hãy thử lại an toàn mà không cần đổi mật khẩu lần nữa.",
+  "Could not finish recovery": "Không thể hoàn tất khôi phục",
+  "Checking password link": "Đang kiểm tra liên kết mật khẩu",
+  "Verifying this secure session…": "Đang xác minh phiên bảo mật…",
+  "Password link unavailable": "Liên kết mật khẩu không khả dụng",
+  "This password link is invalid or has expired.":
+    "Liên kết mật khẩu không hợp lệ hoặc đã hết hạn.",
+  "Request another recovery email": "Yêu cầu email khôi phục khác",
+  "Password links are short-lived and protected by your email session.":
+    "Liên kết mật khẩu chỉ có hiệu lực trong thời gian ngắn và được bảo vệ bởi phiên email của bạn.",
+  "Finish joining the shop": "Hoàn tất tham gia gian hàng",
+  "Your password is saved. Retry the invitation without changing it again.":
+    "Mật khẩu đã được lưu. Hãy thử lại lời mời mà không cần đổi mật khẩu lần nữa.",
+  "Retry invitation": "Thử lại lời mời",
+  "Your saved password will not be changed when you retry.":
+    "Mật khẩu đã lưu sẽ không bị thay đổi khi bạn thử lại.",
+  "Password updated": "Đã cập nhật mật khẩu",
+  "Your new password is saved. Retry opening your account without changing it again.":
+    "Mật khẩu mới đã được lưu. Hãy thử mở lại tài khoản mà không cần đổi mật khẩu lần nữa.",
+  "Opening account…": "Đang mở tài khoản…",
+  "Open my account": "Mở tài khoản của tôi",
+  "Set your password": "Đặt mật khẩu",
+  "Choose a secure password to finish account setup.":
+    "Chọn mật khẩu an toàn để hoàn tất thiết lập tài khoản.",
+  "New password": "Mật khẩu mới",
+  "Saving…": "Đang lưu…",
+  "Save password": "Lưu mật khẩu",
+  "Your password is handled securely and never shown to shop staff.":
+    "Mật khẩu của bạn được xử lý an toàn và không hiển thị cho nhân viên gian hàng.",
+  "Staff sign in": "Đăng nhập dành cho nhân viên",
+  "Use your staff account to continue.":
+    "Dùng tài khoản nhân viên để tiếp tục.",
+  "Supabase is not configured": "Chưa cấu hình Supabase",
+  "Add the Supabase URL and public key before signing in.":
+    "Thêm URL Supabase và khóa công khai trước khi đăng nhập.",
+  "Open workspace": "Mở khu vực quản lý",
+  "Only authorized staff can access this workspace.":
+    "Chỉ nhân viên được cấp quyền mới có thể truy cập khu vực này.",
+  "Checking your access": "Đang kiểm tra quyền truy cập",
+  "Loading your workspace…": "Đang tải không gian làm việc…",
+  "Staff access inactive": "Quyền nhân viên đang tạm ngưng",
+  "Access check failed": "Kiểm tra quyền truy cập thất bại",
+  "Staff access required": "Cần quyền nhân viên",
+  "An owner must reactivate your staff membership.":
+    "Chủ gian hàng cần kích hoạt lại quyền của bạn.",
+  "This signed-in account is not an authorized staff member.":
+    "Tài khoản đang đăng nhập chưa được cấp quyền nhân viên.",
+  "Signed in as": "Đang đăng nhập bằng",
+  "Ask an owner to grant this account access.":
+    "Hãy nhờ chủ gian hàng cấp quyền cho tài khoản này.",
+  "Check access again": "Kiểm tra lại quyền truy cập",
+  "Shop name is required.": "Cần nhập tên gian hàng.",
+  "Shop name must be between 1 and 100 characters.":
+    "Tên gian hàng phải dài từ 1 đến 100 ký tự.",
+  "Could not create shop": "Không thể tạo gian hàng",
+  "Slug must be between 2 and 63 characters, contain only lowercase letters, numbers, and single dashes, and cannot start or end with a dash.":
+    "Slug phải dài từ 2 đến 63 ký tự, chỉ gồm chữ thường, số và dấu gạch ngang đơn, đồng thời không được bắt đầu hoặc kết thúc bằng dấu gạch ngang.",
+  "Could not create shop.": "Không thể tạo gian hàng.",
+  "Creation failed": "Tạo gian hàng thất bại",
+  "Back to shops dashboard": "Về bảng điều khiển gian hàng",
+  "Back to homepage": "Về trang chủ",
+  "Set up your shop name and storefront URL slug to get started.":
+    "Thiết lập tên gian hàng và slug URL cửa hàng để bắt đầu.",
+  "Shop name": "Tên gian hàng",
+  "A friendly name for your merch booth.":
+    "Tên thân thiện cho gian hàng merch của bạn.",
+  "My Artist Booth": "Gian hàng artist của tôi",
+  "Storefront URL slug": "Slug URL cửa hàng",
+  "Only lowercase letters, numbers, and dashes. No spaces.":
+    "Chỉ dùng chữ thường, số và dấu gạch ngang. Không dùng khoảng trắng.",
+  "Preview URL:": "URL xem trước:",
+  "Creating shop…": "Đang tạo gian hàng…",
+  "Create shop": "Tạo gian hàng",
+  "Check your connection and try again.": "Kiểm tra kết nối rồi thử lại.",
+  "Could not sign out": "Không thể đăng xuất",
+  "Offline Event Mode is still active":
+    "Chế độ sự kiện ngoại tuyến vẫn đang hoạt động",
+  "This device still owns event stock or unsynced orders. Sync and close Offline Event Mode before signing out.":
+    "Thiết bị này vẫn đang giữ tồn kho sự kiện hoặc đơn chưa đồng bộ. Hãy đồng bộ và đóng Chế độ sự kiện ngoại tuyến trước khi đăng xuất.",
+  "Sign-out safety check failed": "Không thể kiểm tra an toàn đăng xuất",
+  "Offline Event storage could not be checked. Keep this account signed in and retry after storage access is restored.":
+    "Không thể kiểm tra bộ nhớ Sự kiện Ngoại tuyến. Hãy giữ trạng thái đăng nhập và thử lại sau khi quyền truy cập bộ nhớ được khôi phục.",
+  "Could not save shop details": "Không thể lưu thông tin gian hàng",
+  "Your Account": "Tài khoản của bạn",
+  "Select a shop workspace to manage orders, products, and designs, or preview its public storefront.":
+    "Chọn không gian gian hàng để quản lý đơn, sản phẩm và thiết kế, hoặc xem trước cửa hàng công khai.",
+  "Edit shop details": "Sửa thông tin gian hàng",
+  owner: "chủ sở hữu",
+  admin: "quản trị viên",
+  staff: "nhân viên",
+  "Access disabled": "Quyền truy cập đã tắt",
+  "Shop unavailable": "Gian hàng không khả dụng",
+  "Manage shop": "Quản lý gian hàng",
+  Storefront: "Cửa hàng",
+  "Create another shop": "Tạo thêm gian hàng",
+  "Create your own shop (optional)": "Tạo gian hàng riêng (không bắt buộc)",
+  "Start a storefront only if you plan to sell your own merch. You can also wait for an invitation.":
+    "Chỉ tạo cửa hàng nếu bạn dự định bán sản phẩm của riêng mình. Bạn cũng có thể chờ lời mời.",
+  "Welcome to Matsuri": "Chào mừng đến với Matsuri",
+  "You can join a shop as a teammate or create your own storefront whenever you are ready.":
+    "Bạn có thể tham gia một gian hàng với tư cách cộng sự hoặc tạo cửa hàng riêng khi sẵn sàng.",
+  "Joining someone else’s shop?": "Bạn đang tham gia gian hàng của người khác?",
+  "Open the invitation link from your email. After you accept it, the shop will appear here automatically.":
+    "Mở liên kết lời mời trong email. Sau khi chấp nhận, gian hàng sẽ tự động xuất hiện tại đây.",
+  "{{owned}} of {{limit}} created shops used":
+    "Đã dùng {{owned}} / {{limit}} gian hàng tự tạo",
+  "You have joined {{joined}} shops. Joined shops do not count toward this limit.":
+    "Bạn đã tham gia {{joined}} gian hàng. Các gian hàng tham gia không tính vào giới hạn này.",
+  "Shop creation limit reached": "Đã đạt giới hạn tạo gian hàng",
+  "You can create up to {{limit}} shops. Joined shops do not count toward this limit.":
+    "Bạn có thể tạo tối đa {{limit}} gian hàng. Các gian hàng tham gia không tính vào giới hạn này.",
+  "Add a new storefront and manage its inventory, custom design, and orders.":
+    "Thêm cửa hàng mới và quản lý tồn kho, thiết kế tùy chỉnh cùng đơn hàng.",
+  "Sign out of your account?": "Đăng xuất khỏi tài khoản?",
+  "Your work is saved.": "Công việc của bạn đã được lưu.",
+  "You’ll sign out of the platform dashboard and all shops.":
+    "Bạn sẽ đăng xuất khỏi bảng điều khiển nền tảng và tất cả gian hàng.",
+  Cancel: "Hủy",
+  "Signing out…": "Đang đăng xuất…",
+  "Update the name customers see across your storefront.":
+    "Cập nhật tên khách hàng nhìn thấy trên cửa hàng.",
+  "My shop name": "Tên gian hàng của tôi",
+  "Storefront URL": "URL cửa hàng",
+  Fixed: "Cố định",
+  "Shop URLs cannot currently be changed after creation.":
+    "Hiện không thể đổi URL gian hàng sau khi tạo.",
+  "Save changes": "Lưu thay đổi",
+  "Unsaved changes": "Thay đổi chưa lưu",
+  "Discard unsaved changes?": "Bỏ các thay đổi chưa lưu?",
+  "Your current edits will be lost.":
+    "Các chỉnh sửa hiện tại của bạn sẽ bị mất.",
+  "Keep editing": "Tiếp tục chỉnh sửa",
+  "No changes": "Không có thay đổi",
+  "Reset changes": "Đặt lại thay đổi",
+  "Could not upload image.": "Không thể tải ảnh lên.",
+  "Upload failed": "Tải lên thất bại",
+  "Uploading…": "Đang tải lên…",
+  Products: "Sản phẩm",
+  "{{count}} catalog items": "{{count}} sản phẩm trong danh mục",
+  "Search products": "Tìm sản phẩm",
+  "New item": "Sản phẩm mới",
+  "Product filters": "Bộ lọc sản phẩm",
+  "Well stocked": "Đủ hàng",
+  all: "tất cả",
+  live: "đang bán",
+  low: "sắp hết",
+  hidden: "đã ẩn",
+  "Low / sold out": "Sắp hết / hết hàng",
+  "Loading products…": "Đang tải sản phẩm…",
+  "No products yet": "Chưa có sản phẩm",
+  "No matching products": "Không có sản phẩm phù hợp",
+  "Fetching the latest catalog and stock levels.":
+    "Đang tải danh mục và tồn kho mới nhất.",
+  "Create your first item to start filling the booth.":
+    "Tạo sản phẩm đầu tiên để bắt đầu lấp đầy gian hàng.",
+  "Adjust your search or return to all products.":
+    "Điều chỉnh tìm kiếm hoặc quay lại tất cả sản phẩm.",
+  "Create product": "Tạo sản phẩm",
+  "Delete product?": "Xóa sản phẩm?",
+  "Delete product": "Xóa sản phẩm",
+  "Fix the highlighted fields": "Sửa các trường được đánh dấu",
+  "Review the fields marked below, then save again.":
+    "Kiểm tra các trường được đánh dấu bên dưới rồi lưu lại.",
+  "Clear filters": "Xóa bộ lọc",
+  "Untitled item": "Sản phẩm chưa đặt tên",
+  Featured: "Nổi bật",
+  Hidden: "Đã ẩn",
+  "No code": "Chưa có mã",
+  "Sold out": "Hết hàng",
+  "{{count}} in stock": "Còn {{count}} sản phẩm",
+  "Could not save payment settings": "Không thể lưu cài đặt thanh toán",
+  "Payment & QR": "Thanh toán & QR",
+  "Bank details and payment instructions.":
+    "Thông tin ngân hàng và hướng dẫn thanh toán.",
+  Edit: "Sửa",
+  Bank: "Ngân hàng",
+  Account: "Tài khoản",
+  Label: "Nhãn",
+  "Not set": "Chưa thiết lập",
+  Payment: "Thanh toán",
+  "Bank account": "Tài khoản ngân hàng",
+  "Used to generate each payment QR.": "Dùng để tạo từng mã QR thanh toán.",
+  "Choose a bank": "Chọn ngân hàng",
+  "No bank is configured yet": "Chưa cấu hình ngân hàng",
+  "Account not set": "Chưa thiết lập tài khoản",
+  "Payment display name": "Tên hiển thị thanh toán",
+  "Select bank": "Chọn ngân hàng",
+  "Account number": "Số tài khoản",
+  "Account name": "Tên tài khoản",
+  "Transfer message": "Nội dung chuyển khoản",
+  "Match payments to orders with tokens.":
+    "Dùng các biến để đối chiếu khoản thanh toán với đơn hàng.",
+  "Transfer message template": "Mẫu nội dung chuyển khoản",
+  "Available tokens: {code}, {item}, {amount}":
+    "Các biến có thể dùng: {code}, {item}, {amount}",
+  "Customer payment instructions": "Hướng dẫn thanh toán cho khách",
+  "Backup QR": "QR dự phòng",
+  "Used if VietQR is unavailable.": "Dùng khi VietQR không khả dụng.",
+  "Fallback payment QR": "QR thanh toán dự phòng",
+  "Fallback QR URL": "URL QR dự phòng",
+  "Upload fallback QR": "Tải QR dự phòng lên",
+  "Save payment settings": "Lưu cài đặt thanh toán",
+  "Could not save booth settings": "Không thể lưu cài đặt gian hàng",
+  "Booth info": "Thông tin gian hàng",
+  "Name, logo, location, and social links.":
+    "Tên, logo, vị trí và liên kết mạng xã hội.",
+  Booth: "Gian hàng",
+  Code: "Mã",
+  Hours: "Giờ mở cửa",
+  "Booth identity": "Nhận diện gian hàng",
+  "Customer-facing booth subtitle": "Mô tả gian hàng hiển thị cho khách",
+  Public: "Công khai",
+  "Name, code, logo, hours, and location.":
+    "Tên, mã, logo, giờ mở cửa và vị trí.",
+  "Booth logo": "Logo gian hàng",
+  "Logo URL": "URL logo",
+  "Upload logo": "Tải logo lên",
+  "Booth name": "Tên gian hàng",
+  "Booth code": "Mã gian hàng",
+  "Open hours": "Giờ mở cửa",
+  Location: "Vị trí",
+  "Store copy": "Nội dung cửa hàng",
+  "Customer-facing title and description.":
+    "Tiêu đề và mô tả hiển thị cho khách hàng.",
+  Subtitle: "Mô tả ngắn",
+  "Social links": "Liên kết mạng xã hội",
+  "Links shown in booth information.":
+    "Các liên kết hiển thị trong thông tin gian hàng.",
+  Show: "Hiển thị",
+  "Profile URL": "URL trang cá nhân",
+  "{{platform}} profile URL": "URL trang {{platform}}",
+  "QR center logo": "Logo giữa mã QR",
+  "Social QR logo": "Logo QR mạng xã hội",
+  "Shared QR logo": "Logo QR dùng chung",
+  "Used in the center of every social QR code.":
+    "Được đặt ở giữa mọi mã QR mạng xã hội.",
+  "Upload QR logo": "Tải logo QR lên",
+  "Save booth settings": "Lưu cài đặt gian hàng",
+  "Could not update item": "Không thể cập nhật sản phẩm",
+  "Delete “{{name}}”? This cannot be undone.":
+    "Xóa “{{name}}”? Không thể hoàn tác thao tác này.",
+  "Product details": "Chi tiết sản phẩm",
+  "Add the essentials first. You can refine the listing later.":
+    "Thêm thông tin thiết yếu trước. Bạn có thể hoàn thiện sản phẩm sau.",
+  "Deleting…": "Đang xóa…",
+  Delete: "Xóa",
+  Price: "Giá",
+  Sale: "Giảm giá",
+  Stock: "Tồn kho",
+  Visibility: "Hiển thị",
+  Live: "Đang bán",
+  "Listing details": "Thông tin đăng bán",
+  "The information customers use to identify this item.":
+    "Thông tin giúp khách hàng nhận biết sản phẩm.",
+  "Product name · Required": "Tên sản phẩm · Bắt buộc",
+  "e.g. Moonlight acrylic stand": "VD: Standee acrylic Ánh Trăng",
+  "Item code · Required": "Mã sản phẩm · Bắt buộc",
+  "A short unique code used by staff.":
+    "Mã ngắn duy nhất để nhân viên sử dụng.",
+  Collection: "Bộ sưu tập",
+  "Optional grouping, such as Spring 2026.": "Nhóm tùy chọn, ví dụ Xuân 2026.",
+  "e.g. Starry Days": "VD: Những ngày đầy sao",
+  "Category · Required": "Danh mục · Bắt buộc",
+  "e.g. Acrylic, Print, Apparel": "VD: Acrylic, Tranh in, Trang phục",
+  Description: "Mô tả",
+  "{{count}}/500 characters": "{{count}}/500 ký tự",
+  "What should customers know about this item?":
+    "Khách hàng cần biết gì về sản phẩm này?",
+  "Price & availability": "Giá & tình trạng hàng",
+  "Stock status updates automatically from the quantity.":
+    "Tình trạng tồn kho tự động cập nhật theo số lượng.",
+  "Price · Required": "Giá · Bắt buộc",
+  "Regular price · Required": "Giá thường · Bắt buộc",
+  "Sale price · Required": "Giá khuyến mãi · Bắt buộc",
+  "Customers save {{percent}}%.": "Khách hàng tiết kiệm {{percent}}%.",
+  "Must be lower than the regular price.": "Phải thấp hơn giá thường.",
+  Quantity: "Số lượng",
+  "Decrease quantity": "Giảm số lượng",
+  "Increase quantity": "Tăng số lượng",
+  "{{count}} items in stock": "{{count}} sản phẩm trong kho",
+  "Large quantity — double-check this number.":
+    "Số lượng lớn — hãy kiểm tra lại con số này.",
+  "Product badge": "Nhãn sản phẩm",
+  "Optional label shown on product artwork.":
+    "Nhãn tùy chọn hiển thị trên hình sản phẩm.",
+  "No badge": "Không có nhãn",
+  "Choose badge color": "Chọn màu nhãn",
+  "Badge color": "Màu nhãn",
+  New: "Mới",
+  "Best Seller": "Bán chạy",
+  Limited: "Giới hạn",
+  Restock: "Vừa nhập lại",
+  "Event Exclusive": "Độc quyền sự kiện",
+  Preorder: "Đặt trước",
+  "Last Call": "Cơ hội cuối",
+  "Feature this item": "Làm nổi bật sản phẩm",
+  "Give it extra prominence on the storefront.":
+    "Tăng độ nổi bật trên cửa hàng.",
+  "Put this item on sale": "Giảm giá sản phẩm này",
+  "Show a lower price while keeping the regular price visible.":
+    "Hiển thị giá thấp hơn và vẫn giữ giá thường để khách so sánh.",
+  "Include in quantity promotion": "Tham gia khuyến mãi theo số lượng",
+  "Mix this item with other eligible products in the active offer.":
+    "Kết hợp sản phẩm này với các sản phẩm đủ điều kiện khác trong ưu đãi đang bật.",
+  "Quantity promotion": "Khuyến mãi theo số lượng",
+  "Configure a mix-and-match buy-X-get-Y offer.":
+    "Thiết lập ưu đãi mua X tặng Y có thể kết hợp nhiều sản phẩm.",
+  Offer: "Ưu đãi",
+  "Buy {{buy}}, get {{free}} free": "Mua {{buy}}, tặng {{free}}",
+  Status: "Trạng thái",
+  "Eligible products": "Sản phẩm đủ điều kiện",
+  "Customer buys": "Khách mua",
+  "Paid items required in each offer group.":
+    "Số sản phẩm trả tiền cần có trong mỗi nhóm ưu đãi.",
+  "Free quantity": "Số lượng tặng",
+  "Free item": "Sản phẩm tặng",
+  "Cheapest eligible items become free.":
+    "Sản phẩm đủ điều kiện có giá thấp nhất sẽ được miễn phí.",
+  "Customers choose free items from the selected reward products.":
+    "Khách chọn sản phẩm miễn phí trong nhóm sản phẩm tặng đã chọn.",
+  "Promotion active": "Bật khuyến mãi",
+  "Apply this offer in the storefront and checkout.":
+    "Áp dụng ưu đãi này tại cửa hàng và khi thanh toán.",
+  "Repeat offer": "Lặp lại ưu đãi",
+  "Apply the reward again for each complete group.":
+    "Tiếp tục tặng cho mỗi nhóm sản phẩm đầy đủ.",
+  "Select at least one eligible product before publishing this offer.":
+    "Chọn ít nhất một sản phẩm đủ điều kiện trước khi bật ưu đãi.",
+  "Choose eligible products from each product’s Price & availability section.":
+    "Chọn sản phẩm đủ điều kiện trong mục Giá & tình trạng của từng sản phẩm.",
+  "Could not save promotion": "Không thể lưu khuyến mãi",
+  "Save promotion": "Lưu khuyến mãi",
+  "Promotion saved.": "Đã lưu khuyến mãi.",
+  "Promotion savings": "Tiết kiệm khuyến mãi",
+  "Buy products": "Sản phẩm khách mua",
+  "Reward products": "Sản phẩm tặng",
+  "{{buy}} buy products · {{reward}} reward products":
+    "{{buy}} sản phẩm mua · {{reward}} sản phẩm tặng",
+  "What customers buy": "Sản phẩm khách mua",
+  "Products that count toward Buy {{buy}}": "Sản phẩm tính vào mốc Mua {{buy}}",
+  "These paid products count toward the Buy quantity.":
+    "Các sản phẩm trả tiền này được tính vào số lượng Mua.",
+  "What customers get": "Sản phẩm khách được tặng",
+  "Products customers can choose free": "Sản phẩm khách có thể chọn miễn phí",
+  "Customers choose free items from this reward group.":
+    "Khách chọn sản phẩm miễn phí từ nhóm quà tặng này.",
+  "Choose {{free}} free items from {{reward}} reward products after buying {{buy}} from {{qualifying}} eligible products.":
+    "Sau khi mua {{buy}} trong {{qualifying}} sản phẩm đủ điều kiện, hãy chọn {{free}} sản phẩm miễn phí từ {{reward}} sản phẩm tặng.",
+  "Select at least one buy product and one reward product before publishing this offer.":
+    "Chọn ít nhất một sản phẩm mua và một sản phẩm tặng trước khi bật ưu đãi.",
+  "Visible in storefront": "Hiển thị trên cửa hàng",
+  "Customers can find and purchase this item.":
+    "Khách hàng có thể tìm và mua sản phẩm này.",
+  "Product gallery": "Thư viện ảnh sản phẩm",
+  "Add up to four images. The first image becomes the cover.":
+    "Thêm tối đa bốn ảnh. Ảnh đầu tiên sẽ làm ảnh bìa.",
+  Product: "Sản phẩm",
+  Cover: "Ảnh bìa",
+  "Remove image {{number}}": "Xóa ảnh {{number}}",
+  "No product images yet": "Chưa có ảnh sản phẩm",
+  "Add another image": "Thêm ảnh khác",
+  "Upload product image": "Tải ảnh sản phẩm lên",
+  Clear: "Xóa nội dung",
+  "Unknown product": "Sản phẩm không xác định",
+  "This order was already handled by another staff member.":
+    "Đơn này đã được nhân viên khác xử lý.",
+  "Payment confirmed.": "Đã xác nhận thanh toán.",
+  "Failed to confirm payment.": "Xác nhận thanh toán thất bại.",
+  "Could not confirm order": "Không thể xác nhận đơn",
+  "Cancel this order? This cannot be undone.":
+    "Hủy đơn này? Không thể hoàn tác thao tác này.",
+  "Order cancelled and stock released.": "Đã hủy đơn và hoàn lại tồn kho.",
+  "Failed to cancel order.": "Hủy đơn thất bại.",
+  "Could not cancel order": "Không thể hủy đơn",
+  "Order status": "Trạng thái đơn",
+  Pending: "Đang chờ",
+  Expired: "Đã hết hạn",
+  All: "Tất cả",
+  pending: "đang chờ",
+  confirmed: "đã xác nhận",
+  cancelled: "đã hủy",
+  expired: "đã hết hạn",
+  "Orders shown": "Số đơn hiển thị",
+  "{{count}} matching orders": "{{count}} đơn phù hợp",
+  "Order value": "Tổng giá trị đơn hàng",
+  "Current page total": "Tổng của trang hiện tại",
+  "Units requested": "Tổng số lượng đặt",
+  "{{count}} unique products": "{{count}} sản phẩm khác nhau",
+  "Fulfilment overview": "Tổng quan chuẩn bị hàng",
+  "What needs to be packed": "Các sản phẩm cần đóng gói",
+  "{{count}} total units": "Tổng số lượng: {{count}}",
+  "No item code": "Chưa có mã sản phẩm",
+  "Order queue": "Danh sách đơn hàng",
+  "All orders": "Tất cả đơn hàng",
+  "Pending orders": "Đơn đang chờ",
+  "Confirmed orders": "Đơn đã xác nhận",
+  "Cancelled orders": "Đơn đã hủy",
+  "Expired orders": "Đơn đã hết hạn",
+  "{{status}} orders": "Đơn {{status}}",
+  "Refreshing…": "Đang làm mới…",
+  "{{first}}–{{last}} of {{total}} · newest first":
+    "{{first}}–{{last}} trên {{total}} · mới nhất trước",
+  "Loading orders…": "Đang tải đơn hàng…",
+  "No orders yet": "Chưa có đơn hàng",
+  "No {{status}} orders": "Không có đơn {{status}}",
+  Today: "Hôm nay",
+  "No orders today": "Chưa có đơn hàng nào hôm nay",
+  "No {{status}} orders today": "Không có đơn {{status}} nào hôm nay",
+  "Fetching the latest queue from the server.":
+    "Đang tải hàng đợi mới nhất từ máy chủ.",
+  "You’re all caught up. New orders will appear here automatically.":
+    "Bạn đã xử lý hết. Đơn mới sẽ tự động xuất hiện tại đây.",
+  "New orders appear here automatically.":
+    "Đơn mới sẽ tự động xuất hiện tại đây.",
+  "There are no orders with this status yet.":
+    "Chưa có đơn hàng ở trạng thái này.",
+  "All statuses": "Tất cả trạng thái",
+  "Live updates on": "Đang cập nhật trực tiếp",
+  "View all orders": "Xem tất cả đơn",
+  "Order pages": "Các trang đơn hàng",
+  Previous: "Trước",
+  Page: "Trang",
+  of: "trên",
+  Next: "Tiếp",
+  "Pickup name": "Tên nhận hàng",
+  "Order items": "Sản phẩm trong đơn",
+  "{{count}} units": "{{count}} sản phẩm",
+  preparing: "đang chuẩn bị",
+  ready: "sẵn sàng nhận",
+  picked_up: "đã nhận hàng",
+  unfulfilled: "chưa chuẩn bị",
+  "Mark ready": "Đánh dấu sẵn sàng",
+  "Mark picked up": "Đánh dấu đã nhận",
+  "Order marked ready.": "Đơn hàng đã sẵn sàng.",
+  "Order marked picked up.": "Đơn hàng đã được nhận.",
+  "Update Event Mode fulfilment on the designated device.":
+    "Cập nhật trạng thái xử lý đơn trên thiết bị Chế độ sự kiện được chỉ định.",
+  "This fulfilment update is no longer available.":
+    "Không thể cập nhật trạng thái xử lý đơn này nữa.",
+  "Could not update fulfilment.": "Không thể cập nhật trạng thái xử lý đơn.",
+  "Confirm payment before updating fulfilment.":
+    "Hãy xác nhận thanh toán trước khi cập nhật trạng thái xử lý đơn.",
+  "Fulfilment cannot move backward.":
+    "Không thể đưa trạng thái xử lý đơn về bước trước.",
+  "Order details": "Chi tiết đơn hàng",
+  Created: "Đã tạo",
+  "Handled by": "Xử lý bởi",
+  "Payment updated": "Cập nhật thanh toán",
+  "Fulfilment updated": "Cập nhật trạng thái xử lý đơn",
+  "Fulfilment handled by": "Người xử lý đơn",
+  "Online QR checkout": "Thanh toán QR trực tuyến",
+  "System expiry": "Hệ thống hết hạn",
+  "Not recorded": "Chưa ghi nhận",
+  Total: "Tổng cộng",
+  "Cancelling…": "Đang hủy…",
+  "Cancel and release stock": "Hủy và hoàn lại tồn kho",
+  "Swipe right or press Enter to confirm payment and update stock":
+    "Vuốt sang phải hoặc nhấn Enter để xác nhận thanh toán và cập nhật tồn kho",
+  "Confirming payment…": "Đang xác nhận thanh toán…",
+  "Payment confirmed": "Đã xác nhận thanh toán",
+  "Stock updated": "Đã cập nhật tồn kho",
+  "Could not confirm — try again": "Không thể xác nhận — thử lại",
+  "Swipe to confirm payment": "Vuốt để xác nhận thanh toán",
+  "Payment confirmed and stock updated":
+    "Đã xác nhận thanh toán và cập nhật tồn kho",
+  "Confirmation failed. Try again.": "Xác nhận thất bại. Hãy thử lại.",
+  Staff: "Nhân viên",
+  Admin: "Quản trị viên",
+  Owner: "Chủ sở hữu",
+  "Process and fulfil orders": "Xử lý và bàn giao đơn hàng",
+  "Manage catalog, settings, and orders":
+    "Quản lý danh mục, cài đặt và đơn hàng",
+  "Full shop and team access": "Toàn quyền gian hàng và đội ngũ",
+  "Could not load staff": "Không thể tải danh sách nhân viên",
+  "Enter a valid email address.": "Nhập địa chỉ email hợp lệ.",
+  "Enter your password.": "Nhập mật khẩu.",
+  "Choose color for {{label}}": "Chọn màu cho {{label}}",
+  "Choose a color, then fine-tune its hex value.":
+    "Chọn màu rồi tinh chỉnh bằng mã hex.",
+  "Saturation and brightness": "Độ bão hòa và độ sáng",
+  saturation: "độ bão hòa",
+  brightness: "độ sáng",
+  Hue: "Sắc độ",
+  "Color presets": "Màu có sẵn",
+  "Hex color": "Mã màu hex",
+  "System picker": "Bảng màu hệ thống",
+  "Open system color picker": "Mở bảng chọn màu của hệ thống",
+  "Use a 3 or 6 digit hex color.": "Dùng mã màu hex gồm 3 hoặc 6 ký tự.",
+  "Choose date and time": "Chọn ngày và giờ",
+  "Clear {{label}}": "Xóa {{label}}",
+  "Previous month": "Tháng trước",
+  "Next month": "Tháng sau",
+  Hour: "Giờ",
+  Minute: "Phút",
+  "Could not send invitation": "Không thể gửi lời mời",
+  "Invite processed. The team list is up to date.":
+    "Đã gửi hoặc cập nhật lời mời. Danh sách đội ngũ đã được làm mới.",
+  "Staff access updated.": "Đã cập nhật quyền nhân viên.",
+  "Could not update staff": "Không thể cập nhật quyền nhân viên",
+  "Shop access removed.": "Đã xóa quyền truy cập gian hàng.",
+  "Could not remove access": "Không thể xóa quyền truy cập",
+  "Invitation revoked.": "Đã thu hồi lời mời.",
+  "Could not revoke invitation": "Không thể thu hồi lời mời",
+  "Team access": "Quyền truy cập đội ngũ",
+  "Invite people, choose their role, and review access in one place.":
+    "Mời mọi người, chọn vai trò và xem lại quyền truy cập tại một nơi.",
+  "Invite a teammate": "Mời cộng sự",
+  "Team overview": "Tổng quan đội ngũ",
+  "Active members": "Thành viên đang hoạt động",
+  "Pending invites": "Lời mời đang chờ",
+  "Team seats used": "Số chỗ trong đội ngũ đã dùng",
+  "Choose what they can do. You can change or remove access later.":
+    "Chọn những thao tác họ được phép thực hiện. Bạn có thể thay đổi hoặc thu hồi quyền sau.",
+  "Track who still needs to accept their email invitation.":
+    "Theo dõi những người vẫn cần chấp nhận lời mời qua email.",
+  "They’ll receive secure access for this shop only.":
+    "Họ sẽ nhận quyền truy cập an toàn chỉ dành cho gian hàng này.",
+  "{{used}} of {{limit}} team seats used":
+    "Đã dùng {{used}}/{{limit}} chỗ trong đội ngũ",
+  "Team limit reached": "Đã đạt giới hạn đội ngũ",
+  "Shop team limit reached.": "Đội ngũ của gian hàng đã đạt giới hạn.",
+  "Revoke a pending invitation or remove a member before inviting someone new.":
+    "Hãy thu hồi một lời mời đang chờ hoặc xóa một thành viên trước khi mời người mới.",
+  Email: "Email",
+  Role: "Vai trò",
+  "Invitation role": "Vai trò lời mời",
+  "Send invitation": "Gửi lời mời",
+  Members: "Thành viên",
+  "{{count}} people with shop access":
+    "{{count}} người có quyền truy cập gian hàng",
+  "Loading staff…": "Đang tải danh sách nhân viên…",
+  "No members yet": "Chưa có thành viên",
+  Retry: "Thử lại",
+  "Invite a staff member above.": "Mời một thành viên ở phần trên.",
+  "Shop member": "Thành viên gian hàng",
+  Active: "Đang hoạt động",
+  Inactive: "Không hoạt động",
+  "Role for {{email}}": "Vai trò của {{email}}",
+  "Access for {{email}}": "Quyền truy cập của {{email}}",
+  Enabled: "Đã bật",
+  Disabled: "Đã tắt",
+  "Remove {{email}}": "Xóa {{email}}",
+  Remove: "Xóa",
+  Invitations: "Lời mời",
+  "Pending and recent email invitations": "Lời mời email đang chờ và gần đây",
+  expires: "hết hạn",
+  Revoke: "Thu hồi",
+  "Confirm ownership change": "Xác nhận thay đổi chủ sở hữu",
+  "Ownership changes affect full shop and team access. The shop must always retain at least one active owner.":
+    "Thay đổi chủ sở hữu ảnh hưởng toàn bộ quyền gian hàng và đội ngũ. Gian hàng luôn phải có ít nhất một chủ sở hữu đang hoạt động.",
+  "Confirm change": "Xác nhận thay đổi",
+  "Remove shop access?": "Xóa quyền truy cập gian hàng?",
+  "will immediately lose access to this shop.":
+    "sẽ mất quyền truy cập gian hàng này ngay lập tức.",
+  "Remove access": "Xóa quyền truy cập",
+  "Could not publish": "Không thể xuất bản",
+  "Could not publish all changes": "Không thể xuất bản tất cả thay đổi",
+  "Edit {{section}}": "Chỉnh sửa {{section}}",
+  "Removing…": "Đang xóa…",
+  "Storefront and payment settings were not published. Your edits are still here.":
+    "Chưa thể xuất bản cài đặt cửa hàng và thanh toán. Các chỉnh sửa của bạn vẫn được giữ lại.",
+  "Storefront settings were not published. Payment changes were saved, and your storefront edits are still here.":
+    "Chưa thể xuất bản cài đặt cửa hàng. Thay đổi thanh toán đã được lưu và chỉnh sửa cửa hàng vẫn được giữ lại.",
+  "Payment settings were not published. Storefront changes were saved, and your payment edits are still here.":
+    "Chưa thể xuất bản cài đặt thanh toán. Thay đổi cửa hàng đã được lưu và chỉnh sửa thanh toán vẫn được giữ lại.",
+  "No products available": "Không có sản phẩm khả dụng",
+  "Add products before choosing which items qualify for this promotion.":
+    "Hãy thêm sản phẩm trước khi chọn các mặt hàng áp dụng khuyến mãi này.",
+  "Featured spotlight": "Điểm nhấn nổi bật",
+  "Promoted products and swipe deck": "Sản phẩm nổi bật và bộ thẻ vuốt",
+  "Booth information": "Thông tin gian hàng",
+  "Location, hours, and social QR codes":
+    "Vị trí, giờ mở cửa và mã QR mạng xã hội",
+  "Browse controls": "Công cụ duyệt sản phẩm",
+  "Categories, search, sort, and view mode":
+    "Danh mục, tìm kiếm, sắp xếp và kiểu xem",
+  "Shopping cart": "Giỏ hàng",
+  "Cart, bank details, transfer note, and QR":
+    "Giỏ hàng, thông tin ngân hàng, nội dung chuyển khoản và QR",
+  "Product collection": "Bộ sưu tập sản phẩm",
+  "The complete item grid or list": "Toàn bộ lưới hoặc danh sách sản phẩm",
+  Wide: "Rộng",
+  Side: "Bên cạnh",
+  "Drag {{section}}": "Kéo {{section}}",
+  "Payment settings": "Cài đặt thanh toán",
+  "Storefront builder": "Trình thiết kế cửa hàng",
+  "Use a section handle in the preview to edit it.":
+    "Dùng nút điều khiển của từng phần trong bản xem trước để chỉnh sửa.",
+  "Collapse builder sidebar": "Thu gọn thanh thiết kế",
+  "Expand builder sidebar": "Mở rộng thanh thiết kế",
+  "Builder tools": "Công cụ thiết kế",
+  Layout: "Bố cục",
+  Content: "Nội dung",
+  Style: "Phong cách",
+  "Page sections": "Các phần trang",
+  "Drag to reorder the public page.": "Kéo để sắp xếp lại trang công khai.",
+  "Move {{section}} up": "Di chuyển {{section}} lên",
+  "Move {{section}} down": "Di chuyển {{section}} xuống",
+  "Wide and side modules keep safe column widths. Dragging changes their order within those responsive lanes.":
+    "Các mô-đun chính và mô-đun bên giữ chiều rộng cột phù hợp. Kéo để đổi thứ tự trong từng vùng của bố cục đáp ứng.",
+  "Only settings for the selected section are shown.":
+    "Chỉ hiển thị cài đặt của phần đang chọn.",
+  "The Featured banner displays details directly from active featured products. Mark products as Featured in the Products workspace.":
+    "Banner Nổi bật lấy nội dung trực tiếp từ các sản phẩm nổi bật đang hoạt động. Đánh dấu sản phẩm là Nổi bật trong khu vực Sản phẩm.",
+  "Auto-rotate products": "Tự động chuyển sản phẩm",
+  "Rotate featured items every 4.5 seconds after the customer first interacts. Pauses while they browse and respects reduced motion.":
+    "Chuyển sản phẩm nổi bật mỗi 4,5 giây sau lần tương tác đầu tiên của khách. Tạm dừng khi khách đang xem và tôn trọng cài đặt giảm chuyển động.",
+  "Banner style": "Kiểu banner",
+  "Swipe deck": "Bộ thẻ vuốt",
+  "Layered cards and soft orbit": "Thẻ xếp lớp và quỹ đạo nhẹ",
+  Editorial: "Tạp chí",
+  "Clean magazine layout": "Bố cục tạp chí gọn gàng",
+  Minimal: "Tối giản",
+  "Quiet and product-first": "Nhẹ nhàng, tập trung vào sản phẩm",
+  "Pop poster": "Áp phích nổi bật",
+  "Bold color and energy": "Màu sắc mạnh mẽ và năng động",
+  "Control style": "Kiểu điều khiển",
+  Panel: "Bảng điều khiển",
+  "Everything in one surface": "Gom tất cả trong một khung",
+  Floating: "Nổi",
+  "Light and open": "Nhẹ và thoáng",
+  Compact: "Gọn",
+  "More catalog, less chrome": "Ưu tiên sản phẩm, giảm chi tiết giao diện",
+  "Tinted with an offset shadow": "Nền màu nhẹ với bóng lệch",
+  "Product card style": "Kiểu thẻ sản phẩm",
+  Classic: "Cổ điển",
+  "Balanced shop cards": "Thẻ cửa hàng cân đối",
+  "Flat and spacious": "Phẳng và thoáng",
+  Framed: "Đóng khung",
+  "Inset product photography": "Ảnh sản phẩm nằm trong khung",
+  "Colorful collectible cards": "Thẻ sưu tầm đầy màu sắc",
+  "Header subtitle": "Tiêu đề phụ đầu trang",
+  "Upload booth logo": "Tải logo gian hàng lên",
+  "Social QR center logo": "Logo giữa QR mạng xã hội",
+  "Payment account": "Tài khoản thanh toán",
+  "No account configured": "Chưa cấu hình tài khoản",
+  "Account holder not set": "Chưa nhập tên chủ tài khoản",
+  "Payment ready": "Sẵn sàng nhận thanh toán",
+  "Needs setup": "Cần thiết lập",
+  "Backup payment QR": "QR thanh toán dự phòng",
+  "Upload backup QR": "Tải QR dự phòng lên",
+  "Browse controls use the categories and product data from your catalog. Language is available under Style.":
+    "Điều khiển duyệt dùng danh mục và dữ liệu sản phẩm. Ngôn ngữ nằm trong mục Phong cách.",
+  "Product content is managed from the Products workspace. This section follows the customer’s grid or list choice.":
+    "Nội dung sản phẩm được quản lý trong khu vực Sản phẩm. Phần này tuân theo lựa chọn dạng lưới hoặc danh sách của khách.",
+  "Look & feel": "Giao diện",
+  "Palette presets": "Bảng màu có sẵn",
+  "Start with a mood, then fine-tune any color below.":
+    "Bắt đầu với một phong cách, sau đó tinh chỉnh từng màu bên dưới.",
+  "Matsuri Bloom": "Matsuri Rực rỡ",
+  "Warm & cheerful": "Ấm áp & vui tươi",
+  "Matcha Picnic": "Dã ngoại Matcha",
+  "Cute & cozy": "Dễ thương & ấm cúng",
+  "Sakura Soda": "Soda Sakura",
+  "Sweet & bubbly": "Ngọt ngào & sôi nổi",
+  "Night Market": "Chợ đêm",
+  "Cool & electric": "Cá tính & rực sáng",
+  "Ocean Pop": "Ocean Pop",
+  "Fresh & playful": "Tươi mới & tinh nghịch",
+  "Card personality": "Phong cách thẻ",
+  "Choose how product, booth, cart, and control cards feel.":
+    "Chọn phong cách cho thẻ sản phẩm, gian hàng, giỏ hàng và điều khiển.",
+  Soft: "Mềm mại",
+  "Gentle surfaces": "Bề mặt nhẹ nhàng",
+  Outlined: "Viền rõ",
+  "Clean and crisp": "Gọn gàng & sắc nét",
+  Elevated: "Nổi khối",
+  "Polished depth": "Chiều sâu tinh tế",
+  Playful: "Tinh nghịch",
+  "Colorful offset shadow": "Bóng lệch đầy màu sắc",
+  "Custom colors": "Màu tùy chỉnh",
+  "Make this palette completely yours.":
+    "Biến bảng màu này thành phong cách riêng của bạn.",
+  "Changes update the canvas instantly.":
+    "Thay đổi cập nhật bản xem trước ngay lập tức.",
+  Primary: "Chính",
+  Dark: "Tối",
+  Accent: "Điểm nhấn",
+  "Corner radius": "Độ bo góc",
+  "{{radius}}px across storefront cards": "{{radius}}px cho các thẻ cửa hàng",
+  "Storefront language": "Ngôn ngữ cửa hàng",
+  "Customer-facing interface copy.": "Nội dung giao diện dành cho khách hàng.",
+  "Unpublished changes": "Thay đổi chưa xuất bản",
+  "Published storefront": "Cửa hàng đã xuất bản",
+  "Preview size": "Kích thước xem trước",
+  Desktop: "Máy tính",
+  Phone: "Điện thoại",
+  "Preview zoom": "Thu phóng xem trước",
+  "Storefront preview canvas": "Vùng xem trước cửa hàng",
+  "Zoom out": "Thu nhỏ",
+  "Fit preview": "Vừa khung xem trước",
+  "Zoom in": "Phóng to",
+  Undo: "Hoàn tác",
+  Redo: "Làm lại",
+  "Reset unpublished changes": "Đặt lại thay đổi chưa xuất bản",
+  Reset: "Đặt lại",
+  Publish: "Xuất bản",
+  desktop: "máy tính",
+  phone: "điện thoại",
+  "{{device}} storefront preview": "Bản xem trước cửa hàng trên {{device}}",
+  "Could not refresh orders.": "Không thể làm mới đơn hàng.",
+  "Refresh failed": "Làm mới thất bại",
+  "Could not load workspace data.":
+    "Không thể tải dữ liệu không gian làm việc.",
+  "Connection error": "Lỗi kết nối",
+  "Could not load the admin workspace.": "Không thể tải không gian quản trị.",
+  "Admin unavailable": "Trang quản trị không khả dụng",
+  "Could not refresh admin data.": "Không thể làm mới dữ liệu quản trị.",
+  "Order notifications disabled.": "Đã tắt thông báo đơn hàng.",
+  "Order notifications enabled on this device.":
+    "Đã bật thông báo đơn hàng trên thiết bị này.",
+  "Could not update notifications.": "Không thể cập nhật thông báo.",
+  "Notifications unavailable": "Thông báo không khả dụng",
+  "Item saved.": "Đã lưu sản phẩm.",
+  "Item deleted.": "Đã xóa sản phẩm.",
+  "Back to storefront": "Về cửa hàng",
+  "Go to dashboard": "Đến bảng điều khiển",
+  "Merch desk": "Quầy merch",
+  "Products ({{count}})": "Sản phẩm ({{count}})",
+  Team: "Đội ngũ",
+  Settings: "Cài đặt",
+  "Active shop": "Gian hàng hiện tại",
+  Unavailable: "Không khả dụng",
+  "All shops": "Tất cả gian hàng",
+  "Open platform dashboard": "Mở bảng điều khiển nền tảng",
+  "Set up a new storefront": "Thiết lập cửa hàng mới",
+  "Disable alerts": "Tắt thông báo",
+  "Enable alerts": "Bật thông báo",
+  "Disable order notifications": "Tắt thông báo đơn hàng",
+  "Enable order notifications": "Bật thông báo đơn hàng",
+  "Alerts on": "Đã bật thông báo",
+  "Live operations": "Vận hành trực tiếp",
+  "Catalog management": "Quản lý danh mục",
+  "Shop configuration": "Cấu hình gian hàng",
+  "Access management": "Quản lý quyền truy cập",
+  "Visual storefront": "Giao diện cửa hàng",
+  Orders: "Đơn hàng",
+  "Storefront designer": "Trình thiết kế cửa hàng",
+  "Confirm payments and fulfil orders.":
+    "Xác nhận thanh toán và bàn giao đơn hàng.",
+  "Manage products, prices, and stock.": "Quản lý sản phẩm, giá và tồn kho.",
+  "Update booth and payment details.":
+    "Cập nhật thông tin gian hàng và thanh toán.",
+  "Build your storefront and checkout.":
+    "Thiết kế cửa hàng và quy trình thanh toán.",
+  "matching orders": "đơn phù hợp",
+  total: "tổng cộng",
+  "need attention": "cần chú ý",
+  "Attention needed": "Cần xử lý",
+  "Resolve the time-sensitive items first, then finish shop setup.":
+    "Xử lý các mục sắp hết hạn trước, sau đó hoàn tất thiết lập gian hàng.",
+  "{{count}} visible reservations expire soon":
+    "{{count}} đơn giữ hàng đang hiển thị sắp hết hạn",
+  "1 visible reservation expires soon":
+    "1 đơn giữ hàng đang hiển thị sắp hết hạn",
+  "Confirm received payments before stock is released.":
+    "Xác nhận khoản thanh toán đã nhận trước khi tồn kho được trả lại.",
+  "Confirm payment before stock is released.":
+    "Xác nhận thanh toán trước khi tồn kho được trả lại.",
+  "{{count}} products are low or sold out":
+    "{{count}} sản phẩm sắp hết hoặc đã hết hàng",
+  "1 product is low or sold out": "1 sản phẩm sắp hết hoặc đã hết hàng",
+  "Review availability before the next rush.":
+    "Kiểm tra lại tồn kho trước đợt khách tiếp theo.",
+  "Review stock before the next rush.":
+    "Kiểm tra tồn kho trước đợt khách tiếp theo.",
+  "{{count}} order alerts need manual review":
+    "{{count}} thông báo đơn hàng cần kiểm tra thủ công",
+  "1 order alert needs manual review":
+    "1 thông báo đơn hàng cần kiểm tra thủ công",
+  "{{count}} order alerts are retrying":
+    "{{count}} thông báo đơn hàng đang được gửi lại",
+  "1 order alert is retrying": "1 thông báo đơn hàng đang được gửi lại",
+  "{{count}} order alerts are delayed":
+    "{{count}} thông báo đơn hàng đang bị chậm",
+  "1 order alert is delayed": "1 thông báo đơn hàng đang bị chậm",
+  "{{count}} stopped after all retries. Check staff notification devices.":
+    "{{count}} thông báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của nhân viên.",
+  "1 alert stopped after all retries. Check staff notification devices.":
+    "1 thông báo đã dừng sau mọi lần thử. Hãy kiểm tra thiết bị nhận thông báo của nhân viên.",
+  "The oldest alert became due {{time}}.":
+    "Thông báo cũ nhất đã đến hạn {{time}}.",
+  "Automatic retries are running; orders remain safe in the queue.":
+    "Hệ thống đang tự gửi lại; đơn hàng vẫn an toàn trong hàng đợi.",
+  "Retry notification delivery": "Thử gửi lại thông báo",
+  "Retry one alert after checking that staff notification devices are ready.":
+    "Thử gửi lại một thông báo sau khi kiểm tra thiết bị nhận thông báo của nhân viên đã sẵn sàng.",
+  "Check staff alerts, then retry delivery.":
+    "Kiểm tra thông báo của nhân viên rồi thử gửi lại.",
+  "Retry alert": "Thử gửi lại",
+  "Queuing retry…": "Đang lên lịch gửi lại…",
+  "Order alert queued for another delivery attempt.":
+    "Thông báo đơn hàng đã được xếp hàng để gửi lại.",
+  "This alert is no longer eligible for retry. Its status was refreshed.":
+    "Thông báo này không còn đủ điều kiện gửi lại. Trạng thái đã được làm mới.",
+  "Could not retry this order alert.":
+    "Không thể thử gửi lại thông báo đơn hàng này.",
+  "Retry unavailable": "Không thể gửi lại",
+  "Production checklist · {{done}}/{{total}} ready":
+    "Danh sách kiểm tra vận hành · {{done}}/{{total}} hoàn tất",
+  "Shop setup · {{done}}/{{total}} ready":
+    "Thiết lập gian hàng · {{done}}/{{total}} sẵn sàng",
+  "Publish at least one active product": "Bật bán ít nhất một sản phẩm",
+  "Add customer-ready payment details":
+    "Thêm đầy đủ thông tin thanh toán cho khách",
+  "Complete the storefront name and description":
+    "Hoàn tất tên và mô tả cửa hàng",
+  "Add booth location and opening hours":
+    "Thêm vị trí và giờ mở cửa của gian hàng",
+  corners: "bo góc",
+  locale: "ngôn ngữ",
+  "Workspace unavailable": "Không gian làm việc không khả dụng",
+  "We could not load this shop's workspace. Check your connection and retry.":
+    "Không thể tải không gian của gian hàng này. Hãy kiểm tra kết nối và thử lại.",
+  "Retry loading": "Tải lại",
+  "Product workspace": "Khu vực quản lý sản phẩm",
+  "{{count}} of {{limit}} featured slots used.":
+    "Đã dùng {{count}}/{{limit}} vị trí nổi bật.",
+  "All {{limit}} featured slots are used.":
+    "Đã dùng hết {{limit}} vị trí nổi bật.",
+  "Edit product": "Sửa sản phẩm",
+  "No product selected": "Chưa chọn sản phẩm",
+  "Choose a product from the list to edit it, or start a fresh listing.":
+    "Chọn sản phẩm trong danh sách để chỉnh sửa hoặc tạo sản phẩm mới.",
+  "Storefront design published.": "Đã xuất bản thiết kế cửa hàng.",
+  "Checkout settings saved.": "Đã lưu cài đặt thanh toán.",
+  "Booth settings saved.": "Đã lưu cài đặt gian hàng.",
+  "Sign out of admin?": "Đăng xuất khỏi trang quản trị?",
+  "You’ll return to the staff login screen. The public catalog stays open for customers.":
+    "Bạn sẽ quay lại màn hình đăng nhập dành cho nhân viên. Danh mục công khai vẫn mở cho khách hàng.",
+  "Stay signed in": "Tiếp tục đăng nhập",
+  Gacha: "Gacha",
+  "Gacha setup": "Thiết lập gacha",
+  "Gacha setup steps": "Các bước thiết lập gacha",
+  "Game setup": "Thiết lập game",
+  "Prize pool": "Kho phần thưởng",
+  "Choose the game, public copy, and advanced pity rules.":
+    "Chọn game, nội dung công khai và quy tắc bảo hiểm nâng cao.",
+  "Public minigame open": "Minigame công khai đang mở",
+  "Public minigame closed": "Minigame công khai đang đóng",
+  "Live banners": "Banner đang bật",
+  "Pool items": "Vật phẩm trong kho",
+  "{{count}} featured on this banner":
+    "{{count}} vật phẩm nổi bật trên banner này",
+  "Gacha workflow": "Quy trình gacha",
+  "Set the public experience.": "Thiết lập trải nghiệm công khai.",
+  "Choose what each banner shows.": "Chọn nội dung hiển thị trên từng banner.",
+  "Add and configure prize items.": "Thêm và cấu hình vật phẩm phần thưởng.",
+  Preview: "Xem thử",
+  "Filter pool items": "Lọc vật phẩm trong kho",
+  "Pool items ({{count}})": "Vật phẩm trong kho ({{count}})",
+  "Add products ({{count}})": "Thêm sản phẩm ({{count}})",
+  "Added to pool.": "Đã thêm vào kho.",
+  "Removed from pool.": "Đã xóa khỏi kho.",
+  "Remove from pool": "Xóa khỏi kho",
+  "Pity rules": "Quy tắc bảo hiểm",
+  "Rates and pity rules": "Tỷ lệ và quy tắc bảo hiểm",
+  "Base odds and maximum pulls before each guarantee.":
+    "Tỷ lệ cơ bản và số lượt tối đa trước mỗi mốc bảo hiểm.",
+  "Advanced pull guarantees": "Cài đặt bảo hiểm nâng cao",
+  "Pull guarantees": "Mốc bảo hiểm",
+  "Maximum pulls before each rarity is guaranteed.":
+    "Số lượt tối đa trước khi đảm bảo nhận được từng độ hiếm.",
+  "{{count}}-star rarity": "Độ hiếm {{count}} sao",
+  "All products": "Tất cả sản phẩm",
+  "In pool": "Trong kho",
+  "Not added": "Chưa thêm",
+  "Gacha banners": "Banner gacha",
+  "Build merch pools, preview changes, then publish.":
+    "Tạo kho phần thưởng từ merch, xem thử thay đổi rồi xuất bản.",
+  Banners: "Banner",
+  "Add, order, duplicate, or disable banners.":
+    "Thêm, sắp xếp, nhân bản hoặc tắt banner.",
+  "Add banner": "Thêm banner",
+  "Move banner up": "Đưa banner lên",
+  "Move banner down": "Đưa banner xuống",
+  "Duplicate banner": "Nhân bản banner",
+  "Delete banner": "Xóa banner",
+  "Banner presentation, pool, and item stats.":
+    "Giao diện banner, kho phần thưởng và chỉ số vật phẩm.",
+  "Banner title": "Tên banner",
+  "Bilingual: English | Tiếng Việt or [en]English[vi]Tiếng Việt":
+    "Song ngữ: Tiếng Anh | Tiếng Việt hoặc [en]English[vi]Tiếng Việt",
+  "Banner type": "Loại banner",
+  "Banner copy": "Nội dung banner",
+  "Featured items shown": "Số vật phẩm nổi bật",
+  "Featured banner slots": "Vị trí nổi bật trên banner",
+  "Official lineup": "Đội hình yêu cầu",
+  "{{count}} slots: {{five}}×5★ + {{four}}×4★":
+    "{{count}} vị trí: {{five}}×5★ + {{four}}×4★",
+  "1 primary item": "1 vật phẩm chính",
+  "1 primary + {{count}} secondary": "1 chính + {{count}} phụ",
+  "1 featured item": "1 vật phẩm nổi bật",
+  "{{count}} featured items": "{{count}} vật phẩm nổi bật",
+  "HSR event banners show exactly one 5-star primary and three 4-star rate-ups. Leave every featured slot empty for a standard warp.":
+    "Banner sự kiện HSR cần chính xác một vật phẩm 5 sao chính và ba vật phẩm 4 sao tăng tỷ lệ. Để trống toàn bộ vị trí nổi bật nếu đây là banner thường.",
+  "HSR banners support one primary 5-star item.":
+    "Banner HSR hỗ trợ một vật phẩm 5 sao chính.",
+  "This HSR banner has filled its 4-star rate-up slots.":
+    "Banner HSR này đã đủ vị trí tăng tỷ lệ 4 sao.",
+  "Only 5-star primary and 4-star secondary items can be featured.":
+    "Chỉ vật phẩm 5 sao chính và vật phẩm 4 sao phụ mới có thể được đặt làm nổi bật.",
+  "Choose a featured rarity": "Chọn độ hiếm nổi bật",
+  "Featured items must match the HSR banner type.":
+    "Vật phẩm nổi bật phải khớp với loại banner HSR.",
+  "Choose a matching role": "Chọn vai trò phù hợp",
+  "Featured items must match the banner type.":
+    "Vật phẩm nổi bật phải khớp với loại banner.",
+  "Only 5★ and 4★ items can use featured banner slots.":
+    "Chỉ vật phẩm 5★ và 4★ mới có thể dùng vị trí nổi bật trên banner.",
+  "This banner has filled its 5★ featured slots.":
+    "Banner này đã đủ vị trí nổi bật 5★.",
+  "This banner has filled its 4★ rate-up slots.":
+    "Banner này đã đủ vị trí tăng tỷ lệ 4★.",
+  "Every active HSR banner needs one featured 5-star item.":
+    "Mỗi banner HSR đang bật cần một vật phẩm 5 sao nổi bật.",
+  'The active banner "{{name}}" needs exactly one featured 5-star item.':
+    'Banner đang hoạt động "{{name}}" cần chính xác một vật phẩm 5 sao nổi bật.',
+  "Rate-up": "Tăng tỷ lệ",
+  "5★ featured": "Nổi bật 5★",
+  "4★ rate-up": "Tăng tỷ lệ 4★",
+  "Primary featured": "Nổi bật chính",
+  "Secondary rate-up": "Tăng tỷ lệ phụ",
+  "Banner theme": "Chủ đề banner",
+  "Banner element": "Nguyên tố banner",
+  "Banner active": "Bật banner",
+  "Banner starts": "Banner bắt đầu",
+  "Banner ends": "Banner kết thúc",
+  "Leave empty to make it available immediately.":
+    "Để trống để banner khả dụng ngay lập tức.",
+  "Leave empty to keep it running until you close it.":
+    "Để trống để banner tiếp tục chạy cho đến khi bạn tắt.",
+  "Times use your current device timezone.":
+    "Thời gian sử dụng múi giờ hiện tại của thiết bị.",
+  'Banner "{{name}}" must end after it starts.':
+    'Banner "{{name}}" phải kết thúc sau thời gian bắt đầu.',
+  "Check banner schedule": "Kiểm tra lịch banner",
+  "Simulator rules": "Quy tắc mô phỏng",
+  "Shared availability and pity across every banner.":
+    "Trạng thái và bảo hiểm dùng chung cho mọi banner.",
+  Element: "Nguyên tố",
+  "Element icon": "Biểu tượng nguyên tố",
+  "Weapon class": "Loại vũ khí",
+  "featured items": "vật phẩm nổi bật",
+  items: "vật phẩm",
+  shown: "hiển thị",
+  active: "hoạt động",
+  featured: "nổi bật",
+  Add: "Thêm",
+  "Preparing the shop’s merch banners.":
+    "Đang chuẩn bị các banner merch của gian hàng.",
+  "Give the minigame and every banner a title.":
+    "Hãy đặt tên cho minigame và mọi banner.",
+  "Every active banner needs at least one active merch item.":
+    "Mỗi banner đang bật cần ít nhất một merch đang hoạt động.",
+  "The active game needs at least one active {{rarity}}-star item across its banners.":
+    "Game đang hoạt động cần ít nhất một vật phẩm {{rarity}} sao đang bật trong các banner.",
+  'The active banner "{{name}}" needs at least one active merch item.':
+    'Banner đang hoạt động "{{name}}" cần ít nhất một vật phẩm đang bán.',
+  "Featured slots are full": "Đã đủ vị trí nổi bật",
+  "Check featured items": "Kiểm tra vật phẩm nổi bật",
+  "Incomplete featured lineup": "Đội hình nổi bật chưa đủ",
+  'Featured items in "{{name}}" must match its banner type and use 4★ or 5★ rarity.':
+    'Vật phẩm nổi bật trong "{{name}}" phải khớp loại banner và có độ hiếm 4★ hoặc 5★.',
+  'The active banner "{{name}}" needs exactly {{five}} featured 5★ and {{four}} featured 4★ items.':
+    'Banner đang hoạt động "{{name}}" cần chính xác {{five}} vật phẩm 5★ và {{four}} vật phẩm 4★ nổi bật.',
+  'The active banner "{{name}}" supports {{five}} featured 5★ and up to {{four}} featured 4★ items.':
+    'Banner đang hoạt động "{{name}}" hỗ trợ {{five}} vật phẩm 5★ và tối đa {{four}} vật phẩm 4★ nổi bật.',
+  "This banner can show up to {{count}} featured items.":
+    "Banner này có thể hiển thị tối đa {{count}} vật phẩm nổi bật.",
+  Sword: "Kiếm",
+  Claymore: "Trọng kiếm",
+  Polearm: "Vũ khí cán dài",
+  Bow: "Cung",
+  Catalyst: "Pháp khí",
+  "Minigame studio": "Xưởng minigame",
+  "Turn your merch into characters and weapons for a free minigame.":
+    "Biến merch thành nhân vật và vũ khí trong minigame miễn phí.",
+  "Shelf wishes": "Điều ước kệ hàng",
+  "Create a free character-and-weapon minigame using your real merch catalog.":
+    "Tạo minigame nhân vật và vũ khí miễn phí từ danh mục merch thật.",
+  "Open preview": "Mở bản xem thử",
+  "Public minigame": "Minigame công khai",
+  "Add merch, then tune rarity, role, and featured placement.":
+    "Thêm merch, sau đó điều chỉnh độ hiếm, vai trò và vị trí nổi bật.",
+  "Customers can play from the storefront.": "Khách có thể chơi từ cửa hàng.",
+  "Only staff can preview it until you open it.":
+    "Chỉ nhân viên có thể xem thử cho đến khi bạn mở minigame.",
+  Open: "Đang mở",
+  Closed: "Đã đóng",
+  "Minigame title": "Tên minigame",
+  Introduction: "Giới thiệu",
+  "Warp title": "Tên Warp",
+  "Wish title": "Tên Wish",
+  "4-star pity": "Bảo hiểm 4 sao",
+  "5-star pity": "Bảo hiểm 5 sao",
+  "Character 5-star pity": "Bảo hiểm nhân vật 5 sao",
+  "Light Cone 5-star pity": "Bảo hiểm Nón Ánh Sáng 5 sao",
+  "4-star base rate": "Tỷ lệ cơ bản 4 sao",
+  "5-star base rate": "Tỷ lệ cơ bản 5 sao",
+  "Character 5-star base rate": "Tỷ lệ cơ bản nhân vật 5 sao",
+  "Light Cone 5-star base rate": "Tỷ lệ cơ bản Nón Ánh Sáng 5 sao",
+  "Chance per pull before pity increases the rate.":
+    "Xác suất mỗi lượt trước khi bảo hiểm tăng tỷ lệ.",
+  "Guarantee a 4-star or higher within this many pulls.":
+    "Đảm bảo nhận 4 sao trở lên trong số lượt này.",
+  "Guarantee a 5-star within this many pulls.":
+    "Đảm bảo nhận 5 sao trong số lượt này.",
+  "Character 5★ guaranteed within N pulls":
+    "Đảm bảo nhận nhân vật 5★ trong N lượt",
+  "5★ guaranteed within N pulls": "Đảm bảo nhận 5★ trong N lượt",
+  "4-star soft pity": "Mốc tăng tỷ lệ 4 sao",
+  "5-star soft pity": "Mốc tăng tỷ lệ 5 sao",
+  "Character 5-star soft pity": "Mốc tăng tỷ lệ nhân vật 5 sao",
+  "Light Cone 5-star soft pity": "Mốc tăng tỷ lệ Nón Ánh Sáng 5 sao",
+  "Start increasing the 4-star rate from this pull.":
+    "Bắt đầu tăng tỷ lệ 4 sao từ lượt này.",
+  "Start increasing the 5-star rate from this pull.":
+    "Bắt đầu tăng tỷ lệ 5 sao từ lượt này.",
+  "Character 5★ luck improves after pull #":
+    "Tỷ lệ nhân vật 5★ tăng sau lượt #",
+  "5★ luck improves after pull #": "Tỷ lệ 5★ tăng sau lượt #",
+  "Featured-item rate": "Tỷ lệ vật phẩm nổi bật",
+  "Chance that a 4-star or 5-star pull uses its featured pool.":
+    "Xác suất lượt 4 hoặc 5 sao nhận vật phẩm từ nhóm nổi bật.",
+  "Featured guarantee": "Bảo hiểm vật phẩm nổi bật",
+  "After a non-featured pull, guarantee the next item of that rarity is featured.":
+    "Sau khi trượt vật phẩm nổi bật, đảm bảo vật phẩm tiếp theo cùng độ hiếm sẽ là vật phẩm nổi bật.",
+  "Each soft pity must be at least 1 and lower than its hard pity.":
+    "Mỗi mốc tăng tỷ lệ phải từ 1 trở lên và thấp hơn mốc bảo hiểm cứng.",
+  "The featured-item rate must be between 0% and 100%.":
+    "Tỷ lệ vật phẩm nổi bật phải nằm trong khoảng 0% đến 100%.",
+  "Merch wish pool": "Kho phần thưởng Wish",
+  "Choose products, present them as characters or weapons, and tune their rarity.":
+    "Chọn sản phẩm, đặt vai trò nhân vật hoặc vũ khí và điều chỉnh độ hiếm.",
+  "Publishing…": "Đang xuất bản…",
+  "Publish gacha": "Xuất bản gacha",
+  "Publish HSR warp": "Xuất bản Warp HSR",
+  "Publish Genshin wish": "Xuất bản Wish Genshin",
+  "active merch": "merch đang hoạt động",
+  "Base rarity rates are 90% / 9% / 1%. Weight changes which item appears within the same rarity.":
+    "Tỷ lệ cơ bản là 90% / 9% / 1%. Trọng số quyết định vật phẩm xuất hiện trong cùng độ hiếm.",
+  "Search merch…": "Tìm merch…",
+  "Hidden product": "Sản phẩm bị ẩn",
+  "This product is hidden and won't show up in the storefront wish pool.":
+    "Sản phẩm này đang bị ẩn và sẽ không xuất hiện trong kho phần thưởng Wish của cửa hàng.",
+  Included: "Đã thêm",
+  "Add to pool": "Thêm vào kho",
+  Character: "Nhân vật",
+  Weapon: "Vũ khí",
+  Rarity: "Độ hiếm",
+  Weight: "Trọng số",
+  "No matching merch": "Không có merch phù hợp",
+  "Try another product name, code, or category.":
+    "Hãy thử tên, mã hoặc danh mục sản phẩm khác.",
+  "Loading gacha settings…": "Đang tải cài đặt gacha…",
+  "Preparing the shop’s merch pool.":
+    "Đang chuẩn bị kho phần thưởng của gian hàng.",
+  "Could not load the minigame.": "Không thể tải minigame.",
+  "Gacha unavailable": "Gacha không khả dụng",
+  "Give the minigame a title.": "Hãy đặt tên cho minigame.",
+  "Give every banner a title.": "Hãy đặt tên cho mọi banner.",
+  "Check gacha settings": "Kiểm tra cài đặt gacha",
+  "The 5-star pity must be higher than the 4-star pity.":
+    "Bảo hiểm 5 sao phải lớn hơn bảo hiểm 4 sao.",
+  "The Light Cone 5-star pity must be higher than the 4-star pity.":
+    "Bảo hiểm Nón Ánh Sáng 5 sao phải lớn hơn bảo hiểm 4 sao.",
+  "The 4-star and 5-star base rates must total less than 100%.":
+    "Tổng tỷ lệ cơ bản 4 sao và 5 sao phải nhỏ hơn 100%.",
+  "The 4-star and Light Cone 5-star base rates must total less than 100%.":
+    "Tổng tỷ lệ cơ bản 4 sao và Nón Ánh Sáng 5 sao phải nhỏ hơn 100%.",
+  "Incomplete prize pool": "Kho phần thưởng chưa đầy đủ",
+  'The active banner "{{name}}" needs at least one active 3-star, 4-star, and 5-star item.':
+    'Banner đang bật "{{name}}" cần ít nhất một vật phẩm 3 sao, 4 sao và 5 sao đang hoạt động.',
+  "Check warp settings": "Kiểm tra cài đặt Warp",
+  "Add at least one active merch item before opening the minigame.":
+    "Thêm ít nhất một merch đang hoạt động trước khi mở minigame.",
+  "Wish pool is empty": "Kho phần thưởng Wish đang trống",
+  "Gacha settings published.": "Đã xuất bản cài đặt gacha.",
+  "Could not save the minigame.": "Không thể lưu minigame.",
+  "Could not publish gacha": "Không thể xuất bản gacha",
+  "Moonlight Girl": "Cô gái Ánh Trăng",
+  "Festival Cats": "Mèo Lễ Hội",
+  "Moonlight Stand": "Standee Ánh Trăng",
+  "Postcard Pack": "Bộ bưu thiếp",
+  "Moon Stand × 2": "Standee Ánh Trăng × 2",
+  "Sticker Pack × 1": "Bộ sticker × 1",
+  "Print Set × 1": "Bộ tranh in × 1",
+  "Game Theme": "Chủ đề game",
+  "Game editor": "Trình chỉnh sửa game",
+  "Availability & game": "Trạng thái mở & trò chơi",
+  "Choose the simulator and whether customers can play it.":
+    "Chọn trình mô phỏng và quyết định khách hàng có thể chơi hay không.",
+  "Public copy": "Nội dung công khai",
+  "Name the experience and briefly tell customers what they can win.":
+    "Đặt tên trải nghiệm và giới thiệu ngắn gọn phần thưởng cho khách hàng.",
+  "Turn this minigame on or off for customers.":
+    "Bật hoặc tắt minigame này cho khách hàng.",
+  "Choose the active simulator game.": "Chọn trò chơi mô phỏng đang hoạt động.",
+  "Title shown on the storefront banner.":
+    "Tiêu đề hiển thị trên banner cửa hàng.",
+  "Brief description of rewards.": "Mô tả ngắn gọn về phần thưởng.",
+  "Warp pool": "Kho phần thưởng Warp",
+  "Current banner": "Banner hiện tại",
+  "Reward setup": "Thiết lập phần thưởng",
+  Configure: "Cấu hình",
+  "Select a banner, edit its public copy, then choose its featured rewards.":
+    "Chọn banner, chỉnh sửa nội dung công khai, rồi chọn phần thưởng nổi bật.",
+  "Banners & pool": "Banner & kho phần thưởng",
+  "Gacha status": "Trạng thái gacha",
+  "Each game keeps its own banners and prize pool.":
+    "Mỗi game có banner và kho phần thưởng riêng.",
+  "Banner duplicated": "Đã nhân bản banner",
+  "Pool items are not copied — each merch item can only belong to one banner.":
+    "Các vật phẩm trong kho không được sao chép — mỗi merch chỉ có thể thuộc về một banner.",
+  "Already in another banner": "Đã có trong banner khác",
+  "This item is already in “{{banner}}”. Remove it there first.":
+    "Vật phẩm này đã có trong “{{banner}}”. Hãy xóa nó ở đó trước.",
+  "In “{{banner}}”": "Trong “{{banner}}”",
+  "Banner {{number}}": "Banner {{number}}",
+  "Editing banner": "Đang chỉnh sửa banner",
+  "Light Cone": "Nón Ánh Sáng",
+  Path: "Vận Mệnh",
+  Destruction: "Hủy Diệt",
+  Hunt: "Săn Bắn",
+  Erudition: "Tri Thức",
+  Harmony: "Hòa Hợp",
+  Nihility: "Hư Vô",
+  Preservation: "Bảo Hộ",
+  Abundance: "Trù Phú",
+  Physical: "Vật Lý",
+  Fire: "Hỏa",
+  Ice: "Băng",
+  Lightning: "Lôi",
+  Wind: "Phong",
+  Quantum: "Lượng Tử",
+  Imaginary: "Số Ảo",
+  "Could not save draft": "Không thể lưu bản nháp",
+  "Retry saving": "Thử lưu lại",
+  "Gacha draft saved.": "Đã lưu bản nháp gacha.",
+  "Add at least three active products so the pool can include 3-star, 4-star, and 5-star rewards.":
+    "Hãy thêm ít nhất ba sản phẩm đang hoạt động để kho có phần thưởng 3 sao, 4 sao và 5 sao.",
+  "More merch needed": "Cần thêm merch",
+  "Recommended pool created. Review it, then publish when ready.":
+    "Đã tạo kho phần thưởng đề xuất. Hãy kiểm tra rồi xuất bản khi sẵn sàng.",
+  "The featured lineup was created, but the minigame stays off until you add non-featured 4★ and 5★ loss candidates.":
+    "Đã tạo đội hình nổi bật, nhưng minigame vẫn tắt cho đến khi bạn thêm vật phẩm 4★ và 5★ không nổi bật cho trường hợp trượt rate-up.",
+  "Loss candidates needed": "Cần vật phẩm cho trường hợp trượt rate-up",
+  'The active banner "{{name}}" needs non-featured 4★ and 5★ items for possible featured-rate losses.':
+    'Banner đang hoạt động "{{name}}" cần vật phẩm 4★ và 5★ không nổi bật cho trường hợp có thể trượt rate-up.',
+  "Missing loss candidates": "Thiếu vật phẩm cho trường hợp trượt rate-up",
+  'The standard banner "{{name}}" needs active non-featured 4★ and 5★ items.':
+    'Banner thường "{{name}}" cần vật phẩm 4★ và 5★ không nổi bật đang hoạt động.',
+  "Incomplete standard pool": "Kho phần thưởng banner thường chưa đầy đủ",
+  "Quick setup": "Thiết lập nhanh",
+  "Create a playable pool from your active merch, using safe recommended defaults. Everything remains editable and undoable.":
+    "Tạo kho phần thưởng có thể chơi từ merch đang hoạt động bằng thiết lập đề xuất an toàn. Bạn vẫn có thể chỉnh sửa hoặc hoàn tác mọi thứ.",
+  "Use recommended setup": "Dùng thiết lập đề xuất",
+  "Minigame availability": "Trạng thái mở minigame",
+  "Publishing switches the public minigame to {{game}}. Continue?":
+    "Xuất bản sẽ chuyển minigame công khai sang {{game}}. Tiếp tục?",
+  "Switch the live minigame?": "Chuyển minigame đang hoạt động?",
+  "Delete banner “{{name}}”? Its pool items will be removed too.":
+    "Xóa banner “{{name}}”? Các vật phẩm trong kho của banner này cũng sẽ bị xóa.",
+  "Delete banner?": "Xóa banner?",
+  "Keep at least one banner.": "Hãy giữ lại ít nhất một banner.",
+  "Availability, public copy, and pity rules for this game.":
+    "Trạng thái mở, nội dung công khai và quy tắc bảo hiểm của game này.",
+  "Availability, public copy, rates, and pity rules for this game.":
+    "Trạng thái mở, nội dung công khai, tỷ lệ và quy tắc bảo hiểm của game này.",
+  "1 · Status & copy": "1 · Trạng thái & nội dung",
+  "Choose whether customers can play and what they see before starting.":
+    "Chọn việc khách có thể chơi hay không và nội dung họ thấy trước khi bắt đầu.",
+  "2 · Prizes & banners": "2 · Phần thưởng & banner",
+  "Choose one banner, then manage its prizes without leaving this card.":
+    "Chọn một banner rồi quản lý phần thưởng ngay trong khu vực này.",
+  "3 · Luck & guarantees": "3 · Tỷ lệ & bảo hiểm",
+  "Start with a simple preset. Advanced odds stay out of the way until needed.":
+    "Bắt đầu bằng thiết lập đơn giản. Tỷ lệ nâng cao chỉ hiện khi cần.",
+  "Convention Booth Mode": "Chế độ gian hàng sự kiện",
+  "Fast 50 pity with generous odds for physical event visitors.":
+    "Bảo hiểm 50 lượt nhanh với tỷ lệ hào phóng cho khách tham quan sự kiện.",
+  "Official Genshin Replica": "Mô phỏng tỷ lệ Genshin gốc",
+  "Exact official game rates (90 hard pity, 74 soft pity).":
+    "Mô phỏng đúng tỷ lệ trong game: bảo hiểm cứng ở lượt 90, tăng tỷ lệ từ lượt 74.",
+  "Official Star Rail Replica": "Mô phỏng tỷ lệ Star Rail gốc",
+  "Exact official game rates (90 character pity, 80 Light Cone pity).":
+    "Mô phỏng đúng tỷ lệ trong game: bảo hiểm nhân vật ở lượt 90, Nón Ánh Sáng ở lượt 80.",
+  "Review luck settings": "Xem thiết lập tỷ lệ",
+  "Choose a preset": "Chọn thiết lập có sẵn",
+  Availability: "Trạng thái mở",
+  "Live now": "Đang hoạt động",
+  Unsaved: "Chưa lưu",
+  Draft: "Bản nháp",
+  "{{banners}} banners · {{items}} items":
+    "{{banners}} banner · {{items}} vật phẩm",
+  "Not live": "Chưa hoạt động",
+  "Not published yet": "Chưa xuất bản",
+  "Save draft": "Lưu bản nháp",
+  "Enable at least one banner before publishing the minigame.":
+    "Hãy bật ít nhất một banner trước khi xuất bản minigame.",
+  "No active banner": "Chưa có banner nào được bật",
+  "Luck & guarantees": "Tỷ lệ & bảo hiểm",
+  "Pick a preset, or fine-tune the odds yourself.":
+    "Chọn thiết lập có sẵn hoặc tự điều chỉnh tỷ lệ.",
+  "Odds presets": "Mẫu tỷ lệ",
+  "4★ guaranteed by pull #{{count}}":
+    "Chắc chắn nhận 4★ chậm nhất ở lượt #{{count}}",
+  "5★ guaranteed by pull #{{count}}":
+    "Chắc chắn nhận 5★ chậm nhất ở lượt #{{count}}",
+  "Light Cone 5★ guaranteed by pull #{{count}}":
+    "Chắc chắn nhận Nón Ánh Sáng 5★ chậm nhất ở lượt #{{count}}",
+  "Customize odds": "Tùy chỉnh tỷ lệ",
+  "Custom odds active": "Đang dùng tỷ lệ tùy chỉnh",
+  "Fine-tune base rates, luck ramps, and promoted-prize rules.":
+    "Điều chỉnh tỷ lệ cơ bản, mốc tăng tỷ lệ và quy tắc phần thưởng nổi bật.",
+  "Chance per pull before luck starts improving.":
+    "Tỷ lệ mỗi lượt trước mốc bắt đầu tăng xác suất.",
+  "4★ guaranteed within N pulls": "Bảo hiểm 4★ trong N lượt",
+  "4★ luck improves after pull #": "Tỷ lệ 4★ tăng sau lượt #",
+  "Light Cone 5★ guaranteed within N pulls":
+    "Bảo hiểm Nón Ánh Sáng 5★ trong N lượt",
+  "Light Cone 5★ luck improves after pull #":
+    "Tỷ lệ Nón Ánh Sáng 5★ tăng sau lượt #",
+  "Promoted-prize chance": "Tỷ lệ trúng phần thưởng nổi bật",
+  "Chance that a 4★ or 5★ pull lands on a promoted prize.":
+    "Xác suất lượt quay 4★ hoặc 5★ trúng phần thưởng nổi bật.",
+  "Guarantee promoted prize after a miss":
+    "Bảo đảm phần thưởng nổi bật sau một lần trượt",
+  "After a 4★ or 5★ pull misses the promoted prize, the next one is guaranteed.":
+    "Nếu một lượt 4★ hoặc 5★ không trúng phần thưởng nổi bật, lượt cùng độ hiếm tiếp theo sẽ được bảo đảm.",
+  "Assign 4★ and 5★ merch prizes for this specific banner. 3★ pulls use the shared souvenir pool.":
+    "Gán phần thưởng merch 4★ và 5★ cho banner này. Lượt quay 3★ sẽ dùng kho quà lưu niệm chung.",
+  "Character wishes go live with exactly 1 featured 5★ character and 3 featured 4★ characters.":
+    "Banner nhân vật cần chính xác 1 nhân vật 5★ và 3 nhân vật 4★ nổi bật trước khi phát hành.",
+  "Weapon wishes go live with exactly 2 featured 5★ weapons and 5 featured 4★ weapons.":
+    "Banner vũ khí cần chính xác 2 vũ khí 5★ và 5 vũ khí 4★ nổi bật trước khi phát hành.",
+  "HSR event banners go live with exactly 1 featured 5★ primary and 3 featured 4★ rate-ups. Leave all featured slots empty for a standard warp; 3★ pulls use the shared souvenir pool.":
+    "Banner sự kiện HSR cần chính xác 1 vật phẩm 5★ chính và 3 vật phẩm 4★ tăng tỷ lệ trước khi phát hành. Để trống toàn bộ vị trí nổi bật cho banner thường; lượt quay 3★ dùng kho quà lưu niệm chung.",
+  "Add at least {{count}} active products to fill this banner's featured lineup.":
+    "Hãy thêm ít nhất {{count}} sản phẩm đang hoạt động để điền đủ đội hình nổi bật của banner này.",
+  "Banner Prizes ({{count}})": "Phần thưởng banner ({{count}})",
+  "Warp Banner Prizes (4★ & 5★)": "Phần thưởng Warp (4★ và 5★)",
+  "Wish Banner Prizes (4★ & 5★)": "Phần thưởng Wish (4★ và 5★)",
+  "Prizes: {{items}} · Display limit: {{shown}}":
+    "Phần thưởng: {{items}} · Giới hạn hiển thị: {{shown}}",
+  "Add merch ({{count}})": "Thêm merch ({{count}})",
+  "Included ({{count}})": "Đã thêm ({{count}})",
+  "3★ filler ({{count}})": "Phần thưởng phụ 3★ ({{count}})",
+  "3★ filler prizes": "Phần thưởng phụ 3★",
+  "Filter 3★ filler prizes": "Lọc phần thưởng phụ 3★",
+  "These prizes are shared by every banner in this game.":
+    "Các phần thưởng này được dùng chung cho mọi banner trong game.",
+  Promoted: "Nổi bật",
+  "Banner actions": "Thao tác banner",
+  "Move earlier": "Chuyển lên trước",
+  "Move later": "Chuyển xuống sau",
+  "Saving draft…": "Đang lưu bản nháp…",
+  "Draft saved": "Đã lưu bản nháp",
+  "Discard changes": "Bỏ thay đổi",
+  "Discard changes?": "Bỏ thay đổi?",
+  "Discarding…": "Đang bỏ thay đổi…",
+  "Discard all unpublished changes for this game?":
+    "Bỏ toàn bộ thay đổi chưa xuất bản của game này?",
+  "Add to banner": "Thêm vào banner",
+  "Hidden merch cannot be added until it is active in the catalog.":
+    "Không thể thêm merch đang ẩn cho đến khi sản phẩm được bật trong danh mục.",
+  "Hidden merch cannot be promoted until it is active in the catalog.":
+    "Không thể đặt merch đang ẩn làm phần thưởng nổi bật cho đến khi sản phẩm được bật trong danh mục.",
+  "This prize role does not match the selected banner type.":
+    "Vai trò phần thưởng này không phù hợp với loại banner đã chọn.",
+  "Only 4★ and 5★ prizes can be promoted.":
+    "Chỉ phần thưởng 4★ và 5★ mới có thể được đặt làm nổi bật.",
+  "This banner already has all of its promoted 5★ prizes.":
+    "Banner này đã đủ số phần thưởng nổi bật 5★.",
+  "This banner already has all of its promoted 4★ prizes.":
+    "Banner này đã đủ số phần thưởng nổi bật 4★.",
+  "This banner has filled every promoted-prize slot.":
+    "Banner này đã đủ tất cả vị trí phần thưởng nổi bật.",
+  "Shared 3★ Souvenir Pool": "Kho quà lưu niệm 3★ chung",
+  "Items awarded for 3★ pulls across all banners in this game.":
+    "Các vật phẩm trao cho lượt 3★ ở tất cả banner trong game này.",
+  "Custom 3★ Merch ({{count}})": "Merch 3★ tùy chỉnh ({{count}})",
+  "Add 3★ Merch ({{count}})": "Thêm merch 3★ ({{count}})",
+  "Search merch to add…": "Tìm merch để thêm…",
+  "Remove from 3★ shared pool": "Xóa khỏi kho 3★ chung",
+  "No custom 3★ merch items added. Default souvenirs will be awarded automatically.":
+    "Chưa thêm merch 3★ tùy chỉnh. Quà lưu niệm mặc định sẽ tự động được trao.",
+  "Add as 3★ item": "Thêm làm vật phẩm 3★",
+  "No available merch products to add as 3★ items.":
+    "Không có sản phẩm merch nào khả dụng để thêm làm vật phẩm 3★.",
+  Done: "Hoàn tất",
+  "Something went wrong": "Đã xảy ra lỗi",
+  Notice: "Thông báo",
+  "Dismiss notification": "Đóng thông báo",
+  "Close modal": "Đóng hộp thoại",
+  "Cancel order": "Hủy đơn hàng",
+  "Keep order": "Giữ đơn hàng",
+  "Try again": "Thử lại",
+  "Admin sections": "Các mục quản trị",
+  "Offline Event Mode": "Chế độ sự kiện ngoại tuyến",
+  "Loading event mode…": "Đang tải chế độ sự kiện…",
+  Loading: "Đang tải",
+  "Checking this device and the latest saved event.":
+    "Đang kiểm tra thiết bị này và sự kiện đã lưu gần nhất.",
+  "Could not load event mode": "Không thể tải chế độ sự kiện",
+  "Event data could not be loaded safely.":
+    "Không thể tải dữ liệu sự kiện một cách an toàn.",
+  "Could not load this device's event data.":
+    "Không thể tải dữ liệu sự kiện trên thiết bị này.",
+  "Could not check for an active event session.":
+    "Không thể kiểm tra phiên sự kiện đang hoạt động.",
+  "Could not load the event draft.": "Không thể tải bản nháp sự kiện.",
+  "Could not load event draft": "Không thể tải bản nháp sự kiện",
+  "Loading saved event…": "Đang tải sự kiện đã lưu…",
+  "Keep this window open while the draft is restored.":
+    "Giữ cửa sổ này mở trong khi khôi phục bản nháp.",
+  "No stock available for an event": "Không có tồn kho cho sự kiện",
+  "Add stock to an active product before preparing Event Mode.":
+    "Hãy thêm tồn kho cho một sản phẩm đang hoạt động trước khi chuẩn bị Chế độ sự kiện.",
+  "Event Mode": "Chế độ sự kiện",
+  event: "sự kiện",
+  "Event orders": "Đơn hàng sự kiện",
+  "No event orders today": "Hôm nay chưa có đơn hàng sự kiện",
+  "No event orders yet": "Chưa có đơn hàng sự kiện",
+  "Event sale": "Đơn tại sự kiện",
+  "Resolve this order on the designated Event Mode device.":
+    "Xử lý đơn này trên thiết bị Chế độ sự kiện được chỉ định.",
+  "Event orders appear here after they sync, or directly from this device while offline.":
+    "Đơn hàng sự kiện sẽ xuất hiện tại đây sau khi đồng bộ, hoặc trực tiếp từ thiết bị này khi ngoại tuyến.",
+  "Offline selling": "Bán hàng ngoại tuyến",
+  "Event sales": "Bán hàng tại sự kiện",
+  "Event mode status": "Trạng thái chế độ sự kiện",
+  "Not prepared": "Chưa chuẩn bị",
+  "Set up": "Thiết lập",
+  Manage: "Quản lý",
+  left: "còn",
+  "Preparing device…": "Đang chuẩn bị thiết bị…",
+  "This device is ready for offline sales.":
+    "Thiết bị này đã sẵn sàng bán hàng ngoại tuyến.",
+  "Event Mode unavailable": "Không thể mở chế độ sự kiện",
+  "Could not start offline event mode.":
+    "Không thể khởi động chế độ sự kiện ngoại tuyến.",
+  "Offline orders synchronized.": "Đã đồng bộ đơn hàng ngoại tuyến.",
+  "Could not synchronize offline orders.":
+    "Không thể đồng bộ đơn hàng ngoại tuyến.",
+  "Sync failed": "Đồng bộ thất bại",
+  "Could not update offline order.": "Không thể cập nhật đơn hàng ngoại tuyến.",
+  "Offline event closed and unused stock returned.":
+    "Đã đóng sự kiện ngoại tuyến và hoàn lại tồn kho chưa dùng.",
+  "Close failed": "Không thể đóng sự kiện",
+  "Could not close the offline event.": "Không thể đóng sự kiện ngoại tuyến.",
+  "Prepare this device for an offline event":
+    "Chuẩn bị thiết bị này cho sự kiện ngoại tuyến",
+  "Current active stock will be assigned to this device, removed from online availability, and safely returned when the event closes.":
+    "Tồn kho hiện có sẽ được phân bổ cho thiết bị này, tạm ngừng bán trực tuyến và được hoàn lại an toàn khi đóng sự kiện.",
+  "Choose the stock for this event. It is removed from online availability only when this device starts the event.":
+    "Chọn tồn kho cho sự kiện này. Hàng chỉ bị gỡ khỏi lượng bán trực tuyến khi thiết bị này bắt đầu sự kiện.",
+  "Use one designated staff device while offline. The storefront and enabled gacha games are saved before stock is reserved.":
+    "Chỉ dùng một thiết bị nhân viên được chỉ định khi ngoại tuyến. Cửa hàng và các game gacha đang bật sẽ được lưu trước khi giữ tồn kho.",
+  "Draft details are saved online. The storefront and enabled gacha games are downloaded before the selected stock is reserved.":
+    "Thông tin bản nháp được lưu trực tuyến. Cửa hàng và các game gacha đang bật được tải xuống trước khi giữ tồn kho đã chọn.",
+  "Preparing games… {{progress}}%": "Đang chuẩn bị game… {{progress}}%",
+  "Event name": "Tên sự kiện",
+  Event: "Sự kiện",
+  "All events": "Tất cả sự kiện",
+  "Event starts": "Sự kiện bắt đầu",
+  "Event ends": "Sự kiện kết thúc",
+  "End time must be after start time.":
+    "Thời gian kết thúc phải sau thời gian bắt đầu.",
+  "Convention day or booth session": "Ngày hội chợ hoặc ca trực gian hàng",
+  "Stock to reserve": "Tồn kho cần giữ",
+  "Planned stock allocation": "Phân bổ tồn kho dự kiến",
+  "Allocate {{product}}": "Phân bổ {{product}}",
+  "{{count}} available": "Còn {{count}}",
+  "{{product}} quantity": "Số lượng {{product}}",
+  "Event draft saved.": "Đã lưu bản nháp sự kiện.",
+  "Could not save event draft.": "Không thể lưu bản nháp sự kiện.",
+  "Update draft": "Cập nhật bản nháp",
+  "Prepare device and reserve stock": "Chuẩn bị thiết bị và giữ tồn kho",
+  products: "sản phẩm",
+  "Reserve stock and prepare device": "Giữ tồn kho và chuẩn bị thiết bị",
+  "Reconnect to prepare event mode": "Kết nối lại để chuẩn bị chế độ sự kiện",
+  Online: "Trực tuyến",
+  "Offline ready": "Sẵn sàng ngoại tuyến",
+  "This device is the inventory authority for the allocated event stock.":
+    "Thiết bị này là nguồn dữ liệu tồn kho chính thức cho lượng hàng sự kiện đã phân bổ.",
+  "Sync now": "Đồng bộ ngay",
+  "Export backup": "Xuất bản sao lưu",
+  "Open storefront": "Mở cửa hàng",
+  remaining: "còn lại",
+  "sold locally": "đã bán tại chỗ",
+  "local orders": "đơn cục bộ",
+  "awaiting verification": "chờ xác minh",
+  "Local order ledger": "Sổ đơn hàng cục bộ",
+  "Orders remain on this device until they synchronize.":
+    "Đơn hàng được giữ trên thiết bị này cho đến khi đồng bộ.",
+  Synchronized: "Đã đồng bộ",
+  "Device only": "Chỉ có trên thiết bị",
+  "Open the storefront on this device to create the first offline order.":
+    "Mở cửa hàng trên thiết bị này để tạo đơn ngoại tuyến đầu tiên.",
+  "Walk-in customer": "Khách tại quầy",
+  Confirmed: "Đã xác nhận",
+  Cancelled: "Đã hủy",
+  Cash: "Tiền mặt",
+  VietQR: "VietQR",
+  "Confirm cash": "Xác nhận tiền mặt",
+  "Verify payment": "Xác minh thanh toán",
+  "Pending payment": "Đang chờ thanh toán",
+  "Cancel local order": "Hủy đơn hàng cục bộ",
+  "Cancel {{code}}? Its reserved event stock will be returned on this device.":
+    "Hủy {{code}}? Tồn kho sự kiện đã giữ cho đơn này sẽ được hoàn lại trên thiết bị.",
+  "Synchronization is idempotent; retrying cannot duplicate an offline order.":
+    "Có thể đồng bộ lại an toàn; thao tác thử lại sẽ không tạo trùng đơn ngoại tuyến.",
+  "This event is frozen. Retry closing to finish synchronization and return unused stock.":
+    "Sự kiện đã tạm khóa. Hãy thử đóng lại để hoàn tất đồng bộ và hoàn trả tồn kho chưa dùng.",
+  "Sales are safe on this device. Reconnect before closing the event or switching devices.":
+    "Dữ liệu bán hàng an toàn trên thiết bị này. Hãy kết nối lại trước khi đóng sự kiện hoặc đổi thiết bị.",
+  "Resolve pending payments first": "Xử lý các khoản thanh toán đang chờ trước",
+  "Resolve pending offline payments before closing the event.":
+    "Xử lý các khoản thanh toán ngoại tuyến đang chờ trước khi đóng sự kiện.",
+  "Offline Event Mode requires IndexedDB on this device.":
+    "Chế độ Sự kiện Ngoại tuyến yêu cầu IndexedDB trên thiết bị này.",
+  "Persistent storage is unavailable on this device. Offline Event Mode cannot start safely.":
+    "Bộ nhớ lâu dài không khả dụng trên thiết bị này. Không thể khởi động Chế độ Sự kiện Ngoại tuyến một cách an toàn.",
+  "Could not save the event catalog for offline use on this device.":
+    "Không thể lưu danh mục sự kiện để sử dụng ngoại tuyến trên thiết bị này.",
+  "Offline Event storage is busy in another tab.":
+    "Bộ nhớ Sự kiện Ngoại tuyến đang được sử dụng ở một thẻ khác.",
+  "Offline event session is no longer available.":
+    "Phiên sự kiện ngoại tuyến không còn khả dụng.",
+  "Offline event is closing or closed.":
+    "Sự kiện ngoại tuyến đang đóng hoặc đã đóng.",
+  "Offline finalization acknowledgements are incomplete.":
+    "Xác nhận hoàn tất sự kiện ngoại tuyến chưa đầy đủ.",
+  "Legacy offline event contains orders that require manual reconciliation":
+    "Sự kiện ngoại tuyến cũ có đơn hàng cần được đối soát thủ công.",
+  "Retry sync and close event": "Thử đồng bộ và đóng sự kiện lại",
+  "Sync and close event": "Đồng bộ và đóng sự kiện",
+  "Close offline event?": "Đóng sự kiện ngoại tuyến?",
+  "All local orders will be synchronized and only unsold allocation will return to online stock. This cannot be undone.":
+    "Tất cả đơn cục bộ sẽ được đồng bộ và chỉ phần phân bổ chưa bán mới được trả về tồn kho trực tuyến. Thao tác này không thể hoàn tác.",
+  "Keep event open": "Giữ sự kiện mở",
+  "Closing event…": "Đang đóng sự kiện…",
+};
+
+export type PlatformTranslationVariables = Record<string, string | number>;
+
+function interpolate(
+  message: string,
+  variables?: PlatformTranslationVariables,
+) {
+  if (!variables) return message;
+  return Object.entries(variables).reduce(
+    (result, [key, value]) => result.split(`{{${key}}}`).join(String(value)),
+    message,
+  );
+}
+
+export function getPlatformTranslation(
+  english: string,
+  locale: PlatformLocale,
+  variables?: PlatformTranslationVariables,
+) {
+  return interpolate(
+    locale === "vi" ? (vi[english] ?? english) : english,
+    variables,
+  );
+}
+
+export const platformVietnameseTranslations = vi;
