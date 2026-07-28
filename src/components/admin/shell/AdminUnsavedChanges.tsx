@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useBlocker, useLocation } from "react-router";
+import { type BlockerFunction, type Location, useBlocker } from "react-router";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import { ConfirmationDialog } from "../../ui/ConfirmationDialog";
 
@@ -31,20 +31,23 @@ export function AdminUnsavedChangesProvider({
   children: ReactNode;
 }) {
   const { t } = usePlatformI18n();
-  const location = useLocation();
-  const stableLocation = useRef(location);
   const registrations = useRef(new Map<string, DirtyRegistration>());
+  const blockedFromLocation = useRef<Location | null>(null);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   const hasUnsavedChanges = useCallback(
     () => [...registrations.current.values()].some((value) => value.dirty),
     [],
   );
-  const blocker = useBlocker(hasUnsavedChanges);
-
-  useEffect(() => {
-    if (blocker.state !== "blocked") stableLocation.current = location;
-  }, [blocker.state, location]);
+  const shouldBlockNavigation = useCallback<BlockerFunction>(
+    ({ currentLocation }) => {
+      if (!hasUnsavedChanges()) return false;
+      blockedFromLocation.current = currentLocation;
+      return true;
+    },
+    [hasUnsavedChanges],
+  );
+  const blocker = useBlocker(shouldBlockNavigation);
 
   const register = useCallback((id: string, value: DirtyRegistration) => {
     registrations.current.set(id, value);
@@ -88,8 +91,13 @@ export function AdminUnsavedChangesProvider({
         onClose={() => {
           setPendingAction(null);
           if (blocker.state === "blocked") {
+            const currentLocation = blockedFromLocation.current;
+            const currentHref = currentLocation
+              ? `${currentLocation.pathname}${currentLocation.search}${currentLocation.hash}`
+              : null;
             blocker.reset();
-            const currentHref = `${stableLocation.current.pathname}${stableLocation.current.search}${stableLocation.current.hash}`;
+            blockedFromLocation.current = null;
+            if (!currentHref) return;
             const restoreBrowserUrl = () => {
               const browserHref = `${window.location.pathname}${window.location.search}${window.location.hash}`;
               if (browserHref !== currentHref) {
@@ -100,6 +108,7 @@ export function AdminUnsavedChangesProvider({
                 );
               }
             };
+            // A blocked POP can update the address bar before React Router resets it.
             window.requestAnimationFrame(() => {
               restoreBrowserUrl();
               window.setTimeout(restoreBrowserUrl, 50);
@@ -115,6 +124,7 @@ export function AdminUnsavedChangesProvider({
           const action = pendingAction;
           setPendingAction(null);
           if (blocker.state === "blocked") {
+            blockedFromLocation.current = null;
             blocker.proceed();
             return;
           }
