@@ -13,6 +13,7 @@ type ConfirmationDialogProps = {
   busy?: boolean;
   danger?: boolean;
   mobileSheet?: boolean;
+  historyEnabled?: boolean;
   onClose: () => void;
   onConfirm: () => void;
 };
@@ -27,6 +28,7 @@ export function ConfirmationDialog({
   busy = false,
   danger = true,
   mobileSheet = true,
+  historyEnabled = true,
   onClose,
   onConfirm,
 }: ConfirmationDialogProps) {
@@ -38,6 +40,7 @@ export function ConfirmationDialog({
       appearance="admin"
       dismissible={!busy}
       mobileSheet={mobileSheet}
+      historyEnabled={historyEnabled}
       className="confirmation-modal"
       closeLabel={cancelLabel}
     >

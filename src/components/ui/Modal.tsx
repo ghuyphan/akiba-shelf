@@ -20,6 +20,7 @@ type ModalProps = {
   mobileSheet?: boolean;
   appearance?: "default" | "admin";
   dismissible?: boolean;
+  historyEnabled?: boolean;
   /** Accessible label for the close button. Localized callers should pass
    * their own string; staff screens keep the English default. */
   closeLabel?: string;
@@ -35,6 +36,7 @@ export function Modal({
   mobileSheet = false,
   appearance = "default",
   dismissible = true,
+  historyEnabled = true,
   closeLabel = "Close modal",
 }: ModalProps) {
   const [shouldRender, setShouldRender] = useState(isOpen);
@@ -43,7 +45,7 @@ export function Modal({
   const requestClose = useOverlayHistory(
     isOpen,
     onClose,
-    mobileSheet,
+    mobileSheet && historyEnabled,
     dismissible,
   );
   const requestCloseRef = useRef(requestClose);
