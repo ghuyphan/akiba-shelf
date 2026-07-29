@@ -18,10 +18,20 @@ function verifySecurityHeaders(response) {
   ) {
     throw new Error("missing Referrer-Policy security header");
   }
-  const policy = response.headers.get("content-security-policy");
-  if (!policy) {
+  if (!response.headers.get("content-security-policy")) {
     throw new Error("missing enforced Content-Security-Policy header");
   }
+  if (response.headers.get("strict-transport-security") !== EXPECTED_HSTS) {
+    throw new Error(`missing Strict-Transport-Security: ${EXPECTED_HSTS}`);
+  }
+}
+
+function verifyHtmlSecurityHeaders(
+  response,
+  { requireCloudflareAnalytics = true } = {},
+) {
+  verifySecurityHeaders(response);
+  const policy = response.headers.get("content-security-policy");
   const directives = new Map(
     policy.split(";").map((directive) => {
       const [name, ...sources] = directive.trim().split(/\s+/);
@@ -29,6 +39,7 @@ function verifySecurityHeaders(response) {
     }),
   );
   if (
+    requireCloudflareAnalytics &&
     !directives
       .get("script-src")
       ?.includes("https://static.cloudflareinsights.com")
@@ -37,9 +48,6 @@ function verifySecurityHeaders(response) {
   }
   if (!directives.get("connect-src")?.includes("'self'")) {
     throw new Error("CSP does not permit same-origin analytics delivery");
-  }
-  if (response.headers.get("strict-transport-security") !== EXPECTED_HSTS) {
-    throw new Error(`missing Strict-Transport-Security: ${EXPECTED_HSTS}`);
   }
 }
 
@@ -174,7 +182,12 @@ async function fetchSimulatorMedia(origin, options) {
   return manifest;
 }
 
-async function fetchAppHtml(url, options, expectedEntryAsset) {
+async function fetchAppHtml(
+  url,
+  options,
+  htmlSecurityOptions,
+  expectedEntryAsset,
+) {
   return requestWithRetry(
     url,
     async (response) => {
@@ -187,7 +200,7 @@ async function fetchAppHtml(url, options, expectedEntryAsset) {
           `expected HTML, received ${contentType || "no content type"}`,
         );
       }
-      verifySecurityHeaders(response);
+      verifyHtmlSecurityHeaders(response, htmlSecurityOptions);
       const html = await response.text();
       const entryAsset = extractEntryAsset(html);
       if (expectedEntryAsset && entryAsset !== expectedEntryAsset) {
@@ -259,7 +272,12 @@ async function fetchEntryAsset(origin, assetPath, options) {
   );
 }
 
-async function fetchSimulatorApp(origin, simulatorPath, options) {
+async function fetchSimulatorApp(
+  origin,
+  simulatorPath,
+  options,
+  htmlSecurityOptions,
+) {
   const bootstrapPath = await requestWithRetry(
     `${origin}/${simulatorPath}/`,
     async (response) => {
@@ -272,7 +290,7 @@ async function fetchSimulatorApp(origin, simulatorPath, options) {
           `expected HTML, received ${contentType || "no content type"}`,
         );
       }
-      verifySecurityHeaders(response);
+      verifyHtmlSecurityHeaders(response, htmlSecurityOptions);
       return extractSimulatorBootstrap(await response.text(), simulatorPath);
     },
     options,
@@ -288,6 +306,7 @@ export async function verifyCloudflareDeployment({
   expectedRelease,
   deploymentAttempts,
   canonicalAttempts,
+  rollbackCompatibility = false,
   ...options
 }) {
   const deploymentOrigin = normalizeOrigin(deploymentUrl, "Deployment URL");
@@ -301,6 +320,9 @@ export async function verifyCloudflareDeployment({
     attempts:
       deploymentAttempts ?? options.attempts ?? DEFAULT_DEPLOYMENT_ATTEMPTS,
   };
+  const htmlSecurityOptions = {
+    requireCloudflareAnalytics: !rollbackCompatibility,
+  };
   const metadata = await fetchRelease(
     `${deploymentOrigin}/release.json`,
     deploymentOptions,
@@ -309,16 +331,23 @@ export async function verifyCloudflareDeployment({
   const entryAsset = await fetchAppHtml(
     `${deploymentOrigin}/`,
     deploymentOptions,
+    htmlSecurityOptions,
   );
   if (entryAsset !== metadata.entryAsset) {
     throw new Error(
       `release metadata entry ${metadata.entryAsset} did not match HTML ${entryAsset}`,
     );
   }
-  await fetchAppHtml(`${deploymentOrigin}/auth`, deploymentOptions, entryAsset);
+  await fetchAppHtml(
+    `${deploymentOrigin}/auth`,
+    deploymentOptions,
+    htmlSecurityOptions,
+    entryAsset,
+  );
   await fetchAppHtml(
     `${deploymentOrigin}/admin`,
     deploymentOptions,
+    htmlSecurityOptions,
     entryAsset,
   );
   await fetchEntryAsset(deploymentOrigin, entryAsset, deploymentOptions);
@@ -336,13 +365,37 @@ export async function verifyCloudflareDeployment({
     canonicalOptions,
     metadata.release,
   );
-  await fetchAppHtml(`${canonicalOrigin}/`, canonicalOptions, entryAsset);
-  await fetchAppHtml(`${canonicalOrigin}/admin`, canonicalOptions, entryAsset);
+  await fetchAppHtml(
+    `${canonicalOrigin}/`,
+    canonicalOptions,
+    htmlSecurityOptions,
+    entryAsset,
+  );
+  await fetchAppHtml(
+    `${canonicalOrigin}/admin`,
+    canonicalOptions,
+    htmlSecurityOptions,
+    entryAsset,
+  );
   await fetchEntryAsset(canonicalOrigin, entryAsset, canonicalOptions);
-  const simulatorBootstraps = await Promise.all([
-    fetchSimulatorApp(canonicalOrigin, "gacha-simulator", canonicalOptions),
-    fetchSimulatorApp(canonicalOrigin, "hsr-simulator", canonicalOptions),
-  ]);
+  // Rollback verification must remain compatible with the previous release's
+  // contract. Current releases additionally require external simulator bootstraps.
+  const simulatorBootstraps = rollbackCompatibility
+    ? []
+    : await Promise.all([
+        fetchSimulatorApp(
+          canonicalOrigin,
+          "gacha-simulator",
+          canonicalOptions,
+          htmlSecurityOptions,
+        ),
+        fetchSimulatorApp(
+          canonicalOrigin,
+          "hsr-simulator",
+          canonicalOptions,
+          htmlSecurityOptions,
+        ),
+      ]);
   const simulatorMedia = await fetchSimulatorMedia(
     canonicalOrigin,
     canonicalOptions,
@@ -385,6 +438,8 @@ if (isCli) {
     canonicalUrl,
     wwwUrl,
     expectedRelease: process.env.MATSURI_RELEASE,
+    rollbackCompatibility:
+      process.env.MATSURI_ROLLBACK_COMPATIBILITY === "true",
   });
   console.log(
     `Verified release ${result.release} (${result.entryAsset}) on ${result.deploymentOrigin} and ${result.canonicalOrigin}.`,

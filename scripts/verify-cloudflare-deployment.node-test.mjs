@@ -19,13 +19,18 @@ const securityHeaders = {
   "strict-transport-security": "max-age=31536000",
   "x-content-type-options": "nosniff",
 };
+const resourceSecurityHeaders = {
+  ...securityHeaders,
+  "content-security-policy":
+    "default-src 'self'; script-src 'self'; connect-src 'self'",
+};
 
-function htmlResponse(html) {
+function htmlResponse(html, headers = securityHeaders) {
   return new Response(html, {
     status: 200,
     headers: {
       "content-type": "text/html; charset=utf-8",
-      ...securityHeaders,
+      ...headers,
     },
   });
 }
@@ -60,7 +65,7 @@ function simulatorMediaResponse() {
     headers: {
       "content-type": "video/webm",
       "content-range": "bytes 0-0/10",
-      ...securityHeaders,
+      ...resourceSecurityHeaders,
     },
   });
 }
@@ -68,7 +73,7 @@ function simulatorMediaResponse() {
 function simulatorMediaNotFoundResponse() {
   return new Response("Not found", {
     status: 404,
-    headers: securityHeaders,
+    headers: resourceSecurityHeaders,
   });
 }
 
@@ -402,6 +407,69 @@ test("rejects a deployment that blocks Cloudflare Web Analytics", async () => {
     }),
     /CSP does not permit the Cloudflare Web Analytics beacon/,
   );
+});
+
+test("uses the previous release contract when verifying a rollback", async () => {
+  const rollbackHtml =
+    '<!doctype html><script type="module" src="/assets/index-new12345.js"></script>';
+  const fetchImpl = async (url) => {
+    if (
+      url === "https://deploy.pages.dev/release.json" ||
+      url === "https://matsuri.pro/release.json"
+    )
+      return releaseResponse("release-1");
+    if (
+      url === "https://deploy.pages.dev/" ||
+      url === "https://deploy.pages.dev/auth" ||
+      url === "https://deploy.pages.dev/admin" ||
+      url === "https://matsuri.pro/" ||
+      url === "https://matsuri.pro/admin"
+    )
+      return htmlResponse(rollbackHtml, resourceSecurityHeaders);
+    if (
+      url === "https://deploy.pages.dev/assets/index-new12345.js" ||
+      url === "https://matsuri.pro/assets/index-new12345.js"
+    )
+      return new Response("export {};", {
+        headers: { "content-type": "application/javascript" },
+      });
+    if (url === "https://matsuri.pro/offline-assets.json")
+      return offlineManifestResponse();
+    if (
+      url ===
+      "https://matsuri.pro/gacha-simulator/videos/0123456789abcdef0123/bg.webm"
+    )
+      return simulatorMediaResponse();
+    if (
+      url === "https://matsuri.pro/gacha-simulator/videos/blocked%2Fasset.mp4"
+    )
+      return simulatorMediaNotFoundResponse();
+    if (
+      url === "https://www.matsuri.pro/__deployment-check?source=github-actions"
+    ) {
+      return new Response(null, {
+        status: 301,
+        headers: {
+          location:
+            "https://matsuri.pro/__deployment-check?source=github-actions",
+        },
+      });
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  };
+
+  const result = await verifyCloudflareDeployment({
+    deploymentUrl: "https://deploy.pages.dev",
+    canonicalUrl: "https://matsuri.pro",
+    wwwUrl: "https://www.matsuri.pro",
+    rollbackCompatibility: true,
+    attempts: 1,
+    delayMs: 0,
+    fetchImpl,
+    sleep: async () => undefined,
+  });
+
+  assert.deepEqual(result.simulatorBootstraps, []);
 });
 
 test("rejects unsuccessful Cloudflare API envelopes", () => {

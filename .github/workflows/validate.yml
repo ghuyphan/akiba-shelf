@@ -303,6 +303,7 @@ jobs:
         if: always() && steps.release-freshness.outputs.current == 'true' && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
         env:
           MATSURI_RELEASE: ${{ steps.active-deployment.outputs.sha }}
+          MATSURI_ROLLBACK_COMPATIBILITY: "true"
           PREVIOUS_DEPLOYMENT_URL: ${{ steps.active-deployment.outputs.url }}
         run: >-
           node scripts/verify-cloudflare-deployment.mjs
