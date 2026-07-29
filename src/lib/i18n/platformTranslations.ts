@@ -818,6 +818,36 @@ const vi: Record<string, string> = {
   "Save promotion": "Lưu khuyến mãi",
   "Promotion saved.": "Đã lưu khuyến mãi.",
   "Promotion savings": "Tiết kiệm khuyến mãi",
+  "Sales summary": "Tổng quan doanh thu",
+  "Confirmed revenue": "Doanh thu đã xác nhận",
+  "Provisional: includes unsynced Event sales":
+    "Tạm tính: bao gồm doanh thu sự kiện chưa đồng bộ",
+  "Includes unsynced Event sales": "Gồm doanh thu sự kiện chưa đồng bộ",
+  "Showing cached order totals; sync to refresh":
+    "Đang hiển thị tổng đơn hàng đã lưu; đồng bộ để cập nhật",
+  "Server-confirmed orders only": "Chỉ tính đơn đã máy chủ xác nhận",
+  units: "sản phẩm",
+  "Online revenue": "Doanh thu trực tuyến",
+  "Final server total": "Tổng cuối từ máy chủ",
+  "Event revenue": "Doanh thu sự kiện",
+  "Cash {{cash}} · VietQR {{vietqr}}":
+    "Tiền mặt {{cash}} · VietQR {{vietqr}}",
+  Promotion: "Khuyến mãi",
+  "Configure one scheduled buy-get or percentage offer.":
+    "Thiết lập một ưu đãi mua-tặng hoặc giảm theo phần trăm có lịch.",
+  "{{percent}}% off selected products":
+    "Giảm {{percent}}% cho sản phẩm đã chọn",
+  Type: "Loại",
+  "Percentage off": "Giảm theo phần trăm",
+  "Buy X, get Y": "Mua X, tặng Y",
+  "Promotion type": "Loại khuyến mãi",
+  "Minimum spend (VND)": "Mức chi tối thiểu (VND)",
+  "Starts (optional)": "Bắt đầu (không bắt buộc)",
+  "Ends (optional)": "Kết thúc (không bắt buộc)",
+  "Apply {{percent}}% off to {{count}} selected products after the minimum spend.":
+    "Giảm {{percent}}% cho {{count}} sản phẩm đã chọn sau khi đạt mức chi tối thiểu.",
+  "Select at least one discounted product before publishing this offer.":
+    "Chọn ít nhất một sản phẩm giảm giá trước khi bật ưu đãi này.",
   "Buy products": "Sản phẩm khách mua",
   "Reward products": "Sản phẩm tặng",
   "{{buy}} buy products · {{reward}} reward products":
@@ -1844,10 +1874,16 @@ const vi: Record<string, string> = {
   "Could not close the offline event.": "Không thể đóng sự kiện ngoại tuyến.",
   "Prepare this device for an offline event":
     "Chuẩn bị thiết bị này cho sự kiện ngoại tuyến",
+  "Prepare tablet for offline event sales":
+    "Chuẩn bị máy tính bảng bán hàng ngoại tuyến",
+  "Offline sales": "Bán hàng ngoại tuyến",
+  "Event sales active": "Đang bán hàng tại sự kiện",
   "Current active stock will be assigned to this device, removed from online availability, and safely returned when the event closes.":
     "Tồn kho hiện có sẽ được phân bổ cho thiết bị này, tạm ngừng bán trực tuyến và được hoàn lại an toàn khi đóng sự kiện.",
   "Choose the stock for this event. It is removed from online availability only when this device starts the event.":
     "Chọn tồn kho cho sự kiện này. Hàng chỉ bị gỡ khỏi lượng bán trực tuyến khi thiết bị này bắt đầu sự kiện.",
+  "Prepare this tablet while online before leaving for the festival. Choose event stock now; it is removed from online availability only when this device starts the event.":
+    "Hãy chuẩn bị máy tính bảng này khi còn trực tuyến trước khi đến lễ hội. Chọn tồn kho sự kiện ngay; hàng chỉ bị gỡ khỏi lượng bán trực tuyến khi thiết bị này bắt đầu sự kiện.",
   "Use one designated staff device while offline. The storefront and enabled gacha games are saved before stock is reserved.":
     "Chỉ dùng một thiết bị nhân viên được chỉ định khi ngoại tuyến. Cửa hàng và các game gacha đang bật sẽ được lưu trước khi giữ tồn kho.",
   "Draft details are saved online. The storefront and enabled gacha games are downloaded before the selected stock is reserved.":
@@ -1909,6 +1945,44 @@ const vi: Record<string, string> = {
   "Sales are safe on this device. Reconnect before closing the event or switching devices.":
     "Dữ liệu bán hàng an toàn trên thiết bị này. Hãy kết nối lại trước khi đóng sự kiện hoặc đổi thiết bị.",
   "Resolve pending payments first": "Xử lý các khoản thanh toán đang chờ trước",
+  "Lock tablet": "Khóa máy tính bảng",
+  "Set tablet PIN": "Đặt mã PIN máy tính bảng",
+  "Reconnect to end event": "Kết nối lại để kết thúc sự kiện",
+  "Retry ending event": "Thử kết thúc sự kiện lại",
+  "End event": "Kết thúc sự kiện",
+  "Ending event…": "Đang kết thúc sự kiện…",
+  "End offline event?": "Kết thúc sự kiện ngoại tuyến?",
+  "{{orders}} local orders will be synchronized and {{items}} unsold items will return to online stock. This event cannot be reopened.":
+    "{{orders}} đơn cục bộ sẽ được đồng bộ và {{items}} sản phẩm chưa bán sẽ được trả về tồn kho trực tuyến. Sự kiện này không thể mở lại.",
+  "Protect this tablet": "Bảo vệ máy tính bảng này",
+  "Confirm tablet PIN": "Xác nhận mã PIN máy tính bảng",
+  "Enter the local tablet PIN before ending Event Mode.":
+    "Nhập mã PIN cục bộ của máy tính bảng trước khi kết thúc Chế độ Sự kiện.",
+  "Create a 6-digit PIN for staff access on this device. It works offline and does not replace your Matsuri account.":
+    "Tạo mã PIN 6 chữ số để staff truy cập trên thiết bị này. Mã hoạt động ngoại tuyến và không thay thế tài khoản Matsuri.",
+  "6-digit tablet PIN": "Mã PIN máy tính bảng gồm 6 số",
+  "Save PIN": "Lưu mã PIN",
+  Continue: "Tiếp tục",
+  "Checking…": "Đang kiểm tra…",
+  "Enter exactly 6 digits.": "Nhập đúng 6 chữ số.",
+  "The PINs do not match.": "Hai mã PIN không khớp.",
+  "Incorrect tablet PIN.": "Mã PIN máy tính bảng không đúng.",
+  "Too many attempts. Wait 30 seconds and try again.":
+    "Nhập sai quá nhiều lần. Hãy chờ 30 giây rồi thử lại.",
+  "Could not update the tablet PIN.":
+    "Không thể cập nhật mã PIN máy tính bảng.",
+  "Could not check or update the tablet PIN.":
+    "Không thể kiểm tra hoặc cập nhật mã PIN máy tính bảng.",
+  "Could not check the tablet PIN on this device.":
+    "Không thể kiểm tra mã PIN máy tính bảng trên thiết bị này.",
+  "Tablet PIN must contain exactly 6 digits.":
+    "Mã PIN máy tính bảng phải có đúng 6 chữ số.",
+  "Tablet PIN storage is unavailable on this device.":
+    "Không thể lưu mã PIN máy tính bảng trên thiết bị này.",
+  "Staff access locked": "Kênh staff đang khóa",
+  'Enter the local tablet PIN to manage "{{event}}".':
+    'Nhập mã PIN cục bộ của máy tính bảng để quản lý "{{event}}".',
+  "Open event console": "Mở bảng điều khiển sự kiện",
   "Resolve pending offline payments before closing the event.":
     "Xử lý các khoản thanh toán ngoại tuyến đang chờ trước khi đóng sự kiện.",
   "Offline Event Mode requires IndexedDB on this device.":

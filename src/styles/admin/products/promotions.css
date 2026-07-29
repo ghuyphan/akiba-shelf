@@ -208,20 +208,11 @@
   line-height: 1.45;
 }
 .admin-promotion-modal {
+  --modal-padding-inline: 20px;
+  --modal-padding-block: 20px;
   width: min(96vw, 900px);
   padding: 20px;
   border-radius: 18px;
-}
-.admin-promotion-modal .admin-sticky-actions {
-  position: sticky;
-  bottom: 0;
-  z-index: 4;
-  margin-top: 12px;
-  padding: 10px;
-  border-color: var(--soft-line);
-  background: rgb(255 255 255 / 94%);
-  box-shadow: 0 -10px 24px rgb(20 33 53 / 8%);
-  backdrop-filter: blur(14px);
 }
 .admin-promotion-modal .admin-edit-status {
   justify-content: flex-start;
@@ -285,10 +276,6 @@
     gap: 8px;
   }
 
-  .admin-promotion-modal .admin-sticky-actions {
-    bottom: 0;
-    padding-bottom: 10px;
-  }
 }
 
 .admin-order-card footer .admin-order-discount {
@@ -317,6 +304,10 @@
   padding: 10px 16px;
   background: color-mix(in srgb, var(--soft-line) 40%, var(--admin-inner-bg));
   border-bottom: 1px solid var(--soft-line);
+}
+.promotion-products-selection.is-percentage .promotion-products-header,
+.promotion-products-selection.is-percentage .promotion-product-row {
+  grid-template-columns: minmax(0, 1fr) minmax(132px, .45fr);
 }
 .col-product-info {
   font-size: 10px;
@@ -447,6 +438,9 @@
 }
 
 @media (max-width: 760px) {
+  .admin-promotion-fields-group {
+    grid-template-columns: 1fr;
+  }
   .promotion-products-header {
     display: none;
   }
@@ -476,6 +470,9 @@
     gap: 8px;
     border-top: 1px solid var(--soft-line);
     padding-top: 8px;
+  }
+  .promotion-products-selection.is-percentage .promotion-product-actions {
+    grid-template-columns: 1fr;
   }
   .promotion-product-row .checkbox-wrapper {
     display: flex;

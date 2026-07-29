@@ -3,6 +3,7 @@ export * from "./api/products";
 export * from "./api/settings";
 export * from "./api/gacha";
 export * from "./api/orders";
+export * from "./api/sales";
 export * from "./api/auth";
 export * from "./api/shops";
 export * from "./api/staff";

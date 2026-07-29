@@ -15,7 +15,9 @@
   background: var(--sheet-backdrop);
   backdrop-filter: blur(4px);
 }
-.sheet-backdrop.is-open { animation: fade-in var(--sheet-animation-duration) ease-out both; }
+.sheet-backdrop.is-open {
+  animation: fade-in var(--sheet-animation-duration) ease-out both;
+}
 .sheet-backdrop.is-closing {
   pointer-events: none;
   animation: fade-out var(--sheet-animation-duration) ease-in both;
@@ -29,11 +31,44 @@
 }
 
 .modal {
+  --modal-padding-inline: 18px;
+  --modal-padding-block: 18px;
   width: min(96vw, 620px);
   max-height: min(92vh, 860px);
   overflow: auto;
   border-radius: 10px;
-  padding: 18px;
+  padding: var(--modal-padding-block) var(--modal-padding-inline);
+}
+.modal-footer {
+  position: sticky;
+  z-index: 4;
+  bottom: calc(-1 * var(--modal-padding-block));
+  display: flex;
+  width: auto;
+  min-width: 0;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  margin: var(--modal-padding-block) calc(-1 * var(--modal-padding-inline))
+    calc(-1 * var(--modal-padding-block));
+  padding: 12px var(--modal-padding-inline)
+    max(12px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 -8px 20px rgb(20 33 53 / 6%);
+}
+.modal-footer.admin-sticky-actions {
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: 0 -8px 20px rgb(20 33 53 / 6%);
+  backdrop-filter: none;
+}
+.modal-footer > .button {
+  min-width: 0;
+}
+.modal-footer > .admin-edit-actions {
+  min-width: 0;
 }
 .modal.is-open {
   animation: modal-scale-in 280ms var(--ease-out) both;
@@ -46,14 +81,94 @@
   width: min(96vw, 900px);
 }
 
+.event-pin-modal {
+  width: min(92vw, 430px);
+}
+.event-pin-form {
+  display: grid;
+  gap: 14px;
+  text-align: center;
+}
+.event-pin-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin: 2px auto 0;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 10%, var(--surface));
+}
+.event-pin-form > p {
+  max-width: 38ch;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.event-pin-field {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+.event-pin-field > span {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+}
+.event-pin-field input {
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: 0.34em;
+  text-align: center;
+}
+.event-pin-field input:focus-visible {
+  border-color: var(--green);
+  outline: 3px solid color-mix(in srgb, var(--green) 22%, transparent);
+  outline-offset: 1px;
+}
+.event-pin-error {
+  color: var(--red) !important;
+  font-weight: 750;
+}
+.event-pin-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.event-pin-actions .button {
+  width: 100%;
+  min-width: 0;
+}
+
 @keyframes mobile-sheet-enter {
-  from { transform: translateY(calc(100% + 16px)); opacity: .88; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(calc(100% + 16px));
+    opacity: 0.88;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes mobile-sheet-exit {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(calc(100% + 16px)); opacity: .88; }
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(calc(100% + 16px));
+    opacity: 0.88;
+  }
 }
 
 @media (max-width: 760px) {
@@ -66,6 +181,7 @@
     width: 100% !important;
     max-width: none;
     max-height: var(--sheet-max-height);
+    box-sizing: border-box;
     margin: 0;
     padding: 0 var(--sheet-horizontal-padding) var(--sheet-bottom-padding);
     overflow-x: hidden;
@@ -76,8 +192,18 @@
     scrollbar-width: thin;
   }
 
+  .mobile-sheet-modal .modal-footer {
+    width: calc(100% + 2 * var(--sheet-horizontal-padding));
+    max-width: calc(100vw - 2px);
+    box-sizing: border-box;
+    bottom: calc(-1 * var(--sheet-bottom-padding));
+    margin-inline: calc(-1 * var(--sheet-horizontal-padding));
+    margin-bottom: calc(-1 * var(--sheet-bottom-padding));
+    padding-inline: var(--sheet-horizontal-padding);
+  }
+
   .mobile-sheet-modal.is-open {
-    animation: mobile-sheet-enter 420ms cubic-bezier(.22, 1, .36, 1) both;
+    animation: mobile-sheet-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .mobile-sheet-modal.is-closing {

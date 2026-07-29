@@ -20,8 +20,16 @@ import {
   saveOfflineEventSession,
   useMemoryOfflineEventLedgerForTests,
 } from "../../../lib/offline/offlineEvents";
+import { setEventDevicePin } from "../../../lib/offline/eventAccess";
 import type { OfflineEventSession, Product } from "../../../types/catalog";
 import { ToastProvider } from "../../ui/ToastProvider";
+
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual<typeof import("react-router")>(
+    "react-router",
+  );
+  return { ...actual, useNavigate: () => vi.fn() };
+});
 
 const apiMocks = vi.hoisted(() => ({
   activateOfflineEventSession: vi.fn(),
@@ -87,11 +95,32 @@ function closingSession(): OfflineEventSession {
   };
 }
 
+async function submitTabletPin(mode: "setup" | "verify") {
+  const dialog = screen.getByRole("dialog", {
+    name: mode === "setup" ? "Protect this tablet" : "Confirm tablet PIN",
+  });
+  await userEvent.type(
+    within(dialog).getByLabelText("6-digit tablet PIN"),
+    "123456",
+  );
+  if (mode === "setup")
+    await userEvent.type(
+      within(dialog).getByLabelText("Confirm tablet PIN"),
+      "123456",
+    );
+  await userEvent.click(
+    within(dialog).getByRole("button", {
+      name: mode === "setup" ? "Save PIN" : "Continue",
+    }),
+  );
+}
+
 describe("OfflineEventManager", () => {
   let resetLedger: () => void;
 
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     resetLedger = useMemoryOfflineEventLedgerForTests();
     vi.stubGlobal("navigator", {
       ...navigator,
@@ -125,6 +154,7 @@ describe("OfflineEventManager", () => {
   it("keeps a frozen event manageable and retries finalization", async () => {
     const frozen = closingSession();
     await saveOfflineEventSession(frozen);
+    await setEventDevicePin(frozen.shopId, "123456");
     apiMocks.finalizeOfflineEventSession
       .mockRejectedValueOnce(new Error("Connection lost"))
       .mockResolvedValueOnce({ acknowledgements: [], status: "closed" });
@@ -159,31 +189,32 @@ describe("OfflineEventManager", () => {
     ).not.toBeInTheDocument();
 
     const retry = screen.getByRole("button", {
-      name: "Retry sync and close event",
+      name: "Retry ending event",
     });
     await userEvent.click(retry);
-    const closeDialog = screen.getByRole("dialog", {
-      name: "Close offline event?",
+    await submitTabletPin("verify");
+    const closeDialog = await screen.findByRole("dialog", {
+      name: "End offline event?",
     });
     await userEvent.click(
       within(closeDialog).getByRole("button", {
-        name: "Retry sync and close event",
+        name: "Retry ending event",
       }),
     );
     await waitFor(() =>
       expect(apiMocks.finalizeOfflineEventSession).toHaveBeenCalledTimes(1),
     );
     const retryDialog = screen.getByRole("dialog", {
-      name: "Close offline event?",
+      name: "End offline event?",
     });
     expect(
       within(retryDialog).getByRole("button", {
-        name: "Retry sync and close event",
+        name: "Retry ending event",
       }),
     ).toBeEnabled();
     await userEvent.click(
       within(retryDialog).getByRole("button", {
-        name: "Retry sync and close event",
+        name: "Retry ending event",
       }),
     );
     await waitFor(() =>
@@ -204,6 +235,7 @@ describe("OfflineEventManager", () => {
     });
     const frozen = closingSession();
     await saveOfflineEventSession(frozen);
+    await setEventDevicePin(frozen.shopId, "123456");
 
     render(
       <PlatformI18nProvider>
@@ -227,14 +259,15 @@ describe("OfflineEventManager", () => {
     );
     orderReadFailure.current = new Error("IndexedDB read failed");
     await userEvent.click(
-      screen.getByRole("button", { name: "Retry sync and close event" }),
+      screen.getByRole("button", { name: "Retry ending event" }),
     );
-    const closeDialog = screen.getByRole("dialog", {
-      name: "Close offline event?",
+    await submitTabletPin("verify");
+    const closeDialog = await screen.findByRole("dialog", {
+      name: "End offline event?",
     });
     await userEvent.click(
       within(closeDialog).getByRole("button", {
-        name: "Retry sync and close event",
+        name: "Retry ending event",
       }),
     );
 
@@ -376,6 +409,7 @@ describe("OfflineEventManager", () => {
         name: "Prepare device and reserve stock",
       }),
     );
+    await submitTabletPin("setup");
 
     expect(
       await screen.findByText(/Persistent storage is unavailable/i),
@@ -422,6 +456,7 @@ describe("OfflineEventManager", () => {
         name: "Prepare device and reserve stock",
       }),
     );
+    await submitTabletPin("setup");
 
     expect(
       await screen.findByText(/storage could not be read on this device/i),

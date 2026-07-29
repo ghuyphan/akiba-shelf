@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { PackageCheck, ShoppingCart, Tag } from "lucide-react";
 import type { Product } from "../../../types/catalog";
-import { Modal } from "../../ui/Modal";
+import { Modal, ModalFooter } from "../../ui/Modal";
 import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { ProductPrice } from "./ProductPrice";
 
@@ -122,21 +122,23 @@ export function ProductDetailModal({
                 : copy.available(displayedProduct.quantity_available)}
             </span>
           </div>
-          <button
-            type="button"
-            className="product-detail-add"
-            disabled={isSoldOut}
-            onClick={(event) => {
-              onAddToCart(displayedProduct, event);
-              onClose();
-            }}
-          >
-            <ShoppingCart size={18} />
-            {isSoldOut ? copy.currentlyUnavailable : copy.addToCart}
-          </button>
-          <small className="product-detail-note">{copy.stockNote}</small>
         </div>
       </div>
+      <ModalFooter className="product-detail-actions">
+        <small className="product-detail-note">{copy.stockNote}</small>
+        <button
+          type="button"
+          className="product-detail-add"
+          disabled={isSoldOut}
+          onClick={(event) => {
+            onAddToCart(displayedProduct, event);
+            onClose();
+          }}
+        >
+          <ShoppingCart size={18} />
+          {isSoldOut ? copy.currentlyUnavailable : copy.addToCart}
+        </button>
+      </ModalFooter>
     </Modal>
   );
 }

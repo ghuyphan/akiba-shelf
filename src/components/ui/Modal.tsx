@@ -25,6 +25,16 @@ type ModalProps = {
   closeLabel?: string;
 };
 
+type ModalFooterProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+/** Shared action region for scrollable modals and mobile sheets. */
+export function ModalFooter({ children, className = "" }: ModalFooterProps) {
+  return <div className={`modal-footer ${className}`}>{children}</div>;
+}
+
 export function Modal({
   title,
   isOpen,

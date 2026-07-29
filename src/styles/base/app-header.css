@@ -171,7 +171,7 @@ a {
   width: min(92vw, 480px);
 }
 
-.signout-confirmation {
+.signout-confirmation-body {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 14px;
@@ -188,12 +188,12 @@ a {
   background: color-mix(in srgb, var(--red) 8%, var(--surface));
 }
 
-.signout-confirmation h3 {
+.signout-confirmation-body h3 {
   margin: 2px 0 6px;
   font-size: 16px;
 }
 
-.signout-confirmation p {
+.signout-confirmation-body p {
   margin: 0;
   color: var(--muted);
   font-size: 13px;
@@ -201,11 +201,9 @@ a {
 }
 
 .signout-confirmation-actions {
-  grid-column: 1 / -1;
   display: flex;
   justify-content: flex-end;
   gap: 9px;
-  margin-top: 12px;
 }
 
 .app-header-icon-button:focus-visible,
@@ -281,4 +279,3 @@ a {
     grid-template-columns: 1fr 1fr;
   }
 }
-

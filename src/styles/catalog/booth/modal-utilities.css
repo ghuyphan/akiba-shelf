@@ -16,9 +16,13 @@
 
 /* Subtle Staff Access Link */
 .booth-staff-link {
+  padding: 0;
+  border: 0;
   font-size: 11px !important;
   font-weight: 500 !important;
   color: var(--muted) !important;
+  background: transparent;
+  cursor: pointer;
   opacity: 0.75 !important;
   text-decoration: none !important;
   transition: all 0.2s ease !important;
@@ -29,4 +33,3 @@
   color: var(--ink) !important;
   text-decoration: underline !important;
 }
-

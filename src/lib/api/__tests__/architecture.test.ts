@@ -28,7 +28,7 @@ describe("API module architecture", () => {
       path.resolve(process.cwd(), "src/lib/api.ts"),
       "utf8",
     );
-    expect(barrel.trim().split("\n")).toHaveLength(11);
+    expect(barrel.trim().split("\n")).toHaveLength(12);
     expect(barrel).not.toMatch(/\b(function|const|class)\b/);
   });
 

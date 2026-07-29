@@ -50,6 +50,19 @@ async function expectNoHorizontalOverflow(page: Page) {
     .toEqual({ documentFits: true, bodyFits: true });
 }
 
+async function chooseOrderFilter(page: Page, label: string, count: number) {
+  if (page.viewportSize()!.width <= 1100) {
+    await page.locator(".admin-status-filter .select-menu-trigger").click();
+    await page
+      .getByRole("option", { name: `${label} · ${count}`, exact: true })
+      .click();
+    return;
+  }
+  await page
+    .getByRole("button", { name: new RegExp(`${label} ${count}`, "i") })
+    .click();
+}
+
 async function expectAdminListsFlowOnPhone(page: Page) {
   const lists = await page
     .locator(".admin-scroll-list")
@@ -74,13 +87,13 @@ async function expectAdminListsFlowOnPhone(page: Page) {
   }
 }
 
-async function seedOfflineEventLedger(page: Page) {
+async function seedOfflineEventLedger(page: Page, shopId = "main") {
   const now = new Date().toISOString();
   const sessionId = "71000000-0000-4000-8000-000000000001";
   const session = {
     version: 1,
     id: sessionId,
-    shopId: "main",
+    shopId,
     shopSlug: "akiba-shelf",
     deviceId: "72000000-0000-4000-8000-000000000001",
     name: "Fixture Event",
@@ -186,6 +199,15 @@ async function seedOfflineEventLedger(page: Page) {
   );
 }
 
+async function saveTabletPin(page: Page, pin = "123456") {
+  const pinDialog = page.getByRole("dialog", { name: "Protect this tablet" });
+  await expect(pinDialog).toBeVisible();
+  await pinDialog.getByLabel("6-digit tablet PIN").fill(pin);
+  await pinDialog.getByLabel("Confirm tablet PIN").fill(pin);
+  await pinDialog.getByRole("button", { name: "Save PIN" }).click();
+  await expect(pinDialog).toHaveCount(0);
+}
+
 test("advertises the PWA only on staff routes", async ({ page }) => {
   await mockSupabase(page);
 
@@ -241,7 +263,7 @@ test("shows order details and advances online fulfilment", async ({ page }) => {
   await page.getByPlaceholder("Enter your password").fill("password123");
   await page.getByRole("button", { name: "Open workspace" }).click();
 
-  await page.getByRole("button", { name: /confirmed 1/i }).click();
+  await chooseOrderFilter(page, "Confirmed", 1);
   await expect(page.getByText("AK-0042", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Order details" }).click();
   const details = page.getByRole("dialog", { name: "Order details · AK-0042" });
@@ -253,6 +275,208 @@ test("shows order details and advances online fulfilment", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "Mark picked up" }),
   ).toBeVisible();
+});
+
+test("keeps sales and promotion layouts readable at every breakpoint", async ({
+  page,
+}) => {
+  await mockSupabase(page, {
+    staffRole: "owner",
+    orderQueue: true,
+    orderStatus: "confirmed",
+  });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open workspace" }).click();
+
+  const summary = page.locator(".admin-sales-summary");
+  await expect(summary).toBeVisible();
+  await expect(summary).toHaveCSS("background-image", "none");
+  await expect(summary.locator(".admin-sales-breakdown > span")).toHaveCount(3);
+  await expectNoHorizontalOverflow(page);
+
+  await page.getByRole("button", { name: /Products/ }).click();
+  const promotionCard = page.getByRole("region", { name: "Promotion" });
+  await promotionCard
+    .getByRole("button", { name: "Edit", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Promotion" });
+  const modalFooter = dialog.locator(".modal-footer");
+  await expect(modalFooter).toBeVisible();
+  await expect(modalFooter).toHaveCSS("position", "sticky");
+  await expect(modalFooter).toHaveCSS("backdrop-filter", "none");
+  const footerLayout = await modalFooter.evaluate((footer) => {
+    const footerBounds = footer.getBoundingClientRect();
+    const dialogBounds = footer
+      .closest("[role='dialog']")!
+      .getBoundingClientRect();
+    const statusBounds = footer
+      .querySelector(".admin-edit-status")!
+      .getBoundingClientRect();
+    const actionsBounds = footer
+      .querySelector(".admin-edit-actions")!
+      .getBoundingClientRect();
+    const buttonTops = [...footer.querySelectorAll("button")].map(
+      (button) => button.getBoundingClientRect().top,
+    );
+    return {
+      dialogLeft: dialogBounds.left,
+      dialogRight: dialogBounds.right,
+      footerLeft: footerBounds.left,
+      footerRight: footerBounds.right,
+      statusTop: statusBounds.top,
+      statusBottom: statusBounds.bottom,
+      actionsTop: actionsBounds.top,
+      buttonTops,
+    };
+  });
+  expect(
+    Math.abs(footerLayout.footerLeft - footerLayout.dialogLeft),
+  ).toBeLessThanOrEqual(1.5);
+  expect(
+    Math.abs(footerLayout.footerRight - footerLayout.dialogRight),
+  ).toBeLessThanOrEqual(1.5);
+  expect(new Set(footerLayout.buttonTops).size).toBe(1);
+  if (page.viewportSize()!.width <= 760) {
+    expect(footerLayout.actionsTop).toBeGreaterThanOrEqual(
+      footerLayout.statusBottom,
+    );
+  } else {
+    expect(footerLayout.actionsTop).toBeLessThanOrEqual(
+      footerLayout.statusTop + 16,
+    );
+  }
+  await dialog
+    .locator(".admin-promotion-fields-group .select-menu-trigger")
+    .click();
+  await page.getByRole("option", { name: "Percentage off" }).click();
+  const percentageProducts = dialog.locator(
+    ".promotion-products-selection.is-percentage",
+  );
+  await expect(percentageProducts).toBeVisible();
+
+  if (page.viewportSize()!.width <= 760) {
+    const actionColumns = await percentageProducts
+      .locator(".promotion-product-actions")
+      .evaluateAll((actions) =>
+        actions.map((action) => getComputedStyle(action).gridTemplateColumns),
+      );
+    expect(actionColumns).not.toHaveLength(0);
+    for (const columns of actionColumns)
+      expect(columns.trim().split(/\s+/)).toHaveLength(1);
+  }
+  await expectNoHorizontalOverflow(page);
+});
+
+test("shows Event sales as a solid responsive storefront status", async ({
+  page,
+}) => {
+  await mockSupabase(page);
+  await page.goto("./s/akiba-shelf");
+  await seedOfflineEventLedger(page, "00000000-0000-4000-8000-000000000001");
+  await page.reload();
+
+  const ribbon = page.locator(".event-sales-ribbon");
+  await expect(ribbon).toBeVisible();
+  await expect(ribbon).toHaveCSS("background-image", "none");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("locks event staff access and protects ending the event with a local PIN", async ({
+  page,
+}) => {
+  const storefrontShopId = "00000000-0000-4000-8000-000000000001";
+  await mockSupabase(page, { staffRole: "owner", catalogLocale: "vi" });
+  await page.goto("./admin");
+  await seedOfflineEventLedger(page);
+  // The fixture intentionally aliases the staff shop ID to a public UUID.
+  await seedOfflineEventLedger(page, storefrontShopId);
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open workspace" }).click();
+
+  await page.getByRole("button", { name: "Event Mode: Fixture Event" }).click();
+  let eventDialog = page.getByRole("dialog", { name: "Offline Event Mode" });
+  const activeFooter = eventDialog.locator(".offline-event-active-actions");
+  await expect(activeFooter).toBeVisible();
+  await expect(activeFooter).toHaveCSS("position", "sticky");
+  await expect(
+    activeFooter.getByRole("button", { name: "Set tablet PIN" }),
+  ).toHaveCSS("min-height", "44px");
+  await expect(
+    activeFooter.getByRole("button", { name: "End event" }),
+  ).toHaveCSS("min-height", "44px");
+  const footerLayout = await activeFooter.evaluate((footer) => {
+    const bounds = footer.getBoundingClientRect();
+    const style = getComputedStyle(footer);
+    return {
+      display: style.display,
+      left: bounds.left,
+      right: bounds.right,
+      viewportWidth: window.innerWidth,
+    };
+  });
+  expect(footerLayout.left).toBeGreaterThanOrEqual(0);
+  expect(footerLayout.right).toBeLessThanOrEqual(footerLayout.viewportWidth);
+  if (page.viewportSize()!.width <= 760)
+    expect(footerLayout.display).toBe("grid");
+
+  await activeFooter.getByRole("button", { name: "Set tablet PIN" }).click();
+  await saveTabletPin(page);
+  await page.evaluate((publicShopId) => {
+    const prefix = "matsuri-offline-event-pin-v1:";
+    const record = localStorage.getItem(`${prefix}main`);
+    if (record) localStorage.setItem(`${prefix}${publicShopId}`, record);
+  }, storefrontShopId);
+  await activeFooter.getByRole("button", { name: "Lock tablet" }).click();
+  await expect(page).toHaveURL(/\/s\/akiba-shelf$/);
+  await expect(page.locator(".event-sales-ribbon")).toBeVisible();
+
+  await page
+    .getByRole("button", {
+      name: "Thông tin gian hàng Giờ mở cửa, vị trí & mạng xã hội",
+    })
+    .click();
+  const boothDialog = page.getByRole("dialog", { name: "Chi tiết gian hàng" });
+  await boothDialog.getByRole("button", { name: "Kênh staff →" }).click();
+
+  const storefrontPin = page.getByRole("dialog", { name: "Kênh staff" });
+  await storefrontPin
+    .getByLabel("Mã PIN máy tính bảng gồm 6 số")
+    .fill("000000");
+  await storefrontPin.getByRole("button", { name: "Mở bảng staff" }).click();
+  await expect(storefrontPin).toContainText("Mã PIN máy tính bảng không đúng.");
+  await storefrontPin
+    .getByLabel("Mã PIN máy tính bảng gồm 6 số")
+    .fill("123456");
+  await storefrontPin.getByRole("button", { name: "Mở bảng staff" }).click();
+
+  await expect(page).toHaveURL(/\/admin$/);
+  const adminPin = page.getByRole("dialog", { name: "Staff access locked" });
+  await expect(adminPin).toBeVisible();
+  await adminPin.getByLabel("6-digit tablet PIN").fill("123456");
+  await adminPin.getByRole("button", { name: "Open event console" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Orders", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Event Mode: Fixture Event" }).click();
+  eventDialog = page.getByRole("dialog", { name: "Offline Event Mode" });
+  await eventDialog.getByRole("button", { name: "End event" }).click();
+
+  const endPin = page.getByRole("dialog", { name: "Confirm tablet PIN" });
+  await endPin.getByLabel("6-digit tablet PIN").fill("123456");
+  await endPin.getByRole("button", { name: "Continue" }).click();
+  const confirmation = page.getByRole("dialog", {
+    name: "End offline event?",
+  });
+  await expect(confirmation).toContainText(
+    "2 local orders will be synchronized and 0 unsold items will return to online stock.",
+  );
+  await confirmation
+    .locator(".confirmation-dialog-actions .button-secondary")
+    .click();
+  await expectNoHorizontalOverflow(page);
 });
 
 test("routes an authenticated non-staff user to the dashboard", async ({
@@ -325,83 +549,51 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
   const toolbar = page.locator(".admin-filter-bar");
   const eventControl = toolbar.locator(".offline-event-launcher");
   await expect(eventControl).toBeVisible();
-  await expect(eventControl).toContainText("Event Mode");
+  await expect(eventControl).toContainText("Offline sales");
   await expect(toolbar.getByText("Live queue", { exact: true })).toHaveCount(0);
   const eventFilter = toolbar.getByRole("button", { name: /event 0/i });
-  await expect(eventFilter).toBeVisible();
+  const compactStatusFilter = toolbar.locator(".admin-status-filter");
+  if (page.viewportSize()!.width <= 1100) {
+    await expect(compactStatusFilter).toBeVisible();
+    await expect(eventFilter).toBeHidden();
+  } else {
+    await expect(eventFilter).toBeVisible();
+    await expect(compactStatusFilter).toBeHidden();
+  }
   const eventMenu = toolbar.locator(".admin-event-select");
   const eventSelect = eventMenu.getByRole("combobox", {
     name: "Event: All events",
     exact: true,
   });
-  await expect(eventMenu).toHaveClass(/select-menu/);
-  await expect(eventSelect).toBeVisible();
-  const readToolbarGeometry = () =>
-    toolbar.evaluate((element) => {
-      const bounds = element.getBoundingClientRect();
-      const utilities = element
-        .querySelector<HTMLElement>(".admin-queue-utilities")!
-        .getBoundingClientRect();
-      const eventSelectBounds = element
-        .querySelector<HTMLElement>(".admin-event-select")!
-        .getBoundingClientRect();
-      return {
-        height: bounds.height,
-        utilitiesX: utilities.x - bounds.x,
-        utilitiesWidth: utilities.width,
-        eventSelectWidth: eventSelectBounds.width,
-      };
-    });
-  const geometryBeforeFilterChange = await readToolbarGeometry();
+  await expect(eventMenu).toHaveCount(0);
 
-  await eventFilter.click();
+  await chooseOrderFilter(page, "Event", 0);
   await expect(
     page.getByRole("heading", { name: "Event orders", exact: true }),
   ).toBeVisible();
-  const geometryAfterFilterChange = await readToolbarGeometry();
-  expect(geometryAfterFilterChange.height).toBeCloseTo(
-    geometryBeforeFilterChange.height,
-    1,
-  );
-  expect(geometryAfterFilterChange.utilitiesX).toBeCloseTo(
-    geometryBeforeFilterChange.utilitiesX,
-    1,
-  );
-  expect(geometryAfterFilterChange.utilitiesWidth).toBeCloseTo(
-    geometryBeforeFilterChange.utilitiesWidth,
-    1,
-  );
-  expect(geometryAfterFilterChange.eventSelectWidth).toBeCloseTo(
-    geometryBeforeFilterChange.eventSelectWidth,
-    1,
-  );
+  await expect(eventMenu).toHaveClass(/select-menu/);
+  await expect(eventSelect).toBeVisible();
   await expect(eventSelect).toHaveCSS("min-height", "44px");
   await expect(eventSelect).toHaveCSS("background-color", "rgb(255, 255, 255)");
 
   if (testInfo.project.name === "tablet-chromium") {
-    const [toolbarBox, tabsBox, utilitiesBox] = await Promise.all([
+    const [toolbarBox, statusBox, utilitiesBox] = await Promise.all([
       toolbar.boundingBox(),
-      toolbar.locator(".admin-filter-tabs").boundingBox(),
+      compactStatusFilter.boundingBox(),
       toolbar.locator(".admin-queue-utilities").boundingBox(),
     ]);
     expect(toolbarBox).not.toBeNull();
-    expect(tabsBox).not.toBeNull();
+    expect(statusBox).not.toBeNull();
     expect(utilitiesBox).not.toBeNull();
-    const activeFilterBox = await toolbar
-      .locator(".admin-filter-tabs button[aria-pressed='true']")
-      .boundingBox();
-    expect(activeFilterBox).not.toBeNull();
     const toolbarCenter = toolbarBox!.y + toolbarBox!.height / 2;
     expect(
-      Math.abs(tabsBox!.y + tabsBox!.height / 2 - toolbarCenter),
+      Math.abs(statusBox!.y + statusBox!.height / 2 - toolbarCenter),
     ).toBeLessThan(4);
     expect(
       Math.abs(utilitiesBox!.y + utilitiesBox!.height / 2 - toolbarCenter),
     ).toBeLessThan(2);
-    expect(tabsBox!.x + tabsBox!.width).toBeLessThanOrEqual(utilitiesBox!.x);
-    expect(activeFilterBox!.x).toBeGreaterThanOrEqual(tabsBox!.x);
-    expect(activeFilterBox!.x + activeFilterBox!.width).toBeLessThanOrEqual(
-      tabsBox!.x + tabsBox!.width + 1,
+    expect(statusBox!.x + statusBox!.width).toBeLessThanOrEqual(
+      utilitiesBox!.x,
     );
     expect(utilitiesBox!.x + utilitiesBox!.width).toBeLessThanOrEqual(
       toolbarBox!.x + toolbarBox!.width + 1,
@@ -619,6 +811,7 @@ test("keeps Event Mode locked while device preparation is running", async ({
   });
   await expect(prepare).toBeEnabled();
   await prepare.click();
+  await saveTabletPin(page);
   try {
     await expect(
       dialog.getByRole("button", { name: "Close modal" }),
@@ -688,6 +881,7 @@ test("probes real IndexedDB before reserving Event Mode stock", async ({
       exact: true,
     })
     .click();
+  await saveTabletPin(page);
 
   await expect
     .poll(() =>
@@ -1042,9 +1236,9 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
     page.locator(".admin-nav-tab:not(.admin-nav-storefront)"),
   );
   await expectTouchTargetsAtLeast(
-    page.locator(".admin-filter-tabs button, .admin-queue-utilities button"),
+    page.locator(".admin-status-filter button, .admin-queue-utilities button"),
   );
-  await page.getByRole("button", { name: /confirmed 1/i }).click();
+  await chooseOrderFilter(page, "Confirmed", 1);
   await expectTouchTargetsAtLeast(
     page.locator(
       ".admin-order-fulfillment button, .admin-order-details-trigger",

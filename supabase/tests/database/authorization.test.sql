@@ -123,7 +123,7 @@ select results_eq($$select id from public.products where shop_id='11000000-0000-
 select is_empty($$select id from public.products where id='auth-b-hidden'$$,'staff cannot see another shop private product');
 select is_empty($$update public.products set name='attack' where id='auth-a-active' returning id$$,'staff cannot edit products');
 select is_empty($$update public.payment_settings set bank_account_name='attack' where id='auth-a' returning id$$,'staff cannot edit payment settings');
-select throws_ok($$select public.save_promotion_settings('11000000-0000-4000-8000-000000000001',true,1,1,true,array['auth-a-active'],array['auth-a-active'])$$,'42501','Active shop owner or admin access required','staff cannot change promotion settings');
+select throws_ok($$select public.save_promotion_settings('11000000-0000-4000-8000-000000000001',true,'buy_get',1,1,true,10,0,null,null,array['auth-a-active'],array['auth-a-active'])$$,'42501','Active shop owner or admin access required','staff cannot change promotion settings');
 select ok(not has_table_privilege('authenticated','public.push_subscriptions','insert'),'browser roles cannot register push endpoints directly');
 select ok(not has_table_privilege('authenticated','public.push_subscriptions','update'),'browser roles cannot replace push endpoint ownership directly');
 select ok(not has_table_privilege('authenticated','public.push_subscriptions','delete'),'browser roles cannot bypass protected push unregistration');
@@ -138,8 +138,8 @@ select is_empty($$update public.payment_settings set bank_account_name='attack' 
 select is_empty($$select * from public.get_shop_members('11000000-0000-4000-8000-000000000001')$$,'admin cannot enumerate members');
 select throws_ok($$insert into public.promotions(shop_id,enabled,buy_quantity,free_quantity,repeatable) values('11000000-0000-4000-8000-000000000001',true,1,1,true)$$,'42501',null,'admin cannot bypass the serialized promotion RPC');
 select throws_ok($$insert into public.promotion_products(shop_id,product_id,role) values('11000000-0000-4000-8000-000000000001','auth-a-active','both')$$,'42501',null,'admin cannot mutate promotion mappings directly');
-select lives_ok($$select public.save_promotion_settings('11000000-0000-4000-8000-000000000001',true,1,1,true,array['auth-a-active'],array['auth-a-active'])$$,'admin changes promotion settings through the protected RPC');
-select throws_ok($$select public.save_promotion_settings('11000000-0000-4000-8000-000000000002',true,1,1,true,array['auth-b-active'],array['auth-b-active'])$$,'42501','Active shop owner or admin access required','admin cannot change another shop promotion');
+select lives_ok($$select public.save_promotion_settings('11000000-0000-4000-8000-000000000001',true,'buy_get',1,1,true,10,0,null,null,array['auth-a-active'],array['auth-a-active'])$$,'admin changes promotion settings through the protected RPC');
+select throws_ok($$select public.save_promotion_settings('11000000-0000-4000-8000-000000000002',true,'buy_get',1,1,true,10,0,null,null,array['auth-b-active'],array['auth-b-active'])$$,'42501','Active shop owner or admin access required','admin cannot change another shop promotion');
 
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000001';
 select lives_ok($$select public.save_shop_member('11000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000004','staff',true)$$,'owner manages own members');

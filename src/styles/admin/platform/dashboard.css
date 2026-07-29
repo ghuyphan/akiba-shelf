@@ -454,6 +454,8 @@
 }
 
 .edit-shop-modal {
+  --modal-padding-inline: 22px;
+  --modal-padding-block: 22px;
   width: min(92vw, 520px);
   padding: 22px;
   border-radius: var(--admin-panel-radius, 18px);
@@ -559,8 +561,6 @@
   display: flex;
   justify-content: flex-end;
   gap: 9px;
-  padding-top: 18px;
-  border-top: 1px solid var(--soft-line);
 }
 
 .dashboard-edit-actions .button {
