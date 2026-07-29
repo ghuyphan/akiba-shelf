@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(64);
+select plan(70);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values('20000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','staff-orders@test.local','',now(),now(),now());
 insert into public.shops(id,name,slug,created_by) values('21000000-0000-4000-8000-000000000001','Orders','orders-test','20000000-0000-4000-8000-000000000001');
 insert into public.shop_members(shop_id,user_id,role) values('21000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','staff');
@@ -121,6 +121,22 @@ set local role postgres;
 select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000006'),45000,'non-repeating offer applies only once');
 select is((select quantity_available from public.products where id='order-c'),1,'free items are still reserved from stock');
 
+update public.promotions
+set kind='percentage',percentage_off=25,minimum_subtotal_vnd=30000,
+    starts_at=null,ends_at=null
+where shop_id='21000000-0000-4000-8000-000000000001';
+set local role service_role;
+select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-b","quantity":1}]','30000000-0000-4000-8000-000000000015',repeat('m',32))$$,'percentage order below the minimum succeeds without a discount');
+set local role postgres;
+select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000015'),20000,'percentage minimum spend is server-authoritative');
+update public.promotions set minimum_subtotal_vnd=0
+where shop_id='21000000-0000-4000-8000-000000000001';
+set local role service_role;
+select lives_ok($$select * from public.create_order('orders-test',null,'[{"product_id":"order-b","quantity":2}]','30000000-0000-4000-8000-000000000016',repeat('n',32))$$,'percentage order succeeds');
+set local role postgres;
+select is((select discount_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000016'),10000,'percentage discount is calculated by the database');
+select is((select total_amount from public.orders where client_request_id='30000000-0000-4000-8000-000000000016'),30000,'percentage discount reduces the authoritative order total');
+
 set local role postgres;
 with inserted as (
   insert into public.orders(shop_id,customer_name,total_amount,status,client_request_id,expires_at)
@@ -233,4 +249,26 @@ select is((select payload #>> '{retry_endpoints,0}' from notification_claims whe
 select is(public.complete_order_notification_delivery((select id from notification_order_id),gen_random_uuid(),true,null,'{}'),false,'an expired delivery attempt cannot complete a newer lease');
 select ok(public.complete_order_notification_delivery((select id from notification_order_id),(select (payload->>'lease_token')::uuid from notification_claims where label='second'),true,null,'{}'),'successful retry completes notification delivery');
 select is(public.claim_order_notification_delivery((select id from notification_order_id),'21000000-0000-4000-8000-000000000001')->>'outcome','delivered','delivered notifications remain deduplicated');
+
+set local role postgres;
+insert into public.products(id,shop_id,name,item_code,price_vnd,quantity_available,category,active)
+values('order-big','21000000-0000-4000-8000-000000000001','Big','ORDER-BIG',1500000000,2,'Test',true);
+insert into public.orders(id,shop_id,total_amount,discount_amount,status,client_request_id,expires_at,confirmed_at)
+values
+('22000000-0000-4000-8000-000000000001','21000000-0000-4000-8000-000000000001',1500000000,0,'confirmed','23000000-0000-4000-8000-000000000001',now(),now()),
+('22000000-0000-4000-8000-000000000002','21000000-0000-4000-8000-000000000001',1500000000,0,'confirmed','23000000-0000-4000-8000-000000000002',now(),now());
+insert into public.order_items(shop_id,order_id,product_id,quantity,unit_price,discount_amount)
+values
+('21000000-0000-4000-8000-000000000001','22000000-0000-4000-8000-000000000001','order-big',1,1500000000,0),
+('21000000-0000-4000-8000-000000000001','22000000-0000-4000-8000-000000000002','order-big',1,1500000000,0);
+set local role authenticated;set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000001';
+select is((
+  select (product->>'revenue')::bigint
+  from jsonb_array_elements(public.get_sales_summary(
+    '21000000-0000-4000-8000-000000000001',
+    now()-interval '1 minute',
+    now()+interval '1 minute'
+  )->'product_breakdown') product
+  where product->>'product_id'='order-big'
+),3000000000::bigint,'sales summary keeps lifetime product revenue above 32-bit range');
 select * from finish();rollback;

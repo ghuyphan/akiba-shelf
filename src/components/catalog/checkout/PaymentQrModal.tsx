@@ -5,7 +5,7 @@ import { formatVnd } from "../../../utils/format";
 import { calculateCartPricing, getPricingLine } from "../../../utils/pricing";
 import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { canGenerateVietQr, hasUsablePayment } from "../../../utils/vietqr";
-import { Modal } from "../../ui/Modal";
+import { Modal, ModalFooter } from "../../ui/Modal";
 import { useOrderCountdown, usePaymentQrSource } from "../../../hooks/catalog/useCheckoutPresentation";
 import { getPaymentBank, getBankLogoUrl } from "../../../utils/banks";
 import { useCheckoutSession } from "../../../hooks/catalog/useCheckoutSession";
@@ -177,8 +177,10 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
           <h2>{copy.allSet}</h2>
           <p>{copy.reservedPickup}</p>
           <div className="payment-success-summary"><span>{copy.totalPaid}</span><strong>{formatVnd(order?.total_amount ?? totalAmount)}</strong></div>
-          <button type="button" className="button button-primary" onClick={handleSuccessClose}>{copy.backShop}</button>
         </div>
+        <ModalFooter className="checkout-modal-actions is-single">
+          <button type="button" className="button button-primary" onClick={handleSuccessClose}>{copy.backShop}</button>
+        </ModalFooter>
       </Modal>
     );
   }
@@ -191,8 +193,10 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
           <span className="payment-success-eyebrow">{copy.orderCode} {order.order_code}</span>
           <h2>{copy.orderCancelled}</h2>
           <p>{copy.cancelledPaymentNote}</p>
-          <button type="button" className="button button-primary" onClick={handleSuccessClose}>{copy.backShop}</button>
         </div>
+        <ModalFooter className="checkout-modal-actions is-single">
+          <button type="button" className="button button-primary" onClick={handleSuccessClose}>{copy.backShop}</button>
+        </ModalFooter>
       </Modal>
     );
   }
@@ -204,8 +208,10 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
           <Ban size={38} />
           <h2>{copy.reservationExpired}</h2>
           <p>{copy.reservationExpiredHint}</p>
-          <button type="button" className="button button-primary" onClick={handleSuccessClose}>{copy.backShop}</button>
         </div>
+        <ModalFooter className="checkout-modal-actions is-single">
+          <button type="button" className="button button-primary" onClick={handleSuccessClose}>{copy.backShop}</button>
+        </ModalFooter>
       </Modal>
     );
   }
@@ -241,28 +247,28 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
             <strong>{formatVnd(totalAmount)}</strong>
           </div>
           {securityCheck}
-          <div className="order-confirm-actions">
-            <button
-              type="button"
-              className="button button-secondary"
-              onClick={() => {
-                if (needsReview) checkout.clear();
-                onClose();
-              }}
-              disabled={isSubmitting}
-            >
-              {copy.keepShopping}
-            </button>
-            <button
-              type="button"
-              className="button button-primary"
-              onClick={() => void retryCheckout()}
-              disabled={isSubmitting || !securityReady}
-            >
-              {isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.retryOrder}
-            </button>
-          </div>
         </div>
+        <ModalFooter className="checkout-modal-actions order-confirm-actions">
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() => {
+              if (needsReview) checkout.clear();
+              onClose();
+            }}
+            disabled={isSubmitting}
+          >
+            {copy.keepShopping}
+          </button>
+          <button
+            type="button"
+            className="button button-primary"
+            onClick={() => void retryCheckout()}
+            disabled={isSubmitting || !securityReady}
+          >
+            {isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.retryOrder}
+          </button>
+        </ModalFooter>
       </Modal>
     );
   }
@@ -295,8 +301,11 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
               <div className="order-confirm-secure"><ShieldCheck size={17} /><span>{copy.secureCheck}</span></div>
               {securityCheck}
               {!paymentReady && <p className="order-confirm-payment-error" role="alert">{copy.paymentSettingsError}</p>}
-              <div className="order-confirm-actions"><button type="button" className="button button-secondary" onClick={onClose} disabled={isSubmitting}>{copy.keepShopping}</button><button type="submit" className="button button-primary" disabled={isSubmitting || checkoutCart.length === 0 || !paymentReady || !securityReady}>{isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.createPay}</button></div>
             </div>
+            <ModalFooter className="checkout-modal-actions order-confirm-actions">
+              <button type="button" className="button button-secondary" onClick={onClose} disabled={isSubmitting}>{copy.keepShopping}</button>
+              <button type="submit" className="button button-primary" disabled={isSubmitting || checkoutCart.length === 0 || !paymentReady || !securityReady}>{isSubmitting ? <><Loader2 size={16} className="spin-icon" /> {copy.checking}</> : copy.createPay}</button>
+            </ModalFooter>
           </form>
           )}
         </Modal>
@@ -415,10 +424,12 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
           <div className="payment-transfer-card"><span>{copy.transferTo}</span><div><small>{copy.accountName}</small><strong>{payment.bank_account_name || "N/A"}</strong></div><div><small>{copy.accountNumber}</small><button type="button" aria-label={copy.copyAccountNumber} onClick={() => void copyAccountNumber()}><strong>{payment.bank_account_no || "N/A"}</strong><Copy size={14} /></button><span className="payment-copy-feedback" aria-live="polite">{copyFeedback}</span></div><div><small>{copy.bank}</small><strong>{bankName}</strong></div><div className="payment-transfer-note"><small>{copy.transferNote}</small><strong>{order.order_code}</strong></div></div>
           <div className="payment-receipt-items"><span>{copy.orderSummary}</span>{checkoutCart.map((item) => { const line = getPricingLine(pricing, item.product.id); if (!line) return null; return <div key={item.product.id}><span>{line.quantity} × {item.product.name}{line.freeQuantity > 0 ? ` · ${copy.freeItems(line.freeQuantity)}` : ""}</span>{totalAmount === order.total_amount && <strong>{formatVnd(line.total)}</strong>}</div>; })}{pricing.discountAmount > 0 && <div className="payment-receipt-discount"><span>{copy.discount}</span><strong>−{formatVnd(pricing.discountAmount)}</strong></div>}<div className="payment-receipt-total"><span>{copy.total}</span><strong>{formatVnd(order.total_amount)}</strong></div></div>
           {payment.payment_instructions.trim() && <div className="receipt-instructions"><Sparkles size={16} /><span>{payment.payment_instructions}</span></div>}
-          <button type="button" className="payment-hide-order" onClick={onClose}>{copy.hidePayment}</button>
-          <button type="button" className="button button-secondary" onClick={() => setIsCancelConfirmOpen(true)} disabled={isCancelling || (connectionState === "offline" && order.source !== "offline_event")}>{isCancelling ? copy.cancelling : copy.cancelOrder}</button>
         </div>
       </div>
+      <ModalFooter className="checkout-modal-actions payment-order-actions">
+        <button type="button" className="button button-secondary" onClick={onClose}>{copy.hidePayment}</button>
+        <button type="button" className="button button-danger" onClick={() => setIsCancelConfirmOpen(true)} disabled={isCancelling || (connectionState === "offline" && order.source !== "offline_event")}>{isCancelling ? copy.cancelling : copy.cancelOrder}</button>
+      </ModalFooter>
     </Modal>
     <Modal
       title={copy.cancelReservationTitle}
@@ -433,25 +444,25 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
         <span className="payment-success-eyebrow">{copy.orderCode} {order.order_code}</span>
         <h2>{copy.cancelReservationTitle}</h2>
         <p>{copy.cancelReservationHint}</p>
-        <div className="cancel-order-actions">
-          <button
-            type="button"
-            className="button button-secondary"
-            onClick={() => setIsCancelConfirmOpen(false)}
-            disabled={isCancelling}
-          >
-            {copy.keepOrder}
-          </button>
-          <button
-            type="button"
-            className="button button-danger"
-            onClick={() => void confirmCancel()}
-            disabled={isCancelling}
-          >
-            {isCancelling ? copy.cancelling : copy.cancelOrder}
-          </button>
-        </div>
       </div>
+      <ModalFooter className="checkout-modal-actions cancel-order-actions">
+        <button
+          type="button"
+          className="button button-secondary"
+          onClick={() => setIsCancelConfirmOpen(false)}
+          disabled={isCancelling}
+        >
+          {copy.keepOrder}
+        </button>
+        <button
+          type="button"
+          className="button button-danger"
+          onClick={() => void confirmCancel()}
+          disabled={isCancelling}
+        >
+          {isCancelling ? copy.cancelling : copy.cancelOrder}
+        </button>
+      </ModalFooter>
     </Modal>
     </>
   );

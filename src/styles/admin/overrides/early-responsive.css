@@ -11,8 +11,8 @@
 @media (max-width: 760px) {
   .admin-mobile-settings-page { display: grid; gap: 14px; }
   .admin-filter-bar { width: 100%; min-width: 0; }
-  .admin-filter-tabs { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; min-width: 0; overflow: visible !important; }
-  .admin-filter-tabs button { min-width: 0; width: 100%; padding-inline: 8px !important; }
+  .admin-filter-tabs { display: flex !important; flex-wrap: wrap; width: 100%; min-width: 0; gap: 6px; padding: 0; overflow: visible !important; border: 0; border-radius: 0; background: transparent; }
+  .admin-filter-tabs button { width: auto; min-width: 0; min-height: 40px; flex: 0 0 auto !important; padding-inline: 11px !important; }
   .admin-queue-utilities { width: 100%; justify-content: space-between; }
   .admin-orders-view,.admin-order-metrics,.admin-section-heading,.admin-orders-grid { width: 100%; min-width: 0; }
   .builder-toolbar { grid-template-columns: 1fr auto; }
@@ -27,4 +27,3 @@
   .storefront-builder .designer-preview-stage { width: 100%; min-height: 560px; height: 70vh; padding: 8px; }
   .builder-canvas { padding: 8px; }
 }
-

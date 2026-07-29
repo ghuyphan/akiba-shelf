@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { AlertTriangle, Info } from "lucide-react";
 import { Button } from "./Button";
-import { Modal } from "./Modal";
+import { Modal, ModalFooter } from "./Modal";
 
 type ConfirmationDialogProps = {
   isOpen: boolean;
@@ -44,7 +44,7 @@ export function ConfirmationDialog({
       className="confirmation-modal"
       closeLabel={cancelLabel}
     >
-      <div className="confirmation-dialog">
+      <div className="confirmation-dialog-body">
         <span
           className={`confirmation-dialog-icon ${danger ? "is-danger" : "is-neutral"}`}
           aria-hidden="true"
@@ -52,20 +52,20 @@ export function ConfirmationDialog({
           {danger ? <AlertTriangle size={22} /> : <Info size={22} />}
         </span>
         <div className="confirmation-dialog-message">{message}</div>
-        <div className="confirmation-dialog-actions">
-          <Button variant="secondary" disabled={busy} onClick={onClose}>
-            {cancelLabel}
-          </Button>
-          <Button
-            variant={danger ? "danger" : "primary"}
-            loading={busy}
-            loadingText={loadingLabel}
-            onClick={onConfirm}
-          >
-            {confirmLabel}
-          </Button>
-        </div>
       </div>
+      <ModalFooter className="confirmation-dialog-actions">
+        <Button variant="secondary" disabled={busy} onClick={onClose}>
+          {cancelLabel}
+        </Button>
+        <Button
+          variant={danger ? "danger" : "primary"}
+          loading={busy}
+          loadingText={loadingLabel}
+          onClick={onConfirm}
+        >
+          {confirmLabel}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 }

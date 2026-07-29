@@ -144,7 +144,6 @@
   .storefront-dock { animation: none; transform: translateX(-50%); }
 }
 
-.payment-hide-order { width: 100%; min-height: 42px; padding: 0 16px; border: 0; border-radius: 999px; color: var(--muted); background: var(--surface-soft); cursor: pointer; font-size: 14px; font-weight: 900; }
 .payment-cancelled-state .success-icon-wrap { color: #b23e49; background: #fff0f2; }
 
 @media (max-width: 760px) {
@@ -162,4 +161,3 @@
   from { transform: translate(-50%, 90px); opacity: 0; }
   to { transform: translate(-50%, 0); opacity: 1; }
 }
-

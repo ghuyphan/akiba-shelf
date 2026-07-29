@@ -5,21 +5,14 @@ import {
   PUBLIC_PAYMENT_COLUMNS,
 } from "../catalogQueries";
 import { safePublicUrl } from "../branding";
-import {
-  paymentSettingsSchema,
-} from "../schemas";
+import { paymentSettingsSchema } from "../schemas";
 import type {
   BoothSettings,
   PaymentSettings,
   PromotionSettings,
 } from "../../types/catalog";
-import {
-  requireSupabase,
-} from "./shared";
-import {
-  normalizeBooth,
-  normalizePromotion,
-} from "./settingsNormalization";
+import { requireSupabase } from "./shared";
+import { normalizeBooth, normalizePromotion } from "./settingsNormalization";
 
 export { normalizeBooth, normalizePromotion } from "./settingsNormalization";
 
@@ -66,7 +59,9 @@ export async function getPublicPromotionSettings(
   const [promotion, mappings] = await Promise.all([
     client
       .from("promotions")
-      .select("shop_id,enabled,buy_quantity,free_quantity,repeatable")
+      .select(
+        "shop_id,enabled,kind,buy_quantity,free_quantity,repeatable,percentage_off,minimum_subtotal_vnd,starts_at,ends_at",
+      )
       .eq("shop_id", shopId)
       .maybeSingle(),
     client
@@ -182,9 +177,14 @@ export async function savePromotionSettings(
   const { error } = await requireSupabase().rpc("save_promotion_settings", {
     p_shop_id: shopId,
     p_enabled: normalized.enabled,
+    p_kind: normalized.kind,
     p_buy_quantity: normalized.buy_quantity,
     p_free_quantity: normalized.free_quantity,
     p_repeatable: normalized.repeatable,
+    p_percentage_off: normalized.percentage_off,
+    p_minimum_subtotal_vnd: normalized.minimum_subtotal_vnd,
+    p_starts_at: normalized.starts_at,
+    p_ends_at: normalized.ends_at,
     p_qualifying_product_ids: normalized.qualifying_product_ids,
     p_reward_product_ids: normalized.reward_product_ids,
   });

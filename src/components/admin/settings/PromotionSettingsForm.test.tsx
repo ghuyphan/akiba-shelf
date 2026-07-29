@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { PlatformI18nProvider } from "../../../lib/i18n/platformI18n";
+import { defaultPromotion } from "../../../lib/constants";
 import type { PromotionSettings } from "../../../types/catalog";
 import { ToastProvider } from "../../ui/ToastProvider";
 import { AdminUnsavedChangesProvider } from "../shell/AdminUnsavedChanges";
@@ -17,6 +18,7 @@ import { PromotionSettingsForm } from "./PromotionSettingsForm";
 afterEach(cleanup);
 
 const promotion: PromotionSettings = {
+  ...defaultPromotion,
   enabled: false,
   buy_quantity: 2,
   free_quantity: 1,
@@ -54,7 +56,7 @@ describe("PromotionSettingsForm", () => {
     renderForm();
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
-    const dialog = screen.getByRole("dialog", { name: "Quantity promotion" });
+    const dialog = screen.getByRole("dialog", { name: "Promotion" });
     expect(dialog).toHaveClass("modal-admin");
     expect(screen.getByText("No products available")).toBeInTheDocument();
     expect(
@@ -109,7 +111,7 @@ describe("PromotionSettingsForm", () => {
       screen.getByRole("dialog", { name: "Discard unsaved changes?" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("dialog", { name: "Quantity promotion" }),
+      screen.getByRole("dialog", { name: "Promotion" }),
     ).toBeInTheDocument();
 
     const confirmation = screen.getByRole("dialog", {
@@ -147,7 +149,7 @@ describe("PromotionSettingsForm", () => {
     expect(error).toHaveTextContent("Could not save promotion");
     expect(error).toHaveTextContent("Network unavailable");
     expect(
-      screen.getByRole("dialog", { name: "Quantity promotion" }),
+      screen.getByRole("dialog", { name: "Promotion" }),
     ).toBeInTheDocument();
 
     await user.click(

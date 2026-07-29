@@ -1,6 +1,6 @@
 import { act, fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { Modal } from "./Modal";
+import { Modal, ModalFooter } from "./Modal";
 
 describe("Modal", () => {
   it("preserves deliberate focus inside the dialog", () => {
@@ -80,5 +80,23 @@ describe("Modal", () => {
     act(() => vi.advanceTimersByTime(20));
     expect(document.querySelector(".mobile-sheet-modal")).toBeNull();
     vi.useRealTimers();
+  });
+
+  it("provides a shared sticky footer slot", () => {
+    render(
+      <Modal title="Example" isOpen onClose={() => undefined} mobileSheet>
+        <div>Scrollable content</div>
+        <ModalFooter>
+          <button type="button">Save</button>
+        </ModalFooter>
+      </Modal>,
+    );
+
+    expect(document.querySelector(".modal-footer")).toHaveClass(
+      "modal-footer",
+    );
+    expect(document.querySelector(".modal-footer button")).toHaveTextContent(
+      "Save",
+    );
   });
 });

@@ -483,9 +483,29 @@ test("browses, filters, searches, opens details, and enforces quantity limits", 
   await page
     .getByRole("button", { name: /View details for Moon Stand/i })
     .click();
-  await expect(page.getByRole("dialog")).toContainText(
+  const detailDialog = page.getByRole("dialog");
+  await expect(detailDialog).toContainText(
     "A bright acrylic stand",
   );
+  const detailFooter = detailDialog.locator(".product-detail-actions");
+  await expect(detailFooter).toBeVisible();
+  await expect(detailFooter).toHaveCSS("position", "sticky");
+  const detailFooterBounds = await detailFooter.evaluate((footer) => {
+    const footerBounds = footer.getBoundingClientRect();
+    const dialogBounds = footer.closest("[role='dialog']")!.getBoundingClientRect();
+    return {
+      footerLeft: footerBounds.left,
+      footerRight: footerBounds.right,
+      dialogLeft: dialogBounds.left,
+      dialogRight: dialogBounds.right,
+    };
+  });
+  expect(
+    Math.abs(detailFooterBounds.footerLeft - detailFooterBounds.dialogLeft),
+  ).toBeLessThanOrEqual(1.5);
+  expect(
+    Math.abs(detailFooterBounds.footerRight - detailFooterBounds.dialogRight),
+  ).toBeLessThanOrEqual(1.5);
   await page
     .getByRole("button", { name: /Add to cart/i })
     .last()

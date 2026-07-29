@@ -7,7 +7,7 @@ import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import type { ShopMembership } from "../../../types/catalog";
 import { Button } from "../../ui/Button";
 import { Field, TextInput } from "../../ui/Field";
-import { Modal } from "../../ui/Modal";
+import { Modal, ModalFooter } from "../../ui/Modal";
 import { useToast } from "../../ui/ToastProvider";
 import { getUserFacingErrorMessage } from "../../../lib/errors";
 
@@ -114,7 +114,7 @@ export function DashboardEditShopDialog({
           </div>
         </section>
 
-        <div className="dashboard-edit-actions">
+        <ModalFooter className="dashboard-edit-actions">
           <Button
             type="button"
             variant="ghost"
@@ -126,7 +126,7 @@ export function DashboardEditShopDialog({
           <Button type="submit" loading={busy} loadingText={t("Saving…")}>
             {t("Save changes")}
           </Button>
-        </div>
+        </ModalFooter>
       </form>
     </Modal>
   );

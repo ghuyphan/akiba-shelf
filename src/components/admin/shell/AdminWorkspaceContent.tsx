@@ -9,6 +9,7 @@ import type {
   Product,
   PromotionSettings,
 } from "../../../types/catalog";
+import type { SalesSummaryState } from "../../../lib/sales";
 import { Button } from "../../ui/Button";
 import { EmptyState } from "../../ui/EmptyState";
 import { OrderQueue } from "../orders/OrderQueue";
@@ -21,7 +22,9 @@ const AdminProductsWorkspace = lazyWithRetry("admin-products-workspace", () =>
   })),
 );
 const GachaManager = lazyWithRetry("admin-gacha-workspace", () =>
-  import("../gacha/GachaManager").then((module) => ({ default: module.GachaManager })),
+  import("../gacha/GachaManager").then((module) => ({
+    default: module.GachaManager,
+  })),
 );
 const StorefrontDesigner = lazyWithRetry("admin-design-workspace", () =>
   import("../design/StorefrontDesigner").then((module) => ({
@@ -29,13 +32,19 @@ const StorefrontDesigner = lazyWithRetry("admin-design-workspace", () =>
   })),
 );
 const SettingsForm = lazyWithRetry("admin-settings-form", () =>
-  import("../settings/SettingsForm").then((module) => ({ default: module.SettingsForm })),
+  import("../settings/SettingsForm").then((module) => ({
+    default: module.SettingsForm,
+  })),
 );
 const QrManager = lazyWithRetry("admin-qr-manager", () =>
-  import("../settings/QrManager").then((module) => ({ default: module.QrManager })),
+  import("../settings/QrManager").then((module) => ({
+    default: module.QrManager,
+  })),
 );
 const StaffManager = lazyWithRetry("admin-team-workspace", () =>
-  import("../team/StaffManager").then((module) => ({ default: module.StaffManager })),
+  import("../team/StaffManager").then((module) => ({
+    default: module.StaffManager,
+  })),
 );
 const OfflineEventManager = lazyWithRetry("admin-offline-event-manager", () =>
   import("../events/OfflineEventManager").then((module) => ({
@@ -66,6 +75,7 @@ type AdminWorkspaceContentProps = {
   orderPageSize: number;
   orderTotal: number;
   ordersLoading: boolean;
+  sales: SalesSummaryState;
   onRetry: () => void;
   onOrderFilterChange: (filter: OrderViewFilter) => void;
   onSelectedEventChange: (eventId: string) => void;
@@ -103,6 +113,7 @@ export function AdminWorkspaceContent({
   orderPageSize,
   orderTotal,
   ordersLoading,
+  sales,
   onRetry,
   onOrderFilterChange,
   onSelectedEventChange,
@@ -148,6 +159,7 @@ export function AdminWorkspaceContent({
         todayOnly={ordersTodayOnly}
         counts={orderCounts}
         eventCount={eventOrderCount}
+        sales={sales}
         eventControl={
           canManageCatalog ? (
             <Suspense fallback={null}>
@@ -223,7 +235,11 @@ export function AdminWorkspaceContent({
       <Suspense fallback={workspaceFallback}>
         <section className="admin-mobile-settings-page">
           <SettingsForm shopId={shopId} settings={booth} onSave={onSaveBooth} />
-          <QrManager shopId={shopId} settings={payment} onSave={onSavePayment} />
+          <QrManager
+            shopId={shopId}
+            settings={payment}
+            onSave={onSavePayment}
+          />
         </section>
       </Suspense>
     );

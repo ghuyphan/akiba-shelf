@@ -120,12 +120,19 @@ export type PaymentSettings = {
   payment_instructions: string;
 };
 
+export type PromotionKind = "buy_get" | "percentage";
+
 export type PromotionSettings = {
   shop_id?: string;
   enabled: boolean;
+  kind: PromotionKind;
   buy_quantity: number;
   free_quantity: number;
   repeatable: boolean;
+  percentage_off: number;
+  minimum_subtotal_vnd: number;
+  starts_at: string | null;
+  ends_at: string | null;
   qualifying_product_ids: string[];
   reward_product_ids: string[];
 };
@@ -241,6 +248,29 @@ export type Order = {
   offline_event_name?: string;
   payment_method?: OfflineEventPaymentMethod;
   payment_state?: OfflineEventPaymentState;
+};
+
+export type SalesProductSummary = {
+  product_id: string;
+  name: string;
+  item_code: string;
+  units: number;
+  revenue: number;
+  discount_amount: number;
+};
+
+export type SalesSummary = {
+  from: string;
+  to: string;
+  revenue: number;
+  discount_amount: number;
+  confirmed_order_count: number;
+  units_sold: number;
+  online_revenue: number;
+  event_revenue: number;
+  cash_revenue: number;
+  vietqr_revenue: number;
+  product_breakdown: SalesProductSummary[];
 };
 
 export type OrderMutationOutcome =

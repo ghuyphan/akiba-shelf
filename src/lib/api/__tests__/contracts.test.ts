@@ -5,7 +5,7 @@ import {
   FunctionsRelayError,
 } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { defaultBooth } from "../../constants";
+import { defaultBooth, defaultPromotion } from "../../constants";
 import {
   activateOfflineEventSession,
   CheckoutOutcomeUnknownError,
@@ -15,6 +15,7 @@ import {
   getOfflineEventDraft,
   getOfflineEventOrders,
   getOrderStatusCounts,
+  getSalesSummary,
   getOrderNotificationStatus,
   retryOrderNotification,
   getStorefrontBootstrap,
@@ -112,6 +113,7 @@ const eventSession: OfflineEventSession = {
     payment_instructions: "",
   },
   promotion: {
+    ...defaultPromotion,
     enabled: false,
     buy_quantity: 3,
     free_quantity: 1,
@@ -268,6 +270,37 @@ describe("order API contracts", () => {
       p_shop_id: shopId,
       p_created_after: "2026-07-01T00:00:00.000Z",
       p_created_before: "2026-08-01T00:00:00.000Z",
+    });
+  });
+
+  it("validates authoritative confirmed-sales summaries", async () => {
+    mocks.rpc.mockResolvedValueOnce({
+      data: {
+        from: "2026-07-01T00:00:00+00:00",
+        to: "2026-08-01T00:00:00+00:00",
+        revenue: "150000",
+        discount_amount: "10000",
+        confirmed_order_count: "2",
+        units_sold: "3",
+        online_revenue: "100000",
+        event_revenue: "50000",
+        cash_revenue: "50000",
+        vietqr_revenue: "0",
+        product_breakdown: [],
+      },
+      error: null,
+    });
+    await expect(
+      getSalesSummary(
+        shopId,
+        "2026-07-01T00:00:00+00:00",
+        "2026-08-01T00:00:00+00:00",
+      ),
+    ).resolves.toMatchObject({ revenue: 150000, confirmed_order_count: 2 });
+    expect(mocks.rpc).toHaveBeenCalledWith("get_sales_summary", {
+      p_shop_id: shopId,
+      p_from: "2026-07-01T00:00:00+00:00",
+      p_to: "2026-08-01T00:00:00+00:00",
     });
   });
 
@@ -837,6 +870,7 @@ describe("Playwright Supabase request inventory", () => {
       "/rest/v1/rpc/get_order_notification_status",
       "/rest/v1/rpc/get_order_status_counts",
       "/rest/v1/rpc/get_public_product_categories",
+      "/rest/v1/rpc/get_sales_summary",
       "/rest/v1/rpc/get_shop_members",
       "/rest/v1/rpc/get_shop_workspace_summary",
       "/rest/v1/rpc/get_storefront_bootstrap",

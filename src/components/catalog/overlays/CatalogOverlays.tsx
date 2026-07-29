@@ -29,11 +29,13 @@ export function BoothDetailsModal({
   payment,
   open,
   onClose,
+  onStaffAccess,
 }: {
   booth: BoothSettings;
   payment: PaymentSettings;
   open: boolean;
   onClose: () => void;
+  onStaffAccess?: () => void;
 }) {
   const copy = useCatalogCopy();
   const socialLinks = configuredSocialPlatforms(booth)
@@ -121,9 +123,19 @@ export function BoothDetailsModal({
           </div>
         )}
         <div className="booth-modal-utility-row">
-          <Link to="/admin" className="booth-staff-link">
-            {copy.staffAccess} →
-          </Link>
+          {onStaffAccess ? (
+            <button
+              type="button"
+              className="booth-staff-link"
+              onClick={onStaffAccess}
+            >
+              {copy.staffAccess} →
+            </button>
+          ) : (
+            <Link to="/admin" className="booth-staff-link">
+              {copy.staffAccess} →
+            </Link>
+          )}
         </div>
       </div>
     </Modal>

@@ -1,4 +1,8 @@
-import type { BoothSettings, PaymentSettings, PromotionSettings } from "../types/catalog";
+import type {
+  BoothSettings,
+  PaymentSettings,
+  PromotionSettings,
+} from "../types/catalog";
 
 export const DEFAULT_STOREFRONT_PALETTE = {
   primary: "#d95c64",
@@ -8,11 +12,48 @@ export const DEFAULT_STOREFRONT_PALETTE = {
 } as const;
 
 export const STOREFRONT_PALETTES = [
-  { id: "matsuri-bloom", name: "Matsuri Bloom", mood: "Warm & cheerful", ...DEFAULT_STOREFRONT_PALETTE },
-  { id: "matcha-picnic", name: "Matcha Picnic", mood: "Cute & cozy", primary: "#5c8657", secondary: "#20304a", accent: "#e6b85c", background: "#fbf7ea" },
-  { id: "sakura-soda", name: "Sakura Soda", mood: "Sweet & bubbly", primary: "#e56f92", secondary: "#34263d", accent: "#76c8d6", background: "#fff4f7" },
-  { id: "night-market", name: "Night Market", mood: "Cool & electric", primary: "#7b61d1", secondary: "#171a2b", accent: "#ffb84d", background: "#f2efff" },
-  { id: "ocean-pop", name: "Ocean Pop", mood: "Fresh & playful", primary: "#347f9c", secondary: "#172b3a", accent: "#f2b85b", background: "#eef8f8" },
+  {
+    id: "matsuri-bloom",
+    name: "Matsuri Bloom",
+    mood: "Warm & cheerful",
+    ...DEFAULT_STOREFRONT_PALETTE,
+  },
+  {
+    id: "matcha-picnic",
+    name: "Matcha Picnic",
+    mood: "Cute & cozy",
+    primary: "#5c8657",
+    secondary: "#20304a",
+    accent: "#e6b85c",
+    background: "#fbf7ea",
+  },
+  {
+    id: "sakura-soda",
+    name: "Sakura Soda",
+    mood: "Sweet & bubbly",
+    primary: "#e56f92",
+    secondary: "#34263d",
+    accent: "#76c8d6",
+    background: "#fff4f7",
+  },
+  {
+    id: "night-market",
+    name: "Night Market",
+    mood: "Cool & electric",
+    primary: "#7b61d1",
+    secondary: "#171a2b",
+    accent: "#ffb84d",
+    background: "#f2efff",
+  },
+  {
+    id: "ocean-pop",
+    name: "Ocean Pop",
+    mood: "Fresh & playful",
+    primary: "#347f9c",
+    secondary: "#172b3a",
+    accent: "#f2b85b",
+    background: "#eef8f8",
+  },
 ] as const;
 
 export const defaultBooth: BoothSettings = {
@@ -64,14 +105,27 @@ export const defaultPayment: PaymentSettings = {
 
 export const defaultPromotion: PromotionSettings = {
   enabled: false,
+  kind: "buy_get",
   buy_quantity: 3,
   free_quantity: 1,
   repeatable: true,
+  percentage_off: 10,
+  minimum_subtotal_vnd: 0,
+  starts_at: null,
+  ends_at: null,
   qualifying_product_ids: [],
   reward_product_ids: [],
 };
 
-export const productBadges = ["New", "Best Seller", "Limited", "Restock", "Event Exclusive", "Preorder", "Last Call"];
+export const productBadges = [
+  "New",
+  "Best Seller",
+  "Limited",
+  "Restock",
+  "Event Exclusive",
+  "Preorder",
+  "Last Call",
+];
 export const LIMITED_STOCK_THRESHOLD = 5;
 export const MAX_FEATURED_PRODUCTS = 8;
 export const SHOP_NAME_MAX_LENGTH = 100;

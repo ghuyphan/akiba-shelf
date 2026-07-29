@@ -16,7 +16,9 @@
   .admin-form-section + .admin-form-section { padding-top: 18px; }
   .admin-form-section .form-grid { grid-template-columns: 1fr !important; }
   .admin-image-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .admin-edit-bar { bottom: max(8px, env(safe-area-inset-bottom)); flex-wrap: wrap; gap: 8px; }
+  .admin-edit-bar:where(:not(.modal-footer)) { bottom: max(8px, env(safe-area-inset-bottom)); }
+  .admin-edit-bar { flex-wrap: wrap; gap: 8px; }
+  .modal-footer.admin-edit-bar { flex-wrap: wrap; }
   .admin-edit-status { width: 100%; flex: 1 1 100%; justify-content: center; margin-right: 0; }
   .admin-edit-actions { width: 100%; flex: 1 1 100%; }
   .admin-edit-actions > * { min-width: 0; }
@@ -35,11 +37,12 @@
   .admin-bank-card { grid-template-columns: auto minmax(0, 1fr); }
   .admin-bank-card>span { grid-column: 1 / -1; }
   .admin-filter-bar { align-items: flex-start; flex-direction: column; }
-  .admin-filter-tabs { width: 100%; overflow-x: auto; border-radius: 14px; }
-  .admin-filter-tabs button { flex: 1; justify-content: center; padding-inline: 9px; }
+  .admin-filter-tabs { width: 100%; flex-wrap: wrap; gap: 6px; padding: 0; overflow: visible; border: 0; border-radius: 0; background: transparent; }
+  .admin-filter-tabs button { width: auto; flex: 0 0 auto; justify-content: center; padding-inline: 11px; border: 0; background: transparent; }
   .admin-filter-tabs .admin-event-filter { margin-left: 0; }
   .admin-filter-tabs .admin-event-filter::before { display: none; }
   .admin-queue-utilities { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 8px; }
+  .admin-queue-utilities:not(:has(.offline-event-launcher)) .admin-today-toggle { grid-column: 1 / -1; }
   .admin-toolbar-control { width: 100%; min-width: 0; }
   .admin-order-metrics { grid-template-columns: 1fr; gap: 1px; }
   .admin-order-metrics article { min-height: 68px; padding: 11px 13px; }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/admin/admin.css";
-import { Navigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { getAdminCatalogData } from "../lib/api/catalog";
 import {
   getOrderStatusCounts,
@@ -18,6 +18,7 @@ import {
 import { signInAdmin, signOutAdmin } from "../lib/api/auth";
 import { getShopWorkspaceSummary } from "../lib/api/shops";
 import { getOfflineEventOrders } from "../lib/api/offlineEvents";
+import { getSalesSummary } from "../lib/api/sales";
 import {
   defaultBooth,
   defaultPayment,
@@ -63,6 +64,7 @@ import { AdminWorkspaceContent } from "../components/admin/shell/AdminWorkspaceC
 import { AdminUnsavedChangesProvider } from "../components/admin/shell/AdminUnsavedChanges";
 import type { OrderViewFilter } from "../components/admin/orders/OrderQueue";
 import { SignOutDialog } from "../components/ui/SignOutDialog";
+import { EventPinDialog } from "../components/ui/EventPinDialog";
 import {
   loadAdminOrdersSnapshot,
   saveAdminOrdersSnapshot,
@@ -81,6 +83,17 @@ import { reportError } from "../lib/observability";
 import { useMediaQuery } from "../hooks/shared/useMediaQuery";
 import { useAdminViewRoute } from "../hooks/admin/useAdminViewRoute";
 import {
+  mergeSalesSummaries,
+  projectSalesSummary,
+  type SalesSummaryState,
+} from "../lib/sales";
+import {
+  getEventAdminUnlockExpiresAt,
+  hasEventDevicePin,
+  OFFLINE_EVENT_ACCESS_UPDATED,
+  verifyEventDevicePin,
+} from "../lib/offline/eventAccess";
+import {
   getAdminOrderCountScopeKey,
   getAdminOrderQueryKey,
   getLocalOrderDateScope,
@@ -98,8 +111,16 @@ const emptyOrderCounts: OrderStatusCounts = {
   cancelled: 0,
   expired: 0,
 };
+const emptySalesState: SalesSummaryState = {
+  summary: null,
+  status: "authoritative",
+};
+type EventAccessState =
+  | { status: "checking" | "unlocked" }
+  | { status: "locked"; eventName: string };
 
 export function AdminPage() {
+  const navigate = useNavigate();
   const {
     state: adminSession,
     refresh: refreshAdminSession,
@@ -120,6 +141,7 @@ export function AdminPage() {
   const [orderCounts, setOrderCounts] =
     useState<OrderStatusCounts>(emptyOrderCounts);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [sales, setSales] = useState<SalesSummaryState>(emptySalesState);
   const [notificationStatuses, setNotificationStatuses] = useState<
     OrderNotificationStatus[]
   >([]);
@@ -130,6 +152,9 @@ export function AdminPage() {
   const { viewTab, setViewTab } = useAdminViewRoute();
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [signOutBusy, setSignOutBusy] = useState(false);
+  const [eventAccess, setEventAccess] = useState<EventAccessState>({
+    status: "checking",
+  });
   const [booth, setBooth] = useState<BoothSettings>(() => {
     const activeShopId = localStorage.getItem("akiba-active-shop")?.trim();
     return activeShopId
@@ -154,8 +179,69 @@ export function AdminPage() {
       : null;
   useDocumentBranding(verifiedBranding);
 
+  useEffect(() => {
+    if (!isAuthed || !shopId) {
+      setEventAccess({ status: "unlocked" });
+      return;
+    }
+    let active = true;
+    let refreshRequest = 0;
+    let expiryTimer: number | undefined;
+    const clearExpiryTimer = () => {
+      if (expiryTimer !== undefined) window.clearTimeout(expiryTimer);
+      expiryTimer = undefined;
+    };
+    const refresh = (showChecking = false) => {
+      const requestId = ++refreshRequest;
+      clearExpiryTimer();
+      if (showChecking) setEventAccess({ status: "checking" });
+      void loadOfflineEventSession(shopId)
+        .then((session) => {
+          if (!active || requestId !== refreshRequest) return;
+          const pinConfigured = hasEventDevicePin(shopId);
+          const unlockExpiresAt = pinConfigured
+            ? getEventAdminUnlockExpiresAt(shopId)
+            : null;
+          const protectedSession = Boolean(
+            session && session.status !== "closed" && pinConfigured,
+          );
+          const requiresPin = protectedSession && unlockExpiresAt === null;
+          setEventAccess(
+            requiresPin
+              ? { status: "locked", eventName: session?.name ?? "" }
+              : { status: "unlocked" },
+          );
+          if (protectedSession && unlockExpiresAt !== null) {
+            expiryTimer = window.setTimeout(
+              () => refresh(),
+              Math.max(0, unlockExpiresAt - Date.now() + 25),
+            );
+          }
+        })
+        .catch(() => {
+          if (!active || requestId !== refreshRequest) return;
+          setEventAccess({ status: "unlocked" });
+        });
+    };
+    const handleUpdate = (event: Event) => {
+      const detail = (event as CustomEvent<{ shopId?: string }>).detail;
+      if (!detail?.shopId || detail.shopId === shopId) refresh();
+    };
+    refresh(true);
+    window.addEventListener(OFFLINE_EVENT_UPDATED, handleUpdate);
+    window.addEventListener(OFFLINE_EVENT_ACCESS_UPDATED, handleUpdate);
+    return () => {
+      active = false;
+      refreshRequest += 1;
+      clearExpiryTimer();
+      window.removeEventListener(OFFLINE_EVENT_UPDATED, handleUpdate);
+      window.removeEventListener(OFFLINE_EVENT_ACCESS_UPDATED, handleUpdate);
+    };
+  }, [isAuthed, shopId]);
+
   const orderRequestRef = useRef(0);
   const notificationRequestRef = useRef(0);
+  const salesRequestRef = useRef(0);
   const catalogRequestRef = useRef(0);
   const catalogLoadRef = useRef<{
     shopId: string;
@@ -193,6 +279,7 @@ export function AdminPage() {
     catalogRequestRef.current += 1;
     orderRequestRef.current += 1;
     notificationRequestRef.current += 1;
+    salesRequestRef.current += 1;
     setProducts([]);
     setOrders([]);
     setOrderCounts(emptyOrderCounts);
@@ -200,6 +287,7 @@ export function AdminPage() {
     setEventOrderCount(0);
     setSelectedEventId("");
     setOrderTotal(0);
+    setSales(emptySalesState);
     setSelectedProduct(undefined);
     setBooth(shopId ? getStoredBoothTheme(`id:${shopId}`) : defaultBooth);
     setPayment(defaultPayment);
@@ -509,10 +597,67 @@ export function AdminPage() {
     [shopId, userId],
   );
 
+  const reloadSalesSummary = useCallback(async () => {
+    const requestId = ++salesRequestRef.current;
+    const now = new Date();
+    const range = ordersTodayOnlyRef.current
+      ? getLocalOrderDayBounds(now)
+      : { start: new Date(0), end: now };
+    const from = range.start.toISOString();
+    const to = range.end.toISOString();
+    const localSession = await loadOfflineEventSession(shopId).catch(
+      () => null,
+    );
+    const localLedgerOrders = localSession
+      ? await listOfflineEventOrders(localSession.id).catch(() => [])
+      : [];
+    const localOrders = localSession
+      ? localLedgerOrders.map((order) =>
+          offlineEventOrderAsOrder(order, localSession),
+        )
+      : [];
+    const unsyncedConfirmed = localSession
+      ? localLedgerOrders
+          .filter((order) => order.status === "confirmed" && !order.syncedAt)
+          .map((order) => offlineEventOrderAsOrder(order, localSession))
+      : [];
+    const provisional = projectSalesSummary(unsyncedConfirmed, from, to);
+    try {
+      const authoritative = await getSalesSummary(shopId, from, to);
+      if (requestId !== salesRequestRef.current) return;
+      setSales({
+        summary: provisional.confirmed_order_count
+          ? mergeSalesSummaries(authoritative, provisional)
+          : authoritative,
+        status: provisional.confirmed_order_count
+          ? "provisional"
+          : "authoritative",
+      });
+    } catch (error) {
+      if (isSessionNoise(error)) return;
+      const cached = [
+        ...loadAdminOrdersSnapshot(userId, shopId, "online"),
+        ...loadAdminOrdersSnapshot(userId, shopId, "event"),
+        ...localOrders,
+      ];
+      const unique = [
+        ...new Map(cached.map((order) => [order.id, order])).values(),
+      ];
+      if (requestId !== salesRequestRef.current) return;
+      setSales({
+        summary: projectSalesSummary(unique, from, to),
+        status: "fallback",
+      });
+    }
+  }, [shopId, userId]);
+
   const scheduleOrdersReload = useAdminOrderRealtime({
     enabled: isAuthed,
     shopId,
-    onRefresh: () => reloadOrders(true),
+    onRefresh: () => {
+      void reloadSalesSummary();
+      return reloadOrders(true);
+    },
     onError: (error) => {
       if (isSessionNoise(error)) return;
       toast.error(
@@ -521,6 +666,18 @@ export function AdminPage() {
       );
     },
   });
+
+  useEffect(() => {
+    if (!isAuthed || isInitialLoading) return;
+    const refresh = () => void reloadSalesSummary();
+    refresh();
+    window.addEventListener("online", refresh);
+    window.addEventListener(OFFLINE_EVENT_UPDATED, refresh);
+    return () => {
+      window.removeEventListener("online", refresh);
+      window.removeEventListener(OFFLINE_EVENT_UPDATED, refresh);
+    };
+  }, [isAuthed, isInitialLoading, ordersTodayOnly, reloadSalesSummary]);
 
   // Load initial workspace data in parallel before showing the admin panel
   useEffect(() => {
@@ -885,7 +1042,8 @@ export function AdminPage() {
 
   if (
     adminSession.status === "checking" ||
-    (adminSession.status === "authorized" && isInitialLoading)
+    (adminSession.status === "authorized" &&
+      (isInitialLoading || eventAccess.status === "checking"))
   ) {
     return <AdminAccessCheck />;
   }
@@ -906,6 +1064,53 @@ export function AdminPage() {
         onRetry={refreshAdminSession}
         onSignOut={handleSignOut}
       />
+    );
+  }
+
+  if (eventAccess.status === "locked") {
+    return (
+      <main
+        className="event-admin-lock-screen"
+        style={getAdminThemeStyle(booth)}
+      >
+        <div className="event-admin-lock-brand" aria-hidden="true">
+          <span>M</span>
+          <strong>Matsuri</strong>
+        </div>
+        <EventPinDialog
+          isOpen
+          mode="verify"
+          copy={{
+            title: t("Staff access locked"),
+            message: t('Enter the local tablet PIN to manage "{{event}}".', {
+              event: eventAccess.eventName,
+            }),
+            pinLabel: t("6-digit tablet PIN"),
+            confirmPinLabel: t("Confirm tablet PIN"),
+            cancelLabel: t("Back to storefront"),
+            submitLabel: t("Open event console"),
+            submittingLabel: t("Checking…"),
+            invalidPin: t("Enter exactly 6 digits."),
+            pinMismatch: t("The PINs do not match."),
+            submitError: t("Could not check the tablet PIN on this device."),
+            closeLabel: t("Back to storefront"),
+          }}
+          onClose={() =>
+            navigate(
+              `/s/${encodeURIComponent(adminSession.access.shop_slug)}`,
+              { replace: true },
+            )
+          }
+          onSubmit={async (pin) => {
+            const result = await verifyEventDevicePin(shopId, pin);
+            if (!result.ok)
+              return result.blockedUntil
+                ? t("Too many attempts. Wait 30 seconds and try again.")
+                : t("Incorrect tablet PIN.");
+            setEventAccess({ status: "unlocked" });
+          }}
+        />
+      </main>
     );
   }
 
@@ -978,6 +1183,7 @@ export function AdminPage() {
             orderPageSize={orderPageSize}
             orderTotal={orderTotal}
             ordersLoading={ordersLoading}
+            sales={sales}
             onRetry={() => {
               setWorkspaceLoadFailed(false);
               setIsInitialLoading(true);

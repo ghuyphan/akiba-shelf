@@ -192,6 +192,11 @@ describe("PaymentQrModal", () => {
       screen.getByPlaceholderText("e.g. Huy or Alice"),
     ).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Pickup name" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Create order & pay" }).closest(
+        ".modal-footer",
+      ),
+    ).toHaveClass("checkout-modal-actions", "order-confirm-actions");
   });
 
   it("shows custom inline feedback instead of browser validation for a missing pickup name", () => {

@@ -1,6 +1,6 @@
 import { LogOut } from "lucide-react";
 import { Button } from "./Button";
-import { Modal } from "./Modal";
+import { Modal, ModalFooter } from "./Modal";
 
 type SignOutDialogProps = {
   isOpen: boolean;
@@ -39,7 +39,7 @@ export function SignOutDialog({
       dismissible={!busy}
       closeLabel={cancelLabel}
     >
-      <div className="signout-confirmation">
+      <div className="signout-confirmation-body">
         <span className="signout-confirmation-icon">
           <LogOut size={22} />
         </span>
@@ -47,15 +47,15 @@ export function SignOutDialog({
           <h3>{heading}</h3>
           <p>{message}</p>
         </div>
-        <div className="signout-confirmation-actions">
-          <Button variant="secondary" disabled={busy} onClick={onClose}>
-            {cancelLabel}
-          </Button>
-          <Button loading={busy} loadingText={loadingLabel} onClick={onConfirm}>
-            {confirmLabel}
-          </Button>
-        </div>
       </div>
+      <ModalFooter className="signout-confirmation-actions">
+        <Button variant="secondary" disabled={busy} onClick={onClose}>
+          {cancelLabel}
+        </Button>
+        <Button loading={busy} loadingText={loadingLabel} onClick={onConfirm}>
+          {confirmLabel}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 }

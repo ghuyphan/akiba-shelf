@@ -1,32 +1,73 @@
 import { formatVnd } from "../../../utils/format";
 import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
-import { getProductDiscountPercent, getProductPrice, isProductOnSale } from "../../../utils/pricing";
+import {
+  getProductDiscountPercent,
+  getProductPrice,
+  isProductOnSale,
+  isPromotionActive,
+} from "../../../utils/pricing";
 import type { Product } from "../../../types/catalog";
 import { usePromotion } from "../../../lib/promotionContext";
 
-export function ProductPrice({ product, className = "" }: { product: Product; className?: string }) {
+export function ProductPrice({
+  product,
+  className = "",
+}: {
+  product: Product;
+  className?: string;
+}) {
   const copy = useCatalogCopy();
   const promotion = usePromotion();
   const onSale = isProductOnSale(product);
   const effectivePrice = getProductPrice(product);
-  const isQualifyingProduct = promotion.enabled && promotion.qualifying_product_ids.includes(product.id);
-  const isRewardProduct = promotion.enabled && promotion.reward_product_ids.includes(product.id);
-  const promotionLabel = isQualifyingProduct && isRewardProduct
-    ? copy.combinedPromotion(promotion.buy_quantity, promotion.free_quantity)
-    : isRewardProduct
-      ? copy.rewardPromotion
-      : isQualifyingProduct
-        ? copy.qualifyingPromotion(promotion.buy_quantity)
-        : "";
+  const promotionActive = isPromotionActive(promotion);
+  const isQualifyingProduct =
+    promotionActive && promotion.qualifying_product_ids.includes(product.id);
+  const isRewardProduct =
+    promotion.kind === "buy_get" &&
+    promotionActive &&
+    promotion.reward_product_ids.includes(product.id);
+  const promotionLabel =
+    isQualifyingProduct && isRewardProduct
+      ? promotion.kind === "percentage"
+        ? copy.percentagePromotion(promotion.percentage_off)
+        : copy.combinedPromotion(
+            promotion.buy_quantity,
+            promotion.free_quantity,
+          )
+      : isRewardProduct
+        ? copy.rewardPromotion
+        : isQualifyingProduct
+          ? promotion.kind === "percentage"
+            ? copy.percentagePromotion(promotion.percentage_off)
+            : copy.qualifyingPromotion(promotion.buy_quantity)
+          : "";
 
   return (
     <span
       className={`product-price ${onSale ? "is-sale" : ""} ${className}`.trim()}
-      aria-label={onSale ? `${copy.sale}: ${formatVnd(effectivePrice)}, ${copy.price}: ${formatVnd(product.price_vnd)}` : formatVnd(effectivePrice)}
+      aria-label={
+        onSale
+          ? `${copy.sale}: ${formatVnd(effectivePrice)}, ${copy.price}: ${formatVnd(product.price_vnd)}`
+          : formatVnd(effectivePrice)
+      }
     >
-      <strong className="product-price-current">{formatVnd(effectivePrice)}</strong>
-      {onSale && <span className="product-price-comparison"><del>{formatVnd(product.price_vnd)}</del><em>-{getProductDiscountPercent(product)}%</em></span>}
-      {promotionLabel && <span className={`product-promotion-label ${isQualifyingProduct && isRewardProduct ? "is-combined" : isRewardProduct ? "is-reward" : "is-qualifying"}`}>{promotionLabel}</span>}
+      <strong className="product-price-current">
+        {formatVnd(effectivePrice)}
+      </strong>
+      {onSale && (
+        <span className="product-price-comparison">
+          <del>{formatVnd(product.price_vnd)}</del>
+          <em>-{getProductDiscountPercent(product)}%</em>
+        </span>
+      )}
+      {promotionLabel && (
+        <span
+          className={`product-promotion-label ${isQualifyingProduct && isRewardProduct ? "is-combined" : isRewardProduct ? "is-reward" : "is-qualifying"}`}
+        >
+          {promotionLabel}
+        </span>
+      )}
     </span>
   );
 }

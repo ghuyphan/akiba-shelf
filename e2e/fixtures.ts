@@ -179,9 +179,14 @@ const payment = {
 const promotion = {
   shop_id: "00000000-0000-4000-8000-000000000001",
   enabled: true,
+  kind: "buy_get" as const,
   buy_quantity: 3,
   free_quantity: 1,
   repeatable: true,
+  percentage_off: 10,
+  minimum_subtotal_vnd: 0,
+  starts_at: null,
+  ends_at: null,
   qualifying_product_ids: products.map((product) => product.id),
   reward_product_ids: products.map((product) => product.id),
 };
@@ -501,6 +506,20 @@ export async function mockSupabase(
           options.orderQueue && fixtureOrderStatus === "cancelled" ? 1 : 0,
         expired: options.orderQueue && fixtureOrderStatus === "expired" ? 1 : 0,
         all: options.orderQueue ? 1 : 0,
+      });
+    if (url.pathname.includes("/rest/v1/rpc/get_sales_summary"))
+      return json(route, {
+        from: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
+        to: new Date(new Date().setHours(24, 0, 0, 0)).toISOString(),
+        revenue: fixtureOrderStatus === "confirmed" ? 120000 : 0,
+        discount_amount: 0,
+        confirmed_order_count: fixtureOrderStatus === "confirmed" ? 1 : 0,
+        units_sold: fixtureOrderStatus === "confirmed" ? 1 : 0,
+        online_revenue: fixtureOrderStatus === "confirmed" ? 120000 : 0,
+        event_revenue: 0,
+        cash_revenue: 0,
+        vietqr_revenue: 0,
+        product_breakdown: [],
       });
     if (url.pathname.includes("/rest/v1/rpc/get_order_notification_status"))
       return json(route, []);

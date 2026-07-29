@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { CloudOff } from "lucide-react";
+import { CloudOff, ShieldCheck } from "lucide-react";
 import "../styles/catalog/catalog.css";
 import {
   applyPageTheme,
@@ -33,10 +33,20 @@ import { CategoryFilters } from "../components/catalog/browsing/CategoryFilters"
 import { BoothInfoPanel } from "../components/catalog/shell/BoothInfoPanel";
 import { ProductGrid } from "../components/catalog/browsing/ProductGrid";
 import { ProductDetailModal } from "../components/catalog/browsing/ProductDetailModal";
+import { EventPinDialog } from "../components/ui/EventPinDialog";
 import { SelectedItemPanel } from "../components/catalog/cart/SelectedItemPanel";
 import { StackedFeatured } from "../components/catalog/browsing/StackedFeatured";
 import { useToast } from "../components/ui/ToastProvider";
 import { loadCheckoutSession } from "../lib/offline/checkoutSession";
+import {
+  loadOfflineEventSession,
+  OFFLINE_EVENT_UPDATED,
+} from "../lib/offline/offlineEvents";
+import {
+  hasEventDevicePin,
+  OFFLINE_EVENT_ACCESS_UPDATED,
+  verifyEventDevicePin,
+} from "../lib/offline/eventAccess";
 import {
   loadShopSnapshot,
   saveShopSnapshot,
@@ -52,12 +62,13 @@ import {
   PendingOrderBar,
   RecoverCheckoutBar,
 } from "../components/catalog/overlays/CatalogOverlays";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { getStorefrontBootstrapFast } from "../lib/api/storefrontBootstrap";
 import type { PublicProductSort } from "../lib/catalogQueries";
 import type { Shop } from "../types/catalog";
 import {
   calculateCartPricing,
+  isPromotionActive,
   normalizePromotionRewards,
 } from "../utils/pricing";
 import { prefersLightweightCatalog } from "../lib/network";
@@ -88,6 +99,7 @@ const PaymentQrModal = lazyWithRetry("PaymentQrModal", () =>
 
 export function CatalogPage() {
   const { shopSlug = "" } = useParams();
+  const navigate = useNavigate();
   const toast = useToast();
   const initialShopRef = useRef(loadShopSnapshot(shopSlug));
   const [shop, setShop] = useState<Shop | null | undefined>(
@@ -127,7 +139,7 @@ export function CatalogPage() {
     categories: catalogCategories,
     booth: catalogBooth,
     payment,
-    promotion,
+    promotion: configuredPromotion,
     rewardProducts,
     hasMore,
     loadError,
@@ -147,6 +159,32 @@ export function CatalogPage() {
     orderingEnabled,
     initialBootstrap,
   );
+  const [promotionClock, setPromotionClock] = useState(Date.now);
+  const promotion = useMemo(
+    () => ({
+      ...configuredPromotion,
+      enabled: isPromotionActive(configuredPromotion, new Date(promotionClock)),
+    }),
+    [configuredPromotion, promotionClock],
+  );
+
+  useEffect(() => {
+    const now = Date.now();
+    const nextBoundary = [
+      configuredPromotion.starts_at,
+      configuredPromotion.ends_at,
+    ]
+      .map((value) => (value ? Date.parse(value) : Number.NaN))
+      .filter((value) => Number.isFinite(value) && value > now)
+      .sort((first, second) => first - second)[0];
+    if (nextBoundary === undefined) return;
+
+    const timer = window.setTimeout(
+      () => setPromotionClock(Date.now()),
+      Math.min(nextBoundary - now + 25, 2_147_483_647),
+    );
+    return () => window.clearTimeout(timer);
+  }, [configuredPromotion, promotionClock]);
   const booth = useMemo(
     () =>
       shop?.catalog_source_shop_id
@@ -167,6 +205,11 @@ export function CatalogPage() {
   const [recoverableCheckout, setRecoverableCheckout] =
     useState<CheckoutSession | null>(initialCheckoutRef.current);
   const [online, setOnline] = useState(navigator.onLine);
+  const [eventState, setEventState] = useState({
+    salesActive: false,
+    adminPinRequired: false,
+  });
+  const [isStaffPinOpen, setIsStaffPinOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [paymentModalRequested, setPaymentModalRequested] = useState(
     Boolean(initialCheckoutRef.current),
@@ -223,6 +266,40 @@ export function CatalogPage() {
     setIsQrOpen(false);
     setPaymentModalRequested(Boolean(restored));
   }, [shopSlug]);
+
+  useEffect(() => {
+    if (!catalogShopId) return;
+    let active = true;
+    const refreshEventState = () => {
+      void loadOfflineEventSession(catalogShopId)
+        .then((session) => {
+          if (!active) return;
+          setEventState({
+            salesActive: session?.status === "active",
+            adminPinRequired: Boolean(
+              session &&
+                session.status !== "closed" &&
+                hasEventDevicePin(catalogShopId),
+            ),
+          });
+        })
+        .catch(() => {
+          if (!active) return;
+          setEventState({ salesActive: false, adminPinRequired: false });
+        });
+    };
+    refreshEventState();
+    window.addEventListener(OFFLINE_EVENT_UPDATED, refreshEventState);
+    window.addEventListener(OFFLINE_EVENT_ACCESS_UPDATED, refreshEventState);
+    return () => {
+      active = false;
+      window.removeEventListener(OFFLINE_EVENT_UPDATED, refreshEventState);
+      window.removeEventListener(
+        OFFLINE_EVENT_ACCESS_UPDATED,
+        refreshEventState,
+      );
+    };
+  }, [catalogShopId]);
 
   useEffect(() => {
     if (activeOrder?.status === "pending") {
@@ -867,6 +944,14 @@ export function CatalogPage() {
       return;
     setSelectedProductId(null);
   };
+  const handleStaffAccess = () => {
+    if (!eventState.adminPinRequired) {
+      navigate("/admin");
+      return;
+    }
+    setIsInfoOpen(false);
+    setIsStaffPinOpen(true);
+  };
 
   return (
     <CatalogLocaleProvider locale={booth.catalog_locale ?? "en"}>
@@ -889,6 +974,15 @@ export function CatalogPage() {
                 onPrepareGacha={prepareGacha}
                 onOpenInfo={() => setIsInfoOpen(true)}
               />
+              {eventState.salesActive && (
+                <div className="event-sales-ribbon" role="status">
+                  <ShieldCheck size={15} />
+                  <span>
+                    <strong>{catalogCopy.eventSalesActive}</strong>{" "}
+                    {catalogCopy.eventSalesHint}
+                  </span>
+                </div>
+              )}
               {!online && (
                 <div className="offline-status-banner" role="alert">
                   <CloudOff size={15} />
@@ -979,6 +1073,35 @@ export function CatalogPage() {
                 payment={payment}
                 open={isInfoOpen}
                 onClose={() => setIsInfoOpen(false)}
+                onStaffAccess={handleStaffAccess}
+              />
+              <EventPinDialog
+                isOpen={isStaffPinOpen}
+                mode="verify"
+                copy={{
+                  title: catalogCopy.staffPinTitle,
+                  message: catalogCopy.staffPinHint,
+                  pinLabel: catalogCopy.tabletPin,
+                  confirmPinLabel: catalogCopy.confirmTabletPin,
+                  cancelLabel: catalogCopy.cancel,
+                  submitLabel: catalogCopy.unlockAdmin,
+                  submittingLabel: catalogCopy.checking,
+                  invalidPin: catalogCopy.pinSixDigits,
+                  pinMismatch: catalogCopy.pinMismatch,
+                  submitError: catalogCopy.pinCheckFailed,
+                  closeLabel: catalogCopy.closeModal,
+                }}
+                onClose={() => setIsStaffPinOpen(false)}
+                onSubmit={async (pin) => {
+                  if (!catalogShopId) return catalogCopy.incorrectTabletPin;
+                  const result = await verifyEventDevicePin(catalogShopId, pin);
+                  if (!result.ok)
+                    return result.blockedUntil
+                      ? catalogCopy.pinLocked
+                      : catalogCopy.incorrectTabletPin;
+                  setIsStaffPinOpen(false);
+                  navigate("/admin");
+                }}
               />
               <FlyingItemsLayer items={flyingItems} />
             </main>

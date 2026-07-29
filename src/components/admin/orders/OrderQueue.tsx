@@ -11,7 +11,11 @@ import {
   WalletCards,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import type { OfflineEventSummary, Order } from "../../../types/catalog";
+import type {
+  OfflineEventSummary,
+  Order,
+} from "../../../types/catalog";
+import type { SalesSummaryState } from "../../../lib/sales";
 import type { OrderFilter, OrderStatusCounts } from "../../../lib/api/orders";
 import { listOfflineEvents } from "../../../lib/api/offlineEvents";
 import { formatVnd } from "../../../utils/format";
@@ -30,6 +34,7 @@ import { ConfirmationDialog } from "../../ui/ConfirmationDialog";
 import { OFFLINE_EVENT_UPDATED } from "../../../lib/offline/offlineEvents";
 import { OrderCard } from "./OrderCard";
 import { OrderDetailsModal } from "./OrderDetailsModal";
+import { SalesSummaryPanel } from "./SalesSummaryPanel";
 
 type OrderQueueProps = {
   shopId: string;
@@ -40,6 +45,7 @@ type OrderQueueProps = {
   counts: OrderStatusCounts;
   eventCount: number;
   eventControl?: ReactNode;
+  sales?: SalesSummaryState;
   page: number;
   pageSize: number;
   total: number;
@@ -66,6 +72,7 @@ export function OrderQueue({
   counts,
   eventCount,
   eventControl,
+  sales,
   page,
   pageSize,
   total,
@@ -119,6 +126,12 @@ export function OrderQueue({
     all: t("All"),
     event: t("Event"),
   };
+  const statusFilterOptions = filters.map((item) => ({
+    value: item,
+    label: `${filterLabels[item]} · ${compactFilterCount(
+      item === "event" ? eventCount : counts[item],
+    )}`,
+  }));
   const queueTitles: Record<OrderViewFilter, string> = {
     pending: t("Pending orders"),
     confirmed: t("Confirmed orders"),
@@ -324,7 +337,17 @@ export function OrderQueue({
   return (
     <section className="admin-orders-view" aria-busy={loading}>
       <div className="admin-orders-workspace admin-surface">
+        <SalesSummaryPanel
+          state={sales}
+        />
         <div className="admin-filter-bar">
+          <SelectMenu
+            className="admin-status-filter"
+            value={filter}
+            label={t("Order status")}
+            onChange={(value) => onFilterChange(value as OrderViewFilter)}
+            options={statusFilterOptions}
+          />
           <div
             className="admin-filter-tabs"
             ref={filterTabsRef}
@@ -351,16 +374,15 @@ export function OrderQueue({
             ))}
           </div>
           <div className="admin-queue-utilities">
-            <SelectMenu
-              className="admin-event-select"
-              value={selectedEventId}
-              label={t("Event")}
-              onChange={(eventId) => {
-                onSelectedEventChange(eventId);
-                if (filter !== "event") onFilterChange("event");
-              }}
-              options={eventFilterOptions}
-            />
+            {filter === "event" && (
+              <SelectMenu
+                className="admin-event-select"
+                value={selectedEventId}
+                label={t("Event")}
+                onChange={onSelectedEventChange}
+                options={eventFilterOptions}
+              />
+            )}
             {eventControl}
             <button
               type="button"

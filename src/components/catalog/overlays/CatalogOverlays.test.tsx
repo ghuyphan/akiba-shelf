@@ -1,14 +1,40 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CSSProperties } from "react";
+import { MemoryRouter } from "react-router";
+import { defaultBooth, defaultPayment } from "../../../lib/constants";
+import { CatalogLocaleProvider } from "../../../lib/i18n/catalogLocale";
 import type { CheckoutSession, Order } from "../../../types/catalog";
 import {
+  BoothDetailsModal,
   FloatingCartBar,
   PendingOrderBar,
   RecoverCheckoutBar,
 } from "./CatalogOverlays";
 
 afterEach(cleanup);
+
+describe("BoothDetailsModal", () => {
+  it("uses the event PIN entry callback when the tablet is locked", () => {
+    const onStaffAccess = vi.fn();
+    render(
+      <MemoryRouter>
+        <CatalogLocaleProvider locale="en">
+          <BoothDetailsModal
+            booth={defaultBooth}
+            payment={defaultPayment}
+            open
+            onClose={() => undefined}
+            onStaffAccess={onStaffAccess}
+          />
+        </CatalogLocaleProvider>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Staff access →" }));
+    expect(onStaffAccess).toHaveBeenCalledOnce();
+  });
+});
 
 describe("PendingOrderBar", () => {
   it("renders at the page layer instead of inside the storefront shell", () => {

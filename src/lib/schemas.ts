@@ -214,9 +214,36 @@ export const promotionSettingsSchema = z
   .object({
     shop_id: z.string().uuid().optional(),
     enabled: z.boolean(),
+    kind: z.enum(["buy_get", "percentage"]).optional().default("buy_get"),
     buy_quantity: z.coerce.number().int().min(1).max(99),
     free_quantity: z.coerce.number().int().min(1).max(99),
     repeatable: z.boolean(),
+    percentage_off: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .optional()
+      .default(10),
+    minimum_subtotal_vnd: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(2_000_000_000)
+      .optional()
+      .default(0),
+    starts_at: z
+      .string()
+      .datetime({ offset: true })
+      .nullable()
+      .optional()
+      .default(null),
+    ends_at: z
+      .string()
+      .datetime({ offset: true })
+      .nullable()
+      .optional()
+      .default(null),
     qualifying_product_ids: z
       .array(z.string().min(1).max(160))
       .max(500)
@@ -269,6 +296,29 @@ export const orderStatusCountsSchema = z.object({
   cancelled: z.coerce.number().int().nonnegative(),
   expired: z.coerce.number().int().nonnegative(),
   all: z.coerce.number().int().nonnegative(),
+});
+
+export const salesProductSummarySchema = z.object({
+  product_id: z.string().min(1),
+  name: z.string(),
+  item_code: z.string(),
+  units: z.coerce.number().int().nonnegative(),
+  revenue: z.coerce.number().int().nonnegative(),
+  discount_amount: z.coerce.number().int().nonnegative(),
+});
+
+export const salesSummarySchema = z.object({
+  from: z.string().datetime({ offset: true }),
+  to: z.string().datetime({ offset: true }),
+  revenue: z.coerce.number().int().nonnegative(),
+  discount_amount: z.coerce.number().int().nonnegative(),
+  confirmed_order_count: z.coerce.number().int().nonnegative(),
+  units_sold: z.coerce.number().int().nonnegative(),
+  online_revenue: z.coerce.number().int().nonnegative(),
+  event_revenue: z.coerce.number().int().nonnegative(),
+  cash_revenue: z.coerce.number().int().nonnegative(),
+  vietqr_revenue: z.coerce.number().int().nonnegative(),
+  product_breakdown: z.array(salesProductSummarySchema),
 });
 
 export const orderNotificationStatusSchema = z

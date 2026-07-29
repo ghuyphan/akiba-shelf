@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OfflineEventSession, Product } from "../../../types/catalog";
+import { defaultPromotion } from "../../constants";
 import {
   assertOfflineEventStorageAvailable,
   createOfflineEventOrder,
@@ -54,6 +55,7 @@ function session(): OfflineEventSession {
       payment_instructions: "",
     },
     promotion: {
+      ...defaultPromotion,
       enabled: false,
       buy_quantity: 3,
       free_quantity: 1,
@@ -111,6 +113,26 @@ describe("offline event ledger", () => {
         },
       ],
     });
+  });
+
+  it("uses the frozen percentage promotion for local Event orders", async () => {
+    const active = session();
+    active.promotion = {
+      ...active.promotion,
+      enabled: true,
+      kind: "percentage",
+      percentage_off: 20,
+      qualifying_product_ids: [product.id],
+    };
+    await saveOfflineEventSession(active);
+    const order = await createOfflineEventOrder(
+      active,
+      [{ product, quantity: 2 }],
+      "Customer",
+      "cash",
+    );
+    expect(order.totalAmount).toBe(160_000);
+    expect(order.items[0]?.discount_amount).toBe(40_000);
   });
 
   it("prices local orders from the allocation snapshot, not a stale cart", async () => {

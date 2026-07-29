@@ -15,6 +15,20 @@ import {
   useAdminUnsavedChanges,
 } from "../shell/AdminUnsavedChanges";
 import { AdminFormError } from "../shared/AdminFormError";
+import { SelectMenu } from "../../ui/SelectMenu";
+import { DateTimeInput } from "../../ui/DateTimeInput";
+
+function toLocalDateTime(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function fromLocalDateTime(value: string) {
+  return value ? new Date(value).toISOString() : null;
+}
 
 type PromotionSettingsFormProps = {
   promotion: PromotionSettings;
@@ -43,7 +57,11 @@ export function PromotionSettingsForm({
     event.preventDefault();
     let saved = false;
     await run(async () => {
-      await onSave(draft);
+      await onSave({
+        ...draft,
+        reward_product_ids:
+          draft.kind === "percentage" ? [] : draft.reward_product_ids,
+      });
       saved = true;
     }).catch(() => undefined);
     if (saved) setIsEditing(false);
@@ -67,15 +85,19 @@ export function PromotionSettingsForm({
 
   const canEnable =
     draft.qualifying_product_ids.length > 0 &&
-    draft.reward_product_ids.length > 0;
+    (draft.kind === "percentage" || draft.reward_product_ids.length > 0);
+  const scheduleValid =
+    !draft.starts_at ||
+    !draft.ends_at ||
+    new Date(draft.starts_at) < new Date(draft.ends_at);
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(promotion);
   useAdminUnsavedChanges("promotion-settings", isEditing && hasChanges, reset);
 
   return (
     <>
       <AdminCard
-        title={t("Quantity promotion")}
-        description={t("Configure a mix-and-match buy-X-get-Y offer.")}
+        title={t("Promotion")}
+        description={t("Configure one scheduled buy-get or percentage offer.")}
         icon={<Gift size={18} />}
         className="admin-promotion-card"
         density="compact"
@@ -99,10 +121,14 @@ export function PromotionSettingsForm({
               <span>
                 <small>{t("Offer")}</small>
                 <strong>
-                  {t("Buy {{buy}}, get {{free}} free", {
-                    buy: draft.buy_quantity,
-                    free: draft.free_quantity,
-                  })}
+                  {draft.kind === "percentage"
+                    ? t("{{percent}}% off selected products", {
+                        percent: draft.percentage_off,
+                      })
+                    : t("Buy {{buy}}, get {{free}} free", {
+                        buy: draft.buy_quantity,
+                        free: draft.free_quantity,
+                      })}
                 </strong>
               </span>
             </div>
@@ -119,8 +145,14 @@ export function PromotionSettingsForm({
               <strong>{draft.qualifying_product_ids.length}</strong>
             </div>
             <div className="admin-promotion-stat">
-              <small>{t("Repeat offer")}</small>
-              <strong>{t(draft.repeatable ? "Active" : "Inactive")}</strong>
+              <small>{t("Type")}</small>
+              <strong>
+                {t(
+                  draft.kind === "percentage"
+                    ? "Percentage off"
+                    : "Buy X, get Y",
+                )}
+              </strong>
             </div>
           </div>
           <p className="admin-form-help">
@@ -133,7 +165,7 @@ export function PromotionSettingsForm({
       </AdminCard>
 
       <Modal
-        title={t("Quantity promotion")}
+        title={t("Promotion")}
         isOpen={isEditing}
         onClose={() => requestNavigation(reset)}
         wide
@@ -156,38 +188,93 @@ export function PromotionSettingsForm({
           <div className="admin-promotion-editor">
             <div className="admin-promotion-setup-grid">
               <div className="admin-promotion-fields-group">
-                <Field label={t("Customer buys")}>
-                  <NumberInput
-                    min={1}
-                    max={99}
-                    value={draft.buy_quantity}
+                <Field label={t("Promotion type")}>
+                  <SelectMenu
+                    value={draft.kind}
                     disabled={busy}
-                    onChange={(value) =>
+                    label={t("Promotion type")}
+                    options={[
+                      { value: "buy_get", label: t("Buy X, get Y") },
+                      { value: "percentage", label: t("Percentage off") },
+                    ]}
+                    onChange={(kind) =>
                       setDraft((current) => ({
                         ...current,
-                        buy_quantity: value,
+                        kind: kind as PromotionSettings["kind"],
                       }))
                     }
                   />
                 </Field>
-                <Field label={t("Free quantity")}>
-                  <NumberInput
-                    min={1}
-                    max={99}
-                    value={draft.free_quantity}
-                    disabled={busy}
-                    onChange={(value) =>
-                      setDraft((current) => ({
-                        ...current,
-                        free_quantity: value,
-                      }))
-                    }
-                  />
-                </Field>
+                {draft.kind === "buy_get" ? (
+                  <Field label={t("Customer buys")}>
+                    <NumberInput
+                      min={1}
+                      max={99}
+                      value={draft.buy_quantity}
+                      disabled={busy}
+                      onChange={(value) =>
+                        setDraft((current) => ({
+                          ...current,
+                          buy_quantity: value,
+                        }))
+                      }
+                    />
+                  </Field>
+                ) : (
+                  <Field label={t("Percentage off")}>
+                    <NumberInput
+                      min={1}
+                      max={100}
+                      value={draft.percentage_off}
+                      disabled={busy}
+                      onChange={(value) =>
+                        setDraft((current) => ({
+                          ...current,
+                          percentage_off: value,
+                        }))
+                      }
+                    />
+                  </Field>
+                )}
+                {draft.kind === "buy_get" && (
+                  <Field label={t("Free quantity")}>
+                    <NumberInput
+                      min={1}
+                      max={99}
+                      value={draft.free_quantity}
+                      disabled={busy}
+                      onChange={(value) =>
+                        setDraft((current) => ({
+                          ...current,
+                          free_quantity: value,
+                        }))
+                      }
+                    />
+                  </Field>
+                )}
+                {draft.kind === "percentage" && (
+                  <Field label={t("Minimum spend (VND)")}>
+                    <NumberInput
+                      min={0}
+                      max={2_000_000_000}
+                      value={draft.minimum_subtotal_vnd}
+                      disabled={busy}
+                      onChange={(value) =>
+                        setDraft((current) => ({
+                          ...current,
+                          minimum_subtotal_vnd: value,
+                        }))
+                      }
+                    />
+                  </Field>
+                )}
               </div>
 
               <div className="admin-promotion-switches-group">
-                <label className="compact-switch-label" htmlFor="promotion-enabled">
+                <label
+                  className="compact-switch-label"
+                  htmlFor="promotion-enabled"
+                >
                   <input
                     id="promotion-enabled"
                     type="checkbox"
@@ -205,25 +292,68 @@ export function PromotionSettingsForm({
                     </small>
                   </span>
                 </label>
-                <label className="compact-switch-label" htmlFor="promotion-repeatable">
-                  <input
-                    id="promotion-repeatable"
-                    type="checkbox"
-                    aria-label={t("Repeat offer")}
-                    checked={draft.repeatable}
-                    disabled={busy}
-                    onChange={(event) =>
-                      setDraft({ ...draft, repeatable: event.target.checked })
-                    }
-                  />
-                  <span className="switch-text">
-                    <strong>{t("Repeat offer")}</strong>
-                    <small>
-                      {t("Apply the reward again for each complete group.")}
-                    </small>
-                  </span>
-                </label>
+                {draft.kind === "buy_get" && (
+                  <label
+                    className="compact-switch-label"
+                    htmlFor="promotion-repeatable"
+                  >
+                    <input
+                      id="promotion-repeatable"
+                      type="checkbox"
+                      aria-label={t("Repeat offer")}
+                      checked={draft.repeatable}
+                      disabled={busy}
+                      onChange={(event) =>
+                        setDraft({ ...draft, repeatable: event.target.checked })
+                      }
+                    />
+                    <span className="switch-text">
+                      <strong>{t("Repeat offer")}</strong>
+                      <small>
+                        {t("Apply the reward again for each complete group.")}
+                      </small>
+                    </span>
+                  </label>
+                )}
               </div>
+            </div>
+
+            <div className="admin-promotion-setup-grid">
+              <Field label={t("Starts (optional)")}>
+                <DateTimeInput
+                  label={t("Starts (optional)")}
+                  value={toLocalDateTime(draft.starts_at)}
+                  disabled={busy}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      starts_at: fromLocalDateTime(value),
+                    }))
+                  }
+                />
+              </Field>
+              <Field
+                label={t("Ends (optional)")}
+                error={
+                  !scheduleValid
+                    ? t("End time must be after start time.")
+                    : undefined
+                }
+              >
+                <DateTimeInput
+                  label={t("Ends (optional)")}
+                  value={toLocalDateTime(draft.ends_at)}
+                  min={toLocalDateTime(draft.starts_at)}
+                  invalid={!scheduleValid}
+                  disabled={busy}
+                  onChange={(value) =>
+                    setDraft((current) => ({
+                      ...current,
+                      ends_at: fromLocalDateTime(value),
+                    }))
+                  }
+                />
+              </Field>
             </div>
 
             <div className="promotion-rule-preview">
@@ -231,20 +361,28 @@ export function PromotionSettingsForm({
                 <Gift size={17} />
               </span>
               <strong>
-                {t(
-                  "Choose {{free}} free items from {{reward}} reward products after buying {{buy}} from {{qualifying}} eligible products.",
-                  {
-                    buy: draft.buy_quantity,
-                    qualifying: draft.qualifying_product_ids.length,
-                    free: draft.free_quantity,
-                    reward: draft.reward_product_ids.length,
-                  },
-                )}
+                {draft.kind === "percentage"
+                  ? t(
+                      "Apply {{percent}}% off to {{count}} selected products after the minimum spend.",
+                      {
+                        percent: draft.percentage_off,
+                        count: draft.qualifying_product_ids.length,
+                      },
+                    )
+                  : t(
+                      "Choose {{free}} free items from {{reward}} reward products after buying {{buy}} from {{qualifying}} eligible products.",
+                      {
+                        buy: draft.buy_quantity,
+                        qualifying: draft.qualifying_product_ids.length,
+                        free: draft.free_quantity,
+                        reward: draft.reward_product_ids.length,
+                      },
+                    )}
               </strong>
             </div>
 
             <div
-              className={`promotion-products-selection ${products.length === 0 ? "is-empty" : ""}`}
+              className={`promotion-products-selection ${draft.kind === "percentage" ? "is-percentage" : ""} ${products.length === 0 ? "is-empty" : ""}`}
             >
               {products.length === 0 ? (
                 <EmptyState
@@ -265,12 +403,14 @@ export function PromotionSettingsForm({
                         {draft.qualifying_product_ids.length}/{products.length}
                       </span>
                     </span>
-                    <span className="col-action col-free-action">
-                      <span>{t("Free item")}</span>
-                      <span className="counter-badge">
-                        {draft.reward_product_ids.length}/{products.length}
+                    {draft.kind === "buy_get" && (
+                      <span className="col-action col-free-action">
+                        <span>{t("Free item")}</span>
+                        <span className="counter-badge">
+                          {draft.reward_product_ids.length}/{products.length}
+                        </span>
                       </span>
-                    </span>
+                    )}
                   </div>
                   <div className="promotion-products-list admin-scroll-list">
                     {products.map((product) => {
@@ -302,7 +442,10 @@ export function PromotionSettingsForm({
                             </span>
                           </div>
                           <div className="promotion-product-actions">
-                            <label className="checkbox-wrapper" htmlFor={`promotion-buy-${product.id}`}>
+                            <label
+                              className="checkbox-wrapper"
+                              htmlFor={`promotion-buy-${product.id}`}
+                            >
                               <input
                                 id={`promotion-buy-${product.id}`}
                                 type="checkbox"
@@ -320,24 +463,29 @@ export function PromotionSettingsForm({
                                 {t("Customer buys")}
                               </span>
                             </label>
-                            <label className="checkbox-wrapper" htmlFor={`promotion-free-${product.id}`}>
-                              <input
-                                id={`promotion-free-${product.id}`}
-                                type="checkbox"
-                                aria-label={`${product.name} · ${t("Free item")}`}
-                                checked={isFreeSelected}
-                                disabled={busy}
-                                onChange={() =>
-                                  toggleProduct(
-                                    "reward_product_ids",
-                                    product.id,
-                                  )
-                                }
-                              />
-                              <span className="checkbox-label-text">
-                                {t("Free item")}
-                              </span>
-                            </label>
+                            {draft.kind === "buy_get" && (
+                              <label
+                                className="checkbox-wrapper"
+                                htmlFor={`promotion-free-${product.id}`}
+                              >
+                                <input
+                                  id={`promotion-free-${product.id}`}
+                                  type="checkbox"
+                                  aria-label={`${product.name} · ${t("Free item")}`}
+                                  checked={isFreeSelected}
+                                  disabled={busy}
+                                  onChange={() =>
+                                    toggleProduct(
+                                      "reward_product_ids",
+                                      product.id,
+                                    )
+                                  }
+                                />
+                                <span className="checkbox-label-text">
+                                  {t("Free item")}
+                                </span>
+                              </label>
+                            )}
                           </div>
                         </div>
                       );
@@ -350,15 +498,20 @@ export function PromotionSettingsForm({
 
           {draft.enabled && !canEnable && (
             <p className="admin-promotion-warning">
-              {t(
-                "Select at least one buy product and one reward product before publishing this offer.",
-              )}
+              {draft.kind === "percentage"
+                ? t(
+                    "Select at least one discounted product before publishing this offer.",
+                  )
+                : t(
+                    "Select at least one buy product and one reward product before publishing this offer.",
+                  )}
             </p>
           )}
 
           <AdminEditBar
             status={t(hasChanges ? "Unsaved changes" : "No changes")}
             statusTone={hasChanges ? "dirty" : "saved"}
+            modalFooter
           >
             <Button
               type="button"
@@ -373,7 +526,9 @@ export function PromotionSettingsForm({
               type="submit"
               loading={busy}
               loadingText={t("Saving…")}
-              disabled={!hasChanges || (draft.enabled && !canEnable)}
+              disabled={
+                !hasChanges || !scheduleValid || (draft.enabled && !canEnable)
+              }
             >
               {t("Save promotion")}
             </Button>

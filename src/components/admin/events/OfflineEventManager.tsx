@@ -5,6 +5,7 @@ import {
   CloudOff,
   Download,
   ExternalLink,
+  LockKeyhole,
   LoaderCircle,
   PackageX,
   RefreshCw,
@@ -12,6 +13,7 @@ import {
   ShieldCheck,
   XCircle,
 } from "lucide-react";
+import { useNavigate } from "react-router";
 import {
   activateOfflineEventSession,
   finalizeOfflineEventSession,
@@ -58,13 +60,21 @@ import { Alert } from "../../ui/Alert";
 import { Button } from "../../ui/Button";
 import { Field, TextInput } from "../../ui/Field";
 import { DateTimeInput } from "../../ui/DateTimeInput";
-import { Modal } from "../../ui/Modal";
+import { Modal, ModalFooter } from "../../ui/Modal";
 import { NumberInput } from "../../ui/NumberInput";
 import { useToast } from "../../ui/ToastProvider";
 import { ConfirmationDialog } from "../../ui/ConfirmationDialog";
 import { EmptyState } from "../../ui/EmptyState";
 import { StatusPill } from "../../ui/StatusPill";
 import { useOfflineEventSync } from "./useOfflineEventSync";
+import { EventPinDialog } from "../../ui/EventPinDialog";
+import {
+  hasEventDevicePin,
+  lockEventAdmin,
+  OFFLINE_EVENT_ACCESS_UPDATED,
+  setEventDevicePin,
+  verifyEventDevicePin,
+} from "../../../lib/offline/eventAccess";
 
 type OfflineEventManagerProps = {
   shopId: string;
@@ -102,6 +112,7 @@ export function OfflineEventManager({
   payment,
   promotion,
 }: OfflineEventManagerProps) {
+  const navigate = useNavigate();
   const { locale, t } = usePlatformI18n();
   const dateLocale = locale === "vi" ? "vi-VN" : "en-US";
   const toast = useToast();
@@ -135,6 +146,12 @@ export function OfflineEventManager({
     null,
   );
   const [confirmClose, setConfirmClose] = useState(false);
+  const [pinIntent, setPinIntent] = useState<
+    "start" | "end" | "setup" | null
+  >(null);
+  const [pinConfigured, setPinConfigured] = useState(() =>
+    hasEventDevicePin(shopId),
+  );
   const localRequestRef = useRef(0);
   const draftRequestRef = useRef(0);
   const formRevisionRef = useRef(0);
@@ -276,6 +293,14 @@ export function OfflineEventManager({
       window.removeEventListener("focus", handleFocus);
     };
   }, [reloadLocal, resetDraftForm, shopId]);
+
+  useEffect(() => {
+    const refreshPinState = () => setPinConfigured(hasEventDevicePin(shopId));
+    refreshPinState();
+    window.addEventListener(OFFLINE_EVENT_ACCESS_UPDATED, refreshPinState);
+    return () =>
+      window.removeEventListener(OFFLINE_EVENT_ACCESS_UPDATED, refreshPinState);
+  }, [shopId]);
 
   useEffect(() => {
     if (
@@ -608,6 +633,49 @@ export function OfflineEventManager({
     }
   }
 
+  function requestStartEvent() {
+    if (pinConfigured) {
+      void startEvent();
+      return;
+    }
+    setPinIntent("start");
+  }
+
+  function requestEndEvent() {
+    setPinIntent("end");
+  }
+
+  async function submitPin(pin: string) {
+    try {
+      if (!pinConfigured || pinIntent === "start" || pinIntent === "setup") {
+        await setEventDevicePin(shopId, pin);
+        setPinConfigured(true);
+        const intent = pinIntent;
+        setPinIntent(null);
+        if (intent === "start") void startEvent();
+        if (intent === "end") setConfirmClose(true);
+        return;
+      }
+
+      const result = await verifyEventDevicePin(shopId, pin);
+      if (!result.ok) {
+        if (result.blockedUntil)
+          return t("Too many attempts. Wait 30 seconds and try again.");
+        return t("Incorrect tablet PIN.");
+      }
+      setPinIntent(null);
+      setConfirmClose(true);
+    } catch (error) {
+      return t(getErrorMessage(error, "Could not update the tablet PIN."));
+    }
+  }
+
+  function lockTablet() {
+    lockEventAdmin(shopId);
+    setIsOpen(false);
+    navigate(`/s/${encodeURIComponent(shopSlug)}`);
+  }
+
   function exportBackup() {
     if (!session) return;
     const blob = new Blob(
@@ -690,7 +758,9 @@ export function OfflineEventManager({
         ) : (
           <CloudOff size={15} />
         )}
-        <span>{t("Event Mode")}</span>
+        <span>
+          {eventActive ? t("Event sales active") : t("Offline sales")}
+        </span>
         {eventActive && <i aria-hidden="true" />}
       </button>
 
@@ -729,7 +799,7 @@ export function OfflineEventManager({
           <div className="offline-event-workspace offline-event-setup">
             <p className="offline-event-lead">
               {t(
-                "Choose the stock for this event. It is removed from online availability only when this device starts the event.",
+                "Prepare this tablet while online before leaving for the festival. Choose event stock now; it is removed from online availability only when this device starts the event.",
               )}
             </p>
             <Alert variant="info" className="offline-event-warning">
@@ -910,7 +980,7 @@ export function OfflineEventManager({
                 </div>
               </div>
             )}
-            <div className="offline-event-setup-actions">
+            <ModalFooter className="offline-event-setup-actions">
               <Button
                 variant="secondary"
                 loading={busy === "save"}
@@ -945,13 +1015,13 @@ export function OfflineEventManager({
                   draftLoadState !== "ready"
                 }
                 icon={<ShieldCheck size={17} />}
-                onClick={() => void startEvent()}
+                onClick={requestStartEvent}
               >
                 {online
                   ? t("Prepare device and reserve stock")
                   : t("Reconnect to prepare event mode")}
               </Button>
-            </div>
+            </ModalFooter>
           </div>
         ) : (
           <div className="offline-event-workspace">
@@ -1183,19 +1253,30 @@ export function OfflineEventManager({
                       "Sales are safe on this device. Reconnect before closing the event or switching devices.",
                     )}
             </Alert>
-            <Button
-              variant="danger"
-              className="offline-event-primary-action"
-              loading={busy === "close"}
-              disabled={!online || pendingCount > 0 || Boolean(busy)}
-              onClick={() => setConfirmClose(true)}
-            >
-              {pendingCount > 0
-                ? t("Resolve pending payments first")
-                : sessionIsClosing
-                  ? t("Retry sync and close event")
-                  : t("Sync and close event")}
-            </Button>
+            <ModalFooter className="offline-event-active-actions">
+              <Button
+                variant="secondary"
+                icon={<LockKeyhole size={16} />}
+                disabled={Boolean(busy)}
+                onClick={pinConfigured ? lockTablet : () => setPinIntent("setup")}
+              >
+                {t(pinConfigured ? "Lock tablet" : "Set tablet PIN")}
+              </Button>
+              <Button
+                variant="danger"
+                loading={busy === "close"}
+                disabled={!online || pendingCount > 0 || Boolean(busy)}
+                onClick={requestEndEvent}
+              >
+                {pendingCount > 0
+                  ? t("Resolve pending payments first")
+                  : !online
+                    ? t("Reconnect to end event")
+                    : sessionIsClosing
+                      ? t("Retry ending event")
+                      : t("End event")}
+              </Button>
+            </ModalFooter>
           </div>
         )}
       </Modal>
@@ -1217,20 +1298,49 @@ export function OfflineEventManager({
       />
       <ConfirmationDialog
         isOpen={confirmClose}
-        title={t("Close offline event?")}
+        title={t("End offline event?")}
         message={t(
-          "All local orders will be synchronized and only unsold allocation will return to online stock. This cannot be undone.",
+          "{{orders}} local orders will be synchronized and {{items}} unsold items will return to online stock. This event cannot be reopened.",
+          {
+            orders: orders.length,
+            items: allocationTotal - soldTotal,
+          },
         )}
         cancelLabel={t("Keep event open")}
-        confirmLabel={
-          sessionIsClosing
-            ? t("Retry sync and close event")
-            : t("Sync and close event")
-        }
-        loadingLabel={t("Closing event…")}
+        confirmLabel={t(sessionIsClosing ? "Retry ending event" : "End event")}
+        loadingLabel={t("Ending event…")}
         busy={busy === "close"}
         onClose={() => setConfirmClose(false)}
         onConfirm={() => void closeEvent()}
+      />
+      <EventPinDialog
+        isOpen={pinIntent !== null}
+        mode={pinConfigured && pinIntent === "end" ? "verify" : "setup"}
+        copy={{
+          title: t(
+            pinConfigured && pinIntent === "end"
+              ? "Confirm tablet PIN"
+              : "Protect this tablet",
+          ),
+          message: t(
+            pinConfigured && pinIntent === "end"
+              ? "Enter the local tablet PIN before ending Event Mode."
+              : "Create a 6-digit PIN for staff access on this device. It works offline and does not replace your Matsuri account.",
+          ),
+          pinLabel: t("6-digit tablet PIN"),
+          confirmPinLabel: t("Confirm tablet PIN"),
+          cancelLabel: t("Cancel"),
+          submitLabel: t(
+            pinConfigured && pinIntent === "end" ? "Continue" : "Save PIN",
+          ),
+          submittingLabel: t("Checking…"),
+          invalidPin: t("Enter exactly 6 digits."),
+          pinMismatch: t("The PINs do not match."),
+          submitError: t("Could not check or update the tablet PIN."),
+          closeLabel: t("Close modal"),
+        }}
+        onClose={() => setPinIntent(null)}
+        onSubmit={submitPin}
       />
     </>
   );
