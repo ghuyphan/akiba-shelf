@@ -96,6 +96,14 @@
     padding: 0;
     border: 0;
     background: var(--surface);
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .mobile-sheet-handle::before {
+    position: absolute;
+    inset: -8px 0;
+    content: "";
   }
 
   .mobile-sheet-handle span {
@@ -112,5 +120,6 @@
     margin-bottom: 8px;
     padding: 4px 0 8px;
     background: var(--surface);
+    touch-action: none;
   }
 }

@@ -940,14 +940,6 @@
     width: min(100% - 16px, 860px) !important;
   }
 
-  .booth-info-modal-container:not(.mobile-sheet-modal) {
-    width: min(100% - 16px, 780px) !important;
-  }
-
-  .social-qr-zoom-modal:not(.mobile-sheet-modal) {
-    width: min(100% - 16px, 420px) !important;
-  }
-
   /* Booth info modal inner layout on mobile */
   .booth-info-modal {
     gap: 12px;
@@ -2649,14 +2641,6 @@ select.input {
 
 .cart-item-remove:hover {
   color: var(--red);
-}
-
-.booth-info-modal-container {
-  width: min(96vw, 780px) !important;
-}
-
-.social-qr-zoom-modal {
-  width: min(94vw, 420px) !important;
 }
 
 .social-qr-zoom-link {

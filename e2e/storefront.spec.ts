@@ -1,5 +1,52 @@
-import { expect, test } from "@playwright/test";
+import {
+  expect,
+  test,
+  type BrowserContext,
+  type Locator,
+} from "@playwright/test";
 import { mockSupabase, products } from "./fixtures";
+
+async function dragSheetDown(
+  context: BrowserContext,
+  sheet: Locator,
+  distance = 140,
+) {
+  await expect
+    .poll(() =>
+      sheet.evaluate((element) =>
+        element
+          .getAnimations()
+          .every((animation) =>
+            ["finished", "idle"].includes(animation.playState),
+          ),
+      ),
+    )
+    .toBe(true);
+  const handle = sheet.locator(".mobile-sheet-handle");
+  await expect(handle).toHaveCSS("touch-action", "none");
+  const handleBounds = await handle.boundingBox();
+  expect(handleBounds).not.toBeNull();
+  const x = handleBounds!.x + handleBounds!.width / 2;
+  const y = handleBounds!.y + handleBounds!.height / 2;
+  const client = await context.newCDPSession(sheet.page());
+  await client.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x, y }],
+  });
+  for (let step = 1; step <= 6; step += 1) {
+    await client.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ x, y: y + (distance * step) / 6 }],
+    });
+  }
+  await expect
+    .poll(() => sheet.evaluate((element) => element.style.transform))
+    .not.toBe("");
+  await client.send("Input.dispatchTouchEvent", {
+    type: "touchEnd",
+    touchPoints: [],
+  });
+}
 
 test.beforeEach(async ({ page }) => {
   await mockSupabase(page);
@@ -255,6 +302,45 @@ test("toast uses smooth restrained motion", async ({ page }) => {
   await expect(toast).toHaveCSS("animation-duration", "0.22s");
   await toast.getByRole("button", { name: "Dismiss notification" }).click();
   await expect(toast).toHaveCSS("animation-duration", "0.16s");
+});
+
+test("dismisses a phone sheet with a deliberate handle drag", async ({
+  context,
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "phone-chromium");
+  await page.getByRole("button", { name: /Booth info/i }).click();
+  const dialog = page.getByRole("dialog", { name: "Booth details" });
+  await expect(dialog).toBeVisible();
+
+  const dialogBounds = await dialog.boundingBox();
+  expect(dialogBounds).not.toBeNull();
+  expect(dialogBounds!.x).toBeLessThanOrEqual(1);
+  expect(
+    Math.abs(dialogBounds!.width - (page.viewportSize()?.width ?? 0)),
+  ).toBeLessThanOrEqual(1);
+
+  await dragSheetDown(context, dialog);
+
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator("main")).not.toHaveAttribute("inert", "");
+});
+
+test("collapses the phone cart with a deliberate handle drag", async ({
+  context,
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "phone-chromium");
+  await page.getByRole("button", { name: /Add Moon Stand to cart/i }).click();
+  await page.getByRole("button", { name: /View cart/i }).click();
+
+  const cart = page.getByRole("dialog", { name: "Cart" });
+  await expect(cart).toBeVisible();
+  await dragSheetDown(context, cart);
+
+  await expect(cart).toHaveCount(0);
+  await expect(page.locator(".selected-panel.mobile-collapsed")).toBeVisible();
+  await expect(page.locator("main")).not.toHaveAttribute("inert", "");
 });
 
 test("renders social QR codes with gradient dots in the simple card layout", async ({
@@ -884,6 +970,29 @@ test("launches HSR without forwarding Supabase credentials", async ({
   expect(iframeUrl.searchParams.get("shop")).toBe("akiba-shelf");
   expect(iframeUrl.searchParams.has("supabase_url")).toBe(false);
   expect(iframeUrl.searchParams.has("supabase_anon")).toBe(false);
+});
+
+test("keeps the update notice clickable above an active gacha iframe", async ({
+  page,
+}) => {
+  await page.unrouteAll({ behavior: "wait" });
+  await page.route("**/release.json", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ release: "e2e-next" }),
+    }),
+  );
+  await mockSupabase(page, { dualGacha: true });
+  await page.goto("./s/akiba-shelf/play?game=genshin");
+
+  await expect(page.locator(".gacha-host iframe")).toBeVisible();
+  const notice = page.getByRole("status", {
+    name: "Matsuri update available",
+  });
+  await expect(notice).toBeVisible({ timeout: 5000 });
+  await notice.getByRole("button", { name: "Later" }).click();
+  await expect(notice).toHaveCount(0);
 });
 
 test("keeps the phone game selector full-screen during launch", async ({

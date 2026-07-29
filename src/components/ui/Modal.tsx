@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "./Button";
@@ -6,7 +6,6 @@ import {
   MobileSheetShell,
   SHEET_EXIT_DURATION_MS,
   SheetHandle,
-  inertOutsideSurface,
 } from "./MobileSheetShell";
 import { useOverlayHistory } from "../../hooks/shared/useOverlayHistory";
 
@@ -40,16 +39,12 @@ export function Modal({
   closeLabel = "Close modal",
 }: ModalProps) {
   const [shouldRender, setShouldRender] = useState(isOpen);
-  const dialogRef = useRef<HTMLElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
   const requestClose = useOverlayHistory(
     isOpen,
     onClose,
     mobileSheet && historyEnabled,
     dismissible,
   );
-  const requestCloseRef = useRef(requestClose);
-  requestCloseRef.current = requestClose;
 
   useEffect(() => {
     if (isOpen) {
@@ -63,58 +58,6 @@ export function Modal({
     }
   }, [isOpen, mobileSheet, shouldRender]);
 
-  useEffect(() => {
-    if (!isOpen || !shouldRender) return;
-
-    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    const restoreInert = inertOutsideSurface(dialog);
-    const focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    const focusable = () => Array.from(dialog?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
-    const focusFrame = window.requestAnimationFrame(() => {
-      const activeElement = document.activeElement;
-      if (activeElement instanceof HTMLElement && dialog?.contains(activeElement)) {
-        return;
-      }
-      (focusable()[0] ?? dialog)?.focus();
-    });
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const dialogs = document.querySelectorAll<HTMLElement>('[role="dialog"]');
-      if (dialogs[dialogs.length - 1] !== dialog) return;
-      if (event.key === "Escape") {
-        event.preventDefault();
-        requestCloseRef.current();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const items = focusable();
-      if (items.length === 0) {
-        event.preventDefault();
-        dialog?.focus();
-        return;
-      }
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.cancelAnimationFrame(focusFrame);
-      document.removeEventListener("keydown", handleKeyDown);
-      restoreInert();
-      previousFocusRef.current?.focus();
-    };
-  }, [isOpen, shouldRender]);
-
   if (!shouldRender) return null;
 
   const modal = (
@@ -122,26 +65,29 @@ export function Modal({
       open={isOpen}
       onDismiss={requestClose}
       mode="modal"
-      containerRef={dialogRef}
       className={`modal ${appearance === "admin" ? "modal-admin" : ""} ${mobileSheet ? "mobile-sheet-modal" : ""} ${wide ? "modal-wide" : ""} ${className}`}
       backdropClassName={`modal-backdrop ${mobileSheet ? "mobile-sheet-backdrop" : ""}`}
       role="dialog"
       ariaModal
       ariaLabel={title}
       tabIndex={-1}
+      dragDismissible={dismissible}
     >
-        {mobileSheet && <SheetHandle />}
-        <header className="modal-header">
-          <h2>{title}</h2>
-          <Button
-            variant="ghost"
-            icon={<X size={22} />}
-            aria-label={closeLabel}
-            disabled={!dismissible}
-            onClick={requestClose}
-          />
-        </header>
-        {children}
+      {mobileSheet && <SheetHandle />}
+      <header
+        className="modal-header"
+        data-sheet-drag-region={mobileSheet || undefined}
+      >
+        <h2>{title}</h2>
+        <Button
+          variant="ghost"
+          icon={<X size={22} />}
+          aria-label={closeLabel}
+          disabled={!dismissible}
+          onClick={requestClose}
+        />
+      </header>
+      {children}
     </MobileSheetShell>
   );
 

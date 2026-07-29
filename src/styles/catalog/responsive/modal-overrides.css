@@ -3,7 +3,6 @@
   .product-image-thumbs button { width: 24px; height: 24px; }
   .product-card-actions { gap: 5px; }
   .product-add-button { width: 44px; height: 44px; }
-  .booth-modal-redesign,.order-confirm-modal,.payment-qr-modal-redesign { width: min(100vw - 16px, 930px); max-height: calc(100vh - 16px); padding: 16px; border-radius: 18px; }
   .booth-modal-hero { grid-template-columns: auto minmax(0, 1fr); padding: 15px; }
   .booth-modal-hero .booth-code-pill { grid-column: 1 / -1; width: max-content; }
   .booth-modal-facts { grid-template-columns: 1fr; }

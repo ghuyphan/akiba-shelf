@@ -66,6 +66,7 @@ import { lazyWithRetry } from "../utils/lazyWithRetry";
 import { hasUsablePayment } from "../utils/vietqr";
 import { getUserFacingErrorMessage } from "../lib/errors";
 import { Alert } from "../components/ui/Alert";
+import { PageLoading } from "../components/ui/PageLoading";
 import { CatalogAppChrome } from "../components/catalog/shell/CatalogAppChrome";
 import {
   getStorefrontColumnPosition,
@@ -84,37 +85,6 @@ const PaymentQrModal = lazyWithRetry("PaymentQrModal", () =>
     default: module.PaymentQrModal,
   })),
 );
-
-function StorefrontLoading({
-  title,
-  message,
-}: {
-  title: string;
-  message: string;
-}) {
-  return (
-    <main
-      className="page-loading"
-      aria-label="Loading Matsuri"
-      aria-busy="true"
-    >
-      <div className="page-loading-brand" aria-hidden="true">
-        <img
-          src={`${import.meta.env.BASE_URL}brand/matsuri-mark.svg`}
-          alt=""
-          className="platform-mark"
-        />
-      </div>
-      <div className="page-loading-copy">
-        <strong>{title}</strong>
-        <span>{message}</span>
-      </div>
-      <div className="page-loading-track" aria-hidden="true">
-        <i />
-      </div>
-    </main>
-  );
-}
 
 export function CatalogPage() {
   const { shopSlug = "" } = useParams();
@@ -842,7 +812,7 @@ export function CatalogPage() {
 
   if (shop === undefined) {
     return (
-      <StorefrontLoading
+      <PageLoading
         title={catalogCopy.openingShop}
         message={catalogCopy.openingShopHint}
       />
@@ -863,7 +833,7 @@ export function CatalogPage() {
 
   if (isInitialLoading) {
     return (
-      <StorefrontLoading
+      <PageLoading
         title={catalogCopy.openingShop}
         message={catalogCopy.openingShopHint}
       />

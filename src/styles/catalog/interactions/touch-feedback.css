@@ -35,7 +35,7 @@
 }
 
 @media (hover: none), (pointer: coarse), (max-width: 1100px) {
-  .catalog-screen :is(a, button, [role="button"]) { touch-action: manipulation; }
+  .catalog-screen :is(a, button, [role="button"]):not(.mobile-sheet-handle) { touch-action: manipulation; }
 
   .catalog-screen .button:hover,
   .catalog-screen .chip:hover,

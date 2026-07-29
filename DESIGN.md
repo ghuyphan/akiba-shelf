@@ -64,12 +64,39 @@ confirmation/feedback for fulfilment, payment, membership, and deletion.
 
 ## Copy and review
 
-- Storefront/gacha-host copy: `catalogI18n.tsx`.
-- Platform/auth/dashboard/admin copy: `platformI18n.tsx`.
+- Storefront/gacha-host copy: `src/lib/i18n/catalogI18n.tsx`.
+- Platform/auth/dashboard/admin copy: `src/lib/i18n/platformI18n.tsx`.
 - Update English and Vietnamese together and allow longer translations to wrap.
 - Prefer direct, friendly language with distinct pending, confirmed, cancelled,
   expired, offline, success, and error states.
 
-Screen-specific CSS belongs to its owning stylesheet as defined in
-`AGENTS.md`. For meaningful changes, verify desktop and phone, both locales,
-keyboard focus, and relevant loading/empty/error/success states.
+## CSS ownership
+
+- `global.css`: tokens, resets, shared buttons, fields, modal, alert, and toast.
+- `catalog.css`: storefront, product, cart, checkout, and payment UI.
+- `admin.css`: platform, auth, dashboard, and admin workspace.
+- `gacha-admin.css`, `gacha-entry.css`, `gacha-host.css`: named surfaces only.
+- `legacy.css`: compatibility only. Add no new rules; migrate one slice at a
+  time using `docs/legacy-css-migration.md`.
+
+## Storefront designer contract
+
+Persisted `booth_settings` include layout order, corner radius, locale, theme
+colors, and `card_style`, `featured_style`, `controls_style`, and
+`product_style` variants.
+
+Any new configurable storefront property requires:
+
+1. Migration plus constraint/default when appropriate.
+2. Shared type and runtime schema update.
+3. Safe default in `src/lib/constants.ts`.
+4. Designer control and preview.
+5. Storefront consumption.
+6. Desktop and phone verification.
+
+## Visual verification
+
+For meaningful UI changes, verify desktop and phone, English and Vietnamese,
+loading/empty/error/success states, keyboard focus, and the affected grid/list,
+modal, sheet, or admin workflow. After product-card CSS changes, verify both
+grid and list modes.

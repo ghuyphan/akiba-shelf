@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppUpdateNotice, type AppUpdateNoticeCopy } from "./AppUpdateNotice";
 import { ToastProvider } from "./ToastProvider";
+import "../../styles/base/alerts-toasts.css";
 
 const updateState = vi.hoisted(() => ({
   applyUpdate: vi.fn().mockResolvedValue(undefined),
@@ -51,6 +52,13 @@ describe("AppUpdateNotice", () => {
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: copy.updateLabel }));
     expect(updateState.applyUpdate).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the notice interactive inside the pass-through toast region", () => {
+    renderNotice();
+
+    const notice = screen.getByRole("status", { name: copy.ariaLabel });
+    expect(getComputedStyle(notice).pointerEvents).toBe("auto");
   });
 
   it("can be deferred without applying the update", async () => {
