@@ -808,13 +808,42 @@ export function AdminPage() {
   }
 
   async function handleDeleteProduct(id: string) {
-    await runAdminAction(async () => {
-      markLocalWrite();
-      await deleteProduct(shopId, id);
-      markLocalWrite();
-      setSelectedProduct(undefined);
+    markLocalWrite();
+    const { imageCleanupPending } = await deleteProduct(shopId, id);
+    markLocalWrite();
+    setSelectedProduct(undefined);
+    const nextProducts = products.filter((product) => product.id !== id);
+    setProducts(nextProducts);
+    saveCatalogSnapshot(
+      { booth, payment, promotion, products: nextProducts },
+      shopId,
+      { replaceProducts: true, complete: true },
+    );
+    const followUpNotices: string[] = [];
+    if (imageCleanupPending) {
+      followUpNotices.push(
+        t(
+          "The item was deleted, but its unused images could not be cleaned up.",
+        ),
+      );
+    }
+    try {
       await reloadCatalogAdmin();
-    }, "Item deleted.");
+    } catch {
+      followUpNotices.push(
+        t(
+          "The item was deleted, but the catalog could not be refreshed. Reload to verify the latest list.",
+        ),
+      );
+    }
+    if (followUpNotices.length) {
+      toast.info(
+        followUpNotices.join(" "),
+        t("Item deleted with follow-up needed"),
+      );
+    } else {
+      toast.success(t("Item deleted."));
+    }
   }
 
   async function handleSignOut() {

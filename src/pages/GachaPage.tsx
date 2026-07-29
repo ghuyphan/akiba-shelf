@@ -31,7 +31,7 @@ import {
   runningGachaCatalog,
 } from "../lib/gacha/gachaLaunch";
 import { translations, type CatalogCopy } from "../lib/i18n/catalogI18n";
-import { getErrorMessage } from "../lib/errors";
+import { getUserFacingErrorMessage } from "../lib/errors";
 import { prefersLightweightCatalog } from "../lib/network";
 import { getShopBranding, useDocumentBranding } from "../lib/branding";
 import { applyDocumentSeo, resetDocumentSeo } from "../lib/seo";
@@ -218,7 +218,9 @@ export function GachaPage() {
         }
       } catch (cause) {
         if (active && !hasLaunch)
-          setError(getErrorMessage(cause, translations.en.wishLoadError));
+          setError(
+            getUserFacingErrorMessage(cause, translations.en.wishLoadError),
+          );
       }
     }
     void load();
@@ -361,7 +363,11 @@ export function GachaPage() {
           sendOfflineProgress("ready", 100);
         })
         .catch((cause) =>
-          sendOfflineProgress("error", 0, getErrorMessage(cause)),
+          sendOfflineProgress(
+            "error",
+            0,
+            getUserFacingErrorMessage(cause, copy.wishLoadError),
+          ),
         )
         .finally(() => {
           offlineDownloadRef.current = null;
@@ -373,6 +379,7 @@ export function GachaPage() {
     activeCatalog,
     activeGame,
     availableGames.length,
+    copy.wishLoadError,
     navigate,
     sendOfflineProgress,
     shopSlug,

@@ -288,7 +288,12 @@
 						<i class="gi-exchange" />
 					</button>
 					<div class="selector">
-						<div class="selected-option" on:click|stopPropagation={() => selectOrder()}>
+						<button
+							type="button"
+							class="selected-option"
+							aria-expanded={showOrder}
+							on:click|stopPropagation={() => selectOrder()}
+						>
 							{$t('inventory.sort')} / {$t(`inventory.${orderby}`)}
 
 							{#if showOrder}
@@ -296,7 +301,7 @@
 							{:else}
 								<i class="gi-caret-down" />
 							{/if}
-						</div>
+						</button>
 
 						{#if showOrder}
 							<div class="option-list above" transition:fade={{ duration: 200 }}>

@@ -1199,6 +1199,12 @@ const vi: Record<string, string> = {
   "Notifications unavailable": "Thông báo không khả dụng",
   "Item saved.": "Đã lưu sản phẩm.",
   "Item deleted.": "Đã xóa sản phẩm.",
+  "Item deleted with follow-up needed":
+    "Đã xóa sản phẩm nhưng cần kiểm tra thêm",
+  "The item was deleted, but its unused images could not be cleaned up.":
+    "Sản phẩm đã được xóa nhưng chưa thể dọn dẹp các hình ảnh không còn dùng.",
+  "The item was deleted, but the catalog could not be refreshed. Reload to verify the latest list.":
+    "Sản phẩm đã được xóa nhưng chưa thể làm mới danh mục. Hãy tải lại để kiểm tra danh sách mới nhất.",
   "Back to storefront": "Về cửa hàng",
   "Go to dashboard": "Đến bảng điều khiển",
   "Merch desk": "Quầy merch",

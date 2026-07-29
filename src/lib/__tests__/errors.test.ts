@@ -77,6 +77,9 @@ describe("getErrorMessage", () => {
         fallback,
       ),
     ).toBe(fallback);
+    expect(
+      getUserFacingErrorMessage(new TypeError("Failed to fetch"), fallback),
+    ).toBe(fallback);
   });
 
   it("identifies session noise correctly", () => {

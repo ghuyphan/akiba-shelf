@@ -673,9 +673,28 @@ export async function createOfflineEventOrder(
 ) {
   const result = await ledger().mutate(session.shopId, session.id, (state) => {
     const currentSession = requireActiveSession(state.session, session);
-    const pricing = calculateCartPricing(cart, currentSession.promotion);
+    const allocationsByProductId = new Map(
+      currentSession.allocations.map((allocation) => [
+        allocation.product.id,
+        allocation,
+      ]),
+    );
+    // Event allocations are the immutable local pricing snapshot. Never trust
+    // a cart product refreshed from the storefront after Event Mode started.
+    const authoritativeCart = cart.map((item) => {
+      const allocation = allocationsByProductId.get(item.product.id);
+      if (!allocation)
+        throw new Error(
+          "One or more items are not allocated to this event device.",
+        );
+      return { ...item, product: allocation.product };
+    });
+    const pricing = calculateCartPricing(
+      authoritativeCart,
+      currentSession.promotion,
+    );
     const quantities = new Map(
-      cart.map((item) => [
+      authoritativeCart.map((item) => [
         item.product.id,
         item.quantity + (item.reward_quantity ?? 0),
       ]),
@@ -695,16 +714,6 @@ export async function createOfflineEventOrder(
       }),
       updatedAt: new Date().toISOString(),
     };
-    for (const productId of quantities.keys()) {
-      if (
-        !currentSession.allocations.some(
-          (item) => item.product.id === productId,
-        )
-      )
-        throw new Error(
-          "One or more items are not allocated to this event device.",
-        );
-    }
     const now = new Date().toISOString();
     const order: OfflineEventOrder = {
       version: 1,
@@ -719,7 +728,7 @@ export async function createOfflineEventOrder(
       paymentState: "awaiting_payment",
       clientRevision: 1,
       fulfillmentStatus: "unfulfilled",
-      items: cart.map((item) => {
+      items: authoritativeCart.map((item) => {
         const line = getPricingLine(pricing, item.product.id);
         return {
           product_id: item.product.id,

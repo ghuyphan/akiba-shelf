@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   render,
   screen,
@@ -54,6 +55,63 @@ describe("StaffManager", () => {
     await waitFor(() =>
       expect(screen.getByText("No members yet")).toBeInTheDocument(),
     );
+  });
+
+  it("ignores a late response from the previous shop after switching shops", async () => {
+    let resolveOldMembers!: (members: unknown[]) => void;
+    let resolveOldInvitations!: (invitations: unknown[]) => void;
+    const oldMembers = new Promise<unknown[]>((resolve) => {
+      resolveOldMembers = resolve;
+    });
+    const oldInvitations = new Promise<unknown[]>((resolve) => {
+      resolveOldInvitations = resolve;
+    });
+    apiMocks.getStaffMembers.mockImplementation((shop: string) =>
+      shop === "shop-1"
+        ? oldMembers
+        : Promise.resolve([
+            {
+              user_id: "member-2",
+              email: "shop-2@example.com",
+              role: "staff",
+              active: true,
+            },
+          ]),
+    );
+    apiMocks.getShopInvitations.mockImplementation((shop: string) =>
+      shop === "shop-1" ? oldInvitations : Promise.resolve([]),
+    );
+
+    const view = render(
+      <PlatformI18nProvider>
+        <ToastProvider>
+          <StaffManager shopId="shop-1" />
+        </ToastProvider>
+      </PlatformI18nProvider>,
+    );
+    view.rerender(
+      <PlatformI18nProvider>
+        <ToastProvider>
+          <StaffManager shopId="shop-2" />
+        </ToastProvider>
+      </PlatformI18nProvider>,
+    );
+
+    expect(await screen.findByText("shop-2@example.com")).toBeInTheDocument();
+    await act(async () => {
+      resolveOldMembers([
+        {
+          user_id: "member-1",
+          email: "shop-1@example.com",
+          role: "owner",
+          active: true,
+        },
+      ]);
+      resolveOldInvitations([]);
+    });
+
+    expect(screen.queryByText("shop-1@example.com")).not.toBeInTheDocument();
+    expect(screen.getByText("shop-2@example.com")).toBeInTheDocument();
   });
 
   it("keeps invite validation in context and returns focus to email", async () => {

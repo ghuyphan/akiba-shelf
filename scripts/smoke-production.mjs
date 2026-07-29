@@ -1,5 +1,9 @@
 import { pathToFileURL } from "node:url";
 import { storefrontBootstrapSchema } from "../src/lib/schemas.ts";
+import {
+  CHECKOUT_CONTRACT_HEADER,
+  CHECKOUT_CONTRACT_VERSION,
+} from "../supabase/functions/_shared/checkoutContract.ts";
 
 const REQUEST_TIMEOUT_MS = 15_000;
 // This read-only alias is seeded by migrations and is safe for recurring probes.
@@ -164,6 +168,12 @@ export async function smokeProduction({
       if (allowedOrigin !== origin) {
         throw new Error(
           `checkout preflight allowed ${allowedOrigin || "no origin"}, expected ${origin}`,
+        );
+      }
+      const contractVersion = response.headers.get(CHECKOUT_CONTRACT_HEADER);
+      if (contractVersion !== CHECKOUT_CONTRACT_VERSION) {
+        throw new Error(
+          `checkout preflight contract ${contractVersion || "missing"}, expected ${CHECKOUT_CONTRACT_VERSION}`,
         );
       }
     },

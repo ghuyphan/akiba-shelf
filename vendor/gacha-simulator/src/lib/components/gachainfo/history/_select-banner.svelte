@@ -22,17 +22,19 @@
 </script>
 
 <div class="selectType v2">
-	<div
-		style={`background-image: url(${$assets['history-select-bg.webp']})`}
-		class="wish-type v2"
-	>
+	<div style={`background-image: url(${$assets['history-select-bg.webp']})`} class="wish-type v2">
 		<span> {$t('history.selectWish')} </span>
 		<div class="select-box">
-			<div class="selected" on:click={() => (showSelectList = !showSelectList)}>
+			<button
+				type="button"
+				class="selected"
+				aria-expanded={showSelectList}
+				on:click={() => (showSelectList = !showSelectList)}
+			>
 				<span>{@html $t(`wish.banner.${banner}`)}</span>
 
 				<span class="arrow icon {showSelectList ? 'up' : 'down'}" />
-			</div>
+			</button>
 
 			{#if showSelectList}
 				<div class="select-list" transition:fade={{ duration: 200 }}>
@@ -99,6 +101,15 @@
 		border: 0.15rem solid #b5b2ae;
 		background-color: #dbd7d3;
 		border-radius: 0.25rem;
+	}
+	.selected {
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+	.selected:focus-visible {
+		outline: 0.2rem solid #eac343;
+		outline-offset: 0.15rem;
 	}
 	.selected,
 	.item {

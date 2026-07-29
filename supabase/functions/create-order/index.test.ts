@@ -1,4 +1,8 @@
 import { assert, assertEquals, assertMatch } from "jsr:@std/assert@1";
+import {
+  CHECKOUT_CONTRACT_HEADER,
+  CHECKOUT_CONTRACT_VERSION,
+} from "../_shared/checkoutContract.ts";
 
 Deno.env.set("PUBLIC_SITE_URL", "https://matsuri.pro");
 Deno.env.set(
@@ -78,6 +82,10 @@ Deno.test(
     );
     assertEquals(production.status, 200);
     assertEquals(
+      production.headers.get(CHECKOUT_CONTRACT_HEADER),
+      CHECKOUT_CONTRACT_VERSION,
+    );
+    assertEquals(
       production.headers.get("Access-Control-Allow-Origin"),
       "https://matsuri.pro",
     );
@@ -104,6 +112,10 @@ Deno.test(
     );
     assertEquals(foreign.status, 403);
     assertEquals(foreign.headers.get("Access-Control-Allow-Origin"), null);
+    assertEquals(
+      foreign.headers.get(CHECKOUT_CONTRACT_HEADER),
+      CHECKOUT_CONTRACT_VERSION,
+    );
     assertEquals((await handleCreateOrderRequest(request("{"))).status, 400);
     assertEquals(
       (await handleCreateOrderRequest(request({ ...validBody, items: [] })))
@@ -247,6 +259,10 @@ Deno.test("create order derives layered checkout identities", async () => {
 
   const response = await handleCreateOrderRequest(request(validBody));
   assertEquals(response.status, 200);
+  assertEquals(
+    response.headers.get(CHECKOUT_CONTRACT_HEADER),
+    CHECKOUT_CONTRACT_VERSION,
+  );
   const rotatedAgentResponse = await handleCreateOrderRequest(
     request(validBody, "https://matsuri.pro", "rotated-agent", {
       "X-Forwarded-For": "198.51.100.99",

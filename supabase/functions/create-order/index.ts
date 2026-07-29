@@ -7,6 +7,10 @@ import {
   readBoundedJson,
   requiredEnv,
 } from "../_shared/http.ts";
+import {
+  CHECKOUT_CONTRACT_HEADER,
+  CHECKOUT_CONTRACT_VERSION,
+} from "../_shared/checkoutContract.ts";
 
 type CheckoutRpcResult = {
   data: unknown;
@@ -244,17 +248,21 @@ export async function handleCreateOrderRequest(
 ): Promise<Response> {
   const requestOrigin = normalizeOrigin(request.headers.get("Origin") ?? "");
   const cors = corsHeaders(siteOrigins, requestOrigin);
+  const responseHeaders = {
+    ...cors,
+    [CHECKOUT_CONTRACT_HEADER]: CHECKOUT_CONTRACT_VERSION,
+  };
   if (!siteOrigins.size) {
-    return jsonFailure("Checkout is not configured.", 503, cors);
+    return jsonFailure("Checkout is not configured.", 503, responseHeaders);
   }
   if (!requestOrigin || !siteOrigins.has(requestOrigin)) {
-    return jsonFailure("Origin not allowed.", 403, cors);
+    return jsonFailure("Origin not allowed.", 403, responseHeaders);
   }
   if (request.method === "OPTIONS") {
-    return new Response("ok", { headers: cors });
+    return new Response("ok", { headers: responseHeaders });
   }
   if (request.method !== "POST") {
-    return jsonFailure("Method not allowed.", 405, cors);
+    return jsonFailure("Method not allowed.", 405, responseHeaders);
   }
 
   const body = await readBoundedJson(request, maxBodyLength);
@@ -281,7 +289,11 @@ export async function handleCreateOrderRequest(
     !Array.isArray(body) &&
     turnstileToken.length < 1
   ) {
-    return jsonFailure("Turnstile verification is required.", 403, cors);
+    return jsonFailure(
+      "Turnstile verification is required.",
+      403,
+      responseHeaders,
+    );
   }
   if (
     !slugPattern.test(shopSlug) ||
@@ -294,7 +306,7 @@ export async function handleCreateOrderRequest(
     turnstileToken.length > maxTurnstileTokenLength ||
     !validItems(items)
   ) {
-    return jsonFailure("Invalid checkout request.", 400, cors);
+    return jsonFailure("Invalid checkout request.", 400, responseHeaders);
   }
 
   try {
@@ -305,7 +317,7 @@ export async function handleCreateOrderRequest(
       "TURNSTILE_SECRET",
     ]);
     if (!env) {
-      return jsonFailure("Checkout is not configured.", 503, cors);
+      return jsonFailure("Checkout is not configured.", 503, responseHeaders);
     }
     const url = env.SUPABASE_URL;
     const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
@@ -321,14 +333,14 @@ export async function handleCreateOrderRequest(
         return jsonFailure(
           "Security verification is temporarily unavailable. Please try again.",
           503,
-          cors,
+          responseHeaders,
         );
       }
       if (!verification.success || verification.action !== turnstileAction) {
         return jsonFailure(
           "Security verification failed. Refresh the check and try again.",
           403,
-          cors,
+          responseHeaders,
         );
       }
     }
@@ -358,17 +370,21 @@ export async function handleCreateOrderRequest(
     });
     if (error) {
       const publicFailure = publicError(error.message || "");
-      return jsonFailure(publicFailure.error, publicFailure.status, cors);
+      return jsonFailure(
+        publicFailure.error,
+        publicFailure.status,
+        responseHeaders,
+      );
     }
     const order = Array.isArray(data) ? data[0] : data;
     if (!order) {
       return jsonFailure(
         "The order response was incomplete. Retry checkout.",
         502,
-        cors,
+        responseHeaders,
       );
     }
-    return Response.json(order, { headers: cors });
+    return Response.json(order, { headers: responseHeaders });
   } catch (error) {
     console.error(
       "create-order failed",
@@ -377,7 +393,7 @@ export async function handleCreateOrderRequest(
     return jsonFailure(
       "Checkout is temporarily unavailable. Please retry.",
       503,
-      cors,
+      responseHeaders,
     );
   }
 }

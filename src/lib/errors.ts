@@ -82,7 +82,7 @@ export function getUserFacingErrorMessage(
   error: unknown,
   fallback: string,
 ) {
-  if (error instanceof ZodError) return fallback;
+  if (error instanceof ZodError || error instanceof TypeError) return fallback;
   const raw = getRawErrorMessage(error).trim();
   if (!raw) return fallback;
 

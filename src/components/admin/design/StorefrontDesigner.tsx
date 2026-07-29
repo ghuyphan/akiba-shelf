@@ -487,6 +487,17 @@ export function StorefrontDesigner({
     });
   }
 
+  function updateLogo(url: string, path?: string) {
+    commitSnapshot({
+      booth: {
+        ...draftRef.current,
+        logo_url: url,
+        logo_path: path,
+      },
+      payment: paymentDraftRef.current,
+    });
+  }
+
   function updatePayment<K extends keyof PaymentSettings>(
     key: K,
     value: PaymentSettings[K],
@@ -1309,7 +1320,7 @@ export function StorefrontDesigner({
                                   value={draft.logo_url ?? ""}
                                   placeholder="https://…"
                                   onChange={(event) =>
-                                    update("logo_url", event.target.value)
+                                    updateLogo(event.target.value)
                                   }
                                 />
                               </Field>
@@ -1317,7 +1328,7 @@ export function StorefrontDesigner({
                                 shopId={shopId}
                                 bucket="payment-qr"
                                 label={t("Upload booth logo")}
-                                onUploaded={(url) => update("logo_url", url)}
+                                onUploaded={updateLogo}
                               />
                             </div>
                           </div>

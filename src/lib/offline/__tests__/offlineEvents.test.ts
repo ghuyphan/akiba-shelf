@@ -113,6 +113,43 @@ describe("offline event ledger", () => {
     });
   });
 
+  it("prices local orders from the allocation snapshot, not a stale cart", async () => {
+    const active = session();
+    active.allocations[0].product = {
+      ...product,
+      price_vnd: 120_000,
+      sale_price_vnd: 90_000,
+      effective_price_vnd: 90_000,
+    };
+    await saveOfflineEventSession(active);
+
+    const order = await createOfflineEventOrder(
+      active,
+      [
+        {
+          product: {
+            ...product,
+            price_vnd: 1,
+            sale_price_vnd: 1,
+            effective_price_vnd: 1,
+          },
+          quantity: 2,
+        },
+      ],
+      "Customer",
+    );
+
+    expect(order.totalAmount).toBe(180_000);
+    expect(order.items).toEqual([
+      {
+        product_id: product.id,
+        quantity: 2,
+        unit_price: 90_000,
+        discount_amount: 0,
+      },
+    ]);
+  });
+
   it("blocks sign-out while this device owns event stock or unsynced orders", async () => {
     const active = session();
     await saveOfflineEventSession(active);

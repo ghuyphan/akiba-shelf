@@ -338,6 +338,8 @@ through the Pages Function at the same-origin `/gacha-simulator/videos/*` and
 `SIMULATOR_MEDIA` in `wrangler.jsonc`; the bucket must exist before the first
 production release. If the binding is changed in the Cloudflare dashboard,
 redeploy the Pages project before validating media range requests.
+`public/_routes.json` limits Pages Function invocation to those two media
+prefixes; static application requests must bypass the Function runtime.
 
 Production releases support `VITE_SENTRY_DSN` in the protected environment but
 do not require it. Without a DSN, the application remains operational and
@@ -439,9 +441,9 @@ release verification and the read-only production smoke against the restored
 deployment before the job is failed.
 These longer deployment and canonical retry windows cover the brief state where
 Wrangler reports completion before release metadata or matching hashed assets
-reach the checked edge. A failed verification or smoke check rolls production
-back to the deployment that was active before the upload and then fails the
-release job.
+reach the checked edge. A failed upload, verification, or smoke check rolls
+production back to the deployment that was active before the upload and then
+fails the release job.
 
 Apply and verify any required linked Supabase migration before merging the
 frontend release to `main`. The production smoke calls the read-only storefront
@@ -486,10 +488,15 @@ The smoke checks the SPA shell at the homepage, a storefront route, and Auth
 callback; verifies static bank/payment branding; calls the read-only storefront
 bootstrap RPC for `MATSURI_SMOKE_SHOP_SLUG` (default `demo-booth`); and sends a
 CORS `OPTIONS` request plus missing-token and invalid-token rejection probes to
-`create-order`. The invalid-token probe verifies that Siteverify recognizes the
-configured secret; both requests stop before the order RPC and cannot reserve
-stock. Run it every five minutes from one region and from a second region after
-DNS, TLS, or Cloudflare changes.
+`create-order`. The preflight must return the checkout contract version from
+`supabase/functions/_shared/checkoutContract.ts`, so a Pages release fails when
+the deployed Edge Function is stale. Bump that version for every required
+`create-order` behavior or RPC contract change, deploy the compatible function
+before merging the Pages release, and keep the previous frontend contract valid
+for rollback. The invalid-token probe verifies that Siteverify recognizes the
+configured secret; both POST requests stop before the order RPC and cannot
+reserve stock. Run the smoke every five minutes from one region and from a
+second region after DNS, TLS, or Cloudflare changes.
 
 ## Retention and recovery
 

@@ -57,6 +57,9 @@ export function StaffManager({ shopId }: { shopId: string }) {
     changes: Partial<Pick<StaffAccess, "role" | "active">>;
   } | null>(null);
   const inviteFormRef = useRef<HTMLFormElement>(null);
+  const activeShopIdRef = useRef(shopId);
+  const loadRequestRef = useRef(0);
+  activeShopIdRef.current = shopId;
   const toast = useToast();
   const { locale, t } = usePlatformI18n();
   const localizedInviteRoles = inviteRoles.map((option) => ({
@@ -78,20 +81,36 @@ export function StaffManager({ shopId }: { shopId: string }) {
   const teamPlacesUsed = activeMemberCount + pendingInvitationCount;
   const teamLimitReached = teamPlacesUsed >= MAX_SHOP_TEAM_SIZE;
   const reload = useCallback(async () => {
-    const [nextMembers, nextInvitations] = await Promise.all([
-      getStaffMembers(shopId),
-      getShopInvitations(shopId),
-    ]);
+    if (activeShopIdRef.current !== shopId) return false;
+    const requestId = ++loadRequestRef.current;
+    const isCurrentRequest = () =>
+      activeShopIdRef.current === shopId &&
+      loadRequestRef.current === requestId;
+    let nextMembers: StaffAccess[];
+    let nextInvitations: ShopInvitation[];
+    try {
+      [nextMembers, nextInvitations] = await Promise.all([
+        getStaffMembers(shopId),
+        getShopInvitations(shopId),
+      ]);
+    } catch (caught) {
+      if (!isCurrentRequest()) return false;
+      throw caught;
+    }
+    if (!isCurrentRequest()) return false;
     setMembers(nextMembers);
     setInvitations(nextInvitations);
+    return true;
   }, [shopId]);
   useEffect(() => {
+    let active = true;
     setLoading(true);
     setLoadError("");
     setMembers([]);
     setInvitations([]);
     void reload()
       .catch((caught) => {
+        if (!active || activeShopIdRef.current !== shopId) return;
         const message = getUserFacingErrorMessage(
           caught,
           "Could not load staff",
@@ -99,8 +118,14 @@ export function StaffManager({ shopId }: { shopId: string }) {
         setLoadError(message);
         toast.error(t(message), t("Could not load staff"));
       })
-      .finally(() => setLoading(false));
-  }, [reload, t, toast]);
+      .finally(() => {
+        if (active && activeShopIdRef.current === shopId) setLoading(false);
+      });
+    return () => {
+      active = false;
+      loadRequestRef.current += 1;
+    };
+  }, [reload, shopId, t, toast]);
 
   async function retryLoad() {
     setLoading(true);
@@ -108,9 +133,10 @@ export function StaffManager({ shopId }: { shopId: string }) {
     try {
       await reload();
     } catch (caught) {
+      if (activeShopIdRef.current !== shopId) return;
       setLoadError(getUserFacingErrorMessage(caught, "Could not load staff"));
     } finally {
-      setLoading(false);
+      if (activeShopIdRef.current === shopId) setLoading(false);
     }
   }
   async function submit(event: FormEvent) {

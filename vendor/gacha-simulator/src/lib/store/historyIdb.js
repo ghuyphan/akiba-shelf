@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { openDB } from 'idb';
+import { createMemoryHistoryStore } from './memoryHistory';
 
 const version = 1;
 const DBName = 'WishSimulator';
@@ -16,60 +17,37 @@ if (browser) {
 	});
 }
 
-// Memory-based replacement for IndexedDB
-let memoryDB = [];
+const memoryHistory = createMemoryHistoryStore();
 
 const HistoryIDB = {
 	async historyCount() {
 		try {
 			return (await IndexedDB).count(storeName);
-		}
-		catch (e) {
-			return memoryDB.length();
+		} catch (e) {
+			return memoryHistory.count();
 		}
 	},
 	async getList(banner) {
 		try {
 			return (await IndexedDB).getAllFromIndex(storeName, 'banner', banner);
-		}
-		catch (e) {
-			let list = [];
-			for (const entry of memoryDB) {
-				if (entry.banner === banner) {
-					list.push(entry);
-				}
-			}
-			return list;
+		} catch (e) {
+			return memoryHistory.getByBanner(banner);
 		}
 	},
 
 	async countItem(name) {
 		try {
 			return (await IndexedDB).countFromIndex(storeName, 'name', name);
-		}
-		catch (e) {
-			let count = 0;
-			for (const entry of memoryDB) {
-				if (entry.name === name) {
-					++count;
-				}
-			}
-			return count;
+		} catch (e) {
+			return memoryHistory.countByName(name);
 		}
 	},
 
 	async getByName(name) {
 		try {
 			return (await IndexedDB).getAllFromIndex(storeName, 'name', name);
-		}
-		catch (e) {
-			let list = [];
-			for (const entry of memoryDB) {
-				if (entry.name === name) {
-					list.push(entry);
-				}
-			}
-			return list;
+		} catch (e) {
+			return memoryHistory.getByName(name);
 		}
 	},
 
@@ -77,58 +55,47 @@ const HistoryIDB = {
 		try {
 			const idb = await IndexedDB;
 			const keys = await idb.getAllKeysFromIndex(storeName, 'banner', banner);
-			keys.forEach((key) => idb.delete(storeName, key));
+			await Promise.all(keys.map((key) => idb.delete(storeName, key)));
 			return 'success';
 		} catch (e) {
-			let newMemoryDB = [];
-			for (const entry of memoryDB) {
-				if (entry.banner !== banner) {
-					newMeoryDB.push(entry);
-				}
-			}
-			memoryDB = newMemoryDB;
+			memoryHistory.resetBanner(banner);
 			return 'success';
 		}
 	},
 	async clearIDB() {
 		try {
 			return (await IndexedDB).clear(storeName);
-		}
-		catch (e) {
-			memoryDB.clear();
+		} catch (e) {
+			memoryHistory.clear();
 		}
 	},
 	async getAllHistories() {
 		try {
 			return (await IndexedDB).getAll(storeName);
-		}
-		catch (e) {
-			return memoryDB;
+		} catch (e) {
+			return memoryHistory.getAll();
 		}
 	},
 	async addHistory(data) {
-		// eslint-disable-next-line no-prototype-builtins
-		if (!data.hasOwnProperty('banner')) return;
+		if (
+			!data ||
+			typeof data !== 'object' ||
+			!Object.prototype.hasOwnProperty.call(data, 'banner')
+		) {
+			return;
+		}
 		try {
 			return (await IndexedDB).put(storeName, data);
-		}
-		catch (e) {
-			memoryDB.push(data);
+		} catch (e) {
+			return memoryHistory.put(data);
 		}
 	},
 	async delete(id) {
 		if (!id) return;
 		try {
 			return (await IndexedDB).delete(storeName, id);
-		}
-		catch (e) {
-			let newMemoryDB = [];
-			for (const entry of memoryDB) {
-				if (entry !== id) {
-					newMeoryDB.push(entry);
-				}
-			}
-			memoryDB = newMemoryDB;
+		} catch (e) {
+			memoryHistory.delete(id);
 		}
 	}
 };

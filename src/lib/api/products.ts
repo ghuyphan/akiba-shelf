@@ -189,7 +189,12 @@ export async function saveProduct(
   );
 }
 
-export async function deleteProduct(shopId: string, id: string) {
+export type DeleteProductResult = { imageCleanupPending: boolean };
+
+export async function deleteProduct(
+  shopId: string,
+  id: string,
+): Promise<DeleteProductResult> {
   const client = requireSupabase();
   const paths = await getProductImagePaths(client, shopId, id);
   if (!paths) throw new Error("Product not found.");
@@ -200,6 +205,13 @@ export async function deleteProduct(shopId: string, id: string) {
     .eq("id", id);
   if (error) throw error;
   if (paths.length) {
-    await removeUnreferencedProductImages(client, shopId, paths);
+    try {
+      await removeUnreferencedProductImages(client, shopId, paths);
+    } catch {
+      // The product deletion is already committed. Report cleanup separately
+      // so callers never present a completed deletion as a failed operation.
+      return { imageCleanupPending: true };
+    }
   }
+  return { imageCleanupPending: false };
 }

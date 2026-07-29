@@ -334,6 +334,9 @@ h1 {
 	padding: 0.45rem 2rem 0.45rem 1.5rem;
 	border-radius: 10rem;
 	transition: all 0.2s;
+	width: 100%;
+	color: inherit;
+	text-align: left;
 }
 
 .selected-option i {
@@ -352,6 +355,11 @@ h1 {
 .selected-option:hover {
 	border-color: #fff;
 	box-shadow: rgb(160 175 190 / 60%) 0px 0px 7px 5px;
+}
+
+.selected-option:focus-visible {
+	outline: 0.2rem solid #eac343;
+	outline-offset: 0.15rem;
 }
 
 .option-list {

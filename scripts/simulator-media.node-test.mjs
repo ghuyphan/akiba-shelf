@@ -9,7 +9,7 @@ import {
 test("simulator media packs are versioned and use same-origin routes", async () => {
   const packs = await createSimulatorMediaPacks();
   assert.equal(SIMULATOR_MEDIA_BUCKET, "matsuri-simulator-media");
-  assert.equal(SIMULATOR_MEDIA_DELIVERY_VERSION, "security-headers-v2");
+  assert.equal(SIMULATOR_MEDIA_DELIVERY_VERSION, "security-headers-v3");
 
   for (const [game, pack] of Object.entries(packs)) {
     assert.match(pack.id, /^[a-f0-9]{20}$/);

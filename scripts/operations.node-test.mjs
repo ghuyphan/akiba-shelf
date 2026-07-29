@@ -11,6 +11,7 @@ import { STOREFRONT_ROUTE_PRELOAD_SCRIPT } from "./storefront-route-preload.mjs"
 import { createSimulatorCacheVersion } from "./simulator-cache-version.mjs";
 import { smokeProduction } from "./smoke-production.mjs";
 import { validateObservabilityConfig } from "./validate-observability-config.mjs";
+import { CHECKOUT_CONTRACT_VERSION } from "../supabase/functions/_shared/checkoutContract.ts";
 
 async function withTempDirectory(run) {
   const root = await mkdtemp(join(tmpdir(), "matsuri-operations-"));
@@ -224,9 +225,10 @@ test("pins the structured-data script to the enforced CSP hash", async () => {
 });
 
 test("keeps the static and function security-header contracts aligned", async () => {
-  const [headers, mediaRoute] = await Promise.all([
+  const [headers, mediaRoute, functionRoutes] = await Promise.all([
     readFile(new URL("../public/_headers", import.meta.url), "utf8"),
     readFile(new URL("../functions/media-route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../public/_routes.json", import.meta.url), "utf8"),
   ]);
 
   for (const source of [headers, mediaRoute]) {
@@ -248,6 +250,11 @@ test("keeps the static and function security-header contracts aligned", async ()
   );
   assert.match(staticPolicy, /connect-src 'self'/);
   assert.equal(functionPolicy, staticPolicy);
+  assert.deepEqual(JSON.parse(functionRoutes), {
+    version: 1,
+    include: ["/gacha-simulator/videos/*", "/hsr-simulator/videos/*"],
+    exclude: [],
+  });
 });
 
 test("gates the serialized production deploy on the current main SHA", async () => {
@@ -281,6 +288,10 @@ test("gates the serialized production deploy on the current main SHA", async () 
     /VITE_SENTRY_DSN is not configured; browser observability will report disabled/,
   );
   assert.match(workflow, /npm run validate:observability -- --production/);
+  assert.match(
+    workflow,
+    /steps\.deployment\.outcome == 'failure' \|\| steps\.verify-deployment\.outcome == 'failure'/,
+  );
 });
 
 test("writes deterministic release metadata", () =>
@@ -343,7 +354,10 @@ test("smoke checks routes, assets, storefront data, and checkout preflight", asy
     if (String(url).includes("/functions/v1/create-order")) {
       return new Response(null, {
         status: 204,
-        headers: { "access-control-allow-origin": "https://matsuri.pro" },
+        headers: {
+          "access-control-allow-origin": "https://matsuri.pro",
+          "x-matsuri-checkout-contract": CHECKOUT_CONTRACT_VERSION,
+        },
       });
     }
     if (String(url).includes("/rest/v1/rpc/get_storefront_bootstrap")) {
@@ -396,6 +410,48 @@ test("smoke checks routes, assets, storefront data, and checkout preflight", asy
   assert.equal(
     JSON.parse(checkoutRequests.at(-1).body).turnstileToken,
     "production-smoke-invalid-token",
+  );
+});
+
+test("smoke rejects a stale create-order contract", async () => {
+  const fetchImpl = async (url, init = {}) => {
+    if (String(url).includes("/rest/v1/rpc/get_storefront_bootstrap")) {
+      return new Response(JSON.stringify(validStorefrontBootstrap()), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    if (String(url).includes("/functions/v1/create-order")) {
+      return new Response(null, {
+        status: init.method === "OPTIONS" ? 204 : 403,
+        headers: {
+          "access-control-allow-origin": "https://matsuri.pro",
+          "x-matsuri-checkout-contract": "stale-contract",
+        },
+      });
+    }
+    if (/\.(?:png)$/.test(String(url))) {
+      return new Response("image", {
+        status: 200,
+        headers: { "content-type": "image/png" },
+      });
+    }
+    return new Response("<!doctype html>", {
+      status: 200,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    });
+  };
+
+  await assert.rejects(
+    smokeProduction({
+      baseUrl: "https://matsuri.pro",
+      supabaseUrl: "https://project.supabase.co",
+      supabaseAnonKey: "public-anon-key",
+      fetchImpl,
+    }),
+    new Error(
+      `checkout preflight contract stale-contract, expected ${CHECKOUT_CONTRACT_VERSION}`,
+    ),
   );
 });
 

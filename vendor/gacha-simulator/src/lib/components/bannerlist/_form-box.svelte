@@ -45,14 +45,21 @@
 				on:input={handleSearch}
 				title="Find by Character's or Weapon's Name (4star or 5star) or Banner Name"
 			/>
-			<button><i class="gi-search" /></button>
+			<span class="search-icon" aria-hidden="true">
+				<i class="gi-search" />
+			</span>
 		</div>
 
 		<div class="selector">
-			<div class="selected-option" on:click|stopPropagation={toggleOption}>
+			<button
+				type="button"
+				class="selected-option"
+				aria-expanded={showOptions}
+				on:click|stopPropagation={toggleOption}
+			>
 				{$t('wish.banner.group')} / {groupby === 'version' ? $t(`version`) : $t(groupby)}
 				<i class="gi-caret-{showOptions ? 'up' : 'down'}" />
-			</div>
+			</button>
 
 			{#if showOptions}
 				<div class="option-list below" transition:fade={{ duration: 200 }}>
@@ -103,11 +110,16 @@
 		font-size: 0.75rem;
 		padding-right: 12%;
 	}
-	.search button {
+	.search .search-icon {
 		position: absolute;
 		right: 5%;
 		top: 55%;
 		transform: translateY(-50%);
+	}
+	.selected-option:focus-visible,
+	.btn.reverse:focus-visible {
+		outline: 0.2rem solid #eac343;
+		outline-offset: 0.15rem;
 	}
 
 	.selector {

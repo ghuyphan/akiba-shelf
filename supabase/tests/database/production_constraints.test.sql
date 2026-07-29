@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(17);
 
 select ok(
   (select convalidated from pg_constraint
@@ -78,6 +78,36 @@ select ok(
       and indexdef like 'CREATE UNIQUE INDEX%WHERE (status = %active%'
   ),
   'offline events retain the one-active-session partial unique index'
+);
+select ok(
+  exists (
+    select 1
+    from pg_indexes
+    where schemaname = 'public'
+      and tablename = 'offline_event_sessions'
+      and indexname = 'offline_event_sessions_created_by_idx'
+  ),
+  'offline event creator lookups use a foreign-key index'
+);
+select ok(
+  not has_table_privilege('anon', 'public.products', 'TRUNCATE'),
+  'anonymous clients cannot truncate public tables'
+);
+select ok(
+  not has_table_privilege('anon', 'public.products', 'REFERENCES'),
+  'anonymous clients cannot add references to public tables'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.shops', 'TRIGGER'),
+  'authenticated clients cannot create triggers on public tables'
+);
+select ok(
+  has_column_privilege('anon', 'public.products', 'id', 'SELECT'),
+  'anonymous storefront reads retain their explicit product grant'
+);
+select ok(
+  has_table_privilege('authenticated', 'public.products', 'UPDATE'),
+  'authenticated catalog management retains its explicit update grant'
 );
 
 select * from finish();

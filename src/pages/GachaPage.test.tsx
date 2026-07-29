@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { GachaPage } from "./GachaPage";
 import { resetDocumentBranding } from "../lib/branding";
@@ -96,5 +96,20 @@ describe("GachaPage route metadata", () => {
 
     renderRoute();
     await waitFor(() => expect(document.title).toBe("Demo Booth · Matsuri"));
+  });
+
+  it("does not render technical launch errors on the public route", async () => {
+    loadGachaLaunch.mockRejectedValueOnce(
+      new TypeError("Failed to fetch public.gacha_settings"),
+    );
+
+    renderRoute();
+
+    expect(
+      await screen.findByText("Could not load the minigame."),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/Failed to fetch public\.gacha_settings/i),
+    ).not.toBeInTheDocument();
   });
 });

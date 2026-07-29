@@ -10,7 +10,9 @@
 	export let weaponType = '';
 	export let qty = 0;
 	export let isOwned = true;
+	export let isInteractive = true;
 	export let outfit = null;
+	$: accessibleName = localName || name;
 
 	let countInfo = `R${qty > 5 ? `5 + ${qty - 5}` : qty}`;
 	if (type === 'character') {
@@ -19,12 +21,19 @@
 
 	const dispatch = createEventDispatcher();
 	const handleShowDetails = () => {
-		if (!isOwned) return;
+		if (!isOwned || !isInteractive) return;
 		return dispatch('click', { name, outfit });
 	};
 </script>
 
-<div class="content" class:owned={isOwned} on:click={handleShowDetails}>
+<button
+	type="button"
+	class="content"
+	class:owned={isOwned}
+	disabled={!isOwned || !isInteractive}
+	aria-label={accessibleName}
+	on:click={handleShowDetails}
+>
 	{#if !isOwned}
 		<div class="overlay" />
 	{/if}
@@ -35,7 +44,7 @@
 		{#if type === 'character'}
 			<img
 				src={$assets[`face/${outfit || name}`]}
-				alt={localName}
+				alt={accessibleName}
 				on:error={(e) => e.target.remove()}
 				loading="lazy"
 				crossorigin="anonymous"
@@ -44,7 +53,7 @@
 		{:else}
 			<img
 				src={$assets[name]}
-				alt={localName}
+				alt={accessibleName}
 				class={weaponType}
 				loading="lazy"
 				crossorigin="anonymous"
@@ -65,10 +74,14 @@
 			{localName}
 		</span>
 	</div>
-</div>
+</button>
 
 <style>
 	.content {
+		border: 0;
+		padding: 0;
+		font: inherit;
+		cursor: pointer;
 		border-radius: calc(3.5 / 100 * var(--item-width));
 		width: 100%;
 		height: 100%;
@@ -78,6 +91,13 @@
 		background-color: #fff;
 		color: #3a4156;
 		position: relative;
+	}
+	.content:disabled {
+		cursor: default;
+	}
+	.content:focus-visible {
+		outline: 0.2rem solid #eac343;
+		outline-offset: 0.15rem;
 	}
 
 	.content.owned::after {

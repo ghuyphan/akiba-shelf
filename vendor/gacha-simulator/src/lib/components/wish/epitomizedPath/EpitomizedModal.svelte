@@ -137,25 +137,28 @@
 						<div class="weapon-list" style="--item-width: {itemWidth}px">
 							{#if weaponName}
 								<div class="weapon-content">
-									<button>
+									<div class="weapon-card">
 										<InventoryItem
 											name={weaponName}
 											weaponType={weapons[weaponIndex].type}
 											type="weapon"
 											rarity={5}
+											isInteractive={false}
 										/>
-									</button>
+									</div>
 								</div>
 							{:else}
 								{#each weapons as { name, type }, i}
-									<div
-										class="weapon-content"
-										class:active={targetActive === i}
-										on:click={() => select(i)}
-									>
-										<button>
-											<InventoryItem {name} weaponType={type} type="weapon" rarity={5} />
-										</button>
+									<div class="weapon-content">
+										<div class="weapon-card" class:active={targetActive === i}>
+											<InventoryItem
+												{name}
+												weaponType={type}
+												type="weapon"
+												rarity={5}
+												on:click={() => select(i)}
+											/>
+										</div>
 									</div>
 								{/each}
 							{/if}
@@ -341,25 +344,25 @@
 		width: 50%;
 	}
 
-	.weapon-content button {
+	.weapon-card {
 		font-size: small;
 		aspect-ratio: 8.75 / 10;
 		position: relative;
 		vertical-align: middle;
 		width: 100%;
 	}
-	:global(.mobile) .weapon-content button {
+	:global(.mobile) .weapon-card {
 		font-size: xx-small;
 	}
 
-	.weapon-content.active button::after,
-	.weapon-content.active button::before {
+	.weapon-card.active::after,
+	.weapon-card.active::before {
 		position: absolute;
 		right: 0;
 		top: 0;
 	}
 
-	.weapon-content.active button::after {
+	.weapon-card.active::after {
 		display: block;
 		content: '';
 		width: 100%;
@@ -368,7 +371,7 @@
 		border-width: 0.2rem 0;
 		border-radius: 0.3rem;
 	}
-	.weapon-content.active button::before {
+	.weapon-card.active::before {
 		content: '✔';
 		font-size: 1.2rem;
 		color: #759a28;

@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "include": [
+    "/gacha-simulator/videos/*",
+    "/hsr-simulator/videos/*"
+  ],
+  "exclude": []
+}
