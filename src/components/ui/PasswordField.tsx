@@ -37,6 +37,7 @@ export function PasswordField({
         <Lock size={19} className="input-icon" aria-hidden="true" />
         <input
           type={visible ? "text" : "password"}
+          aria-label={label}
           minLength={minLength}
           disabled={disabled}
           autoComplete={autoComplete}
@@ -49,7 +50,9 @@ export function PasswordField({
           type="button"
           className="password-toggle-btn"
           onClick={() => setVisible((current) => !current)}
-          aria-label={t(visible ? "Hide {{label}}" : "Show {{label}}", { label: label.toLowerCase() })}
+          aria-label={t(visible ? "Hide {{label}}" : "Show {{label}}", {
+            label: label.toLowerCase(),
+          })}
           disabled={disabled}
         >
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}

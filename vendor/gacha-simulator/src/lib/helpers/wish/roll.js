@@ -40,7 +40,7 @@ const roll = async (banner, indexOfBanner, WishInstance) => {
 				currentPity: pity5,
 				softPity: softPity5,
 				hardPity: hardPity5
-		  });
+			});
 	let chance4star = !available.has(4)
 		? 0
 		: getMerchPityChance({
@@ -48,7 +48,7 @@ const roll = async (banner, indexOfBanner, WishInstance) => {
 				currentPity: pity4,
 				softPity: softPity4,
 				hardPity: hardPity4
-		  });
+			});
 	let chance3star = 100 - chance4star - chance5star;
 
 	if (!available.has(3)) chance3star = 0;
@@ -93,8 +93,7 @@ const roll = async (banner, indexOfBanner, WishInstance) => {
 		pity5star.set(banner, pity5 + 1);
 	}
 
-	const Wish = await WishInstance;
-	const wishResult = Wish.getItem(rarity, banner, indexOfBanner);
+	const wishResult = WishInstance.getItem(rarity, indexOfBanner);
 	wishResult.pity = pity;
 	wishResult.banner = banner;
 

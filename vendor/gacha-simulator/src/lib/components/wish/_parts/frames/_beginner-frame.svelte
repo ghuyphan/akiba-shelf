@@ -7,7 +7,7 @@
 	import { beginnerRoll } from '$lib/store/localstore';
 	import HighlightedBannerName from '$lib/components/utility/HighlightedBannerName.svelte';
 
-	export let character = '';
+	export let character = { character: '' };
 	export let isError = false;
 	$: char = $t(`${character.character}.name`);
 

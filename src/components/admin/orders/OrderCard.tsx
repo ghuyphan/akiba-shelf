@@ -149,6 +149,7 @@ export function OrderCard({
         </div>
       )}
       <div
+        role="region"
         className={`admin-order-items ${hasScrollableItems ? "is-scrollable" : ""}`}
         tabIndex={hasScrollableItems ? 0 : undefined}
         aria-label={hasScrollableItems ? t("Order items") : undefined}

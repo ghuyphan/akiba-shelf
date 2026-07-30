@@ -15,7 +15,13 @@
 </script>
 
 {#if show}
-	<div class="bg" on:click={handleClose} transition:fly={{ x: -10, duration: 100 }} />
+	<button
+		type="button"
+		class="bg"
+		aria-label={$t('close')}
+		on:click={handleClose}
+		transition:fly={{ x: -10, duration: 100 }}
+	/>
 	<div class="navbar" transition:fly={{ x: -100, duration: 200 }}>
 		<div class="top">{$t('shop.text')}</div>
 		<div class="nav-item">
@@ -179,7 +185,6 @@
 		font-weight: normal !important;
 		font-variant: normal !important;
 		text-transform: none !important;
-		speak: none;
 		line-height: 90%;
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;

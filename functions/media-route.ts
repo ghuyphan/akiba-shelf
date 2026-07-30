@@ -19,10 +19,20 @@ export function applyFunctionSecurityHeaders(headers: Headers): Headers {
   return headers;
 }
 
+export function getConditionalResponseStatus(headers: Headers): 304 | 412 {
+  if (headers.has("if-match") || headers.has("if-unmodified-since")) {
+    return 412;
+  }
+  if (headers.has("if-none-match") || headers.has("if-modified-since")) {
+    return 304;
+  }
+  return 412;
+}
+
 export interface SimulatorMediaRange {
   contentRange?: string;
   length: number;
-  status: 200 | 206;
+  status: 200 | 206 | 416;
 }
 
 export function parseSimulatorMediaRange(
@@ -87,6 +97,13 @@ export function getSimulatorMediaRange(
 
   const start =
     "suffix" in range ? Math.max(size - range.suffix, 0) : (range.offset ?? 0);
+  if (start >= size) {
+    return {
+      contentRange: `bytes */${size}`,
+      length: 0,
+      status: 416,
+    };
+  }
   const length =
     "suffix" in range
       ? Math.min(range.suffix, size)

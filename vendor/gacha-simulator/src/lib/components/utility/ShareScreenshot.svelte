@@ -93,7 +93,7 @@
 
 	const copyHandle = async () => {
 		playSfx();
-		copy(shareLink);
+		await copy(shareLink);
 		showToast = true;
 		clearTimeout(toastTimer);
 		toastTimer = setTimeout(() => {
@@ -145,12 +145,7 @@
 <svelte:window bind:innerWidth={width} bind:innerHeight={height} />
 
 {#if show}
-	<div
-		class="screenshot"
-		style="height: {$viewportHeight}px;"
-		out:fade={{ duration: 200 }}
-		on:click|stopPropagation
-	>
+	<div class="screenshot" style="height: {$viewportHeight}px;" out:fade={{ duration: 200 }}>
 		<button class="close" on:click={closehandle}>
 			<i class="gi-close" />
 		</button>

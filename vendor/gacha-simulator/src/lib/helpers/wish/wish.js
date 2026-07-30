@@ -18,11 +18,11 @@ const getClosestAvailableRarity = (items, requestedRarity) => {
 };
 
 const Wish = {
-	async init() {
+	init() {
 		return this;
 	},
 
-	getItem(rarity, banner, indexOfBanner = 0) {
+	getItem(rarity, indexOfBanner = 0) {
 		const activeBanners = getMerchBanners().filter((item) => item.active);
 		const selectedBanner = activeBanners[indexOfBanner];
 		if (!selectedBanner) return { type: null, rarity: 0, name: null };

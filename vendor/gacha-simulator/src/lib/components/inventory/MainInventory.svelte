@@ -217,7 +217,12 @@
 	<InventoryDetails {...detailItem} on:close={() => (showInventoryDetail = false)} />
 {/if}
 
-<section on:click={handleCancelSelect}>
+<section
+	role="presentation"
+	tabindex="-1"
+	on:click={handleCancelSelect}
+	on:keydown={(event) => event.key === 'Escape' && handleCancelSelect()}
+>
 	{#each bg as b, i}
 		<img
 			src={$assets[`element-${b}-bg.webp`]}
@@ -263,7 +268,7 @@
 						<span style="color: white; padding: 2rem; font-size: 1.2rem">
 							{$t('waiting')}...
 						</span>
-					{:then data}
+					{:then}
 						{#if dataToShow.length < 1}
 							<span style="color: white; padding: 2rem; font-size: 1.2rem">
 								{$t('history.noData')}

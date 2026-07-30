@@ -33,7 +33,7 @@ export function CatalogHeader({
   return (
     <header
       className={`catalog-header ${className}`.trim()}
-      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="brand-lockup">
         <div className="brand-mark">
@@ -51,7 +51,9 @@ export function CatalogHeader({
           <h1>{booth.booth_name}</h1>
           <div className="brand-meta">
             {booth.booth_code && (
-              <span className="brand-meta-code">{copy.boothCode(booth.booth_code)}</span>
+              <span className="brand-meta-code">
+                {copy.boothCode(booth.booth_code)}
+              </span>
             )}
             <span className="brand-meta-subtitle">{copy.officialShop}</span>
           </div>

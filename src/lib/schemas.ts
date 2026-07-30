@@ -401,6 +401,78 @@ export const shopMembershipSchema = z
   })
   .passthrough();
 
+export const shopListSchema = z.array(shopSchema);
+export const shopMembershipListSchema = z.array(shopMembershipSchema);
+
+export const shopWorkspaceSummarySchema = z
+  .object({
+    shop_id: z.string().min(1),
+    shop_name: z.string(),
+    shop_slug: z.string(),
+    booth_name: z.string().nullish(),
+    logo_url: z.string().nullish(),
+    theme_background: z.string().nullish(),
+  })
+  .passthrough();
+
+export const staffAccessSchema = z
+  .object({
+    shop_id: z.string().min(1).optional(),
+    user_id: z.string().min(1).optional(),
+    email: z.string().email().optional(),
+    role: z.enum(["owner", "admin", "staff"]),
+    active: z.boolean(),
+    created_at: z.string().optional(),
+    updated_at: z.string().optional(),
+  })
+  .passthrough();
+
+export const staffAccessListSchema = z.array(staffAccessSchema);
+
+export const shopInvitationSchema = z
+  .object({
+    id: z.string().min(1),
+    shop_id: z.string().min(1),
+    email: z.string().email(),
+    role: z.enum(["owner", "admin", "staff"]),
+    status: z.enum(["pending", "accepted", "revoked", "expired"]),
+    expires_at: z.string(),
+    created_at: z.string(),
+  })
+  .passthrough();
+
+export const shopInvitationListSchema = z.array(shopInvitationSchema);
+export const invitationOutcomeSchema = z.object({
+  outcome: z.literal("processed"),
+});
+
+export const pushStatusResultSchema = z.object({ enabled: z.boolean() });
+export const pushRegisterResultSchema = z.object({
+  outcome: z.literal("registered"),
+});
+export const pushUnregisterResultSchema = z.object({
+  outcome: z.literal("unregistered"),
+  unsubscribe: z.boolean(),
+});
+
+export const productCategoryRowsSchema = z.array(
+  z.object({ category: z.string() }).passthrough(),
+);
+
+export const promotionProductMappingsSchema = z.array(
+  z
+    .object({
+      product_id: z.string().min(1),
+      role: z.enum(["qualifying", "reward", "both"]),
+    })
+    .passthrough(),
+);
+
+export const imagePathsRowSchema = z
+  .object({ image_paths: z.unknown().optional() })
+  .passthrough();
+export const imagePathsRowsSchema = z.array(imagePathsRowSchema);
+
 const cachedOrderItemSchema = z
   .object({
     id: z.string().min(1),

@@ -1,12 +1,5 @@
 import { type ReactNode, useMemo, useState } from "react";
-import {
-  ChevronDown,
-  Gift,
-  Plus,
-  Search,
-  Sword,
-  Sparkles,
-} from "lucide-react";
+import { ChevronDown, Gift, Plus, Search, Sword, Sparkles } from "lucide-react";
 import {
   getGachaBannerFeaturedRule,
   type GachaGameDescriptor,
@@ -236,7 +229,7 @@ export function GachaPoolEditor({
         <header className="gacha-panel-heading">
           <h3>
             {t(
-                descriptor.gameType === "hsr"
+              descriptor.gameType === "hsr"
                 ? "Warp Banner Prizes (4★ & 5★)"
                 : "Wish Banner Prizes (4★ & 5★)",
             )}
@@ -295,6 +288,7 @@ export function GachaPoolEditor({
           <label className="gacha-search">
             <Search size={16} />
             <input
+              aria-label={t("Search merch…")}
               value={query}
               placeholder={t("Search merch…")}
               onChange={(event) => setQuery(event.target.value)}

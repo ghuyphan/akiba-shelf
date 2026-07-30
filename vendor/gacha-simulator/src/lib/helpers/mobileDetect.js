@@ -16,7 +16,7 @@ const checkViewport = () => {
 	return !rotate && window.matchMedia('screen and (max-width: 760px)').matches;
 };
 const mobileDetect = () => {
-	const userAgent = navigator.userAgent || navigator.vendor || window.opera || userAgentPlaceholder;
+	const userAgent = navigator.userAgent || window.opera || userAgentPlaceholder;
 	return navigator?.userAgentData?.mobile || checkUserAgent(userAgent) || checkViewport();
 };
 
@@ -28,14 +28,12 @@ const browserDetect = () => {
 	if (isIOSChrome) return { isSupported: true, ios: true };
 
 	const chromium = window.chrome;
-	const vendorName = winNav.vendor;
 	const isOpera = typeof window.opr !== 'undefined';
 	const isIEedge = userAgent.indexOf('Edg') > -1;
 	const isFirefox = userAgent.indexOf('Firefox') > -1;
 
 	const isChromium = chromium !== null && typeof chromium !== 'undefined';
-	const isBrowserSupport =
-		isChromium || vendorName === 'Google Inc.' || isOpera || isIEedge || isFirefox;
+	const isBrowserSupport = isChromium || isOpera || isIEedge || isFirefox;
 
 	if (isBrowserSupport) return { isSupported: true };
 

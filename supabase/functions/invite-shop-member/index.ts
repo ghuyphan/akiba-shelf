@@ -1,91 +1,32 @@
 import { createClient as defaultCreateClient } from "npm:@supabase/supabase-js@2.110.2";
+import {
+  configuredOrigins,
+  corsHeaders,
+  jsonFailure,
+  normalizeOrigin,
+  readBoundedJson,
+} from "../_shared/http.ts";
 
 export const clientFactory = {
   createClient: defaultCreateClient,
 };
 
 const siteUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "";
-const siteOrigin = (() => {
-  try {
-    return new URL(siteUrl).origin;
-  } catch {
-    return "";
-  }
-})();
-const cors = {
-  "Access-Control-Allow-Origin": siteOrigin,
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Vary": "Origin",
-};
+const siteOrigin = normalizeOrigin(siteUrl);
+const allowedOrigins = configuredOrigins(siteUrl);
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const roles = new Set(["admin", "staff"]);
 const maxBodyLength = 8 * 1024;
-const success = () =>
-  Response.json({ outcome: "processed" }, { headers: cors });
-const failure = (error: string, status: number) =>
-  Response.json({ error }, { status, headers: cors });
-
-async function readBoundedText(request: Request) {
-  const declaredLength = request.headers.get("Content-Length");
-  if (declaredLength) {
-    const bytes = Number(declaredLength);
-    if (!Number.isSafeInteger(bytes) || bytes < 0 || bytes > maxBodyLength) {
-      return null;
-    }
-  }
-  if (!request.body) return null;
-
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let totalBytes = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      totalBytes += value.byteLength;
-      if (totalBytes > maxBodyLength) {
-        await reader.cancel();
-        return null;
-      }
-      chunks.push(value);
-    }
-  } catch {
-    return null;
-  }
-
-  const body = new Uint8Array(totalBytes);
-  let offset = 0;
-  for (const chunk of chunks) {
-    body.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(body);
-  } catch {
-    return null;
-  }
-}
-
-async function parseBody(
-  request: Request,
-): Promise<Record<string, unknown> | null> {
-  try {
-    const raw = await readBoundedText(request);
-    if (!raw) return null;
-    const value = JSON.parse(raw);
-    return value && typeof value === "object" && !Array.isArray(value)
-      ? (value as Record<string, unknown>)
-      : null;
-  } catch {
-    return null;
-  }
-}
 
 export async function handleInviteRequest(request: Request): Promise<Response> {
+  const requestOrigin = normalizeOrigin(request.headers.get("Origin") ?? "");
+  const cors = corsHeaders(allowedOrigins, requestOrigin);
+  const success = () =>
+    Response.json({ outcome: "processed" }, { headers: cors });
+  const failure = (error: string, status: number) =>
+    jsonFailure(error, status, cors);
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: cors });
   }
@@ -93,12 +34,11 @@ export async function handleInviteRequest(request: Request): Promise<Response> {
   const authorization = request.headers.get("Authorization");
   if (!authorization) return failure("Authentication required.", 401);
   if (!siteOrigin) return failure("Invitation email is not configured.", 503);
-  const origin = request.headers.get("Origin");
-  if (origin && origin !== siteOrigin) {
+  if (requestOrigin && requestOrigin !== siteOrigin) {
     return failure("Origin not allowed.", 403);
   }
 
-  const body = await parseBody(request);
+  const body = await readBoundedJson(request, maxBodyLength);
   if (!body) return failure("Invalid request body.", 400);
   const action = typeof body.action === "string" ? body.action : "";
   const shopId = typeof body.shopId === "string" ? body.shopId : "";

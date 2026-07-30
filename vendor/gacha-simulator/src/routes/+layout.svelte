@@ -11,7 +11,6 @@
 		isAcquaintUsed,
 		bannerActive,
 		bannerList,
-		assets,
 		isPWA
 	} from '$lib/store/stores';
 	import { mountLocale } from '$lib/helpers/i18n';
@@ -28,7 +27,6 @@
 	let innerWidth;
 	let isBannerLoaded = false;
 	let isloaded = false;
-	let showAd = false;
 
 	$: lc = $locale?.toLowerCase() || '';
 	$: isYuanshen = lc.includes('cn') || lc.includes('ja');
@@ -59,7 +57,6 @@
 
 	setContext('bannerLoaded', () => (isBannerLoaded = true));
 	setContext('loaded', () => (isloaded = true));
-	setContext('showAd', (show) => (showAd = show));
 
 	mountLocale();
 	onMount(() => {
@@ -104,7 +101,6 @@
 		type="font/woff2"
 		crossorigin
 	/>
-
 </svelte:head>
 
 <Loader {isBannerLoaded} {directLoad} />
@@ -119,7 +115,6 @@
 	{#if !$isLoading && isloaded}
 		<slot />
 	{/if}
-
 </main>
 
 <style global>

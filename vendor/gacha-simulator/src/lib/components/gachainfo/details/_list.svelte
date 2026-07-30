@@ -26,7 +26,9 @@
 	<h4>{$t('details.itemWishFor')}</h4>
 	<h3 class="star5">
 		<div class="star">
-			{#each Array(5) as i} <i class="gi-star" /> {/each}
+			{#each Array(5) as _, index (index)}
+				<i class="gi-star" />
+			{/each}
 		</div>
 		<span>
 			{$t('details.probInfo', { values: value5star })}
@@ -49,7 +51,8 @@
 						</div>
 						<div class="cell">
 							{merch ? name : type === 'weapon' ? $t(name) : $t(`${name}.name`)}
-							{#if rateup} <i class="gi-arrow-up" />{/if}
+							{#if rateup}
+								<i class="gi-arrow-up" />{/if}
 						</div>
 					{/each}
 				</div>
@@ -59,7 +62,7 @@
 
 	<h3 class="star4">
 		<div class="star">
-			{#each Array(5) as z, i}
+			{#each Array(5) as _, i}
 				<i class="gi-star" style={i > 3 ? 'color: transparent' : ''} />
 			{/each}
 		</div>
@@ -84,7 +87,8 @@
 						</div>
 						<div class="cell">
 							{merch ? name : type === 'weapon' ? $t(name) : $t(`${name}.name`)}
-							{#if rateup} <i class="gi-arrow-up" />{/if}
+							{#if rateup}
+								<i class="gi-arrow-up" />{/if}
 						</div>
 					{/each}
 				</div>
@@ -94,7 +98,7 @@
 
 	<h3 class="star3">
 		<div class="star">
-			{#each Array(5) as x, i}
+			{#each Array(5) as _, i}
 				<i class="gi-star" style={i > 2 ? 'color: transparent' : ''} />
 			{/each}
 		</div>

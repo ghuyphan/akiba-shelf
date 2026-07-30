@@ -5,7 +5,10 @@ import {
   PUBLIC_PAYMENT_COLUMNS,
 } from "../catalogQueries";
 import { safePublicUrl } from "../branding";
-import { paymentSettingsSchema } from "../schemas";
+import {
+  paymentSettingsSchema,
+  promotionProductMappingsSchema,
+} from "../schemas";
 import type {
   BoothSettings,
   PaymentSettings,
@@ -13,6 +16,7 @@ import type {
 } from "../../types/catalog";
 import { requireSupabase } from "./shared";
 import { normalizeBooth, normalizePromotion } from "./settingsNormalization";
+import { reportError } from "../observability";
 
 export { normalizeBooth, normalizePromotion } from "./settingsNormalization";
 
@@ -71,10 +75,7 @@ export async function getPublicPromotionSettings(
   ]);
   if (promotion.error) throw promotion.error;
   if (mappings.error) throw mappings.error;
-  const rows = (mappings.data ?? []) as {
-    product_id: string;
-    role: "qualifying" | "reward" | "both";
-  }[];
+  const rows = promotionProductMappingsSchema.parse(mappings.data ?? []);
   return normalizePromotion({
     ...(promotion.data ?? { ...defaultPromotion, shop_id: shopId }),
     qualifying_product_ids: rows
@@ -113,7 +114,7 @@ export const getAdminPromotionSettings = getPublicPromotionSettings;
 export async function saveBoothSettings(
   shopId: string,
   settings: BoothSettings,
-) {
+): Promise<{ booth: BoothSettings; imageCleanupPending: boolean }> {
   const client = requireSupabase();
   const { data: previousData, error: previousError } = await client
     .rpc("get_admin_booth_settings", { p_shop_id: shopId })
@@ -136,17 +137,30 @@ export async function saveBoothSettings(
       path !== settings.logo_path &&
       path !== settings.social_qr_logo_path,
   );
+  let imageCleanupPending = false;
   if (removed.length) {
-    const { error: removeError } = await client.storage
-      .from("payment-qr")
-      .remove(removed);
-    if (removeError) throw removeError;
+    try {
+      const { error: removeError } = await client.storage
+        .from("payment-qr")
+        .remove(removed);
+      if (removeError) throw removeError;
+    } catch (error) {
+      imageCleanupPending = true;
+      reportError(error, {
+        stage: "booth_image_cleanup_after_save",
+        shopId,
+        pathCount: removed.length,
+      });
+    }
   }
-  return normalizeBooth({
-    ...data,
-    logo_path: settings.logo_path,
-    social_qr_logo_path: settings.social_qr_logo_path,
-  });
+  return {
+    booth: normalizeBooth({
+      ...data,
+      logo_path: settings.logo_path,
+      social_qr_logo_path: settings.social_qr_logo_path,
+    }),
+    imageCleanupPending,
+  };
 }
 
 export async function savePaymentSettings(

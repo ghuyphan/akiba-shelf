@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { t } from 'svelte-i18n';
 
-	const isSlotpresent = $$props.$$slots;
+	const hasSlot = Object.keys($$slots).length > 0;
 	export let type = 'confirm';
 	export let text = '';
 	export let disabled = false;
@@ -25,7 +25,7 @@
 		<i class="gi-times" />
 	{/if}
 
-	{#if isSlotpresent}
+	{#if hasSlot}
 		<slot />
 	{:else}
 		<span>

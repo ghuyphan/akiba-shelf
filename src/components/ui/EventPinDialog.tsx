@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { KeyRound } from "lucide-react";
 import { Button } from "./Button";
 import { Modal, ModalFooter } from "./Modal";
@@ -40,6 +40,7 @@ export function EventPinDialog({
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const pinInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -47,6 +48,10 @@ export function EventPinDialog({
     setConfirmation("");
     setError("");
     setBusy(false);
+    const focusFrame = window.requestAnimationFrame(() =>
+      pinInputRef.current?.focus(),
+    );
+    return () => window.cancelAnimationFrame(focusFrame);
   }, [isOpen, mode]);
 
   async function handleSubmit(event: React.FormEvent) {
@@ -90,14 +95,15 @@ export function EventPinDialog({
         <label className="event-pin-field">
           <span>{copy.pinLabel}</span>
           <input
+            ref={pinInputRef}
             type="password"
+            aria-label={copy.pinLabel}
             inputMode="numeric"
             pattern="[0-9]*"
             maxLength={6}
             autoComplete={
               mode === "setup" ? "new-password" : "current-password"
             }
-            autoFocus
             value={pin}
             disabled={busy}
             aria-invalid={Boolean(error) || undefined}
@@ -112,6 +118,7 @@ export function EventPinDialog({
             <span>{copy.confirmPinLabel}</span>
             <input
               type="password"
+              aria-label={copy.confirmPinLabel}
               inputMode="numeric"
               pattern="[0-9]*"
               maxLength={6}

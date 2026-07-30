@@ -4,10 +4,14 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { PLATFORM_BRAND } from "../lib/branding";
 import { PlatformMark } from "../components/ui/PlatformMark";
 import { useAdminSession } from "../hooks/admin/useAdminSession";
-import { signInAdmin } from "../lib/api/auth";
+import { signInAdmin, signOutAdmin } from "../lib/api/auth";
 import { createShop } from "../lib/api/shops";
 import { useAsyncAction } from "../hooks/shared/useAsyncAction";
-import { AdminAccessCheck, AdminAccessDenied, LoginPanel } from "../components/admin/auth/LoginPanel";
+import {
+  AdminAccessCheck,
+  AdminAccessDenied,
+  LoginPanel,
+} from "../components/admin/auth/LoginPanel";
 import { useToast } from "../components/ui/ToastProvider";
 import { Alert } from "../components/ui/Alert";
 import { Field, TextInput } from "../components/ui/Field";
@@ -24,7 +28,8 @@ import { useBackNavigation } from "../hooks/shared/useBackNavigation";
 import { safeLocalStorageSet } from "../lib/offline/safeStorage";
 
 export function NewShopPage() {
-  const { state: adminSession, refresh: refreshAdminSession } = useAdminSession();
+  const { state: adminSession, refresh: refreshAdminSession } =
+    useAdminSession();
   const navigate = useNavigate();
   const goBack = useBackNavigation("/dashboard");
   const { busy, run, setError } = useAsyncAction();
@@ -35,9 +40,10 @@ export function NewShopPage() {
   const [slug, setSlug] = useState("");
   const [isSlugEditedManually, setIsSlugEditedManually] = useState(false);
 
-  const ownedShopCount = adminSession.status === "authorized"
-    ? adminSession.memberships.filter((shop) => shop.role === "owner").length
-    : 0;
+  const ownedShopCount =
+    adminSession.status === "authorized"
+      ? adminSession.memberships.filter((shop) => shop.role === "owner").length
+      : 0;
   const creationLimitReached = ownedShopCount >= MAX_OWNED_SHOPS;
 
   async function handleLogin(
@@ -78,7 +84,10 @@ export function NewShopPage() {
 
     if (creationLimitReached) {
       toast.error(
-        t("You can create up to {{limit}} shops. Joined shops do not count toward this limit.", { limit: MAX_OWNED_SHOPS }),
+        t(
+          "You can create up to {{limit}} shops. Joined shops do not count toward this limit.",
+          { limit: MAX_OWNED_SHOPS },
+        ),
         t("Shop creation limit reached"),
       );
       return;
@@ -103,7 +112,9 @@ export function NewShopPage() {
       !slugRegex.test(trimmedSlug)
     ) {
       toast.error(
-        t("Slug must be between 2 and 63 characters, contain only lowercase letters, numbers, and single dashes, and cannot start or end with a dash."),
+        t(
+          "Slug must be between 2 and 63 characters, contain only lowercase letters, numbers, and single dashes, and cannot start or end with a dash.",
+        ),
         t("Could not create shop"),
       );
       return;
@@ -117,7 +128,10 @@ export function NewShopPage() {
       safeLocalStorageSet("akiba-active-shop", newShop.id);
       navigate("/admin");
     }).catch((caught) => {
-      toast.error(t(getErrorMessage(caught, "Could not create shop.")), t("Creation failed"));
+      toast.error(
+        t(getErrorMessage(caught, "Could not create shop.")),
+        t("Creation failed"),
+      );
       setError("");
     });
   }
@@ -130,7 +144,19 @@ export function NewShopPage() {
     return <LoginPanel onLogin={handleLogin} />;
   }
   if (adminSession.status === "error" || adminSession.status === "inactive") {
-    return <AdminAccessDenied kind={adminSession.status} message={adminSession.status === "error" ? adminSession.message : undefined} onRetry={refreshAdminSession} onSignOut={async()=>{ await import("../lib/api").then(m=>m.signOutAdmin()); await refreshAdminSession(); }} />;
+    return (
+      <AdminAccessDenied
+        kind={adminSession.status}
+        message={
+          adminSession.status === "error" ? adminSession.message : undefined
+        }
+        onRetry={refreshAdminSession}
+        onSignOut={async () => {
+          await signOutAdmin();
+          await refreshAdminSession();
+        }}
+      />
+    );
   }
 
   return (
@@ -164,54 +190,78 @@ export function NewShopPage() {
 
           <div className="admin-login-heading">
             <h1>{t("Create your shop")}</h1>
-            <p>{t("Set up your shop name and storefront URL slug to get started.")}</p>
-            <small>{t("{{owned}} of {{limit}} created shops used", { owned: ownedShopCount, limit: MAX_OWNED_SHOPS })}</small>
+            <p>
+              {t(
+                "Set up your shop name and storefront URL slug to get started.",
+              )}
+            </p>
+            <small>
+              {t("{{owned}} of {{limit}} created shops used", {
+                owned: ownedShopCount,
+                limit: MAX_OWNED_SHOPS,
+              })}
+            </small>
           </div>
 
-          {creationLimitReached ? <Alert title={t("Shop creation limit reached")}>
-            {t("You can create up to {{limit}} shops. Joined shops do not count toward this limit.", { limit: MAX_OWNED_SHOPS })}
-          </Alert> : <form onSubmit={handleSubmit} className="admin-login-form" noValidate>
-            <Field label={t("Shop name")} hint={t("A friendly name for your merch booth.")}>
-              <TextInput
-                value={name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                placeholder={t("My Artist Booth")}
-                maxLength={SHOP_NAME_MAX_LENGTH}
-                disabled={busy}
-              />
-            </Field>
-
-            <Field
-              label={t("Storefront URL slug")}
-              hint={t("Only lowercase letters, numbers, and dashes. No spaces.")}
+          {creationLimitReached ? (
+            <Alert title={t("Shop creation limit reached")}>
+              {t(
+                "You can create up to {{limit}} shops. Joined shops do not count toward this limit.",
+                { limit: MAX_OWNED_SHOPS },
+              )}
+            </Alert>
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className="admin-login-form"
+              noValidate
             >
-              <div className="admin-slug-input-wrapper">
+              <Field
+                label={t("Shop name")}
+                hint={t("A friendly name for your merch booth.")}
+              >
                 <TextInput
-                  value={slug}
-                  onChange={(e) => handleSlugChange(e.target.value)}
-                  placeholder="my-artist-booth"
-                  minLength={SHOP_SLUG_MIN_LENGTH}
-                  maxLength={SHOP_SLUG_MAX_LENGTH}
+                  value={name}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  placeholder={t("My Artist Booth")}
+                  maxLength={SHOP_NAME_MAX_LENGTH}
                   disabled={busy}
                 />
-                {slug && (
-                  <span className="admin-slug-preview">
-                    {t("Preview URL:")} <strong>/s/{slug}</strong>
-                  </span>
+              </Field>
+
+              <Field
+                label={t("Storefront URL slug")}
+                hint={t(
+                  "Only lowercase letters, numbers, and dashes. No spaces.",
                 )}
-              </div>
-            </Field>
+              >
+                <div className="admin-slug-input-wrapper">
+                  <TextInput
+                    value={slug}
+                    onChange={(e) => handleSlugChange(e.target.value)}
+                    placeholder="my-artist-booth"
+                    minLength={SHOP_SLUG_MIN_LENGTH}
+                    maxLength={SHOP_SLUG_MAX_LENGTH}
+                    disabled={busy}
+                  />
+                  {slug && (
+                    <span className="admin-slug-preview">
+                      {t("Preview URL:")} <strong>/s/{slug}</strong>
+                    </span>
+                  )}
+                </div>
+              </Field>
 
-
-            <button
-              type="submit"
-              className="admin-login-submit"
-              disabled={busy || !name.trim() || !slug.trim()}
-            >
-              <span>{busy ? t("Creating shop…") : t("Create shop")}</span>
-              <Plus size={18} />
-            </button>
-          </form>}
+              <button
+                type="submit"
+                className="admin-login-submit"
+                disabled={busy || !name.trim() || !slug.trim()}
+              >
+                <span>{busy ? t("Creating shop…") : t("Create shop")}</span>
+                <Plus size={18} />
+              </button>
+            </form>
+          )}
         </div>
       </section>
     </main>

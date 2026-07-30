@@ -1,6 +1,11 @@
 import { defaultBooth } from "../constants";
 import type { BoothSettings, Shop, ShopMembership } from "../../types/catalog";
 import { requireSupabase } from "./shared";
+import {
+  shopMembershipListSchema,
+  shopSchema,
+  shopWorkspaceSummarySchema,
+} from "../schemas";
 
 export async function getPublicShop(slug: string): Promise<Shop | null> {
   const { data, error } = await requireSupabase()
@@ -10,7 +15,7 @@ export async function getPublicShop(slug: string): Promise<Shop | null> {
     .eq("active", true)
     .maybeSingle();
   if (error) throw error;
-  return data as Shop | null;
+  return data ? shopSchema.parse(data) : null;
 }
 
 export async function getShopMemberships(): Promise<ShopMembership[]> {
@@ -18,7 +23,7 @@ export async function getShopMemberships(): Promise<ShopMembership[]> {
     "get_my_shop_memberships",
   );
   if (error) throw error;
-  return (data ?? []) as ShopMembership[];
+  return shopMembershipListSchema.parse(data ?? []) as ShopMembership[];
 }
 
 export async function getShopWorkspaceSummary(
@@ -31,14 +36,7 @@ export async function getShopWorkspaceSummary(
     .rpc("get_shop_workspace_summary", { p_shop_id: shopId })
     .single();
   if (error) throw error;
-  const summary = data as {
-    shop_id: string;
-    shop_name: string;
-    shop_slug: string;
-    booth_name?: string;
-    logo_url?: string;
-    theme_background?: string;
-  };
+  const summary = shopWorkspaceSummarySchema.parse(data);
   return {
     id: summary.shop_id,
     name: summary.shop_name,
@@ -55,7 +53,7 @@ export async function createShop(name: string, slug: string): Promise<Shop> {
     p_slug: slug,
   });
   if (error) throw error;
-  return data as Shop;
+  return shopSchema.parse(data);
 }
 
 export async function updateShop(shopId: string, name: string): Promise<void> {

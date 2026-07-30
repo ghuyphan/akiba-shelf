@@ -1,31 +1,23 @@
 import { extractEdgeFunctionError, requireSupabase } from "./shared";
+import {
+  invitationOutcomeSchema,
+  shopInvitationListSchema,
+  shopInvitationSchema,
+  staffAccessListSchema,
+  staffAccessSchema,
+} from "../schemas";
+import type { z } from "zod";
 
 export type StaffRole = "owner" | "admin" | "staff";
-export type StaffAccess = {
-  shop_id?: string;
-  user_id?: string;
-  email?: string;
-  role: StaffRole;
-  active: boolean;
-  created_at?: string;
-  updated_at?: string;
-};
-export type ShopInvitation = {
-  id: string;
-  shop_id: string;
-  email: string;
-  role: StaffRole;
-  status: "pending" | "accepted" | "revoked" | "expired";
-  expires_at: string;
-  created_at: string;
-};
+export type StaffAccess = z.infer<typeof staffAccessSchema>;
+export type ShopInvitation = z.infer<typeof shopInvitationSchema>;
 
 export async function getStaffMembers(shopId: string): Promise<StaffAccess[]> {
   const { data, error } = await requireSupabase().rpc("get_shop_members", {
     p_shop_id: shopId,
   });
   if (error) throw error;
-  return (data ?? []) as StaffAccess[];
+  return staffAccessListSchema.parse(data ?? []);
 }
 
 export async function saveStaffMember(
@@ -39,7 +31,7 @@ export async function saveStaffMember(
     p_active: member.active,
   });
   if (error) throw error;
-  return data as StaffAccess;
+  return staffAccessSchema.parse(data);
 }
 
 export async function deleteStaffMember(shopId: string, userId: string) {
@@ -77,10 +69,7 @@ export async function inviteShopMember(
     { body: { action: "invite", shopId, email, role } },
   );
   if (error) await handleFunctionsError(error);
-  if ((data as { outcome?: string })?.outcome !== "processed") {
-    throw new Error("Invitation response was invalid.");
-  }
-  return "processed";
+  return invitationOutcomeSchema.parse(data).outcome;
 }
 
 export async function getShopInvitations(
@@ -92,17 +81,18 @@ export async function getShopInvitations(
     .eq("shop_id", shopId)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []) as ShopInvitation[];
+  return shopInvitationListSchema.parse(data ?? []);
 }
 
 export async function updateShopInvitation(
   shopId: string,
   invitationId: string,
-  action: "resend" | "revoke",
+  action: "revoke",
 ): Promise<void> {
-  const { error } = await requireSupabase().functions.invoke(
+  const { data, error } = await requireSupabase().functions.invoke(
     "invite-shop-member",
     { body: { action, shopId, invitationId } },
   );
   if (error) await handleFunctionsError(error);
+  invitationOutcomeSchema.parse(data);
 }

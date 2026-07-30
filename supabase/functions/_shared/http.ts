@@ -21,7 +21,7 @@ export function corsHeaders(
 ) {
   const headers: Record<string, string> = {
     "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-notification-worker-secret",
+      "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": methods,
     "Cache-Control": "no-store",
     Vary: "Origin",

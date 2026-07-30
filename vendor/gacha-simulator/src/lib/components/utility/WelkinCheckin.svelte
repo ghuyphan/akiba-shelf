@@ -18,6 +18,9 @@
 		});
 		handleObtained('primogem', 8000);
 	};
+	const closeOnKeyboard = (event) => {
+		if (event.key === 'Enter' || event.key === ' ') closeHandle();
+	};
 
 	let dayRemaining;
 	const setDay = (show) => {
@@ -29,7 +32,12 @@
 </script>
 
 {#if show}
-	<section on:click|stopPropagation={closeHandle}>
+	<section
+		role="button"
+		tabindex="0"
+		on:click|stopPropagation={closeHandle}
+		on:keydown|stopPropagation={closeOnKeyboard}
+	>
 		<div class="container">
 			<div class="bg" />
 			<div class="content">

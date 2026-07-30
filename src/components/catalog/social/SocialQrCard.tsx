@@ -15,7 +15,11 @@ type SocialQrCardProps = {
   deferOnPhone?: boolean;
 };
 
-const DEFAULT_QR_COLORS: [string, string, string] = ["#486a55", "#5f8d55", "#17233c"];
+const DEFAULT_QR_COLORS: [string, string, string] = [
+  "#486a55",
+  "#5f8d55",
+  "#17233c",
+];
 
 function loadImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -103,7 +107,13 @@ async function generateSocialQr(
   const logoImage = await loadImage(logoUrl);
   context.fillStyle = "#ffffff";
   context.beginPath();
-  context.roundRect(logoInset - 14, logoInset - 14, logoSize + 28, logoSize + 28, 34);
+  context.roundRect(
+    logoInset - 14,
+    logoInset - 14,
+    logoSize + 28,
+    logoSize + 28,
+    34,
+  );
   context.fill();
   context.save();
   context.beginPath();
@@ -125,7 +135,16 @@ function profileName(url: string, fallback: string) {
   }
 }
 
-export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradient, showLabel = true, deferOnPhone = false }: SocialQrCardProps) {
+export function SocialQrCard({
+  label,
+  url,
+  logoUrl,
+  icon,
+  brandColor,
+  brandGradient,
+  showLabel = true,
+  deferOnPhone = false,
+}: SocialQrCardProps) {
   const copy = useCatalogCopy();
   const [qrSrc, setQrSrc] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -179,38 +198,38 @@ export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradi
 
   const accentGradient = brandGradient ?? brandColor ?? undefined;
   const cardStyle = accentGradient
-    ? {
+    ? ({
         "--social-accent": accentGradient,
         "--social-accent-color": brandColor ?? "#53657d",
-      } as React.CSSProperties
+      } as React.CSSProperties)
     : undefined;
 
   return (
     <>
-      <article
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         className={`social-qr-card social-qr-${platform}${accentGradient ? " social-qr-branded" : ""}`}
         style={{ ...cardStyle, cursor: "pointer" }}
         onClick={(e) => {
           e.stopPropagation();
           openQr();
         }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            openQr();
-          }
-        }}
       >
-        <div className="social-qr-header" style={brandColor ? { color: brandColor } : undefined}>
+        <div
+          className="social-qr-header"
+          style={brandColor ? { color: brandColor } : undefined}
+        >
           {icon}
           {showLabel && <span>{label}</span>}
         </div>
         <div className="social-qr-code">
-          {qrSrc ? <img src={qrSrc} alt={copy.socialQrAlt(label)} /> : <div className="qr-loading" />}
+          {qrSrc ? (
+            <img src={qrSrc} alt={copy.socialQrAlt(label)} />
+          ) : (
+            <div className="qr-loading" />
+          )}
         </div>
-      </article>
+      </button>
 
       <Modal
         title={copy.socialQrTitle(label)}
@@ -220,8 +239,14 @@ export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradi
         mobileSheet
         closeLabel={copy.closeModal}
       >
-        <div className="social-qr-zoom-content" onClick={(e) => e.stopPropagation()}>
-          <div className="social-qr-zoom-icon" style={brandColor ? { color: brandColor } : undefined}>
+        <div
+          className="social-qr-zoom-content"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <div
+            className="social-qr-zoom-icon"
+            style={brandColor ? { color: brandColor } : undefined}
+          >
             {icon}
             <span>{label}</span>
           </div>
@@ -243,7 +268,11 @@ export function SocialQrCard({ label, url, logoUrl, icon, brandColor, brandGradi
             target="_blank"
             rel="noopener noreferrer"
             className="social-qr-zoom-link"
-            style={brandColor ? { color: brandColor, borderColor: brandColor } : undefined}
+            style={
+              brandColor
+                ? { color: brandColor, borderColor: brandColor }
+                : undefined
+            }
           >
             {copy.openSocialProfile}
           </a>

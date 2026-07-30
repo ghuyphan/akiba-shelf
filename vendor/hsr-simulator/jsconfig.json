@@ -12,6 +12,5 @@
 		"moduleResolution": "bundler",
 		"noImplicitThis": false,
 		"typeRoots": ["node_modules/@types"]
-	},
-	"files": ["node_modules/vite-plugin-pwa/client.d.ts"]
+	}
 }

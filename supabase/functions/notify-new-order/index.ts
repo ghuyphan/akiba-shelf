@@ -1,4 +1,7 @@
-import { createClient as defaultCreateClient } from "npm:@supabase/supabase-js@2.110.2";
+import {
+  createClient as defaultCreateClient,
+  type SupabaseClient,
+} from "npm:@supabase/supabase-js@2.110.2";
 import webpush from "npm:web-push@3.6.7";
 import { jsonFailure, readBoundedJson, requiredEnv } from "../_shared/http.ts";
 import {
@@ -75,7 +78,7 @@ async function inspectPushSubscription(value: unknown) {
 }
 
 async function deleteSubscriptionBestEffort(
-  admin: any,
+  admin: SupabaseClient,
   shopId: string,
   endpoint: string,
 ) {
@@ -107,7 +110,7 @@ async function deleteSubscriptionBestEffort(
 }
 
 async function completeJob(
-  admin: any,
+  admin: SupabaseClient,
   job: ClaimedJob,
   delivered: boolean,
   errorCode: string | null,
@@ -130,7 +133,7 @@ async function completeJob(
 }
 
 async function processClaimedJob(
-  admin: any,
+  admin: SupabaseClient,
   job: ClaimedJob,
   vapid: { publicKey: string; privateKey: string; subject: string },
 ) {

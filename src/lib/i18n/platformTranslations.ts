@@ -687,6 +687,17 @@ const vi: Record<string, string> = {
   "Upload fallback QR": "Tải QR dự phòng lên",
   "Save payment settings": "Lưu cài đặt thanh toán",
   "Could not save booth settings": "Không thể lưu cài đặt gian hàng",
+  "The item was saved, but obsolete images could not be cleaned up yet.":
+    "Sản phẩm đã được lưu nhưng chưa thể dọn dẹp các hình ảnh cũ.",
+  "Item saved with follow-up needed": "Sản phẩm đã lưu và cần xử lý thêm",
+  "The storefront was saved, but obsolete images could not be cleaned up yet.":
+    "Gian hàng đã được lưu nhưng chưa thể dọn dẹp các hình ảnh cũ.",
+  "Storefront saved with follow-up needed":
+    "Gian hàng đã lưu và cần xử lý thêm",
+  "Newer storefront changes detected":
+    "Đã phát hiện thay đổi gian hàng mới hơn",
+  "A newer storefront version is available. Your unpublished edits are preserved until you reset them.":
+    "Đã có phiên bản gian hàng mới hơn. Các thay đổi chưa xuất bản của bạn được giữ lại cho đến khi bạn đặt lại.",
   "Booth info": "Thông tin gian hàng",
   "Name, logo, location, and social links.":
     "Tên, logo, vị trí và liên kết mạng xã hội.",
@@ -830,8 +841,7 @@ const vi: Record<string, string> = {
   "Online revenue": "Doanh thu trực tuyến",
   "Final server total": "Tổng cuối từ máy chủ",
   "Event revenue": "Doanh thu sự kiện",
-  "Cash {{cash}} · VietQR {{vietqr}}":
-    "Tiền mặt {{cash}} · VietQR {{vietqr}}",
+  "Cash {{cash}} · VietQR {{vietqr}}": "Tiền mặt {{cash}} · VietQR {{vietqr}}",
   Promotion: "Khuyến mãi",
   "Configure one scheduled buy-get or percentage offer.":
     "Thiết lập một ưu đãi mua-tặng hoặc giảm theo phần trăm có lịch.",

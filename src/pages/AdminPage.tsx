@@ -1,12 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import "../styles/admin/admin.css";
 import { Navigate, useNavigate } from "react-router";
 import { getAdminCatalogData } from "../lib/api/catalog";
 import {
   getOrderStatusCounts,
-  getOrderNotificationStatus,
   getOrders,
-  retryOrderNotification,
   type OrderStatusCounts,
 } from "../lib/api/orders";
 import { deleteProduct, saveProduct } from "../lib/api/products";
@@ -44,7 +49,6 @@ import type {
   PromotionSettings,
   Product,
   Order,
-  OrderNotificationStatus,
 } from "../types/catalog";
 import {
   AdminAccessCheck,
@@ -79,7 +83,6 @@ import {
   offlineEventOrderAsOrder,
   OFFLINE_EVENT_UPDATED,
 } from "../lib/offline/offlineEvents";
-import { reportError } from "../lib/observability";
 import { useMediaQuery } from "../hooks/shared/useMediaQuery";
 import { useAdminViewRoute } from "../hooks/admin/useAdminViewRoute";
 import {
@@ -88,17 +91,13 @@ import {
   type SalesSummaryState,
 } from "../lib/sales";
 import {
-  getEventAdminUnlockExpiresAt,
-  hasEventDevicePin,
-  OFFLINE_EVENT_ACCESS_UPDATED,
-  verifyEventDevicePin,
-} from "../lib/offline/eventAccess";
-import {
   getAdminOrderCountScopeKey,
   getAdminOrderQueryKey,
   getLocalOrderDateScope,
   getLocalOrderDayBounds,
 } from "../hooks/admin/adminOrderQuery";
+import { useAdminNotifications } from "../hooks/admin/useAdminNotifications";
+import { useAdminEventAccess } from "../hooks/admin/useAdminEventAccess";
 
 const orderPageSize = 12;
 // Realtime events caused by this tab's own writes are ignored inside this
@@ -115,10 +114,6 @@ const emptySalesState: SalesSummaryState = {
   summary: null,
   status: "authoritative",
 };
-type EventAccessState =
-  | { status: "checking" | "unlocked" }
-  | { status: "locked"; eventName: string };
-
 export function AdminPage() {
   const navigate = useNavigate();
   const {
@@ -142,9 +137,6 @@ export function AdminPage() {
     useState<OrderStatusCounts>(emptyOrderCounts);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [sales, setSales] = useState<SalesSummaryState>(emptySalesState);
-  const [notificationStatuses, setNotificationStatuses] = useState<
-    OrderNotificationStatus[]
-  >([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [workspaceLoadFailed, setWorkspaceLoadFailed] = useState(false);
@@ -152,9 +144,11 @@ export function AdminPage() {
   const { viewTab, setViewTab } = useAdminViewRoute();
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [signOutBusy, setSignOutBusy] = useState(false);
-  const [eventAccess, setEventAccess] = useState<EventAccessState>({
-    status: "checking",
-  });
+  const {
+    state: eventAccess,
+    unlock: unlockEventAccess,
+    verify: verifyEventPin,
+  } = useAdminEventAccess(isAuthed, shopId);
   const [booth, setBooth] = useState<BoothSettings>(() => {
     const activeShopId = localStorage.getItem("akiba-active-shop")?.trim();
     return activeShopId
@@ -179,70 +173,11 @@ export function AdminPage() {
       : null;
   useDocumentBranding(verifiedBranding);
 
-  useEffect(() => {
-    if (!isAuthed || !shopId) {
-      setEventAccess({ status: "unlocked" });
-      return;
-    }
-    let active = true;
-    let refreshRequest = 0;
-    let expiryTimer: number | undefined;
-    const clearExpiryTimer = () => {
-      if (expiryTimer !== undefined) window.clearTimeout(expiryTimer);
-      expiryTimer = undefined;
-    };
-    const refresh = (showChecking = false) => {
-      const requestId = ++refreshRequest;
-      clearExpiryTimer();
-      if (showChecking) setEventAccess({ status: "checking" });
-      void loadOfflineEventSession(shopId)
-        .then((session) => {
-          if (!active || requestId !== refreshRequest) return;
-          const pinConfigured = hasEventDevicePin(shopId);
-          const unlockExpiresAt = pinConfigured
-            ? getEventAdminUnlockExpiresAt(shopId)
-            : null;
-          const protectedSession = Boolean(
-            session && session.status !== "closed" && pinConfigured,
-          );
-          const requiresPin = protectedSession && unlockExpiresAt === null;
-          setEventAccess(
-            requiresPin
-              ? { status: "locked", eventName: session?.name ?? "" }
-              : { status: "unlocked" },
-          );
-          if (protectedSession && unlockExpiresAt !== null) {
-            expiryTimer = window.setTimeout(
-              () => refresh(),
-              Math.max(0, unlockExpiresAt - Date.now() + 25),
-            );
-          }
-        })
-        .catch(() => {
-          if (!active || requestId !== refreshRequest) return;
-          setEventAccess({ status: "unlocked" });
-        });
-    };
-    const handleUpdate = (event: Event) => {
-      const detail = (event as CustomEvent<{ shopId?: string }>).detail;
-      if (!detail?.shopId || detail.shopId === shopId) refresh();
-    };
-    refresh(true);
-    window.addEventListener(OFFLINE_EVENT_UPDATED, handleUpdate);
-    window.addEventListener(OFFLINE_EVENT_ACCESS_UPDATED, handleUpdate);
-    return () => {
-      active = false;
-      refreshRequest += 1;
-      clearExpiryTimer();
-      window.removeEventListener(OFFLINE_EVENT_UPDATED, handleUpdate);
-      window.removeEventListener(OFFLINE_EVENT_ACCESS_UPDATED, handleUpdate);
-    };
-  }, [isAuthed, shopId]);
-
   const orderRequestRef = useRef(0);
-  const notificationRequestRef = useRef(0);
+  const orderCountRequestRef = useRef(0);
   const salesRequestRef = useRef(0);
   const catalogRequestRef = useRef(0);
+  const activeShopIdRef = useRef(shopId);
   const catalogLoadRef = useRef<{
     shopId: string;
     promise: Promise<void>;
@@ -275,15 +210,29 @@ export function AdminPage() {
       return Number.isFinite(expiresAt) && expiresAt <= cutoff;
     }).length;
   }, [orders]);
-  useEffect(() => {
+  useLayoutEffect(() => {
+    activeShopIdRef.current = shopId;
     catalogRequestRef.current += 1;
     orderRequestRef.current += 1;
-    notificationRequestRef.current += 1;
+    orderCountRequestRef.current += 1;
     salesRequestRef.current += 1;
+    catalogLoadRef.current = null;
+    orderLoadRef.current = null;
+  }, [shopId]);
+
+  useLayoutEffect(() => {
+    orderRequestRef.current += 1;
+    orderLoadRef.current = null;
+  }, [orderFilter, orderPage, ordersTodayOnly, selectedEventId]);
+
+  useLayoutEffect(() => {
+    orderCountRequestRef.current += 1;
+  }, [ordersTodayOnly]);
+
+  useEffect(() => {
     setProducts([]);
     setOrders([]);
     setOrderCounts(emptyOrderCounts);
-    setNotificationStatuses([]);
     setEventOrderCount(0);
     setSelectedEventId("");
     setOrderTotal(0);
@@ -297,70 +246,13 @@ export function AdminPage() {
     loadedOrderQueryRef.current = "";
     loadedOrderCountScopeRef.current = "";
     loadedCatalogShopRef.current = "";
-    catalogLoadRef.current = null;
-    orderLoadRef.current = null;
   }, [shopId]);
 
-  const refreshNotificationStatus = useCallback(async () => {
-    const requestId = ++notificationRequestRef.current;
-    const statuses = await getOrderNotificationStatus(shopId);
-    if (requestId === notificationRequestRef.current)
-      setNotificationStatuses(statuses);
-  }, [shopId]);
-
-  useEffect(() => {
-    if (!isAuthed || isInitialLoading) return;
-    const refresh = () => {
-      void refreshNotificationStatus().catch((error) => {
-        if (!isSessionNoise(error)) {
-          reportError(error, {
-            stage: "admin_notification_status",
-            shopId,
-          });
-        }
-      });
-    };
-    refresh();
-    const interval = window.setInterval(refresh, 30_000);
-    window.addEventListener("focus", refresh);
-    window.addEventListener("online", refresh);
-    return () => {
-      notificationRequestRef.current += 1;
-      window.clearInterval(interval);
-      window.removeEventListener("focus", refresh);
-      window.removeEventListener("online", refresh);
-    };
-  }, [isAuthed, isInitialLoading, refreshNotificationStatus, shopId]);
-
-  const handleRetryNotification = useCallback(
-    async (orderId: string) => {
-      try {
-        const retried = await retryOrderNotification(
-          shopId,
-          orderId,
-          "admin_attention_panel",
-        );
-        await refreshNotificationStatus();
-        if (retried) {
-          toast.success(t("Order alert queued for another delivery attempt."));
-        } else {
-          toast.info(
-            t(
-              "This alert is no longer eligible for retry. Its status was refreshed.",
-            ),
-          );
-        }
-        return retried;
-      } catch (error) {
-        toast.error(
-          t(getErrorMessage(error, "Could not retry this order alert.")),
-          t("Retry unavailable"),
-        );
-        throw error;
-      }
-    },
-    [refreshNotificationStatus, shopId, t, toast],
-  );
+  const { statuses: notificationStatuses, retry: handleRetryNotification } =
+    useAdminNotifications({
+      enabled: isAuthed && !isInitialLoading,
+      shopId,
+    });
   useEffect(() => {
     orderPageRef.current = orderPage;
     orderFilterRef.current = orderFilter;
@@ -386,7 +278,7 @@ export function AdminPage() {
       .then((catalog) => {
         if (
           requestId !== catalogRequestRef.current ||
-          requestedShopId !== shopId
+          requestedShopId !== activeShopIdRef.current
         )
           return;
         setBooth(catalog.booth);
@@ -404,15 +296,25 @@ export function AdminPage() {
         });
       })
       .catch((error) => {
+        if (
+          requestId !== catalogRequestRef.current ||
+          requestedShopId !== activeShopIdRef.current
+        )
+          return;
         if (navigator.onLine && !isTransportError(error)) throw error;
-        const snapshot = loadCatalogSnapshot(shopId);
+        const snapshot = loadCatalogSnapshot(requestedShopId);
         if (!snapshot?.complete || !snapshot.payment || !snapshot.promotion)
           throw error;
+        if (
+          requestId !== catalogRequestRef.current ||
+          requestedShopId !== activeShopIdRef.current
+        )
+          return;
         setBooth(snapshot.booth);
         setPayment(snapshot.payment);
         setPromotion(snapshot.promotion);
         setProducts(snapshot.products);
-        loadedCatalogShopRef.current = shopId;
+        loadedCatalogShopRef.current = requestedShopId;
       })
       .finally(() => {
         if (requestId === catalogRequestRef.current) setCatalogLoading(false);
@@ -437,19 +339,24 @@ export function AdminPage() {
       if (orderLoadRef.current?.key === loadKey)
         return orderLoadRef.current.promise;
       const requestId = ++orderRequestRef.current;
+      const requestedShopId = shopId;
+      const requestedUserId = userId;
+      const requestedFilter = orderFilterRef.current;
+      const requestedEventId = selectedEventIdRef.current;
+      const requestedTodayOnly = ordersTodayOnlyRef.current;
       setOrdersLoading(true);
       const promise = (async () => {
         // "Today" follows the staff's local day, recomputed on every fetch so an
         // open admin session rolls over correctly at midnight.
-        const filter = orderFilterRef.current;
-        const dateScope = getLocalOrderDateScope(ordersTodayOnlyRef.current);
+        const filter = requestedFilter;
+        const dateScope = getLocalOrderDateScope(requestedTodayOnly);
         const [result, countResult] =
           filter === "event"
             ? await Promise.all([
                 getOfflineEventOrders(shopId, {
                   page,
                   pageSize: orderPageSize,
-                  sessionId: selectedEventIdRef.current || undefined,
+                  sessionId: requestedEventId || undefined,
                   ...dateScope,
                 }),
                 refreshCounts
@@ -482,13 +389,17 @@ export function AdminPage() {
                     ])
                   : Promise.resolve(null),
               ]);
-        if (requestId !== orderRequestRef.current) return;
-        const eventSource = selectedEventIdRef.current
-          ? (`event:${selectedEventIdRef.current}` as const)
+        if (
+          requestId !== orderRequestRef.current ||
+          requestedShopId !== activeShopIdRef.current
+        )
+          return;
+        const eventSource = requestedEventId
+          ? (`event:${requestedEventId}` as const)
           : "event";
         saveAdminOrdersSnapshot(
-          userId,
-          shopId,
+          requestedUserId,
+          requestedShopId,
           result.orders,
           filter === "event" ? eventSource : "online",
         );
@@ -500,30 +411,39 @@ export function AdminPage() {
         setOrders(result.orders);
         setOrderTotal(result.total);
         loadedOrderQueryRef.current = queryKey;
-        if (filter === "event" && !selectedEventIdRef.current)
+        if (filter === "event" && !requestedEventId)
           setEventOrderCount(result.total);
         if (countResult) {
           setOrderCounts(countResult[0]);
           if (countResult[1] !== null) setEventOrderCount(countResult[1]);
           loadedOrderCountScopeRef.current = getAdminOrderCountScopeKey(
-            shopId,
-            ordersTodayOnlyRef.current,
+            requestedShopId,
+            requestedTodayOnly,
           );
         }
       })()
         .catch(async (error) => {
+          if (
+            requestId !== orderRequestRef.current ||
+            requestedShopId !== activeShopIdRef.current
+          )
+            return;
           if (navigator.onLine && !isTransportError(error)) throw error;
-          const filter = orderFilterRef.current;
+          const filter = requestedFilter;
           const source =
             filter === "event"
-              ? selectedEventIdRef.current
-                ? (`event:${selectedEventIdRef.current}` as const)
+              ? requestedEventId
+                ? (`event:${requestedEventId}` as const)
                 : "event"
               : "online";
-          const cached = loadAdminOrdersSnapshot(userId, shopId, source);
+          const cached = loadAdminOrdersSnapshot(
+            requestedUserId,
+            requestedShopId,
+            source,
+          );
           let available = cached;
           if (filter === "event") {
-            const session = await loadOfflineEventSession(shopId);
+            const session = await loadOfflineEventSession(requestedShopId);
             const localOrders = session
               ? (await listOfflineEventOrders(session.id)).map((order) =>
                   offlineEventOrderAsOrder(order, session),
@@ -534,12 +454,16 @@ export function AdminPage() {
             available = [...merged.values()].sort((a, b) =>
               b.created_at.localeCompare(a.created_at),
             );
-            if (selectedEventIdRef.current)
+            if (requestedEventId)
               available = available.filter(
-                (order) =>
-                  order.offline_event_session_id === selectedEventIdRef.current,
+                (order) => order.offline_event_session_id === requestedEventId,
               );
           }
+          if (
+            requestId !== orderRequestRef.current ||
+            requestedShopId !== activeShopIdRef.current
+          )
+            return;
           if (!available.length && filter !== "event") throw error;
           const { start: today, end: tomorrow } = getLocalOrderDayBounds();
           const scoped = available.filter((order) => {
@@ -551,26 +475,25 @@ export function AdminPage() {
               return false;
             const created = new Date(order.created_at);
             return (
-              !ordersTodayOnlyRef.current ||
-              (created >= today && created < tomorrow)
+              !requestedTodayOnly || (created >= today && created < tomorrow)
             );
           });
           const from = Math.max(0, page - 1) * orderPageSize;
           setOrders(scoped.slice(from, from + orderPageSize));
           setOrderTotal(scoped.length);
           loadedOrderQueryRef.current = queryKey;
-          if (filter === "event" && !selectedEventIdRef.current)
+          if (filter === "event" && !requestedEventId)
             setEventOrderCount(scoped.length);
           const onlineCached = loadAdminOrdersSnapshot(
-            userId,
-            shopId,
+            requestedUserId,
+            requestedShopId,
             "online",
           );
           const counts = onlineCached.reduce<OrderStatusCounts>(
             (result, order) => {
               const created = new Date(order.created_at);
               if (
-                ordersTodayOnlyRef.current &&
+                requestedTodayOnly &&
                 (created < today || created >= tomorrow)
               )
                 return result;
@@ -582,8 +505,8 @@ export function AdminPage() {
           );
           setOrderCounts(counts);
           loadedOrderCountScopeRef.current = getAdminOrderCountScopeKey(
-            shopId,
-            ordersTodayOnlyRef.current,
+            requestedShopId,
+            requestedTodayOnly,
           );
         })
         .finally(() => {
@@ -795,6 +718,9 @@ export function AdminPage() {
     if (isInitialLoading) return;
     const countScope = getAdminOrderCountScopeKey(shopId, ordersTodayOnly);
     if (loadedOrderCountScopeRef.current === countScope) return;
+    const requestId = ++orderCountRequestRef.current;
+    const requestedShopId = shopId;
+    let active = true;
 
     const scopeNow = new Date();
     const dateScope = getLocalOrderDateScope(ordersTodayOnly, scopeNow);
@@ -810,11 +736,23 @@ export function AdminPage() {
       }),
     ])
       .then(([counts, eventResult]) => {
+        if (
+          !active ||
+          requestId !== orderCountRequestRef.current ||
+          requestedShopId !== activeShopIdRef.current
+        )
+          return;
         setOrderCounts(counts);
         setEventOrderCount(eventResult.total);
         loadedOrderCountScopeRef.current = countScope;
       })
       .catch(async (error) => {
+        if (
+          !active ||
+          requestId !== orderCountRequestRef.current ||
+          requestedShopId !== activeShopIdRef.current
+        )
+          return;
         if (isSessionNoise(error)) return;
         if (!navigator.onLine || isTransportError(error)) {
           const onlineCached = loadAdminOrdersSnapshot(
@@ -823,7 +761,7 @@ export function AdminPage() {
             "online",
           );
           const eventCached = loadAdminOrdersSnapshot(userId, shopId, "event");
-          const session = await loadOfflineEventSession(shopId);
+          const session = await loadOfflineEventSession(requestedShopId);
           const localOrders = session
             ? (await listOfflineEventOrders(session.id)).map((order) =>
                 offlineEventOrderAsOrder(order, session),
@@ -833,6 +771,12 @@ export function AdminPage() {
             eventCached.map((order) => [order.id, order]),
           );
           localOrders.forEach((order) => eventOrders.set(order.id, order));
+          if (
+            !active ||
+            requestId !== orderCountRequestRef.current ||
+            requestedShopId !== activeShopIdRef.current
+          )
+            return;
           const inScope = (order: Order) => {
             if (!ordersTodayOnly) return true;
             const created = new Date(order.created_at);
@@ -858,6 +802,9 @@ export function AdminPage() {
           t("Admin unavailable"),
         );
       });
+    return () => {
+      active = false;
+    };
   }, [isAuthed, shopId, userId, ordersTodayOnly, isInitialLoading, t, toast]);
 
   useEffect(() => {
@@ -940,11 +887,6 @@ export function AdminPage() {
       setViewTab("orders", true);
   }, [isAuthed, adminSession, setViewTab, viewTab]);
 
-  async function runAdminAction(action: () => Promise<void>, message: string) {
-    await action();
-    toast.success(t(message));
-  }
-
   async function handleLogin(
     email: string,
     password: string,
@@ -955,13 +897,21 @@ export function AdminPage() {
   }
 
   async function handleSaveProduct(product: Product) {
-    await runAdminAction(async () => {
-      markLocalWrite();
-      await saveProduct(shopId, product);
-      markLocalWrite();
-      await reloadCatalogAdmin();
-      setSelectedProduct(product);
-    }, "Item saved.");
+    markLocalWrite();
+    const saved = await saveProduct(shopId, product);
+    markLocalWrite();
+    await reloadCatalogAdmin();
+    setSelectedProduct(saved.product);
+    if (saved.imageCleanupPending) {
+      toast.info(
+        t(
+          "The item was saved, but obsolete images could not be cleaned up yet.",
+        ),
+        t("Item saved with follow-up needed"),
+      );
+    } else {
+      toast.success(t("Item saved."));
+    }
   }
 
   async function handleDeleteProduct(id: string) {
@@ -1102,12 +1052,12 @@ export function AdminPage() {
             )
           }
           onSubmit={async (pin) => {
-            const result = await verifyEventDevicePin(shopId, pin);
+            const result = await verifyEventPin(pin);
             if (!result.ok)
               return result.blockedUntil
                 ? t("Too many attempts. Wait 30 seconds and try again.")
                 : t("Incorrect tablet PIN.");
-            setEventAccess({ status: "unlocked" });
+            unlockEventAccess();
           }}
         />
       </main>
@@ -1218,14 +1168,23 @@ export function AdminPage() {
               markLocalWrite();
               const saved = await saveBoothSettings(shopId, settings);
               markLocalWrite();
-              setBooth(saved);
-              toast.success(
-                t(
-                  viewTab === "design"
-                    ? "Storefront design published."
-                    : "Booth settings saved.",
-                ),
-              );
+              setBooth(saved.booth);
+              if (saved.imageCleanupPending) {
+                toast.info(
+                  t(
+                    "The storefront was saved, but obsolete images could not be cleaned up yet.",
+                  ),
+                  t("Storefront saved with follow-up needed"),
+                );
+              } else {
+                toast.success(
+                  t(
+                    viewTab === "design"
+                      ? "Storefront design published."
+                      : "Booth settings saved.",
+                  ),
+                );
+              }
             }}
             onSavePayment={async (settings) => {
               markLocalWrite();

@@ -1,7 +1,7 @@
 <script>
 	import { afterUpdate, createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { t, locale } from 'svelte-i18n';
+	import { t } from 'svelte-i18n';
 	import {
 		viewportHeight,
 		viewportWidth,
@@ -13,7 +13,6 @@
 	import { localOutfits } from '$lib/store/localstore';
 	import { playSfx } from '$lib/helpers/audio/audio.svelte';
 	import { getName } from '$lib/helpers/nameText';
-	import { base } from '$app/paths';
 	import { checkActiveOutfit } from '$lib/helpers/outfit';
 
 	// Component
@@ -26,9 +25,6 @@
 	export let skipSplashOneByOne = false;
 	export let outfitName = '';
 	export let outfitOwner = '';
-
-	const lc = $locale?.toLowerCase() || '';
-	const isYuanshen = lc.includes('cn') || lc.includes('ja');
 
 	$: splatterWidth = $viewportHeight > $viewportWidth ? $viewportWidth : $viewportHeight;
 	$: splatterStyle = `width: ${splatterWidth}px; height: ${splatterWidth}px`;
@@ -162,7 +158,9 @@
 						{#if !$animeoff}
 							<div class="white-flash" />
 						{/if}
-						{#if !isSplashOut && !$animeoff} <SplashLight type="in" {rarity} /> {/if}
+						{#if !isSplashOut && !$animeoff}
+							<SplashLight type="in" {rarity} />
+						{/if}
 						<!-- <img src={$assets[`splatter-${rarity}star.svg`]} alt="splatter" class="anim sprite" /> -->
 
 						{#if isMerch}
@@ -214,8 +212,8 @@
 								<div class="text anim">
 									{#if outfitName}
 										{$t(`outfit.item.${outfitName}.name`)}
-					{:else}
-						{name}
+									{:else}
+										{name}
 									{/if}
 								</div>
 								<div class="star">
@@ -261,7 +259,9 @@
 							</div>
 						{/if}
 
-						{#if isSplashOut && !$animeoff} <SplashLight type="out" {rarity} /> {/if}
+						{#if isSplashOut && !$animeoff}
+							<SplashLight type="out" {rarity} />
+						{/if}
 					</div>
 				{/if}
 			{/each}
@@ -426,6 +426,7 @@
 	}
 
 	.info i.elemen {
+		background-clip: text;
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		font-size: 5.2em;
@@ -530,7 +531,9 @@
 		border: 0.12rem solid rgba(255, 248, 223, 0.9);
 		border-radius: 4%;
 		background: rgba(255, 255, 255, 0.16);
-		box-shadow: 0 1rem 3rem rgba(20, 24, 36, 0.34), 0 0 1.8rem rgba(255, 255, 255, 0.25);
+		box-shadow:
+			0 1rem 3rem rgba(20, 24, 36, 0.34),
+			0 0 1.8rem rgba(255, 255, 255, 0.25);
 		transform: scale(1) translate(7%, -3%);
 	}
 	.merch-result img {
@@ -633,7 +636,9 @@
 		margin-left: 0.5rem;
 		margin-right: 0.5rem;
 		padding-bottom: 0.5rem;
-		box-shadow: 0 0 7px rgba(255, 255, 255, 0.5), 0 0 14px rgba(255, 255, 255, 0.3),
+		box-shadow:
+			0 0 7px rgba(255, 255, 255, 0.5),
+			0 0 14px rgba(255, 255, 255, 0.3),
 			0 0 30px rgba(255, 255, 255, 0.2);
 	}
 	.stella::after,

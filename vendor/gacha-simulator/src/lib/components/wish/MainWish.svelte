@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import { t, locale } from 'svelte-i18n';
+	import { locale } from 'svelte-i18n';
 	import {
 		acquaint,
 		intertwined,

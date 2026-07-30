@@ -6,34 +6,11 @@ each item against the current tree before implementing it.
 
 ## Priority 1: maintainability
 
-- Continue extracting focused state and loaders from `AdminPage.tsx`. Keep the
-  page as route composition rather than moving Supabase access into components.
 - Continue splitting `GachaManager.tsx` only where a section has clear state and
   test boundaries. Preserve the three-card editor described in
   `gacha-admin-redesign.md`.
 - Keep `src/lib/api.ts` as a compatibility barrel. New implementations belong
   in the existing domain modules under `src/lib/api/`.
-- `src/pages/NewShopPage.tsx` still dynamically imports that compatibility
-  barrel for sign-out. It is the only runtime exception in
-  `scripts/check-architecture.mjs`; switch it to the focused Auth domain before
-  removing the allowlist entry.
-- Document intentional patches and dependency ownership for both vendored
-  simulators. Their upstream README files are not Matsuri architecture docs.
-
-## Priority 1: accessibility
-
-Several jsx-a11y interaction rules remain disabled in `eslint.config.js`.
-Regenerate the warning inventory before work; old line-number lists are stale.
-
-Re-enable one category at a time:
-
-1. labels and control names;
-2. click/keyboard parity;
-3. interactive roles and tab order;
-4. autofocus decisions.
-
-Move a rule to error only after its warning count reaches zero. Preserve
-keyboard focus while changing touch behavior.
 
 ## Priority 2: CSS ownership
 
@@ -53,8 +30,6 @@ load order remain stable.
   one-time target.
 - Run pgTAP when a local Supabase stack is available and keep linked database
   lint/advisors in deployment verification.
-- Resolve simulator build reproducibility issues instead of relying on existing
-  `.gacha-dist` or `.hsr-gacha-dist` output.
 
 ## Post-stabilization: retire compatibility RPCs
 

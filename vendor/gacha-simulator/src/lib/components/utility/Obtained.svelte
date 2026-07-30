@@ -20,6 +20,9 @@
 	const closeHandle = () => {
 		dispatch('close');
 	};
+	const closeOnKeyboard = (event) => {
+		if (event.key === 'Enter' || event.key === ' ') closeHandle();
+	};
 
 	const cekItem = () => {
 		return Object.keys(items).reduce((a, key) => {
@@ -44,7 +47,12 @@
 	}
 </script>
 
-<section on:click|stopPropagation={closeHandle}>
+<section
+	role="button"
+	tabindex="0"
+	on:click|stopPropagation={closeHandle}
+	on:keydown|stopPropagation={closeOnKeyboard}
+>
 	<div class="container">
 		<div class="bg" />
 		<div class="content" in:scaleFade={{ duration: 200 }}>
@@ -57,7 +65,7 @@
 			<div class="milestone">
 				{#each Object.keys(items) as key}
 					{#if items[key] > 0}
-						<div class="item {key}" on:click|stopPropagation>
+						<div class="item {key}">
 							<div class="body">
 								<div
 									class="pic"
@@ -67,7 +75,7 @@
 								>
 									<Icon width="100%" type={key} />
 									<div class="star">
-										{#each Array(key === 'stardust' ? 4 : 5) as i}
+										{#each Array(key === 'stardust' ? 4 : 5) as _, index (index)}
 											<i class="gi-star" />
 										{/each}
 									</div>

@@ -90,4 +90,34 @@ describe("CORS configuration and invitation error handling", () => {
       ),
     ).rejects.toThrow("Could not reach the invitation service.");
   });
+
+  it("rejects malformed invitation success responses", async () => {
+    mocks.invoke.mockResolvedValueOnce({
+      data: { outcome: "queued" },
+      error: null,
+    });
+
+    await expect(
+      inviteShopMember(
+        "11000000-0000-4000-8000-000000000001",
+        "test@example.com",
+        "staff",
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("validates invitation update success responses", async () => {
+    mocks.invoke.mockResolvedValueOnce({
+      data: { outcome: "processed" },
+      error: null,
+    });
+
+    await expect(
+      updateShopInvitation(
+        "11000000-0000-4000-8000-000000000001",
+        "11000000-0000-4000-8000-000000000002",
+        "revoke",
+      ),
+    ).resolves.toBeUndefined();
+  });
 });

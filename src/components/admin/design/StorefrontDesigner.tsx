@@ -70,6 +70,7 @@ import { Alert } from "../../ui/Alert";
 import { useAdminUnsavedChanges } from "../shell/AdminUnsavedChanges";
 import { useTabIndicator } from "../../../hooks/shared/useTabIndicator";
 import { DesignerStyleOptions } from "./DesignerStyleOptions";
+import { useStorefrontDesignerDraft } from "../../../hooks/admin/useStorefrontDesignerDraft";
 
 type StorefrontDesignerProps = {
   shopId: string;
@@ -85,7 +86,6 @@ type PreviewDevice = "desktop" | "phone";
 type PreviewZoom = "fit" | number;
 type DropEdge = "before" | "after";
 type DropTarget = { section: StorefrontSection; edge: DropEdge };
-type DesignerSnapshot = { booth: BoothSettings; payment: PaymentSettings };
 type SelectedSection = StorefrontSection;
 type CanvasPan = {
   pointerId: number;
@@ -173,12 +173,6 @@ export function StorefrontDesigner({
   onSave,
   onSavePayment,
 }: StorefrontDesignerProps) {
-  const [draft, setDraft] = useState(settings);
-  const [paymentDraft, setPaymentDraft] = useState(payment);
-  const draftRef = useRef(settings);
-  const paymentDraftRef = useRef(payment);
-  const [history, setHistory] = useState<DesignerSnapshot[]>([]);
-  const [future, setFuture] = useState<DesignerSnapshot[]>([]);
   const [dragged, setDragged] = useState<StorefrontSection | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const [selected, setSelected] = useState<SelectedSection>("featured");
@@ -209,6 +203,28 @@ export function StorefrontDesigner({
   const { busy, error, run, setError } = useAsyncAction();
   const toast = useToast();
   const { t } = usePlatformI18n();
+  const clearDesignerError = useCallback(() => setError(""), [setError]);
+  const {
+    draft,
+    paymentDraft,
+    draftRef,
+    paymentDraftRef,
+    history,
+    future,
+    syncNotice,
+    setSyncNotice,
+    hasChanges,
+    commitSnapshot,
+    undo,
+    redo,
+    discardChanges,
+    clearHistory,
+  } = useStorefrontDesignerDraft({
+    shopId,
+    settings,
+    payment,
+    clearError: clearDesignerError,
+  });
   useEffect(() => {
     if (error) {
       toast.error(
@@ -244,18 +260,6 @@ export function StorefrontDesigner({
       );
     buttons?.[nextIndex]?.focus();
   }
-
-  useEffect(() => {
-    draftRef.current = settings;
-    setDraft(settings);
-    setError("");
-  }, [settings, setError]);
-
-  useEffect(() => {
-    paymentDraftRef.current = payment;
-    setPaymentDraft(payment);
-    setError("");
-  }, [payment, setError]);
 
   useEffect(() => {
     const stage = previewStageRef.current;
@@ -446,36 +450,7 @@ export function StorefrontDesigner({
       paymentDraft.bank_account_no?.trim() &&
       paymentDraft.bank_account_name?.trim(),
   );
-  const hasChanges =
-    JSON.stringify(draft) !== JSON.stringify(settings) ||
-    JSON.stringify(paymentDraft) !== JSON.stringify(payment);
-
-  const discardChanges = useCallback(() => {
-    draftRef.current = settings;
-    paymentDraftRef.current = payment;
-    setDraft(settings);
-    setPaymentDraft(payment);
-    setHistory([]);
-    setFuture([]);
-    setPublishNotice("");
-    setError("");
-  }, [payment, setError, settings]);
-
   useAdminUnsavedChanges(`designer:${shopId}`, hasChanges, discardChanges);
-
-  function commitSnapshot(next: DesignerSnapshot) {
-    const current = {
-      booth: draftRef.current,
-      payment: paymentDraftRef.current,
-    };
-    if (JSON.stringify(next) === JSON.stringify(current)) return;
-    setHistory((items) => [...items.slice(-49), current]);
-    setFuture([]);
-    draftRef.current = next.booth;
-    paymentDraftRef.current = next.payment;
-    setDraft(next.booth);
-    setPaymentDraft(next.payment);
-  }
 
   function update<K extends keyof BoothSettings>(
     key: K,
@@ -521,39 +496,10 @@ export function StorefrontDesigner({
     });
   }
 
-  function undo() {
-    const previous = history[history.length - 1];
-    if (!previous) return;
-    setHistory((items) => items.slice(0, -1));
-    setFuture((items) =>
-      [
-        { booth: draftRef.current, payment: paymentDraftRef.current },
-        ...items,
-      ].slice(0, 50),
-    );
-    draftRef.current = previous.booth;
-    paymentDraftRef.current = previous.payment;
-    setDraft(previous.booth);
-    setPaymentDraft(previous.payment);
-  }
-
-  function redo() {
-    const next = future[0];
-    if (!next) return;
-    setFuture((items) => items.slice(1));
-    setHistory((items) => [
-      ...items.slice(-49),
-      { booth: draftRef.current, payment: paymentDraftRef.current },
-    ]);
-    draftRef.current = next.booth;
-    paymentDraftRef.current = next.payment;
-    setDraft(next.booth);
-    setPaymentDraft(next.payment);
-  }
-
   function resetDraft() {
     if (!hasChanges) return;
-    commitSnapshot({ booth: settings, payment });
+    discardChanges();
+    setPublishNotice("");
   }
 
   function move(
@@ -884,8 +830,7 @@ export function StorefrontDesigner({
               : new Error("Could not publish all changes");
         throw failure;
       }
-      setHistory([]);
-      setFuture([]);
+      clearHistory();
     }).catch(() => undefined);
   }
 
@@ -1224,7 +1169,10 @@ export function StorefrontDesigner({
                           onChange={(value) => update("featured_style", value)}
                         />
                       </div>
-                      <label className="builder-toggle" htmlFor="designer-featured-autoplay">
+                      <label
+                        className="builder-toggle"
+                        htmlFor="designer-featured-autoplay"
+                      >
                         <span>
                           <strong>{t("Auto-rotate products")}</strong>
                           <small>
@@ -1641,12 +1589,14 @@ export function StorefrontDesigner({
                       </small>
                     </div>
                     <DesignerStyleOptions
-                      options={[
-                        ["soft", "Soft", "Gentle surfaces"],
-                        ["outlined", "Outlined", "Clean and crisp"],
-                        ["elevated", "Elevated", "Polished depth"],
-                        ["playful", "Playful", "Colorful offset shadow"],
-                      ] as const}
+                      options={
+                        [
+                          ["soft", "Soft", "Gentle surfaces"],
+                          ["outlined", "Outlined", "Clean and crisp"],
+                          ["elevated", "Elevated", "Polished depth"],
+                          ["playful", "Playful", "Colorful offset shadow"],
+                        ] as const
+                      }
                       value={draft.card_style ?? "soft"}
                       className="designer-card-style-grid"
                       sampleClassName={(value) =>
@@ -1765,6 +1715,16 @@ export function StorefrontDesigner({
             onClose={() => setPublishNotice("")}
           >
             {publishNotice}
+          </Alert>
+        )}
+        {syncNotice && (
+          <Alert
+            variant="info"
+            title={t("Newer storefront changes detected")}
+            className="builder-publish-alert"
+            onClose={() => setSyncNotice("")}
+          >
+            {t(syncNotice)}
           </Alert>
         )}
         <div className="builder-toolbar">

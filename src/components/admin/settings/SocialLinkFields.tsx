@@ -23,7 +23,11 @@ export function SocialLinkFields({
           <section
             key={platform.label}
             className={`social-channel-field ${visible ? "" : "is-hidden"}`}
-            style={{ "--social-channel-color": platform.color } as React.CSSProperties}
+            style={
+              {
+                "--social-channel-color": platform.color,
+              } as React.CSSProperties
+            }
           >
             <div className="social-channel-field-head">
               <span aria-hidden="true">
@@ -33,6 +37,7 @@ export function SocialLinkFields({
               <label className="social-channel-visibility">
                 <input
                   type="checkbox"
+                  aria-label={platform.label}
                   checked={visible}
                   disabled={disabled}
                   onChange={(event) =>

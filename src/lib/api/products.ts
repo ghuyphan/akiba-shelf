@@ -1,12 +1,17 @@
 import { MAX_FEATURED_PRODUCTS } from "../constants";
 import { PUBLIC_PRODUCT_COLUMNS } from "../catalogQueries";
 import type { PublicProductSort } from "../catalogQueries";
-import { productRowSchema } from "../schemas";
+import {
+  imagePathsRowSchema,
+  productCategoryRowsSchema,
+  productRowSchema,
+} from "../schemas";
 import type { Product } from "../../types/catalog";
 import { requireSupabase, textArray } from "./shared";
 import type { ApiClient } from "./shared";
 import { removeUnreferencedProductImages } from "./storage";
 import { normalizeProduct } from "./productNormalization";
+import { reportError } from "../observability";
 
 export { normalizeProduct } from "./productNormalization";
 
@@ -113,7 +118,7 @@ export async function getPublicProductCategories(
     { p_shop_id: shopId },
   );
   if (error) throw error;
-  return ((data ?? []) as { category: string }[]).map((row) => row.category);
+  return productCategoryRowsSchema.parse(data ?? []).map((row) => row.category);
 }
 
 export async function getPublicProductsByIds(
@@ -154,15 +159,13 @@ async function getProductImagePaths(
     .eq("id", productId)
     .maybeSingle();
   if (error) throw error;
-  return data
-    ? textArray((data as { image_paths?: unknown }).image_paths)
-    : null;
+  return data ? textArray(imagePathsRowSchema.parse(data).image_paths) : null;
 }
 
 export async function saveProduct(
   shopId: string,
   product: Product,
-): Promise<Product> {
+): Promise<{ product: Product; imageCleanupPending: boolean }> {
   const client = requireSupabase();
   const previousPaths = await getProductImagePaths(client, shopId, product.id);
   const editableProduct = { ...product };
@@ -181,12 +184,26 @@ export async function saveProduct(
   const removedPaths = (previousPaths ?? []).filter(
     (path) => !textArray(product.image_paths).includes(path),
   );
+  let imageCleanupPending = false;
   if (removedPaths.length) {
-    await removeUnreferencedProductImages(client, shopId, removedPaths);
+    try {
+      await removeUnreferencedProductImages(client, shopId, removedPaths);
+    } catch (error) {
+      imageCleanupPending = true;
+      reportError(error, {
+        stage: "product_image_cleanup_after_save",
+        shopId,
+        productId: product.id,
+        pathCount: removedPaths.length,
+      });
+    }
   }
-  return normalizeProduct(
-    productRowSchema.parse({ ...data, image_paths: product.image_paths }),
-  );
+  return {
+    product: normalizeProduct(
+      productRowSchema.parse({ ...data, image_paths: product.image_paths }),
+    ),
+    imageCleanupPending,
+  };
 }
 
 export type DeleteProductResult = { imageCleanupPending: boolean };
@@ -207,9 +224,15 @@ export async function deleteProduct(
   if (paths.length) {
     try {
       await removeUnreferencedProductImages(client, shopId, paths);
-    } catch {
+    } catch (error) {
       // The product deletion is already committed. Report cleanup separately
       // so callers never present a completed deletion as a failed operation.
+      reportError(error, {
+        stage: "product_image_cleanup_after_delete",
+        shopId,
+        productId: id,
+        pathCount: paths.length,
+      });
       return { imageCleanupPending: true };
     }
   }

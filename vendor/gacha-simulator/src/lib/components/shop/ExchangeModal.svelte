@@ -217,7 +217,7 @@
 						{/if}
 					</div>
 					<div class="star">
-						{#each Array(itemRarity || data[itemToBuy]?.star) as _, i}
+						{#each Array(itemRarity || data[itemToBuy]?.star) as _, index (index)}
 							<i class="gi-star" />
 						{/each}
 					</div>

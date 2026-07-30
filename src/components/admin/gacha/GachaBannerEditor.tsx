@@ -117,6 +117,7 @@ export function GachaBannerEditor({
           <label className="gacha-mini-check banner-active">
             <input
               type="checkbox"
+              aria-label={t("Banner active")}
               checked={banner.active}
               onChange={(event) =>
                 onUpdateBanner({ active: event.target.checked })

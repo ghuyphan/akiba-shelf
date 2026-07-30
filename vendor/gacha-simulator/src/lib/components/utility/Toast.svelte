@@ -18,9 +18,15 @@
 	}
 </script>
 
-<div class="toast" transition:fly={{ y: -20 }} on:click={closeHandle}>
-	<slot />
-</div>
+{#if autoclose}
+	<div class="toast" transition:fly={{ y: -20 }}>
+		<slot />
+	</div>
+{:else}
+	<button type="button" class="toast" transition:fly={{ y: -20 }} on:click={closeHandle}>
+		<slot />
+	</button>
+{/if}
 
 <style>
 	.toast {
@@ -37,5 +43,6 @@
 		top: 7%;
 		transform: translateX(-50%);
 		font-size: 0.7rem;
+		border: 0;
 	}
 </style>

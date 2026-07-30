@@ -42,12 +42,16 @@
 	<div
 		class="modal"
 		class:dark
+		role="presentation"
+		tabindex="-1"
 		style="height: {$viewportHeight}px;"
 		transition:fade={{ duration: 80 }}
-		on:click={dimiss}
+		on:click|self={dimiss}
+		on:keydown={(event) => event.key === 'Escape' && dimiss()}
 	>
 		<div
-			class="modal-content" class:wide on:click|stopPropagation
+			class="modal-content"
+			class:wide
 			transition:scale={{ duration: 80, start: 0.95, opacity: 0.5 }}
 		>
 			<span class="corner top-left" />

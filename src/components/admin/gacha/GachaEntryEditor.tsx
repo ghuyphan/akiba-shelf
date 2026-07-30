@@ -192,6 +192,13 @@ export function GachaEntryEditor({
         >
           <input
             type="checkbox"
+            aria-label={t(
+              entry.rarity === 5
+                ? "5★ featured"
+                : entry.rarity === 4
+                  ? "4★ rate-up"
+                  : "Featured",
+            )}
             checked={entry.featured}
             disabled={featuredSelectionDisabled}
             aria-describedby={
@@ -219,6 +226,7 @@ export function GachaEntryEditor({
       >
         <input
           type="checkbox"
+          aria-label={t("Active")}
           checked={entry.active}
           disabled={!productActive}
           onChange={(event) =>

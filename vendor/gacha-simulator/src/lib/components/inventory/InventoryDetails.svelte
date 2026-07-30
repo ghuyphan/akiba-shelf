@@ -85,11 +85,7 @@
 		<div class="splatter" style={splatterStyle}>
 			{#if isMerch}
 				<div class="splash-art merch-result star{rarity}">
-					<img
-						src={$assets[`splash-art/${name}`]}
-						alt={name}
-						on:error={(e) => e.target.remove()}
-					/>
+					<img src={$assets[`splash-art/${name}`]} alt={name} on:error={(e) => e.target.remove()} />
 				</div>
 			{:else if type === 'weapon'}
 				<div class="splash-art weapon {weaponType}-parent">
@@ -202,7 +198,9 @@
 		border: 0.12rem solid rgba(255, 248, 223, 0.9);
 		border-radius: 4%;
 		background: rgba(255, 255, 255, 0.16);
-		box-shadow: 0 1rem 3rem rgba(20, 24, 36, 0.34), 0 0 1.8rem rgba(255, 255, 255, 0.25);
+		box-shadow:
+			0 1rem 3rem rgba(20, 24, 36, 0.34),
+			0 0 1.8rem rgba(255, 255, 255, 0.25);
 		transform: translate(7%, -3%);
 	}
 	.merch-result img {
@@ -273,6 +271,7 @@
 		font-size: 5.2em;
 		margin-right: -7px;
 		margin-top: -5px;
+		background-clip: text;
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		position: relative;

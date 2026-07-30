@@ -21,7 +21,7 @@
 	let itemPerPage = 5;
 	let filterBy = 'All';
 
-	$: banner = $bannerList.find((v, i) => i === $bannerActive).type;
+	$: banner = $bannerList.find((_, i) => i === $bannerActive).type;
 
 	const selectBanner = (path) => {
 		activepage = 1;

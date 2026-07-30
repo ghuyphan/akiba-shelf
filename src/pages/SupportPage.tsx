@@ -212,6 +212,7 @@ export function SupportPage() {
                   <span className="support-custom-amount-field">
                     <input
                       type="number"
+                      aria-label={t("Custom amount")}
                       inputMode="numeric"
                       min="1000"
                       max={MAX_SUPPORT_AMOUNT}

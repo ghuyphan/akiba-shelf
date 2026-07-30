@@ -227,8 +227,13 @@ export function AuthPage() {
         <p>
           {completion
             ? completion.mode === "signup"
-              ? t("We sent a confirmation link to {{email}}.", { email: completion.email })
-              : t("If {{email}} can be recovered, a secure link is on its way.", { email: completion.email })
+              ? t("We sent a confirmation link to {{email}}.", {
+                  email: completion.email,
+                })
+              : t(
+                  "If {{email}} can be recovered, a secure link is on its way.",
+                  { email: completion.email },
+                )
             : copy.description}
         </p>
       </div>
@@ -293,6 +298,7 @@ export function AuthPage() {
                 <Mail size={19} className="input-icon" aria-hidden="true" />
                 <input
                   type="email"
+                  aria-label={t("Email address")}
                   autoComplete="email"
                   placeholder={t("you@example.com")}
                   value={email}
@@ -381,7 +387,9 @@ export function AuthPage() {
       )}
       <AuthSecurityNote>
         {completion
-          ? t("Secure links are short-lived and can only be used through your email.")
+          ? t(
+              "Secure links are short-lived and can only be used through your email.",
+            )
           : copy.security}
       </AuthSecurityNote>
     </AuthShell>

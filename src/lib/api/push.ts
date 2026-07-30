@@ -1,10 +1,9 @@
 import { extractEdgeFunctionError, requireSupabase } from "./shared";
-
-type PushActionResult = {
-  outcome?: string;
-  enabled?: boolean;
-  unsubscribe?: boolean;
-};
+import {
+  pushRegisterResultSchema,
+  pushStatusResultSchema,
+  pushUnregisterResultSchema,
+} from "../schemas";
 
 async function invokePushAction(body: Record<string, unknown>) {
   const { data, error } = await requireSupabase().functions.invoke(
@@ -15,7 +14,7 @@ async function invokePushAction(body: Record<string, unknown>) {
     const message = await extractEdgeFunctionError(error);
     throw new Error(message ?? "Push notifications could not be updated.");
   }
-  return (data ?? {}) as PushActionResult;
+  return data;
 }
 
 export async function getPushRegistrationStatus(
@@ -23,7 +22,7 @@ export async function getPushRegistrationStatus(
   endpoint: string,
 ) {
   const result = await invokePushAction({ action: "status", shopId, endpoint });
-  return result.enabled === true;
+  return pushStatusResultSchema.parse(result).enabled;
 }
 
 export async function registerPushSubscription(
@@ -31,7 +30,7 @@ export async function registerPushSubscription(
   subscription: PushSubscription,
 ) {
   const json = subscription.toJSON();
-  await invokePushAction({
+  const result = await invokePushAction({
     action: "register",
     shopId,
     endpoint: subscription.endpoint,
@@ -39,12 +38,17 @@ export async function registerPushSubscription(
     auth: json.keys?.auth,
     userAgent: navigator.userAgent,
   });
+  pushRegisterResultSchema.parse(result);
 }
 
 export async function unregisterPushSubscription(
   shopId: string,
   endpoint: string,
 ) {
-  const result = await invokePushAction({ action: "unregister", shopId, endpoint });
-  return result.unsubscribe === true;
+  const result = await invokePushAction({
+    action: "unregister",
+    shopId,
+    endpoint,
+  });
+  return pushUnregisterResultSchema.parse(result).unsubscribe;
 }

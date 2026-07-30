@@ -11,7 +11,6 @@ const supabaseImportAllowlist = new Set([
   "src/lib/offline/pwa.ts",
   "src/lib/realtime.ts",
 ]);
-const compatibilityBarrelAllowlist = new Set(["src/pages/NewShopPage.tsx"]);
 
 function portable(path) {
   return path.split(sep).join("/");
@@ -75,7 +74,6 @@ export async function architectureViolations(root = process.cwd()) {
 
     if (
       path !== "src/lib/api.ts" &&
-      !compatibilityBarrelAllowlist.has(path) &&
       imports.some((value) => /(?:^|\/)lib\/api$/.test(value))
     ) {
       violations.push(

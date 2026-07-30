@@ -1965,6 +1965,64 @@ test("shop switcher keeps a compact scrollable list and fixed actions", async ({
   ).toBeVisible();
 });
 
+test("shop switching ignores late catalog and count responses", async ({
+  page,
+}) => {
+  await mockSupabase(page, {
+    staffRole: "owner",
+    manyShops: true,
+    multiShop: true,
+    adminResponseDelayMs: { "shop-0": 600 },
+    orderCountsByShop: {
+      main: { pending: 0, confirmed: 0, cancelled: 0, expired: 0, all: 0 },
+      "shop-0": {
+        pending: 1,
+        confirmed: 0,
+        cancelled: 0,
+        expired: 0,
+        all: 1,
+      },
+      "shop-1": {
+        pending: 2,
+        confirmed: 0,
+        cancelled: 0,
+        expired: 0,
+        all: 2,
+      },
+    },
+  });
+  await page.goto("./admin");
+  await page.getByLabel("Email address").fill("owner@test.local");
+  await page.getByPlaceholder("Enter your password").fill("password123");
+  await page.getByRole("button", { name: "Open workspace" }).click();
+
+  const activeShop = page.getByRole("combobox", { name: /^Active shop:/ });
+  await activeShop.click();
+  await page
+    .getByRole("option", { name: /^Fixture Shop 1(?: Active.*)?$/ })
+    .click();
+  await expect(activeShop).toHaveAccessibleName(/Fixture Shop 1/);
+  await activeShop.click();
+  await page
+    .getByRole("option", { name: /^Fixture Shop 2(?: Active.*)?$/ })
+    .click();
+
+  await expect(page.locator(".admin-workspace-identity strong")).toHaveText(
+    "Booth shop-1",
+  );
+  await expect(page.locator(".admin-nav-orders .admin-nav-count")).toHaveText(
+    "2",
+  );
+
+  await page.waitForTimeout(700);
+  await expect(page.locator(".admin-workspace-identity strong")).toHaveText(
+    "Booth shop-1",
+  );
+  await expect(page.locator(".admin-nav-orders .admin-nav-count")).toHaveText(
+    "2",
+  );
+});
+
 test("designer phone rules apply inside the preview iframe", async ({
   page,
 }, testInfo) => {

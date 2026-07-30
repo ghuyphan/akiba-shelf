@@ -1,5 +1,6 @@
 import {
   applyFunctionSecurityHeaders,
+  getConditionalResponseStatus,
   getSimulatorMediaKey,
   getSimulatorMediaRange,
   isSimulatorMediaPath,
@@ -29,11 +30,11 @@ function setRangeHeaders(
   object: R2ObjectBody,
   headers: Headers,
   requestedRange?: R2Range,
-): number {
+): ReturnType<typeof getSimulatorMediaRange> {
   const range = getSimulatorMediaRange(object.size, requestedRange);
   headers.set("content-length", String(range.length));
   if (range.contentRange) headers.set("content-range", range.contentRange);
-  return range.status;
+  return range;
 }
 
 export const onRequest: PagesFunction<Env> = async (context) => {
@@ -69,12 +70,16 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       return mediaResponse(null, { headers });
     }
     if (!hasBody(object)) {
-      const status = context.request.headers.has("if-none-match") ? 304 : 412;
+      const status = getConditionalResponseStatus(context.request.headers);
       return mediaResponse(null, { status, headers });
     }
 
-    const status = setRangeHeaders(object, headers, requestedRange);
-    return mediaResponse(object.body, { status, headers });
+    const range = setRangeHeaders(object, headers, requestedRange);
+    if (range.status === 416) {
+      await object.body.cancel();
+      return mediaResponse(null, { status: range.status, headers });
+    }
+    return mediaResponse(object.body, { status: range.status, headers });
   } catch (error) {
     console.error(
       JSON.stringify({

@@ -219,6 +219,7 @@ export function AdminWorkspaceContent({
     return (
       <Suspense fallback={workspaceFallback}>
         <StorefrontDesigner
+          key={shopId}
           shopId={shopId}
           settings={booth}
           products={products}

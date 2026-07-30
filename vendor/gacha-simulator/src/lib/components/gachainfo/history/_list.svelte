@@ -11,7 +11,6 @@
 	export let filter = '';
 	export let page = { itemPerPage: 0, activepage: 0 };
 
-	let table;
 	let data = [];
 	let dataToShow = [];
 
@@ -37,7 +36,7 @@
 	};
 </script>
 
-<div class="table v2" bind:this={table}>
+<div class="table v2">
 	<div style="min-width: max-content;">
 		<div class="row head">
 			<div class="cell cell0">{$t('history.pity')}</div>
@@ -65,14 +64,18 @@
 							<div class="cell cell1">{$t(type)}</div>
 							<div class="cell cell2 star{rarity}">
 								{merchNames.has(name) ? name : type === 'weapon' ? $t(name) : $t(`${name}.name`)}
-								{#if rarity > 3} ( {rarity}★ ) {/if}
+								{#if rarity > 3}
+									( {rarity}★ )
+								{/if}
 							</div>
 							<div class="cell cell3">{time}</div>
 							<div class="cell cell4">
 								{#if bannerName}
 									{#if ['events', 'weapons'].includes(banner)}
 										<a href="/" on:click|preventDefault={() => search(bannerName)}>
-										{merchNames.size ? 'Matsuri Shelf Wishes' : $t(`wish.banner.name.${getBannerName(bannerName).name}`)}
+											{merchNames.size
+												? 'Matsuri Shelf Wishes'
+												: $t(`wish.banner.name.${getBannerName(bannerName).name}`)}
 										</a>
 									{:else}
 										{$t(`wish.banner.name.wanderlust`)}

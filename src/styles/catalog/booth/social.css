@@ -78,6 +78,13 @@
   gap: 12px;
 }
 
+button.social-qr-card {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+}
+
 .social-qr-zoom-modal {
   width: min(94vw, 420px);
 }
@@ -130,4 +137,3 @@
   font-size: 18px;
   font-weight: 700;
 }
-

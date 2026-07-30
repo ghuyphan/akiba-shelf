@@ -1,6 +1,7 @@
 import { safeUuid } from "../../utils/id";
 import { requireSupabase, textArray } from "./shared";
 import type { ApiClient } from "./shared";
+import { imagePathsRowsSchema } from "../schemas";
 
 export async function removeUnreferencedProductImages(
   client: ApiClient,
@@ -14,9 +15,9 @@ export async function removeUnreferencedProductImages(
     .overlaps("image_paths", paths);
   if (error) throw error;
   const referenced = new Set(
-    ((data ?? []) as { image_paths?: unknown }[]).flatMap((row) =>
-      textArray(row.image_paths),
-    ),
+    imagePathsRowsSchema
+      .parse(data ?? [])
+      .flatMap((row) => textArray(row.image_paths)),
   );
   const removable = paths.filter((path) => !referenced.has(path));
   if (removable.length) {

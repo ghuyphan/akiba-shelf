@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 	import { t } from 'svelte-i18n';
-	import { assets, isMobile, isPWA } from '$lib/store/stores';
+	import { assets } from '$lib/store/stores';
 
 	export let activeContent;
 	const selectMenu = getContext('selectMenu');

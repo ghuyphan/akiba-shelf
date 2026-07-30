@@ -84,6 +84,7 @@ export function LoginPanel({ onLogin }: LoginPanelProps) {
             <Mail size={19} className="input-icon" />
             <input
               type="email"
+              aria-label={t("Email address")}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               disabled={!isSupabaseConfigured}

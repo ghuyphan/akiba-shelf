@@ -100,6 +100,7 @@ export function GachaShared3StarEditor({
           <label className="gacha-search">
             <Search size={16} />
             <input
+              aria-label={t("Search merch to add…")}
               value={query}
               placeholder={t("Search merch to add…")}
               onChange={(e) => setQuery(e.target.value)}

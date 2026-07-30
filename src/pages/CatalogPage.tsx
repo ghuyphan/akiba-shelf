@@ -21,7 +21,6 @@ import type {
   CheckoutSession,
   Order,
   Product,
-  StorefrontBootstrap,
   StorefrontSection,
 } from "../types/catalog";
 import { translations } from "../lib/i18n/catalogI18n";
@@ -38,20 +37,8 @@ import { SelectedItemPanel } from "../components/catalog/cart/SelectedItemPanel"
 import { StackedFeatured } from "../components/catalog/browsing/StackedFeatured";
 import { useToast } from "../components/ui/ToastProvider";
 import { loadCheckoutSession } from "../lib/offline/checkoutSession";
-import {
-  loadOfflineEventSession,
-  OFFLINE_EVENT_UPDATED,
-} from "../lib/offline/offlineEvents";
-import {
-  hasEventDevicePin,
-  OFFLINE_EVENT_ACCESS_UPDATED,
-  verifyEventDevicePin,
-} from "../lib/offline/eventAccess";
-import {
-  loadShopSnapshot,
-  saveShopSnapshot,
-  loadCatalogSnapshot,
-} from "../lib/offline/offline";
+import { verifyEventDevicePin } from "../lib/offline/eventAccess";
+import { loadCatalogSnapshot } from "../lib/offline/offline";
 import { usePersistentCart } from "../hooks/catalog/usePersistentCart";
 import { useCatalogData } from "../hooks/catalog/useCatalogData";
 import { useAddToCartFeedback } from "../hooks/catalog/useAddToCartFeedback";
@@ -63,9 +50,7 @@ import {
   RecoverCheckoutBar,
 } from "../components/catalog/overlays/CatalogOverlays";
 import { useNavigate, useParams } from "react-router";
-import { getStorefrontBootstrapFast } from "../lib/api/storefrontBootstrap";
 import type { PublicProductSort } from "../lib/catalogQueries";
-import type { Shop } from "../types/catalog";
 import {
   calculateCartPricing,
   isPromotionActive,
@@ -79,6 +64,8 @@ import { getUserFacingErrorMessage } from "../lib/errors";
 import { Alert } from "../components/ui/Alert";
 import { PageLoading } from "../components/ui/PageLoading";
 import { CatalogAppChrome } from "../components/catalog/shell/CatalogAppChrome";
+import { useCatalogEventState } from "../hooks/catalog/useCatalogEventState";
+import { useStorefrontShop } from "../hooks/catalog/useStorefrontShop";
 import {
   getStorefrontColumnPosition,
   normalizeStorefrontOrder,
@@ -101,19 +88,14 @@ export function CatalogPage() {
   const { shopSlug = "" } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
-  const initialShopRef = useRef(loadShopSnapshot(shopSlug));
-  const [shop, setShop] = useState<Shop | null | undefined>(
-    () => initialShopRef.current ?? undefined,
-  );
-  const [initialBootstrap, setInitialBootstrap] = useState<
-    StorefrontBootstrap | null | undefined
-  >(undefined);
-  const [catalogShopId, setCatalogShopId] = useState<string | undefined>(
-    () =>
-      initialShopRef.current?.catalog_source_shop_id ??
-      initialShopRef.current?.id,
-  );
-  const [shopLoadError, setShopLoadError] = useState("");
+  const [online, setOnline] = useState(navigator.onLine);
+  const markOnline = useCallback(() => setOnline(true), []);
+  const { shop, initialBootstrap, catalogShopId, shopLoadError, loadShop } =
+    useStorefrontShop({
+      shopSlug,
+      connectError: translations.en.shopConnectError,
+      onOnline: markOnline,
+    });
   const [lightweightMode] = useState(prefersLightweightCatalog);
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -193,22 +175,11 @@ export function CatalogPage() {
     [catalogBooth, shop?.catalog_source_shop_id, shop?.name],
   );
   const catalogCopy = translations[booth.catalog_locale ?? "en"];
-  // Latest-copy ref for stable callbacks: the loaded booth locale flips
-  // catalogCopy once (default -> shop locale), and loadShop must not refire
-  // (and reset the shop back to undefined) when that happens.
-  const catalogCopyRef = useRef(catalogCopy);
-  useEffect(() => {
-    catalogCopyRef.current = catalogCopy;
-  }, [catalogCopy]);
   const { flyingItems, animateAdd } = useAddToCartFeedback(lightweightMode);
   const initialCheckoutRef = useRef(loadCheckoutSession(shopSlug));
   const [recoverableCheckout, setRecoverableCheckout] =
     useState<CheckoutSession | null>(initialCheckoutRef.current);
-  const [online, setOnline] = useState(navigator.onLine);
-  const [eventState, setEventState] = useState({
-    salesActive: false,
-    adminPinRequired: false,
-  });
+  const eventState = useCatalogEventState(catalogShopId);
   const [isStaffPinOpen, setIsStaffPinOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [paymentModalRequested, setPaymentModalRequested] = useState(
@@ -268,87 +239,10 @@ export function CatalogPage() {
   }, [shopSlug]);
 
   useEffect(() => {
-    if (!catalogShopId) return;
-    let active = true;
-    const refreshEventState = () => {
-      void loadOfflineEventSession(catalogShopId)
-        .then((session) => {
-          if (!active) return;
-          setEventState({
-            salesActive: session?.status === "active",
-            adminPinRequired: Boolean(
-              session &&
-                session.status !== "closed" &&
-                hasEventDevicePin(catalogShopId),
-            ),
-          });
-        })
-        .catch(() => {
-          if (!active) return;
-          setEventState({ salesActive: false, adminPinRequired: false });
-        });
-    };
-    refreshEventState();
-    window.addEventListener(OFFLINE_EVENT_UPDATED, refreshEventState);
-    window.addEventListener(OFFLINE_EVENT_ACCESS_UPDATED, refreshEventState);
-    return () => {
-      active = false;
-      window.removeEventListener(OFFLINE_EVENT_UPDATED, refreshEventState);
-      window.removeEventListener(
-        OFFLINE_EVENT_ACCESS_UPDATED,
-        refreshEventState,
-      );
-    };
-  }, [catalogShopId]);
-
-  useEffect(() => {
     if (activeOrder?.status === "pending") {
       setPaymentModalRequested(true);
     }
   }, [activeOrder?.status]);
-
-  const loadShop = useCallback(async () => {
-    const cachedShop = loadShopSnapshot(shopSlug);
-    if (!cachedShop) {
-      setShop(undefined);
-    }
-    setShopLoadError("");
-    try {
-      const bootstrap = await getStorefrontBootstrapFast(shopSlug);
-      const freshShop = bootstrap.shop;
-      setOnline(true);
-      setInitialBootstrap(bootstrap);
-      setCatalogShopId(bootstrap.catalogShopId);
-      setShop(freshShop);
-      saveShopSnapshot(freshShop, shopSlug);
-    } catch (bootstrapError) {
-      setInitialBootstrap(null);
-      try {
-        // Keep rolling deployments compatible while the bootstrap RPC migration
-        // is being applied; the catalog hook will use the existing public reads.
-        const { getPublicShop } = await import("../lib/api/shops");
-        const legacyShop = await getPublicShop(shopSlug);
-        if (!legacyShop) throw bootstrapError;
-        setOnline(true);
-        setCatalogShopId(legacyShop.catalog_source_shop_id ?? legacyShop.id);
-        setShop(legacyShop);
-        saveShopSnapshot(legacyShop, shopSlug);
-      } catch (fallbackError) {
-        setCatalogShopId(cachedShop?.catalog_source_shop_id ?? cachedShop?.id);
-        if (!cachedShop) setShop(null);
-        setShopLoadError(
-          getUserFacingErrorMessage(
-            fallbackError,
-            catalogCopyRef.current.shopConnectError,
-          ),
-        );
-      }
-    }
-  }, [shopSlug]);
-
-  useEffect(() => {
-    void loadShop();
-  }, [loadShop]);
 
   const prepareGacha = useCallback(() => {
     if (!shop || !catalogShopId) return;
@@ -417,8 +311,8 @@ export function CatalogPage() {
 
   useEffect(() => {
     if (!loadError) return;
-    toast.error(loadError, catalogCopyRef.current.catalogUnavailableTitle);
-  }, [loadError, toast]);
+    toast.error(loadError, catalogCopy.catalogUnavailableTitle);
+  }, [catalogCopy.catalogUnavailableTitle, loadError, toast]);
 
   useEffect(() => {
     document.body.classList.add("catalog-screen");

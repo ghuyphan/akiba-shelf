@@ -1,6 +1,5 @@
 <script>
 	import { onMount } from 'svelte';
-	import { base } from '$app/paths';
 	import { t } from 'svelte-i18n';
 	import { APP_TITLE } from '$lib/env';
 	import { viewportWidth, viewportHeight, assets } from '$lib/store/stores';
@@ -193,6 +192,7 @@
 		font-size: 5.2em;
 		margin-right: -7px;
 		margin-top: -5px;
+		background-clip: text;
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		position: relative;
@@ -237,7 +237,9 @@
 		margin-left: 0.5rem;
 		margin-right: 0.5rem;
 		padding-bottom: 0.5rem;
-		box-shadow: 0 0 7px rgba(255, 255, 255, 0.5), 0 0 14px rgba(255, 255, 255, 0.3),
+		box-shadow:
+			0 0 7px rgba(255, 255, 255, 0.5),
+			0 0 14px rgba(255, 255, 255, 0.3),
 			0 0 30px rgba(255, 255, 255, 0.2);
 	}
 	.stella::after,

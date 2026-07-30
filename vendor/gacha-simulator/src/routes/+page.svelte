@@ -9,7 +9,6 @@
 		backsound,
 		patchVersion,
 		bannerPhase,
-		showBeginner,
 		isFatepointSystem,
 		muted,
 		bannerActive,
@@ -17,7 +16,6 @@
 		assets
 	} from '$lib/store/stores';
 	import { localConfig, localWelkin } from '$lib/store/localstore';
-	import beginnerConfig from '$lib/data/banners/beginner.json';
 	import { getMerchConfig, getMerchItems } from '$lib/helpers/merch';
 	import { checkLightweight } from '$lib/helpers/lightweight';
 	import { base } from '$app/paths';
@@ -67,18 +65,10 @@
 	setContext('animateBG', animateBG);
 
 	let showToast = false;
-	const beginnerBanner = (beginnerConfig?.beginner || beginnerConfig)?.featured || {};
-	let eventBanner;
-	let weaponBanner;
-	let standardBanner;
 	let list = [];
 
-	const showBeginnerCheck = (showBeginner) => {
-		return;
-	};
-
 	const loaded = getContext('bannerLoaded');
-	const updateBannerListToShow = (showBeginner) => {
+	const updateBannerListToShow = () => {
 		const config = getMerchConfig();
 		list = (config.banners || [])
 			.filter((banner) => banner.active)
@@ -118,7 +108,7 @@
 		return;
 	};
 
-	const switchBanner = async (patch, bannerPhase) => {
+	const switchBanner = async (_patch, _bannerPhase) => {
 		try {
 			return updateBannerListToShow(false);
 		} catch (e) {
@@ -128,7 +118,6 @@
 	};
 
 	$: switchBanner($patchVersion, $bannerPhase);
-	$: showBeginnerCheck($showBeginner);
 
 	let showObtained = false;
 	let obtainedItems = {};

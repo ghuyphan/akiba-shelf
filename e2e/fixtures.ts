@@ -224,6 +224,17 @@ export async function mockSupabase(
     orderQueue?: boolean;
     orderStatus?: "pending" | "confirmed" | "cancelled" | "expired";
     bootstrapUnavailable?: boolean;
+    adminResponseDelayMs?: Record<string, number>;
+    orderCountsByShop?: Record<
+      string,
+      {
+        pending: number;
+        confirmed: number;
+        cancelled: number;
+        expired: number;
+        all: number;
+      }
+    >;
   } = {},
 ) {
   await page.route("https://example.test/*.jpg", (route) =>
@@ -302,6 +313,15 @@ export async function mockSupabase(
   await page.route("**/mock-supabase/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
+    const rpcBody = request.postData()
+      ? (JSON.parse(request.postData() || "{}") as Record<string, unknown>)
+      : {};
+    const requestedShopId = String(rpcBody.p_shop_id || "main");
+    const adminDelay = options.adminResponseDelayMs?.[requestedShopId] ?? 0;
+    const delayAdminResponse = () =>
+      adminDelay > 0
+        ? new Promise<void>((resolve) => setTimeout(resolve, adminDelay))
+        : Promise.resolve();
     if (url.pathname.includes("/auth/v1/token")) {
       const payload = JSON.parse(request.postData() || "{}");
       const header = btoa(JSON.stringify({ alg: "none", typ: "JWT" }));
@@ -467,10 +487,24 @@ export async function mockSupabase(
         },
         status: "closed",
       });
-    if (url.pathname.includes("/rest/v1/rpc/get_admin_products"))
+    if (url.pathname.includes("/rest/v1/rpc/get_admin_products")) {
+      await delayAdminResponse();
       return json(route, catalogProducts);
-    if (url.pathname.includes("/rest/v1/rpc/get_admin_booth_settings"))
-      return json(route, booth);
+    }
+    if (url.pathname.includes("/rest/v1/rpc/get_admin_booth_settings")) {
+      await delayAdminResponse();
+      return json(
+        route,
+        options.multiShop
+          ? {
+              ...booth,
+              id: requestedShopId,
+              shop_id: requestedShopId,
+              booth_name: `Booth ${requestedShopId}`,
+            }
+          : booth,
+      );
+    }
     if (url.pathname.includes("/rest/v1/rpc/get_shop_members"))
       return json(
         route,
@@ -497,16 +531,23 @@ export async function mockSupabase(
             ]
           : [],
       );
-    if (url.pathname.includes("/rest/v1/rpc/get_order_status_counts"))
-      return json(route, {
-        pending: options.orderQueue && fixtureOrderStatus === "pending" ? 1 : 0,
-        confirmed:
-          options.orderQueue && fixtureOrderStatus === "confirmed" ? 1 : 0,
-        cancelled:
-          options.orderQueue && fixtureOrderStatus === "cancelled" ? 1 : 0,
-        expired: options.orderQueue && fixtureOrderStatus === "expired" ? 1 : 0,
-        all: options.orderQueue ? 1 : 0,
-      });
+    if (url.pathname.includes("/rest/v1/rpc/get_order_status_counts")) {
+      await delayAdminResponse();
+      return json(
+        route,
+        options.orderCountsByShop?.[requestedShopId] ?? {
+          pending:
+            options.orderQueue && fixtureOrderStatus === "pending" ? 1 : 0,
+          confirmed:
+            options.orderQueue && fixtureOrderStatus === "confirmed" ? 1 : 0,
+          cancelled:
+            options.orderQueue && fixtureOrderStatus === "cancelled" ? 1 : 0,
+          expired:
+            options.orderQueue && fixtureOrderStatus === "expired" ? 1 : 0,
+          all: options.orderQueue ? 1 : 0,
+        },
+      );
+    }
     if (url.pathname.includes("/rest/v1/rpc/get_sales_summary"))
       return json(route, {
         from: new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
@@ -647,12 +688,18 @@ export async function mockSupabase(
       const requestedSlug =
         url.searchParams.get("slug")?.replace(/^eq\./, "") ?? "akiba-shelf";
       const slug = options.multiShop ? requestedSlug : "akiba-shelf";
+      const shopId =
+        slug === "shop-b"
+          ? "00000000-0000-4000-8000-000000000002"
+          : "00000000-0000-4000-8000-000000000001";
       return json(route, [
         {
-          id: options.multiShop ? `id-${slug}` : "main",
+          id: shopId,
           name: options.multiShop ? `Fixture ${slug}` : "Fixture Booth",
           slug,
           active: true,
+          accepting_orders: true,
+          catalog_source_shop_id: null,
         },
       ]);
     }

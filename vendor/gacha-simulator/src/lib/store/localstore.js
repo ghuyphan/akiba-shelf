@@ -129,7 +129,7 @@ const localFatePoint = {
 	remove() {
 		const { patch, phase, data } = this;
 		const index = data.findIndex((d) => d.patch === patch && d.phase === phase);
-		const newArray = data.filter((ar, i) => i !== index);
+		const newArray = data.filter((_, i) => i !== index);
 		localStorage.setItem('fatepoint', JSON.stringify({ data: newArray }));
 	}
 };

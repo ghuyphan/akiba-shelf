@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LIMITED_STOCK_THRESHOLD } from "../../constants";
-import { deleteProduct, normalizeProduct } from "../products";
+import { deleteProduct, normalizeProduct, saveProduct } from "../products";
+import type { Product } from "../../../types/catalog";
 
 const mocks = vi.hoisted(() => ({
   client: null as unknown,
@@ -46,6 +47,47 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+const savedProduct: Product = {
+  id: "product-1",
+  name: "Product",
+  collection: "Collection",
+  description: "Description",
+  price_vnd: 1000,
+  sale_price_vnd: null,
+  effective_price_vnd: 1000,
+  item_code: "PRODUCT-1",
+  quantity_available: 2,
+  category: "Print",
+  stock_status: "in_stock",
+  stock_note: "In stock",
+  images: ["https://example.test/product.webp"],
+  image_paths: ["shop/new.webp"],
+  featured: false,
+  sort_order: 1,
+  active: true,
+};
+
+function saveProductClient() {
+  const lookup = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue({
+      data: { image_paths: ["shop/old.webp"] },
+      error: null,
+    }),
+  };
+  const write = {
+    update: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: savedProduct, error: null }),
+  };
+  mocks.client = {
+    rpc: vi.fn().mockReturnValue(lookup),
+    from: vi.fn().mockReturnValue(write),
+  };
+}
+
 describe("product normalization", () => {
   it("uses the shared threshold for limited stock", () => {
     expect(
@@ -87,5 +129,34 @@ describe("product deletion", () => {
       imageCleanupPending: false,
     });
     expect(mocks.removeUnreferencedProductImages).not.toHaveBeenCalled();
+  });
+});
+
+describe("product saving", () => {
+  it("reports cleanup separately after the product save commits", async () => {
+    saveProductClient();
+    mocks.removeUnreferencedProductImages.mockRejectedValueOnce(
+      new Error("Storage unavailable"),
+    );
+
+    await expect(saveProduct("shop-1", savedProduct)).resolves.toEqual({
+      product: expect.objectContaining({ id: "product-1" }),
+      imageCleanupPending: true,
+    });
+    expect(mocks.removeUnreferencedProductImages).toHaveBeenCalledWith(
+      mocks.client,
+      "shop-1",
+      ["shop/old.webp"],
+    );
+  });
+
+  it("reports a fully completed save when cleanup succeeds", async () => {
+    saveProductClient();
+    mocks.removeUnreferencedProductImages.mockResolvedValueOnce(undefined);
+
+    await expect(saveProduct("shop-1", savedProduct)).resolves.toEqual({
+      product: expect.objectContaining({ id: "product-1" }),
+      imageCleanupPending: false,
+    });
   });
 });

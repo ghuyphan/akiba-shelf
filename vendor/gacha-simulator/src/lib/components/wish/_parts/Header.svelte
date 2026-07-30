@@ -1,6 +1,6 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { t, locale } from 'svelte-i18n';
+	import { t } from 'svelte-i18n';
 	import { browser } from '$app/environment';
 
 	import BannerButton from '$lib/components/wish/_parts/BannerButton.svelte';
@@ -8,21 +8,14 @@
 	import MyFund from '$lib/components/utility/MyFund.svelte';
 
 	import { playSfx } from '$lib/helpers/audio/audio.svelte';
-	import browserState from '$lib/helpers/browserState';
-	import { getMerchConfig } from '$lib/helpers/merch';
-	import { parseLocalizedText } from '$lib/helpers/localize';
 	import {
 		acquaint,
 		bannerActive,
 		intertwined,
 		mobileMode,
 		primogem,
-		stardust,
-		starglitter,
-		pageActive,
 		isAcquaintUsed,
 		bannerList,
-		unlimitedFates,
 		viewportHeight,
 		assets,
 		isPWA,
@@ -97,7 +90,12 @@
 			<MyFund type={$isAcquaintUsed ? 'acquaint' : 'intertwined'}>
 				{$isAcquaintUsed ? $acquaint : $intertwined}
 			</MyFund>
-			<button class="close" on:click={previousClick} title="Back to store" aria-label="Back to store">
+			<button
+				class="close"
+				on:click={previousClick}
+				title="Back to store"
+				aria-label="Back to store"
+			>
 				<i class="gi-close" />
 			</button>
 		</div>
@@ -115,7 +113,6 @@
 			/>
 		{/each}
 	</div>
-
 </div>
 
 <style>
@@ -156,9 +153,6 @@
 		height: 1.3rem;
 	}
 
-	.bg {
-		display: none;
-	}
 	.top {
 		display: flex;
 		justify-content: space-between;
@@ -226,24 +220,6 @@
 		justify-content: flex-start;
 		padding-top: 2.5rem;
 		z-index: -10;
-	}
-
-	:global(.mobile) .bg {
-		display: block;
-		position: absolute;
-		top: 0;
-		left: 50%;
-		width: 40px;
-		background-color: rgba(0, 0, 0, 0.4);
-		z-index: -1;
-		transform: translateX(-50%);
-		text-align: center;
-		border: solid rgba(207, 186, 143, 0.5);
-		border-width: 0 2px;
-	}
-	.bg > img {
-		width: 60%;
-		margin-top: 3px;
 	}
 
 	@media screen and (min-width: 700px) {

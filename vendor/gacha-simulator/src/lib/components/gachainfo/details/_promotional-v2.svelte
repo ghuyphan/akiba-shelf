@@ -5,7 +5,8 @@
 
 	export let data = { featured: [], items: [], banner: '' };
 	const { featured, items, banner, merch = false } = data;
-	const itemImage = (item) => item.imageUrl || $assets[item.type === 'weapon' ? item.name : `face/${item.name}`];
+	const itemImage = (item) =>
+		item.imageUrl || $assets[item.type === 'weapon' ? item.name : `face/${item.name}`];
 </script>
 
 {#if ['events', 'weapons'].includes(banner)}
@@ -13,7 +14,9 @@
 
 	<h3 class="star5">
 		<div class="star">
-			{#each Array(5) as i} <i class="gi-star" /> {/each}
+			{#each Array(5) as _, index (index)}
+				<i class="gi-star" />
+			{/each}
 		</div>
 		<span>
 			{$t('details.percentageDrop', {
@@ -35,7 +38,9 @@
 						<picture class="star5" style="background-image:url('{$assets['5star-bg.webp']}');">
 							<img src={itemImage(item)} alt={item.name} crossorigin="anonymous" />
 						</picture>
-						<span class="stars">{#each Array(5) as i}<i class="gi-star" />{/each}</span>
+						<span class="stars"
+							>{#each Array(5) as _, index (index)}<i class="gi-star" />{/each}</span
+						>
 						<caption>{item.type === 'weapon' ? 'Weapon' : 'Character'}</caption>
 					</div>
 				{/each}
@@ -58,7 +63,7 @@
 						/>
 					</picture>
 					<span class="stars">
-						{#each Array(5) as i}
+						{#each Array(5) as _, index (index)}
 							<i class="gi-star" />
 						{/each}
 					</span>
@@ -84,7 +89,7 @@
 							/>
 						</picture>
 						<span class="stars">
-							{#each Array(5) as i}
+							{#each Array(5) as _, index (index)}
 								<i class="gi-star" />
 							{/each}
 						</span>
@@ -97,7 +102,9 @@
 
 	<h3 class="star4">
 		<div class="star">
-			{#each Array(4) as i} <i class="gi-star" /> {/each}
+			{#each Array(4) as _, index (index)}
+				<i class="gi-star" />
+			{/each}
 		</div>
 		<i class="gi-star" style="color: transparent;" />
 		<span>
@@ -112,7 +119,7 @@
 			{#each items[1]?.items || [] as { name, vision }}
 				<span class="{vision || 'wanderlust'}-flat"
 					>{merch ? name : $t(`${name}${banner === 'events' ? '.name' : ''}`)}</span
-			>
+				>
 			{/each}
 		</div>
 
@@ -123,7 +130,9 @@
 						<picture class="star4" style="background-image:url('{$assets['4star-bg.webp']}')">
 							<img src={itemImage(item)} alt={item.name} crossorigin="anonymous" />
 						</picture>
-						<span class="stars">{#each Array(4) as i}<i class="gi-star" />{/each}</span>
+						<span class="stars"
+							>{#each Array(4) as _, index (index)}<i class="gi-star" />{/each}</span
+						>
 						<caption>{item.type === 'weapon' ? 'Weapon' : 'Character'}</caption>
 					</div>
 				{/each}
@@ -140,7 +149,7 @@
 							/>
 						</picture>
 						<span class="stars">
-							{#each Array(4) as i}
+							{#each Array(4) as _, index (index)}
 								<i class="gi-star" />
 							{/each}
 						</span>
@@ -160,7 +169,7 @@
 							/>
 						</picture>
 						<span class="stars">
-							{#each Array(4) as i}
+							{#each Array(4) as _, index (index)}
 								<i class="gi-star" />
 							{/each}
 						</span>

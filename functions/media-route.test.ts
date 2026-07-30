@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyFunctionSecurityHeaders,
   FUNCTION_SECURITY_HEADERS,
+  getConditionalResponseStatus,
   getSimulatorMediaKey,
   getSimulatorMediaRange,
   isSimulatorMediaPath,
@@ -65,6 +66,35 @@ describe("simulator media route", () => {
       length: 3,
       status: 206,
     });
+    expect(getSimulatorMediaRange(10, { offset: 10 })).toEqual({
+      contentRange: "bytes */10",
+      length: 0,
+      status: 416,
+    });
+  });
+
+  it("maps successful and failed HTTP preconditions to their response status", () => {
+    expect(
+      getConditionalResponseStatus(
+        new Headers({ "if-none-match": '"current-etag"' }),
+      ),
+    ).toBe(304);
+    expect(
+      getConditionalResponseStatus(
+        new Headers({ "if-modified-since": "Wed, 29 Jul 2026 00:00:00 GMT" }),
+      ),
+    ).toBe(304);
+    expect(
+      getConditionalResponseStatus(new Headers({ "if-match": '"stale-etag"' })),
+    ).toBe(412);
+    expect(
+      getConditionalResponseStatus(
+        new Headers({
+          "if-none-match": '"current-etag"',
+          "if-unmodified-since": "Wed, 29 Jul 2026 00:00:00 GMT",
+        }),
+      ),
+    ).toBe(412);
   });
 
   it("parses HTTP byte range headers before calling R2", () => {

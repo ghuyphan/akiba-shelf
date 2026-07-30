@@ -118,7 +118,10 @@
 					<div
 						id="wish{i}"
 						class="item star{rarity} {type}"
+						role="button"
+						tabindex="0"
 						on:click|preventDefault={() => playSfx()}
+						on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && playSfx()}
 					>
 						{#if isNew}
 							<div class="new">{$t('wish.result.new')}</div>
@@ -152,10 +155,7 @@
 									<div class="info">
 										<div class="merch-icon">
 											{#if type === 'weapon'}
-												<img
-													src={$assets[`${weaponType}-white.svg`]}
-													alt="{weaponType} icon"
-												/>
+												<img src={$assets[`${weaponType}-white.svg`]} alt="{weaponType} icon" />
 											{:else}
 												<img
 													src={$assets[`icon-${vision}.svg`]}
@@ -167,7 +167,7 @@
 
 										<div class="merch-kind">{type === 'weapon' ? 'WEAPON' : 'CHARACTER'}</div>
 										<div class="star">
-											{#each Array(rarity) as _, i}
+											{#each Array(rarity) as _, index (index)}
 												<div class="i gi-star" />
 											{/each}
 										</div>
@@ -184,8 +184,8 @@
 												{#if stelaFortuna}
 													<div class="stella stella{rarity}">
 														<img
-																	src={$assets[`stella-fortuna-${rarity}star.webp`]}
-																	alt="Stella Fortuna"
+															src={$assets[`stella-fortuna-${rarity}star.webp`]}
+															alt="Stella Fortuna"
 														/>
 													</div>
 												{/if}
@@ -352,8 +352,11 @@
 	}
 
 	.shadow.shadow5 {
-		box-shadow: 0 0 4rem rgba(255, 255, 255, 0.5), 0 0 1rem rgb(249, 170, 2),
-			0 0 1.4rem rgb(249, 170, 2), 0 0 2rem rgb(249, 121, 2);
+		box-shadow:
+			0 0 4rem rgba(255, 255, 255, 0.5),
+			0 0 1rem rgb(249, 170, 2),
+			0 0 1.4rem rgb(249, 170, 2),
+			0 0 2rem rgb(249, 121, 2);
 		background-color: rgb(249, 170, 2);
 		filter: unset;
 	}
@@ -367,8 +370,11 @@
 	}
 
 	.shadow.shadow4 {
-		box-shadow: 0 0 4rem rgba(255, 255, 255, 0.6), 0 0 1rem rgb(138, 3, 161),
-			0 0 1.4rem rgb(217, 0, 255), 0 0 2rem rgb(29, 4, 255);
+		box-shadow:
+			0 0 4rem rgba(255, 255, 255, 0.6),
+			0 0 1rem rgb(138, 3, 161),
+			0 0 1.4rem rgb(217, 0, 255),
+			0 0 2rem rgb(29, 4, 255);
 		background-color: rgb(185, 18, 214);
 	}
 	.star4 .item-body {
@@ -454,7 +460,8 @@
 		border: 1px solid rgba(255, 255, 255, 0.7);
 		border-radius: calc(2.5 / 100 * var(--card-height));
 		background: rgba(255, 255, 255, 0.2);
-		box-shadow: 0 calc(1 / 100 * var(--card-height)) calc(2 / 100 * var(--card-height)) rgba(20, 29, 45, 0.38);
+		box-shadow: 0 calc(1 / 100 * var(--card-height)) calc(2 / 100 * var(--card-height))
+			rgba(20, 29, 45, 0.38);
 		object-fit: cover;
 	}
 
@@ -485,7 +492,9 @@
 		overflow: hidden;
 		display: block;
 		position: relative;
-		box-shadow: 0 0 5px rgba(255, 255, 255, 0.7), 0 0 10px rgba(255, 255, 255, 0.4),
+		box-shadow:
+			0 0 5px rgba(255, 255, 255, 0.7),
+			0 0 10px rgba(255, 255, 255, 0.4),
 			0 0 15px rgba(255, 255, 255, 0.2);
 	}
 	.stella::after,

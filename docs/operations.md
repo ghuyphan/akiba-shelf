@@ -341,6 +341,13 @@ redeploy the Pages project before validating media range requests.
 `public/_routes.json` limits Pages Function invocation to those two media
 prefixes; static application requests must bypass the Function runtime.
 
+The Pages Worker uses the `nodejs_compat` compatibility flag and persists
+Workers Logs and Traces with a 10% sampling rate. Treat these logs as
+operational diagnostics: never log order payloads, recovery tokens, payment
+credentials, or Supabase secrets. Review the Worker log stream after media
+deployments and alert on sustained 5xx responses or range-request failures;
+the application smoke still verifies the customer-visible contract.
+
 Production releases support `VITE_SENTRY_DSN` in the protected environment but
 do not require it. Without a DSN, the application remains operational and
 reports `data-observability-status="disabled"`; the deployment job emits a
@@ -548,7 +555,7 @@ block release. New performance warnings require a query/index review or a
 written deferral. Also review migration history and dry-run output; advisors do
 not detect deployment drift.
 
-Current reviewed warnings (2026-07-27):
+Current reviewed warnings (2026-07-30):
 
 - `anon_security_definer_function_executable` and
   `authenticated_security_definer_function_executable` are expected for the

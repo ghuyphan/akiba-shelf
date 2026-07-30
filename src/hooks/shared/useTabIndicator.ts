@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 
 export function useTabIndicator<TValue, TElement extends HTMLElement = HTMLElement>(
   activeValue: TValue,
-  dependencies: any[] = []
+  dependencies: readonly unknown[] = [],
 ) {
   const containerRef = useRef<TElement | null>(null);
   const itemRefs = useRef<Map<TValue, HTMLElement | null>>(new Map());

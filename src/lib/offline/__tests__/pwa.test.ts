@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../../api/push", () => ({
+  getPushRegistrationStatus: vi.fn(),
+  registerPushSubscription: vi.fn(),
+  unregisterPushSubscription: vi.fn(),
+}));
+
 const originalServiceWorker = Object.getOwnPropertyDescriptor(
   navigator,
   "serviceWorker",

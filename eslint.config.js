@@ -21,21 +21,32 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "warn",
       "react-hooks/exhaustive-deps": "warn",
-      // jsx-a11y interaction rules stay off for now: re-enabling them surfaces
-      // 59 warnings across 18 files. The remediation plan (per-site fixes and
-      // patterns) lives in docs/technical-debt.md — flip these back on
-      // as that list is worked down. The 2026-07-17 pass already fixed the
-      // ProductCard / SelectedItemPanel / OrderQueue / CatalogToolbar /
-      // SwipeConfirmButton sites, which pass with the rules enabled.
+      // The deprecated label-has-for rule conflicts with the current
+      // label-has-associated-control rule and requires redundant markup.
       "jsx-a11y/label-has-for": "off",
-      "jsx-a11y/control-has-associated-label": "off",
-      "jsx-a11y/no-autofocus": "off",
-      "jsx-a11y/label-has-associated-control": "off",
-      "jsx-a11y/click-events-have-key-events": "off",
-      "jsx-a11y/no-static-element-interactions": "off",
-      "jsx-a11y/no-noninteractive-element-interactions": "off",
-      "jsx-a11y/no-noninteractive-element-to-interactive-role": "off",
-      "jsx-a11y/no-noninteractive-tabindex": "off",
+      "jsx-a11y/control-has-associated-label": "error",
+      "jsx-a11y/no-autofocus": "error",
+      "jsx-a11y/label-has-associated-control": "error",
+      "jsx-a11y/click-events-have-key-events": "error",
+      "jsx-a11y/no-static-element-interactions": "error",
+      "jsx-a11y/no-noninteractive-element-interactions": [
+        "error",
+        {
+          handlers: [
+            "onClick",
+            "onMouseDown",
+            "onMouseUp",
+            "onKeyPress",
+            "onKeyDown",
+            "onKeyUp",
+          ],
+        },
+      ],
+      "jsx-a11y/no-noninteractive-element-to-interactive-role": "error",
+      "jsx-a11y/no-noninteractive-tabindex": [
+        "error",
+        { roles: ["tabpanel", "region"] },
+      ],
     },
   },
   {
