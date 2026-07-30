@@ -1,7 +1,9 @@
 import { PLATFORM_BRAND } from "./branding";
 
 export const PLATFORM_SITE_URL = "https://matsuri.pro";
-export const PLATFORM_SOCIAL_IMAGE = `${PLATFORM_SITE_URL}/brand/matsuri-icon-512.png`;
+export const PLATFORM_SOCIAL_IMAGE = `${PLATFORM_SITE_URL}/brand/matsuri-social-card.png`;
+export const PLATFORM_SOCIAL_IMAGE_ALT =
+  "Matsuri artist booth storefront and live order management preview";
 
 export type DocumentSeo = {
   description: string;
@@ -46,10 +48,35 @@ export function applyDocumentSeo({
   setMeta('meta[property="og:type"]', "property", "og:type", type);
   setMeta('meta[property="og:url"]', "property", "og:url", canonicalUrl);
   setMeta('meta[property="og:image"]', "property", "og:image", PLATFORM_SOCIAL_IMAGE);
-  setMeta('meta[name="twitter:card"]', "name", "twitter:card", "summary");
+  setMeta(
+    'meta[property="og:image:type"]',
+    "property",
+    "og:image:type",
+    "image/png",
+  );
+  setMeta(
+    'meta[property="og:image:width"]',
+    "property",
+    "og:image:width",
+    "1200",
+  );
+  setMeta(
+    'meta[property="og:image:height"]',
+    "property",
+    "og:image:height",
+    "630",
+  );
+  setMeta(
+    'meta[property="og:image:alt"]',
+    "property",
+    "og:image:alt",
+    PLATFORM_SOCIAL_IMAGE_ALT,
+  );
+  setMeta('meta[name="twitter:card"]', "name", "twitter:card", "summary_large_image");
   setMeta('meta[name="twitter:title"]', "name", "twitter:title", document.title);
   setMeta('meta[name="twitter:description"]', "name", "twitter:description", description);
   setMeta('meta[name="twitter:image"]', "name", "twitter:image", PLATFORM_SOCIAL_IMAGE);
+  setMeta('meta[name="twitter:image:alt"]', "name", "twitter:image:alt", PLATFORM_SOCIAL_IMAGE_ALT);
 }
 
 export function resetDocumentSeo() {

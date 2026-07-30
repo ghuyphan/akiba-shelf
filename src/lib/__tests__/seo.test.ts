@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { applyDocumentSeo, PLATFORM_SITE_URL } from "../seo";
+import {
+  applyDocumentSeo,
+  PLATFORM_SITE_URL,
+  PLATFORM_SOCIAL_IMAGE,
+  PLATFORM_SOCIAL_IMAGE_ALT,
+} from "../seo";
 
 afterEach(() => {
   document.head
@@ -37,5 +42,30 @@ describe("document SEO", () => {
       document.querySelector<HTMLMetaElement>('meta[property="og:type"]')
         ?.content,
     ).toBe("profile");
+    expect(
+      document.querySelector<HTMLMetaElement>('meta[property="og:image"]')
+        ?.content,
+    ).toBe(PLATFORM_SOCIAL_IMAGE);
+    expect(
+      document.querySelector<HTMLMetaElement>('meta[property="og:image:width"]')
+        ?.content,
+    ).toBe("1200");
+    expect(
+      document.querySelector<HTMLMetaElement>(
+        'meta[property="og:image:height"]',
+      )?.content,
+    ).toBe("630");
+    expect(
+      document.querySelector<HTMLMetaElement>('meta[property="og:image:alt"]')
+        ?.content,
+    ).toBe(PLATFORM_SOCIAL_IMAGE_ALT);
+    expect(
+      document.querySelector<HTMLMetaElement>('meta[name="twitter:card"]')
+        ?.content,
+    ).toBe("summary_large_image");
+    expect(
+      document.querySelector<HTMLMetaElement>('meta[name="twitter:image:alt"]')
+        ?.content,
+    ).toBe(PLATFORM_SOCIAL_IMAGE_ALT);
   });
 });
