@@ -1,7 +1,7 @@
 import { PLATFORM_BRAND } from "./branding";
 
 export const PLATFORM_SITE_URL = "https://matsuri.pro";
-export const PLATFORM_SOCIAL_IMAGE = `${PLATFORM_SITE_URL}/brand/matsuri-social-card.png`;
+export const PLATFORM_SOCIAL_IMAGE = `${PLATFORM_SITE_URL}/brand/matsuri-social-card-v1.png`;
 export const PLATFORM_SOCIAL_IMAGE_ALT =
   "Matsuri artist booth storefront and live order management preview";
 
