@@ -186,6 +186,18 @@ test("validates optional production observability configuration", () => {
   );
 });
 
+test("keeps the Pages configuration on supported fields", async () => {
+  const config = await readFile(
+    new URL("../wrangler.jsonc", import.meta.url),
+    "utf8",
+  );
+  assert.match(config, /"pages_build_output_dir": "\.\/dist"/);
+  assert.match(config, /"compatibility_flags": \["nodejs_compat"\]/);
+  assert.match(config, /"binding": "SIMULATOR_MEDIA"/);
+  assert.match(config, /"bucket_name": "matsuri-simulator-media"/);
+  assert.doesNotMatch(config, /"observability"/);
+});
+
 test("keeps browser telemetry on the deployed release identity", async () => {
   const [workflow, observability] = await Promise.all([
     readFile(
@@ -290,8 +302,15 @@ test("gates the serialized production deploy on the current main SHA", async () 
   assert.match(workflow, /npm run validate:observability -- --production/);
   assert.match(
     workflow,
-    /steps\.deployment\.outcome == 'failure' \|\| steps\.verify-deployment\.outcome == 'failure'/,
+    /steps\.deployment\.outcome == 'success' && \(steps\.verify-deployment\.outcome == 'failure'/,
   );
+  assert.match(workflow, /Verify active release after upload failure/);
+  assert.match(workflow, /Smoke active production after upload failure/);
+  const rollbackStep = workflow.slice(
+    workflow.indexOf("Roll back failed production release"),
+    workflow.indexOf("Verify rollback became active"),
+  );
+  assert.doesNotMatch(rollbackStep, /steps\.deployment\.outcome == 'failure'/);
 });
 
 test("writes deterministic release metadata", () =>

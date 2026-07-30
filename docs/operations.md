@@ -341,12 +341,13 @@ redeploy the Pages project before validating media range requests.
 `public/_routes.json` limits Pages Function invocation to those two media
 prefixes; static application requests must bypass the Function runtime.
 
-The Pages Worker uses the `nodejs_compat` compatibility flag and persists
-Workers Logs and Traces with a 10% sampling rate. Treat these logs as
-operational diagnostics: never log order payloads, recovery tokens, payment
-credentials, or Supabase secrets. Review the Worker log stream after media
-deployments and alert on sustained 5xx responses or range-request failures;
-the application smoke still verifies the customer-visible contract.
+The Pages Function uses the `nodejs_compat` compatibility flag. Pages rejects
+the Workers-only `observability` block in `wrangler.jsonc`; do not add it to
+this project. Pages Function logs are live streams available from deployment
+details or `wrangler pages deployment tail` and are not persisted. Never log
+order payloads, recovery tokens, payment credentials, or Supabase secrets. Use
+the application smoke, external monitoring, and Sentry for durable diagnostics;
+use the live stream while investigating media 5xx or range-request failures.
 
 Production releases support `VITE_SENTRY_DSN` in the protected environment but
 do not require it. Without a DSN, the application remains operational and
@@ -441,16 +442,20 @@ application route, admin route, entry asset, and simulator media. It verifies
 the security baseline on HTML, media success, and rejected media responses,
 then confirms that
 `www.matsuri.pro` preserves path and query parameters while redirecting
-permanently to the apex. If verification fails, the rollback API envelope is
-validated and the Pages project's `canonical_deployment` is polled until the
-previously active deployment is canonical again. The workflow then reruns
-release verification and the read-only production smoke against the restored
-deployment before the job is failed.
+permanently to the apex. If upload validation fails before Cloudflare creates a
+deployment, the workflow verifies that the previously active release and
+production smoke remain healthy without calling rollback. If post-upload
+verification fails, the rollback API envelope is validated and the Pages
+project's `canonical_deployment` is polled until the previously active
+deployment is canonical again. The workflow then reruns release verification
+and the read-only production smoke against the restored deployment before the
+job is failed.
 These longer deployment and canonical retry windows cover the brief state where
 Wrangler reports completion before release metadata or matching hashed assets
-reach the checked edge. A failed upload, verification, or smoke check rolls
-production back to the deployment that was active before the upload and then
-fails the release job.
+reach the checked edge. A failed verification or smoke check rolls production
+back to the deployment that was active before the upload. A failed upload
+leaves that deployment active. Every failure path verifies the live release and
+then fails the release job.
 
 Apply and verify any required linked Supabase migration before merging the
 frontend release to `main`. The production smoke calls the read-only storefront

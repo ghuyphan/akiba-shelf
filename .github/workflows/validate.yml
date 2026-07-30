@@ -282,7 +282,7 @@ jobs:
           --supabase-anon-key "$VITE_SUPABASE_ANON_KEY"
           --storefront-slug "${{ vars.MATSURI_SMOKE_SHOP_SLUG || 'demo-booth' }}"
       - name: Roll back failed production release
-        if: always() && steps.release-freshness.outputs.current == 'true' && (steps.deployment.outcome == 'failure' || steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
+        if: always() && steps.release-freshness.outputs.current == 'true' && steps.deployment.outcome == 'success' && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -293,14 +293,14 @@ jobs:
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/matsuri/deployments/$PREVIOUS_DEPLOYMENT_ID/rollback" > rollback-response.json
           node scripts/assert-cloudflare-api.mjs rollback-response.json "Cloudflare Pages rollback"
       - name: Verify rollback became active
-        if: always() && steps.release-freshness.outputs.current == 'true' && (steps.deployment.outcome == 'failure' || steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
+        if: always() && steps.release-freshness.outputs.current == 'true' && steps.deployment.outcome == 'success' && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           PREVIOUS_DEPLOYMENT_ID: ${{ steps.active-deployment.outputs.id }}
         run: node scripts/verify-cloudflare-rollback.mjs
       - name: Verify rolled-back Cloudflare release
-        if: always() && steps.release-freshness.outputs.current == 'true' && (steps.deployment.outcome == 'failure' || steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
+        if: always() && steps.release-freshness.outputs.current == 'true' && steps.deployment.outcome == 'success' && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
         env:
           MATSURI_RELEASE: ${{ steps.active-deployment.outputs.sha }}
           MATSURI_ROLLBACK_COMPATIBILITY: "true"
@@ -311,7 +311,26 @@ jobs:
           https://matsuri.pro
           https://www.matsuri.pro
       - name: Smoke rolled-back production routes and checkout preflight
-        if: always() && steps.release-freshness.outputs.current == 'true' && (steps.deployment.outcome == 'failure' || steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
+        if: always() && steps.release-freshness.outputs.current == 'true' && steps.deployment.outcome == 'success' && (steps.verify-deployment.outcome == 'failure' || steps.smoke-production.outcome == 'failure') && steps.active-deployment.outputs.id != ''
+        run: >-
+          npm run smoke:production --
+          --base-url https://matsuri.pro
+          --supabase-url "$VITE_SUPABASE_URL"
+          --supabase-anon-key "$VITE_SUPABASE_ANON_KEY"
+          --storefront-slug "${{ vars.MATSURI_SMOKE_SHOP_SLUG || 'demo-booth' }}"
+      - name: Verify active release after upload failure
+        if: always() && steps.release-freshness.outputs.current == 'true' && steps.deployment.outcome == 'failure' && steps.active-deployment.outputs.id != ''
+        env:
+          MATSURI_RELEASE: ${{ steps.active-deployment.outputs.sha }}
+          MATSURI_ROLLBACK_COMPATIBILITY: "true"
+          PREVIOUS_DEPLOYMENT_URL: ${{ steps.active-deployment.outputs.url }}
+        run: >-
+          node scripts/verify-cloudflare-deployment.mjs
+          "$PREVIOUS_DEPLOYMENT_URL"
+          https://matsuri.pro
+          https://www.matsuri.pro
+      - name: Smoke active production after upload failure
+        if: always() && steps.release-freshness.outputs.current == 'true' && steps.deployment.outcome == 'failure' && steps.active-deployment.outputs.id != ''
         run: >-
           npm run smoke:production --
           --base-url https://matsuri.pro
