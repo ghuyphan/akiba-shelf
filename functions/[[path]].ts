@@ -48,7 +48,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     (context.request.method === "GET" || context.request.method === "HEAD") &&
     isVersionedAppScriptPath(requestUrl.pathname)
   ) {
-    const response = await context.next();
+    // Bind the asset lookup to this Pages deployment. Resolving through
+    // next() can briefly pair the custom domain with a different asset set.
+    const response = await context.env.ASSETS.fetch(context.request);
     if (isJavaScriptResponse(response)) return response;
     await response.body?.cancel();
     return createStaleAppAssetResponse(context.request.method);

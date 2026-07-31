@@ -5,6 +5,7 @@ import {
   waitForPagesDeployment,
 } from "./cloudflare-pages-api.mjs";
 import {
+  fetchStableEntryAsset,
   fetchStaleAppAssetRecovery,
   verifyCloudflareDeployment,
 } from "./verify-cloudflare-deployment.mjs";
@@ -117,6 +118,29 @@ test("verifies the stale application asset recovery contract", async () => {
   ]);
 });
 
+test("rejects a current entry asset that flaps into recovery", async () => {
+  let requests = 0;
+  await assert.rejects(
+    fetchStableEntryAsset(
+      "https://matsuri.pro",
+      "/assets/index-new12345.js",
+      {
+        attempts: 1,
+        fetchImpl: async () => {
+          requests += 1;
+          return requests === 1
+            ? new Response("export {};", {
+                headers: { "content-type": "application/javascript" },
+              })
+            : staleAppAssetRecoveryResponse();
+        },
+      },
+      2,
+    ),
+    /current entry asset returned the recovery module/,
+  );
+});
+
 test("waits for the canonical domain and verifies the www redirect", async () => {
   let canonicalRequests = 0;
   const requestedUrls = [];
@@ -199,10 +223,16 @@ test("waits for the canonical domain and verifies the www redirect", async () =>
     "https://deploy.pages.dev/auth",
     "https://deploy.pages.dev/admin",
     "https://deploy.pages.dev/assets/index-new12345.js",
+    "https://deploy.pages.dev/assets/index-new12345.js",
+    "https://deploy.pages.dev/assets/index-new12345.js",
+    "https://deploy.pages.dev/assets/index-new12345.js",
     "https://matsuri.pro/release.json",
     "https://matsuri.pro/",
     "https://matsuri.pro/",
     "https://matsuri.pro/admin",
+    "https://matsuri.pro/assets/index-new12345.js",
+    "https://matsuri.pro/assets/index-new12345.js",
+    "https://matsuri.pro/assets/index-new12345.js",
     "https://matsuri.pro/assets/index-new12345.js",
     "https://matsuri.pro/gacha-simulator/",
     "https://matsuri.pro/hsr-simulator/",
@@ -364,7 +394,7 @@ test("allows canonical hashed assets to outlast the normal retry budget", async 
     sleep: async () => undefined,
   });
 
-  assert.equal(canonicalAssetRequests, 11);
+  assert.equal(canonicalAssetRequests, 14);
 });
 
 test("rejects non-HTTPS deployment origins", async () => {

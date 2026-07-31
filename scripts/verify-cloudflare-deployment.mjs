@@ -4,6 +4,7 @@ const DEFAULT_ATTEMPTS = 10;
 const DEFAULT_DEPLOYMENT_ATTEMPTS = 40;
 const DEFAULT_CANONICAL_ATTEMPTS = 40;
 const DEFAULT_DELAY_MS = 3_000;
+const DEFAULT_ENTRY_ASSET_STABILITY_SAMPLES = 4;
 const REQUEST_TIMEOUT_MS = 15_000;
 const deploymentCheckPath = "/__deployment-check?source=github-actions";
 const staleAppAssetPath = "/assets/index-Missing0.js";
@@ -268,9 +269,27 @@ async function fetchEntryAsset(origin, assetPath, options) {
           `expected JavaScript, received ${contentType || "no content type"}`,
         );
       }
+      if (response.headers.get("x-matsuri-stale-asset") === "recover") {
+        throw new Error("current entry asset returned the recovery module");
+      }
     },
     options,
   );
+}
+
+export async function fetchStableEntryAsset(
+  origin,
+  assetPath,
+  options,
+  samples = DEFAULT_ENTRY_ASSET_STABILITY_SAMPLES,
+) {
+  if (!Number.isInteger(samples) || samples < 1) {
+    throw new Error("entry asset stability samples must be a positive integer");
+  }
+  await fetchEntryAsset(origin, assetPath, options);
+  for (let sample = 1; sample < samples; sample += 1) {
+    await fetchEntryAsset(origin, assetPath, { ...options, attempts: 1 });
+  }
 }
 
 export async function fetchStaleAppAssetRecovery(origin, options) {
@@ -346,6 +365,7 @@ export async function verifyCloudflareDeployment({
   expectedRelease,
   deploymentAttempts,
   canonicalAttempts,
+  entryAssetStabilitySamples = DEFAULT_ENTRY_ASSET_STABILITY_SAMPLES,
   rollbackCompatibility = false,
   verifyStaleAssetRecovery = false,
   ...options
@@ -391,7 +411,12 @@ export async function verifyCloudflareDeployment({
     htmlSecurityOptions,
     entryAsset,
   );
-  await fetchEntryAsset(deploymentOrigin, entryAsset, deploymentOptions);
+  await fetchStableEntryAsset(
+    deploymentOrigin,
+    entryAsset,
+    deploymentOptions,
+    entryAssetStabilitySamples,
+  );
 
   // Custom-domain routing can briefly expose the new HTML before every edge
   // serves its matching hashed assets. Give that propagation a longer budget
@@ -418,7 +443,12 @@ export async function verifyCloudflareDeployment({
     htmlSecurityOptions,
     entryAsset,
   );
-  await fetchEntryAsset(canonicalOrigin, entryAsset, canonicalOptions);
+  await fetchStableEntryAsset(
+    canonicalOrigin,
+    entryAsset,
+    canonicalOptions,
+    entryAssetStabilitySamples,
+  );
   // Rollback verification must remain compatible with the previous release's
   // contract. Current releases additionally require external simulator bootstraps.
   const simulatorBootstraps = rollbackCompatibility

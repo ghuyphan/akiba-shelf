@@ -449,6 +449,9 @@ a content-type-aware Cache Rule is deployed and verified separately.
 After Wrangler uploads the artifact, the workflow waits up to two minutes for
 the deployment URL and `matsuri.pro` to serve the same release metadata, deep
 application route, admin route, entry asset, and simulator media. It verifies
+four consecutive current-entry responses and rejects the stale-asset recovery
+header so a mixed custom-domain asset rollout cannot pass on one healthy edge.
+It also verifies
 the security baseline on HTML, media success, and rejected media responses,
 then confirms that
 `www.matsuri.pro` preserves path and query parameters while redirecting

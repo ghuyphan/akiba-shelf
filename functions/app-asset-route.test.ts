@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createStaleAppAssetResponse,
   isJavaScriptResponse,
@@ -6,6 +6,22 @@ import {
   STALE_APP_ASSET_HEADER,
   STALE_APP_ASSET_RECOVERY_SCRIPT,
 } from "./app-asset-route";
+import { onRequest } from "./[[path]]";
+
+function createAssetContext(assetResponse: Response) {
+  const assetFetch = vi.fn().mockResolvedValue(assetResponse);
+  const next = vi.fn().mockResolvedValue(
+    new Response("<!doctype html>", {
+      headers: { "content-type": "text/html; charset=utf-8" },
+    }),
+  );
+  const context = {
+    request: new Request("https://matsuri.pro/assets/index-BPGrAREH.js"),
+    env: { ASSETS: { fetch: assetFetch } },
+    next,
+  } as unknown as Parameters<typeof onRequest>[0];
+  return { assetFetch, context, next };
+}
 
 describe("stale application asset recovery", () => {
   it("recognizes only versioned application scripts", () => {
@@ -56,5 +72,31 @@ describe("stale application asset recovery", () => {
   it("omits the recovery body for HEAD requests", async () => {
     const response = createStaleAppAssetResponse("HEAD");
     expect(await response.text()).toBe("");
+  });
+
+  it("reads application scripts from the deployment asset binding", async () => {
+    const assetResponse = new Response("export {};", {
+      headers: { "content-type": "application/javascript" },
+    });
+    const { assetFetch, context, next } = createAssetContext(assetResponse);
+
+    const response = await onRequest(context);
+
+    expect(response).toBe(assetResponse);
+    expect(assetFetch).toHaveBeenCalledWith(context.request);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("recovers when the deployment asset binding returns the SPA shell", async () => {
+    const { context, next } = createAssetContext(
+      new Response("<!doctype html>", {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      }),
+    );
+
+    const response = await onRequest(context);
+
+    expect(response.headers.get(STALE_APP_ASSET_HEADER)).toBe("recover");
+    expect(next).not.toHaveBeenCalled();
   });
 });
