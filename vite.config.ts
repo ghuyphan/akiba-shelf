@@ -373,6 +373,8 @@ export default defineConfig(async ({ command }) => {
       ),
     },
     build: {
+      target: ["es2020", "safari16.4"],
+      cssTarget: ["chrome87", "edge88", "firefox78", "safari16.4"],
       rollupOptions: {
         output: {
           experimentalMinChunkSize: 12_000,

@@ -1,8 +1,8 @@
-import { ArrowRight, LogIn, RotateCw, Store } from "lucide-react";
+import { ArrowRight, LogIn, RotateCw } from "lucide-react";
 import { Link } from "react-router";
 import { AppHeader } from "../components/ui/AppHeader";
 import { PlatformHeaderBrand } from "../components/ui/PlatformHeaderBrand";
-import { PLATFORM_BRAND } from "../lib/branding";
+import { PlatformStatusArt } from "../components/ui/PlatformStatusArt";
 import { useCatalogCopy } from "../lib/i18n/catalogLocale";
 import "../styles/admin/admin.css";
 
@@ -18,8 +18,10 @@ export function ShopUnavailablePage({
   onRetry,
 }: ShopUnavailablePageProps) {
   const copy = useCatalogCopy();
+  const titleId = "storefront-unavailable-title";
+
   return (
-    <div className="admin-shell platform-home-shell platform-not-found-shell">
+    <div className="admin-shell platform-home-shell platform-not-found-shell platform-404-shell">
       <AppHeader
         brand={
           <Link
@@ -41,115 +43,72 @@ export function ShopUnavailablePage({
         }
       />
 
-      <main className="admin-container platform-home-container">
+      <main className="admin-container platform-home-container platform-404-main">
         <section
-          className="platform-landing-hero platform-not-found-hero"
+          className="platform-404-layout"
+          aria-labelledby={titleId}
           role={hasLoadError ? "alert" : undefined}
         >
-          <div className="platform-landing-hero-copy">
-            <span className="platform-landing-kicker">
-              <span aria-hidden="true">✦</span> {copy.storefrontUnavailableKicker}
-            </span>
-            <h1>
-              {copy.unavailableTitle}{" "}
-              <span className="platform-landing-title-accent">
-                {copy.unavailableTitleAccent}
+          <PlatformStatusArt variant={hasLoadError ? "offline" : "missing"} />
+          <div className="platform-404-copy">
+            {!hasLoadError && (
+              <span className="platform-404-kicker">
+                {copy.storefrontUnavailableKicker}
               </span>
-              <i
-                className="platform-landing-title-underline"
-                aria-hidden="true"
-              />
+            )}
+            <h1 id={titleId}>
+              {hasLoadError ? (
+                copy.catalogUnavailableTitle
+              ) : (
+                <>
+                  {copy.unavailableTitle}{" "}
+                  <span className="platform-404-title-accent">
+                    {copy.unavailableTitleAccent}
+                  </span>
+                </>
+              )}
             </h1>
             <p>
               {hasLoadError
                 ? copy.unavailableLoadError
                 : copy.unavailableNotFound}
             </p>
-            <div className="platform-landing-actions">
-              <Link to="/" className="button button-primary platform-home-cta">
-                {copy.backToMatsuri} <ArrowRight size={17} />
-              </Link>
-              <button
-                type="button"
-                className="button platform-home-demo"
-                onClick={onRetry}
-              >
-                <RotateCw size={17} /> {copy.tryAgain}
-              </button>
-            </div>
-            {showDemoLink && (
-              <small className="platform-landing-note">
-                {copy.lookingForExample}{" "}
-                <Link to="/s/demo-booth">
-                  <strong>{copy.visitDemoBooth}</strong>
+            <div className="platform-404-actions">
+              {hasLoadError ? (
+                <button
+                  type="button"
+                  className="button button-primary platform-home-cta"
+                  onClick={onRetry}
+                >
+                  <RotateCw size={17} /> {copy.tryAgain}
+                </button>
+              ) : (
+                <Link
+                  to="/"
+                  className="button button-primary platform-home-cta"
+                >
+                  {copy.backToMatsuri} <ArrowRight size={17} />
                 </Link>
-              </small>
-            )}
-          </div>
+              )}
 
-          <div className="platform-landing-art" aria-hidden="true">
-            <div className="platform-landing-desk-shadow" />
-            <span className="platform-landing-tape platform-landing-tape-one" />
-            <span className="platform-landing-tape platform-landing-tape-two" />
-            <div className="platform-landing-sketchbook">
-              <div className="platform-landing-sketch-title">
-                <span>
-                  <strong>{copy.lostBoothNotice}</strong>
-                  <small>{copy.artistAlley404}</small>
-                </span>
-                <b>{copy.notHere}</b>
-              </div>
-              <div className="platform-landing-mini-shop">
-                <div className="platform-landing-poster platform-not-found-poster">
-                  <small>{copy.storefrontMissing}</small>
-                  <strong>{copy.nothingOnShelf}</strong>
-                </div>
-                <div className="platform-landing-product-stack">
-                  <article>
-                    <div className="pink">{copy.emptyDisplay}</div>
-                    <footer>
-                      <b>{copy.tryAnotherAisle}</b>
-                      <span>→</span>
-                    </footer>
-                  </article>
-                  <article>
-                    <div className="mint">{copy.booth404}</div>
-                    <footer>
-                      <b>{copy.linkNotFound}</b>
-                      <span>♡</span>
-                    </footer>
-                  </article>
-                </div>
-              </div>
+              {hasLoadError ? (
+                <Link to="/" className="platform-404-demo-link">
+                  {copy.backToMatsuri} <span aria-hidden="true">→</span>
+                </Link>
+              ) : (
+                showDemoLink && (
+                  <Link
+                    to="/s/demo-booth"
+                    className="platform-404-demo-link"
+                  >
+                    {copy.visitDemoBooth} <span aria-hidden="true">→</span>
+                  </Link>
+                )
+              )}
             </div>
-            <div className="platform-landing-phone platform-not-found-phone">
-              <div className="platform-landing-phone-notch" />
-              <div className="platform-landing-phone-head">
-                <span>{copy.boothDirectory}</span>
-                <span>♡</span>
-              </div>
-              <div className="platform-not-found-phone-empty">
-                <Store size={34} />
-                <strong>{copy.noBoothFound}</strong>
-                <small>{copy.tryAnotherLink}</small>
-              </div>
-            </div>
-            <span className="platform-landing-sticker star">404</span>
-            <span className="platform-landing-sticker heart">♡</span>
-            <span className="platform-landing-sticker pencil">
-              {copy.keepLooking}
-            </span>
           </div>
         </section>
       </main>
-
-      <footer className="platform-home-footer">
-        <strong>{PLATFORM_BRAND.name}</strong>
-        <span>{copy.madeForArtists}</span>
-        <small>
-          &copy; {new Date().getFullYear()} {PLATFORM_BRAND.name}
-        </small>
-      </footer>
     </div>
   );
 }

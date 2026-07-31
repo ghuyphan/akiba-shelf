@@ -1,5 +1,6 @@
 import {
   FloatingFocusManager,
+  FloatingPortal,
   useInteractions,
   useListNavigation,
 } from "@floating-ui/react";
@@ -100,42 +101,44 @@ export function ActionMenu({
         {triggerIcon}
       </button>
       {isMounted && (
-        <FloatingFocusManager
-          context={context}
-          modal={false}
-          initialFocus={0}
-          returnFocus
-        >
-          <div
-            ref={refs.setFloating}
-            className={`action-menu-popover ${popoverClassName}`.trim()}
-            data-placement={placement}
-            style={{ ...floatingStyles, ...transitionStyles }}
-            {...getFloatingProps({ "aria-label": label })}
+        <FloatingPortal>
+          <FloatingFocusManager
+            context={context}
+            modal={false}
+            initialFocus={0}
+            returnFocus
           >
-            {items.map((item, index) => (
-              <button
-                key={item.id}
-                ref={(node) => {
-                  itemRefs.current[index] = node;
-                }}
-                type="button"
-                role="menuitem"
-                tabIndex={index === activeIndex ? 0 : -1}
-                className={`${itemClassName} ${item.danger ? "danger" : ""}`.trim()}
-                disabled={item.disabled}
-                title={item.title}
-                {...getItemProps({
-                  onClick: () => select(item),
-                  onFocus: () => setActiveIndex(index),
-                })}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </div>
-        </FloatingFocusManager>
+            <div
+              ref={refs.setFloating}
+              className={`action-menu-popover ${popoverClassName}`.trim()}
+              data-placement={placement}
+              style={{ ...floatingStyles, ...transitionStyles }}
+              {...getFloatingProps({ "aria-label": label })}
+            >
+              {items.map((item, index) => (
+                <button
+                  key={item.id}
+                  ref={(node) => {
+                    itemRefs.current[index] = node;
+                  }}
+                  type="button"
+                  role="menuitem"
+                  tabIndex={index === activeIndex ? 0 : -1}
+                  className={`${itemClassName} ${item.danger ? "danger" : ""}`.trim()}
+                  disabled={item.disabled}
+                  title={item.title}
+                  {...getItemProps({
+                    onClick: () => select(item),
+                    onFocus: () => setActiveIndex(index),
+                  })}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </FloatingFocusManager>
+        </FloatingPortal>
       )}
     </div>
   );

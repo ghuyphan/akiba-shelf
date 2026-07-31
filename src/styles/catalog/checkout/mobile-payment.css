@@ -1,6 +1,6 @@
 /* Compact payment experience on phone screens. */
 @media (max-width: 700px) {
-  .order-confirm-modal,.payment-qr-modal-redesign { width: 100%; max-height: min(90dvh, 780px); padding: 0 var(--sheet-horizontal-padding) var(--sheet-bottom-padding); }
+  .order-confirm-modal,.payment-qr-modal-redesign { width: 100%; max-height: min(90vh, 780px); max-height: min(90dvh, 780px); padding: 0 var(--sheet-horizontal-padding) var(--sheet-bottom-padding); }
   .payment-modal.cancel-order-modal { width: 100% !important; padding: 0 var(--sheet-horizontal-padding) var(--sheet-bottom-padding); border-radius: var(--sheet-radius) var(--sheet-radius) 0 0 !important; }
   .cancel-order-modal .modal-header h2 { font-size: 22px; }
   .cancel-order-confirmation { gap: 13px; padding-top: 8px; }

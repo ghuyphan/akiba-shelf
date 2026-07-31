@@ -74,7 +74,7 @@
 }
 
 .alert-info svg {
-  color: var(--blue);
+  color: var(--teal);
 }
 
 .alert-success {
@@ -125,7 +125,7 @@
   color: var(--ink);
   background: rgb(255 255 255 / 96%);
   box-shadow: 0 12px 30px rgb(15 23 42 / 13%);
-  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
 }
 .toast.is-open {
   animation: toast-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -228,7 +228,7 @@
   color: var(--ink);
   background: rgb(255 255 255 / 96%);
   box-shadow: 0 12px 30px rgb(15 23 42 / 13%);
-  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
   animation: toast-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -357,11 +357,11 @@
 @keyframes fade-out {
   from {
     opacity: 1;
-    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   }
   to {
     opacity: 0;
-    backdrop-filter: blur(0);
+    -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0);
   }
 }
 

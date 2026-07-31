@@ -42,6 +42,15 @@ beforeEach(() => {
 });
 
 describe("booth settings saving", () => {
+  it("rejects malformed theme colors before making a request", async () => {
+    await expect(
+      saveBoothSettings("shop-1", {
+        ...defaultBooth,
+        theme_primary: "not-a-color",
+      }),
+    ).rejects.toThrow("Use a 6 digit hex color");
+  });
+
   it("reports cleanup separately after the booth save commits", async () => {
     const { remove } = boothClient(new Error("Storage unavailable"));
 

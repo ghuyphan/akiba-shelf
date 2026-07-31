@@ -6,6 +6,26 @@ import {
 } from "@playwright/test";
 import { mockSupabase, products } from "./fixtures";
 
+function getRgbContrastRatio(first: string, second: string) {
+  const luminance = (color: string) => {
+    const channels = color
+      .match(/[\d.]+/g)
+      ?.slice(0, 3)
+      .map(Number);
+    if (!channels || channels.length !== 3) return 0;
+    const linear = channels.map((channel) => {
+      const normalized = channel / 255;
+      return normalized <= 0.04045
+        ? normalized / 12.92
+        : ((normalized + 0.055) / 1.055) ** 2.4;
+    });
+    return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+  };
+  const lighter = Math.max(luminance(first), luminance(second));
+  const darker = Math.min(luminance(first), luminance(second));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 async function dragSheetDown(
   context: BrowserContext,
   sheet: Locator,
@@ -393,6 +413,7 @@ test("renders social QR codes with gradient dots in the simple card layout", asy
   await expect(
     qrDialog.getByRole("link", { name: /Open Profile Link/i }),
   ).toHaveAttribute("href", "https://instagram.com/fixture.artist");
+  await qrDialog.getByRole("button", { name: /Close/i }).click();
 
   const xCard = boothDialog.locator(".social-qr-x");
   const youtubeCard = boothDialog.locator(".social-qr-youtube");
@@ -422,10 +443,13 @@ test("uses the booth locale and derives its open status from local time", async 
     await expect(guide.locator(".booth-card-topline small")).toContainText(
       /Đang mở|Đã đóng/,
     );
-    await expect(guide.locator(".booth-card-topline small")).toHaveCSS(
-      "color",
-      "rgb(95, 141, 85)",
-    );
+    const statusColor = await guide
+      .locator(".booth-card-topline small")
+      .evaluate((element) => getComputedStyle(element).color);
+    expect(statusColor).not.toBe("rgb(95, 141, 85)");
+    expect(
+      getRgbContrastRatio(statusColor, "rgb(255, 255, 255)"),
+    ).toBeGreaterThanOrEqual(4.5);
     await expect(guide.locator(".booth-card-topline i")).toHaveCount(0);
   }
   await page.getByRole("button", { name: /Thông tin gian hàng/i }).click();

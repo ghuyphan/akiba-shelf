@@ -36,7 +36,8 @@ describe("Modal", () => {
         <button>Inside</button>
       </Modal>,
     );
-    expect(container.inert).toBe(true);
+    expect(container).toHaveAttribute("inert");
+    expect(container).toHaveAttribute("aria-hidden", "true");
 
     rerender(
       <Modal title="Example" isOpen={false} onClose={() => undefined}>
@@ -44,6 +45,7 @@ describe("Modal", () => {
       </Modal>,
     );
     expect(container).not.toHaveAttribute("inert");
+    expect(container).not.toHaveAttribute("aria-hidden");
   });
 
   it("locks every dismissal control when it is not dismissible", () => {

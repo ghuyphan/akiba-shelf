@@ -1,13 +1,26 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { type ComponentProps, useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { PlatformI18nProvider } from "../../lib/i18n/platformI18n";
 import { ColorPicker, hexToHsv, hsvToHex } from "./ColorPicker";
 
-function Harness({ initial = "#5f8d55" }: { initial?: string }) {
+function Harness({
+  initial = "#5f8d55",
+  recommendation,
+}: {
+  initial?: string;
+  recommendation?: ComponentProps<typeof ColorPicker>["recommendation"];
+}) {
   const [value, setValue] = useState(initial);
-  return <ColorPicker label="Accent" value={value} onChange={setValue} />;
+  return (
+    <ColorPicker
+      label="Accent"
+      value={value}
+      recommendation={recommendation}
+      onChange={setValue}
+    />
+  );
 }
 
 describe("ColorPicker", () => {
@@ -57,5 +70,28 @@ describe("ColorPicker", () => {
     for (const color of ["#000000", "#ffffff", "#e76f51", "#123abc"]) {
       expect(hsvToHex(hexToHsv(color))).toBe(color);
     }
+  });
+
+  it("applies an explicit accessible recommendation", async () => {
+    const user = userEvent.setup();
+    render(
+      <PlatformI18nProvider>
+        <Harness
+          initial="#ffffff"
+          recommendation={{
+            color: "#a93945",
+            label: "Recommended accessible shade",
+            description: "Current contrast is too low.",
+            actionLabel: "Use #a93945",
+          }}
+        />
+      </PlatformI18nProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Accent: #ffffff" }));
+    await user.click(screen.getByRole("button", { name: "Use #a93945" }));
+    expect(
+      screen.getByRole("button", { name: "Accent: #a93945" }),
+    ).toBeInTheDocument();
   });
 });

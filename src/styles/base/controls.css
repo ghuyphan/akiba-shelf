@@ -86,6 +86,7 @@
     )
   );
   max-width: var(--floating-available-width, calc(100vw - 24px));
+  max-height: var(--floating-available-height, min(360px, calc(100vh - 24px)));
   max-height: var(--floating-available-height, min(360px, calc(100dvh - 24px)));
   margin: 0;
   padding: 7px;
@@ -447,6 +448,7 @@ input[type="number"]::-webkit-outer-spin-button {
   z-index: 140;
   width: min(340px, var(--floating-available-width, calc(100vw - 24px)));
   max-width: var(--floating-available-width, calc(100vw - 24px));
+  max-height: var(--floating-available-height, calc(100vh - 24px));
   max-height: var(--floating-available-height, calc(100dvh - 24px));
   padding: 14px;
   overflow-y: auto;
@@ -468,6 +470,7 @@ input[type="number"]::-webkit-outer-spin-button {
   z-index: 140;
   width: min(320px, var(--floating-available-width, calc(100vw - 24px)));
   max-width: var(--floating-available-width, calc(100vw - 24px));
+  max-height: var(--floating-available-height, calc(100vh - 24px));
   max-height: var(--floating-available-height, calc(100dvh - 24px));
   padding: 12px;
   overflow-y: auto;
@@ -622,6 +625,65 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .color-picker-presets button:active {
   transform: scale(0.94);
+}
+
+.color-picker-recommendation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--green) 24%, var(--line));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--green) 6%, #fff);
+}
+
+.color-picker-recommendation[data-current="true"] {
+  border-color: color-mix(in srgb, var(--green) 18%, var(--line));
+  background: color-mix(in srgb, var(--green) 4%, #fff);
+}
+
+.color-picker-recommendation-swatch {
+  width: 30px;
+  height: 30px;
+  border: 2px solid #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgb(15 23 42 / 16%);
+}
+
+.color-picker-recommendation > span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.color-picker-recommendation strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.color-picker-recommendation small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.color-picker-recommendation button {
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--green) 30%, var(--line));
+  border-radius: 9px;
+  color: color-mix(in srgb, var(--green) 75%, #17311c);
+  background: #fff;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.color-picker-recommendation button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--green) 24%, transparent);
+  outline-offset: 2px;
 }
 
 .color-picker-value-row {
@@ -828,7 +890,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .date-time-days button.active {
-  color: #fff;
+  color: var(--on-coral, #fff);
   background: var(--coral);
 }
 

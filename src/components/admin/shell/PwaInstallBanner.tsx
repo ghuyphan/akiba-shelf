@@ -8,6 +8,7 @@ import {
   type PwaInstallState,
 } from "../../../lib/offline/pwa";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
+import { subscribeToMediaQuery } from "../../../utils/mediaQuery";
 
 const DISMISS_KEY = "matsuri-pwa-install-dismissed-at";
 const DISMISS_FOR_MS = 14 * 24 * 60 * 60 * 1000;
@@ -37,8 +38,7 @@ export function PwaInstallBanner() {
     const phoneLayout = window.matchMedia("(max-width: 760px)");
     const handleChange = (event: MediaQueryListEvent) =>
       setIsPhoneLayout(event.matches);
-    phoneLayout.addEventListener("change", handleChange);
-    return () => phoneLayout.removeEventListener("change", handleChange);
+    return subscribeToMediaQuery(phoneLayout, handleChange);
   }, []);
 
   useEffect(

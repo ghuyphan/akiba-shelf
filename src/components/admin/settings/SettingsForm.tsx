@@ -21,8 +21,8 @@ import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import { SocialLinkFields } from "./SocialLinkFields";
 import { SocialBrandIcon } from "../../ui/SocialBrandIcon";
 import { useAdminUnsavedChanges } from "../shell/AdminUnsavedChanges";
-import { ColorPicker } from "../../ui/ColorPicker";
 import { AdminFormError } from "../shared/AdminFormError";
+import { StorefrontThemeColorPicker } from "../shared/StorefrontThemeColorPicker";
 
 type SettingsFormProps = {
   shopId: string;
@@ -31,10 +31,10 @@ type SettingsFormProps = {
 };
 
 const THEME_COLOR_FIELDS = [
-  ["theme_primary", "Primary", DEFAULT_STOREFRONT_PALETTE.primary],
-  ["theme_secondary", "Dark", DEFAULT_STOREFRONT_PALETTE.secondary],
-  ["theme_accent", "Accent", DEFAULT_STOREFRONT_PALETTE.accent],
-  ["theme_background", "Page", DEFAULT_STOREFRONT_PALETTE.background],
+  ["theme_primary", "primary", "Primary", DEFAULT_STOREFRONT_PALETTE.primary],
+  ["theme_secondary", "secondary", "Dark", DEFAULT_STOREFRONT_PALETTE.secondary],
+  ["theme_accent", "accent", "Accent", DEFAULT_STOREFRONT_PALETTE.accent],
+  ["theme_background", "background", "Page", DEFAULT_STOREFRONT_PALETTE.background],
 ] as const;
 
 export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
@@ -233,12 +233,14 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
             </div>
           </div>
           <div className="admin-settings-color-grid">
-            {THEME_COLOR_FIELDS.map(([key, label, fallback]) => (
+            {THEME_COLOR_FIELDS.map(([key, role, label, fallback]) => (
               <div className="admin-settings-color-field" key={key}>
                 <span>{t(label)}</span>
-                <ColorPicker
+                <StorefrontThemeColorPicker
+                  role={role}
                   label={t(label)}
                   value={draft[key] ?? fallback}
+                  settings={draft}
                   disabled={!isEditing}
                   onChange={(value) => setDraft({ ...draft, [key]: value })}
                 />

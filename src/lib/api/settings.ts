@@ -6,6 +6,7 @@ import {
 } from "../catalogQueries";
 import { safePublicUrl } from "../branding";
 import {
+  boothSettingsSchema,
   paymentSettingsSchema,
   promotionProductMappingsSchema,
 } from "../schemas";
@@ -115,6 +116,7 @@ export async function saveBoothSettings(
   shopId: string,
   settings: BoothSettings,
 ): Promise<{ booth: BoothSettings; imageCleanupPending: boolean }> {
+  const validatedSettings = boothSettingsSchema.parse(settings);
   const client = requireSupabase();
   const { data: previousData, error: previousError } = await client
     .rpc("get_admin_booth_settings", { p_shop_id: shopId })
@@ -124,7 +126,11 @@ export async function saveBoothSettings(
     logo_path?: string;
     social_qr_logo_path?: string;
   } | null;
-  const payload = { ...settings, id: settings.id ?? shopId, shop_id: shopId };
+  const payload = {
+    ...validatedSettings,
+    id: validatedSettings.id ?? shopId,
+    shop_id: shopId,
+  };
   // Private paths make update/insert safer than a grant-expanding upsert.
   const write = previous
     ? client.from("booth_settings").update(payload).eq("shop_id", shopId)
@@ -134,8 +140,8 @@ export async function saveBoothSettings(
   const removed = [previous?.logo_path, previous?.social_qr_logo_path].filter(
     (path): path is string =>
       Boolean(path) &&
-      path !== settings.logo_path &&
-      path !== settings.social_qr_logo_path,
+      path !== validatedSettings.logo_path &&
+      path !== validatedSettings.social_qr_logo_path,
   );
   let imageCleanupPending = false;
   if (removed.length) {
@@ -156,8 +162,8 @@ export async function saveBoothSettings(
   return {
     booth: normalizeBooth({
       ...data,
-      logo_path: settings.logo_path,
-      social_qr_logo_path: settings.social_qr_logo_path,
+      logo_path: validatedSettings.logo_path,
+      social_qr_logo_path: validatedSettings.social_qr_logo_path,
     }),
     imageCleanupPending,
   };

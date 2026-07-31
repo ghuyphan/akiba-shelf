@@ -2,6 +2,21 @@ import { expect, test } from "@playwright/test";
 import type { Locator, Page } from "@playwright/test";
 import { mockSupabase, products } from "./fixtures";
 
+function getContrastRatio(first: string, second: string) {
+  const luminance = (color: string) => {
+    const channels = [1, 3, 5].map(
+      (index) => Number.parseInt(color.slice(index, index + 2), 16) / 255,
+    );
+    const linear = channels.map((channel) =>
+      channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+    );
+    return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+  };
+  const lighter = Math.max(luminance(first), luminance(second));
+  const darker = Math.min(luminance(first), luminance(second));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 async function expectTouchTargetsAtLeast(locator: Locator, minimum = 44) {
   await expect(locator.first()).toBeVisible();
   const targets = await locator.evaluateAll((elements) =>
@@ -1165,7 +1180,7 @@ test("uses shop branding while keeping admin actions contrast-safe", async ({
     return {
       primary: style.getPropertyValue("--admin-primary").trim(),
       secondary: style.getPropertyValue("--admin-secondary").trim(),
-      accent: style.getPropertyValue("--admin-accent").trim(),
+      accent: style.getPropertyValue("--teal").trim(),
       page: style.getPropertyValue("--admin-page-bg").trim(),
       brandPrimary: style.getPropertyValue("--admin-brand-primary").trim(),
       brandSecondary: style.getPropertyValue("--admin-brand-secondary").trim(),
@@ -1173,14 +1188,18 @@ test("uses shop branding while keeping admin actions contrast-safe", async ({
     };
   });
   expect(adminTheme).toMatchObject({
-    primary: "#507647",
     secondary: "#17233c",
-    accent: "#5f8d55",
     brandPrimary: "#5f8d55",
     brandSecondary: "#17233c",
     brandAccent: "#5f8d55",
   });
-  expect(adminTheme.page).toContain("#fff8f2");
+  expect(
+    getContrastRatio(adminTheme.primary, "#ffffff"),
+  ).toBeGreaterThanOrEqual(4.5);
+  expect(getContrastRatio(adminTheme.accent, "#ffffff")).toBeGreaterThanOrEqual(
+    4.5,
+  );
+  expect(adminTheme.page).toBe("#f7f2ea");
 
   await page.getByRole("button", { name: /Products/ }).click();
   await page.getByRole("button", { name: /Moon Stand/ }).click();
@@ -1200,8 +1219,7 @@ test("uses shop branding while keeping admin actions contrast-safe", async ({
       exact: true,
     })
     .evaluate((button) => getComputedStyle(button).backgroundColor);
-  expect(workspacePrimaryColor).toBe("rgb(92, 134, 87)");
-  expect(portaledPrimaryColor).toBe("rgb(92, 134, 87)");
+  expect(workspacePrimaryColor).toBe(portaledPrimaryColor);
   expect([workspacePrimaryColor, portaledPrimaryColor]).not.toContain(
     "rgb(95, 141, 85)",
   );

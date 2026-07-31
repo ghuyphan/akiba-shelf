@@ -7,7 +7,9 @@
   .mobile-cart-summary-text span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mobile-cart-summary-btn { flex: 0 0 auto; width: auto; max-width: 52%; white-space: nowrap; }
   .selected-panel:not(.selected-panel-empty).mobile-expanded {
+    height: min(88vh, 760px);
     height: min(88dvh, 760px);
+    max-height: min(88vh, 760px);
     max-height: min(88dvh, 760px);
   }
 }

@@ -38,10 +38,10 @@ export function useAnchoredPopover({
     whileElementsMounted: autoUpdate,
     middleware: [
       offset(7),
-      flip({ padding: 12 }),
-      shift({ padding: 12 }),
+      flip({ padding: 13 }),
+      shift({ padding: 13 }),
       size({
-        padding: 12,
+        padding: 13,
         apply({ availableHeight, availableWidth, rects, elements }) {
           const height = maxHeight
             ? Math.min(maxHeight, availableHeight)
@@ -60,6 +60,35 @@ export function useAnchoredPopover({
           );
         },
       }),
+      {
+        name: "viewportClamp",
+        fn({ x, y, rects }) {
+          const viewport = window.visualViewport;
+          const left = viewport?.offsetLeft ?? 0;
+          const top = viewport?.offsetTop ?? 0;
+          const width = Math.min(
+            viewport?.width ?? Number.POSITIVE_INFINITY,
+            window.innerWidth,
+            document.documentElement.clientWidth,
+          );
+          const height = Math.min(
+            viewport?.height ?? Number.POSITIVE_INFINITY,
+            window.innerHeight,
+            document.documentElement.clientHeight,
+          );
+          const minX = left + 13;
+          const minY = top + 13;
+          const maxX = Math.max(minX, left + width - rects.floating.width - 13);
+          const maxY = Math.max(
+            minY,
+            top + height - rects.floating.height - 13,
+          );
+          return {
+            x: Math.min(Math.max(x, minX), maxX),
+            y: Math.min(Math.max(y, minY), maxY),
+          };
+        },
+      },
     ],
   });
   const click = useClick(floating.context);

@@ -53,13 +53,13 @@
 }
 
 .button-primary {
-  color: #fff;
+  color: var(--on-coral, #fff);
   background: var(--coral);
   border-color: var(--coral);
 }
 
 .button-secondary {
-  color: #fff;
+  color: var(--on-navy, #fff);
   background: var(--teal-dark);
   border-color: var(--teal-dark);
 }
@@ -115,4 +115,3 @@
     transform: rotate(360deg);
   }
 }
-

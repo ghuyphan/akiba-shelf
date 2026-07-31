@@ -26,7 +26,7 @@ a {
   border-radius: 20px;
   background: rgb(255 255 255 / 88%);
   box-shadow: 0 14px 38px rgb(26 38 60 / 10%);
-  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
 }
 
 .app-header-surface-simple {
@@ -112,7 +112,7 @@ a {
 
 .app-header-mark {
   overflow: hidden;
-  color: #fff;
+  color: var(--on-coral, #fff);
   background: var(--coral);
 }
 

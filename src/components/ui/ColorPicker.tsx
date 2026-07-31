@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
+import { normalizeHexColor, readableTextColor } from "../../utils/color";
 import { useAnchoredPopover } from "./useAnchoredPopover";
 
 const DEFAULT_COLORS = [
@@ -37,6 +38,12 @@ type ColorPickerProps = {
   className?: string;
   compact?: boolean;
   colors?: string[];
+  recommendation?: {
+    color: string;
+    label: string;
+    description: string;
+    actionLabel: string;
+  };
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -44,16 +51,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function normalizeColor(value: string) {
-  const trimmed = value.trim();
-  if (/^#[0-9a-f]{6}$/i.test(trimmed)) return trimmed.toLowerCase();
-  if (/^#[0-9a-f]{3}$/i.test(trimmed)) {
-    return `#${trimmed
-      .slice(1)
-      .split("")
-      .map((part) => part + part)
-      .join("")}`.toLowerCase();
-  }
-  return null;
+  return normalizeHexColor(value);
 }
 
 export function hexToHsv(hex: string): HsvColor {
@@ -108,20 +106,6 @@ export function hsvToHex({ h, s, v }: HsvColor) {
     .join("")}`;
 }
 
-function readableInk(hex: string) {
-  const normalized = normalizeColor(hex) ?? "#000000";
-  const channels = [1, 3, 5].map((index) =>
-    Number.parseInt(normalized.slice(index, index + 2), 16) / 255,
-  );
-  const linear = channels.map((channel) =>
-    channel <= 0.03928
-      ? channel / 12.92
-      : ((channel + 0.055) / 1.055) ** 2.4,
-  );
-  const luminance = linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
-  return luminance > 0.48 ? "#20304a" : "#ffffff";
-}
-
 export function ColorPicker({
   value,
   label,
@@ -130,6 +114,7 @@ export function ColorPicker({
   className = "",
   compact = false,
   colors = DEFAULT_COLORS,
+  recommendation,
 }: ColorPickerProps) {
   const { t } = usePlatformI18n();
   const normalizedValue = normalizeColor(value);
@@ -347,7 +332,10 @@ export function ColorPicker({
                     className={selected ? "active" : ""}
                     aria-label={normalized}
                     aria-pressed={selected}
-                    style={{ background: normalized, color: readableInk(normalized) }}
+                    style={{
+                      background: normalized,
+                      color: readableTextColor(normalized),
+                    }}
                     onClick={() => commit(normalized)}
                   >
                     {selected && <Check size={14} aria-hidden="true" />}
@@ -355,6 +343,33 @@ export function ColorPicker({
                 );
               })}
             </div>
+
+            {recommendation && normalizeColor(recommendation.color) && (
+              <div
+                className="color-picker-recommendation"
+                data-current={
+                  normalizeColor(recommendation.color) === normalizedValue ||
+                  undefined
+                }
+              >
+                <span
+                  className="color-picker-recommendation-swatch"
+                  style={{ background: normalizeColor(recommendation.color)! }}
+                />
+                <span>
+                  <strong>{recommendation.label}</strong>
+                  <small>{recommendation.description}</small>
+                </span>
+                {normalizeColor(recommendation.color) !== normalizedValue && (
+                  <button
+                    type="button"
+                    onClick={() => commit(recommendation.color)}
+                  >
+                    {recommendation.actionLabel}
+                  </button>
+                )}
+              </div>
+            )}
 
             <div className="color-picker-value-row">
               <label className="color-picker-value" htmlFor={inputId}>

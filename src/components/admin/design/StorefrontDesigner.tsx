@@ -44,7 +44,7 @@ import { useToast } from "../../ui/ToastProvider";
 import { Button } from "../../ui/Button";
 import { Field, TextArea, TextInput } from "../../ui/Field";
 import { SelectMenu } from "../../ui/SelectMenu";
-import { ColorPicker } from "../../ui/ColorPicker";
+import { StorefrontThemeColorPicker } from "../shared/StorefrontThemeColorPicker";
 import { RangeInput } from "../../ui/RangeInput";
 import { CatalogHeader } from "../../catalog/shell/CatalogHeader";
 import { CategoryFilters } from "../../catalog/browsing/CategoryFilters";
@@ -1615,31 +1615,37 @@ export function StorefrontDesigner({
                       [
                         [
                           "theme_primary",
+                          "primary",
                           "Primary",
                           DEFAULT_STOREFRONT_PALETTE.primary,
                         ],
                         [
                           "theme_secondary",
+                          "secondary",
                           "Dark",
                           DEFAULT_STOREFRONT_PALETTE.secondary,
                         ],
                         [
                           "theme_accent",
+                          "accent",
                           "Accent",
                           DEFAULT_STOREFRONT_PALETTE.accent,
                         ],
                         [
                           "theme_background",
+                          "background",
                           "Page",
                           DEFAULT_STOREFRONT_PALETTE.background,
                         ],
                       ] as const
-                    ).map(([key, label, fallback]) => (
+                    ).map(([key, role, label, fallback]) => (
                       <div className="designer-color-field" key={key}>
                         <span>{t(label)}</span>
-                        <ColorPicker
+                        <StorefrontThemeColorPicker
+                          role={role}
                           label={t(label)}
                           value={draft[key] ?? fallback}
+                          settings={draft}
                           onChange={(value) => update(key, value)}
                         />
                       </div>

@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
+import { subscribeToMediaQuery } from "../../utils/mediaQuery";
 import { useMobileSheetDrag } from "./useMobileSheetDrag";
 
 type MobileSheetShellProps = {
@@ -20,7 +21,13 @@ let lockedBodyStyles: { overflow: string; paddingRight: string } | null = null;
 
 const inertLocks = new WeakMap<
   HTMLElement,
-  { count: number; inert: boolean; hadAttribute: boolean }
+  {
+    count: number;
+    inert: boolean;
+    hadAttribute: boolean;
+    ariaHidden: string | null;
+    ariaFallback: boolean;
+  }
 >();
 
 export const SHEET_EXIT_DURATION_MS = 240;
@@ -66,15 +73,20 @@ export function inertOutsideSurface(
       if (existingLock) {
         existingLock.count += 1;
       } else {
+        const supportsInert = typeof sibling.inert === "boolean";
         inertLocks.set(sibling, {
           count: 1,
-          inert: sibling.inert,
+          inert: supportsInert ? sibling.inert : false,
           hadAttribute: sibling.hasAttribute("inert"),
+          ariaHidden: sibling.getAttribute("aria-hidden"),
+          ariaFallback: !supportsInert,
         });
       }
       changes.push(sibling);
-      sibling.inert = true;
+      if (!inertLocks.get(sibling)?.ariaFallback) sibling.inert = true;
       sibling.setAttribute("inert", "");
+      if (inertLocks.get(sibling)?.ariaFallback)
+        sibling.setAttribute("aria-hidden", "true");
     }
     if (branchParent === document.body) break;
     branch = branchParent;
@@ -86,8 +98,12 @@ export function inertOutsideSurface(
       if (!lock) continue;
       lock.count -= 1;
       if (lock.count > 0) continue;
-      element.inert = lock.inert;
+      if (!lock.ariaFallback) element.inert = lock.inert;
       if (!lock.hadAttribute) element.removeAttribute("inert");
+      if (lock.ariaFallback) {
+        if (lock.ariaHidden === null) element.removeAttribute("aria-hidden");
+        else element.setAttribute("aria-hidden", lock.ariaHidden);
+      }
       inertLocks.delete(element);
     }
   };
@@ -125,8 +141,7 @@ function usePhoneSheetLayout() {
     const media = window.matchMedia("(max-width: 760px)");
     const handleChange = () => setMatches(media.matches);
     handleChange();
-    media.addEventListener("change", handleChange);
-    return () => media.removeEventListener("change", handleChange);
+    return subscribeToMediaQuery(media, handleChange);
   }, []);
 
   return matches;

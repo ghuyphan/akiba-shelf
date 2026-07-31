@@ -13,6 +13,7 @@
   align-content: center;
   gap: 16px;
   width: 100%;
+  min-height: 100vh;
   min-height: 100dvh;
   padding: 24px;
   color: var(--loading-muted);

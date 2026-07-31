@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { subscribeToMediaQuery } from "../../utils/mediaQuery";
 
 export function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(
@@ -9,8 +10,7 @@ export function useMediaQuery(query: string) {
     const media = window.matchMedia(query);
     const update = () => setMatches(media.matches);
     update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
+    return subscribeToMediaQuery(media, update);
   }, [query]);
 
   return matches;

@@ -20,7 +20,7 @@
     linear-gradient(rgb(255 255 255 / 8%) 1px, transparent 1px),
     linear-gradient(90deg, rgb(255 255 255 / 8%) 1px, transparent 1px);
   background-size: 52px 52px;
-  mask-image: linear-gradient(to bottom, black, transparent 48%);
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent 48%); mask-image: linear-gradient(to bottom, black, transparent 48%);
 }
 
 .gacha-select-actions {
@@ -53,7 +53,7 @@
   border-radius: 999px;
   background: rgb(4 8 18 / 58%);
   box-shadow: 0 12px 34px rgb(0 0 0 / 22%);
-  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%); backdrop-filter: blur(18px) saturate(135%);
   cursor: pointer;
   transition:
     transform 180ms ease,
@@ -135,6 +135,7 @@
 .gacha-select-panel,
 .gacha-game-portals {
   position: relative;
+  min-height: 100vh;
   min-height: 100dvh;
 }
 
@@ -187,4 +188,3 @@
   text-transform: uppercase;
   white-space: nowrap;
 }
-

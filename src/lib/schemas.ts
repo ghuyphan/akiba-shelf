@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+export const hexColorSchema = z
+  .string()
+  .regex(/^#[\da-f]{6}$/i, "Use a 6 digit hex color.")
+  .transform((value) => value.toLowerCase());
+
 export const storefrontSections = [
   "featured",
   "booth",
@@ -126,20 +131,16 @@ export const boothSettingsSchema = z
       .string()
       .nullish()
       .transform((value) => value ?? undefined),
-    theme_primary: z
-      .string()
+    theme_primary: hexColorSchema
       .nullish()
       .transform((value) => value ?? undefined),
-    theme_secondary: z
-      .string()
+    theme_secondary: hexColorSchema
       .nullish()
       .transform((value) => value ?? undefined),
-    theme_accent: z
-      .string()
+    theme_accent: hexColorSchema
       .nullish()
       .transform((value) => value ?? undefined),
-    theme_background: z
-      .string()
+    theme_background: hexColorSchema
       .nullish()
       .transform((value) => value ?? undefined),
     layout_order: layoutOrderSchema

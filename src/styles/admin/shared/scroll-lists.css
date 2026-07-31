@@ -1,6 +1,7 @@
 /* Dynamic admin collections share one bounded, touch-friendly scroll area. */
 .admin-scroll-list {
   min-height: 0;
+  max-height: min(680px, calc(100vh - 280px)) !important;
   max-height: min(680px, calc(100dvh - 280px)) !important;
   overflow-y: auto !important;
   overscroll-behavior-y: contain !important;

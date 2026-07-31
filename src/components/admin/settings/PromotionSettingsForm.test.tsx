@@ -110,9 +110,14 @@ describe("PromotionSettingsForm", () => {
     expect(
       screen.getByRole("dialog", { name: "Discard unsaved changes?" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("dialog", { name: "Promotion" }),
-    ).toBeInTheDocument();
+    const promotionDialog = document.querySelector(
+      '[role="dialog"][aria-label="Promotion"]',
+    );
+    expect(promotionDialog).toBeInTheDocument();
+    expect(promotionDialog?.closest(".sheet-backdrop")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
 
     const confirmation = screen.getByRole("dialog", {
       name: "Discard unsaved changes?",

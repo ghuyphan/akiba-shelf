@@ -2,6 +2,7 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { SOCIAL_QR_COLORS } from "../../../utils/social";
+import { subscribeToMediaQuery } from "../../../utils/mediaQuery";
 import { Modal } from "../../ui/Modal";
 
 type SocialQrCardProps = {
@@ -187,8 +188,7 @@ export function SocialQrCard({
     const handleBreakpoint = (event: MediaQueryListEvent) => {
       if (!event.matches) void ensureQr();
     };
-    phone.addEventListener("change", handleBreakpoint);
-    return () => phone.removeEventListener("change", handleBreakpoint);
+    return subscribeToMediaQuery(phone, handleBreakpoint);
   }, [deferOnPhone, ensureQr]);
 
   const openQr = () => {

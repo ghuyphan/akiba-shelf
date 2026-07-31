@@ -6,7 +6,7 @@ import { CatalogLocaleProvider } from "../lib/i18n/catalogLocale";
 import { ShopUnavailablePage } from "./ShopUnavailablePage";
 
 describe("ShopUnavailablePage", () => {
-  it("renders the unavailable experience in the storefront locale", async () => {
+  it("renders a localized retry state for load failures", async () => {
     const user = userEvent.setup();
     const retry = vi.fn();
     render(
@@ -22,7 +22,7 @@ describe("ShopUnavailablePage", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: /Gian hàng này không có trên kệ/i }),
+      screen.getByRole("heading", { name: "Không thể tải gian hàng" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Hiện chúng tôi chưa thể kết nối",
@@ -31,10 +31,38 @@ describe("ShopUnavailablePage", () => {
       screen.getByRole("link", { name: "Staff đăng nhập" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Ghé gian hàng demo." }),
+      screen.getByRole("link", { name: "Về Matsuri" }),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/404/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Thử lại" }));
     expect(retry).toHaveBeenCalledOnce();
+  });
+
+  it("keeps true missing storefronts distinct from load failures", () => {
+    render(
+      <MemoryRouter>
+        <CatalogLocaleProvider locale="en">
+          <ShopUnavailablePage
+            hasLoadError={false}
+            showDemoLink
+            onRetry={vi.fn()}
+          />
+        </CatalogLocaleProvider>
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "This booth isn’t on the shelf.",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("404")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Visit the demo booth." }),
+    ).toHaveAttribute("href", "/s/demo-booth");
+    expect(
+      screen.queryByRole("button", { name: "Try again" }),
+    ).not.toBeInTheDocument();
   });
 });

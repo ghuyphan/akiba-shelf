@@ -6,14 +6,14 @@
   place-items: center;
   padding: 20px;
   background: rgb(6 14 24 / 58%);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
 .sheet-backdrop {
   position: fixed;
   inset: 0;
   z-index: 90;
   background: var(--sheet-backdrop);
-  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
 }
 .sheet-backdrop.is-open {
   animation: fade-in var(--sheet-animation-duration) ease-out both;
@@ -62,7 +62,7 @@
   border-radius: 0;
   background: var(--surface);
   box-shadow: 0 -8px 20px rgb(20 33 53 / 6%);
-  backdrop-filter: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 .modal-footer > .button {
   min-width: 0;

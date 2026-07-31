@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   boothSettingsSchema,
+  hexColorSchema,
   imageVariantSchema,
   invitationOutcomeSchema,
   layoutOrderSchema,
@@ -57,6 +58,11 @@ describe("runtime schemas", () => {
     expect(
       boothSettingsSchema.shape.card_style.safeParse("glassmorphism").success,
     ).toBe(false);
+  });
+  it("accepts only canonical six-digit theme colors", () => {
+    expect(hexColorSchema.safeParse("#A1B2C3").data).toBe("#a1b2c3");
+    expect(hexColorSchema.safeParse("#abc").success).toBe(false);
+    expect(hexColorSchema.safeParse("not-a-color").success).toBe(false);
   });
   it("validates each section-specific storefront style", () => {
     expect(

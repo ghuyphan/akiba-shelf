@@ -40,13 +40,54 @@ test("auth remains usable when browser storage is blocked", async ({
   await expect(
     page.getByRole("heading", { name: "Orders", exact: true }),
   ).toBeVisible();
+
+  const moreActions = page.getByRole("button", { name: "More actions" });
+  await moreActions.click();
+  const menuBounds = await page
+    .getByRole("menu", { name: "More actions" })
+    .evaluate((menu) => {
+      const bounds = menu.getBoundingClientRect();
+      return {
+        left: bounds.left,
+        right: bounds.right,
+        width: innerWidth,
+      };
+    });
+  expect(menuBounds.left).toBeGreaterThanOrEqual(11);
+  expect(menuBounds.right).toBeLessThanOrEqual(menuBounds.width - 11);
 });
 
 test("storefront cart persists across a WebKit reload", async ({ page }) => {
   await mockSupabase(page);
   await page.goto("./s/akiba-shelf");
+  const addToCart = page.getByRole("button", {
+    name: /Add Moon Stand to cart/i,
+  });
+  await expect(addToCart).toBeVisible();
 
-  await page.getByRole("button", { name: /Add Moon Stand to cart/i }).click();
+  const readTheme = () =>
+    page.evaluate(() => {
+      const root = getComputedStyle(document.documentElement);
+      const header = document.querySelector<HTMLElement>(".catalog-header");
+      return {
+        page: root.getPropertyValue("--page-bg").trim(),
+        card: root.getPropertyValue("--store-card-background").trim(),
+        renderedPage: getComputedStyle(document.body).backgroundColor,
+        backdrop: header
+          ? getComputedStyle(header).getPropertyValue("backdrop-filter") ||
+            getComputedStyle(header).getPropertyValue(
+              "-webkit-backdrop-filter",
+            )
+          : "",
+      };
+    });
+  await expect.poll(async () => (await readTheme()).card).toMatch(/^#[0-9a-f]{6}$/);
+  const theme = await readTheme();
+  expect(theme.page).toMatch(/^#[0-9a-f]{6}$/);
+  expect(theme.renderedPage).not.toBe("rgba(0, 0, 0, 0)");
+  expect(theme.backdrop).toContain("blur");
+
+  await addToCart.click();
   await expect
     .poll(() =>
       page.evaluate(

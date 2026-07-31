@@ -172,7 +172,7 @@
 }
 
 .chip-active {
-  color: #fff;
+  color: var(--on-navy, #fff);
   background: var(--navy);
   border-color: var(--navy);
 }
@@ -248,7 +248,7 @@
 
 .search-clear:hover {
   background: var(--coral);
-  color: #fff;
+  color: var(--on-coral, #fff);
 }
 
 .sort-control {
@@ -291,4 +291,3 @@
   cursor: pointer !important;
   outline: none !important;
 }
-

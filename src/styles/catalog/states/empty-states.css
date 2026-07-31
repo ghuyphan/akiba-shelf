@@ -13,7 +13,9 @@
 
 @media (min-width: 761px) {
   .selected-panel:not(.selected-panel-empty) {
+    height: min(560px, calc(100vh - 108px));
     height: min(560px, calc(100dvh - 108px));
+    min-height: min(520px, calc(100vh - 108px));
     min-height: min(520px, calc(100dvh - 108px));
   }
 }
@@ -36,4 +38,3 @@
   border-color: var(--line) !important;
   box-shadow: var(--soft-shadow) !important;
 }
-

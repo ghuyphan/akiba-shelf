@@ -228,14 +228,12 @@ describe("MobileSheetShell", () => {
     const { rerender } = render(renderStack(true, false));
     rerender(renderStack(true, true));
 
-    const background = screen.getByRole("button", {
-      name: "Background action",
-      hidden: true,
-    });
+    const background = screen.getByText("Background action");
     const firstBackdrop = document
       .querySelector('[aria-label="First sheet"]')
       ?.closest(".sheet-backdrop");
     expect(background).toHaveAttribute("inert");
+    expect(background).toHaveAttribute("aria-hidden", "true");
     expect(firstBackdrop).toHaveAttribute("inert");
 
     rerender(renderStack(false, true));
@@ -245,6 +243,7 @@ describe("MobileSheetShell", () => {
     rerender(renderStack(false, false));
     act(() => vi.advanceTimersByTime(241));
     expect(background).not.toHaveAttribute("inert");
+    expect(background).not.toHaveAttribute("aria-hidden");
   });
 
   it("traps focus, inerts the background, and restores focus when closed", () => {
@@ -279,10 +278,10 @@ describe("MobileSheetShell", () => {
     const setPhoneLayout = mockPhoneLayout(true);
 
     render(<ExpandableSheetHarness />);
+    const outside = screen.getByRole("button", { name: "Outside action" });
     fireEvent.click(screen.getByRole("button", { name: "Open cart" }));
     act(() => vi.runOnlyPendingTimers());
 
-    const outside = screen.getByRole("button", { name: "Outside action" });
     expect(screen.getByRole("dialog", { name: "Cart" })).toBeInTheDocument();
     expect(outside).toHaveAttribute("inert");
     expect(document.body.style.overflow).toBe("hidden");

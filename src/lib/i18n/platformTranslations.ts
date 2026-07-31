@@ -1008,6 +1008,15 @@ const vi: Record<string, string> = {
   brightness: "độ sáng",
   Hue: "Sắc độ",
   "Color presets": "Màu có sẵn",
+  "Accessible contrast": "Độ tương phản đạt chuẩn",
+  "Recommended accessible shade": "Sắc độ dễ đọc được đề xuất",
+  "{{ratio}}:1 against {{surface}}.":
+    "Tỷ lệ {{ratio}}:1 trên {{surface}}.",
+  "Current {{ratio}}:1; target {{target}}:1 against {{surface}}.":
+    "Hiện tại {{ratio}}:1; mục tiêu {{target}}:1 trên {{surface}}.",
+  "Use {{color}}": "Dùng {{color}}",
+  "light surfaces": "bề mặt sáng",
+  "dark palette color": "màu tối của bảng màu",
   "Hex color": "Mã màu hex",
   "System picker": "Bảng màu hệ thống",
   "Open system color picker": "Mở bảng chọn màu của hệ thống",

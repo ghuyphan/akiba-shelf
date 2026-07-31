@@ -60,6 +60,7 @@ import { prefersLightweightCatalog } from "../lib/network";
 import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 import { hasUsablePayment } from "../utils/vietqr";
+import { subscribeToMediaQuery } from "../utils/mediaQuery";
 import { getUserFacingErrorMessage } from "../lib/errors";
 import { Alert } from "../components/ui/Alert";
 import { PageLoading } from "../components/ui/PageLoading";
@@ -296,9 +297,9 @@ export function CatalogPage() {
         observer.observe(cartModule);
       }
     };
-    mobile.addEventListener("change", handleBreakpoint);
+    const unsubscribe = subscribeToMediaQuery(mobile, handleBreakpoint);
     return () => {
-      mobile.removeEventListener("change", handleBreakpoint);
+      unsubscribe();
       observer.disconnect();
     };
   }, [cart.length]);

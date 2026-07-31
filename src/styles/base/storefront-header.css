@@ -11,7 +11,7 @@
   border-bottom: 1px solid var(--soft-line);
   border-radius: 0;
   box-shadow: none;
-  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
 }
 
 .brand-lockup,
@@ -41,7 +41,7 @@
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  color: #fff;
+  color: var(--on-navy, #fff);
   background: var(--teal-dark);
 }
 
@@ -112,4 +112,3 @@
   justify-content: end;
   gap: 12px;
 }
-

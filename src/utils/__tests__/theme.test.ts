@@ -32,7 +32,7 @@ describe("storefront card styles", () => {
     expect(admin["--admin-accent"]).toBe("#fff000");
     expect(admin["--coral"]).not.toBe("#ffffff");
     expect(admin["--navy"]).not.toBe("#f4f4f4");
-    expect(admin["--page-bg"]).toContain("#101820");
+    expect(admin["--page-bg"]).toBe("#c3c0bc");
     expect(admin["--admin-action"]).toBe("#5c8657");
   });
 
@@ -41,8 +41,8 @@ describe("storefront card styles", () => {
     const playful = getThemeStyle({ ...defaultBooth, card_style: "playful" });
 
     expect(outlined["--store-card-shadow"]).toBe("none");
-    expect(playful["--store-card-shadow"]).toContain("color-mix");
-    expect(playful["--store-card-border"]).toContain("--coral");
+    expect(playful["--store-card-shadow"]).toMatch(/^5px 6px 0 rgba\(/);
+    expect(playful["--store-card-border"]).toMatch(/^#[0-9a-f]{6}$/);
   });
 
   it("maps section presets to scoped storefront classes", () => {

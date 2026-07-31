@@ -72,6 +72,25 @@ function Harness() {
 }
 
 describe("StorefrontDesigner", () => {
+  it("offers an explicit accessible shade for an unsafe primary", async () => {
+    const user = userEvent.setup();
+    render(renderDesigner("shop-1", defaultBooth));
+
+    await user.click(screen.getByRole("tab", { name: "Style" }));
+    await user.click(
+      screen.getByRole("button", {
+        name: `Primary: ${defaultBooth.theme_primary}`,
+      }),
+    );
+
+    expect(
+      screen.getByText("Recommended accessible shade"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Use #[0-9a-f]{6}/i }),
+    ).toBeInTheDocument();
+  });
+
   it("retains failed payment edits when storefront publication succeeds", async () => {
     const user = userEvent.setup();
     render(

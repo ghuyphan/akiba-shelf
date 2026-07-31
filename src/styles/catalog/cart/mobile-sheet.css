@@ -4,8 +4,8 @@
 }
 
 @keyframes cart-backdrop-out {
-  from { opacity: 1; backdrop-filter: blur(4px); }
-  to { opacity: 0; backdrop-filter: blur(0); }
+  from { opacity: 1; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  to { opacity: 0; -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); }
 }
 
 @media (max-width: 760px) {

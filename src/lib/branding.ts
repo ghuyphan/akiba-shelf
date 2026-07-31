@@ -40,10 +40,14 @@ export function getShopName(shopName?: string, boothName?: string) {
 
 export function getShopBranding(shopName?: string, boothName?: string, logoUrl?: string, themeColor?: string): DocumentBranding {
   const name = getShopName(shopName, boothName);
+  const normalizedThemeColor = themeColor?.trim();
   return {
     title: `${name} · ${PLATFORM_BRAND.name}`,
     faviconUrl: safePublicUrl(logoUrl) ?? PLATFORM_FAVICON,
-    themeColor: themeColor?.trim() || PLATFORM_THEME_COLOR,
+    themeColor:
+      normalizedThemeColor && /^#[\da-f]{6}$/i.test(normalizedThemeColor)
+        ? normalizedThemeColor.toLowerCase()
+        : PLATFORM_THEME_COLOR,
   };
 }
 

@@ -56,7 +56,7 @@
   border-radius: 13px;
   background: rgb(255 255 255 / 96%);
   box-shadow: 0 12px 30px rgb(80 58 38 / 13%);
-  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
   animation: staff-install-banner-enter 240ms var(--ease-out) both;
 }
 @keyframes staff-install-banner-enter {

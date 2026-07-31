@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { subscribeToMediaQuery } from "../../utils/mediaQuery";
 
 const TURNSTILE_SCRIPT_ID = "matsuri-turnstile-api";
 const TURNSTILE_ACTION = "turnstile-spin-v2";
@@ -116,8 +117,7 @@ export const TurnstileWidget = forwardRef<
   useEffect(() => {
     const media = window.matchMedia(COMPACT_QUERY);
     const update = () => setCompact(media.matches);
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
+    return subscribeToMediaQuery(media, update);
   }, []);
 
   const issueTestToken = () => {

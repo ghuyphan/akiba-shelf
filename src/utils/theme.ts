@@ -2,6 +2,13 @@ import type { CSSProperties } from "react";
 import { DEFAULT_STOREFRONT_PALETTE, defaultBooth } from "../lib/constants";
 import type { BoothSettings, StorefrontSection } from "../types/catalog";
 import { PLATFORM_THEME_COLOR } from "../lib/branding";
+import {
+  ensureColorContrast,
+  mixHexColors,
+  normalizeHexColor,
+  parseHexColor,
+  readableTextColor,
+} from "./color";
 
 type ThemeStyle = CSSProperties & Record<`--${string}`, string>;
 
@@ -34,71 +41,7 @@ export function getStorefrontSectionStyleClass(
 }
 
 function color(value: string | undefined, fallback: string) {
-  const parsed = parseHexColor(value?.trim() || fallback);
-  return parsed ? rgbToHex(parsed) : fallback;
-}
-
-type Rgb = { red: number; green: number; blue: number };
-
-function parseHexColor(value: string): Rgb | null {
-  const match = value.trim().match(/^#([\da-f]{3}|[\da-f]{6})$/i);
-  if (!match) return null;
-  const hex =
-    match[1].length === 3
-      ? match[1]
-          .split("")
-          .map((character) => character + character)
-          .join("")
-      : match[1];
-  return {
-    red: Number.parseInt(hex.slice(0, 2), 16),
-    green: Number.parseInt(hex.slice(2, 4), 16),
-    blue: Number.parseInt(hex.slice(4, 6), 16),
-  };
-}
-
-function channelLuminance(channel: number) {
-  const value = channel / 255;
-  return value <= 0.04045
-    ? value / 12.92
-    : Math.pow((value + 0.055) / 1.055, 2.4);
-}
-
-function luminance({ red, green, blue }: Rgb) {
-  return (
-    channelLuminance(red) * 0.2126 +
-    channelLuminance(green) * 0.7152 +
-    channelLuminance(blue) * 0.0722
-  );
-}
-
-function contrastRatio(first: Rgb, second: Rgb) {
-  const lighter = Math.max(luminance(first), luminance(second));
-  const darker = Math.min(luminance(first), luminance(second));
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-function rgbToHex({ red, green, blue }: Rgb) {
-  return `#${[red, green, blue]
-    .map((value) => Math.round(value).toString(16).padStart(2, "0"))
-    .join("")}`;
-}
-
-function readableBrandColor(value: string, fallback: string, target = 4.5) {
-  const source = parseHexColor(value) ?? parseHexColor(fallback);
-  if (!source) return fallback;
-  const white = { red: 255, green: 255, blue: 255 };
-  if (contrastRatio(source, white) >= target) return rgbToHex(source);
-
-  for (let amount = 0.08; amount <= 1; amount += 0.08) {
-    const darkened = {
-      red: source.red * (1 - amount),
-      green: source.green * (1 - amount),
-      blue: source.blue * (1 - amount),
-    };
-    if (contrastRatio(darkened, white) >= target) return rgbToHex(darkened);
-  }
-  return "#20304a";
+  return normalizeHexColor(value ?? "") ?? fallback;
 }
 
 function getAdminBrandStyle(booth: BoothSettings): ThemeStyle {
@@ -136,15 +79,52 @@ export function getThemeStyle(booth: BoothSettings): ThemeStyle {
     booth.theme_background,
     DEFAULT_STOREFRONT_PALETTE.background,
   );
+  const primaryInteractive = ensureColorContrast(
+    primary,
+    "#ffffff",
+    4.5,
+    "#20304a",
+  );
+  const primaryStrong = ensureColorContrast(
+    primary,
+    "#ffffff",
+    6,
+    "#20304a",
+  );
+  const secondaryInteractive = ensureColorContrast(
+    secondary,
+    "#ffffff",
+    4.5,
+    "#20304a",
+  );
+  const pageBackground = ensureColorContrast(
+    background,
+    secondaryInteractive,
+    4.5,
+    DEFAULT_STOREFRONT_PALETTE.background,
+  );
+  const accentOnLight = ensureColorContrast(
+    accent,
+    "#ffffff",
+    4.5,
+    secondaryInteractive,
+  );
+  const accentOnSecondary = ensureColorContrast(
+    accent,
+    secondaryInteractive,
+    4.5,
+    "#ffffff",
+  );
   const cornerRadius = Math.min(
     32,
     Math.max(0, booth.corner_radius ?? defaultBooth.corner_radius ?? 16),
   );
   const cardStyle = booth.card_style ?? defaultBooth.card_style ?? "soft";
+  const playfulShadow = parseHexColor(accentOnSecondary)!;
   const cardTokens = {
     soft: {
-      background: "color-mix(in srgb, #fff 92%, var(--page-bg))",
-      border: "color-mix(in srgb, var(--line) 72%, transparent)",
+      background: mixHexColors("#ffffff", pageBackground, 0.92) ?? "#ffffff",
+      border: "rgba(222, 217, 207, 0.72)",
       shadow: "0 10px 28px rgb(15 23 42 / 6%)",
     },
     outlined: {
@@ -159,19 +139,26 @@ export function getThemeStyle(booth: BoothSettings): ThemeStyle {
     },
     playful: {
       background: "#fff",
-      border: "color-mix(in srgb, var(--coral) 42%, var(--line))",
-      shadow: "5px 6px 0 color-mix(in srgb, var(--blue) 42%, transparent)",
+      border:
+        mixHexColors(primaryInteractive, "#ded9cf", 0.42) ?? "#ded9cf",
+      shadow: `5px 6px 0 rgba(${playfulShadow.red}, ${playfulShadow.green}, ${playfulShadow.blue}, 0.42)`,
     },
   }[cardStyle];
 
   return {
-    "--coral": primary,
-    "--coral-strong": primary,
-    "--navy": secondary,
-    "--teal-dark": secondary,
-    "--blue": accent,
-    "--teal": accent,
-    "--page-bg": background,
+    "--store-brand-primary": primary,
+    "--store-brand-secondary": secondary,
+    "--store-brand-accent": accent,
+    "--store-brand-page-bg": background,
+    "--coral": primaryInteractive,
+    "--coral-strong": primaryStrong,
+    "--on-coral": readableTextColor(primaryInteractive),
+    "--navy": secondaryInteractive,
+    "--teal-dark": secondaryInteractive,
+    "--on-navy": readableTextColor(secondaryInteractive),
+    "--blue": accentOnSecondary,
+    "--teal": accentOnLight,
+    "--page-bg": pageBackground,
     "--store-radius": `${cornerRadius}px`,
     "--store-card-background": cardTokens.background,
     "--store-card-border": cardTokens.border,
@@ -185,25 +172,43 @@ export function getAdminThemeStyle(booth: BoothSettings): ThemeStyle {
   const secondary = brandStyle["--admin-brand-secondary"];
   const accent = brandStyle["--admin-brand-accent"];
   const pageBackground = brandStyle["--admin-brand-page-bg"];
-  const safePageBackground = `color-mix(in srgb, ${pageBackground} 22%, #f5f0e8)`;
-  const interactive = readableBrandColor(primary, adminThemeStyle["--coral"]);
-  const readableSecondary = readableBrandColor(
+  const safePageBackground =
+    mixHexColors(pageBackground, "#f5f0e8", 0.22) ??
+    adminThemeStyle["--page-bg"];
+  const interactive = ensureColorContrast(
+    primary,
+    "#ffffff",
+    4.5,
+    adminThemeStyle["--coral"],
+  );
+  const readableSecondary = ensureColorContrast(
     secondary,
+    "#ffffff",
+    4.5,
     adminThemeStyle["--admin-secondary"],
+  );
+  const readableAccent = ensureColorContrast(
+    accent,
+    "#ffffff",
+    4.5,
+    adminThemeStyle["--teal-dark"],
   );
   return {
     ...adminThemeStyle,
     ...brandStyle,
     "--coral": interactive,
-    "--coral-strong": readableBrandColor(
+    "--coral-strong": ensureColorContrast(
       primary,
-      adminThemeStyle["--coral-strong"],
+      "#ffffff",
       6,
+      adminThemeStyle["--coral-strong"],
     ),
+    "--on-coral": readableTextColor(interactive),
     "--navy": readableSecondary,
-    "--teal-dark": readableBrandColor(accent, adminThemeStyle["--teal-dark"]),
-    "--blue": accent,
-    "--teal": accent,
+    "--teal-dark": readableAccent,
+    "--on-navy": readableTextColor(readableSecondary),
+    "--blue": readableAccent,
+    "--teal": readableAccent,
     "--page-bg": safePageBackground,
     "--admin-primary": interactive,
     "--admin-brand-interactive": interactive,
@@ -247,7 +252,9 @@ export function resetPageTheme() {
   [
     "--coral",
     "--coral-strong",
+    "--on-coral",
     "--navy",
+    "--on-navy",
     "--teal-dark",
     "--blue",
     "--teal",
@@ -256,6 +263,10 @@ export function resetPageTheme() {
     "--store-card-background",
     "--store-card-border",
     "--store-card-shadow",
+    "--store-brand-primary",
+    "--store-brand-secondary",
+    "--store-brand-accent",
+    "--store-brand-page-bg",
     "--admin-primary",
     "--admin-secondary",
     "--admin-accent",

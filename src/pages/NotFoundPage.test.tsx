@@ -8,7 +8,7 @@ describe("NotFoundPage", () => {
   beforeEach(() => localStorage.setItem("matsuri-platform-locale", "en"));
   afterEach(() => localStorage.removeItem("matsuri-platform-locale"));
 
-  it("renders a real 404 with recovery links", () => {
+  it("renders a focused 404 with recovery links", () => {
     render(
       <MemoryRouter initialEntries={["/missing-booth"]}>
         <PlatformI18nProvider>
@@ -19,15 +19,18 @@ describe("NotFoundPage", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Wrong aisle. There’s no booth here.",
+        name: "This page wandered off.",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText("/missing-booth")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Go home" }),
+      screen.getByRole("link", { name: "Back to Matsuri" }),
     ).toHaveAttribute("href", "/");
     expect(
-      screen.getByRole("link", { name: "Open demo storefront" }),
+      screen.getByRole("link", { name: "Visit the demo booth" }),
     ).toHaveAttribute("href", "/s/demo-booth");
+    expect(
+      screen.queryByRole("link", { name: "Sign in" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("/missing-booth")).not.toBeInTheDocument();
   });
 });

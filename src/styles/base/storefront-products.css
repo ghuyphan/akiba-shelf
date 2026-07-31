@@ -123,7 +123,7 @@
   place-items: center;
   z-index: 2;
   background: rgb(255 255 255 / 75%);
-  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px);
 }
 
 .product-soldout-overlay span {
