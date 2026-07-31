@@ -1,5 +1,5 @@
 {
-  "appRouteChunks": "app-route-chunks-v1",
+  "appRouteChunks": "app-route-chunks-v2",
   "simulatorShell": "gacha-app-shell-v4",
   "simulatorMedia": "gacha-media-cache-v2",
   "simulatorStatic": "gacha-static-cache-v2",

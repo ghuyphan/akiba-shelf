@@ -24,6 +24,7 @@ let installPrompt: InstallPromptEvent | null = null;
 let installListenersReady = false;
 const installStateListeners = new Set<() => void>();
 const versionedRuntimeCachePrefixes = [
+  "app-route-chunks-",
   "gacha-app-shell-v",
   "gacha-media-cache-v",
   "gacha-static-cache-v",

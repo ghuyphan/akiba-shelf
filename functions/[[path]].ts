@@ -6,6 +6,11 @@ import {
   isSimulatorMediaPath,
   parseSimulatorMediaRange,
 } from "./media-route";
+import {
+  createStaleAppAssetResponse,
+  isJavaScriptResponse,
+  isVersionedAppScriptPath,
+} from "./app-asset-route";
 
 function mediaResponse(
   body: BodyInit | null,
@@ -39,6 +44,15 @@ function setRangeHeaders(
 
 export const onRequest: PagesFunction<Env> = async (context) => {
   const requestUrl = new URL(context.request.url);
+  if (
+    (context.request.method === "GET" || context.request.method === "HEAD") &&
+    isVersionedAppScriptPath(requestUrl.pathname)
+  ) {
+    const response = await context.next();
+    if (isJavaScriptResponse(response)) return response;
+    await response.body?.cancel();
+    return createStaleAppAssetResponse(context.request.method);
+  }
   if (!isSimulatorMediaPath(requestUrl.pathname)) return context.next();
 
   const key = getSimulatorMediaKey(requestUrl.pathname);

@@ -6,6 +6,7 @@ const DEFAULT_CANONICAL_ATTEMPTS = 40;
 const DEFAULT_DELAY_MS = 3_000;
 const REQUEST_TIMEOUT_MS = 15_000;
 const deploymentCheckPath = "/__deployment-check?source=github-actions";
+const staleAppAssetPath = "/assets/index-Missing0.js";
 const EXPECTED_HSTS = "max-age=31536000";
 
 function verifySecurityHeaders(response) {
@@ -272,6 +273,45 @@ async function fetchEntryAsset(origin, assetPath, options) {
   );
 }
 
+export async function fetchStaleAppAssetRecovery(origin, options) {
+  return requestWithRetry(
+    new URL(staleAppAssetPath, origin).href,
+    async (response) => {
+      if (response.status !== 200) {
+        throw new Error(`expected HTTP 200, received ${response.status}`);
+      }
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.includes("javascript")) {
+        throw new Error(
+          `expected JavaScript recovery, received ${contentType || "no content type"}`,
+        );
+      }
+      if (response.headers.get("x-matsuri-stale-asset") !== "recover") {
+        throw new Error("missing stale asset recovery header");
+      }
+      const cacheControl = response.headers.get("cache-control") ?? "";
+      if (!cacheControl.includes("no-store")) {
+        throw new Error(
+          "stale asset recovery must use Cache-Control: no-store",
+        );
+      }
+      verifySecurityHeaders(response);
+      const body = await response.text();
+      if (
+        !body.includes("registration.update()") ||
+        !body.includes("location.reload()")
+      ) {
+        throw new Error("stale asset recovery module is incomplete");
+      }
+      return staleAppAssetPath;
+    },
+    {
+      ...options,
+      requestInit: { headers: { accept: "*/*" } },
+    },
+  );
+}
+
 async function fetchSimulatorApp(
   origin,
   simulatorPath,
@@ -307,6 +347,7 @@ export async function verifyCloudflareDeployment({
   deploymentAttempts,
   canonicalAttempts,
   rollbackCompatibility = false,
+  verifyStaleAssetRecovery = false,
   ...options
 }) {
   const deploymentOrigin = normalizeOrigin(deploymentUrl, "Deployment URL");
@@ -400,6 +441,10 @@ export async function verifyCloudflareDeployment({
     canonicalOrigin,
     canonicalOptions,
   );
+  const staleAppAssetRecovery =
+    rollbackCompatibility || !verifyStaleAssetRecovery
+      ? null
+      : await fetchStaleAppAssetRecovery(canonicalOrigin, canonicalOptions);
 
   const wwwCheckUrl = new URL(deploymentCheckPath, wwwOrigin);
   const expectedLocation = new URL(deploymentCheckPath, canonicalOrigin).href;
@@ -426,6 +471,7 @@ export async function verifyCloudflareDeployment({
     release: metadata.release,
     simulatorBootstraps,
     simulatorMedia,
+    staleAppAssetRecovery,
   };
 }
 
@@ -440,6 +486,7 @@ if (isCli) {
     expectedRelease: process.env.MATSURI_RELEASE,
     rollbackCompatibility:
       process.env.MATSURI_ROLLBACK_COMPATIBILITY === "true",
+    verifyStaleAssetRecovery: true,
   });
   console.log(
     `Verified release ${result.release} (${result.entryAsset}) on ${result.deploymentOrigin} and ${result.canonicalOrigin}.`,

@@ -4,7 +4,10 @@ import {
   parseCloudflareApiResponse,
   waitForPagesDeployment,
 } from "./cloudflare-pages-api.mjs";
-import { verifyCloudflareDeployment } from "./verify-cloudflare-deployment.mjs";
+import {
+  fetchStaleAppAssetRecovery,
+  verifyCloudflareDeployment,
+} from "./verify-cloudflare-deployment.mjs";
 
 const oldHtml =
   '<script type="module" src="/assets/index-old12345.js"></script>';
@@ -86,6 +89,33 @@ function simulatorBootstrapResponse() {
     headers: { "content-type": "application/javascript" },
   });
 }
+
+function staleAppAssetRecoveryResponse() {
+  return new Response("await registration.update(); location.reload();", {
+    headers: {
+      "cache-control": "no-cache, no-store, must-revalidate",
+      "content-type": "application/javascript; charset=utf-8",
+      "x-matsuri-stale-asset": "recover",
+      ...resourceSecurityHeaders,
+    },
+  });
+}
+
+test("verifies the stale application asset recovery contract", async () => {
+  const requestedUrls = [];
+  const result = await fetchStaleAppAssetRecovery("https://matsuri.pro", {
+    attempts: 1,
+    fetchImpl: async (url) => {
+      requestedUrls.push(url);
+      return staleAppAssetRecoveryResponse();
+    },
+  });
+
+  assert.equal(result, "/assets/index-Missing0.js");
+  assert.deepEqual(requestedUrls, [
+    "https://matsuri.pro/assets/index-Missing0.js",
+  ]);
+});
 
 test("waits for the canonical domain and verifies the www redirect", async () => {
   let canonicalRequests = 0;

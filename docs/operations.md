@@ -339,7 +339,10 @@ through the Pages Function at the same-origin `/gacha-simulator/videos/*` and
 production release. If the binding is changed in the Cloudflare dashboard,
 redeploy the Pages project before validating media range requests.
 `public/_routes.json` limits Pages Function invocation to those two media
-prefixes; static application requests must bypass the Function runtime.
+prefixes plus `/assets/*`. Existing application assets pass through unchanged;
+the asset route inspects only versioned JavaScript responses so a missing file
+cannot be returned as the SPA HTML shell. Other static application requests
+bypass the Function runtime.
 
 The Pages Function uses the `nodejs_compat` compatibility flag. Pages rejects
 the Workers-only `observability` block in `wrangler.jsonc`; do not add it to
@@ -413,10 +416,17 @@ one generation of hashed Vite assets and simulator `internal/immutable` assets
 from the exact build artifact for the active production deployment. If that
 artifact is unavailable, retention is skipped instead of rebuilding with
 potentially different public environment values.
-This keeps old tabs working without carrying removed HTML, manifests, or stable
-media into the next release. The allowlist lives in
-`scripts/retain-previous-assets.mjs`; do not broaden it or remove the retention
-without an equivalent stale-client compatibility strategy.
+This keeps recently opened tabs working without carrying removed HTML,
+manifests, or stable media into the next release. Tabs older than that retained
+generation are recovered by the Pages Function route for `/assets/*`: a missing
+versioned JavaScript request that fell through to the SPA HTML shell receives a
+no-store JavaScript recovery module instead. The module removes only Matsuri's
+route-chunk caches, updates the service worker, and reloads the current URL.
+The service worker also validates JavaScript/CSS response MIME types before
+caching them so the SPA fallback cannot poison a hashed asset URL as HTML. Keep
+the recovery route and cache guard together with the retention allowlist in
+`scripts/retain-previous-assets.mjs`; do not remove any part without an
+equivalent stale-client compatibility strategy.
 
 Cloudflare Pages reads `public/_headers` for browser security and cache policy.
 The Content Security Policy is enforced (not report-only). Keep inline scripts

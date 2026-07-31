@@ -237,11 +237,16 @@ test("pins the structured-data script to the enforced CSP hash", async () => {
 });
 
 test("keeps the static and function security-header contracts aligned", async () => {
-  const [headers, mediaRoute, functionRoutes] = await Promise.all([
-    readFile(new URL("../public/_headers", import.meta.url), "utf8"),
-    readFile(new URL("../functions/media-route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../public/_routes.json", import.meta.url), "utf8"),
-  ]);
+  const [headers, mediaRoute, appAssetRoute, functionRoutes] =
+    await Promise.all([
+      readFile(new URL("../public/_headers", import.meta.url), "utf8"),
+      readFile(new URL("../functions/media-route.ts", import.meta.url), "utf8"),
+      readFile(
+        new URL("../functions/app-asset-route.ts", import.meta.url),
+        "utf8",
+      ),
+      readFile(new URL("../public/_routes.json", import.meta.url), "utf8"),
+    ]);
 
   for (const source of [headers, mediaRoute]) {
     assert.match(source, /max-age=31536000/);
@@ -262,9 +267,16 @@ test("keeps the static and function security-header contracts aligned", async ()
   );
   assert.match(staticPolicy, /connect-src 'self'/);
   assert.equal(functionPolicy, staticPolicy);
+  assert.match(appAssetRoute, /application\/javascript; charset=utf-8/);
+  assert.match(appAssetRoute, /no-cache, no-store, must-revalidate/);
+  assert.match(appAssetRoute, /applyFunctionSecurityHeaders/);
   assert.deepEqual(JSON.parse(functionRoutes), {
     version: 1,
-    include: ["/gacha-simulator/videos/*", "/hsr-simulator/videos/*"],
+    include: [
+      "/assets/*",
+      "/gacha-simulator/videos/*",
+      "/hsr-simulator/videos/*",
+    ],
     exclude: [],
   });
 });

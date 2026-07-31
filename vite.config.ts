@@ -19,6 +19,31 @@ import { STOREFRONT_ROUTE_PRELOAD_SCRIPT } from "./scripts/storefront-route-prel
 const gachaDevRoot = resolve(process.cwd(), ".gacha-dist");
 const hsrDevRoot = resolve(process.cwd(), ".hsr-gacha-dist");
 
+const appAssetCacheGuard = {
+  cacheWillUpdate: async ({
+    request,
+    response,
+  }: {
+    request: Request;
+    response?: Response;
+  }) => {
+    if (!response?.ok || response.headers.has("x-matsuri-stale-asset")) {
+      return null;
+    }
+
+    const contentType =
+      response.headers.get("content-type")?.toLowerCase() ?? "";
+    const pathname = new URL(request.url).pathname.toLowerCase();
+    if (pathname.endsWith(".js")) {
+      return contentType.includes("javascript") ? response : null;
+    }
+    if (pathname.endsWith(".css")) {
+      return contentType.includes("text/css") ? response : null;
+    }
+    return null;
+  },
+};
+
 type DevelopmentOfflineAsset = {
   path: string;
   size: number;
@@ -424,6 +449,7 @@ export default defineConfig(async ({ command }) => {
               handler: "StaleWhileRevalidate",
               options: {
                 cacheName: OFFLINE_CACHE_NAMES.appRouteChunks,
+                plugins: [appAssetCacheGuard],
                 expiration: {
                   maxEntries: 80,
                   maxAgeSeconds: 30 * 24 * 60 * 60,
