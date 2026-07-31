@@ -422,6 +422,12 @@ generation are recovered by the Pages Function route for `/assets/*`: a missing
 versioned JavaScript request that fell through to the SPA HTML shell receives a
 no-store JavaScript recovery module instead. The module removes only Matsuri's
 route-chunk caches, updates the service worker, and reloads the current URL.
+Custom-domain script requests resolve through the stable
+`matsuri-88f.pages.dev` project origin because Cloudflare can briefly pair a
+custom-domain Pages Function with another deployment's static asset set.
+Deployment and local URLs still use their own `ASSETS` binding so release
+checks remain deployment-scoped. Do not forward cookies or authorization
+headers to the project origin.
 The service worker also validates JavaScript/CSS response MIME types before
 caching them so the SPA fallback cannot poison a hashed asset URL as HTML. Keep
 the recovery route and cache guard together with the retention allowlist in

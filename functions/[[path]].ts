@@ -12,6 +12,41 @@ import {
   isVersionedAppScriptPath,
 } from "./app-asset-route";
 
+const PAGES_PROJECT_ORIGIN = "https://matsuri-88f.pages.dev";
+const APP_CUSTOM_HOSTS = new Set(["matsuri.pro", "www.matsuri.pro"]);
+
+function createProjectAssetRequest(request: Request, requestUrl: URL): Request {
+  const headers = new Headers();
+  const accept = request.headers.get("accept");
+  if (accept) headers.set("accept", accept);
+  return new Request(
+    new URL(`${requestUrl.pathname}${requestUrl.search}`, PAGES_PROJECT_ORIGIN),
+    {
+      method: request.method,
+      headers,
+      redirect: "manual",
+    },
+  );
+}
+
+async function fetchAppScript(
+  context: Parameters<typeof onRequest>[0],
+  requestUrl: URL,
+): Promise<Response> {
+  if (APP_CUSTOM_HOSTS.has(requestUrl.hostname)) {
+    try {
+      const response = await fetch(
+        createProjectAssetRequest(context.request, requestUrl),
+      );
+      if (isJavaScriptResponse(response)) return response;
+      await response.body?.cancel();
+    } catch {
+      // Fall back to the deployment binding when the project alias is unavailable.
+    }
+  }
+  return context.env.ASSETS.fetch(context.request);
+}
+
 function mediaResponse(
   body: BodyInit | null,
   init: ResponseInit = {},
@@ -48,9 +83,10 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     (context.request.method === "GET" || context.request.method === "HEAD") &&
     isVersionedAppScriptPath(requestUrl.pathname)
   ) {
-    // Bind the asset lookup to this Pages deployment. Resolving through
-    // next() can briefly pair the custom domain with a different asset set.
-    const response = await context.env.ASSETS.fetch(context.request);
+    // Custom domains can briefly pair a Pages Function with another static
+    // asset set. The project alias is stable while deployment URLs remain
+    // bound to their own artifacts for verification.
+    const response = await fetchAppScript(context, requestUrl);
     if (isJavaScriptResponse(response)) return response;
     await response.body?.cancel();
     return createStaleAppAssetResponse(context.request.method);
