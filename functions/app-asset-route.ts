@@ -9,15 +9,6 @@ const APP_CACHE_PREFIX = "app-route-chunks-";
 
 async function refreshApplication() {
   try {
-    if ("caches" in globalThis) {
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames
-          .filter((name) => name.startsWith(APP_CACHE_PREFIX))
-          .map((name) => caches.delete(name)),
-      );
-    }
-
     if ("serviceWorker" in navigator) {
       const registration = await navigator.serviceWorker.getRegistration("/");
       if (registration) {
@@ -53,7 +44,22 @@ async function refreshApplication() {
       }
     }
   } catch {
-    // A network reload still recovers visitors without a working service worker.
+    // Cache cleanup and a network reload can still recover a failed update.
+  }
+
+  try {
+    // Delete after the worker update so an old stale-while-revalidate request
+    // cannot repopulate the poisoned response between cleanup and reload.
+    if ("caches" in globalThis) {
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames
+          .filter((name) => name.startsWith(APP_CACHE_PREFIX))
+          .map((name) => caches.delete(name)),
+      );
+    }
+  } catch {
+    // A network reload still recovers visitors without Cache Storage access.
   }
 
   location.reload();

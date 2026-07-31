@@ -48,6 +48,9 @@ describe("stale application asset recovery", () => {
     expect(await response.text()).toBe(STALE_APP_ASSET_RECOVERY_SCRIPT);
     expect(STALE_APP_ASSET_RECOVERY_SCRIPT).toContain("registration.update()");
     expect(STALE_APP_ASSET_RECOVERY_SCRIPT).toContain("location.reload()");
+    expect(
+      STALE_APP_ASSET_RECOVERY_SCRIPT.indexOf("registration.update()"),
+    ).toBeLessThan(STALE_APP_ASSET_RECOVERY_SCRIPT.indexOf("caches.keys()"));
   });
 
   it("omits the recovery body for HEAD requests", async () => {
