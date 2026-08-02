@@ -19,7 +19,15 @@ if (!mode) {
   process.exit(2);
 }
 
-const args = ["--yes", "supabase@2.109.1", "db", "query", mode];
+const args = [
+  "--yes",
+  "supabase@2.109.1",
+  "db",
+  "query",
+  mode,
+  "--agent",
+  "no",
+];
 if (mode === "--db-url") {
   const urlIndex = process.argv.indexOf(mode) + 1;
   const databaseUrl = process.argv[urlIndex];
@@ -47,7 +55,8 @@ if (result.status !== 0) {
 try {
   const payload = JSON.parse(result.stdout);
   if (payload._tag === "Error") throw new Error(payload.error?.message);
-  const surface = payload.rows?.[0]?.security_surface;
+  const row = Array.isArray(payload) ? payload[0] : payload.rows?.[0];
+  const surface = row?.security_surface;
   if (typeof surface !== "string")
     throw new Error("Supabase returned no security-surface row.");
   console.log(JSON.stringify(JSON.parse(surface), null, 2));
