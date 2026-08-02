@@ -66,25 +66,25 @@ test("recovers a tab that requests a retired application script", async ({
     page.getByRole("button", { name: /Add Moon Stand to cart/i }),
   ).toBeVisible();
 
-  await page.evaluate(() => {
-    const script = document.createElement("script");
-    script.type = "module";
-    script.src = "/assets/index-BPGrAREH.js";
-    document.head.append(script);
-  });
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "domcontentloaded" }),
+    page.evaluate(() => {
+      const script = document.createElement("script");
+      script.type = "module";
+      script.src = "/assets/index-BPGrAREH.js";
+      document.head.append(script);
+    }),
+  ]);
 
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (
-            performance.getEntriesByType("navigation")[0] as
-              | PerformanceNavigationTiming
-              | undefined
-          )?.type,
-      ),
-    )
-    .toBe("reload");
+  const navigationType = await page.evaluate(
+    () =>
+      (
+        performance.getEntriesByType("navigation")[0] as
+          | PerformanceNavigationTiming
+          | undefined
+      )?.type,
+  );
+  expect(navigationType).toBe("reload");
   await expect(
     page.getByRole("button", { name: /Add Moon Stand to cart/i }),
   ).toBeVisible();
