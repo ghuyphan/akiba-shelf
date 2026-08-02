@@ -83,8 +83,8 @@ test("storefront cart persists across a WebKit reload", async ({ page }) => {
     });
   await expect.poll(async () => (await readTheme()).card).toMatch(/^#[0-9a-f]{6}$/);
   const theme = await readTheme();
-  expect(theme.page).toMatch(/^#[0-9a-f]{6}$/);
-  expect(theme.renderedPage).not.toBe("rgba(0, 0, 0, 0)");
+  expect(theme.page).toBe("#fff8f2");
+  expect(theme.renderedPage).toBe("rgb(255, 248, 242)");
   expect(theme.backdrop).toContain("blur");
 
   await addToCart.click();

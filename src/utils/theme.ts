@@ -97,12 +97,7 @@ export function getThemeStyle(booth: BoothSettings): ThemeStyle {
     4.5,
     "#20304a",
   );
-  const pageBackground = ensureColorContrast(
-    background,
-    secondaryInteractive,
-    4.5,
-    DEFAULT_STOREFRONT_PALETTE.background,
-  );
+  const pageBackground = background;
   const accentOnLight = ensureColorContrast(
     accent,
     "#ffffff",

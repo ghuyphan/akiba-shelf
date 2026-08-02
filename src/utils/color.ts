@@ -136,6 +136,32 @@ export function ensureColorContrast(
   return best?.color ?? normalizeHexColor(fallback) ?? "#20304a";
 }
 
+export function ensureSurfaceContrast(
+  value: string,
+  foreground: string,
+  targetRatio = 4.5,
+  fallback = WHITE,
+) {
+  const normalizedForeground = normalizeHexColor(foreground) ?? BLACK;
+  const normalized = normalizeHexColor(value) ?? normalizeHexColor(fallback);
+  if (!normalized) return WHITE;
+  if (getContrastRatio(normalized, normalizedForeground) >= targetRatio)
+    return normalized;
+
+  const light = findNearestPassingMix(
+    parseHexColor(normalized)!,
+    parseHexColor(WHITE)!,
+    normalizedForeground,
+    targetRatio,
+  );
+  if (light) return light.color;
+
+  const normalizedFallback = normalizeHexColor(fallback) ?? WHITE;
+  if (getContrastRatio(normalizedFallback, normalizedForeground) >= targetRatio)
+    return normalizedFallback;
+  return WHITE;
+}
+
 export function readableTextColor(
   background: string,
   dark = "#20304a",

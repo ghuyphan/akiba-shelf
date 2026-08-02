@@ -5,6 +5,7 @@ import {
 import type { BoothSettings } from "../types/catalog";
 import {
   ensureColorContrast,
+  ensureSurfaceContrast,
   getContrastRatio,
   normalizeHexColor,
 } from "./color";
@@ -68,16 +69,22 @@ export function getStorefrontColorGuidance(
   const ratio = getContrastRatio(current, reference);
   return {
     current,
-    recommended: ensureColorContrast(
-      current,
-      reference,
-      TARGET_CONTRAST,
+    recommended:
       role === "background"
-        ? DEFAULT_STOREFRONT_PALETTE.background
-        : role === "accent"
-          ? DEFAULT_STOREFRONT_PALETTE.accent
-          : DEFAULT_STOREFRONT_PALETTE.secondary,
-    ),
+        ? ensureSurfaceContrast(
+            current,
+            reference,
+            TARGET_CONTRAST,
+            DEFAULT_STOREFRONT_PALETTE.background,
+          )
+        : ensureColorContrast(
+            current,
+            reference,
+            TARGET_CONTRAST,
+            role === "accent"
+              ? DEFAULT_STOREFRONT_PALETTE.accent
+              : DEFAULT_STOREFRONT_PALETTE.secondary,
+          ),
     ratio,
     target: TARGET_CONTRAST,
     reference,
