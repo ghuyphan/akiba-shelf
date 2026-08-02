@@ -1,0 +1,76 @@
+name: Scheduled Maintenance
+
+on:
+  schedule:
+    - cron: "23 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repository:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=moderate
+      - run: npm run check:repo-size
+      - run: npm run check:simulator-contracts
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3
+        with:
+          version: 2.109.1
+      - run: npm ci
+      - name: Check linked database prerequisites
+        id: database-config
+        shell: bash
+        run: |
+          if [[ -n "$SUPABASE_ACCESS_TOKEN" && -n "$SUPABASE_PROJECT_REF" && -n "$SUPABASE_DB_PASSWORD" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Supabase access token, project ref, or database password is missing; linked maintenance skipped"
+          fi
+      - name: Link Supabase project
+        if: steps.database-config.outputs.configured == 'true'
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+      - name: Run linked security advisors
+        if: steps.database-config.outputs.configured == 'true'
+        run: supabase db advisors --linked --type security --level warn --fail-on error
+      - name: Run linked performance advisors
+        if: steps.database-config.outputs.configured == 'true'
+        run: supabase db advisors --linked --type performance --level warn --fail-on error
+      - name: Generate database security surface
+        if: steps.database-config.outputs.configured == 'true'
+        run: npm run --silent report:db-security -- --linked > database-security-surface.json
+      - name: Upload database security surface
+        if: steps.database-config.outputs.configured == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: database-security-surface-${{ github.run_id }}
+          path: database-security-surface.json
+          retention-days: 30
+          if-no-files-found: error

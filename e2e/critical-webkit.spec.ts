@@ -5,9 +5,17 @@ test("auth remains usable when browser storage is blocked", async ({
   page,
 }) => {
   await page.addInitScript(() => {
+    const restoreKey = Symbol.for("matsuri.restore-storage-prototype");
     const getItem = Storage.prototype.getItem;
     const setItem = Storage.prototype.setItem;
     const removeItem = Storage.prototype.removeItem;
+    (window as unknown as Record<symbol, (() => void) | undefined>)[
+      restoreKey
+    ] = () => {
+      Storage.prototype.getItem = getItem;
+      Storage.prototype.setItem = setItem;
+      Storage.prototype.removeItem = removeItem;
+    };
     const shouldBlock = (storage: Storage, key: string) =>
       storage === window.localStorage && key.startsWith("matsuri-admin-");
     Storage.prototype.getItem = function (key) {
@@ -55,6 +63,12 @@ test("auth remains usable when browser storage is blocked", async ({
     });
   expect(menuBounds.left).toBeGreaterThanOrEqual(11);
   expect(menuBounds.right).toBeLessThanOrEqual(menuBounds.width - 11);
+  await page.evaluate(() => {
+    const restoreKey = Symbol.for("matsuri.restore-storage-prototype");
+    (window as unknown as Record<symbol, (() => void) | undefined>)[
+      restoreKey
+    ]?.();
+  });
 });
 
 test("storefront cart persists across a WebKit reload", async ({ page }) => {
@@ -75,13 +89,13 @@ test("storefront cart persists across a WebKit reload", async ({ page }) => {
         renderedPage: getComputedStyle(document.body).backgroundColor,
         backdrop: header
           ? getComputedStyle(header).getPropertyValue("backdrop-filter") ||
-            getComputedStyle(header).getPropertyValue(
-              "-webkit-backdrop-filter",
-            )
+            getComputedStyle(header).getPropertyValue("-webkit-backdrop-filter")
           : "",
       };
     });
-  await expect.poll(async () => (await readTheme()).card).toMatch(/^#[0-9a-f]{6}$/);
+  await expect
+    .poll(async () => (await readTheme()).card)
+    .toMatch(/^#[0-9a-f]{6}$/);
   const theme = await readTheme();
   expect(theme.page).toBe("#fff8f2");
   expect(theme.renderedPage).toBe("rgb(255, 248, 242)");

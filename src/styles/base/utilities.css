@@ -63,3 +63,10 @@
   font-size: 12px;
   font-weight: 700;
 }
+
+.field-error-msg {
+  margin-top: 4px;
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 500;
+}

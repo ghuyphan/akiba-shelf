@@ -3,6 +3,7 @@ import { base } from '$app/paths';
 import { localConfig } from '$lib/helpers/dataAPI/api-localstorage';
 import { cookie } from '$lib/helpers/dataAPI/api-cookie';
 import { browser } from '$app/environment';
+import { createLazySfxPool } from './lazy-sfx-pool.js';
 
 const sfxList = [
 	'balance-click',
@@ -41,52 +42,26 @@ const isMuted = () => {
 	return sfx;
 };
 
-let sounds = {};
-
-const initSFX = () => {
-	if (!browser) return;
-	sounds = sfxList.reduce((prev, current) => {
-		const sfx = prev || {};
-		sfx[current] = new Howl({
-			src: [`${base}/audiofx/${current}.ogg`],
+const sfxPool = createLazySfxPool({
+	names: sfxList,
+	isMuted,
+	readVolume: () => (browser ? cookie.get('sfxVolume') : 1),
+	writeVolume: (volume) => cookie.set('sfxVolume', volume),
+	createSound: (name, volume) =>
+		new Howl({
+			src: [`${base}/audiofx/${name}.ogg`],
+			preload: false,
+			volume,
 			onplayerror: (_soundId, error) => {
-				console.warn(`Unable to play HSR sound effect "${current}".`, error);
+				console.warn(`Unable to play HSR sound effect "${name}".`, error);
 			},
 			onloaderror: (_soundId, error) => {
-				console.warn(`Unable to load HSR sound effect "${current}".`, error);
+				console.warn(`Unable to load HSR sound effect "${name}".`, error);
 			}
-		});
-		return sfx;
-	}, {});
-};
-initSFX();
+		}),
+	reportError: (error) => console.error('Unable to use HSR sound effect:', error.message)
+});
 
-const sfxids = {};
-export const playSfx = (nameOfSoundfx = 'click') => {
-	try {
-		if (!sounds[nameOfSoundfx]) throw new Error('No Sound effect for ' + nameOfSoundfx);
-		if (isMuted()) return;
-		sfxids[nameOfSoundfx] = sounds[nameOfSoundfx].play();
-	} catch (e) {
-		console.error('Unable to Play Sfx : ', e.message);
-	}
-};
-
-export const stopSfx = (nameOfSoundfx = 'click') => {
-	try {
-		if (isMuted()) return;
-		if (!sounds[nameOfSoundfx]) throw new Error('No Sound effect for ' + nameOfSoundfx);
-
-		// const volume = cookie.get('sfxVolume') || 1;
-		// sounds[nameOfSoundfx].fade(volume, 0, 1000, sfxids[nameOfSoundfx]);
-		sounds[nameOfSoundfx].stop();
-	} catch (e) {
-		console.error('Unable to Stop Sfx : ', e.message);
-	}
-};
-
-export const setSfxVolume = (val) => {
-	const volumeVal = val / 100;
-	cookie.set('sfxVolume', volumeVal);
-	Object.keys(sounds).forEach((key) => sounds[key]?.volume(volumeVal));
-};
+export const playSfx = (nameOfSoundfx = 'click') => sfxPool.play(nameOfSoundfx);
+export const stopSfx = (nameOfSoundfx = 'click') => sfxPool.stop(nameOfSoundfx);
+export const setSfxVolume = (value) => sfxPool.setVolume(value);

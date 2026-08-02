@@ -12,29 +12,10 @@ import { dirname, resolve } from "node:path";
 import { createSimulatorCacheVersion } from "./simulator-cache-version.mjs";
 import { createSimulatorMediaPacks } from "./simulator-media.mjs";
 import { externalizeSimulatorBootstrap } from "./externalize-simulator-bootstrap.mjs";
+import { SIMULATORS } from "./simulator-config.mjs";
 
 const externalMedia = process.argv.includes("--external-media");
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
-const simulators = [
-  {
-    game: "genshin",
-    label: "Genshin",
-    workspace: "matsuri-wish-simulator",
-    devDir: ".gacha-dist",
-    distDir: "dist/gacha-simulator",
-    envVar: "GACHA_OUTPUT_DIR",
-    sourceRoot: "vendor/gacha-simulator",
-  },
-  {
-    game: "hsr",
-    label: "HSR",
-    workspace: "matsuri-hsr-warp-simulator",
-    devDir: ".hsr-gacha-dist",
-    distDir: "dist/hsr-simulator",
-    envVar: "GACHA_OUTPUT_DIR",
-    sourceRoot: "vendor/hsr-simulator",
-  },
-];
 
 function readBuildMarker(path) {
   try {
@@ -44,11 +25,11 @@ function readBuildMarker(path) {
   }
 }
 
-function runBuild({ workspace, output, envVar, mediaBaseUrl }) {
+function runBuild({ workspaceName, output, envVar, mediaBaseUrl }) {
   return new Promise((resolveResult) => {
     const child = spawn(
       npmCommand,
-      ["run", "build", "--workspace", workspace],
+      ["run", "build", "--workspace", workspaceName],
       {
         cwd: process.cwd(),
         env: {
@@ -73,10 +54,10 @@ async function buildSimulator(simulator, mediaPack) {
   const targetStaging = resolve(root, stagingDir);
   const targetDist = resolve(root, simulator.distDir);
   const sourceVersion = await createSimulatorCacheVersion(
-    resolve(root, simulator.sourceRoot),
+    resolve(root, simulator.workspaceRoot),
   );
   const mediaBaseUrl = externalMedia
-    ? `/${simulator.game === "genshin" ? "gacha-simulator" : "hsr-simulator"}/videos/${mediaPack.id}`
+    ? `/${simulator.routeRoot}/videos/${mediaPack.id}`
     : "";
   const markerPath = resolve(targetDev, ".matsuri-build.json");
   const expectedMarker = {
@@ -96,7 +77,7 @@ async function buildSimulator(simulator, mediaPack) {
     console.log(`Building ${simulator.label} simulator...`);
     rmSync(targetStaging, { recursive: true, force: true });
     const code = await runBuild({
-      workspace: simulator.workspace,
+      workspaceName: simulator.workspaceName,
       output: stagingDir,
       envVar: simulator.envVar,
       mediaBaseUrl,
@@ -107,10 +88,7 @@ async function buildSimulator(simulator, mediaPack) {
     writeFileSync(markerPath, `${JSON.stringify(expectedMarker)}\n`);
   }
 
-  externalizeSimulatorBootstrap(
-    targetDev,
-    `/${simulator.game === "genshin" ? "gacha-simulator" : "hsr-simulator"}`,
-  );
+  externalizeSimulatorBootstrap(targetDev, `/${simulator.routeRoot}`);
 
   rmSync(targetDist, { recursive: true, force: true });
   mkdirSync(dirname(targetDist), { recursive: true });
@@ -121,5 +99,5 @@ async function buildSimulator(simulator, mediaPack) {
 }
 
 const mediaPacks = await createSimulatorMediaPacks();
-for (const simulator of simulators)
+for (const simulator of SIMULATORS)
   await buildSimulator(simulator, mediaPacks[simulator.game]);

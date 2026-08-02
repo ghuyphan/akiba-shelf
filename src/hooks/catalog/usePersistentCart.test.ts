@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Product } from "../../types/catalog";
+import { loadCart } from "../../lib/offline/offline";
 
 const storedCart = vi.hoisted(() => ({ current: [] as unknown[] }));
 vi.mock("../../lib/offline/offline", () => ({
@@ -35,6 +36,12 @@ function product(overrides: Partial<Product> = {}): Product {
 describe("usePersistentCart", () => {
   beforeEach(() => {
     storedCart.current = [];
+    vi.clearAllMocks();
+  });
+
+  it("loads the initial cart once without a post-render overwrite", () => {
+    renderHook(() => usePersistentCart("test-shop"));
+    expect(loadCart).toHaveBeenCalledOnce();
   });
 
   it("reports authoritative stock and price reconciliation", () => {

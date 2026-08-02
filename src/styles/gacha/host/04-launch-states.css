@@ -15,11 +15,11 @@
 }
 
 .gacha-game-select.is-launching .gacha-game-portals::after {
-  animation: gacha-seam-charge 1320ms var(--portal-ease) both;
+  animation: gacha-seam-charge 620ms var(--portal-ease) both;
 }
 
 .gacha-game-select.is-launching .gacha-game-portals::before {
-  animation: gacha-rift-burst 1320ms var(--portal-ease) both;
+  animation: gacha-rift-burst 620ms var(--portal-ease) both;
 }
 
 .gacha-game-select.is-launching-genshin .gacha-game-portal.is-genshin,
@@ -28,39 +28,30 @@
   pointer-events: none;
 }
 
-.gacha-game-select.is-launching-genshin .gacha-game-portal.is-genshin {
-  animation: gacha-enter-genshin 1320ms var(--portal-ease) both;
-}
-
-.gacha-game-select.is-launching-hsr .gacha-game-portal.is-hsr {
-  animation: gacha-enter-hsr 1320ms var(--portal-ease) both;
-}
-
 .gacha-game-select.is-launching-genshin .gacha-game-portal.is-hsr {
-  animation: gacha-dismiss-right 620ms var(--portal-ease) both;
+  animation: gacha-dismiss-right 360ms var(--portal-ease) both;
 }
 
 .gacha-game-select.is-launching-hsr .gacha-game-portal.is-genshin {
-  animation: gacha-dismiss-left 620ms var(--portal-ease) both;
+  animation: gacha-dismiss-left 360ms var(--portal-ease) both;
 }
 
 .gacha-game-select.is-launching .gacha-portal-content {
-  animation: gacha-content-launch 520ms ease both;
+  animation: gacha-content-launch 600ms ease both;
 }
 
-.gacha-game-select.is-launching-genshin .is-genshin .gacha-portal-art {
-  z-index: 11;
-  animation: gacha-art-launch-genshin 1320ms var(--portal-ease) both;
-}
-
+.gacha-game-select.is-launching-genshin .is-genshin .gacha-portal-art,
 .gacha-game-select.is-launching-hsr .is-hsr .gacha-portal-art {
   z-index: 11;
-  animation: gacha-art-launch-hsr 1320ms var(--portal-ease) both;
+  animation: gacha-art-launch 600ms ease both;
 }
 
-.gacha-game-select.is-launching-genshin .is-genshin .gacha-portal-art::after,
-.gacha-game-select.is-launching-hsr .is-hsr .gacha-portal-art::after {
-  animation: gacha-portal-ring 1320ms ease-in-out both;
+.gacha-game-select.is-launching .gacha-game-portal,
+.gacha-game-select.is-launching .gacha-game-portals::before,
+.gacha-game-select.is-launching .gacha-game-portals::after,
+.gacha-game-select.is-launching .gacha-portal-art,
+.gacha-game-select.is-launching .gacha-portal-content {
+  will-change: transform, opacity;
 }
 
 .gacha-game-select.is-launching .gacha-game-portal:focus-visible {
@@ -71,4 +62,3 @@
 .gacha-game-select.is-launching .gacha-hsr-ornament {
   animation: none;
 }
-

@@ -2,20 +2,11 @@ import { existsSync, renameSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { externalizeSimulatorBootstrap } from "./externalize-simulator-bootstrap.mjs";
+import { getSimulator } from "./simulator-config.mjs";
 
 const game = process.argv[2];
 const ifMissing = process.argv.includes("--if-missing");
-const simulators = {
-  genshin: {
-    workspace: "matsuri-wish-simulator",
-    output: ".gacha-dist",
-  },
-  hsr: {
-    workspace: "matsuri-hsr-warp-simulator",
-    output: ".hsr-gacha-dist",
-  },
-};
-const simulator = simulators[game];
+const simulator = getSimulator(game);
 
 if (!simulator) {
   console.error(
@@ -25,7 +16,7 @@ if (!simulator) {
 }
 
 const root = process.cwd();
-const outputPath = resolve(root, simulator.output);
+const outputPath = resolve(root, simulator.devDir);
 const stagingPath = `${outputPath}.next`;
 const previousPath = `${outputPath}.previous`;
 
@@ -38,12 +29,12 @@ rmSync(stagingPath, { recursive: true, force: true });
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 const result = spawnSync(
   npmCommand,
-  ["run", "build", "--workspace", simulator.workspace],
+  ["run", "build", "--workspace", simulator.workspaceName],
   {
     cwd: root,
     env: {
       ...process.env,
-      GACHA_OUTPUT_DIR: `../../${simulator.output}.next`,
+      [simulator.envVar]: `../../${simulator.devDir}.next`,
     },
     stdio: "inherit",
   },
@@ -54,10 +45,7 @@ if (result.status !== 0) {
   process.exit(result.status ?? 1);
 }
 
-externalizeSimulatorBootstrap(
-  stagingPath,
-  `/${game === "genshin" ? "gacha-simulator" : "hsr-simulator"}`,
-);
+externalizeSimulatorBootstrap(stagingPath, `/${simulator.routeRoot}`);
 rmSync(previousPath, { recursive: true, force: true });
 if (existsSync(outputPath)) renameSync(outputPath, previousPath);
 renameSync(stagingPath, outputPath);

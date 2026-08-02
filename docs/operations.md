@@ -178,7 +178,14 @@ Local database checks when available:
 ```bash
 npm run test:db
 npm run test:db:integration
+npm run report:db-security -- --local
 ```
+
+The security-surface report is read-only and inventories public RPC signatures,
+function configuration and execute grants, relation grants and RLS state,
+policies, triggers, and view `security_invoker` settings. Use `--linked` only
+after confirming the intended project. Store linked reports as restricted CI
+artifacts; policy expressions and object names are operational metadata.
 
 Never edit an already-applied migration to change production behavior; add a
 new migration. Search all layered function definitions and grants before
@@ -344,6 +351,15 @@ the asset route inspects only versioned JavaScript responses so a missing file
 cannot be returned as the SPA HTML shell. Other static application requests
 bypass the Function runtime.
 
+Large authoritative media remains tracked until a reproducible acquisition and
+rollback contract is complete. `npm run check:repo-size` rejects new tracked
+files at or above 5 MiB and changes to reviewed files unless
+`config/repository-size-baseline.json` is intentionally updated with size and
+SHA-256. Do not rewrite Git history as part of routine cleanup. Prefer the
+existing R2 publishing path for production delivery; evaluate Git LFS or
+off-repository source archives only with checksum, licensing, and restore
+documentation.
+
 The Pages Function uses the `nodejs_compat` compatibility flag. Pages rejects
 the Workers-only `observability` block in `wrangler.jsonc`; do not add it to
 this project. Pages Function logs are live streams available from deployment
@@ -403,13 +419,22 @@ change to generate production source maps and upload them in CI, plus a narrowly
 scoped Sentry auth token and organization/project identifiers. Never expose
 those credentials as `VITE_*` variables.
 
-The `CI and Deploy` workflow runs checks, database tests, e2e tests, and
-performance tests before building. A newer run cancels superseded validation
-jobs for the same ref, but production deployment steps are serialized and are
-never cancelled mid-release. Immediately before upload, the workflow reads the
-current `main` ref through the GitHub API and skips a run whose SHA has been
-superseded. API failure blocks deployment. A manual run is allowed only from
-`main` through `workflow_dispatch`.
+The `CI and Deploy` workflow runs checks, database tests, e2e tests,
+performance tests, and an isolated PWA/service-worker job before building. A
+newer run cancels superseded validation jobs for the same ref, but production
+deployment steps are serialized and are never cancelled mid-release.
+Immediately before upload, the workflow reads the current `main` ref through
+the GitHub API and skips a run whose SHA has been superseded. API failure blocks
+deployment. A manual run is allowed only from `main` through
+`workflow_dispatch`.
+
+All third-party Actions use immutable commit SHAs with the reviewed release tag
+recorded in a comment. The separate `Scheduled Maintenance` workflow runs every
+Monday: dependency audit, repository-size baseline, simulator contract checks,
+linked advisors, and a database security-surface artifact. Configure
+`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, and `SUPABASE_DB_PASSWORD` as
+repository secrets; the database lane reports a warning and skips linked work
+when any prerequisite is absent.
 
 The workflow stores the clean `dist/` build for each production run and retains
 one generation of hashed Vite assets and simulator `internal/immutable` assets

@@ -1,20 +1,17 @@
 import { createHash } from "node:crypto";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { extname, join, relative, resolve, sep } from "node:path";
+import { SIMULATORS } from "./simulator-config.mjs";
 
 export const SIMULATOR_MEDIA_BUCKET = "matsuri-simulator-media";
 export const SIMULATOR_MEDIA_DELIVERY_VERSION = "security-headers-v3";
 
-export const SIMULATOR_MEDIA_GAMES = {
-  genshin: {
-    routeRoot: "gacha-simulator",
-    sourceRoot: "vendor/gacha-simulator/static/videos",
-  },
-  hsr: {
-    routeRoot: "hsr-simulator",
-    sourceRoot: "vendor/hsr-simulator/static/videos",
-  },
-};
+export const SIMULATOR_MEDIA_GAMES = Object.fromEntries(
+  SIMULATORS.map(({ game, routeRoot, workspaceRoot }) => [
+    game,
+    { routeRoot, sourceRoot: `${workspaceRoot}/static/videos` },
+  ]),
+);
 
 const MEDIA_TYPES = {
   ".mp4": "video/mp4",

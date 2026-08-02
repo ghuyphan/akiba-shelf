@@ -1,0 +1,29 @@
+{
+  "largeFileThresholdBytes": 5242880,
+  "files": {
+    "vendor/hsr-simulator/static/videos/event-3star.mp4": {
+      "size": 10491511,
+      "sha256": "a98dce75a1a079b6de94f8eaf8df27fb178b1f442c39c68db458c35408f215a0"
+    },
+    "vendor/hsr-simulator/static/videos/event-4star.mp4": {
+      "size": 10583756,
+      "sha256": "c08142151ff1b12e5992efb6f3b5a71e1a680cc99d2fb3dbb5d10bcf3559956a"
+    },
+    "vendor/hsr-simulator/static/videos/event-5star.mp4": {
+      "size": 11768681,
+      "sha256": "603005dc72660d23e31608663a74ead64889048e4a5ff011740e325084a9585a"
+    },
+    "vendor/hsr-simulator/static/videos/regular-3star.mp4": {
+      "size": 9388273,
+      "sha256": "1d8eb264f60c2fd0a3544ad5c9bd191872e97c12081d3dfdca245706ebad617e"
+    },
+    "vendor/hsr-simulator/static/videos/regular-4star.mp4": {
+      "size": 10587203,
+      "sha256": "4c964e1a0f56374f5d5369910c0484b1738d3d3878c41ecf8fcff3a31222a10b"
+    },
+    "vendor/hsr-simulator/static/videos/regular-5star.mp4": {
+      "size": 11283513,
+      "sha256": "094c68d58f13df3a0b29579ada372a0d6549f407b5f54d91ae790172fbc52d1e"
+    }
+  }
+}

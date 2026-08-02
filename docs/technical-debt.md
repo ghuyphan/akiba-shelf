@@ -16,7 +16,9 @@ each item against the current tree before implementing it.
 
 `src/styles/legacy.css` remains large. Follow `legacy-css-migration.md` one
 surface at a time with desktop/phone and product grid/list coverage. Do not mix
-selector relocation with a redesign.
+selector relocation with a redesign. Shared `.field-error-msg` ownership has
+moved to `styles/base/utilities.css`; continue with the next independently
+verifiable primitive or route surface.
 
 After legacy work, consider route-splitting more admin CSS only if behavior and
 load order remain stable.
@@ -30,6 +32,9 @@ load order remain stable.
   one-time target.
 - Run pgTAP when a local Supabase stack is available and keep linked database
   lint/advisors in deployment verification.
+- Move authoritative simulator videos out of normal Git storage only after a
+  checksum-pinned acquisition, license, rollback, and disaster-recovery contract
+  exists. The current large-file baseline prevents unreviewed growth meanwhile.
 
 ## Post-stabilization: retire compatibility RPCs
 

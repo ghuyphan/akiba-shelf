@@ -50,10 +50,8 @@ import {
   RecoverCheckoutBar,
 } from "../components/catalog/overlays/CatalogOverlays";
 import { useNavigate, useParams } from "react-router";
-import type { PublicProductSort } from "../lib/catalogQueries";
 import {
   calculateCartPricing,
-  isPromotionActive,
   normalizePromotionRewards,
 } from "../utils/pricing";
 import { prefersLightweightCatalog } from "../lib/network";
@@ -72,6 +70,8 @@ import {
   normalizeStorefrontOrder,
   partitionStorefrontOrder,
 } from "../components/catalog/storefrontLayout";
+import { useCatalogFilters } from "../hooks/catalog/useCatalogFilters";
+import { useScheduledPromotion } from "../hooks/catalog/useScheduledPromotion";
 
 const ShopUnavailablePage = lazy(() =>
   import("./ShopUnavailablePage").then((module) => ({
@@ -98,11 +98,18 @@ export function CatalogPage() {
       onOnline: markOnline,
     });
   const [lightweightMode] = useState(prefersLightweightCatalog);
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [sort, setSort] = useState<PublicProductSort>("recommended");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const {
+    activeCategory,
+    setActiveCategory,
+    searchQuery,
+    setSearchQuery,
+    sort,
+    setSort,
+    viewMode,
+    setViewMode,
+    query: catalogQuery,
+    reset: resetFilters,
+  } = useCatalogFilters();
   const {
     cart,
     setCart,
@@ -112,10 +119,6 @@ export function CatalogPage() {
   } = usePersistentCart(shopSlug);
 
   const orderingEnabled = shop?.accepting_orders !== false;
-  const catalogQuery = useMemo(
-    () => ({ category: activeCategory, search: debouncedSearch, sort }),
-    [activeCategory, debouncedSearch, sort],
-  );
   const {
     products,
     featuredProducts,
@@ -142,32 +145,7 @@ export function CatalogPage() {
     orderingEnabled,
     initialBootstrap,
   );
-  const [promotionClock, setPromotionClock] = useState(Date.now);
-  const promotion = useMemo(
-    () => ({
-      ...configuredPromotion,
-      enabled: isPromotionActive(configuredPromotion, new Date(promotionClock)),
-    }),
-    [configuredPromotion, promotionClock],
-  );
-
-  useEffect(() => {
-    const now = Date.now();
-    const nextBoundary = [
-      configuredPromotion.starts_at,
-      configuredPromotion.ends_at,
-    ]
-      .map((value) => (value ? Date.parse(value) : Number.NaN))
-      .filter((value) => Number.isFinite(value) && value > now)
-      .sort((first, second) => first - second)[0];
-    if (nextBoundary === undefined) return;
-
-    const timer = window.setTimeout(
-      () => setPromotionClock(Date.now()),
-      Math.min(nextBoundary - now + 25, 2_147_483_647),
-    );
-    return () => window.clearTimeout(timer);
-  }, [configuredPromotion, promotionClock]);
+  const promotion = useScheduledPromotion(configuredPromotion);
   const booth = useMemo(
     () =>
       shop?.catalog_source_shop_id
@@ -339,14 +317,6 @@ export function CatalogPage() {
   useEffect(() => {
     if (cart.length === 0) setIsCartExpanded(false);
   }, [cart.length]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(
-      () => setDebouncedSearch(searchQuery.trim()),
-      250,
-    );
-    return () => window.clearTimeout(timer);
-  }, [searchQuery]);
 
   // Keep the latest cart readable from stable callbacks so memoized children
   // do not re-render when only cart contents change.
@@ -528,9 +498,8 @@ export function CatalogPage() {
   }, [setCart]);
 
   const handleResetFilters = useCallback(() => {
-    setActiveCategory("All");
-    setSearchQuery("");
-  }, []);
+    resetFilters();
+  }, [resetFilters]);
 
   const handleRetryCatalog = useCallback(() => {
     void loadCatalog();
@@ -711,6 +680,10 @@ export function CatalogPage() {
       rewardProducts,
       searchQuery,
       selectedProductId,
+      setActiveCategory,
+      setSearchQuery,
+      setSort,
+      setViewMode,
       shop?.name,
       sort,
       viewMode,

@@ -186,6 +186,21 @@ test("validates optional production observability configuration", () => {
   );
 });
 
+test("pins every third-party workflow action to an immutable commit", async () => {
+  for (const path of [
+    "../.github/workflows/validate.yml",
+    "../.github/workflows/maintenance.yml",
+  ]) {
+    const workflow = await readFile(new URL(path, import.meta.url), "utf8");
+    const actionReferences = [
+      ...workflow.matchAll(/uses:\s+[^@\s]+@([^\s#]+)/g),
+    ];
+    assert.ok(actionReferences.length > 0, `${path} has no action references`);
+    for (const [, reference] of actionReferences)
+      assert.match(reference, /^[a-f0-9]{40}$/, `${path} uses ${reference}`);
+  }
+});
+
 test("keeps the Pages configuration on supported fields", async () => {
   const config = await readFile(
     new URL("../wrangler.jsonc", import.meta.url),

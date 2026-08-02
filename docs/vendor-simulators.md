@@ -24,6 +24,18 @@ dependencies through the root workspace, review browser bundle and offline-pack
 impact, and run `npm audit --omit=dev` for any dependency change. Keep each
 workspace's SvelteKit generation compatible with the root Node version.
 
+Review simulator dependencies monthly and upstream simulator changes quarterly.
+Security fixes affecting production browser code take priority over that cadence.
+Never add a nested lockfile; `npm run check:simulator-contracts` enforces package
+names, root workspace ownership, required build/check scripts, ignored generated
+outputs, and authoritative media roots. Shared build metadata lives in
+`scripts/simulator-config.mjs`; do not duplicate workspace or route mappings.
+
+HSR retains sound effects but no music player. Sound effects are instantiated
+and fetched only on first unmuted use; importing the sound module or browsing
+while muted must create no audio requests. Offline packs still include the SFX
+files so an explicitly saved simulator remains complete.
+
 ## Required verification
 
 `npm run check:simulators` requires zero Svelte errors, warnings, and hints in
@@ -39,6 +51,9 @@ npm run test:security
 npm run test:simulators
 npm run build:simulators
 ```
+
+`npm run verify:simulators` runs the complete sequence above, including the
+workspace contract check.
 
 Also run the relevant root unit/e2e, PWA, and performance gates when host
 messaging, media routing, offline packs, limits, or visible behavior changes.
