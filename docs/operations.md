@@ -352,8 +352,9 @@ cannot be returned as the SPA HTML shell. Other static application requests
 bypass the Function runtime.
 
 Large authoritative media remains tracked until a reproducible acquisition and
-rollback contract is complete. `npm run check:repo-size` rejects new tracked
-files at or above 5 MiB and changes to reviewed files unless
+rollback contract is complete. `npm run check:repo-size` rejects aggregate
+simulator-video growth, new tracked files at or above 5 MiB, and changes to
+reviewed files unless
 `config/repository-size-baseline.json` is intentionally updated with size and
 SHA-256. Do not rewrite Git history as part of routine cleanup. Prefer the
 existing R2 publishing path for production delivery; evaluate Git LFS or
@@ -419,8 +420,8 @@ change to generate production source maps and upload them in CI, plus a narrowly
 scoped Sentry auth token and organization/project identifiers. Never expose
 those credentials as `VITE_*` variables.
 
-The `CI and Deploy` workflow runs checks, database tests, e2e tests,
-performance tests, and an isolated PWA/service-worker job before building. A
+The `CI and Deploy` workflow runs checks, database tests, Chromium E2E,
+WebKit, performance, and PWA/service-worker jobs in parallel before building. A
 newer run cancels superseded validation jobs for the same ref, but production
 deployment steps are serialized and are never cancelled mid-release.
 Immediately before upload, the workflow reads the current `main` ref through

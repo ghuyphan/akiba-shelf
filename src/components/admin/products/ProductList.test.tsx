@@ -21,7 +21,7 @@ const baseProduct: Product = {
   stock_status: "in_stock",
   stock_note: "In stock",
   images: [],
-  featured: false,
+  featured: true,
   sort_order: 1,
   active: true,
 };
@@ -38,6 +38,7 @@ function renderList(selectedId?: string) {
             name: "Low stock pin",
             item_code: "PIN-001",
             quantity_available: 2,
+            featured: false,
           },
           {
             ...baseProduct,
@@ -67,14 +68,22 @@ describe("ProductList", () => {
     const stocked = within(filters).getByRole("button", {
       name: "Well stocked",
     });
+    const featured = within(filters).getByRole("button", { name: "featured" });
     const low = within(filters).getByRole("button", {
       name: "Low / sold out",
     });
     const hidden = within(filters).getByRole("button", { name: "hidden" });
 
     expect(all).toHaveAttribute("aria-pressed", "true");
-    for (const filter of [stocked, low, hidden])
+    for (const filter of [featured, stocked, low, hidden])
       expect(filter).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(featured);
+    expect(featured).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /Moon stand/ })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /Low stock pin/ }),
+    ).not.toBeInTheDocument();
 
     await user.click(stocked);
     expect(stocked).toHaveAttribute("aria-pressed", "true");

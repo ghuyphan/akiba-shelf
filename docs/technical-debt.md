@@ -25,7 +25,8 @@ load order remain stable.
 
 ## Priority 2: verification and tooling
 
-- Add WebKit coverage for the iPad-oriented target when CI capacity allows.
+- Keep Chromium E2E, WebKit, performance, and PWA jobs isolated so failures
+  remain diagnosable and the browser suites can run in parallel.
 - Broaden automated source formatting only after agreeing on the churn; current
   formatting checks intentionally cover configuration and selected files.
 - Keep coverage thresholds as a ratchet rather than imposing an unrealistic

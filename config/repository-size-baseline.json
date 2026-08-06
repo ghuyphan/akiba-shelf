@@ -1,5 +1,9 @@
 {
   "largeFileThresholdBytes": 5242880,
+  "simulatorMedia": {
+    "maxBytes": 99304111,
+    "maxFiles": 18
+  },
   "files": {
     "vendor/hsr-simulator/static/videos/event-3star.mp4": {
       "size": 10491511,

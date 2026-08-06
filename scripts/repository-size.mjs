@@ -1,12 +1,20 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export function validateLargeFiles({ trackedFiles, baseline, readFile, stat }) {
   const actual = new Map();
+  let simulatorMediaBytes = 0;
+  let simulatorMediaFiles = 0;
   for (const path of trackedFiles) {
     const size = stat(path).size;
+    if (
+      /^vendor\/(gacha-simulator|hsr-simulator)\/static\/videos\//.test(path)
+    ) {
+      simulatorMediaBytes += size;
+      simulatorMediaFiles += 1;
+    }
     if (size < baseline.largeFileThresholdBytes) continue;
     actual.set(path, {
       size,
@@ -31,7 +39,17 @@ export function validateLargeFiles({ trackedFiles, baseline, readFile, stat }) {
     if (!actual.has(path))
       failures.push(`stale large-file baseline entry: ${path}`);
   }
-  return { actual, failures };
+  if (baseline.simulatorMedia) {
+    if (simulatorMediaBytes > baseline.simulatorMedia.maxBytes)
+      failures.push(
+        `tracked simulator media exceeds budget: ${simulatorMediaBytes} > ${baseline.simulatorMedia.maxBytes} bytes`,
+      );
+    if (simulatorMediaFiles > baseline.simulatorMedia.maxFiles)
+      failures.push(
+        `tracked simulator media exceeds file limit: ${simulatorMediaFiles} > ${baseline.simulatorMedia.maxFiles}`,
+      );
+  }
+  return { actual, failures, simulatorMediaBytes, simulatorMediaFiles };
 }
 
 function main() {
@@ -42,20 +60,21 @@ function main() {
     encoding: "utf8",
   })
     .split("\0")
-    .filter(Boolean);
-  const { actual, failures } = validateLargeFiles({
-    trackedFiles,
-    baseline,
-    readFile: readFileSync,
-    stat: statSync,
-  });
+    .filter((path) => path && existsSync(path));
+  const { actual, failures, simulatorMediaBytes, simulatorMediaFiles } =
+    validateLargeFiles({
+      trackedFiles,
+      baseline,
+      readFile: readFileSync,
+      stat: statSync,
+    });
 
   const totalBytes = [...actual.values()].reduce(
     (sum, file) => sum + file.size,
     0,
   );
   console.log(
-    `Tracked large files: ${actual.size}; baseline bytes: ${totalBytes}.`,
+    `Tracked large files: ${actual.size}; baseline bytes: ${totalBytes}; simulator media: ${simulatorMediaFiles} files / ${simulatorMediaBytes} bytes.`,
   );
   if (failures.length) {
     for (const failure of failures)

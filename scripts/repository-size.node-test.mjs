@@ -36,3 +36,23 @@ test("rejects new and stale large files", () => {
     "stale large-file baseline entry: allowed.bin",
   ]);
 });
+
+test("rejects aggregate simulator media growth below the large-file threshold", () => {
+  const result = validateLargeFiles({
+    trackedFiles: [
+      "vendor/gacha-simulator/static/videos/one.mp4",
+      "vendor/gacha-simulator/static/videos/two.mp4",
+    ],
+    baseline: {
+      largeFileThresholdBytes: 100,
+      files: {},
+      simulatorMedia: { maxBytes: 15, maxFiles: 1 },
+    },
+    readFile,
+    stat,
+  });
+  assert.deepEqual(result.failures, [
+    "tracked simulator media exceeds budget: 20 > 15 bytes",
+    "tracked simulator media exceeds file limit: 2 > 1",
+  ]);
+});

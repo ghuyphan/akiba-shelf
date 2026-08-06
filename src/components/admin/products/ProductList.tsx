@@ -32,9 +32,9 @@ export function ProductList({
 }: ProductListProps) {
   const { t } = usePlatformI18n();
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | "stocked" | "low" | "hidden">(
-    "all",
-  );
+  const [filter, setFilter] = useState<
+    "all" | "featured" | "stocked" | "low" | "hidden"
+  >("all");
   const visibleProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return products.filter((product) => {
@@ -48,6 +48,7 @@ export function ProductList({
         ].some((value) => value?.toLowerCase().includes(normalizedQuery));
       const matchesFilter =
         filter === "all" ||
+        (filter === "featured" && product.featured) ||
         (filter === "stocked" &&
           product.active &&
           product.quantity_available > 5) ||
@@ -90,23 +91,25 @@ export function ProductList({
         role="group"
         aria-label={t("Product filters")}
       >
-        {(["all", "stocked", "low", "hidden"] as const).map((item) => (
-          <button
-            key={item}
-            type="button"
-            className={filter === item ? "active" : ""}
-            aria-pressed={filter === item}
-            onClick={() => setFilter(item)}
-          >
-            {t(
-              item === "low"
-                ? "Low / sold out"
-                : item === "stocked"
-                  ? "Well stocked"
-                  : item,
-            )}
-          </button>
-        ))}
+        {(["all", "featured", "stocked", "low", "hidden"] as const).map(
+          (item) => (
+            <button
+              key={item}
+              type="button"
+              className={filter === item ? "active" : ""}
+              aria-pressed={filter === item}
+              onClick={() => setFilter(item)}
+            >
+              {t(
+                item === "low"
+                  ? "Low / sold out"
+                  : item === "stocked"
+                    ? "Well stocked"
+                    : item,
+              )}
+            </button>
+          ),
+        )}
       </div>
       <div className="admin-product-list admin-scroll-list">
         {visibleProducts.length === 0 && (

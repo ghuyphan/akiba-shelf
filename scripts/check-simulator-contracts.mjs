@@ -36,10 +36,12 @@ for (const simulator of SIMULATORS) {
     if (!workspacePackage.scripts?.[script])
       failures.push(`${simulator.game}: missing required ${script} script`);
   }
-  if (existsSync(resolve(root, simulator.workspaceRoot, "package-lock.json")))
-    failures.push(
-      `${simulator.game}: nested package-lock.json bypasses the root workspace lockfile`,
-    );
+  for (const lockfile of ["package-lock.json", "pnpm-lock.yaml", "yarn.lock"]) {
+    if (existsSync(resolve(root, simulator.workspaceRoot, lockfile)))
+      failures.push(
+        `${simulator.game}: nested ${lockfile} bypasses the root workspace lockfile`,
+      );
+  }
   if (!ignoredPaths.has(simulator.devDir))
     failures.push(
       `${simulator.game}: generated output ${simulator.devDir} must stay ignored`,

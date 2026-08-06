@@ -1,19 +1,6 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 import "../styles/admin/admin.css";
 import { Navigate, useNavigate } from "react-router";
-import { getAdminCatalogData } from "../lib/api/catalog";
-import {
-  getOrderStatusCounts,
-  getOrders,
-  type OrderStatusCounts,
-} from "../lib/api/orders";
 import { deleteProduct, saveProduct } from "../lib/api/products";
 import {
   saveBoothSettings,
@@ -22,34 +9,15 @@ import {
 } from "../lib/api/settings";
 import { signInAdmin, signOutAdmin } from "../lib/api/auth";
 import { getShopWorkspaceSummary } from "../lib/api/shops";
-import { getOfflineEventOrders } from "../lib/api/offlineEvents";
-import { getSalesSummary } from "../lib/api/sales";
-import {
-  defaultBooth,
-  defaultPayment,
-  defaultPromotion,
-  MAX_OWNED_SHOPS,
-} from "../lib/constants";
-import {
-  getErrorMessage,
-  isSessionNoise,
-  isTransportError,
-} from "../lib/errors";
-import { subscribeToCatalogChanges } from "../lib/realtime";
+import { defaultBooth, MAX_OWNED_SHOPS } from "../lib/constants";
+import { isSessionNoise } from "../lib/errors";
 import {
   applyAdminPageTheme,
   getAdminThemeStyle,
   resetPageTheme,
 } from "../utils/theme";
-import { getStoredBoothTheme } from "../utils/themeStorage";
 import { getAdminBranding, useDocumentBranding } from "../lib/branding";
-import type {
-  BoothSettings,
-  PaymentSettings,
-  PromotionSettings,
-  Product,
-  Order,
-} from "../types/catalog";
+import type { Product } from "../types/catalog";
 import {
   AdminAccessCheck,
   AdminAccessDenied,
@@ -60,60 +28,21 @@ import { useAdminSession } from "../hooks/admin/useAdminSession";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
 import { PwaInstallBanner } from "../components/admin/shell/PwaInstallBanner";
 import { getOfflineEventSignOutRisk } from "../lib/offline/offlineEvents";
-import { useAdminOrderRealtime } from "../hooks/admin/useAdminOrderRealtime";
 import { AdminWorkspaceHeader } from "../components/admin/shell/AdminWorkspaceHeader";
 import { AdminViewHero } from "../components/admin/shell/AdminViewHero";
 import { AdminAttentionPanel } from "../components/admin/shell/AdminAttentionPanel";
 import { AdminWorkspaceContent } from "../components/admin/shell/AdminWorkspaceContent";
 import { AdminUnsavedChangesProvider } from "../components/admin/shell/AdminUnsavedChanges";
-import type { OrderViewFilter } from "../components/admin/orders/OrderQueue";
 import { SignOutDialog } from "../components/ui/SignOutDialog";
 import { EventPinDialog } from "../components/ui/EventPinDialog";
-import {
-  loadAdminOrdersSnapshot,
-  saveAdminOrdersSnapshot,
-} from "../lib/offline/adminOffline";
-import {
-  loadCatalogSnapshot,
-  saveCatalogSnapshot,
-} from "../lib/offline/offline";
-import {
-  listOfflineEventOrders,
-  loadOfflineEventSession,
-  offlineEventOrderAsOrder,
-  OFFLINE_EVENT_UPDATED,
-} from "../lib/offline/offlineEvents";
+import { saveCatalogSnapshot } from "../lib/offline/offline";
 import { useMediaQuery } from "../hooks/shared/useMediaQuery";
 import { useAdminViewRoute } from "../hooks/admin/useAdminViewRoute";
-import {
-  mergeSalesSummaries,
-  projectSalesSummary,
-  type SalesSummaryState,
-} from "../lib/sales";
-import {
-  getAdminOrderCountScopeKey,
-  getAdminOrderQueryKey,
-  getLocalOrderDateScope,
-  getLocalOrderDayBounds,
-} from "../hooks/admin/adminOrderQuery";
 import { useAdminNotifications } from "../hooks/admin/useAdminNotifications";
 import { useAdminEventAccess } from "../hooks/admin/useAdminEventAccess";
+import { useAdminCatalogWorkspace } from "../hooks/admin/useAdminCatalogWorkspace";
+import { useAdminOrdersWorkspace } from "../hooks/admin/useAdminOrdersWorkspace";
 
-const orderPageSize = 12;
-// Realtime events caused by this tab's own writes are ignored inside this
-// window; the local reload/state update already reflects them.
-const localWriteQuietMs = 2000;
-const emptyOrderCounts: OrderStatusCounts = {
-  all: 0,
-  pending: 0,
-  confirmed: 0,
-  cancelled: 0,
-  expired: 0,
-};
-const emptySalesState: SalesSummaryState = {
-  summary: null,
-  status: "authoritative",
-};
 export function AdminPage() {
   const navigate = useNavigate();
   const {
@@ -125,22 +54,8 @@ export function AdminPage() {
   const shopId = isAuthed ? adminSession.access.shop_id : "";
   const userId = isAuthed ? adminSession.userId : "";
   const canManageCatalog = isAuthed && adminSession.access.role !== "staff";
-  const [products, setProducts] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [orderFilter, setOrderFilter] = useState<OrderViewFilter>("pending");
-  const [selectedEventId, setSelectedEventId] = useState("");
-  const [eventOrderCount, setEventOrderCount] = useState(0);
-  const [ordersTodayOnly, setOrdersTodayOnly] = useState(true);
-  const [orderPage, setOrderPage] = useState(1);
-  const [orderTotal, setOrderTotal] = useState(0);
-  const [orderCounts, setOrderCounts] =
-    useState<OrderStatusCounts>(emptyOrderCounts);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-  const [sales, setSales] = useState<SalesSummaryState>(emptySalesState);
-  const [catalogLoading, setCatalogLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [workspaceLoadFailed, setWorkspaceLoadFailed] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product>();
   const { viewTab, setViewTab } = useAdminViewRoute();
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [signOutBusy, setSignOutBusy] = useState(false);
@@ -149,15 +64,48 @@ export function AdminPage() {
     unlock: unlockEventAccess,
     verify: verifyEventPin,
   } = useAdminEventAccess(isAuthed, shopId);
-  const [booth, setBooth] = useState<BoothSettings>(() => {
-    const activeShopId = localStorage.getItem("akiba-active-shop")?.trim();
-    return activeShopId
-      ? getStoredBoothTheme(`id:${activeShopId}`)
-      : defaultBooth;
+  const {
+    booth,
+    catalogLoading,
+    loadedShopId: loadedCatalogShopId,
+    markLocalWrite,
+    payment,
+    products,
+    promotion,
+    reload: reloadCatalogAdmin,
+    selectedProduct,
+    setBooth,
+    setPayment,
+    setProducts,
+    setPromotion,
+    setSelectedProduct,
+  } = useAdminCatalogWorkspace({ enabled: canManageCatalog, shopId });
+  const {
+    changeFilter: handleOrderFilterChange,
+    changeTodayOnly: handleOrdersTodayOnlyChange,
+    eventOrderCount,
+    expiringOrderCount,
+    openPending: handleOpenPendingOrders,
+    orderCounts,
+    orderFilter,
+    orderPage,
+    orderTotal,
+    orders,
+    ordersLoading,
+    ordersTodayOnly,
+    pageSize: orderPageSize,
+    reload: reloadOrders,
+    sales,
+    scheduleReload: scheduleOrdersReload,
+    selectEvent: handleSelectedEventChange,
+    selectedEventId,
+    setOrderPage,
+  } = useAdminOrdersWorkspace({
+    enabled: isAuthed,
+    ready: isAuthed && !isInitialLoading,
+    shopId,
+    userId,
   });
-  const [payment, setPayment] = useState<PaymentSettings>(defaultPayment);
-  const [promotion, setPromotion] =
-    useState<PromotionSettings>(defaultPromotion);
   const toast = useToast();
   const { t } = usePlatformI18n();
   const compactAdminLayout = useMediaQuery("(max-width: 1100px)");
@@ -173,28 +121,6 @@ export function AdminPage() {
       : null;
   useDocumentBranding(verifiedBranding);
 
-  const orderRequestRef = useRef(0);
-  const orderCountRequestRef = useRef(0);
-  const salesRequestRef = useRef(0);
-  const catalogRequestRef = useRef(0);
-  const activeShopIdRef = useRef(shopId);
-  const catalogLoadRef = useRef<{
-    shopId: string;
-    promise: Promise<void>;
-  } | null>(null);
-  const orderLoadRef = useRef<{
-    key: string;
-    promise: Promise<void>;
-  } | null>(null);
-  const loadedCatalogShopRef = useRef("");
-  const orderPageRef = useRef(orderPage);
-  const orderFilterRef = useRef(orderFilter);
-  const selectedEventIdRef = useRef(selectedEventId);
-  const ordersTodayOnlyRef = useRef(ordersTodayOnly);
-  const loadedOrderQueryRef = useRef("");
-  const loadedOrderCountScopeRef = useRef("");
-  const tRef = useRef(t);
-  const lastLocalWriteRef = useRef(0);
   const lowStockCount = useMemo(
     () =>
       products.filter(
@@ -202,50 +128,9 @@ export function AdminPage() {
       ).length,
     [products],
   );
-  const expiringOrderCount = useMemo(() => {
-    const cutoff = Date.now() + 10 * 60 * 1000;
-    return orders.filter((order) => {
-      if (order.status !== "pending" || !order.expires_at) return false;
-      const expiresAt = new Date(order.expires_at).getTime();
-      return Number.isFinite(expiresAt) && expiresAt <= cutoff;
-    }).length;
-  }, [orders]);
-  useLayoutEffect(() => {
-    activeShopIdRef.current = shopId;
-    catalogRequestRef.current += 1;
-    orderRequestRef.current += 1;
-    orderCountRequestRef.current += 1;
-    salesRequestRef.current += 1;
-    catalogLoadRef.current = null;
-    orderLoadRef.current = null;
-  }, [shopId]);
-
-  useLayoutEffect(() => {
-    orderRequestRef.current += 1;
-    orderLoadRef.current = null;
-  }, [orderFilter, orderPage, ordersTodayOnly, selectedEventId]);
-
-  useLayoutEffect(() => {
-    orderCountRequestRef.current += 1;
-  }, [ordersTodayOnly]);
-
   useEffect(() => {
-    setProducts([]);
-    setOrders([]);
-    setOrderCounts(emptyOrderCounts);
-    setEventOrderCount(0);
-    setSelectedEventId("");
-    setOrderTotal(0);
-    setSales(emptySalesState);
-    setSelectedProduct(undefined);
-    setBooth(shopId ? getStoredBoothTheme(`id:${shopId}`) : defaultBooth);
-    setPayment(defaultPayment);
-    setPromotion(defaultPromotion);
     setWorkspaceLoadFailed(false);
     setIsInitialLoading(true);
-    loadedOrderQueryRef.current = "";
-    loadedOrderCountScopeRef.current = "";
-    loadedCatalogShopRef.current = "";
   }, [shopId]);
 
   const { statuses: notificationStatuses, retry: handleRetryNotification } =
@@ -253,355 +138,6 @@ export function AdminPage() {
       enabled: isAuthed && !isInitialLoading,
       shopId,
     });
-  useEffect(() => {
-    orderPageRef.current = orderPage;
-    orderFilterRef.current = orderFilter;
-    selectedEventIdRef.current = selectedEventId;
-    ordersTodayOnlyRef.current = ordersTodayOnly;
-  }, [orderPage, orderFilter, ordersTodayOnly, selectedEventId]);
-
-  useEffect(() => {
-    tRef.current = t;
-  }, [t]);
-
-  const markLocalWrite = useCallback(() => {
-    lastLocalWriteRef.current = Date.now();
-  }, []);
-
-  const reloadCatalogAdmin = useCallback(() => {
-    if (catalogLoadRef.current?.shopId === shopId)
-      return catalogLoadRef.current.promise;
-    const requestId = ++catalogRequestRef.current;
-    const requestedShopId = shopId;
-    setCatalogLoading(true);
-    const promise = getAdminCatalogData(shopId)
-      .then((catalog) => {
-        if (
-          requestId !== catalogRequestRef.current ||
-          requestedShopId !== activeShopIdRef.current
-        )
-          return;
-        setBooth(catalog.booth);
-        setPayment(catalog.payment);
-        setPromotion(catalog.promotion);
-        setProducts(catalog.products);
-        saveCatalogSnapshot(catalog, shopId, {
-          replaceProducts: true,
-          complete: true,
-        });
-        loadedCatalogShopRef.current = shopId;
-        setSelectedProduct((current) => {
-          if (!current) return undefined;
-          return catalog.products.find((p) => p.id === current.id);
-        });
-      })
-      .catch((error) => {
-        if (
-          requestId !== catalogRequestRef.current ||
-          requestedShopId !== activeShopIdRef.current
-        )
-          return;
-        if (navigator.onLine && !isTransportError(error)) throw error;
-        const snapshot = loadCatalogSnapshot(requestedShopId);
-        if (!snapshot?.complete || !snapshot.payment || !snapshot.promotion)
-          throw error;
-        if (
-          requestId !== catalogRequestRef.current ||
-          requestedShopId !== activeShopIdRef.current
-        )
-          return;
-        setBooth(snapshot.booth);
-        setPayment(snapshot.payment);
-        setPromotion(snapshot.promotion);
-        setProducts(snapshot.products);
-        loadedCatalogShopRef.current = requestedShopId;
-      })
-      .finally(() => {
-        if (requestId === catalogRequestRef.current) setCatalogLoading(false);
-        if (catalogLoadRef.current?.promise === promise)
-          catalogLoadRef.current = null;
-      });
-    catalogLoadRef.current = { shopId, promise };
-    return promise;
-  }, [shopId]);
-
-  const reloadOrders = useCallback(
-    async (refreshCounts = false) => {
-      const page = orderPageRef.current;
-      const queryKey = getAdminOrderQueryKey({
-        shopId,
-        page,
-        filter: orderFilterRef.current,
-        selectedEventId: selectedEventIdRef.current,
-        todayOnly: ordersTodayOnlyRef.current,
-      });
-      const loadKey = `${queryKey}:${refreshCounts}`;
-      if (orderLoadRef.current?.key === loadKey)
-        return orderLoadRef.current.promise;
-      const requestId = ++orderRequestRef.current;
-      const requestedShopId = shopId;
-      const requestedUserId = userId;
-      const requestedFilter = orderFilterRef.current;
-      const requestedEventId = selectedEventIdRef.current;
-      const requestedTodayOnly = ordersTodayOnlyRef.current;
-      setOrdersLoading(true);
-      const promise = (async () => {
-        // "Today" follows the staff's local day, recomputed on every fetch so an
-        // open admin session rolls over correctly at midnight.
-        const filter = requestedFilter;
-        const dateScope = getLocalOrderDateScope(requestedTodayOnly);
-        const [result, countResult] =
-          filter === "event"
-            ? await Promise.all([
-                getOfflineEventOrders(shopId, {
-                  page,
-                  pageSize: orderPageSize,
-                  sessionId: requestedEventId || undefined,
-                  ...dateScope,
-                }),
-                refreshCounts
-                  ? getOrderStatusCounts(shopId, dateScope)
-                  : Promise.resolve(null),
-              ]).then(
-                ([eventResult, counts]) =>
-                  [
-                    eventResult,
-                    counts ? ([counts, eventResult.total] as const) : null,
-                  ] as const,
-              )
-            : await Promise.all([
-                getOrders(shopId, {
-                  page,
-                  pageSize: orderPageSize,
-                  status: filter,
-                  ...dateScope,
-                }),
-                refreshCounts
-                  ? Promise.all([
-                      getOrderStatusCounts(shopId, dateScope),
-                      getOfflineEventOrders(shopId, {
-                        page: 1,
-                        pageSize: 1,
-                        ...dateScope,
-                      })
-                        .then((eventResult) => eventResult.total)
-                        .catch(() => null),
-                    ])
-                  : Promise.resolve(null),
-              ]);
-        if (
-          requestId !== orderRequestRef.current ||
-          requestedShopId !== activeShopIdRef.current
-        )
-          return;
-        const eventSource = requestedEventId
-          ? (`event:${requestedEventId}` as const)
-          : "event";
-        saveAdminOrdersSnapshot(
-          requestedUserId,
-          requestedShopId,
-          result.orders,
-          filter === "event" ? eventSource : "online",
-        );
-        const lastPage = Math.max(1, Math.ceil(result.total / orderPageSize));
-        if (page > lastPage) {
-          setOrderPage(lastPage);
-          return;
-        }
-        setOrders(result.orders);
-        setOrderTotal(result.total);
-        loadedOrderQueryRef.current = queryKey;
-        if (filter === "event" && !requestedEventId)
-          setEventOrderCount(result.total);
-        if (countResult) {
-          setOrderCounts(countResult[0]);
-          if (countResult[1] !== null) setEventOrderCount(countResult[1]);
-          loadedOrderCountScopeRef.current = getAdminOrderCountScopeKey(
-            requestedShopId,
-            requestedTodayOnly,
-          );
-        }
-      })()
-        .catch(async (error) => {
-          if (
-            requestId !== orderRequestRef.current ||
-            requestedShopId !== activeShopIdRef.current
-          )
-            return;
-          if (navigator.onLine && !isTransportError(error)) throw error;
-          const filter = requestedFilter;
-          const source =
-            filter === "event"
-              ? requestedEventId
-                ? (`event:${requestedEventId}` as const)
-                : "event"
-              : "online";
-          const cached = loadAdminOrdersSnapshot(
-            requestedUserId,
-            requestedShopId,
-            source,
-          );
-          let available = cached;
-          if (filter === "event") {
-            const session = await loadOfflineEventSession(requestedShopId);
-            const localOrders = session
-              ? (await listOfflineEventOrders(session.id)).map((order) =>
-                  offlineEventOrderAsOrder(order, session),
-                )
-              : [];
-            const merged = new Map(cached.map((order) => [order.id, order]));
-            localOrders.forEach((order) => merged.set(order.id, order));
-            available = [...merged.values()].sort((a, b) =>
-              b.created_at.localeCompare(a.created_at),
-            );
-            if (requestedEventId)
-              available = available.filter(
-                (order) => order.offline_event_session_id === requestedEventId,
-              );
-          }
-          if (
-            requestId !== orderRequestRef.current ||
-            requestedShopId !== activeShopIdRef.current
-          )
-            return;
-          if (!available.length && filter !== "event") throw error;
-          const { start: today, end: tomorrow } = getLocalOrderDayBounds();
-          const scoped = available.filter((order) => {
-            if (
-              filter !== "event" &&
-              filter !== "all" &&
-              order.status !== filter
-            )
-              return false;
-            const created = new Date(order.created_at);
-            return (
-              !requestedTodayOnly || (created >= today && created < tomorrow)
-            );
-          });
-          const from = Math.max(0, page - 1) * orderPageSize;
-          setOrders(scoped.slice(from, from + orderPageSize));
-          setOrderTotal(scoped.length);
-          loadedOrderQueryRef.current = queryKey;
-          if (filter === "event" && !requestedEventId)
-            setEventOrderCount(scoped.length);
-          const onlineCached = loadAdminOrdersSnapshot(
-            requestedUserId,
-            requestedShopId,
-            "online",
-          );
-          const counts = onlineCached.reduce<OrderStatusCounts>(
-            (result, order) => {
-              const created = new Date(order.created_at);
-              if (
-                requestedTodayOnly &&
-                (created < today || created >= tomorrow)
-              )
-                return result;
-              result[order.status] += 1;
-              result.all += 1;
-              return result;
-            },
-            { ...emptyOrderCounts },
-          );
-          setOrderCounts(counts);
-          loadedOrderCountScopeRef.current = getAdminOrderCountScopeKey(
-            requestedShopId,
-            requestedTodayOnly,
-          );
-        })
-        .finally(() => {
-          if (requestId === orderRequestRef.current) setOrdersLoading(false);
-          if (orderLoadRef.current?.promise === promise)
-            orderLoadRef.current = null;
-        });
-      orderLoadRef.current = { key: loadKey, promise };
-      return promise;
-    },
-    [shopId, userId],
-  );
-
-  const reloadSalesSummary = useCallback(async () => {
-    const requestId = ++salesRequestRef.current;
-    const now = new Date();
-    const range = ordersTodayOnlyRef.current
-      ? getLocalOrderDayBounds(now)
-      : { start: new Date(0), end: now };
-    const from = range.start.toISOString();
-    const to = range.end.toISOString();
-    const localSession = await loadOfflineEventSession(shopId).catch(
-      () => null,
-    );
-    const localLedgerOrders = localSession
-      ? await listOfflineEventOrders(localSession.id).catch(() => [])
-      : [];
-    const localOrders = localSession
-      ? localLedgerOrders.map((order) =>
-          offlineEventOrderAsOrder(order, localSession),
-        )
-      : [];
-    const unsyncedConfirmed = localSession
-      ? localLedgerOrders
-          .filter((order) => order.status === "confirmed" && !order.syncedAt)
-          .map((order) => offlineEventOrderAsOrder(order, localSession))
-      : [];
-    const provisional = projectSalesSummary(unsyncedConfirmed, from, to);
-    try {
-      const authoritative = await getSalesSummary(shopId, from, to);
-      if (requestId !== salesRequestRef.current) return;
-      setSales({
-        summary: provisional.confirmed_order_count
-          ? mergeSalesSummaries(authoritative, provisional)
-          : authoritative,
-        status: provisional.confirmed_order_count
-          ? "provisional"
-          : "authoritative",
-      });
-    } catch (error) {
-      if (isSessionNoise(error)) return;
-      const cached = [
-        ...loadAdminOrdersSnapshot(userId, shopId, "online"),
-        ...loadAdminOrdersSnapshot(userId, shopId, "event"),
-        ...localOrders,
-      ];
-      const unique = [
-        ...new Map(cached.map((order) => [order.id, order])).values(),
-      ];
-      if (requestId !== salesRequestRef.current) return;
-      setSales({
-        summary: projectSalesSummary(unique, from, to),
-        status: "fallback",
-      });
-    }
-  }, [shopId, userId]);
-
-  const scheduleOrdersReload = useAdminOrderRealtime({
-    enabled: isAuthed,
-    shopId,
-    onRefresh: () => {
-      void reloadSalesSummary();
-      return reloadOrders(true);
-    },
-    onError: (error) => {
-      if (isSessionNoise(error)) return;
-      toast.error(
-        tRef.current(getErrorMessage(error, "Could not refresh orders.")),
-        tRef.current("Refresh failed"),
-      );
-    },
-  });
-
-  useEffect(() => {
-    if (!isAuthed || isInitialLoading) return;
-    const refresh = () => void reloadSalesSummary();
-    refresh();
-    window.addEventListener("online", refresh);
-    window.addEventListener(OFFLINE_EVENT_UPDATED, refresh);
-    return () => {
-      window.removeEventListener("online", refresh);
-      window.removeEventListener(OFFLINE_EVENT_UPDATED, refresh);
-    };
-  }, [isAuthed, isInitialLoading, ordersTodayOnly, reloadSalesSummary]);
-
   // Load initial workspace data in parallel before showing the admin panel
   useEffect(() => {
     if (!isAuthed) {
@@ -657,13 +193,14 @@ export function AdminPage() {
     isInitialLoading,
     reloadCatalogAdmin,
     reloadOrders,
+    setBooth,
     t,
     toast,
   ]);
 
   useEffect(() => {
     if (!canManageCatalog || isInitialLoading) return;
-    if (loadedCatalogShopRef.current === shopId) return;
+    if (loadedCatalogShopId === shopId) return;
 
     reloadCatalogAdmin().catch((error) => {
       if (isSessionNoise(error)) return;
@@ -675,202 +212,12 @@ export function AdminPage() {
   }, [
     canManageCatalog,
     isInitialLoading,
+    loadedCatalogShopId,
     reloadCatalogAdmin,
     shopId,
     t,
     toast,
   ]);
-
-  useEffect(() => {
-    if (!isAuthed) return;
-    if (isInitialLoading) return;
-    const queryKey = getAdminOrderQueryKey({
-      shopId,
-      page: orderPage,
-      filter: orderFilter,
-      selectedEventId,
-      todayOnly: ordersTodayOnly,
-    });
-    if (loadedOrderQueryRef.current === queryKey) return;
-
-    reloadOrders().catch((error) => {
-      if (isSessionNoise(error)) return;
-      toast.error(
-        t("Could not load the admin workspace."),
-        t("Admin unavailable"),
-      );
-    });
-  }, [
-    isAuthed,
-    shopId,
-    orderFilter,
-    selectedEventId,
-    ordersTodayOnly,
-    orderPage,
-    isInitialLoading,
-    reloadOrders,
-    t,
-    toast,
-  ]);
-
-  useEffect(() => {
-    if (!isAuthed) return;
-    if (isInitialLoading) return;
-    const countScope = getAdminOrderCountScopeKey(shopId, ordersTodayOnly);
-    if (loadedOrderCountScopeRef.current === countScope) return;
-    const requestId = ++orderCountRequestRef.current;
-    const requestedShopId = shopId;
-    let active = true;
-
-    const scopeNow = new Date();
-    const dateScope = getLocalOrderDateScope(ordersTodayOnly, scopeNow);
-    const { start: startOfToday, end: startOfTomorrow } =
-      getLocalOrderDayBounds(scopeNow);
-
-    Promise.all([
-      getOrderStatusCounts(shopId, dateScope),
-      getOfflineEventOrders(shopId, {
-        page: 1,
-        pageSize: 1,
-        ...dateScope,
-      }),
-    ])
-      .then(([counts, eventResult]) => {
-        if (
-          !active ||
-          requestId !== orderCountRequestRef.current ||
-          requestedShopId !== activeShopIdRef.current
-        )
-          return;
-        setOrderCounts(counts);
-        setEventOrderCount(eventResult.total);
-        loadedOrderCountScopeRef.current = countScope;
-      })
-      .catch(async (error) => {
-        if (
-          !active ||
-          requestId !== orderCountRequestRef.current ||
-          requestedShopId !== activeShopIdRef.current
-        )
-          return;
-        if (isSessionNoise(error)) return;
-        if (!navigator.onLine || isTransportError(error)) {
-          const onlineCached = loadAdminOrdersSnapshot(
-            userId,
-            shopId,
-            "online",
-          );
-          const eventCached = loadAdminOrdersSnapshot(userId, shopId, "event");
-          const session = await loadOfflineEventSession(requestedShopId);
-          const localOrders = session
-            ? (await listOfflineEventOrders(session.id)).map((order) =>
-                offlineEventOrderAsOrder(order, session),
-              )
-            : [];
-          const eventOrders = new Map(
-            eventCached.map((order) => [order.id, order]),
-          );
-          localOrders.forEach((order) => eventOrders.set(order.id, order));
-          if (
-            !active ||
-            requestId !== orderCountRequestRef.current ||
-            requestedShopId !== activeShopIdRef.current
-          )
-            return;
-          const inScope = (order: Order) => {
-            if (!ordersTodayOnly) return true;
-            const created = new Date(order.created_at);
-            return created >= startOfToday && created < startOfTomorrow;
-          };
-          setOrderCounts(
-            onlineCached.reduce<OrderStatusCounts>(
-              (counts, order) => {
-                if (!inScope(order)) return counts;
-                counts[order.status] += 1;
-                counts.all += 1;
-                return counts;
-              },
-              { ...emptyOrderCounts },
-            ),
-          );
-          setEventOrderCount([...eventOrders.values()].filter(inScope).length);
-          loadedOrderCountScopeRef.current = countScope;
-          return;
-        }
-        toast.error(
-          t("Could not load the admin workspace."),
-          t("Admin unavailable"),
-        );
-      });
-    return () => {
-      active = false;
-    };
-  }, [isAuthed, shopId, userId, ordersTodayOnly, isInitialLoading, t, toast]);
-
-  useEffect(() => {
-    if (!isAuthed || isInitialLoading || orderFilter !== "event") return;
-    let timer: number | undefined;
-    const refresh = () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        reloadOrders(true).catch((error) => {
-          if (isSessionNoise(error)) return;
-          toast.error(
-            tRef.current(getErrorMessage(error, "Could not refresh orders.")),
-            tRef.current("Refresh failed"),
-          );
-        });
-      }, 200);
-    };
-    const handleEventUpdate = (event: Event) => {
-      const detail = (event as CustomEvent<{ shopId?: string }>).detail;
-      if (!detail?.shopId || detail.shopId === shopId) refresh();
-    };
-    window.addEventListener(OFFLINE_EVENT_UPDATED, handleEventUpdate);
-    window.addEventListener("online", refresh);
-    window.addEventListener("focus", refresh);
-    window.addEventListener("storage", refresh);
-    const interval = window.setInterval(refresh, 15_000);
-    return () => {
-      window.clearTimeout(timer);
-      window.clearInterval(interval);
-      window.removeEventListener(OFFLINE_EVENT_UPDATED, handleEventUpdate);
-      window.removeEventListener("online", refresh);
-      window.removeEventListener("focus", refresh);
-      window.removeEventListener("storage", refresh);
-    };
-  }, [isAuthed, isInitialLoading, orderFilter, reloadOrders, shopId, toast]);
-
-  // Real-time catalog subscription
-  useEffect(() => {
-    if (!canManageCatalog) return undefined;
-
-    let reloadTimer: number | undefined;
-    const unsubscribe = subscribeToCatalogChanges(shopId, {
-      onChange: () => {
-        window.clearTimeout(reloadTimer);
-        reloadTimer = window.setTimeout(() => {
-          if (Date.now() - lastLocalWriteRef.current < localWriteQuietMs)
-            return;
-          reloadCatalogAdmin().catch((error) => {
-            if (isSessionNoise(error)) return;
-            toast.error(
-              tRef.current(
-                getErrorMessage(error, "Could not refresh admin data."),
-              ),
-              tRef.current("Refresh failed"),
-            );
-          });
-        }, 150);
-      },
-      onStatus: () => undefined,
-    });
-
-    return () => {
-      window.clearTimeout(reloadTimer);
-      unsubscribe();
-    };
-  }, [canManageCatalog, shopId, reloadCatalogAdmin, toast]);
 
   useEffect(() => {
     if (!isAuthed || !shopId) return;
@@ -1098,11 +445,7 @@ export function AdminPage() {
               notificationStatuses={notificationStatuses}
               canManageCatalog={canManageCatalog}
               canRetryNotifications={adminSession.access.role !== "staff"}
-              onOpenOrders={() => {
-                setOrderFilter("pending");
-                setSelectedEventId("");
-                setOrderPage(1);
-              }}
+              onOpenOrders={handleOpenPendingOrders}
               onOpenProducts={() => setViewTab("products")}
               onOpenSettings={() =>
                 setViewTab(compactAdminLayout ? "settings" : "design")
@@ -1138,20 +481,9 @@ export function AdminPage() {
               setWorkspaceLoadFailed(false);
               setIsInitialLoading(true);
             }}
-            onOrderFilterChange={(filter) => {
-              setOrderFilter(filter);
-              if (filter !== "event") setSelectedEventId("");
-              setOrderPage(1);
-            }}
-            onSelectedEventChange={(eventId) => {
-              setOrderFilter("event");
-              setSelectedEventId(eventId);
-              setOrderPage(1);
-            }}
-            onOrdersTodayOnlyChange={(todayOnly) => {
-              setOrdersTodayOnly(todayOnly);
-              setOrderPage(1);
-            }}
+            onOrderFilterChange={handleOrderFilterChange}
+            onSelectedEventChange={handleSelectedEventChange}
+            onOrdersTodayOnlyChange={handleOrdersTodayOnlyChange}
             onOrderPageChange={setOrderPage}
             onOrderUpdated={scheduleOrdersReload}
             onSelectProduct={setSelectedProduct}

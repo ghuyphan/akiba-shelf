@@ -89,10 +89,7 @@ describe("StackedFeatured", () => {
     );
 
     const image = container.querySelector(".featured-deck-card img");
-    expect(image).toHaveAttribute(
-      "src",
-      "https://example.test/first-600.webp",
-    );
+    expect(image).toHaveAttribute("src", "https://example.test/first-600.webp");
     expect(image).not.toHaveAttribute("srcset");
   });
 
@@ -140,7 +137,32 @@ describe("StackedFeatured", () => {
     expect(container.querySelector(".featured-banner-count")).toHaveTextContent(
       "01 / 08",
     );
-    expect(container.querySelectorAll(".featured-banner-nav>div>button"))
-      .toHaveLength(8);
+    expect(
+      container.querySelectorAll(".featured-banner-nav>div>button"),
+    ).toHaveLength(8);
+  });
+
+  it("never renders unfeatured products from a broad upstream response", () => {
+    const { container } = render(
+      <CatalogLocaleProvider locale="en">
+        <StackedFeatured
+          products={[
+            featuredProduct("featured", "Featured print"),
+            {
+              ...featuredProduct("regular", "Regular print"),
+              featured: false,
+            },
+          ]}
+          autoRotate={false}
+          onSelect={vi.fn()}
+        />
+      </CatalogLocaleProvider>,
+    );
+
+    expect(
+      container.querySelector(".featured-banner-copy h2"),
+    ).toHaveTextContent("Featured print");
+    expect(container).not.toHaveTextContent("Regular print");
+    expect(container.querySelectorAll(".featured-deck-card")).toHaveLength(1);
   });
 });

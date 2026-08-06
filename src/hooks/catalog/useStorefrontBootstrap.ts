@@ -128,7 +128,7 @@ export function useStorefrontBootstrap(
       );
       const nextFeatured = await getPublicFeaturedProducts(shopId);
       if (identity === shopIdentityRef.current)
-        setFeaturedProducts(nextFeatured);
+        setFeaturedProducts(selectStorefrontFeaturedProducts(nextFeatured));
     } catch {
       if (identity === shopIdentityRef.current)
         setFeaturedProducts(selectStorefrontFeaturedProducts(initialProducts));
