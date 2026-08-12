@@ -32,6 +32,13 @@ export async function createSimulatorCacheVersion(workspaceRoot) {
       // Optional source entries differ between the vendored simulators.
     }
   }
+  const sharedRoot = resolve(root, "../shared");
+  try {
+    const details = await stat(sharedRoot);
+    if (details.isDirectory()) await collectFiles(root, sharedRoot, files);
+  } catch {
+    // Standalone simulator checkouts do not include Matsuri's shared policy.
+  }
   const hash = createHash("sha256");
   for (const file of files.sort()) {
     hash.update(relative(root, file).split(sep).join("/"));

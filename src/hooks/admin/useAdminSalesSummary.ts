@@ -25,6 +25,8 @@ const emptySalesState: SalesSummaryState = {
   summary: null,
   status: "authoritative",
 };
+// Keep the client inside the RPC's inclusive 366-day reporting contract.
+const maxSalesSummaryRangeMs = 366 * 24 * 60 * 60 * 1000;
 
 export function useAdminSalesSummary({
   enabled,
@@ -57,7 +59,7 @@ export function useAdminSalesSummary({
     const now = new Date();
     const range = todayOnlyRef.current
       ? getLocalOrderDayBounds(now)
-      : { start: new Date(0), end: now };
+      : { start: new Date(now.getTime() - maxSalesSummaryRangeMs), end: now };
     const from = range.start.toISOString();
     const to = range.end.toISOString();
     const localSession = await loadOfflineEventSession(shopId).catch(

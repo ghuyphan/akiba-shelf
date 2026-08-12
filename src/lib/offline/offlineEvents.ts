@@ -681,14 +681,22 @@ export async function createOfflineEventOrder(
     );
     // Event allocations are the immutable local pricing snapshot. Never trust
     // a cart product refreshed from the storefront after Event Mode started.
-    const authoritativeCart = cart.map((item) => {
+    const authoritativeCartByProduct = new Map<string, CartItem>();
+    cart.forEach((item) => {
       const allocation = allocationsByProductId.get(item.product.id);
       if (!allocation)
         throw new Error(
           "One or more items are not allocated to this event device.",
         );
-      return { ...item, product: allocation.product };
+      const previous = authoritativeCartByProduct.get(item.product.id);
+      authoritativeCartByProduct.set(item.product.id, {
+        product: allocation.product,
+        quantity: (previous?.quantity ?? 0) + item.quantity,
+        reward_quantity:
+          (previous?.reward_quantity ?? 0) + (item.reward_quantity ?? 0),
+      });
     });
+    const authoritativeCart = [...authoritativeCartByProduct.values()];
     const pricing = calculateCartPricing(
       authoritativeCart,
       currentSession.promotion,
@@ -810,15 +818,17 @@ export async function updateOfflineEventOrder(
         ? {
             ...currentSession,
             allocations: currentSession.allocations.map((allocation) => {
-              const item = current.items.find(
-                (candidate) => candidate.product_id === allocation.product.id,
-              );
-              return item
+              const returnedQuantity = current.items
+                .filter(
+                  (candidate) => candidate.product_id === allocation.product.id,
+                )
+                .reduce((total, item) => total + item.quantity, 0);
+              return returnedQuantity > 0
                 ? {
                     ...allocation,
                     quantitySold: Math.max(
                       0,
-                      allocation.quantitySold - item.quantity,
+                      allocation.quantitySold - returnedQuantity,
                     ),
                   }
                 : allocation;

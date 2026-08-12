@@ -151,6 +151,13 @@ const publicRpcErrors = new Map<string, { error: string; status: number }>([
     "Cart contains too many free reward items",
     { error: "Cart contains too many free reward items", status: 409 },
   ],
+  [
+    "Cart total is too large",
+    {
+      error: "The cart total is too large. Reduce the quantity and try again.",
+      status: 409,
+    },
+  ],
 ]);
 
 async function sha256(value: string) {

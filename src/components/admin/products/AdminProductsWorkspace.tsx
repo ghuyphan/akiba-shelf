@@ -101,6 +101,7 @@ export function AdminProductsWorkspace({
   return (
     <>
       <PromotionSettingsForm
+        key={shopId}
         promotion={promotion}
         products={products}
         onSave={onSavePromotion}
@@ -196,6 +197,7 @@ export function AdminProductsWorkspace({
             className={`admin-grid-col-form ${activeTab === "form" ? "show" : "hide"}`}
           >
             <ProductForm
+              key={selectedProduct.id}
               shopId={shopId}
               product={selectedProduct}
               featuredCount={featuredCount}

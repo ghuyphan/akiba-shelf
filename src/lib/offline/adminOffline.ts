@@ -13,6 +13,11 @@ const MAX_ACCESS_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_ORDER_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_ORDER_SNAPSHOT = 200;
 export type AdminOrderSource = "online" | "event" | `event:${string}`;
+export type AdminOrderSnapshotScope = {
+  status?: Order["status"];
+  createdAfter?: string;
+  createdBefore?: string;
+};
 
 type CachedAccess = {
   version: 2;
@@ -87,9 +92,26 @@ export function saveAdminOrdersSnapshot(
   shopId: string,
   orders: Order[],
   source: AdminOrderSource = "online",
+  replaceScope?: AdminOrderSnapshotScope,
 ) {
   const previous = loadAdminOrdersSnapshot(userId, shopId, source);
-  const merged = new Map(previous.map((order) => [order.id, order]));
+  const createdAfter = replaceScope?.createdAfter
+    ? new Date(replaceScope.createdAfter).getTime()
+    : undefined;
+  const createdBefore = replaceScope?.createdBefore
+    ? new Date(replaceScope.createdBefore).getTime()
+    : undefined;
+  const retained = replaceScope
+    ? previous.filter((order) => {
+        if (replaceScope.status && order.status !== replaceScope.status)
+          return true;
+        const createdAt = new Date(order.created_at).getTime();
+        if (createdAfter !== undefined && createdAt < createdAfter) return true;
+        if (createdBefore !== undefined && createdAt >= createdBefore) return true;
+        return false;
+      })
+    : previous;
+  const merged = new Map(retained.map((order) => [order.id, order]));
   orders.forEach((order) => merged.set(order.id, order));
   const parsed = zCachedOrders.safeParse({
     version: CACHE_VERSION,

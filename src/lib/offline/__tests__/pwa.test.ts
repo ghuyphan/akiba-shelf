@@ -93,6 +93,25 @@ describe("push configuration", () => {
     );
   });
 
+  it("preserves the active route cache while deleting superseded runtime caches", async () => {
+    const deleteCache = vi.fn(async () => true);
+    vi.stubGlobal("caches", {
+      keys: vi.fn(async () => [
+        "app-route-chunks-v1",
+        "app-route-chunks-v2",
+        "gacha-app-shell-v4-old",
+      ]),
+      delete: deleteCache,
+    });
+    const { cleanupSupersededRuntimeCaches } = await import("../pwa");
+
+    await cleanupSupersededRuntimeCaches();
+
+    expect(deleteCache).toHaveBeenCalledWith("app-route-chunks-v1");
+    expect(deleteCache).toHaveBeenCalledWith("gacha-app-shell-v4-old");
+    expect(deleteCache).not.toHaveBeenCalledWith("app-route-chunks-v2");
+  });
+
   it("rejects when an installing worker becomes redundant", async () => {
     const worker = new EventTarget() as EventTarget & {
       state: ServiceWorkerState;

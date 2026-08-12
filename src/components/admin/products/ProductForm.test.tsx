@@ -1,10 +1,30 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PlatformI18nProvider } from "../../../lib/i18n/platformI18n";
 import type { Product } from "../../../types/catalog";
 import { ToastProvider } from "../../ui/ToastProvider";
 import { ProductForm } from "./ProductForm";
+
+const uploadMocks = vi.hoisted(() => ({
+  onProductUploaded: undefined as
+    | ((variant: {
+        thumbnail: string;
+        detail: string;
+        paths: string[];
+      }) => void)
+    | undefined,
+}));
+
+vi.mock("../shared/ImageUpload", () => ({
+  ImageUpload: (props: {
+    label: string;
+    onProductUploaded?: typeof uploadMocks.onProductUploaded;
+  }) => {
+    uploadMocks.onProductUploaded = props.onProductUploaded;
+    return <button type="button">{props.label}</button>;
+  },
+}));
 
 const product: Product = {
   id: "product-1",
@@ -49,7 +69,83 @@ function renderForm(
 }
 
 describe("ProductForm", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    uploadMocks.onProductUploaded = undefined;
+  });
+
+  it("keeps dirty fields when realtime refreshes the same product", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <PlatformI18nProvider>
+        <ToastProvider>
+          <ProductForm
+            shopId="shop-1"
+            product={product}
+            featuredCount={0}
+            onSave={vi.fn()}
+            onDelete={vi.fn()}
+          />
+        </ToastProvider>
+      </PlatformI18nProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const name = screen.getByRole("textbox", {
+      name: "Product name · Required",
+    });
+    await user.clear(name);
+    await user.type(name, "Local draft");
+
+    rerender(
+      <PlatformI18nProvider>
+        <ToastProvider>
+          <ProductForm
+            shopId="shop-1"
+            product={{ ...product, quantity_available: 4 }}
+            featuredCount={0}
+            onSave={vi.fn()}
+            onDelete={vi.fn()}
+          />
+        </ToastProvider>
+      </PlatformI18nProvider>,
+    );
+
+    expect(name).toHaveValue("Local draft");
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+  });
+
+  it("merges a completed upload into the latest draft", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    renderForm(undefined, 0, onSave);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const name = screen.getByRole("textbox", {
+      name: "Product name · Required",
+    });
+    await user.clear(name);
+    await user.type(name, "Edited during upload");
+
+    act(() => {
+      uploadMocks.onProductUploaded?.({
+        thumbnail: "https://example.com/new-thumb.jpg",
+        detail: "https://example.com/new-detail.jpg",
+        paths: ["thumb-path", "detail-path"],
+      });
+    });
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "Edited during upload",
+        images: [
+          "https://example.com/product.jpg",
+          "https://example.com/new-detail.jpg",
+        ],
+      }),
+    );
+  });
 
   it("uses the shared destructive confirmation before deleting", async () => {
     const user = userEvent.setup();

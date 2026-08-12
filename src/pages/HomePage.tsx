@@ -2,9 +2,11 @@ import { Link } from "react-router";
 import { useEffect, useRef } from "react";
 import {
   ArrowRight,
+  ArrowUpRight,
   ClipboardCheck,
   Heart,
   LogIn,
+  MessageCircle,
   PackageCheck,
   Palette,
   ScanLine,
@@ -14,7 +16,7 @@ import {
 import { AppHeader } from "../components/ui/AppHeader";
 import { PlatformHeaderBrand } from "../components/ui/PlatformHeaderBrand";
 import { PlatformLanguageToggle } from "../components/ui/PlatformLanguageToggle";
-import { PLATFORM_BRAND } from "../lib/branding";
+import { PLATFORM_BRAND, PLATFORM_CONTACT } from "../lib/branding";
 import { usePlatformI18n } from "../lib/i18n/platformI18n";
 import "../styles/admin/admin.css";
 
@@ -388,13 +390,27 @@ export function HomePage() {
       </main>
 
       <footer className="platform-home-footer">
-        <strong>{PLATFORM_BRAND.name}</strong>
-        <span>
-          {t("Made for independent artists, conventions, and pop-up booths.")}
-        </span>
-        <small>
-          &copy; {new Date().getFullYear()} {PLATFORM_BRAND.name}
-        </small>
+        <div className="platform-home-footer-brand">
+          <strong>{PLATFORM_BRAND.name}</strong>
+          <span>
+            {t("Made for independent artists, conventions, and pop-up booths.")}
+          </span>
+        </div>
+        <div className="platform-home-footer-meta">
+          <a
+            href={PLATFORM_CONTACT.zaloUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={t("Chat with Matsuri on Zalo")}
+          >
+            <MessageCircle size={14} aria-hidden="true" />
+            {t("Say hello on Zalo")}
+            <ArrowUpRight size={14} aria-hidden="true" />
+          </a>
+          <small>
+            &copy; {new Date().getFullYear()} {PLATFORM_BRAND.name}
+          </small>
+        </div>
       </footer>
     </div>
   );

@@ -222,6 +222,16 @@ export function useAdminOrdersWorkspace({
           requestedShopId,
           result.orders,
           requestedFilter === "event" ? eventSource : "online",
+          page === 1 && result.total <= adminOrderPageSize
+            ? {
+                status:
+                  requestedFilter === "event" || requestedFilter === "all"
+                    ? undefined
+                    : requestedFilter,
+                createdAfter: dateScope.createdAfter,
+                createdBefore: dateScope.createdBefore,
+              }
+            : undefined,
         );
         const lastPage = Math.max(
           1,

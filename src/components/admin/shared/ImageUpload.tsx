@@ -1,5 +1,5 @@
 import { ImageUp, LoaderCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { uploadImage, uploadProductImages } from "../../../lib/api/storage";
 import {
   compressImage,
@@ -29,8 +29,16 @@ export function ImageUpload({
   onProductUploaded,
 }: ImageUploadProps) {
   const [busy, setBusy] = useState(false);
+  const mountedRef = useRef(true);
   const toast = useToast();
   const { t } = usePlatformI18n();
+
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
+    },
+    [],
+  );
 
   async function handleChange(file?: File) {
     if (!file) return;
@@ -44,19 +52,21 @@ export function ImageUpload({
           variants.thumbnail,
           variants.detail,
         );
-        onProductUploaded(uploaded);
+        if (mountedRef.current) onProductUploaded(uploaded);
       } else {
         const compressedFile = await compressImage(file);
         const uploaded = await uploadImage(shopId, bucket, compressedFile);
-        onUploaded(uploaded.url, uploaded.path);
+        if (mountedRef.current) onUploaded(uploaded.url, uploaded.path);
       }
     } catch (caught) {
-      toast.error(
-        t(getUserFacingErrorMessage(caught, "Could not upload image.")),
-        t("Upload failed"),
-      );
+      if (mountedRef.current) {
+        toast.error(
+          t(getUserFacingErrorMessage(caught, "Could not upload image.")),
+          t("Upload failed"),
+        );
+      }
     } finally {
-      setBusy(false);
+      if (mountedRef.current) setBusy(false);
     }
   }
 

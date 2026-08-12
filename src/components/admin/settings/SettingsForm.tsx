@@ -1,4 +1,11 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Clock3,
   Edit3,
@@ -40,17 +47,41 @@ const THEME_COLOR_FIELDS = [
 export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
   const [draft, setDraft] = useState(settings);
   const [isEditing, setIsEditing] = useState(false);
+  const activeShopIdRef = useRef(shopId);
+  const acceptedSettingsRef = useRef(settings);
+  const draftRef = useRef(draft);
   const { busy, error, run, setError } = useAsyncAction();
   const { t } = usePlatformI18n();
   const hasChanges = useMemo(
     () => JSON.stringify(draft) !== JSON.stringify(settings),
     [draft, settings],
   );
+  const isEditingRef = useRef(isEditing);
+
+  isEditingRef.current = isEditing;
+  draftRef.current = draft;
+
   useEffect(() => {
+    const sameShop = activeShopIdRef.current === shopId;
+    const hasDirtyDraft =
+      JSON.stringify(draftRef.current) !==
+      JSON.stringify(acceptedSettingsRef.current);
+    const draftMatchesIncoming =
+      JSON.stringify(draftRef.current) === JSON.stringify(settings);
+    activeShopIdRef.current = shopId;
+    if (
+      sameShop &&
+      isEditingRef.current &&
+      hasDirtyDraft &&
+      !draftMatchesIncoming
+    ) {
+      return;
+    }
+    acceptedSettingsRef.current = settings;
     setDraft(settings);
     setIsEditing(false);
     setError("");
-  }, [settings, setError]);
+  }, [settings, shopId, setError]);
   const resetDraft = useCallback(() => {
     setDraft(settings);
     setIsEditing(false);
@@ -155,7 +186,11 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
                   bucket="payment-qr"
                   label={t("Upload logo")}
                   onUploaded={(url, path) =>
-                    setDraft({ ...draft, logo_url: url, logo_path: path })
+                    setDraft((current) => ({
+                      ...current,
+                      logo_url: url,
+                      logo_path: path,
+                    }))
                   }
                 />
               )}
@@ -295,11 +330,11 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
                 bucket="payment-qr"
                 label={t("Upload QR logo")}
                 onUploaded={(url, path) =>
-                  setDraft({
-                    ...draft,
+                  setDraft((current) => ({
+                    ...current,
                     social_qr_logo_url: url,
                     social_qr_logo_path: path,
-                  })
+                  }))
                 }
               />
             )}

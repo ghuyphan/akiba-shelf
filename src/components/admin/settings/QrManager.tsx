@@ -1,4 +1,11 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   BadgeDollarSign,
   Building2,
@@ -34,19 +41,43 @@ type QrManagerProps = {
 export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
   const [draft, setDraft] = useState(settings);
   const [isEditing, setIsEditing] = useState(false);
+  const activeShopIdRef = useRef(shopId);
+  const acceptedSettingsRef = useRef(settings);
+  const draftRef = useRef(draft);
   const { busy, error, run, setError } = useAsyncAction();
   const { t } = usePlatformI18n();
   const hasChanges = useMemo(
     () => JSON.stringify(draft) !== JSON.stringify(settings),
     [draft, settings],
   );
+  const isEditingRef = useRef(isEditing);
+
+  isEditingRef.current = isEditing;
+  draftRef.current = draft;
+
   const banks = getVietQrBanks();
   const selectedBank = getPaymentBank(draft.bank_code, draft.bank_acq_id);
   useEffect(() => {
+    const sameShop = activeShopIdRef.current === shopId;
+    const hasDirtyDraft =
+      JSON.stringify(draftRef.current) !==
+      JSON.stringify(acceptedSettingsRef.current);
+    const draftMatchesIncoming =
+      JSON.stringify(draftRef.current) === JSON.stringify(settings);
+    activeShopIdRef.current = shopId;
+    if (
+      sameShop &&
+      isEditingRef.current &&
+      hasDirtyDraft &&
+      !draftMatchesIncoming
+    ) {
+      return;
+    }
+    acceptedSettingsRef.current = settings;
     setDraft(settings);
     setIsEditing(false);
     setError("");
-  }, [settings, setError]);
+  }, [settings, shopId, setError]);
   const resetDraft = useCallback(() => {
     setDraft(settings);
     setIsEditing(false);
@@ -261,7 +292,12 @@ export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
                   shopId={shopId}
                   bucket="payment-qr"
                   label={t("Upload fallback QR")}
-                  onUploaded={(url) => setDraft({ ...draft, bank_qr_url: url })}
+                  onUploaded={(url) =>
+                    setDraft((current) => ({
+                      ...current,
+                      bank_qr_url: url,
+                    }))
+                  }
                 />
               )}
             </div>

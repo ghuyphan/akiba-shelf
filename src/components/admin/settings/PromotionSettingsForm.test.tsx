@@ -6,6 +6,7 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { PlatformI18nProvider } from "../../../lib/i18n/platformI18n";
@@ -27,8 +28,36 @@ const promotion: PromotionSettings = {
   reward_product_ids: [],
 };
 
+function RealtimePromotionHarness() {
+  const [current, setCurrent] = useState(promotion);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          setCurrent((value) => ({
+            ...value,
+            repeatable: !value.repeatable,
+          }))
+        }
+      >
+        Refresh promotion
+      </button>
+      <PromotionSettingsForm
+        promotion={current}
+        products={[]}
+        onSave={vi.fn().mockResolvedValue(undefined)}
+      />
+    </>
+  );
+}
+
 describe("PromotionSettingsForm", () => {
-  function renderForm(onSave = vi.fn().mockResolvedValue(undefined)) {
+  function renderForm(
+    onSave = vi.fn().mockResolvedValue(undefined),
+    initialPromotion = promotion,
+  ) {
     const router = createMemoryRouter([
       {
         path: "/",
@@ -37,7 +66,7 @@ describe("PromotionSettingsForm", () => {
             <ToastProvider>
               <AdminUnsavedChangesProvider>
                 <PromotionSettingsForm
-                  promotion={promotion}
+                  promotion={initialPromotion}
                   products={[]}
                   onSave={onSave}
                 />
@@ -48,8 +77,40 @@ describe("PromotionSettingsForm", () => {
       },
     ]);
     render(<RouterProvider router={router} />);
-    return onSave;
+    return { onSave, router };
   }
+
+  it("keeps dirty fields when realtime refreshes promotion settings", async () => {
+    const user = userEvent.setup();
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: (
+          <PlatformI18nProvider>
+            <ToastProvider>
+              <AdminUnsavedChangesProvider>
+                <RealtimePromotionHarness />
+              </AdminUnsavedChangesProvider>
+            </ToastProvider>
+          </PlatformI18nProvider>
+        ),
+      },
+    ]);
+    render(<RouterProvider router={router} />);
+
+    const refreshButton = screen.getByRole("button", {
+      name: "Refresh promotion",
+    });
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const buyQuantity = screen.getByRole("textbox", {
+      name: "Customer buys",
+    });
+    await user.click(buyQuantity);
+    await user.keyboard("4");
+
+    await user.click(refreshButton);
+    expect(buyQuantity).toHaveValue("4");
+  });
 
   it("uses the admin modal and explains an empty catalog", async () => {
     const user = userEvent.setup();

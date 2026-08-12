@@ -338,6 +338,31 @@ describe("useAdminOrdersWorkspace", () => {
     );
   });
 
+  it("replaces a complete pending cache scope when the server queue is empty", async () => {
+    const { result } = renderHook(() =>
+      useAdminOrdersWorkspace({
+        enabled: true,
+        ready: false,
+        shopId: "shop-1",
+        userId: "user-1",
+      }),
+    );
+
+    await act(async () => result.current.reload());
+
+    expect(mocks.saveAdminOrdersSnapshot).toHaveBeenCalledWith(
+      "user-1",
+      "shop-1",
+      [],
+      "online",
+      expect.objectContaining({
+        status: "pending",
+        createdAfter: expect.any(String),
+        createdBefore: expect.any(String),
+      }),
+    );
+  });
+
   it("uses cached counts when the aggregate request fails offline", async () => {
     const transportError = new Error("offline");
     mocks.getOrderStatusCounts.mockRejectedValue(transportError);

@@ -111,8 +111,26 @@ export function ProductForm({
   const hasLegacyBadge =
     Boolean(draft.badge) && !productBadges.includes(draft.badge ?? "");
   const images = draft.images.filter(Boolean);
+  const draftRef = useRef(draft);
+  const isEditingRef = useRef(isEditing);
+  const acceptedProductRef = useRef(product);
+
+  draftRef.current = draft;
+  isEditingRef.current = isEditing;
 
   useEffect(() => {
+    const acceptedProduct = acceptedProductRef.current;
+    const draftMatchesIncoming =
+      JSON.stringify(draftRef.current) === JSON.stringify(product);
+    if (
+      isEditingRef.current &&
+      draftRef.current.id === product.id &&
+      JSON.stringify(draftRef.current) !== JSON.stringify(acceptedProduct) &&
+      !draftMatchesIncoming
+    ) {
+      return;
+    }
+    acceptedProductRef.current = product;
     setDraft(product);
     setIsEditing(!product.name);
     setErrors([]);
@@ -767,22 +785,30 @@ export function ProductForm({
                   }
                   onUploaded={(url) => setField("images", [...images, url])}
                   onProductUploaded={(variant) => {
-                    const nextDraft = {
-                      ...draft,
-                      images: [...draft.images.filter(Boolean), variant.detail],
-                      image_variants: [
-                        ...(draft.image_variants ?? []),
-                        {
-                          thumbnail: variant.thumbnail,
-                          detail: variant.detail,
-                        },
-                      ],
-                      image_paths: [
-                        ...(draft.image_paths ?? []),
-                        ...variant.paths,
-                      ],
-                    };
-                    updateDraft(nextDraft, true);
+                    setDraft((current) => {
+                      setHistory((previous) =>
+                        [...previous, current].slice(-50),
+                      );
+                      setFuture([]);
+                      return {
+                        ...current,
+                        images: [
+                          ...current.images.filter(Boolean),
+                          variant.detail,
+                        ],
+                        image_variants: [
+                          ...(current.image_variants ?? []),
+                          {
+                            thumbnail: variant.thumbnail,
+                            detail: variant.detail,
+                          },
+                        ],
+                        image_paths: [
+                          ...(current.image_paths ?? []),
+                          ...variant.paths,
+                        ],
+                      };
+                    });
                   }}
                 />
               </div>

@@ -382,6 +382,26 @@ test("changes the simulator cache version only when simulator sources change", (
     assert.notEqual(first, changed);
   }));
 
+test("changes the simulator cache version when the shared roll policy changes", () =>
+  withTempDirectory(async (root) => {
+    const simulatorRoot = join(root, "vendor/gacha-simulator");
+    await write(simulatorRoot, "package.json", "{}\n");
+    await write(simulatorRoot, "src/sw.js", "const version = 1;\n");
+    await write(
+      root,
+      "vendor/shared/gacha-policy.js",
+      "export const rate = 50;\n",
+    );
+    const first = await createSimulatorCacheVersion(simulatorRoot);
+    await write(
+      root,
+      "vendor/shared/gacha-policy.js",
+      "export const rate = 75;\n",
+    );
+    const changed = await createSimulatorCacheVersion(simulatorRoot);
+    assert.notEqual(first, changed);
+  }));
+
 test("smoke checks routes, assets, storefront data, and checkout preflight", async () => {
   const requests = [];
   const fetchImpl = async (url, init = {}) => {

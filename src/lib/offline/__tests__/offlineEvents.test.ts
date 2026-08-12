@@ -308,6 +308,56 @@ describe("offline event ledger", () => {
     ).toBe(0);
   });
 
+  it("aggregates duplicate product rows for allocation and cancellation", async () => {
+    const active = session();
+    await saveOfflineEventSession(active);
+    const order = await createOfflineEventOrder(
+      active,
+      [
+        { product, quantity: 1 },
+        { product, quantity: 1 },
+      ],
+      "Customer",
+    );
+
+    expect(order.items).toMatchObject([
+      { product_id: product.id, quantity: 2 },
+    ]);
+    expect(
+      (await loadOfflineEventSession(active.shopId))?.allocations[0]
+        .quantitySold,
+    ).toBe(2);
+
+    await updateOfflineEventOrder(active, order.id, {
+      status: "cancelled",
+      paymentState: "awaiting_payment",
+    });
+    expect(
+      (await loadOfflineEventSession(active.shopId))?.allocations[0]
+        .quantitySold,
+    ).toBe(0);
+  });
+
+  it("rejects duplicate rows whose combined quantity exceeds allocation", async () => {
+    const active = session();
+    await saveOfflineEventSession(active);
+
+    await expect(
+      createOfflineEventOrder(
+        active,
+        [
+          { product, quantity: 2 },
+          { product, quantity: 2 },
+        ],
+        "Customer",
+      ),
+    ).rejects.toThrow(/enough event stock/i);
+    expect(
+      (await loadOfflineEventSession(active.shopId))?.allocations[0]
+        .quantitySold,
+    ).toBe(0);
+  });
+
   it("serializes concurrent sales so allocated stock cannot be oversold", async () => {
     const active = session();
     active.allocations[0].quantityAllocated = 1;

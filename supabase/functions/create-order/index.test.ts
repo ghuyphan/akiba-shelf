@@ -347,6 +347,20 @@ Deno.test(
       rpc: () =>
         Promise.resolve({
           data: null,
+          error: { message: "Cart total is too large" },
+        }),
+    });
+    const oversizedTotal = await handleCreateOrderRequest(request(validBody));
+    assertEquals(oversizedTotal.status, 409);
+    assertEquals(
+      (await oversizedTotal.json()).error,
+      "The cart total is too large. Reduce the quantity and try again.",
+    );
+
+    clientFactory.createClient = () => ({
+      rpc: () =>
+        Promise.resolve({
+          data: null,
           error: { message: "relation public.promotions does not exist" },
         }),
     });

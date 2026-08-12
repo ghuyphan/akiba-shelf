@@ -42,16 +42,22 @@ declare global {
 
 let turnstileLoader: Promise<TurnstileApi> | null = null;
 
-function loadTurnstile() {
+export function loadTurnstile() {
   if (window.turnstile) return Promise.resolve(window.turnstile);
   if (turnstileLoader) return turnstileLoader;
 
   turnstileLoader = new Promise<TurnstileApi>((resolve, reject) => {
     const finish = () => {
       if (window.turnstile) resolve(window.turnstile);
-      else reject(new Error("Turnstile loaded without a browser API."));
+      else {
+        document.getElementById(TURNSTILE_SCRIPT_ID)?.remove();
+        reject(new Error("Turnstile loaded without a browser API."));
+      }
     };
-    const fail = () => reject(new Error("Turnstile could not be loaded."));
+    const fail = () => {
+      document.getElementById(TURNSTILE_SCRIPT_ID)?.remove();
+      reject(new Error("Turnstile could not be loaded."));
+    };
     const existing = document.getElementById(
       TURNSTILE_SCRIPT_ID,
     ) as HTMLScriptElement | null;

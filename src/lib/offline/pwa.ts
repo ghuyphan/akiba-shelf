@@ -30,9 +30,10 @@ const versionedRuntimeCachePrefixes = [
   "gacha-static-cache-v",
 ];
 
-async function cleanupSupersededRuntimeCaches() {
+export async function cleanupSupersededRuntimeCaches() {
   if (!("caches" in window) || typeof caches.keys !== "function") return;
   const active = new Set([
+    OFFLINE_CACHE_NAMES.appRouteChunks,
     OFFLINE_CACHE_NAMES.simulatorShell,
     OFFLINE_CACHE_NAMES.simulatorMedia,
     OFFLINE_CACHE_NAMES.simulatorStatic,

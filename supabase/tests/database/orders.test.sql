@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(70);
+select plan(74);
 insert into auth.users(id,instance_id,aud,role,email,encrypted_password,email_confirmed_at,created_at,updated_at) values('20000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000','authenticated','authenticated','staff-orders@test.local','',now(),now(),now());
 insert into public.shops(id,name,slug,created_by) values('21000000-0000-4000-8000-000000000001','Orders','orders-test','20000000-0000-4000-8000-000000000001');
 insert into public.shop_members(shop_id,user_id,role) values('21000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','staff');
@@ -271,4 +271,58 @@ select is((
   )->'product_breakdown') product
   where product->>'product_id'='order-big'
 ),3000000000::bigint,'sales summary keeps lifetime product revenue above 32-bit range');
+
+set local role postgres;
+insert into public.products(
+  id,shop_id,name,item_code,price_vnd,quantity_available,category,active
+) values
+('order-stale-reward','21000000-0000-4000-8000-000000000001','Stale reward','ORDER-STALE',10000,2,'Test',true),
+('order-overflow','21000000-0000-4000-8000-000000000001','Overflow','ORDER-OVERFLOW',1500000000,2,'Test',true);
+update public.promotions
+set enabled=true, kind='buy_get', buy_quantity=1, free_quantity=1,
+    repeatable=true, starts_at=now()+interval '1 hour',
+    ends_at=now()+interval '2 hours'
+where shop_id='21000000-0000-4000-8000-000000000001';
+delete from public.promotion_products
+where shop_id='21000000-0000-4000-8000-000000000001';
+insert into public.promotion_products(shop_id,product_id,role)
+values(
+  '21000000-0000-4000-8000-000000000001',
+  'order-stale-reward',
+  'both'
+);
+
+set local role service_role;
+select throws_ok($$select * from public.create_order(
+  'orders-test',null,
+  '[{"product_id":"order-stale-reward","quantity":2,"reward_quantity":1}]',
+  '30000000-0000-4000-8000-000000000017',repeat('t',32)
+)$$,'This promotion is no longer active','scheduled buy-get rewards fail when the promotion is not active');
+
+set local role postgres;
+select is((select quantity_available from public.products where id='order-stale-reward'),2,'a stale reward cart does not reserve inventory');
+update public.promotions
+set enabled=true, starts_at=null, ends_at=null
+where shop_id='21000000-0000-4000-8000-000000000001';
+insert into public.promotion_products(shop_id,product_id,role)
+values(
+  '21000000-0000-4000-8000-000000000001',
+  'order-overflow',
+  'both'
+);
+
+set local role service_role;
+select throws_ok($$select * from public.create_order(
+  'orders-test',null,
+  '[{"product_id":"order-overflow","quantity":2,"reward_quantity":1}]',
+  '30000000-0000-4000-8000-000000000018',repeat('u',32)
+)$$,'Cart total is too large','checkout rejects gross line overflow even when a reward keeps the net total in range');
+
+set local role authenticated;
+set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000001';
+select throws_ok($$select public.get_sales_summary(
+  '21000000-0000-4000-8000-000000000001',
+  now()-interval '367 days',
+  now()
+)$$,'Sales summary range cannot exceed 366 days','sales reports reject unbounded history scans');
 select * from finish();rollback;

@@ -396,6 +396,8 @@ const vi: Record<string, string> = {
   "Create your shop": "Tạo gian hàng",
   "Made for independent artists, conventions, and pop-up booths.":
     "Dành cho artist độc lập, hội chợ và gian hàng pop-up.",
+  "Say hello on Zalo": "Nhắn Matsuri qua Zalo",
+  "Chat with Matsuri on Zalo": "Nhắn với Matsuri qua Zalo",
   "Welcome back": "Chào mừng bạn trở lại",
   "Sign in to manage your shops.": "Đăng nhập để quản lý các gian hàng.",
   "Signing in…": "Đang đăng nhập…",

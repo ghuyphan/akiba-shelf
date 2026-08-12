@@ -861,10 +861,20 @@ export async function mockSupabase(
       );
     }
     if (url.pathname.includes("/rest/v1/orders")) {
+      const authorization = request.headers()["authorization"] ?? "";
+      const requestedShopId = url.searchParams
+        .get("shop_id")
+        ?.replace(/^eq\./, "");
+      const canReadOrders =
+        Boolean(options.staffRole) &&
+        (options.staffActive ?? true) &&
+        authorization.startsWith("Bearer ") &&
+        (!requestedShopId || requestedShopId === "main");
       const requestedStatus = url.searchParams
         .get("status")
         ?.replace(/^eq\./, "");
       const rows =
+        canReadOrders &&
         options.orderQueue &&
         (!requestedStatus || requestedStatus === fixtureOrder().status)
           ? [fixtureOrder()]

@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Edit3, Gift, Package, X } from "lucide-react";
 import type { Product, PromotionSettings } from "../../../types/catalog";
 import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
@@ -46,8 +46,25 @@ export function PromotionSettingsForm({
   const { busy, error, run, setError } = useAsyncAction();
   const { t } = usePlatformI18n();
   const requestNavigation = useAdminNavigationGuard();
+  const draftRef = useRef(draft);
+  const isEditingRef = useRef(isEditing);
+  const acceptedPromotionRef = useRef(promotion);
+
+  draftRef.current = draft;
+  isEditingRef.current = isEditing;
 
   useEffect(() => {
+    const draftMatchesIncoming =
+      JSON.stringify(draftRef.current) === JSON.stringify(promotion);
+    if (
+      isEditingRef.current &&
+      JSON.stringify(draftRef.current) !==
+        JSON.stringify(acceptedPromotionRef.current) &&
+      !draftMatchesIncoming
+    ) {
+      return;
+    }
+    acceptedPromotionRef.current = promotion;
     setDraft(promotion);
     setIsEditing(false);
     setError("");

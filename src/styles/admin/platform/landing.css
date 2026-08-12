@@ -779,21 +779,28 @@
 
 .platform-home-footer {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 20px;
+  gap: 32px;
   width: min(100% - 28px, 1180px);
-  min-height: 105px;
+  min-height: 112px;
+  flex: 0 0 auto;
   margin: auto auto 0;
   border-top: 1px solid var(--landing-line);
   color: var(--landing-muted);
   font-size: 10px;
 }
-.platform-home-footer strong {
-  color: var(--landing-ink);
+.platform-home-footer-brand {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
 }
-.platform-home-footer span {
-  text-align: center;
+.platform-home-footer-brand strong {
+  color: var(--landing-ink);
+  font-size: 14px;
+}
+.platform-home-footer-brand span {
+  line-height: 1.45;
 }
 
 /* The unavailable storefront reuses the platform landing page composition. */
@@ -1319,9 +1326,14 @@
   }
   .platform-home-footer {
     grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 24px 0;
+    justify-items: center;
+    gap: 18px;
+    min-height: 0;
+    padding: 28px 0 32px;
     text-align: center;
+  }
+  .platform-home-footer-brand {
+    justify-items: center;
   }
   .platform-404-main {
     padding-block: 30px 64px !important;
@@ -2523,9 +2535,13 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 22px;
 }
 .platform-home-footer-meta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
   color: var(--landing-coral-dark);
   font-weight: 750;
   text-decoration: none;
@@ -2533,6 +2549,10 @@
 .platform-home-footer-meta a:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+.platform-home-footer-meta a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--landing-coral) 28%, transparent);
+  outline-offset: 3px;
 }
 
 /* Community support page. */

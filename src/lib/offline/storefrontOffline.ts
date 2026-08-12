@@ -112,6 +112,9 @@ export async function prepareStorefrontOffline(shop: Shop) {
     ).catch(() => null);
   }
 
+  // The existing pack remains valid through transient setup/network failures.
+  // Invalidate it only when the catalog snapshot is about to be replaced.
+  localStorage.removeItem(storefrontMarkerKey(shop.slug));
   saveShopSnapshot(shop, shop.slug);
   const snapshotSaved = saveCatalogSnapshot(
     {

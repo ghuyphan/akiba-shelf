@@ -9,6 +9,9 @@ export const PLATFORM_BRAND = {
 
 export const PLATFORM_THEME_COLOR = "#d95c64";
 export const PLATFORM_FAVICON = `${import.meta.env.BASE_URL}brand/matsuri-favicon.svg`;
+export const PLATFORM_CONTACT = {
+  zaloUrl: "https://zalo.me/0853300850",
+} as const;
 
 export type DocumentBranding = {
   title: string;

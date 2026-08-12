@@ -76,6 +76,29 @@ describe("admin order snapshots", () => {
     ).toEqual(["event-2"]);
   });
 
+  it("replaces a complete cached query scope without deleting other history", () => {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    saveAdminOrdersSnapshot("user-1", "shop-1", [
+      order("stale-pending", "online"),
+      { ...order("confirmed", "online"), status: "confirmed" },
+      { ...order("old-pending", "online"), created_at: yesterday },
+    ]);
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    saveAdminOrdersSnapshot("user-1", "shop-1", [], "online", {
+      status: "pending",
+      createdAfter: start.toISOString(),
+      createdBefore: end.toISOString(),
+    });
+
+    expect(
+      loadAdminOrdersSnapshot("user-1", "shop-1").map(({ id }) => id),
+    ).toEqual(["confirmed", "old-pending"]);
+  });
+
   it("isolates cached access and orders between signed-in users", () => {
     saveAdminAccessSnapshot("user-1", "one@example.test", []);
     saveAdminAccessSnapshot("user-2", "two@example.test", []);

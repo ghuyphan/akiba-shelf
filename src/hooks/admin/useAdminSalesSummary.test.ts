@@ -30,7 +30,8 @@ vi.mock("../../lib/offline/offlineEvents", () => ({
 import { useAdminSalesSummary } from "./useAdminSalesSummary";
 
 function order(id: string, overrides: Partial<Order> = {}): Order {
-  const now = new Date().toISOString();
+  // Keep fixtures clearly inside the hook's exclusive upper time bound.
+  const now = new Date(Date.now() - 1_000).toISOString();
   return {
     id,
     order_code: id,
@@ -72,6 +73,28 @@ describe("useAdminSalesSummary", () => {
     mocks.loadOfflineEventSession.mockResolvedValue(null);
     mocks.listOfflineEventOrders.mockResolvedValue([]);
     mocks.loadAdminOrdersSnapshot.mockReturnValue([]);
+  });
+
+  it("bounds all-history reporting to the server-supported window", async () => {
+    renderHook(() =>
+      useAdminSalesSummary({
+        enabled: true,
+        ready: true,
+        shopId: "shop-1",
+        userId: "user-1",
+        todayOnly: false,
+      }),
+    );
+
+    await waitFor(() => expect(mocks.getSalesSummary).toHaveBeenCalled());
+    const [, from, to] = mocks.getSalesSummary.mock.calls[0] as [
+      string,
+      string,
+      string,
+    ];
+    expect(new Date(to).getTime() - new Date(from).getTime()).toBe(
+      366 * 24 * 60 * 60 * 1000,
+    );
   });
 
   it("marks unsynced confirmed Event revenue as provisional", async () => {
