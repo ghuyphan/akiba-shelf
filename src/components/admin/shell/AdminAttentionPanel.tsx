@@ -18,6 +18,7 @@ import { hasUsablePayment } from "../../../utils/vietqr";
 import { formatRelativeTime } from "../../../utils/format";
 import { Button } from "../../ui/Button";
 import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
+import { AdminCard } from "./AdminCard";
 
 type ReadinessItem = {
   key: string;
@@ -181,19 +182,15 @@ export function AdminAttentionPanel({
     return null;
 
   return (
-    <section
+    <AdminCard
+      title={t("Attention needed")}
+      description={t(
+        "Resolve the time-sensitive items first, then finish shop setup.",
+      )}
+      icon={<CircleAlert size={18} />}
       className="admin-attention-panel"
-      aria-label={t("Attention needed")}
+      density="compact"
     >
-      <div className="admin-attention-heading">
-        <span>
-          <CircleAlert size={17} />
-        </span>
-        <div>
-          <strong>{t("Attention needed")}</strong>
-        </div>
-      </div>
-
       <div className="admin-attention-grid">
         {expiringOrderCount > 0 && (
           <AttentionItem
@@ -291,9 +288,7 @@ export function AdminAttentionPanel({
         <div className="admin-notification-retry">
           <span>
             <strong>{t("Retry notification delivery")}</strong>
-            <small>
-              {t("Check staff alerts, then retry delivery.")}
-            </small>
+            <small>{t("Check staff alerts, then retry delivery.")}</small>
           </span>
           <Button
             type="button"
@@ -311,7 +306,6 @@ export function AdminAttentionPanel({
           </Button>
         </div>
       )}
-
-    </section>
+    </AdminCard>
   );
 }

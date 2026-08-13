@@ -7,7 +7,7 @@
   --admin-inner-bg: var(--admin-inset-bg, color-mix(in srgb, #fff 58%, var(--page-bg)));
 }
 
-.admin-container :is(.admin-card,.admin-surface,.admin-items-summary,.admin-order-card) {
+.admin-container :is(.admin-card,.admin-surface,.admin-order-card) {
   border: 1px solid var(--admin-surface-border) !important;
   border-radius: var(--admin-surface-radius) !important;
   background: var(--admin-panel-bg, #fff) !important;
@@ -70,7 +70,6 @@
 .admin-shell .button-primary:hover:not(:disabled) { border-color: color-mix(in srgb, var(--admin-action) 88%, #000); background: color-mix(in srgb, var(--admin-action) 88%, #000); }
 
 .admin-order-metrics article { min-height: 72px; padding: 11px 13px; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
-.admin-items-summary { padding: 18px; }
 .admin-order-card { padding: 16px; }
 .admin-settings-switcher { border: 1px solid var(--admin-surface-border); border-radius: 14px; background: var(--admin-panel-bg,#fff); box-shadow: var(--admin-surface-shadow); }
 

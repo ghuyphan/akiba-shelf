@@ -1814,10 +1814,8 @@ const vi: Record<string, string> = {
     "Vai trò phần thưởng này không phù hợp với loại banner đã chọn.",
   "Only 4★ and 5★ prizes can be promoted.":
     "Chỉ phần thưởng 4★ và 5★ mới có thể được đặt làm nổi bật.",
-  "This banner already has all of its promoted 5★ prizes.":
-    "Banner này đã đủ số phần thưởng nổi bật 5★.",
-  "This banner already has all of its promoted 4★ prizes.":
-    "Banner này đã đủ số phần thưởng nổi bật 4★.",
+  "All promoted 5★ slots are filled.": "Đã đủ vị trí nổi bật 5★.",
+  "All promoted 4★ slots are filled.": "Đã đủ vị trí nổi bật 4★.",
   "This banner has filled every promoted-prize slot.":
     "Banner này đã đủ tất cả vị trí phần thưởng nổi bật.",
   "Shared 3★ Souvenir Pool": "Kho quà lưu niệm 3★ chung",

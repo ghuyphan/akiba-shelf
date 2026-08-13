@@ -1916,6 +1916,25 @@ test("workspace and dashboard headers share locale and selector surfaces", async
     headerButtonBackground,
   );
 
+  if (page.viewportSize()!.width > 1280) {
+    const headerGeometry = await page
+      .locator(".admin-workspace-header .app-header-surface-with-nav")
+      .evaluate((surface) => {
+        const surfaceBounds = surface.getBoundingClientRect();
+        const navigationBounds = surface
+          .querySelector<HTMLElement>(".app-header-navigation")!
+          .getBoundingClientRect();
+        return {
+          surfaceCenter: surfaceBounds.left + surfaceBounds.width / 2,
+          navigationCenter: navigationBounds.left + navigationBounds.width / 2,
+        };
+      });
+    expect(
+      Math.abs(headerGeometry.navigationCenter - headerGeometry.surfaceCenter),
+    ).toBeLessThan(1);
+    await expect(shopSelector.locator(".select-menu-copy small")).toBeHidden();
+  }
+
   await page.goto("./dashboard");
   await expect(
     page.getByRole("heading", { name: "Your shops", exact: true }),

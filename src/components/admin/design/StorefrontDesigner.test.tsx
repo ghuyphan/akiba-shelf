@@ -72,6 +72,14 @@ function Harness() {
 }
 
 describe("StorefrontDesigner", () => {
+  it("uses the shared admin surface for the builder workspace", () => {
+    const { container } = render(renderDesigner("shop-1", defaultBooth));
+
+    expect(container.querySelector(".storefront-builder")).toHaveClass(
+      "admin-surface",
+    );
+  });
+
   it("offers an explicit accessible shade for an unsafe primary", async () => {
     const user = userEvent.setup();
     render(renderDesigner("shop-1", defaultBooth));

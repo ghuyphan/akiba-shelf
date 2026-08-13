@@ -11,10 +11,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import type {
-  OfflineEventSummary,
-  Order,
-} from "../../../types/catalog";
+import type { OfflineEventSummary, Order } from "../../../types/catalog";
 import type { SalesSummaryState } from "../../../lib/sales";
 import type { OrderFilter, OrderStatusCounts } from "../../../lib/api/orders";
 import { listOfflineEvents } from "../../../lib/api/offlineEvents";
@@ -35,6 +32,7 @@ import { OFFLINE_EVENT_UPDATED } from "../../../lib/offline/offlineEvents";
 import { OrderCard } from "./OrderCard";
 import { OrderDetailsModal } from "./OrderDetailsModal";
 import { SalesSummaryPanel } from "./SalesSummaryPanel";
+import { AdminCard } from "../shell/AdminCard";
 
 type OrderQueueProps = {
   shopId: string;
@@ -336,10 +334,25 @@ export function OrderQueue({
 
   return (
     <section className="admin-orders-view" aria-busy={loading}>
-      <div className="admin-orders-workspace admin-surface">
-        <SalesSummaryPanel
-          state={sales}
-        />
+      <AdminCard
+        title={queueTitles[filter]}
+        description={t("Confirm payments and fulfil orders.")}
+        icon={<ReceiptText size={18} />}
+        className="admin-orders-workspace"
+        density="compact"
+        action={
+          <small className="admin-order-range" aria-live="polite">
+            {loading
+              ? t("Refreshing…")
+              : t("{{first}}–{{last}} of {{total}} · newest first", {
+                  first: firstOrder,
+                  last: lastOrder,
+                  total,
+                })}
+          </small>
+        }
+      >
+        <SalesSummaryPanel state={sales} />
         <div className="admin-filter-bar">
           <SelectMenu
             className="admin-status-filter"
@@ -469,21 +482,6 @@ export function OrderQueue({
         )}
 
         <div className="admin-order-results">
-          <div className="admin-section-heading">
-            <div>
-              <span>{t("Order queue")}</span>
-              <h2>{queueTitles[filter]}</h2>
-            </div>
-            <small aria-live="polite">
-              {loading
-                ? t("Refreshing…")
-                : t("{{first}}–{{last}} of {{total}} · newest first", {
-                    first: firstOrder,
-                    last: lastOrder,
-                    total,
-                  })}
-            </small>
-          </div>
           {orders.length === 0 ? (
             <EmptyState
               tone={loading ? "loading" : "neutral"}
@@ -559,7 +557,7 @@ export function OrderQueue({
             </nav>
           )}
         </div>
-      </div>
+      </AdminCard>
       <OrderDetailsModal
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}

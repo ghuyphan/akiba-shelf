@@ -115,9 +115,9 @@ export function GachaEntryEditor({
         : entry.rarity === 3
           ? t("Only 4★ and 5★ prizes can be promoted.")
           : entry.rarity === 5 && primaryFeaturedCount >= rule.fiveStarLimit
-            ? t("This banner already has all of its promoted 5★ prizes.")
+            ? t("All promoted 5★ slots are filled.")
             : entry.rarity === 4 && secondaryFeaturedCount >= rule.fourStarLimit
-              ? t("This banner already has all of its promoted 4★ prizes.")
+              ? t("All promoted 4★ slots are filled.")
               : t("This banner has filled every promoted-prize slot.");
 
   return (
@@ -186,6 +186,11 @@ export function GachaEntryEditor({
         />
       </Field>
       <div className="gacha-featured-control">
+        {featuredDisabledReason && (
+          <small id={featuredReasonId} className="gacha-control-explanation">
+            {featuredDisabledReason}
+          </small>
+        )}
         <label
           className={`gacha-mini-check ${featuredSelectionDisabled ? "is-disabled" : ""}`}
           title={featuredDisabledReason || undefined}
@@ -215,11 +220,6 @@ export function GachaEntryEditor({
                 : "Featured",
           )}
         </label>
-        {featuredDisabledReason && (
-          <small id={featuredReasonId} className="gacha-control-explanation">
-            {featuredDisabledReason}
-          </small>
-        )}
       </div>
       <label
         className={`gacha-mini-check ${!productActive ? "is-disabled" : ""}`}

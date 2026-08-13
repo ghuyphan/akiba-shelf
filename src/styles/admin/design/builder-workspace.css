@@ -4,10 +4,6 @@
   grid-template-columns: 360px minmax(0, 1fr);
   gap: 0;
   overflow: hidden;
-  border: 1px solid var(--admin-surface-border);
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: var(--admin-surface-shadow);
 }
 .admin-container .storefront-builder.sidebar-closed { grid-template-columns: 64px minmax(0, 1fr); }
 .admin-container .storefront-builder .builder-sidebar {
@@ -119,7 +115,15 @@
   height: var(--builder-command-height);
   min-height: var(--builder-command-height);
 }
-.storefront-builder .builder-toolbar { padding: 8px 12px; }
+.admin-container .storefront-builder .builder-sidebar-head {
+  padding: 12px var(--builder-panel-padding);
+}
+.admin-container .storefront-builder.sidebar-closed .builder-sidebar-head {
+  padding-inline: 8px;
+}
+.storefront-builder .builder-toolbar {
+  padding: 8px var(--builder-panel-padding);
+}
 .storefront-builder .builder-tabs {
   min-height: var(--builder-tabs-height);
   padding: 8px var(--builder-panel-padding);
@@ -140,6 +144,10 @@
 .storefront-builder .builder-field-row { gap: 10px; }
 
 @media (max-width: 760px) {
+  .storefront-builder {
+    --builder-panel-padding: 14px;
+    --builder-content-gap: 14px;
+  }
   .storefront-builder .builder-toolbar {
     height: auto;
     min-height: var(--builder-command-height);

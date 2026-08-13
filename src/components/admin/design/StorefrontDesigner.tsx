@@ -986,7 +986,7 @@ export function StorefrontDesigner({
 
   return (
     <section
-      className={`storefront-builder ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}
+      className={`storefront-builder admin-surface ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}
     >
       <aside className="builder-sidebar admin-surface">
         <div className="builder-sidebar-head">

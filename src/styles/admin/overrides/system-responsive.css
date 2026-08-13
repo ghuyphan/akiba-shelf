@@ -46,7 +46,6 @@
   .admin-toolbar-control { width: 100%; min-width: 0; }
   .admin-order-metrics { grid-template-columns: 1fr; gap: 1px; }
   .admin-order-metrics article { min-height: 68px; padding: 11px 13px; }
-  .admin-items-summary { padding: 15px; }
   .admin-items-summary-grid { grid-template-columns: 1fr; }
   .admin-orders-grid { grid-template-columns: 1fr; }
   .admin-orders-pagination { justify-content: space-between; gap: 8px; }

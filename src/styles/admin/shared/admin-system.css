@@ -171,36 +171,7 @@
 }
 
 .admin-attention-panel {
-  display: grid;
-  gap: 8px;
-  padding: 12px 14px;
-  border: 1px solid var(--admin-panel-border, var(--line));
-  border-radius: var(--admin-inset-radius, 12px);
-  background: var(--admin-panel-bg, #fff);
-  box-shadow: var(--admin-panel-shadow, 0 14px 36px rgb(80 58 38 / 8%));
-}
-.admin-attention-heading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   min-width: 0;
-}
-.admin-attention-heading > span {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
-  border-radius: 9px;
-  color: #9a6514;
-  background: #fff2d5;
-}
-.admin-attention-heading > div {
-  min-width: 0;
-}
-.admin-attention-heading strong {
-  color: var(--ink);
-  font-size: 13px;
 }
 .admin-attention-grid {
   display: grid;

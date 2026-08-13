@@ -36,6 +36,26 @@
     overflow: hidden;
   }
 }
+
+@media (min-width: 1281px) {
+  .admin-workspace-header .app-header-surface-with-nav {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+  .admin-workspace-header .app-header-navigation {
+    width: auto;
+    overflow: visible;
+  }
+  .admin-workspace-header .admin-shop-switcher-menu {
+    width: 156px;
+  }
+  .admin-workspace-header
+    .admin-shop-switcher-menu
+    > .select-menu-trigger
+    .select-menu-copy
+    small {
+    display: none;
+  }
+}
 .staff-install-banner {
   --pwa-accent: var(--coral);
   --pwa-accent-strong: var(--coral-strong);

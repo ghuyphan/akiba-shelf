@@ -27,7 +27,7 @@ describe("AdminAttentionPanel", () => {
   });
 
   it("shows time-sensitive orders, low stock, and the next setup action", () => {
-    render(
+    const { container } = render(
       <PlatformI18nProvider>
         <AdminAttentionPanel
           booth={defaultBooth}
@@ -52,9 +52,17 @@ describe("AdminAttentionPanel", () => {
     expect(
       screen.getByText("3 products are low or sold out"),
     ).toBeInTheDocument();
+    expect(screen.getByText("Shop setup · 0/4 ready")).toBeInTheDocument();
     expect(
-      screen.getByText("Shop setup · 0/4 ready"),
+      screen.getByText(
+        "Resolve the time-sensitive items first, then finish shop setup.",
+      ),
     ).toBeInTheDocument();
+    expect(container.querySelector(".admin-attention-panel")).toHaveClass(
+      "admin-card",
+      "admin-card-panel",
+      "admin-card-compact",
+    );
   });
 
   it("uses queue aggregates for notification attention without counting skipped deliveries", () => {

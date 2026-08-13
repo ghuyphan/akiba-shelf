@@ -182,7 +182,9 @@ describe("OrderQueue", () => {
       expect(
         screen.getByRole("button", { name: filterName }),
       ).toBeInTheDocument();
-      expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: heading }),
+      ).toBeInTheDocument();
     },
   );
 
@@ -210,6 +212,11 @@ describe("OrderQueue", () => {
     expect(document.querySelector(".admin-orders-view")).toHaveAttribute(
       "aria-busy",
       "true",
+    );
+    expect(document.querySelector(".admin-orders-workspace")).toHaveClass(
+      "admin-card",
+      "admin-card-panel",
+      "admin-card-compact",
     );
     expect(screen.getByRole("button", { name: /pending 1/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /^today$/i })).toBeDisabled();
