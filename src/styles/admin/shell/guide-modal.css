@@ -1,0 +1,547 @@
+/* Admin Guide & Convention Playbook Modal */
+.admin-guide-modal {
+  max-width: 720px !important;
+  width: 100%;
+}
+
+.admin-guide-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 8px;
+}
+
+.admin-guide-nav {
+  position: relative;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--admin-inset-bg, #f8fafc);
+  border: 1px solid var(--line);
+  border-radius: var(--admin-control-radius, 11px);
+  padding: 3px;
+  gap: 3px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-guide-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-guide-nav::before,
+.admin-guide-nav::after {
+  display: none !important;
+}
+
+.admin-guide-nav-tab {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 160ms var(--ease-standard);
+}
+
+.admin-guide-nav-tab svg {
+  flex-shrink: 0;
+}
+
+.admin-guide-nav-tab:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, #fff 50%, transparent);
+}
+
+.admin-guide-nav-tab.is-active,
+.admin-guide-nav-tab.active {
+  background: #fff !important;
+  color: var(--ink) !important;
+  box-shadow: 0 2px 6px rgb(15 23 42 / 7%) !important;
+}
+
+.admin-guide-nav-tab .tab-label-short {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .admin-guide-nav-tab .tab-label-full {
+    display: none;
+  }
+  .admin-guide-nav-tab .tab-label-short {
+    display: inline;
+  }
+}
+
+.admin-guide-banner-tip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--admin-inset-radius, 12px);
+  background: color-mix(in srgb, var(--coral) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--coral) 18%, transparent);
+  color: color-mix(in srgb, var(--coral) 80%, var(--ink));
+  font-size: 11.5px;
+  line-height: 1.45;
+  transition: all 160ms ease;
+}
+
+.admin-guide-banner-tip.is-clickable {
+  cursor: pointer;
+}
+
+.admin-guide-banner-tip.is-clickable:hover {
+  background: color-mix(in srgb, var(--coral) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--coral) 35%, transparent);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgb(15 23 42 / 5%);
+}
+
+.admin-guide-banner-tip.is-clickable:active {
+  transform: translateY(0);
+}
+
+.admin-guide-banner-tip:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.admin-guide-tip-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-guide-tip-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--coral-strong);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--coral) 25%, transparent);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 4%);
+}
+
+.admin-guide-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(85vh - 180px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.admin-guide-card {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  background: #fff !important;
+  border: 1px solid var(--soft-line) !important;
+  border-radius: var(--admin-inset-radius, 14px) !important;
+  padding: 14px 16px !important;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 3%) !important;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.admin-guide-card:hover {
+  border-color: color-mix(in srgb, var(--coral) 32%, var(--line)) !important;
+  box-shadow: 0 4px 14px rgb(15 23 42 / 6%) !important;
+}
+
+.admin-guide-card.admin-guide-card-checklist {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 14px !important;
+}
+
+/* Visual Mockup Illustrations */
+.admin-guide-visual {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  flex: 0 0 60px;
+  border-radius: 12px;
+  background: var(--surface-soft, #f8fafc);
+  border: 1px solid var(--soft-line);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-guide-visual-qr {
+  background: color-mix(in srgb, var(--coral) 6%, #fff);
+}
+
+.guide-qr-mockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--coral-strong);
+  position: relative;
+}
+
+.guide-qr-badge {
+  position: absolute;
+  bottom: -4px;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--ink);
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+.admin-guide-visual-catalog {
+  background: color-mix(in srgb, #5c8657 7%, #fff);
+}
+
+.guide-catalog-mockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #436a3f;
+  position: relative;
+}
+
+.guide-card-pill {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  font-size: 7px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.guide-card-stock {
+  position: absolute;
+  bottom: -6px;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #5c8657;
+  color: #fff;
+}
+
+.admin-guide-visual-booth {
+  background: color-mix(in srgb, #20304a 6%, #fff);
+}
+
+.guide-booth-mockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--navy);
+  position: relative;
+}
+
+.guide-booth-pin {
+  position: absolute;
+  bottom: -6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--navy);
+  color: #fff;
+}
+
+.admin-guide-visual-storefront {
+  background: color-mix(in srgb, var(--coral) 8%, #fff);
+}
+
+.guide-phone-mockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--coral);
+  position: relative;
+}
+
+.guide-phone-pill {
+  position: absolute;
+  bottom: -6px;
+  font-size: 7px;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--coral);
+  color: #fff;
+}
+
+/* Card Content & Layout */
+.admin-guide-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-guide-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-guide-card-title {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.admin-guide-card-title svg {
+  flex-shrink: 0;
+  color: var(--coral);
+}
+
+.admin-guide-card-desc {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.admin-guide-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+.admin-guide-badge-done {
+  background: color-mix(in srgb, #5c8657 14%, transparent);
+  color: #3b6038;
+}
+
+.admin-guide-badge-todo {
+  background: color-mix(in srgb, var(--coral) 12%, transparent);
+  color: var(--coral-strong);
+}
+
+.admin-guide-badge-warning {
+  background: #fff4d6;
+  color: #8f6211;
+}
+
+.admin-guide-badge-info {
+  background: color-mix(in srgb, var(--navy) 10%, transparent);
+  color: var(--navy);
+}
+
+.admin-guide-card-action {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.admin-guide-card-action .button {
+  min-height: 32px;
+  padding-inline: 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Flow Cards (Cheat Sheet & Feature Playbook) */
+.admin-guide-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.admin-guide-card:not(.admin-guide-card-checklist) .admin-guide-card-action {
+  margin-left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 2px;
+}
+
+.guide-diagram-flow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface-soft, #f8fafc);
+  border: 1px solid var(--soft-line);
+}
+
+.guide-diagram-step {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.guide-diagram-step strong {
+  font-size: 10.5px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.guide-diagram-step small {
+  font-size: 9.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.guide-diagram-step code {
+  font-size: 10.5px;
+  font-weight: 750;
+  color: var(--coral-strong);
+}
+
+.guide-diagram-step.is-success strong {
+  color: #3b6038;
+}
+
+.guide-diagram-arrow {
+  color: var(--muted);
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+}
+
+/* Gacha Pity Bar */
+.guide-diagram-pity {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface-soft, #f8fafc);
+  border: 1px solid var(--soft-line);
+}
+
+.guide-pity-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 80%, transparent);
+  overflow: hidden;
+  position: relative;
+}
+
+.guide-pity-progress {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f6c85f, #d95c64);
+}
+
+.guide-pity-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9.5px;
+  color: var(--muted);
+}
+
+.guide-pity-labels strong {
+  color: var(--coral-strong);
+}
+
+@media (max-width: 760px) {
+  .admin-guide-nav {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 3px;
+    gap: 3px;
+  }
+
+  .admin-guide-nav-tab {
+    flex: 1 0 auto;
+    padding: 6px 9px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .admin-guide-card {
+    padding: 12px 14px !important;
+    gap: 8px !important;
+  }
+
+  .admin-guide-card.admin-guide-card-checklist {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .admin-guide-visual {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+  }
+
+  .admin-guide-card.admin-guide-card-checklist .admin-guide-card-action {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .admin-guide-card.admin-guide-card-checklist .admin-guide-card-action .button {
+    width: 100%;
+  }
+
+  .admin-guide-card:not(.admin-guide-card-checklist) .admin-guide-card-action .button {
+    width: 100%;
+  }
+
+  .guide-diagram-flow {
+    padding: 6px 8px;
+  }
+
+  .guide-diagram-step strong {
+    font-size: 9.5px;
+  }
+
+  .guide-diagram-step small {
+    font-size: 8.5px;
+  }
+}

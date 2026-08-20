@@ -19,6 +19,7 @@ import { formatRelativeTime } from "../../../utils/format";
 import { Button } from "../../ui/Button";
 import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { AdminCard } from "./AdminCard";
+import type { GuideSection } from "./AdminGuideModal";
 
 type ReadinessItem = {
   key: string;
@@ -68,6 +69,7 @@ type AdminAttentionPanelProps = {
   onOpenProducts: () => void;
   onOpenSettings: () => void;
   onRetryNotification: (orderId: string) => Promise<boolean>;
+  onOpenGuide?: (section?: GuideSection) => void;
 };
 
 type NotificationAttention = {
@@ -152,6 +154,7 @@ export function AdminAttentionPanel({
   onOpenProducts,
   onOpenSettings,
   onRetryNotification,
+  onOpenGuide,
 }: AdminAttentionPanelProps) {
   const { locale, t } = usePlatformI18n();
   const { busy: retryBusy, run: runRetry } = useAsyncAction();
@@ -278,7 +281,11 @@ export function AdminAttentionPanel({
             })}
             hint={t(incomplete[0].label)}
             onClick={
-              incomplete[0].key === "catalog" ? onOpenProducts : onOpenSettings
+              onOpenGuide
+                ? () => onOpenGuide("checklist")
+                : incomplete[0].key === "catalog"
+                  ? onOpenProducts
+                  : onOpenSettings
             }
           />
         )}

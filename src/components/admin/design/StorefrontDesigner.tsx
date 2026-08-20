@@ -183,6 +183,7 @@ export function StorefrontDesigner({
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [fitScale, setFitScale] = useState(0.5);
   const [previewZoom, setPreviewZoom] = useState<PreviewZoom>("fit");
+  const [frameHeight, setFrameHeight] = useState(1120);
   const previewStageRef = useRef<HTMLDivElement>(null);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
   const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
@@ -294,6 +295,26 @@ export function StorefrontDesigner({
       "--preview-width",
       `${device === "phone" ? 390 : 1380}px`,
     );
+
+    const root = previewDocument.getElementById("designer-preview-root");
+    const target = root ?? previewDocument.body;
+    const updateHeight = () => {
+      const live = previewDocument.querySelector(".designer-live-storefront");
+      const height = Math.max(
+        live?.scrollHeight ?? 0,
+        target.scrollHeight,
+        previewDocument.documentElement.scrollHeight,
+      );
+      if (height > 0) {
+        setFrameHeight(Math.max(device === "phone" ? 844 : 900, height));
+      }
+    };
+    updateHeight();
+    const heightObserver = new ResizeObserver(updateHeight);
+    heightObserver.observe(target);
+    if (previewDocument.body && previewDocument.body !== target) {
+      heightObserver.observe(previewDocument.body);
+    }
 
     const wheel = (event: WheelEvent) => {
       if (!event.ctrlKey && !event.metaKey) return;
@@ -635,7 +656,7 @@ export function StorefrontDesigner({
     const stage = previewStageRef.current;
     if (!stage) return;
     const left = Math.max(0, (stage.scrollWidth - stage.clientWidth) / 2);
-    const top = Math.max(0, (stage.scrollHeight - stage.clientHeight) / 2);
+    const top = 0;
     if (typeof stage.scrollTo === "function")
       stage.scrollTo({ left, top, behavior });
     else {
@@ -1852,7 +1873,8 @@ export function StorefrontDesigner({
             className="designer-preview-frame"
             style={{
               width: `${(device === "phone" ? 390 : 1380) * previewScale}px`,
-              minHeight: `${(device === "phone" ? 844 : 1120) * previewScale}px`,
+              height: `${frameHeight * previewScale}px`,
+              minHeight: `${frameHeight * previewScale}px`,
             }}
           >
             <iframe
@@ -1863,7 +1885,7 @@ export function StorefrontDesigner({
               onLoad={loadPreviewFrame}
               style={{
                 width: device === "phone" ? 390 : 1380,
-                height: device === "phone" ? 844 : 1120,
+                height: frameHeight,
                 transform: `scale(${previewScale})`,
               }}
             />

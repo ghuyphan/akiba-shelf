@@ -279,3 +279,19 @@
   background: var(--teal-dark);
   border-color: var(--teal-dark);
 }
+
+.button-checkout > span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+  margin-left: 8px;
+}
+
+.selected-panel:not(.selected-panel-empty) .selected-header {
+  margin-bottom: 12px;
+}
+
+.selected-panel:not(.selected-panel-empty) .selected-actions {
+  margin-top: 8px;
+}

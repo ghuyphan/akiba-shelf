@@ -16,7 +16,6 @@
 @import "./settings/editor.css";
 @import "./orders/queue.css";
 @import "./overrides/system-responsive.css";
-@import "./team/access.css";
 @import "./design/team-access.css";
 @import "./platform/landing.css";
 @import "./platform/dashboard.css";
@@ -26,7 +25,9 @@
 @import "./design/sidebar-typography.css";
 @import "./products/promotions.css";
 @import "./shared/actions-dialogs.css";
+@import "./overrides/legacy-compat.css";
 @import "./events/offline.css";
 @import "./overrides/remediation.css";
 @import "./shared/scroll-lists.css";
 @import "./overrides/system-surface.css";
+@import "./shell/guide-modal.css";

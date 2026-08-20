@@ -43,7 +43,7 @@
 .storefront-builder .designer-preview-stage { height: calc(100vh - 190px); min-height: 650px; display: flex; justify-content: flex-start; align-items: flex-start; overflow: auto; padding: 120px; touch-action: none; overscroll-behavior: contain; cursor: grab; user-select: none; }
 .storefront-builder .designer-preview-stage.is-pan-ready { cursor: grab; }
 .storefront-builder .designer-preview-stage.is-panning { cursor: grabbing; }
-.designer-preview-frame { position: relative; flex: 0 0 auto; margin: auto; overflow: hidden; border-radius: 20px; }
+.designer-preview-frame { position: relative; flex: 0 0 auto; margin: 0 auto; overflow: hidden; border-radius: 18px; box-shadow: 0 16px 48px rgb(20 33 53 / 10%), 0 2px 8px rgb(20 33 53 / 5%); }
 .storefront-builder .designer-live-storefront { flex: 0 0 auto; }
 .designer-live-module.is-selected::after { content: ""; position: absolute; inset: -6px; z-index: 45; border: 2px solid var(--coral); border-radius: calc(var(--store-radius) + 6px); pointer-events: none; }
 .designer-live-module.is-dragging { opacity: .28; filter: saturate(.65); }

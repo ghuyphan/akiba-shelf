@@ -38,6 +38,19 @@
   user-select: none;
 }
 
+.category-row .chip:hover {
+  transform: none;
+  box-shadow: none;
+  color: var(--coral);
+}
+.category-row .chip-active:hover {
+  color: #fff;
+}
+.quantity-stepper button:disabled:hover {
+  color: #a8b2c2;
+  transform: none;
+}
+
 .storefront-content-main .category-scroller {
   position: relative;
   min-width: 0;

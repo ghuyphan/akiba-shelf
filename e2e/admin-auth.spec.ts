@@ -1894,27 +1894,24 @@ test("workspace and dashboard headers share locale and selector surfaces", async
   const shopSelector = page.locator(
     ".admin-shop-switcher-menu > .select-menu-trigger",
   );
-  const localeSelector = page.locator(
-    ".platform-language-menu > .select-menu-trigger",
-  );
   const headerButtonBackground = await headerButton.evaluate(
     (element) => getComputedStyle(element).backgroundColor,
   );
 
   await expect(shopSelector).toBeVisible();
-  await expect(localeSelector).toBeVisible();
   await expect(shopSelector).toHaveCSS("height", "44px");
-  await expect(localeSelector).toHaveCSS("height", "44px");
   await expect(shopSelector).toHaveCSS("border-radius", "12px");
-  await expect(localeSelector).toHaveCSS("border-radius", "12px");
   await expect(shopSelector).toHaveCSS(
     "background-color",
     headerButtonBackground,
   );
-  await expect(localeSelector).toHaveCSS(
-    "background-color",
-    headerButtonBackground,
-  );
+
+  // Check language option in overflow menu
+  await headerButton.click();
+  await expect(
+    page.getByRole("menuitem", { name: /Tiếng Việt/ }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
 
   if (page.viewportSize()!.width > 1280) {
     const headerGeometry = await page

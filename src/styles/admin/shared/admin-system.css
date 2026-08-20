@@ -27,6 +27,16 @@
   --admin-panel-border: color-mix(in srgb, var(--line) 88%, var(--ink) 6%);
   --admin-panel-shadow: 0 14px 36px rgb(80 58 38 / 8%);
   --admin-sticky-top: 102px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
   font-family: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
   background:
     radial-gradient(
@@ -42,6 +52,11 @@
     color-mix(in srgb, var(--admin-brand-page-bg) 14%, var(--admin-page-bg)) !important;
 }
 
+.admin-card:hover {
+  border-color: rgb(180 195 214 / 88%);
+  box-shadow: 0 14px 34px rgb(7 24 50 / 9%);
+}
+
 .admin-shell
   :is(
     .admin-order-code,
@@ -54,13 +69,15 @@
 }
 
 .admin-container {
+  display: flex !important;
+  flex-direction: column !important;
   width: min(100% - 32px, 1400px) !important;
   margin: 18px auto 40px !important;
   padding: 0 4px !important;
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  gap: 16px !important;
+  gap: 18px !important;
 }
 
 .admin-view-hero {
@@ -255,9 +272,76 @@
 }
 
 .admin-grid {
+  display: grid;
   grid-template-columns: minmax(320px, 370px) minmax(0, 1fr) !important;
   gap: 18px !important;
   margin-top: 0 !important;
+}
+
+.admin-settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.admin-form,
+.stack {
+  display: grid;
+  gap: 14px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.admin-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.admin-switch-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.admin-switch-row input {
+  accent-color: var(--coral);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  margin-bottom: 10px;
+  color: var(--coral-strong);
+  font-weight: 700;
+  text-decoration: none;
 }
 
 @media (max-width: 1100px) {

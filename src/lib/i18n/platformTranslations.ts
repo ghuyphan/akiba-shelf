@@ -2031,6 +2031,157 @@ const vi: Record<string, string> = {
     "Tất cả đơn cục bộ sẽ được đồng bộ và chỉ phần phân bổ chưa bán mới được trả về tồn kho trực tuyến. Thao tác này không thể hoàn tác.",
   "Keep event open": "Giữ sự kiện mở",
   "Closing event…": "Đang đóng sự kiện…",
+  "Booth Guide & Playbook": "Bí kíp & Hướng dẫn gian hàng",
+  "Guide categories": "Danh mục hướng dẫn",
+  "Launch Checklist": "Checklist mở shop",
+  "Convention Cheat Sheet": "Bí kíp bán hàng sự kiện",
+  "Feature Playbook": "Tính năng nâng cao",
+  "Complete these 4 core steps to get your artist booth customer-ready for the event.":
+    "Hoàn tất 4 bước cốt lõi để chuẩn bị gian hàng sẵn sàng đón khách.",
+  "1. VietQR Bank Payment": "1. Thanh toán VietQR ngân hàng",
+  "Configured ({{bank}})": "Đã cài đặt ({{bank}})",
+  "Action needed": "Cần thiết lập",
+  "Ready": "Đã sẵn sàng",
+  "Direct VietQR transfer payments to your bank account with automatic order matching.":
+    "Khách chuyển khoản VietQR thẳng vào tài khoản ngân hàng của bạn.",
+  "Review payment": "Xem thanh toán",
+  "Set up payment": "Cài đặt thanh toán",
+  "2. Merch Catalog & Stock": "2. Danh mục merch & Tồn kho",
+  "{{count}} active items": "{{count}} sản phẩm đang bán",
+  "0 active items": "0 sản phẩm đang bán",
+  "List your prints, acrylic stands, charms, and stickers with prices and inventory limits.":
+    "Thêm tranh, standee acrylic, móc khóa và sticker kèm giá và tồn kho.",
+  "Manage products": "Quản lý sản phẩm",
+  "Add products": "Thêm sản phẩm",
+  "3. Booth Identity & Location": "3. Tên & Vị trí gian hàng",
+  "Missing details": "Chưa đủ thông tin",
+  "Set table number, hall row, booth bio, and opening hours so attendees can locate you easily.":
+    "Điền số bàn, khu vực sảnh và giờ mở cửa để khách dễ tìm đến gian hàng.",
+  "Edit booth info": "Sửa thông tin gian hàng",
+  "Complete booth": "Hoàn tất gian hàng",
+  "4. Customer Storefront Preview": "4. Xem trước cửa hàng của khách",
+  "Test adding items to cart, review mobile layout, and verify your VietQR code scan.":
+    "Thử thêm sản phẩm vào giỏ, kiểm tra giao diện điện thoại và quét mã VietQR.",
+  "15-Minute Order Reservation": "Giữ hàng 15 phút cho mỗi đơn",
+  "Auto-release": "Tự động hủy",
+  "Stock is held immediately": "Sản phẩm được giữ ngay",
+  "When a fan places an order, inventory is reserved for exactly 15 minutes.":
+    "Khi khách đặt đơn, hàng được giữ đúng 15 phút để khách thanh toán.",
+  "Automatic expiry": "Tự động hoàn tồn kho",
+  "If payment isn’t confirmed within 15 minutes, the order expires and stock returns to the booth automatically.":
+    "Nếu không xác nhận thanh toán sau 15 phút, đơn sẽ hết hạn và hàng tự động trả về gian hàng.",
+  "Confirming Bank Payments": "Xác nhận chuyển khoản ngân hàng",
+  "Staff check": "Nhân viên kiểm tra",
+  "Verify on your banking app": "Kiểm tra trên app ngân hàng",
+  "Customer transfers via VietQR → Check your bank notification on phone before confirming.":
+    "Khách quét mã VietQR chuyển khoản → Kiểm tra thông báo trên app ngân hàng trước khi bấm Xác nhận.",
+  "Swipe / Click Confirm": "Gạt hoặc Bấm Xác nhận",
+  "Confirming finalizes the order reservation and moves it to the packaging queue.":
+    "Bấm Xác nhận sẽ chốt giữ hàng và chuyển đơn sang danh sách chờ đóng gói.",
+  "Spotty / Dead Convention Wi-Fi": "Khi Wi-Fi sự kiện yếu hoặc mất mạng",
+  "Offline mode": "Chế độ offline",
+  "Allocate stock online before the event. You can sell completely offline without Wi-Fi.":
+    "Cấp số lượng bán offline từ trước. Bạn có thể bán hàng không cần Wi-Fi.",
+  "Keep tab open": "Giữ nguyên tab trình duyệt",
+  "Never sign out while holding active offline sales. Sync orders when internet returns.":
+    "Không đăng xuất khi đang có đơn offline chưa đồng bộ. Đồng bộ đơn khi có mạng trở lại.",
+  "View event tools": "Mở công cụ sự kiện",
+  "Gacha Minigame & Pity System": "Minigame Gacha & Cơ chế bảo hiểm",
+  "Pity & guarantees": "Bảo hiểm & Tỷ lệ quay",
+  "Built-in 90-pull hard pity, soft pity luck curves, and 50/50 guarantees match native game engines.":
+    "Hỗ trợ bảo hiểm 90 lượt, tăng tỷ lệ may mắn và cơ chế 50/50 chuẩn như game gốc.",
+  "Catalog auto-deduction": "Tự động trừ tồn kho catalog",
+  "5-star and 4-star prizes link directly to your merchandise catalog and update stock on winning rolls.":
+    "Giải 5 sao và 4 sao liên kết trực tiếp với sản phẩm catalog và tự động trừ kho khi trúng.",
+  "Shared 3-star pool": "Kho giải phụ 3 sao dùng chung",
+  "Stickers, candies, or small souvenirs are shared across banners as filler prizes.":
+    "Sticker, kẹo hoặc quà lưu niệm nhỏ được dùng chung cho tất cả các banner làm giải 3 sao.",
+  "Open Gacha Manager": "Mở quản lý Gacha",
+  "Staff Tablet & PIN Security": "Bảo mật máy tính bảng & Mã PIN",
+  "Local security": "Bảo mật cục bộ",
+  "6-Digit Tablet PIN": "Mã PIN 6 số trên tablet",
+  "Protects your shared booth tablet so temporary staff can process orders without accessing account settings.":
+    "Bảo vệ máy tính bảng tại gian hàng để nhân viên trực quầy xử lý đơn mà không sửa được cài đặt tài khoản.",
+  "Role permissions": "Phân quyền vai trò",
+  "Staff can only confirm and pack orders; catalog, pricing, and bank accounts remain restricted.":
+    "Nhân viên chỉ có quyền xác nhận và đóng gói đơn; catalog, giá và tài khoản ngân hàng được bảo mật.",
+  "Manage Team": "Quản lý nhân sự",
+  "Booth guide & playbook": "Bí kíp & Hướng dẫn gian hàng",
+  "Booth guide": "Bí kíp gian hàng",
+  Guide: "Hướng dẫn",
+  "Auto Stock Protection": "Tự động giữ tồn kho",
+  "When a customer clicks Pay Now, inventory is held for exactly 15 minutes. If unpaid, the order expires and inventory is restored automatically.":
+    "Khi khách bấm Thanh toán, hàng được giữ đúng 15 phút. Nếu chưa thanh toán, đơn sẽ tự hết hạn và trả lại tồn kho.",
+  "Safe Banking": "Giao dịch an toàn",
+  "Always verify that the bank transfer note matches the Matsuri Order Code before clicking Confirm in the Orders tab.":
+    "Luôn kiểm tra nội dung chuyển khoản khớp với Mã đơn Matsuri trước khi bấm Xác nhận trong tab Đơn hàng.",
+  "Staff Tablet": "Tablet nhân viên",
+  "At crowded convention halls with spotty Wi-Fi, allocate dedicated stock to one tablet before the rush. End the session with your 6-digit staff PIN to sync sales.":
+    "Tại sảnh sự kiện đông đúc Wi-Fi yếu, phân bổ tồn kho riêng cho tablet trước giờ cao điểm. Kết thúc phiên bằng mã PIN 6 số để đồng bộ doanh thu.",
+  "View orders & event mode": "Xem đơn hàng & Chế độ sự kiện",
+  "Fair Odds": "Tỷ lệ chuẩn",
+  "Rolls follow native Genshin/HSR gacha odds with guaranteed 5★ pity. Won items are instantly deducted from your live catalog inventory.":
+    "Tỷ lệ quay chuẩn Genshin/HSR kèm bảo hiểm 5★. Vật phẩm trúng thưởng được trừ trực tiếp từ tồn kho catalog.",
+  "Offline PIN": "Mã PIN offline",
+  "Assign staff role with limited access to order processing. Ending offline event sessions requires your 6-digit staff PIN.":
+    "Phân quyền nhân viên chỉ được xử lý đơn hàng. Kết thúc phiên bán hàng offline cần mã PIN 6 số của bạn.",
+  "Unified Inventory Sync": "Đồng bộ tồn kho tức thì",
+  "Real-time": "Thời gian thực",
+  "All storefront sales, offline event orders, and gacha pulls share the same server-authoritative stock ledger. Zero overselling.":
+    "Mọi đơn hàng online, bán offline tại sự kiện và lượt quay gacha đều dùng chung sổ cái tồn kho. Không bao giờ bán vượt số lượng.",
+  "Reserved for 15 minutes upon checkout; auto-restored if unpaid.":
+    "Hàng được giữ 15 phút khi đặt; tự động hoàn lại nếu chưa thanh toán.",
+  "Verify the transfer note on your bank app matches the order code.":
+    "Kiểm tra nội dung chuyển khoản trên app ngân hàng khớp với mã đơn.",
+  "Sell offline without internet; sync orders when back online.":
+    "Bán hàng offline không cần mạng; đồng bộ đơn khi có kết nối trở lại.",
+  "Allocate Stock": "Phân bổ kho",
+  "Sell Offline": "Bán offline",
+  "No Wi-Fi Needed": "Không cần Wi-Fi",
+  "PIN End Session": "Nhập PIN kết thúc",
+  "Sync Orders": "Đồng bộ đơn",
+  "Standard gacha rates with pity; winning items deduct live catalog stock.":
+    "Tỷ lệ gacha chuẩn kèm bảo hiểm; trúng thưởng tự trừ tồn kho catalog.",
+  "Staff Role": "Nhân viên",
+  "Orders Only": "Chỉ xử lý đơn",
+  "Booth Tablet": "Tablet quầy",
+  "Shared Device": "Thiết bị dùng chung",
+  "6-Digit PIN": "Mã PIN 6 số",
+  "Secure Close": "Bảo mật kết thúc",
+  "Restrict staff to order processing; protect sensitive settings.":
+    "Giới hạn nhân viên chỉ xử lý đơn; bảo mật các cài đặt quan trọng.",
+  "Manage Team Access": "Quản lý quyền nhân sự",
+  "Storefront & Event": "Cửa hàng & Sự kiện",
+  "Gacha Pulls": "Lượt quay Gacha",
+  "Real-Time Ledger": "Sổ cái tức thì",
+  "Zero Overselling": "Không bán vượt tồn",
+  "All sales and gacha pulls share one live stock pool.":
+    "Mọi giao dịch và lượt quay gacha đều dùng chung một kho tồn.",
+  "Manage Products": "Quản lý sản phẩm",
+  "View orders": "Xem đơn hàng",
+  "Offline Event Tools": "Công cụ sự kiện offline",
+  "Manage live stock": "Quản lý kho hàng",
+  "Order Created": "Khách đặt đơn",
+  "Stock Reserved": "Giữ tồn kho",
+  "15-Min Window": "15 phút thanh toán",
+  "VietQR Payment": "Chuyển khoản VietQR",
+  "Items Packed": "Đóng gói trả hàng",
+  "Transfer Note": "Nội dung CK",
+  "Order Code": "Mã đơn hàng",
+  "1-Click Confirm": "1-Chạm Xác nhận",
+  "Ready for Pickup": "Giao khách nhận",
+  "1 Roll": "1 Lượt",
+  "74 Soft Pity": "74 Tăng tỷ lệ",
+  "90 Guaranteed 5★": "90 Bảo hiểm 5★",
+  "Online Setup": "Cài đặt trực tuyến",
+  "Online & Offline": "Trực tuyến & Tại quầy",
+  "Pity Wins": "Trúng thưởng",
+  "Cheat Sheet": "Bí kíp",
+  Playbook: "Tính năng",
+  Checklist: "Checklist",
+  "Spotty convention Wi-Fi? Use Offline Event Mode in Orders to sell without internet.":
+    "Wi-Fi sự kiện chập chờn? Dùng Chế độ sự kiện ngoại tuyến trong Đơn hàng để bán không cần mạng.",
+  "Open event mode": "Mở chế độ sự kiện",
 };
 
 export type PlatformTranslationVariables = Record<string, string | number>;

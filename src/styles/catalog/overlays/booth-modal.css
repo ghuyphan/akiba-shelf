@@ -1,3 +1,12 @@
+.modal-backdrop:not(.mobile-sheet-backdrop) {
+  padding: 12px;
+  align-items: center;
+  justify-items: center;
+}
+.booth-info-modal {
+  gap: 12px;
+  padding: 4px 0;
+}
 .booth-modal-redesign { width: min(94vw, 760px); padding: 22px; border-radius: 22px; }
 .booth-modal-redesign .modal-header { margin-bottom: 18px; }
 .booth-modal-content { display: grid; gap: 18px; }

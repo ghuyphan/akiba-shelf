@@ -32,6 +32,10 @@ import { AdminWorkspaceHeader } from "../../components/admin/shell/AdminWorkspac
 import { AdminViewHero } from "../../components/admin/shell/AdminViewHero";
 import { AdminAttentionPanel } from "../../components/admin/shell/AdminAttentionPanel";
 import { AdminWorkspaceContent } from "../../components/admin/shell/AdminWorkspaceContent";
+import {
+  AdminGuideModal,
+  type GuideSection,
+} from "../../components/admin/shell/AdminGuideModal";
 import { AdminUnsavedChangesProvider } from "../../components/admin/shell/AdminUnsavedChanges";
 import { SignOutDialog } from "../../components/platform/SignOutDialog";
 import { EventPinDialog } from "../../components/ui/EventPinDialog";
@@ -59,6 +63,8 @@ export function AdminPage() {
   const { viewTab, setViewTab } = useAdminViewRoute();
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [signOutBusy, setSignOutBusy] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [guideSection, setGuideSection] = useState<GuideSection>("checklist");
   const {
     state: eventAccess,
     unlock: unlockEventAccess,
@@ -411,6 +417,11 @@ export function AdminPage() {
     );
   }
 
+  function handleOpenGuide(section: GuideSection = "checklist") {
+    setGuideSection(section);
+    setIsGuideOpen(true);
+  }
+
   const canCreateShop =
     adminSession.memberships.filter((membership) => membership.role === "owner")
       .length < MAX_OWNED_SHOPS;
@@ -430,6 +441,7 @@ export function AdminPage() {
           onViewTabChange={setViewTab}
           onSelectShop={selectShop}
           onRequestSignOut={() => setIsSignOutOpen(true)}
+          onOpenGuide={handleOpenGuide}
         />
 
         <div className="admin-container">
@@ -451,6 +463,7 @@ export function AdminPage() {
                 setViewTab(compactAdminLayout ? "settings" : "design")
               }
               onRetryNotification={handleRetryNotification}
+              onOpenGuide={handleOpenGuide}
             />
           )}
           <AdminWorkspaceContent
@@ -527,6 +540,18 @@ export function AdminPage() {
             }}
           />
         </div>
+
+        <AdminGuideModal
+          isOpen={isGuideOpen}
+          onClose={() => setIsGuideOpen(false)}
+          booth={booth}
+          payment={payment}
+          products={products}
+          shopRole={adminSession.access.role}
+          shopSlug={adminSession.access.shop_slug}
+          onNavigateTab={setViewTab}
+          initialSection={guideSection}
+        />
 
         <SignOutDialog
           isOpen={isSignOutOpen}

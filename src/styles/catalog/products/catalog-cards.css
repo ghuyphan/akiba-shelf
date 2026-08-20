@@ -65,6 +65,8 @@
 .product-price-comparison em { padding: 2px 5px; border-radius: 999px; color: #a33d48; background: #fff0f2; font-size: 8px; font-style: normal; font-weight: 950; line-height: 1.4; }
 .product-price.is-sale .product-price-current { color: #c44755 !important; }
 .product-meta-row strong { color: var(--ink) !important; font-size: 16px !important; letter-spacing: -.02em; }
+.product-meta-row .stock-line { font-size: 10px !important; }
+.product-meta-row .item-code { min-height: 28px !important; padding: 0 8px !important; font-size: 10px !important; }
 .stock-line { gap: 5px !important; margin-top: 5px !important; font-size: 11px; font-weight: 750; white-space: nowrap; }
 .stock-line::before { width: 6px !important; height: 6px !important; flex-shrink: 0; }
 .product-card-actions { flex: 0 0 auto; gap: 6px; }

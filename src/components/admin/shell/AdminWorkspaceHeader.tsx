@@ -8,6 +8,8 @@ import {
   EllipsisVertical,
   Gamepad2,
   Heart,
+  HelpCircle,
+  Languages,
   LayoutTemplate,
   LogOut,
   Package,
@@ -32,8 +34,8 @@ import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import { safePublicUrl } from "../../../lib/branding";
 import type { BoothSettings, ShopMembership } from "../../../types/catalog";
 import type { AdminViewTab } from "./adminWorkspaceTypes";
+import type { GuideSection } from "./AdminGuideModal";
 import { useAdminNavigationGuard } from "./AdminUnsavedChanges";
-import { PlatformLanguageToggle } from "../../platform/PlatformLanguageToggle";
 
 type AdminWorkspaceHeaderProps = {
   booth: BoothSettings;
@@ -48,6 +50,7 @@ type AdminWorkspaceHeaderProps = {
   onViewTabChange: (tab: AdminViewTab) => void;
   onSelectShop: (shopId: string) => void;
   onRequestSignOut: () => void;
+  onOpenGuide: (section?: GuideSection) => void;
 };
 
 export function AdminWorkspaceHeader({
@@ -63,10 +66,11 @@ export function AdminWorkspaceHeader({
   onViewTabChange,
   onSelectShop,
   onRequestSignOut,
+  onOpenGuide,
 }: AdminWorkspaceHeaderProps) {
   const navigate = useNavigate();
   const toast = useToast();
-  const { t } = usePlatformI18n();
+  const { locale, setLocale, t } = usePlatformI18n();
   const requestNavigation = useAdminNavigationGuard();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -291,7 +295,16 @@ export function AdminWorkspaceHeader({
               });
             }}
           />
-          <PlatformLanguageToggle />
+          <button
+            type="button"
+            className="app-header-button admin-guide-toggle"
+            aria-label={t("Booth guide & playbook")}
+            title={t("Booth guide & playbook")}
+            onClick={() => onOpenGuide()}
+          >
+            <HelpCircle size={15} />
+            <span className="admin-guide-label">{t("Guide")}</span>
+          </button>
           <ActionMenu
             className="admin-overflow-menu"
             label={t("More actions")}
@@ -300,6 +313,12 @@ export function AdminWorkspaceHeader({
             popoverClassName="admin-overflow-popover"
             itemClassName="admin-overflow-item"
             items={[
+              {
+                id: "language",
+                label: locale === "vi" ? "English" : "Tiếng Việt",
+                icon: <Languages size={15} />,
+                onSelect: () => setLocale(locale === "vi" ? "en" : "vi"),
+              },
               ...(canUsePush()
                 ? [
                     {
