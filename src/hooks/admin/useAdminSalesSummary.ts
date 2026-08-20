@@ -19,7 +19,10 @@ import {
   projectSalesSummary,
   type SalesSummaryState,
 } from "../../lib/sales";
-import { getLocalOrderDayBounds } from "./adminOrderQuery";
+import {
+  getLocalOrderDayBounds,
+  normalizeOrderDateFilter,
+} from "./adminOrderQuery";
 
 const emptySalesState: SalesSummaryState = {
   summary: null,
@@ -39,7 +42,7 @@ export function useAdminSalesSummary({
   ready: boolean;
   shopId: string;
   userId: string;
-  todayOnly: boolean;
+  todayOnly: boolean | string;
 }) {
   const [sales, setSales] = useState<SalesSummaryState>(emptySalesState);
   const requestRef = useRef(0);
@@ -57,9 +60,27 @@ export function useAdminSalesSummary({
   const reloadSalesSummary = useCallback(async () => {
     const requestId = ++requestRef.current;
     const now = new Date();
-    const range = todayOnlyRef.current
-      ? getLocalOrderDayBounds(now)
-      : { start: new Date(now.getTime() - maxSalesSummaryRangeMs), end: now };
+    const normalized = normalizeOrderDateFilter(todayOnlyRef.current);
+    let range: { start: Date; end: Date };
+    if (normalized === "today") {
+      range = getLocalOrderDayBounds(now);
+    } else if (normalized === "all") {
+      range = {
+        start: new Date(now.getTime() - maxSalesSummaryRangeMs),
+        end: now,
+      };
+    } else {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
+      if (match) {
+        const [, y, m, d] = match;
+        range = {
+          start: new Date(Number(y), Number(m) - 1, Number(d), 0, 0, 0, 0),
+          end: new Date(Number(y), Number(m) - 1, Number(d) + 1, 0, 0, 0, 0),
+        };
+      } else {
+        range = getLocalOrderDayBounds(now);
+      }
+    }
     const from = range.start.toISOString();
     const to = range.end.toISOString();
     const localSession = await loadOfflineEventSession(shopId).catch(

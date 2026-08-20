@@ -2182,6 +2182,11 @@ const vi: Record<string, string> = {
   "Spotty convention Wi-Fi? Use Offline Event Mode in Orders to sell without internet.":
     "Wi-Fi sự kiện chập chờn? Dùng Chế độ sự kiện ngoại tuyến trong Đơn hàng để bán không cần mạng.",
   "Open event mode": "Mở chế độ sự kiện",
+  "All time": "Tất cả thời gian",
+  "Date filter": "Lọc theo ngày",
+  "Pick a date": "Chọn ngày",
+  "Pick date": "Chọn ngày",
+  "No orders on {{date}}": "Không có đơn vào {{date}}",
 };
 
 export type PlatformTranslationVariables = Record<string, string | number>;

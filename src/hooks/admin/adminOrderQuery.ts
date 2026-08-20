@@ -1,11 +1,21 @@
 import type { OrderViewFilter } from "../../components/admin/orders/OrderQueue";
 
+export type OrderDateFilter = "today" | "all" | string;
+
+export function normalizeOrderDateFilter(
+  value: boolean | string | undefined,
+): OrderDateFilter {
+  if (value === undefined || value === true || value === "today") return "today";
+  if (value === false || value === "all") return "all";
+  return value;
+}
+
 type AdminOrderQuery = {
   shopId: string;
   page: number;
   filter: OrderViewFilter;
   selectedEventId: string;
-  todayOnly: boolean;
+  todayOnly: boolean | string;
 };
 
 export function getAdminOrderQueryKey(query: AdminOrderQuery) {
@@ -14,20 +24,35 @@ export function getAdminOrderQueryKey(query: AdminOrderQuery) {
     query.page,
     query.filter,
     query.selectedEventId,
-    query.todayOnly,
+    normalizeOrderDateFilter(query.todayOnly),
   ].join(":");
 }
 
-export function getAdminOrderCountScopeKey(shopId: string, todayOnly: boolean) {
-  return [shopId, todayOnly].join(":");
+export function getAdminOrderCountScopeKey(
+  shopId: string,
+  todayOnly: boolean | string,
+) {
+  return [shopId, normalizeOrderDateFilter(todayOnly)].join(":");
 }
 
 export function getLocalOrderDateScope(
-  todayOnly: boolean,
+  dateFilter: boolean | string,
   now = new Date(),
 ): { createdAfter?: string; createdBefore?: string } {
-  if (!todayOnly) return {};
-  const { start, end } = getLocalOrderDayBounds(now);
+  const normalized = normalizeOrderDateFilter(dateFilter);
+  if (normalized === "all") return {};
+  if (normalized === "today") {
+    const { start, end } = getLocalOrderDayBounds(now);
+    return {
+      createdAfter: start.toISOString(),
+      createdBefore: end.toISOString(),
+    };
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
+  if (!match) return {};
+  const [, y, m, d] = match;
+  const start = new Date(Number(y), Number(m) - 1, Number(d), 0, 0, 0, 0);
+  const end = new Date(Number(y), Number(m) - 1, Number(d) + 1, 0, 0, 0, 0);
   return {
     createdAfter: start.toISOString(),
     createdBefore: end.toISOString(),

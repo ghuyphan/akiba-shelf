@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  CalendarDays,
   ChevronLeft,
   ChevronRight,
   CloudOff,
@@ -32,6 +31,7 @@ import { OFFLINE_EVENT_UPDATED } from "../../../lib/offline/offlineEvents";
 import { OrderCard } from "./OrderCard";
 import { OrderDetailsModal } from "./OrderDetailsModal";
 import { SalesSummaryPanel } from "./SalesSummaryPanel";
+import { OrderDateFilterPicker } from "./OrderDateFilterPicker";
 import { AdminCard } from "../shell/AdminCard";
 
 type OrderQueueProps = {
@@ -39,7 +39,7 @@ type OrderQueueProps = {
   orders: Order[];
   filter: OrderViewFilter;
   selectedEventId: string;
-  todayOnly: boolean;
+  todayOnly: boolean | string;
   counts: OrderStatusCounts;
   eventCount: number;
   eventControl?: ReactNode;
@@ -50,7 +50,7 @@ type OrderQueueProps = {
   loading: boolean;
   onFilterChange: (filter: OrderViewFilter) => void;
   onSelectedEventChange: (eventId: string) => void;
-  onTodayOnlyChange: (todayOnly: boolean) => void;
+  onTodayOnlyChange: (todayOnly: boolean | string) => void;
   onPageChange: (page: number) => void;
   onOrderUpdated: () => void;
 };
@@ -318,19 +318,25 @@ export function OrderQueue({
     }
   }
 
+  const isToday = todayOnly === true || todayOnly === "today";
+  const isAllTime = todayOnly === false || todayOnly === "all";
+  const customDate = !isToday && !isAllTime ? String(todayOnly) : "";
+
   const emptyTitle = loading
     ? t("Loading orders…")
-    : todayOnly
+    : isToday
       ? filter === "event"
         ? t("No event orders today")
         : filter === "all"
           ? t("No orders today")
           : t("No {{status}} orders today", { status: t(filter) })
-      : filter === "event"
-        ? t("No event orders yet")
-        : filter === "all"
-          ? t("No orders yet")
-          : t("No {{status}} orders", { status: t(filter) });
+      : customDate
+        ? t("No orders on {{date}}", { date: customDate })
+        : filter === "event"
+          ? t("No event orders yet")
+          : filter === "all"
+            ? t("No orders yet")
+            : t("No {{status}} orders", { status: t(filter) });
 
   return (
     <section className="admin-orders-view" aria-busy={loading}>
@@ -397,16 +403,11 @@ export function OrderQueue({
               />
             )}
             {eventControl}
-            <button
-              type="button"
-              className={`admin-toolbar-control admin-today-toggle ${todayOnly ? "active" : ""}`}
-              aria-pressed={todayOnly}
+            <OrderDateFilterPicker
+              value={todayOnly}
+              onChange={onTodayOnlyChange}
               disabled={loading}
-              onClick={() => onTodayOnlyChange(!todayOnly)}
-            >
-              <CalendarDays size={14} />
-              <span>{t("Today")}</span>
-            </button>
+            />
           </div>
         </div>
 
@@ -499,7 +500,7 @@ export function OrderQueue({
                       : t("There are no orders with this status yet.")
               }
               action={
-                !loading && (filter !== "all" || todayOnly) ? (
+                !loading && (filter !== "all" || !isAllTime) ? (
                   <Button
                     type="button"
                     variant="secondary"

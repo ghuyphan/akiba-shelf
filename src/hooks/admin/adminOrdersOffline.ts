@@ -7,7 +7,10 @@ import {
   offlineEventOrderAsOrder,
 } from "../../lib/offline/offlineEvents";
 import type { Order } from "../../types/catalog";
-import { getLocalOrderDayBounds } from "./adminOrderQuery";
+import {
+  getLocalOrderDayBounds,
+  normalizeOrderDateFilter,
+} from "./adminOrderQuery";
 
 export const emptyAdminOrderCounts: OrderStatusCounts = {
   all: 0,
@@ -19,16 +22,42 @@ export const emptyAdminOrderCounts: OrderStatusCounts = {
 
 function isInDateScope(
   order: Order,
-  todayOnly: boolean,
+  todayOnly: boolean | string,
   start: Date,
   end: Date,
 ) {
-  if (!todayOnly) return true;
+  const normalized = normalizeOrderDateFilter(todayOnly);
+  if (normalized === "all") return true;
+  if (normalized === "today") {
+    const created = new Date(order.created_at);
+    return created >= start && created < end;
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
+  if (!match) return true;
+  const [, y, m, d] = match;
+  const customStart = new Date(
+    Number(y),
+    Number(m) - 1,
+    Number(d),
+    0,
+    0,
+    0,
+    0,
+  );
+  const customEnd = new Date(
+    Number(y),
+    Number(m) - 1,
+    Number(d) + 1,
+    0,
+    0,
+    0,
+    0,
+  );
   const created = new Date(order.created_at);
-  return created >= start && created < end;
+  return created >= customStart && created < customEnd;
 }
 
-function countOrders(orders: Order[], todayOnly: boolean) {
+function countOrders(orders: Order[], todayOnly: boolean | string) {
   const { start, end } = getLocalOrderDayBounds();
   return orders.reduce<OrderStatusCounts>(
     (counts, order) => {
@@ -83,7 +112,7 @@ export async function loadOfflineAdminOrderPage({
   shopId: string;
   filter: OrderViewFilter;
   selectedEventId: string;
-  todayOnly: boolean;
+  todayOnly: boolean | string;
   page: number;
   pageSize: number;
 }) {
@@ -117,7 +146,7 @@ export async function loadOfflineAdminOrderCounts({
 }: {
   userId: string;
   shopId: string;
-  todayOnly: boolean;
+  todayOnly: boolean | string;
 }) {
   const online = loadAdminOrdersSnapshot(userId, shopId, "online");
   const events = await mergeCachedEventOrders(userId, shopId);

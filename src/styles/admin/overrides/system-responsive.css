@@ -42,7 +42,8 @@
   .admin-filter-tabs .admin-event-filter { margin-left: 0; }
   .admin-filter-tabs .admin-event-filter::before { display: none; }
   .admin-queue-utilities { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 8px; }
-  .admin-queue-utilities:not(:has(.offline-event-launcher)) .admin-today-toggle { grid-column: 1 / -1; }
+  .admin-queue-utilities:not(:has(.offline-event-launcher)) :is(.admin-today-toggle, .order-date-picker-wrap, .admin-date-picker-trigger) { grid-column: 1 / -1; }
+  .order-date-picker-wrap { width: 100%; min-width: 0; }
   .admin-toolbar-control { width: 100%; min-width: 0; }
   .admin-order-metrics { grid-template-columns: 1fr; gap: 1px; }
   .admin-order-metrics article { min-height: 68px; padding: 11px 13px; }

@@ -26,6 +26,8 @@ import {
   getAdminOrderCountScopeKey,
   getAdminOrderQueryKey,
   getLocalOrderDateScope,
+  normalizeOrderDateFilter,
+  type OrderDateFilter,
 } from "./adminOrderQuery";
 import {
   emptyAdminOrderCounts,
@@ -53,7 +55,9 @@ export function useAdminOrdersWorkspace({
   const [orderFilter, setOrderFilter] = useState<OrderViewFilter>("pending");
   const [selectedEventId, setSelectedEventId] = useState("");
   const [eventOrderCount, setEventOrderCount] = useState(0);
-  const [ordersTodayOnly, setOrdersTodayOnly] = useState(true);
+  const [orderDateScope, setOrderDateScope] =
+    useState<OrderDateFilter>("today");
+  const ordersTodayOnly = orderDateScope === "today";
   const [orderPage, setOrderPage] = useState(1);
   const [orderTotal, setOrderTotal] = useState(0);
   const [orderCounts, setOrderCounts] = useState<OrderStatusCounts>(
@@ -70,7 +74,7 @@ export function useAdminOrdersWorkspace({
   const orderPageRef = useRef(orderPage);
   const orderFilterRef = useRef(orderFilter);
   const selectedEventIdRef = useRef(selectedEventId);
-  const ordersTodayOnlyRef = useRef(ordersTodayOnly);
+  const ordersTodayOnlyRef = useRef<OrderDateFilter>(orderDateScope);
   const loadedOrderQueryRef = useRef("");
   const loadedOrderCountScopeRef = useRef("");
   const toast = useToast();
@@ -96,11 +100,11 @@ export function useAdminOrdersWorkspace({
   useLayoutEffect(() => {
     orderRequestRef.current += 1;
     orderLoadRef.current = null;
-  }, [orderFilter, orderPage, ordersTodayOnly, selectedEventId]);
+  }, [orderFilter, orderPage, orderDateScope, selectedEventId]);
 
   useLayoutEffect(() => {
     orderCountRequestRef.current += 1;
-  }, [ordersTodayOnly]);
+  }, [orderDateScope]);
 
   useEffect(() => {
     setOrders([]);
@@ -117,8 +121,8 @@ export function useAdminOrdersWorkspace({
     orderPageRef.current = orderPage;
     orderFilterRef.current = orderFilter;
     selectedEventIdRef.current = selectedEventId;
-    ordersTodayOnlyRef.current = ordersTodayOnly;
-  }, [orderPage, orderFilter, ordersTodayOnly, selectedEventId]);
+    ordersTodayOnlyRef.current = orderDateScope;
+  }, [orderPage, orderFilter, orderDateScope, selectedEventId]);
 
   useEffect(() => {
     tRef.current = t;
@@ -129,7 +133,7 @@ export function useAdminOrdersWorkspace({
     ready,
     shopId,
     userId,
-    todayOnly: ordersTodayOnly,
+    todayOnly: orderDateScope,
   });
 
   const reload = useCallback(
@@ -358,13 +362,13 @@ export function useAdminOrdersWorkspace({
 
   useEffect(() => {
     if (!enabled || !ready) return;
-    const countScope = getAdminOrderCountScopeKey(shopId, ordersTodayOnly);
+    const countScope = getAdminOrderCountScopeKey(shopId, orderDateScope);
     if (loadedOrderCountScopeRef.current === countScope) return;
     const requestId = ++orderCountRequestRef.current;
     const requestedShopId = shopId;
     let active = true;
     const scopeNow = new Date();
-    const dateScope = getLocalOrderDateScope(ordersTodayOnly, scopeNow);
+    const dateScope = getLocalOrderDateScope(orderDateScope, scopeNow);
 
     Promise.all([
       getOrderStatusCounts(requestedShopId, dateScope),
@@ -397,7 +401,7 @@ export function useAdminOrdersWorkspace({
           const fallback = await loadOfflineAdminOrderCounts({
             userId,
             shopId: requestedShopId,
-            todayOnly: ordersTodayOnly,
+            todayOnly: orderDateScope,
           });
           if (
             !active ||
@@ -418,7 +422,7 @@ export function useAdminOrdersWorkspace({
     return () => {
       active = false;
     };
-  }, [enabled, ordersTodayOnly, ready, shopId, t, toast, userId]);
+  }, [enabled, orderDateScope, ready, shopId, t, toast, userId]);
 
   useAdminEventOrderRefresh({
     enabled,
@@ -442,9 +446,13 @@ export function useAdminOrdersWorkspace({
     setOrderPage(1);
   }, []);
 
-  const changeTodayOnly = useCallback((todayOnly: boolean) => {
-    setOrdersTodayOnly(todayOnly);
-    setOrderPage(1);
+  const changeTodayOnly = useCallback((todayOnly: boolean | string) => {
+    setOrderDateScope((prev) => {
+      const next = normalizeOrderDateFilter(todayOnly);
+      if (prev === next) return prev;
+      setOrderPage(1);
+      return next;
+    });
   }, []);
 
   const openPending = useCallback(() => {

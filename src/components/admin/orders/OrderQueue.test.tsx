@@ -219,7 +219,7 @@ describe("OrderQueue", () => {
       "admin-card-compact",
     );
     expect(screen.getByRole("button", { name: /pending 1/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /^today$/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /date filter/i })).toBeDisabled();
   });
 
   it("summarizes only confirmed orders that have not been picked up", () => {
@@ -386,10 +386,11 @@ describe("OrderQueue", () => {
     const props = renderQueue();
     const user = userEvent.setup();
 
-    const toggle = screen.getByRole("button", { name: /^today$/i });
-    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    const trigger = screen.getByRole("button", { name: /date filter/i });
+    await user.click(trigger);
 
-    await user.click(toggle);
+    const todayOption = screen.getByRole("button", { name: /^today$/i });
+    await user.click(todayOption);
 
     expect(props.onTodayOnlyChange).toHaveBeenCalledWith(true);
   });
@@ -525,10 +526,9 @@ describe("OrderQueue", () => {
     const user = userEvent.setup();
 
     expect(screen.getByText("No orders today")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^today$/i })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(
+      screen.getByRole("button", { name: /date filter: today/i }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /view all orders/i }));
 

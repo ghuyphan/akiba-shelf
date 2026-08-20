@@ -18,6 +18,67 @@
 .admin-toolbar-control { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 13px; color: var(--ink); background: #fff; cursor: pointer; font-size: 11px; font-weight: 800; box-shadow: none; transition: color 160ms ease, border-color 160ms ease, background 160ms ease; }
 .admin-toolbar-control:hover { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 18%, var(--line)); background: var(--surface-soft); }
 .admin-toolbar-control:focus-visible { outline: 3px solid color-mix(in srgb, var(--coral) 24%, transparent); outline-offset: 2px; }
+.order-date-picker-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.admin-date-picker-trigger {
+  white-space: nowrap;
+}
+
+.admin-date-picker-trigger.active {
+  border-color: color-mix(in srgb, var(--coral) 40%, var(--line));
+  background: var(--surface-soft);
+}
+
+.order-date-filter-popover {
+  padding: 12px !important;
+  width: 280px !important;
+}
+
+.order-date-presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--soft-line);
+}
+
+.order-date-preset-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--muted);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.order-date-preset-btn:hover {
+  color: var(--ink);
+  background: var(--surface-soft);
+}
+
+.order-date-preset-btn.active {
+  color: #fff !important;
+  background: var(--coral) !important;
+  border-color: var(--coral) !important;
+}
+
+.date-time-days button.is-today {
+  font-weight: 900;
+  color: var(--coral);
+}
+
 .admin-today-toggle.active { color: #fff; border-color: var(--coral); background: var(--coral); box-shadow: none; }
 .admin-today-toggle.active > svg { color: currentColor; }
 .admin-inline-error { display: flex; align-items: center; gap: 9px; padding: 12px 14px; border: 1px solid rgb(223 101 112 / 25%); border-radius: 13px; color: #b43d49; background: #fff5f6; font-size: 11px; }

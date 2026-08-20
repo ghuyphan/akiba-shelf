@@ -69,7 +69,7 @@ type AdminWorkspaceContentProps = {
   orderFilter: OrderViewFilter;
   selectedEventId: string;
   eventOrderCount: number;
-  ordersTodayOnly: boolean;
+  ordersTodayOnly: boolean | string;
   orderCounts: OrderStatusCounts;
   orderPage: number;
   orderPageSize: number;
@@ -79,7 +79,7 @@ type AdminWorkspaceContentProps = {
   onRetry: () => void;
   onOrderFilterChange: (filter: OrderViewFilter) => void;
   onSelectedEventChange: (eventId: string) => void;
-  onOrdersTodayOnlyChange: (todayOnly: boolean) => void;
+  onOrdersTodayOnlyChange: (todayOnly: boolean | string) => void;
   onOrderPageChange: (page: number) => void;
   onOrderUpdated: () => void;
   onSelectProduct: (product: Product) => void;
