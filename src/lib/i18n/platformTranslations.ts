@@ -2187,6 +2187,11 @@ const vi: Record<string, string> = {
   "Pick a date": "Chọn ngày",
   "Pick date": "Chọn ngày",
   "No orders on {{date}}": "Không có đơn vào {{date}}",
+  "7 days": "7 ngày qua",
+  "30 days": "30 ngày qua",
+  "Last 7 days": "7 ngày qua",
+  "Last 30 days": "30 ngày qua",
+  "No orders in this period": "Không có đơn trong khoảng này",
 };
 
 export type PlatformTranslationVariables = Record<string, string | number>;

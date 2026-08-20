@@ -32,6 +32,35 @@ function isInDateScope(
     const created = new Date(order.created_at);
     return created >= start && created < end;
   }
+  if (normalized.includes("..")) {
+    const [startStr, endStr] = normalized.split("..");
+    const startMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startStr);
+    const endMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(endStr);
+    if (startMatch && endMatch) {
+      const [, sy, sm, sd] = startMatch;
+      const [, ey, em, ed] = endMatch;
+      const customStart = new Date(
+        Number(sy),
+        Number(sm) - 1,
+        Number(sd),
+        0,
+        0,
+        0,
+        0,
+      );
+      const customEnd = new Date(
+        Number(ey),
+        Number(em) - 1,
+        Number(ed) + 1,
+        0,
+        0,
+        0,
+        0,
+      );
+      const created = new Date(order.created_at);
+      return created >= customStart && created < customEnd;
+    }
+  }
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
   if (!match) return true;
   const [, y, m, d] = match;

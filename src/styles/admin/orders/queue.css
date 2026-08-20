@@ -79,6 +79,26 @@
   color: var(--coral);
 }
 
+.date-time-days button.in-range {
+  background: color-mix(in srgb, var(--coral) 12%, transparent) !important;
+  color: var(--ink) !important;
+  border-radius: 0 !important;
+}
+
+.date-time-days button.range-start {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.date-time-days button.range-end {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.date-time-days button.range-start.range-end {
+  border-radius: 10px !important;
+}
+
 .admin-today-toggle.active { color: #fff; border-color: var(--coral); background: var(--coral); box-shadow: none; }
 .admin-today-toggle.active > svg { color: currentColor; }
 .admin-inline-error { display: flex; align-items: center; gap: 9px; padding: 12px 14px; border: 1px solid rgb(223 101 112 / 25%); border-radius: 13px; color: #b43d49; background: #fff5f6; font-size: 11px; }

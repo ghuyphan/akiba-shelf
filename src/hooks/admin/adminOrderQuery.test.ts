@@ -46,5 +46,12 @@ describe("admin order query helpers", () => {
       createdAfter: customStart.toISOString(),
       createdBefore: customEnd.toISOString(),
     });
+
+    const rangeStart = new Date(2026, 7, 10, 0, 0, 0, 0);
+    const rangeEnd = new Date(2026, 7, 21, 0, 0, 0, 0);
+    expect(getLocalOrderDateScope("2026-08-10..2026-08-20", now)).toEqual({
+      createdAfter: rangeStart.toISOString(),
+      createdBefore: rangeEnd.toISOString(),
+    });
   });
 });

@@ -331,7 +331,9 @@ export function OrderQueue({
           ? t("No orders today")
           : t("No {{status}} orders today", { status: t(filter) })
       : customDate
-        ? t("No orders on {{date}}", { date: customDate })
+        ? customDate.includes("..")
+          ? t("No orders in this period")
+          : t("No orders on {{date}}", { date: customDate })
         : filter === "event"
           ? t("No event orders yet")
           : filter === "all"

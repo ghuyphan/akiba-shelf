@@ -69,6 +69,20 @@ export function useAdminSalesSummary({
         start: new Date(now.getTime() - maxSalesSummaryRangeMs),
         end: now,
       };
+    } else if (normalized.includes("..")) {
+      const [startStr, endStr] = normalized.split("..");
+      const startMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startStr);
+      const endMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(endStr);
+      if (startMatch && endMatch) {
+        const [, sy, sm, sd] = startMatch;
+        const [, ey, em, ed] = endMatch;
+        range = {
+          start: new Date(Number(sy), Number(sm) - 1, Number(sd), 0, 0, 0, 0),
+          end: new Date(Number(ey), Number(em) - 1, Number(ed) + 1, 0, 0, 0, 0),
+        };
+      } else {
+        range = getLocalOrderDayBounds(now);
+      }
     } else {
       const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
       if (match) {

@@ -22,6 +22,33 @@ function formatIsoDate(year: number, month: number, day: number) {
   return `${year}-${pad(month)}-${pad(day)}`;
 }
 
+function parseIsoParts(dateStr: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (!match) return null;
+  return {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+  };
+}
+
+function getPastDaysIsoRange(daysAgo: number) {
+  const now = new Date();
+  const past = new Date(now);
+  past.setDate(past.getDate() - (daysAgo - 1));
+  const fromIso = formatIsoDate(
+    past.getFullYear(),
+    past.getMonth() + 1,
+    past.getDate(),
+  );
+  const toIso = formatIsoDate(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    now.getDate(),
+  );
+  return `${fromIso}..${toIso}`;
+}
+
 export function OrderDateFilterPicker({
   value,
   onChange,
@@ -30,21 +57,34 @@ export function OrderDateFilterPicker({
   const { locale, t } = usePlatformI18n();
   const dateLocale = locale === "vi" ? "vi-VN" : "en-US";
   const [open, setOpen] = useState(false);
+  const [draftStart, setDraftStart] = useState<string | null>(null);
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
 
   const isToday = value === true || value === "today";
   const isAllTime = value === false || value === "all";
-  const customDateStr = !isToday && !isAllTime ? String(value) : "";
+  const customStr = !isToday && !isAllTime ? String(value) : "";
 
-  const customParts = useMemo(() => {
-    if (!customDateStr) return null;
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(customDateStr);
-    if (!match) return null;
-    return {
-      year: Number(match[1]),
-      month: Number(match[2]),
-      day: Number(match[3]),
-    };
-  }, [customDateStr]);
+  const parsedRange = useMemo(() => {
+    if (!customStr) return null;
+    if (customStr.includes("..")) {
+      const [startStr, endStr] = customStr.split("..");
+      const startParts = parseIsoParts(startStr);
+      const endParts = parseIsoParts(endStr);
+      if (startParts && endParts) {
+        return { start: startStr, end: endStr, startParts, endParts };
+      }
+    }
+    const singleParts = parseIsoParts(customStr);
+    if (singleParts) {
+      return {
+        start: customStr,
+        end: customStr,
+        startParts: singleParts,
+        endParts: singleParts,
+      };
+    }
+    return null;
+  }, [customStr]);
 
   const today = useMemo(() => {
     const now = new Date();
@@ -52,19 +92,34 @@ export function OrderDateFilterPicker({
       year: now.getFullYear(),
       month: now.getMonth() + 1,
       day: now.getDate(),
+      iso: formatIsoDate(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        now.getDate(),
+      ),
     };
   }, []);
 
   const [view, setView] = useState({
-    year: customParts?.year ?? today.year,
-    month: customParts?.month ?? today.month,
+    year: parsedRange?.startParts.year ?? today.year,
+    month: parsedRange?.startParts.month ?? today.month,
   });
 
   useEffect(() => {
-    if (customParts) {
-      setView({ year: customParts.year, month: customParts.month });
+    if (parsedRange) {
+      setView({
+        year: parsedRange.startParts.year,
+        month: parsedRange.startParts.month,
+      });
     }
-  }, [customParts]);
+  }, [parsedRange]);
+
+  useEffect(() => {
+    if (!open) {
+      setDraftStart(null);
+      setHoveredDate(null);
+    }
+  }, [open]);
 
   const {
     refs,
@@ -78,7 +133,7 @@ export function OrderDateFilterPicker({
     open,
     onOpenChange: setOpen,
     role: "dialog",
-    maxHeight: 480,
+    maxHeight: 520,
     scaleTransition: false,
   });
 
@@ -110,34 +165,99 @@ export function OrderDateFilterPicker({
     setView({ year: next.getFullYear(), month: next.getMonth() + 1 });
   }
 
-  function handleSelectDay(year: number, month: number, day: number) {
-    const iso = formatIsoDate(year, month, day);
-    onChange(iso);
-    setOpen(false);
+  function handleSelectDay(iso: string) {
+    if (!draftStart) {
+      // First click: start range selection
+      setDraftStart(iso);
+    } else {
+      // Second click: finish range selection
+      if (draftStart === iso) {
+        onChange(iso);
+      } else {
+        const start = draftStart < iso ? draftStart : iso;
+        const end = draftStart < iso ? iso : draftStart;
+        onChange(`${start}..${end}`);
+      }
+      setDraftStart(null);
+      setOpen(false);
+    }
   }
 
   function handleSelectToday() {
+    setDraftStart(null);
     onChange(true);
     setOpen(false);
   }
 
+  function handleSelectLast7Days() {
+    setDraftStart(null);
+    onChange(getPastDaysIsoRange(7));
+    setOpen(false);
+  }
+
+  function handleSelectLast30Days() {
+    setDraftStart(null);
+    onChange(getPastDaysIsoRange(30));
+    setOpen(false);
+  }
+
   function handleSelectAllTime() {
+    setDraftStart(null);
     onChange(false);
     setOpen(false);
   }
+
+  // Active range bounds for rendering calendar days
+  const activeBounds = useMemo(() => {
+    if (draftStart) {
+      const second = hoveredDate ?? draftStart;
+      const start = draftStart < second ? draftStart : second;
+      const end = draftStart < second ? second : draftStart;
+      return { start, end };
+    }
+    if (parsedRange) {
+      return { start: parsedRange.start, end: parsedRange.end };
+    }
+    return null;
+  }, [draftStart, hoveredDate, parsedRange]);
 
   const triggerLabel = isToday
     ? t("Today")
     : isAllTime
       ? t("All time")
-      : customParts
-        ? new Intl.DateTimeFormat(dateLocale, {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }).format(
-            new Date(customParts.year, customParts.month - 1, customParts.day),
-          )
+      : parsedRange
+        ? parsedRange.start === parsedRange.end
+          ? new Intl.DateTimeFormat(dateLocale, {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }).format(
+              new Date(
+                parsedRange.startParts.year,
+                parsedRange.startParts.month - 1,
+                parsedRange.startParts.day,
+              ),
+            )
+          : `${new Intl.DateTimeFormat(dateLocale, {
+              day: "numeric",
+              month: "short",
+            }).format(
+              new Date(
+                parsedRange.startParts.year,
+                parsedRange.startParts.month - 1,
+                parsedRange.startParts.day,
+              ),
+            )} – ${new Intl.DateTimeFormat(dateLocale, {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }).format(
+              new Date(
+                parsedRange.endParts.year,
+                parsedRange.endParts.month - 1,
+                parsedRange.endParts.day,
+              ),
+            )}`
         : t("Today");
 
   return (
@@ -184,15 +304,31 @@ export function OrderDateFilterPicker({
                 className={`order-date-preset-btn ${isToday ? "active" : ""}`}
                 onClick={handleSelectToday}
               >
-                <CalendarDays size={13} />
+                <CalendarDays size={12} />
                 <span>{t("Today")}</span>
+              </button>
+              <button
+                type="button"
+                className={`order-date-preset-btn ${customStr === getPastDaysIsoRange(7) ? "active" : ""}`}
+                onClick={handleSelectLast7Days}
+              >
+                <Calendar size={12} />
+                <span>{t("7 days")}</span>
+              </button>
+              <button
+                type="button"
+                className={`order-date-preset-btn ${customStr === getPastDaysIsoRange(30) ? "active" : ""}`}
+                onClick={handleSelectLast30Days}
+              >
+                <Calendar size={12} />
+                <span>{t("30 days")}</span>
               </button>
               <button
                 type="button"
                 className={`order-date-preset-btn ${isAllTime ? "active" : ""}`}
                 onClick={handleSelectAllTime}
               >
-                <History size={13} />
+                <History size={12} />
                 <span>{t("All time")}</span>
               </button>
             </div>
@@ -234,27 +370,45 @@ export function OrderDateFilterPicker({
                 const year = date.getFullYear();
                 const month = date.getMonth() + 1;
                 const day = date.getDate();
+                const iso = formatIsoDate(year, month, day);
                 const sameMonth = month === view.month;
-                const isSelected =
-                  Boolean(customParts) &&
-                  customParts?.year === year &&
-                  customParts?.month === month &&
-                  customParts?.day === day;
-                const isCurrentDay =
-                  today.year === year &&
-                  today.month === month &&
-                  today.day === day;
+
+                const isStart = activeBounds?.start === iso;
+                const isEnd = activeBounds?.end === iso;
+                const inRange =
+                  Boolean(activeBounds) &&
+                  activeBounds!.start <= iso &&
+                  iso <= activeBounds!.end;
+
+                const isCurrentDay = today.iso === iso;
+
+                let dayClass = sameMonth ? "" : "outside";
+                if (isStart && isEnd) {
+                  dayClass += " active";
+                } else if (isStart) {
+                  dayClass += " range-start active";
+                } else if (isEnd) {
+                  dayClass += " range-end active";
+                } else if (inRange) {
+                  dayClass += " in-range";
+                }
+                if (isCurrentDay && !inRange) {
+                  dayClass += " is-today";
+                }
 
                 return (
                   <button
                     key={date.toISOString()}
                     type="button"
-                    className={`${sameMonth ? "" : "outside"} ${isSelected ? "active" : ""} ${isCurrentDay && !isSelected ? "is-today" : ""}`.trim()}
+                    className={dayClass.trim()}
                     aria-label={new Intl.DateTimeFormat(dateLocale, {
                       dateStyle: "full",
                     }).format(date)}
-                    aria-current={isSelected ? "date" : undefined}
-                    onClick={() => handleSelectDay(year, month, day)}
+                    aria-current={isStart || isEnd ? "date" : undefined}
+                    onMouseEnter={() => {
+                      if (draftStart) setHoveredDate(iso);
+                    }}
+                    onClick={() => handleSelectDay(iso)}
                   >
                     {day}
                   </button>

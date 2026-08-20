@@ -48,6 +48,21 @@ export function getLocalOrderDateScope(
       createdBefore: end.toISOString(),
     };
   }
+  if (normalized.includes("..")) {
+    const [startStr, endStr] = normalized.split("..");
+    const startMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startStr);
+    const endMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(endStr);
+    if (startMatch && endMatch) {
+      const [, sy, sm, sd] = startMatch;
+      const [, ey, em, ed] = endMatch;
+      const start = new Date(Number(sy), Number(sm) - 1, Number(sd), 0, 0, 0, 0);
+      const end = new Date(Number(ey), Number(em) - 1, Number(ed) + 1, 0, 0, 0, 0);
+      return {
+        createdAfter: start.toISOString(),
+        createdBefore: end.toISOString(),
+      };
+    }
+  }
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
   if (!match) return {};
   const [, y, m, d] = match;
