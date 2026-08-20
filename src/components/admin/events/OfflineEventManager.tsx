@@ -66,7 +66,7 @@ import { useToast } from "../../ui/ToastProvider";
 import { ConfirmationDialog } from "../../ui/ConfirmationDialog";
 import { EmptyState } from "../../ui/EmptyState";
 import { StatusPill } from "../../ui/StatusPill";
-import { useOfflineEventSync } from "./useOfflineEventSync";
+import { useOfflineEventSync } from "../../../hooks/admin/useOfflineEventSync";
 import { EventPinDialog } from "../../ui/EventPinDialog";
 import {
   hasEventDevicePin,

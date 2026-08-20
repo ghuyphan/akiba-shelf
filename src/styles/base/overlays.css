@@ -194,7 +194,7 @@
 
   .mobile-sheet-modal .modal-footer {
     width: calc(100% + 2 * var(--sheet-horizontal-padding));
-    max-width: calc(100vw - 2px);
+    max-width: none;
     box-sizing: border-box;
     bottom: calc(-1 * var(--sheet-bottom-padding));
     margin-inline: calc(-1 * var(--sheet-horizontal-padding));

@@ -258,6 +258,7 @@ const vi: Record<string, string> = {
   "There is nothing at this address. The link may be old, mistyped, or moved to another part of Matsuri.":
     "Không có nội dung tại địa chỉ này. Liên kết có thể đã cũ, bị nhập sai hoặc được chuyển sang phần khác của Matsuri.",
   "Back to Matsuri": "Về Matsuri",
+  "Demo booth": "Gian hàng demo",
   "Visit the demo booth": "Ghé gian hàng demo",
   "Missing path:": "Đường dẫn không tồn tại:",
   "Lost booth notice": "Thông báo gian hàng thất lạc",
@@ -396,6 +397,10 @@ const vi: Record<string, string> = {
   "Create your shop": "Tạo gian hàng",
   "Made for independent artists, conventions, and pop-up booths.":
     "Dành cho artist độc lập, hội chợ và gian hàng pop-up.",
+  "Zalo support": "Hỗ trợ qua Zalo",
+  "Need help? Chat on Zalo": "Cần hỗ trợ? Chat qua Zalo",
+  "Artist support on Zalo": "Hỗ trợ artist qua Zalo",
+  "Contact support": "Liên hệ hỗ trợ",
   "Say hello on Zalo": "Nhắn Matsuri qua Zalo",
   "Chat with Matsuri on Zalo": "Nhắn với Matsuri qua Zalo",
   "Welcome back": "Chào mừng bạn trở lại",
@@ -1012,8 +1017,7 @@ const vi: Record<string, string> = {
   "Color presets": "Màu có sẵn",
   "Accessible contrast": "Độ tương phản đạt chuẩn",
   "Recommended accessible shade": "Sắc độ dễ đọc được đề xuất",
-  "{{ratio}}:1 against {{surface}}.":
-    "Tỷ lệ {{ratio}}:1 trên {{surface}}.",
+  "{{ratio}}:1 against {{surface}}.": "Tỷ lệ {{ratio}}:1 trên {{surface}}.",
   "Current {{ratio}}:1; target {{target}}:1 against {{surface}}.":
     "Hiện tại {{ratio}}:1; mục tiêu {{target}}:1 trên {{surface}}.",
   "Use {{color}}": "Dùng {{color}}",

@@ -16,3 +16,25 @@
   .payment-transfer-card { grid-template-columns: 1fr; }
   .payment-transfer-card>span { grid-column: auto; }
 }
+
+@media (max-width: 760px) {
+  .modal-backdrop:not(.mobile-sheet-backdrop) {
+    padding: 12px;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .modal:not(.mobile-sheet-modal) {
+    --modal-padding-inline: 14px;
+    --modal-padding-block: 14px;
+    width: min(100% - 16px, 620px) !important;
+    max-height: 88vh;
+    padding: var(--modal-padding-block) var(--modal-padding-inline);
+    border-radius: 16px;
+    margin: 0 auto;
+  }
+
+  .payment-modal:not(.mobile-sheet-modal) {
+    width: min(100% - 16px, 860px) !important;
+  }
+}

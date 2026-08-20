@@ -53,3 +53,38 @@
   .booth-card-redesign .social-qr-card { grid-template-rows: 22px auto; }
 }
 
+.booth-card {
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: var(--soft-shadow);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.booth-detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.booth-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  border: 1px solid var(--soft-line);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.booth-chip svg {
+  color: var(--teal);
+  flex-shrink: 0;
+}
+

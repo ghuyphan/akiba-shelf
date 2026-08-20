@@ -115,6 +115,6 @@
 .designer-preview-document.device-phone .product-grid:not(.product-grid-list) { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 9px !important; }
 .designer-preview-document.device-phone .product-grid:not(.product-grid-list) .product-card { grid-template-columns: 1fr !important; grid-template-rows: 126px minmax(128px, 1fr) !important; min-height: 254px !important; height: auto !important; }
 .designer-preview-document.device-phone .product-grid:not(.product-grid-list) .product-image-wrap { height: 126px !important; }
-.designer-preview-document.device-phone .product-card-description,.designer-preview-document.device-phone .product-card .item-code { display: none !important; }
+.designer-preview-document.device-phone .product-card-description { display: none !important; }
 .designer-preview-document.device-phone .product-card-body { grid-template-rows: minmax(0, 1fr) auto !important; gap: 6px !important; padding: 9px 10px !important; }
 .designer-preview-document.device-phone .product-card h3 { min-height: 0 !important; font-size: 11px !important; }

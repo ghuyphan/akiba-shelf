@@ -1,90 +1,167 @@
-@keyframes gacha-mobile-portal-arrive {
+@keyframes gacha-mobile-portal-arrive-top {
   from {
     opacity: 0;
-    scale: 1.035;
+    transform: translateY(-16px);
   }
-}
-
-@keyframes gacha-mobile-portal-enter-genshin {
-  75% {
+  to {
     opacity: 1;
-  }
-  100% {
-    opacity: 0;
+    transform: translateY(0);
   }
 }
 
-@keyframes gacha-mobile-portal-enter-hsr {
-  75% {
+@keyframes gacha-mobile-portal-arrive-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
     opacity: 1;
-  }
-  100% {
-    opacity: 0;
+    transform: translateY(0);
   }
 }
 
-@keyframes gacha-mobile-portal-dismiss-genshin {
+@keyframes gacha-mobile-seam-arrive {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
   to {
-    opacity: 0;
-    transform: translateY(-12%);
-  }
-}
-
-@keyframes gacha-mobile-portal-dismiss-hsr {
-  to {
-    opacity: 0;
-    transform: translateY(12%);
-  }
-}
-
-@keyframes gacha-mobile-logo-launch {
-  75% {
     opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes gacha-mobile-rift-breathe {
-  to {
-    opacity: 0.68;
-    scale: 1.06 1;
-  }
-}
-
-@keyframes gacha-mobile-seam-breathe {
-  to {
-    opacity: 0.52;
-    scale: 0.94 1;
-  }
-}
-
-@keyframes gacha-mobile-rift-launch {
-  45% {
-    opacity: 0.9;
-    scale: 1.18 1.4;
-  }
-  100% {
-    opacity: 0;
-    scale: 1.5 2.4;
+    transform: scaleX(1);
   }
 }
 
 @keyframes gacha-mobile-seam-launch {
-  55% {
+  0% {
     opacity: 1;
-    scale: 1.15 1;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(4);
   }
   100% {
     opacity: 0;
-    scale: 2.2 1;
+    transform: scaleY(18);
+  }
+}
+
+@keyframes gacha-mobile-launch-expand-top {
+  0% {
+    clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
+  }
+  100% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes gacha-mobile-launch-expand-bottom {
+  0% {
+    clip-path: polygon(0 50%, 100% 50%, 100% 100%, 0 100%);
+  }
+  100% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes gacha-mobile-dismiss-up {
+  to {
+    opacity: 0;
+    transform: translateY(-30%);
+  }
+}
+
+@keyframes gacha-mobile-dismiss-down {
+  to {
+    opacity: 0;
+    transform: translateY(30%);
+  }
+}
+
+@keyframes gacha-mobile-content-launch {
+  0%,
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06) translateY(-14px);
+  }
+}
+
+@keyframes gacha-mobile-art-arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.65) rotate(-10deg);
+  }
+  to {
+    opacity: 0.85;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes gacha-mobile-currency-float-genshin {
+  0% {
+    transform: translate3d(0, -6px, 0) rotate(-6deg);
+  }
+  50% {
+    transform: translate3d(2px, 0px, 0) rotate(-2deg) scale(1.03);
+  }
+  100% {
+    transform: translate3d(0, 6px, 0) rotate(2deg);
+  }
+}
+
+@keyframes gacha-mobile-currency-float-hsr {
+  0% {
+    transform: translate3d(0, -5px, 0) rotate(6deg);
+  }
+  50% {
+    transform: translate3d(-2px, 1px, 0) rotate(9deg) scale(1.03);
+  }
+  100% {
+    transform: translate3d(0, 5px, 0) rotate(13deg);
+  }
+}
+
+@keyframes gacha-mobile-wish-launch {
+  0% {
+    opacity: 0.85;
+    transform: scale(1) rotate(0deg);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.4) rotate(14deg) translateY(-8px);
+    filter: drop-shadow(0 0 16px rgb(160 220 255 / 90%));
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.2) rotate(26deg) translateY(-28px);
+    filter: drop-shadow(0 0 35px rgb(160 220 255 / 100%));
+  }
+}
+
+@keyframes gacha-mobile-ticket-launch {
+  0% {
+    opacity: 0.85;
+    transform: scale(1) rotate(8deg);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.4) rotate(-3deg) translateY(-8px);
+    filter: drop-shadow(0 0 16px rgb(180 150 255 / 90%));
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.2) rotate(-16deg) translateY(-28px);
+    filter: drop-shadow(0 0 35px rgb(180 150 255 / 100%));
   }
 }
 
 @keyframes gacha-mobile-flash {
   0%,
-  68% {
+  65% {
     opacity: 0;
   }
   100% {

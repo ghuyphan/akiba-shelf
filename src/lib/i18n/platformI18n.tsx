@@ -55,6 +55,18 @@ export function usePlatformI18n() {
   return value;
 }
 
+export function useOptionalPlatformI18n(): PlatformI18nValue {
+  const value = useContext(PlatformI18nContext);
+  if (value) return value;
+  const locale = getInitialPlatformLocale();
+  return {
+    locale,
+    setLocale: savePlatformLocale,
+    t: (english, variables) =>
+      getPlatformTranslation(english, locale, variables),
+  };
+}
+
 export {
   getPlatformTranslation,
   platformVietnameseTranslations,

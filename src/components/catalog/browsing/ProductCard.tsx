@@ -77,7 +77,10 @@ export const ProductCard = memo(function ProductCard({ product, selected, viewMo
       </div>
       <div className="product-card-body">
         <div>
-          <div className="product-card-taxonomy"><span>{product.collection || product.category}</span>{product.featured && <span>{copy.featured}</span>}</div>
+          <div className="product-card-taxonomy">
+            <span>{product.collection || product.category}</span>
+            {product.featured && <span className="product-card-featured">{copy.featured}</span>}
+          </div>
           <h3>{product.name}</h3>
           {product.description && (
             <p className="product-card-description" title={product.description}>
@@ -90,7 +93,7 @@ export const ProductCard = memo(function ProductCard({ product, selected, viewMo
             <ProductPrice product={product} />
             <span className={`stock-line ${getStockTone(product)}`}>{isSoldOut ? copy.soldOut : product.quantity_available > 50 ? copy.availableCapped(50) : copy.available(product.quantity_available)}</span>
           </div>
-          <div className="product-card-actions" style={{ position: "relative", zIndex: 4 }}><span className="item-code">{product.item_code}</span><button type="button" className="product-add-button" disabled={isSoldOut} onClick={(event) => { event.stopPropagation(); onSelect(product, event); }} aria-label={isSoldOut ? copy.productSoldOut(product.name) : copy.addProduct(product.name)} title={isSoldOut ? copy.soldOut : copy.addToCart}><ShoppingCart size={16} /><span>{isSoldOut ? copy.unavailable : copy.addToCart}</span></button></div>
+          <div className="product-card-actions" style={{ position: "relative", zIndex: 4 }}><button type="button" className="product-add-button" disabled={isSoldOut} onClick={(event) => { event.stopPropagation(); onSelect(product, event); }} aria-label={isSoldOut ? copy.productSoldOut(product.name) : copy.addProduct(product.name)} title={isSoldOut ? copy.soldOut : copy.addToCart}><ShoppingCart size={16} /><span>{isSoldOut ? copy.unavailable : copy.addToCart}</span></button></div>
         </div>
       </div>
     </div>

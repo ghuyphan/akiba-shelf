@@ -10,8 +10,8 @@ import type { BoothSettings } from "../../../types/catalog";
 import { PageLoading } from "../../ui/PageLoading";
 import { getAuthErrorNotice } from "../../../lib/auth/authErrors";
 import { PasswordField } from "../../ui/PasswordField";
-import { AuthSecurityNote, AuthShell } from "../../ui/AuthShell";
-import { AuthDivider, GoogleAuthButton } from "../../ui/GoogleAuthButton";
+import { AuthSecurityNote, AuthShell } from "../../platform/AuthShell";
+import { AuthDivider, GoogleAuthButton } from "../../platform/GoogleAuthButton";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import {
   TurnstileWidget,

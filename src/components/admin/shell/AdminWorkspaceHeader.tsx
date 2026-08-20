@@ -33,7 +33,7 @@ import { safePublicUrl } from "../../../lib/branding";
 import type { BoothSettings, ShopMembership } from "../../../types/catalog";
 import type { AdminViewTab } from "./adminWorkspaceTypes";
 import { useAdminNavigationGuard } from "./AdminUnsavedChanges";
-import { PlatformLanguageToggle } from "../../ui/PlatformLanguageToggle";
+import { PlatformLanguageToggle } from "../../platform/PlatformLanguageToggle";
 
 type AdminWorkspaceHeaderProps = {
   booth: BoothSettings;

@@ -10,7 +10,8 @@ a {
   width: 100%;
   padding: 14px 16px 0;
   border: 0;
-  background: linear-gradient(var(--page-bg) 72%, transparent);
+  background: transparent;
+  pointer-events: none;
 }
 
 .app-header-surface {
@@ -26,7 +27,9 @@ a {
   border-radius: 20px;
   background: rgb(255 255 255 / 88%);
   box-shadow: 0 14px 38px rgb(26 38 60 / 10%);
-  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  pointer-events: auto;
 }
 
 .app-header-surface-simple {
@@ -278,4 +281,23 @@ a {
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
+}
+
+.brand-mark {
+  width: 46px;
+  height: 46px;
+  color: var(--coral);
+  background: #fff;
+  border: 2px solid var(--coral);
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 6%);
+}
+
+.brand-lockup-details h1 {
+  font-size: 20px;
+}
+
+.open-pill {
+  min-height: 40px;
+  border-radius: 999px;
 }

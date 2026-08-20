@@ -9,7 +9,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { SelectMenu } from "./SelectMenu";
-import { useAnchoredPopover } from "./useAnchoredPopover";
+import { useAnchoredPopover } from "../../hooks/shared/useAnchoredPopover";
 
 type DateTimeInputProps = {
   value: string;

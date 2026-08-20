@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { PlatformMark } from "./PlatformMark";
+import { PlatformMark } from "../platform/PlatformMark";
 import { PLATFORM_BRAND } from "../../lib/branding";
 
 interface PageLoadingProps {

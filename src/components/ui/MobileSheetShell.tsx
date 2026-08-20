@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { subscribeToMediaQuery } from "../../utils/mediaQuery";
-import { useMobileSheetDrag } from "./useMobileSheetDrag";
+import { useMobileSheetDrag } from "../../hooks/shared/useMobileSheetDrag";
 
 type MobileSheetShellProps = {
   children: ReactNode;

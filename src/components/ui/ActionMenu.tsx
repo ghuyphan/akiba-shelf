@@ -5,7 +5,7 @@ import {
   useListNavigation,
 } from "@floating-ui/react";
 import { type ReactNode, useRef, useState } from "react";
-import { useAnchoredPopover } from "./useAnchoredPopover";
+import { useAnchoredPopover } from "../../hooks/shared/useAnchoredPopover";
 
 export type ActionMenuItem = {
   id: string;

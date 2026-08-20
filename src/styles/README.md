@@ -8,7 +8,6 @@ Application code imports only the ownership entry files, never fragments:
 - `gacha/admin.css`: gacha editor.
 - `gacha/entry.css`: storefront gacha entry point.
 - `gacha/host.css`: gacha launch host.
-- `legacy.css`: compatibility rules pending incremental removal.
 
 The entry files are import manifests. Their order is part of the cascade
 contract, so add a rule to the owning fragment and do not alphabetize imports.

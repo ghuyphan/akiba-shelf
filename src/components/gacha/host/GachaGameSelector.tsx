@@ -47,6 +47,7 @@ type GachaGameSelectorProps = {
   launchingGame: GachaGameType | null;
   packDownload: GachaPackDownloadState;
   skipIntro: boolean;
+  lightweightMode?: boolean;
   onSaveOffline: () => void;
   onLaunch: (
     event: MouseEvent<HTMLAnchorElement>,
@@ -63,12 +64,16 @@ export function GachaGameSelector({
   launchingGame,
   packDownload,
   skipIntro,
+  lightweightMode = false,
   onSaveOffline,
   onLaunch,
 }: GachaGameSelectorProps) {
   return (
     <main
-      className={`gacha-game-select${skipIntro ? " skip-selector-intro" : ""}${launchingGame ? ` is-launching is-launching-${launchingGame}` : ""}`}
+      className={`gacha-game-select${skipIntro ? " skip-selector-intro" : ""}${launchingGame ? ` is-launching is-launching-${launchingGame}` : ""}${lightweightMode ? " is-lightweight" : ""}`}
+      aria-label={
+        shopName ? `${shopName} · ${copy.chooseGachaTitle}` : copy.chooseGachaTitle
+      }
       aria-busy={launchingGame !== null}
     >
       <div className="gacha-select-actions">
@@ -235,6 +240,7 @@ export function GachaGameSelector({
           })}
         </div>
       </section>
+
     </main>
   );
 }

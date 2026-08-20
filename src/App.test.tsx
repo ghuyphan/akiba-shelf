@@ -5,36 +5,36 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ configurePwa: vi.fn() }));
 
 vi.mock("./lib/offline/pwa", () => ({ configurePwa: mocks.configurePwa }));
-vi.mock("./pages/PlatformLayout", () => ({
+vi.mock("./pages/platform/PlatformLayout", () => ({
   PlatformLayout: () => (
     <div data-testid="platform-layout">
       <Outlet />
     </div>
   ),
 }));
-vi.mock("./pages/HomePage", () => ({ HomePage: () => <p>Home route</p> }));
-vi.mock("./pages/SupportPage", () => ({
+vi.mock("./pages/platform/HomePage", () => ({ HomePage: () => <p>Home route</p> }));
+vi.mock("./pages/platform/SupportPage", () => ({
   SupportPage: () => <p>Support route</p>,
 }));
-vi.mock("./pages/DashboardPage", () => ({
+vi.mock("./pages/admin/DashboardPage", () => ({
   DashboardPage: () => <p>Dashboard route</p>,
 }));
-vi.mock("./pages/NewShopPage", () => ({
+vi.mock("./pages/admin/NewShopPage", () => ({
   NewShopPage: () => <p>New shop route</p>,
 }));
-vi.mock("./pages/AdminPage", () => ({ AdminPage: () => <p>Admin route</p> }));
-vi.mock("./pages/CatalogPage", () => ({
+vi.mock("./pages/admin/AdminPage", () => ({ AdminPage: () => <p>Admin route</p> }));
+vi.mock("./pages/catalog/CatalogPage", () => ({
   CatalogPage: () => <p>Catalog route</p>,
 }));
-vi.mock("./pages/GachaPage", () => ({ GachaPage: () => <p>Gacha route</p> }));
-vi.mock("./pages/AuthPage", () => ({ AuthPage: () => <p>Auth route</p> }));
-vi.mock("./pages/AuthCallbackPage", () => ({
+vi.mock("./pages/catalog/GachaPage", () => ({ GachaPage: () => <p>Gacha route</p> }));
+vi.mock("./pages/auth/AuthPage", () => ({ AuthPage: () => <p>Auth route</p> }));
+vi.mock("./pages/auth/AuthCallbackPage", () => ({
   AuthCallbackPage: () => <p>Auth callback route</p>,
 }));
-vi.mock("./pages/SetPasswordPage", () => ({
+vi.mock("./pages/auth/SetPasswordPage", () => ({
   SetPasswordPage: () => <p>Set password route</p>,
 }));
-vi.mock("./pages/NotFoundPage", () => ({
+vi.mock("./pages/platform/NotFoundPage", () => ({
   NotFoundPage: () => <p>Not found route</p>,
 }));
 

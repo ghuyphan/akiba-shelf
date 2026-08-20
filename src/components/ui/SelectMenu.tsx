@@ -6,7 +6,7 @@ import {
 } from "@floating-ui/react";
 import { Check, ChevronDown } from "lucide-react";
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { useAnchoredPopover } from "./useAnchoredPopover";
+import { useAnchoredPopover } from "../../hooks/shared/useAnchoredPopover";
 
 export type SelectMenuOption = {
   value: string;

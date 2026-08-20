@@ -4,19 +4,44 @@
   }
 }
 
+.gacha-game-select.is-lightweight .gacha-portal-currency,
+.gacha-game-select.is-lightweight .gacha-hsr-ornament {
+  animation: none !important;
+}
+
+.gacha-game-select.is-lightweight .gacha-portal-glow {
+  display: none !important;
+}
+
+.gacha-game-select.is-lightweight .gacha-select-back,
+.gacha-game-select.is-lightweight .gacha-cache-btn,
+.gacha-game-select.is-lightweight .gacha-portal-enter {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: #151d30;
+}
+
+.gacha-game-select.is-lightweight .gacha-game-portal {
+  transition: width 200ms ease, opacity 150ms ease;
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   .gacha-game-portal,
   .gacha-game-portal::before,
   .gacha-portal-art,
   .gacha-portal-content,
   .gacha-portal-enter,
-  .gacha-portal-enter::before,
-  .gacha-portal-glow,
   .gacha-portal-currency,
-  .gacha-game-portals::after,
-  .gacha-game-select::after {
-    animation: none;
-    transition: none;
+  .gacha-game-select::after,
+  .gacha-game-portals::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .gacha-game-select.is-launching .gacha-game-portals::after {
+    display: none !important;
+    opacity: 0 !important;
   }
 
   .gacha-hsr-ornament {

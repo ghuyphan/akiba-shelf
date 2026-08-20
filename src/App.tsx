@@ -13,45 +13,45 @@ import { PageLoading } from "./components/ui/PageLoading";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
 
 const PlatformLayout = lazyWithRetry("platform-layout", () =>
-  import("./pages/PlatformLayout").then((m) => ({ default: m.PlatformLayout })),
+  import("./pages/platform/PlatformLayout").then((m) => ({ default: m.PlatformLayout })),
 );
 
 const HomePage = lazyWithRetry("home", () =>
-  import("./pages/HomePage").then((m) => ({ default: m.HomePage })),
+  import("./pages/platform/HomePage").then((m) => ({ default: m.HomePage })),
 );
 const SupportPage = lazyWithRetry("support", () =>
-  import("./pages/SupportPage").then((m) => ({ default: m.SupportPage })),
+  import("./pages/platform/SupportPage").then((m) => ({ default: m.SupportPage })),
 );
 const DashboardPage = lazyWithRetry("dashboard", () =>
-  import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })),
+  import("./pages/admin/DashboardPage").then((m) => ({ default: m.DashboardPage })),
 );
 const NewShopPage = lazyWithRetry("new-shop", () =>
-  import("./pages/NewShopPage").then((m) => ({ default: m.NewShopPage })),
+  import("./pages/admin/NewShopPage").then((m) => ({ default: m.NewShopPage })),
 );
 const AdminPage = lazyWithRetry("admin", () =>
-  import("./pages/AdminPage").then((m) => ({ default: m.AdminPage })),
+  import("./pages/admin/AdminPage").then((m) => ({ default: m.AdminPage })),
 );
 const CatalogPage = lazyWithRetry("catalog", () =>
-  import("./pages/CatalogPage").then((m) => ({ default: m.CatalogPage })),
+  import("./pages/catalog/CatalogPage").then((m) => ({ default: m.CatalogPage })),
 );
 const GachaPage = lazyWithRetry("gacha", () =>
-  import("./pages/GachaPage").then((m) => ({ default: m.GachaPage })),
+  import("./pages/catalog/GachaPage").then((m) => ({ default: m.GachaPage })),
 );
 const AuthPage = lazyWithRetry("auth", () =>
-  import("./pages/AuthPage").then((m) => ({ default: m.AuthPage })),
+  import("./pages/auth/AuthPage").then((m) => ({ default: m.AuthPage })),
 );
 const AuthCallbackPage = lazyWithRetry("auth-callback", () =>
-  import("./pages/AuthCallbackPage").then((m) => ({
+  import("./pages/auth/AuthCallbackPage").then((m) => ({
     default: m.AuthCallbackPage,
   })),
 );
 const SetPasswordPage = lazyWithRetry("set-password", () =>
-  import("./pages/SetPasswordPage").then((m) => ({
+  import("./pages/auth/SetPasswordPage").then((m) => ({
     default: m.SetPasswordPage,
   })),
 );
 const NotFoundPage = lazyWithRetry("not-found", () =>
-  import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
+  import("./pages/platform/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
 );
 
 function KeyedCatalogPage() {

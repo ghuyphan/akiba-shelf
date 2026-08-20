@@ -75,9 +75,7 @@ confirmation/feedback for fulfilment, payment, membership, and deletion.
 - `global.css`: tokens, resets, shared buttons, fields, modal, alert, and toast.
 - `catalog.css`: storefront, product, cart, checkout, and payment UI.
 - `admin.css`: platform, auth, dashboard, and admin workspace.
-- `gacha-admin.css`, `gacha-entry.css`, `gacha-host.css`: named surfaces only.
-- `legacy.css`: compatibility only. Add no new rules; migrate one slice at a
-  time using `docs/legacy-css-migration.md`.
+- `gacha/admin.css`, `gacha/entry.css`, `gacha/host.css`: named surfaces only.
 
 ## Storefront designer contract
 

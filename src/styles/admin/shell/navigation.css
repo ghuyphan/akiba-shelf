@@ -44,6 +44,7 @@
 .app-header .admin-nav-tab.active { border: 0; color: var(--ink); background: transparent; box-shadow: none; }
 .admin-nav-count { display: grid; place-items: center; min-width: 19px; height: 19px; padding: 0 4px; border-radius: 999px; color: #fff; background: var(--red); font-size: 9px; font-weight: 900; line-height: 1; pointer-events: none; }
 .admin-nav-count-products { color: var(--muted); background: color-mix(in srgb, var(--ink) 8%, #fff); }
+.admin-nav-mobile-settings { display: none !important; }
 
 @media (prefers-reduced-motion: reduce) {
   .app-header .admin-nav-tabs::before,
@@ -64,6 +65,6 @@
 @media (max-width: 1100px) {
   .admin-mobile-settings-page { grid-template-columns: minmax(0, 1fr); }
   .admin-mobile-settings-page > .admin-card { height: auto; }
-  .admin-workspace-header .admin-nav-storefront { display: none; }
-  .admin-workspace-header .admin-nav-mobile-settings { display: inline-flex; }
+  .admin-workspace-header .admin-nav-storefront { display: none !important; }
+  .admin-workspace-header .admin-nav-mobile-settings { display: inline-flex !important; }
 }

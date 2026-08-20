@@ -1,5 +1,5 @@
 /* Storefront section personalities */
-.style-featured-editorial .featured-banner { background: linear-gradient(115deg,#fff 0 64%,color-mix(in srgb,var(--blue) 9%,#fff) 64% 100%); }
+.style-featured-editorial .featured-banner { border-color: color-mix(in srgb, var(--coral) 22%, var(--line)); background: linear-gradient(115deg, #fff 0 60%, color-mix(in srgb, var(--coral) 18%, #fff) 60% 100%); }
 .style-featured-editorial .featured-banner::after { border-color: color-mix(in srgb,var(--navy) 5%,transparent); box-shadow: 0 0 0 18px color-mix(in srgb,var(--navy) 2.5%,transparent); }
 .style-featured-editorial .featured-banner-orbit { display: none; }
 .style-featured-editorial .featured-banner-image-main { border-radius: calc(var(--store-radius,16px) * .8); transform: none; }
@@ -38,7 +38,6 @@
 .style-product-minimal .product-card:hover { border-color: transparent !important; box-shadow: none !important; }
 .style-product-minimal .product-image-wrap { overflow: hidden; border-radius: calc(var(--store-radius,16px) * .75); }
 .style-product-minimal .product-card-body { padding-inline: 4px !important; }
-.style-product-minimal .product-card .item-code { background: transparent; }
 .style-product-framed .product-image-wrap { margin: 8px 8px 0; overflow: hidden; border: 1px solid var(--soft-line); border-radius: calc(var(--store-radius,16px) * .72); }
 .style-product-framed .product-card-body { padding: 12px 14px 14px !important; }
 .style-product-framed .product-card-list .product-image-wrap { margin: 8px 0 8px 8px; }

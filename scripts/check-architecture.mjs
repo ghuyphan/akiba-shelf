@@ -6,7 +6,7 @@ const sourcePattern = /\.(?:ts|tsx)$/;
 const importPattern = /(?:from\s+|import\s*\(|vi\.mock\()\s*["']([^"']+)["']/g;
 const supabaseImportAllowlist = new Set([
   "src/components/admin/auth/LoginPanel.tsx",
-  "src/components/ui/GoogleAuthButton.tsx",
+  "src/components/platform/GoogleAuthButton.tsx",
   "src/hooks/admin/useAdminSession.ts",
   "src/lib/offline/pwa.ts",
   "src/lib/realtime.ts",

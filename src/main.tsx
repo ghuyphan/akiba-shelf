@@ -2,7 +2,6 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles/base/fonts.css";
 import "./styles/base/global.css";
-import "./styles/legacy.css";
 import { resetDocumentBranding } from "./lib/branding";
 import { restoreRedirect } from "./lib/auth/authUrls";
 import { getRoutePrefetchTarget } from "./lib/routePrefetch";
@@ -62,13 +61,13 @@ const prefetchTarget = getRoutePrefetchTarget(
 );
 
 if (prefetchTarget === "catalog") {
-  void import("./pages/CatalogPage").catch(() => {});
+  void import("./pages/catalog/CatalogPage").catch(() => {});
 } else if (prefetchTarget === "admin") {
-  void import("./pages/AdminPage").catch(() => {});
+  void import("./pages/admin/AdminPage").catch(() => {});
 } else if (prefetchTarget === "dashboard") {
-  void import("./pages/DashboardPage").catch(() => {});
+  void import("./pages/admin/DashboardPage").catch(() => {});
 } else if (prefetchTarget === "auth") {
-  void import("./pages/AuthPage").catch(() => {});
+  void import("./pages/auth/AuthPage").catch(() => {});
 }
 
 const appChunkRetryKey = "chunk-reload:app";

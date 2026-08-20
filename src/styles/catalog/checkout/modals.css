@@ -123,3 +123,14 @@
 
 @keyframes payment-loading-pulse { 0%,100% { opacity: .58; } 50% { opacity: 1; } }
 @keyframes payment-loading-sweep { 0% { transform: translateX(-100%); } 65%,100% { transform: translateX(100%); } }
+
+.order-summary-panel {
+  background: var(--surface-soft, #f8fafc);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+  align-items: start;
+}

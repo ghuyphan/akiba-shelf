@@ -43,13 +43,14 @@ src/
   components/admin/       Admin features: auth, dashboard, design, events,
                           gacha, orders, products, settings, shell, team;
                           shared holds admin-only cross-feature controls
-  components/catalog/     Storefront features: browsing, cart, checkout,
-                          overlays, shell, social
+  components/catalog/     Storefront features: booth, browsing, cart, checkout,
+                          layout, overlays, shell, social
+  components/platform/    Platform landing art, brand marks, and public shell
   components/gacha/host/  Public gacha host and selector presentation
-  components/ui/          Shared primitives
-  hooks/admin/             Admin session and order Realtime orchestration
+  components/ui/          Shared primitives & design-system controls
+  hooks/admin/             Admin session, order Realtime, and offline event sync
   hooks/catalog/           Storefront, cart, and checkout orchestration
-  hooks/shared/            Cross-feature UI and async behavior
+  hooks/shared/            Cross-feature UI, gestures, popovers, and async behavior
   lib/api/                 Supabase/Storage/Edge Function domain modules
   lib/auth/                Auth routing, URLs, validation, safe errors
   lib/gacha/               Game rules, featured limits, launch handoff
@@ -57,12 +58,14 @@ src/
   lib/offline/             PWA, caches, cart, checkout, event ledger
   lib/schemas.ts           Runtime validation
   lib/realtime.ts          Catalog and admin order subscriptions
-  pages/                   Route composition
+  pages/admin/             Admin workspace, dashboard, and shop creation routes
+  pages/auth/              Authentication, callback, and password setup routes
+  pages/catalog/           Public storefront, gacha, and unavailable fallback routes
+  pages/platform/          Landing, support, not-found, and platform layout routes
   styles/base/             Global tokens, resets, and shared primitives
   styles/admin/            Platform, auth, dashboard, and admin workspace CSS
   styles/catalog/          Storefront, product, cart, and checkout CSS
   styles/gacha/            Gacha admin, entry, and host CSS
-  styles/legacy.css        Compatibility-only CSS pending incremental removal
   types/                   Shared catalog and gacha models
   utils/                   Pricing, theme, images, VietQR, formatting
 e2e/                       Playwright specs and Supabase HTTP mock

@@ -13,7 +13,7 @@ import {
 } from "react";
 import { usePlatformI18n } from "../../lib/i18n/platformI18n";
 import { normalizeHexColor, readableTextColor } from "../../utils/color";
-import { useAnchoredPopover } from "./useAnchoredPopover";
+import { useAnchoredPopover } from "../../hooks/shared/useAnchoredPopover";
 
 const DEFAULT_COLORS = [
   "#5f8d55",

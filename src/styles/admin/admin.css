@@ -26,7 +26,6 @@
 @import "./design/sidebar-typography.css";
 @import "./products/promotions.css";
 @import "./shared/actions-dialogs.css";
-@import "./overrides/legacy-compat.css";
 @import "./events/offline.css";
 @import "./overrides/remediation.css";
 @import "./shared/scroll-lists.css";

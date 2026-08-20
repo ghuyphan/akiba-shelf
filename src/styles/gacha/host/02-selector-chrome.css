@@ -2,26 +2,11 @@
   --portal-ease: cubic-bezier(0.22, 0.74, 0.2, 1);
   position: fixed;
   inset: 0;
-  overflow: auto;
+  overflow: hidden;
   color: #ffffff;
-  background:
-    radial-gradient(circle at 50% -15%, rgb(91 119 184 / 22%), transparent 38%),
-    #050812;
+  background: #070b16;
 }
 
-.gacha-game-select::before {
-  content: "";
-  position: fixed;
-  z-index: 7;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.16;
-  background-image:
-    linear-gradient(rgb(255 255 255 / 8%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 8%) 1px, transparent 1px);
-  background-size: 52px 52px;
-  -webkit-mask-image: linear-gradient(to bottom, black, transparent 48%); mask-image: linear-gradient(to bottom, black, transparent 48%);
-}
 
 .gacha-select-actions {
   position: fixed;
@@ -132,59 +117,11 @@
   font-variant-numeric: tabular-nums;
 }
 
-.gacha-select-panel,
-.gacha-game-portals {
-  position: relative;
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-
-.gacha-select-heading {
+.gacha-select-panel {
   position: fixed;
-  z-index: 15;
-  top: max(22px, env(safe-area-inset-top));
-  left: 50%;
-  width: min(580px, calc(100% - 440px));
-  text-align: center;
-  text-shadow: 0 3px 18px rgb(0 0 0 / 55%);
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.gacha-select-heading > span {
-  display: block;
-  color: rgb(255 255 255 / 65%);
-  font-size: 0.64rem;
-  font-weight: 800;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-}
-
-.gacha-select-heading h1 {
-  margin: 4px 0 0;
-  font-size: clamp(1.35rem, 2.4vw, 2.15rem);
-  font-weight: 650;
-  letter-spacing: -0.025em;
-  line-height: 1.05;
-}
-
-.gacha-select-heading p {
-  margin: 6px auto 0;
-  color: rgb(255 255 255 / 72%);
-  font-size: clamp(0.76rem, 1vw, 0.92rem);
-  line-height: 1.4;
-}
-
-.gacha-select-heading strong {
-  display: inline-block;
-  max-width: 100%;
-  margin-top: 8px;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
-  color: #f6dfaa;
-  font-size: 0.64rem;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
 }

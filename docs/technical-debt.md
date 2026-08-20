@@ -14,14 +14,9 @@ each item against the current tree before implementing it.
 
 ## Priority 2: CSS ownership
 
-`src/styles/legacy.css` remains large. Follow `legacy-css-migration.md` one
-surface at a time with desktop/phone and product grid/list coverage. Do not mix
-selector relocation with a redesign. Shared `.field-error-msg` ownership has
-moved to `styles/base/utilities.css`; continue with the next independently
-verifiable primitive or route surface.
-
-After legacy work, consider route-splitting more admin CSS only if behavior and
-load order remain stable.
+`src/styles/legacy.css` has been fully retired and removed. All shared primitives,
+keyframes, controls, and screen-specific declarations have been migrated into their
+owning manifests (`styles/base/`, `styles/admin/`, `styles/catalog/`, `styles/gacha/`).
 
 ## Priority 2: verification and tooling
 

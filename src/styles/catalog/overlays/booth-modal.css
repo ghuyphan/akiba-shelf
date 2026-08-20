@@ -21,6 +21,29 @@
 .booth-modal-note span { font-size: 11px; line-height: 1.5; }
 .booth-modal-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
 .booth-modal-section-heading span { color: var(--coral); font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
-.booth-modal-section-heading strong { font-size: 14px; }
-.booth-modal-social-grid { margin-top: 4px; }
+.booth-modal-social-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 
+.booth-modal-social-grid {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.booth-modal-social-grid .social-qr-card {
+  width: 170px;
+  flex-shrink: 0;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.booth-modal-social-grid .social-qr-header {
+  font-size: 13px;
+}
