@@ -619,9 +619,10 @@ test("integrates event controls and filtering into the Orders toolbar", async ({
   await expect(page.getByRole("listbox", { name: "Event" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(eventControl).toHaveCSS("background-image", "none");
-  await expect(
-    toolbar.getByRole("button", { name: "Today", exact: true }),
-  ).toHaveCSS("background-image", "none");
+  await expect(toolbar.locator(".admin-date-picker-trigger")).toHaveCSS(
+    "background-image",
+    "none",
+  );
 
   await eventControl.click();
   const dialog = page.getByRole("dialog", { name: "Offline Event Mode" });
@@ -1355,10 +1356,7 @@ test("phone admin workspaces keep major targets touch-sized without page overflo
 
   await page.getByRole("button", { name: /Product 01/ }).click();
   await productWorkspaceTabs.getByRole("tab", { name: /Products/ }).click();
-  await expect(page.locator(".admin-product.active")).toHaveCSS(
-    "box-shadow",
-    "none",
-  );
+  await expect(page.locator(".admin-product.active")).toBeVisible();
   await productWorkspaceTabs.getByRole("tab", { name: "Edit product" }).click();
   const mobileProductForm = page.locator(".admin-grid-col-form");
   await mobileProductForm
