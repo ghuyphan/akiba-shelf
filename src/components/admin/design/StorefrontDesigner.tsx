@@ -12,7 +12,7 @@ import {
   CreditCard,
   GripVertical,
   Languages,
-  LayoutTemplate,
+  LayoutGrid,
   Link2,
   MessageSquareText,
   Minus,
@@ -24,10 +24,10 @@ import {
   RefreshCw,
   RotateCcw,
   Save,
+  SlidersHorizontal,
   Smartphone,
   Sparkles,
   Store,
-  Type,
   Undo2,
 } from "lucide-react";
 import type {
@@ -163,8 +163,8 @@ const productStyleOptions = [
   ["playful", "Playful", "Colorful collectible cards"],
 ] as const;
 const inspectorTabs = [
-  ["layout", LayoutTemplate, "Layout"],
-  ["content", Type, "Content"],
+  ["layout", LayoutGrid, "Layout"],
+  ["content", SlidersHorizontal, "Content"],
   ["style", Palette, "Style"],
 ] as const;
 
@@ -1056,8 +1056,8 @@ export function StorefrontDesigner({
     >
       <aside className="builder-sidebar admin-surface">
         <div className="builder-sidebar-head">
-          <span className="builder-logo">
-            <LayoutTemplate size={18} />
+          <span className="builder-logo" aria-hidden="true">
+            <Store size={18} />
           </span>
           {sidebarOpen && (
             <div>
@@ -1915,7 +1915,7 @@ export function StorefrontDesigner({
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
-                          strokeWidth="2.4"
+                          strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         >

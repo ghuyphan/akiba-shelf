@@ -10,7 +10,6 @@ import {
   Heart,
   HelpCircle,
   Languages,
-  LayoutTemplate,
   LogOut,
   Package,
   Settings2,
@@ -172,7 +171,7 @@ export function AdminWorkspaceHeader({
               aria-current={viewTab === "design" ? "page" : undefined}
               onClick={() => requestNavigation(() => onViewTabChange("design"))}
             >
-              <LayoutTemplate size={15} /> {t("Storefront")}
+              <Store size={15} /> {t("Storefront")}
             </button>
           )}
           <button
