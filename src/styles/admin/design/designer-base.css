@@ -173,43 +173,47 @@
 
 .sample-featured-minimal {
   background: #ffffff;
-  border-color: var(--line);
+  border: 1.5px solid color-mix(in srgb, var(--line) 85%, var(--ink));
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 .sample-featured-minimal::before {
   content: "";
   position: absolute;
-  inset: 4px 10px;
-  background: var(--surface-soft);
-  border: 1px solid var(--soft-line);
-  border-radius: 4px;
+  left: 4px;
+  top: 7px;
+  width: 10px;
+  height: 2.5px;
+  background: var(--ink);
+  border-radius: 1px;
+  box-shadow: 0 4px 0 var(--muted);
 }
 .sample-featured-minimal::after {
   content: "";
   position: absolute;
-  bottom: 3px;
-  left: 8px;
-  right: 8px;
-  height: 2px;
-  background: var(--ink);
-  border-radius: 1px;
-  opacity: 0.35;
+  right: 3px;
+  top: 4px;
+  bottom: 4px;
+  width: 13px;
+  background: color-mix(in srgb, var(--surface-soft) 85%, #fff);
+  border: 1px solid var(--line);
+  border-radius: 3px;
 }
 
 .sample-featured-poster {
-  background: linear-gradient(135deg, #131c2e 0%, #20304a 55%, color-mix(in srgb, var(--coral, #d95c64) 85%, #131c2e) 100%);
-  border-color: #131c2e;
-  box-shadow: 0 2px 8px rgba(19, 28, 46, 0.25);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--coral, #d95c64) 14%, #ffffff), color-mix(in srgb, var(--blue, #f6c85f) 20%, #ffffff));
+  border: 1.5px solid var(--coral, #d95c64);
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--coral, #d95c64) 40%, transparent);
 }
 .sample-featured-poster::before {
   content: "";
   position: absolute;
   left: 4px;
-  top: 5px;
+  top: 6px;
   width: 9px;
-  height: 2.5px;
-  background: var(--blue, #f6c85f);
+  height: 3px;
+  background: var(--ink);
   border-radius: 1px;
-  box-shadow: 0 5px 0 rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 0 #8a600e;
 }
 .sample-featured-poster::after {
   content: "";
@@ -218,10 +222,11 @@
   top: 4px;
   width: 14px;
   height: 19px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 3px;
-  transform: rotate(5deg);
-  box-shadow: 2px 3px 0 var(--blue, #f6c85f);
+  background: #ffffff;
+  border: 1px solid var(--coral, #d95c64);
+  border-radius: 4px;
+  transform: rotate(4deg);
+  box-shadow: 2px 2px 0 var(--blue, #f6c85f);
 }
 
 /* Controls Style Samples */
