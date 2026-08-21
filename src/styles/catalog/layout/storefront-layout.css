@@ -11,12 +11,12 @@
 .product-card,
 .booth-card.booth-card-redesign,
 .selected-panel {
-  border-width: 1px !important;
-  border-style: solid !important;
-  border-color: var(--store-card-border) !important;
-  border-radius: var(--store-radius, 16px) !important;
-  background: var(--store-card-background) !important;
-  box-shadow: var(--store-card-shadow) !important;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--store-card-border, var(--line));
+  border-radius: var(--store-radius, 16px);
+  background: var(--store-card-background, #ffffff);
+  box-shadow: var(--store-card-shadow, 0 10px 26px rgb(15 23 42 / 6%));
 }
 .storefront-section { min-width: 0; }
 .storefront-section:empty { display: none; }

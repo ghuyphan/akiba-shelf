@@ -254,8 +254,7 @@
   background: color-mix(in srgb, var(--blue) 20%, #ffffff);
 }
 
-@media (max-width: 700px) {
+@media (max-width: 720px) {
   .style-featured-minimal .featured-banner-inner { grid-template-columns: 1fr; }
-  .style-featured-minimal .featured-banner-image-main { width: 160px; }
   .style-controls-floating .catalog-toolbar { padding: 6px; }
 }

@@ -118,22 +118,22 @@ export function getThemeStyle(booth: BoothSettings): ThemeStyle {
   const playfulShadow = parseHexColor(accentOnSecondary)!;
   const cardTokens = {
     soft: {
-      background: mixHexColors("#ffffff", pageBackground, 0.92) ?? "#ffffff",
-      border: "rgba(222, 217, 207, 0.72)",
-      shadow: "0 10px 28px rgb(15 23 42 / 6%)",
+      background: mixHexColors("#ffffff", pageBackground, 0.95) ?? "#ffffff",
+      border: "rgba(222, 217, 207, 0.85)",
+      shadow: "0 8px 24px -2px rgb(15 23 42 / 6%), 0 2px 6px -1px rgb(15 23 42 / 4%)",
     },
     outlined: {
-      background: "#fff",
+      background: "#ffffff",
       border: "var(--line)",
       shadow: "none",
     },
     elevated: {
-      background: "#fff",
-      border: "transparent",
-      shadow: "0 20px 46px rgb(15 23 42 / 12%)",
+      background: "#ffffff",
+      border: "1px solid rgb(15 23 42 / 4%)",
+      shadow: "0 14px 34px -4px rgb(15 23 42 / 12%), 0 4px 12px -2px rgb(15 23 42 / 6%)",
     },
     playful: {
-      background: "#fff",
+      background: "#ffffff",
       border:
         mixHexColors(primaryInteractive, "#ded9cf", 0.42) ?? "#ded9cf",
       shadow: `5px 6px 0 rgba(${playfulShadow.red}, ${playfulShadow.green}, ${playfulShadow.blue}, 0.42)`,

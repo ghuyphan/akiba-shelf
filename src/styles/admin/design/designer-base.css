@@ -49,22 +49,23 @@
   border: 1px solid var(--soft-line);
   border-radius: 12px;
   color: var(--ink);
-  background: #fff;
+  background: #ffffff;
   cursor: pointer;
   text-align: left;
-  transition: all 140ms ease;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
 }
 .designer-palette-grid > button:hover,
 .designer-card-style-grid > button:hover {
-  border-color: color-mix(in srgb, var(--coral) 40%, var(--line));
-  background: var(--surface-soft);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--coral) 45%, var(--line));
+  background: #ffffff;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 .designer-palette-grid > button.active,
 .designer-card-style-grid > button.active {
   border-color: var(--coral);
-  background: color-mix(in srgb, var(--coral) 5%, #fff);
-  box-shadow: 0 0 0 1px var(--coral);
+  background: color-mix(in srgb, var(--coral) 6%, #ffffff);
+  box-shadow: 0 0 0 1.5px var(--coral);
 }
 .designer-palette-grid > button > span:last-child,
 .designer-card-style-grid > button > span {
@@ -75,15 +76,16 @@
 .designer-palette-grid strong,
 .designer-card-style-grid strong {
   overflow: hidden;
-  font-size: 11.5px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 750;
+  color: var(--ink);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .designer-palette-grid small,
 .designer-card-style-grid small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 10.5px;
   line-height: 1.35;
 }
 .designer-palette-swatches {
