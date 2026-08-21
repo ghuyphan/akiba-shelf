@@ -81,6 +81,8 @@ export const defaultBooth: BoothSettings = {
   theme_accent: DEFAULT_STOREFRONT_PALETTE.accent,
   theme_background: DEFAULT_STOREFRONT_PALETTE.background,
   layout_order: ["featured", "booth", "controls", "products", "cart"],
+  layout_preset: "split",
+  hidden_sections: [],
   corner_radius: 16,
   card_style: "soft",
   featured_style: "deck",

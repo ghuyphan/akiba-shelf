@@ -107,6 +107,19 @@
 .storefront-module-booth > .booth-card { width: 100%; height: 100%; }
 .storefront-module-featured > :is(.featured-banner, .featured-banner-empty) { margin-bottom: 0; }
 
+/* Preset 2: Full-width Hero Banner */
+.layout-preset-full_hero .storefront-hero-grid { display: block; width: 100%; }
+.layout-preset-full_hero .storefront-hero-grid .storefront-module-featured { width: 100%; }
+
+/* Preset 3: Sticky Artist Sidebar */
+.layout-preset-sidebar_booth .storefront-hero-grid { display: none; }
+.layout-preset-sidebar_booth .storefront-content-side .storefront-module-booth { margin-bottom: 18px; }
+
+/* Preset 4: Stacked Flow */
+.layout-preset-stacked .storefront-hero-grid { display: grid; grid-template-columns: 1fr; gap: 18px; width: 100%; }
+.layout-preset-stacked .storefront-hero-grid .storefront-module { grid-column: 1 / -1; }
+.layout-preset-stacked .storefront-content-grid { display: none; }
+
 @media (min-width: 981px) {
   .booth-card.booth-card-redesign { height: 100%; }
   .storefront-content-side { align-self: start; }
