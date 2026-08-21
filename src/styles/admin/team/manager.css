@@ -151,7 +151,7 @@
   transition: transform 160ms ease;
 }
 .staff-access-toggle input:checked + span {
-  background: #629257;
+  background: var(--admin-action, var(--coral));
 }
 .staff-access-toggle input:checked + span:after {
   transform: translateX(14px);
@@ -375,8 +375,8 @@
   background: #fff4d6;
 }
 .staff-invitation-status.status-accepted {
-  color: var(--green);
-  background: color-mix(in srgb, var(--green) 10%, #fff);
+  color: var(--admin-action, var(--coral));
+  background: color-mix(in srgb, var(--admin-action, var(--coral)) 10%, #fff);
 }
 
 @media (max-width: 760px) {

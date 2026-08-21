@@ -33,7 +33,7 @@ describe("storefront card styles", () => {
     expect(admin["--coral"]).not.toBe("#ffffff");
     expect(admin["--navy"]).not.toBe("#f4f4f4");
     expect(admin["--page-bg"]).toBe("#c3c0bc");
-    expect(admin["--admin-action"]).toBe("#5c8657");
+    expect(admin["--admin-action"]).toBe(admin["--admin-primary"]);
   });
 
   it("maps persisted card personalities to distinct safe CSS tokens", () => {

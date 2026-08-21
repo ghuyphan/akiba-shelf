@@ -210,6 +210,7 @@ export function getAdminThemeStyle(booth: BoothSettings): ThemeStyle {
     "--admin-secondary": readableSecondary,
     "--admin-accent": accent,
     "--admin-page-bg": safePageBackground,
+    "--admin-action": interactive,
   };
 }
 

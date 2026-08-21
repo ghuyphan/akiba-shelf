@@ -173,9 +173,9 @@
 .admin-order-card>footer>div { display: grid; gap: 3px; min-width: 0; }
 .admin-order-card>footer span { color: var(--muted); font-size: 11px; }
 .admin-order-card>footer strong { font-size: 15px; }
-.admin-order-event-source { display: inline-flex; align-items: center; align-self: flex-start; gap: 6px; max-width: 100%; padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--green) 22%, var(--line)); border-radius: 999px; color: #267559; background: color-mix(in srgb, var(--green) 7%, #fff); font-size: 11px; font-weight: 850; }
+.admin-order-event-source { display: inline-flex; align-items: center; align-self: flex-start; gap: 6px; max-width: 100%; padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--admin-action, var(--coral)) 22%, var(--line)); border-radius: 999px; color: var(--admin-action, var(--coral)); background: color-mix(in srgb, var(--admin-action, var(--coral)) 7%, #fff); font-size: 11px; font-weight: 850; }
 .admin-order-event-source span { overflow-wrap: anywhere; }
-.admin-order-event-note { padding: 10px 12px; border-left: 3px solid color-mix(in srgb, var(--green) 55%, var(--line)); border-radius: 0 10px 10px 0; color: var(--muted); background: var(--surface-soft); font-size: 11px; font-weight: 700; line-height: 1.45; }
+.admin-order-event-note { padding: 10px 12px; border-left: 3px solid color-mix(in srgb, var(--admin-action, var(--coral)) 55%, var(--line)); border-radius: 0 10px 10px 0; color: var(--muted); background: var(--surface-soft); font-size: 11px; font-weight: 700; line-height: 1.45; }
 .admin-order-actions { display: grid; gap: 7px; }
 .admin-order-fulfillment { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
 .admin-fulfillment-status { overflow: hidden; padding: 5px 8px; border-radius: 999px; color: #8a6419; background: #fff5d9; font-size: 11px; font-weight: 850; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
@@ -227,7 +227,7 @@
   .admin-container .admin-orders-workspace .admin-order-card { height: auto; padding: 16px 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
   .admin-container .admin-orders-workspace .admin-order-card + .admin-order-card { border-top: 1px solid var(--soft-line) !important; }
 }
-.swipe-track { --swipe-progress: 0; --swipe-confirm: var(--green); position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; overflow: hidden; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--surface-soft); cursor: grab; user-select: none; touch-action: pan-y; isolation: isolate; outline: none; transition: border-color 220ms ease, box-shadow 220ms ease; }
+.swipe-track { --swipe-progress: 0; --swipe-confirm: var(--admin-action, var(--coral)); position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; overflow: hidden; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--surface-soft); cursor: grab; user-select: none; touch-action: pan-y; isolation: isolate; outline: none; transition: border-color 220ms ease, box-shadow 220ms ease; }
 .swipe-track:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--swipe-confirm) 24%, transparent); }
 .swipe-track.phase-dragging { cursor: grabbing; touch-action: none; }
 .swipe-track.phase-committing { cursor: wait; }

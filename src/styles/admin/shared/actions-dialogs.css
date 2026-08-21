@@ -37,11 +37,10 @@
   box-shadow: 0 8px 18px rgb(23 32 51 / 10%);
 }
 
-/* Portaled admin dialogs must keep the same action language as the workspace. */
 .modal-admin .button-primary {
   color: #fff;
-  border-color: var(--admin-action, #5c8657);
-  background: var(--admin-action, #5c8657);
+  border-color: var(--admin-action, var(--coral));
+  background: var(--admin-action, var(--coral));
 }
 
 .modal-admin .button-secondary {
@@ -52,8 +51,8 @@
 }
 
 .modal-admin .button-primary:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--admin-action, #5c8657) 88%, #000);
-  background: color-mix(in srgb, var(--admin-action, #5c8657) 88%, #000);
+  border-color: color-mix(in srgb, var(--admin-action, var(--coral)) 88%, #000);
+  background: color-mix(in srgb, var(--admin-action, var(--coral)) 88%, #000);
 }
 
 .modal-admin .button-secondary:hover:not(:disabled) {

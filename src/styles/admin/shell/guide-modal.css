@@ -425,8 +425,8 @@
 }
 
 .admin-guide-badge-done {
-  background: color-mix(in srgb, #5c8657 14%, transparent);
-  color: #3b6038;
+  background: color-mix(in srgb, var(--admin-action, var(--coral)) 14%, transparent);
+  color: var(--admin-action, var(--coral-strong));
 }
 
 .admin-guide-badge-todo {
@@ -516,7 +516,7 @@
 }
 
 .guide-diagram-step.is-success strong {
-  color: #3b6038;
+  color: var(--admin-action, var(--coral));
 }
 
 .guide-pipeline-flow .guide-diagram-step.is-highlight strong {
@@ -556,7 +556,7 @@
 }
 
 .guide-split-banking {
-  border-color: color-mix(in srgb, #5c8657 30%, var(--line));
+  border-color: color-mix(in srgb, var(--admin-action, var(--coral)) 30%, var(--line));
 }
 
 .guide-split-matsuri {
@@ -576,7 +576,7 @@
 .guide-split-box strong {
   font-size: 11px;
   font-weight: 800;
-  color: #3b6038;
+  color: var(--admin-action, var(--coral));
 }
 
 .guide-split-box code {
@@ -592,7 +592,7 @@
   font-size: 9.5px;
   font-weight: 800;
   color: #fff;
-  background: #5c8657;
+  background: var(--admin-action, var(--coral));
   padding: 2px 6px;
   border-radius: 4px;
   margin-top: 2px;
@@ -640,29 +640,29 @@
   color: var(--coral-strong);
 }
 
-/* Guide Spotlight Focus Ring - Matsuri Green Accent */
+/* Guide Spotlight Focus Ring - Dynamic Brand Accent */
 @keyframes guide-spotlight-pulse-kf {
   0% {
     box-shadow:
-      0 0 0 0 rgb(92 134 87 / 0%),
-      0 0 0 0 rgb(92 134 87 / 0%);
+      0 0 0 0 transparent,
+      0 0 0 0 transparent;
   }
   30% {
     box-shadow:
-      0 0 0 2.5px #5c8657,
-      0 0 0 7px rgb(92 134 87 / 24%),
-      0 8px 26px rgb(92 134 87 / 28%);
+      0 0 0 2.5px var(--admin-action, var(--coral)),
+      0 0 0 7px color-mix(in srgb, var(--admin-action, var(--coral)) 24%, transparent),
+      0 8px 26px color-mix(in srgb, var(--admin-action, var(--coral)) 28%, transparent);
   }
   65% {
     box-shadow:
-      0 0 0 2px #5c8657,
-      0 0 0 9px rgb(92 134 87 / 14%),
-      0 10px 30px rgb(92 134 87 / 20%);
+      0 0 0 2px var(--admin-action, var(--coral)),
+      0 0 0 9px color-mix(in srgb, var(--admin-action, var(--coral)) 14%, transparent),
+      0 10px 30px color-mix(in srgb, var(--admin-action, var(--coral)) 20%, transparent);
   }
   100% {
     box-shadow:
-      0 0 0 0 rgb(92 134 87 / 0%),
-      0 0 0 0 rgb(92 134 87 / 0%);
+      0 0 0 0 transparent,
+      0 0 0 0 transparent;
   }
 }
 
@@ -678,8 +678,8 @@
   .guide-spotlight-pulse {
     animation: none !important;
     box-shadow:
-      0 0 0 2.5px #5c8657,
-      0 0 0 6px rgb(92 134 87 / 25%) !important;
+      0 0 0 2.5px var(--admin-action, var(--coral)),
+      0 0 0 6px color-mix(in srgb, var(--admin-action, var(--coral)) 25%, transparent) !important;
   }
 }
 

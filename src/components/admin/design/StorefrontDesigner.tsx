@@ -37,6 +37,7 @@ import type {
   StorefrontSection,
 } from "../../../types/catalog";
 import {
+  getAdminThemeStyle,
   getStorefrontSectionStyleClass,
   getThemeStyle,
 } from "../../../utils/theme";
@@ -1053,6 +1054,7 @@ export function StorefrontDesigner({
   return (
     <section
       className={`storefront-builder admin-surface ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}
+      style={getAdminThemeStyle(draft)}
     >
       <aside className="builder-sidebar admin-surface">
         <div className="builder-sidebar-head">

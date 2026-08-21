@@ -43,8 +43,8 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 9px;
-  color: var(--green);
-  background: color-mix(in srgb, var(--green) 10%, #fff);
+  color: var(--admin-action, var(--coral));
+  background: color-mix(in srgb, var(--admin-action, var(--coral)) 10%, #fff);
 }
 .admin-promotion-summary small {
   color: var(--muted);
@@ -188,10 +188,10 @@
   gap: 10px;
   min-width: 0;
   padding: 11px 13px;
-  border: 1px solid color-mix(in srgb, var(--green) 20%, var(--soft-line));
+  border: 1px solid color-mix(in srgb, var(--admin-action, var(--coral)) 20%, var(--soft-line));
   border-radius: 12px;
   color: var(--ink);
-  background: color-mix(in srgb, var(--green) 6%, #fff);
+  background: color-mix(in srgb, var(--admin-action, var(--coral)) 6%, #fff);
 }
 .promotion-rule-preview > span {
   display: grid;
@@ -200,7 +200,7 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 9px;
-  color: var(--green);
+  color: var(--admin-action, var(--coral));
   background: #fff;
 }
 .promotion-rule-preview strong {
@@ -335,9 +335,9 @@
   height: 20px;
   padding-inline: 6px;
   border-radius: 999px;
-  color: var(--green);
+  color: var(--admin-action, var(--coral));
   background: #fff;
-  border: 1px solid color-mix(in srgb, var(--green) 20%, var(--soft-line));
+  border: 1px solid color-mix(in srgb, var(--admin-action, var(--coral)) 20%, var(--soft-line));
   font-size: 9px;
   font-weight: 850;
 }

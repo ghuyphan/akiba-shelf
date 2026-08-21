@@ -694,7 +694,7 @@
   background: var(--muted);
 }
 .admin-edit-status.is-saved > i {
-  background: var(--green);
+  background: var(--admin-action, var(--coral));
 }
 .admin-edit-status.is-dirty > i {
   background: #d08a24;

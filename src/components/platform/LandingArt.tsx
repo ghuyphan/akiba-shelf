@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useId, type CSSProperties } from "react";
 
 type PaperClipColor = "silver" | "rosegold" | "gold" | "mint" | "coral";
 
@@ -197,7 +197,7 @@ export function WashiTapeArt({
   className = "",
   style,
 }: WashiTapeProps) {
-  const patternId = `washi-pat-${Math.random().toString(36).slice(2, 7)}`;
+  const patternId = useId();
 
   return (
     <svg
@@ -705,7 +705,9 @@ export function BenefitBadgeArt({
             height="20"
             rx="3"
             stroke="currentColor"
-            strokeWidth="1.8"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
           <rect x="8" y="6" width="3" height="3" rx="0.5" fill="currentColor" />
           <rect
@@ -724,8 +726,8 @@ export function BenefitBadgeArt({
             rx="0.5"
             fill="currentColor"
           />
-          <rect x="13" y="12" width="1.5" height="1.5" fill="currentColor" />
-          <circle cx="12" cy="18.5" r="1" fill="currentColor" />
+          <rect x="13" y="11.5" width="2" height="2" rx="0.5" fill="currentColor" />
+          <circle cx="12" cy="18" r="1" fill="currentColor" />
         </svg>
       );
     case "stock":
@@ -742,15 +744,28 @@ export function BenefitBadgeArt({
           <path
             d="M3 8L12 3L21 8V18L12 22L3 18V8Z"
             stroke="currentColor"
-            strokeWidth="1.8"
+            strokeWidth="2"
+            strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <path d="M12 3V22" stroke="currentColor" strokeWidth="1.6" />
-          <path d="M3 8L12 13L21 8" stroke="currentColor" strokeWidth="1.6" />
+          <path
+            d="M12 3V22"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M3 8L12 13L21 8"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
           <circle
             cx="12"
             cy="13"
-            r="1.8"
+            r="2"
             fill="var(--landing-coral, #d95c64)"
           />
         </svg>
@@ -773,37 +788,40 @@ export function BenefitBadgeArt({
             height="18"
             rx="2"
             stroke="currentColor"
-            strokeWidth="1.8"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
           <path
             d="M8 2H16"
             stroke="currentColor"
-            strokeWidth="2.4"
+            strokeWidth="2"
             strokeLinecap="round"
+            strokeLinejoin="round"
           />
           <path
-            d="M8 9L10 11L14 7"
+            d="M8 9L10.5 11.5L15 7"
             stroke="currentColor"
-            strokeWidth="1.8"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
           <line
             x1="8"
-            y1="14"
+            y1="14.5"
             x2="16"
-            y2="14"
+            y2="14.5"
             stroke="currentColor"
-            strokeWidth="1.6"
+            strokeWidth="2"
             strokeLinecap="round"
           />
           <line
             x1="8"
-            y1="17.5"
+            y1="18"
             x2="13"
-            y2="17.5"
+            y2="18"
             stroke="currentColor"
-            strokeWidth="1.6"
+            strokeWidth="2"
             strokeLinecap="round"
           />
         </svg>
@@ -822,7 +840,9 @@ export function BenefitBadgeArt({
           <path
             d="M12 3C6.477 3 2 7.03 2 12C2 16.97 6.477 21 12 21C13.5 21 14.5 19.8 14.5 18.5C14.5 17.8 14.2 17.2 13.8 16.7C13.4 16.2 13.2 15.6 13.2 15C13.2 13.6 14.3 12.5 15.7 12.5H18C20.2 12.5 22 10.7 22 8.5C22 5.5 17.5 3 12 3Z"
             stroke="currentColor"
-            strokeWidth="1.8"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
           <circle cx="7.5" cy="9.5" r="1.5" fill="currentColor" />
           <circle cx="12" cy="7.5" r="1.5" fill="currentColor" />
