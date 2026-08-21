@@ -2234,6 +2234,60 @@ const vi: Record<string, string> = {
     "Giới hạn nhân viên chỉ xử lý đơn; bảo vệ cài đặt quan trọng và chống đóng phiên trái phép.",
   "All sales, offline event orders, and gacha pulls share one live stock pool.":
     "Mọi giao dịch trực tuyến, bán tại quầy và quay gacha đều dùng chung một kho tồn.",
+  "Auto-confirm": "Tự động xác thực",
+  "Automated payment verification": "Xác thực thanh toán tự động",
+  "Auto-confirm orders via payOS, SePay, or Android notification webhook.":
+    "Tự động xác nhận đơn hàng qua payOS, SePay hoặc webhook thông báo Android.",
+  "Enable automated confirmation": "Bật tự động xác thực",
+  "Auto-confirm payments": "Tự động xác thực thanh toán",
+  "Webhook URL": "URL Webhook",
+  "Paste this URL into your payOS or webhook forwarder settings.":
+    "Dán URL này vào cấu hình payOS hoặc ứng dụng chuyển tiếp webhook.",
+  "Webhook Secret (for MacroDroid / SePay / Custom)":
+    "Mã bí mật Webhook (cho MacroDroid / SePay / Tùy chỉnh)",
+  "Secret sent in x-webhook-secret header.":
+    "Mã bí mật gửi trong tiêu đề x-webhook-secret.",
+  "payOS Checksum Key (for payOS HMAC-SHA256)":
+    "Checksum Key payOS (dùng cho mã hóa HMAC-SHA256)",
+  "Found in payOS Dashboard > Integration.":
+    "Lấy tại Bảng điều khiển payOS > Tích hợp.",
+  "payOS Client ID": "Client ID payOS",
+  "Optional Client ID": "Client ID (tùy chọn)",
+  "payOS API Key": "API Key payOS",
+  "Optional API Key": "API Key (tùy chọn)",
+  Generate: "Tạo mới",
+  Copied: "Đã sao chép",
+  Copy: "Sao chép",
+  Off: "Tắt",
+  "Paste Checksum Key from payOS": "Dán Checksum Key từ payOS",
+  "How to set up automated alerts (100% Free):":
+    "Cách thiết lập thông báo tự động (100% Miễn phí):",
+  "Option 1: payOS (Recommended)": "Cách 1: payOS (Khuyên dùng)",
+  "Option 2: Android Phone Forwarder (MacroDroid / Tasker)":
+    "Cách 2: Ứng dụng điện thoại Android (MacroDroid / Tasker)",
+  "1. Sign up at payos.vn and link your bank account.":
+    "1. Đăng ký tại payos.vn và liên kết tài khoản ngân hàng.",
+  "2. Paste the Webhook URL above into payOS Webhook Settings.":
+    "2. Dán URL Webhook ở trên vào Cài đặt Webhook của payOS.",
+  "3. Copy the Checksum Key from payOS into the field below.":
+    "3. Sao chép Checksum Key từ payOS vào ô bên dưới.",
+  "1. Install MacroDroid on your Android phone with banking notifications enabled.":
+    "1. Cài MacroDroid trên điện thoại Android đã bật thông báo ngân hàng.",
+  "2. Create a macro to HTTP POST bank push notifications to the Webhook URL.":
+    "2. Tạo macro gửi HTTP POST thông báo biến động số dư tới URL Webhook.",
+  "3. Add header x-webhook-secret matching the secret key below.":
+    "3. Thêm tiêu đề x-webhook-secret khớp với mã bí mật bên dưới.",
+  "Automated VietQR & payOS Alerts": "Xác thực VietQR tự động & payOS",
+  "Hands-free": "Tự động 100%",
+  "payOS / Bank": "payOS / Ngân hàng",
+  "Open Banking": "Open Banking",
+  "Webhook Alert": "Báo Webhook",
+  "HMAC-SHA256": "HMAC-SHA256",
+  "Instant Order Unlock": "Mở khóa đơn tức thì",
+  "Zero Manual Clicks": "Không cần bấm xác nhận",
+  "Connect payOS or an Android notification forwarder for 100% automated, hands-free order confirmation.":
+    "Kết nối payOS hoặc ứng dụng chuyển tiếp thông báo Android để tự động xác nhận đơn hàng 100% không cần thao tác tay.",
+  "Configure Auto-Confirm": "Cài đặt tự động xác thực",
 };
 
 export type PlatformTranslationVariables = Record<string, string | number>;

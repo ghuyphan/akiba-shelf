@@ -844,6 +844,55 @@ export function AdminGuideModal({
                   </div>
                 )}
               </article>
+
+              {/* Feature 4: Automated VietQR & payOS Webhooks */}
+              <article className="admin-guide-card">
+                <div className="admin-guide-card-header">
+                  <span className="admin-guide-card-title">
+                    <Sparkles size={17} />
+                    {t("Automated VietQR & payOS Alerts")}
+                  </span>
+                  <span className="admin-guide-badge admin-guide-badge-done">
+                    {t("Hands-free")}
+                  </span>
+                </div>
+                <div className="guide-diagram-flow">
+                  <div className="guide-diagram-step">
+                    <strong>{t("payOS / Bank")}</strong>
+                    <small>{t("Open Banking")}</small>
+                  </div>
+                  <ArrowRight size={14} className="guide-diagram-arrow" />
+                  <div className="guide-diagram-step">
+                    <strong>{t("Webhook Alert")}</strong>
+                    <small>{t("HMAC-SHA256")}</small>
+                  </div>
+                  <ArrowRight size={14} className="guide-diagram-arrow" />
+                  <div className="guide-diagram-step is-success">
+                    <strong>{t("Instant Order Unlock")}</strong>
+                    <small>{t("Zero Manual Clicks")}</small>
+                  </div>
+                </div>
+                <p className="admin-guide-card-desc">
+                  {t(
+                    "Connect payOS or an Android notification forwarder for 100% automated, hands-free order confirmation.",
+                  )}
+                </p>
+                {isOwnerOrAdmin && (
+                  <div className="admin-guide-card-action">
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        handleJump(
+                          isCompact ? "settings" : "design",
+                          "payment-settings",
+                        )
+                      }
+                    >
+                      {t("Configure Auto-Confirm")}
+                    </Button>
+                  </div>
+                )}
+              </article>
             </div>
           )}
         </div>

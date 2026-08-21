@@ -220,6 +220,7 @@ export function AdminWorkspaceContent({
         <StorefrontDesigner
           key={shopId}
           shopId={shopId}
+          shopSlug={shopSlug}
           settings={booth}
           products={products}
           payment={payment}
@@ -237,6 +238,7 @@ export function AdminWorkspaceContent({
           <SettingsForm shopId={shopId} settings={booth} onSave={onSaveBooth} />
           <QrManager
             shopId={shopId}
+            shopSlug={shopSlug}
             settings={payment}
             onSave={onSavePayment}
           />

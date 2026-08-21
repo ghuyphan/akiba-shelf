@@ -34,7 +34,7 @@
     "test:perf": "playwright test --config playwright.perf.config.ts",
     "test:db": "npx --yes supabase@2.109.1 test db --local",
     "report:db-security": "node scripts/database-security-surface.mjs",
-    "test:functions": "deno test --node-modules-dir=none --no-lock --allow-env --allow-net supabase/functions/create-order/index.test.ts supabase/functions/invite-shop-member/index.test.ts supabase/functions/notify-new-order/index.test.ts supabase/functions/push-subscriptions/index.test.ts",
+    "test:functions": "deno test --node-modules-dir=none --no-lock --allow-env --allow-net supabase/functions/create-order/index.test.ts supabase/functions/invite-shop-member/index.test.ts supabase/functions/notify-new-order/index.test.ts supabase/functions/payment-webhook/index.test.ts supabase/functions/push-subscriptions/index.test.ts",
     "test:db:integration": "vitest run src/test/database.integration.test.ts",
     "check:simulators": "node scripts/check-simulators.mjs",
     "check:simulator-contracts": "node scripts/check-simulator-contracts.mjs",

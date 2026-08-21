@@ -228,3 +228,49 @@
 .selected-bank-summary-empty strong {
   color: var(--muted);
 }
+
+.admin-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink);
+  user-select: none;
+}
+
+.admin-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--coral);
+  cursor: pointer;
+}
+
+.admin-copyable-field {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-copyable-field .input {
+  flex: 1;
+}
+
+.admin-webhook-guide {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  border: 1px solid var(--soft-line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-webhook-guide ol {
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+
+.admin-webhook-guide li {
+  margin-bottom: 4px;
+}

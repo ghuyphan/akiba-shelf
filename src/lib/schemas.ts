@@ -208,6 +208,23 @@ export const paymentSettingsSchema = z
       .nullish()
       .transform((value) => value ?? undefined),
     payment_instructions: z.string(),
+    auto_confirm_enabled: z.boolean().optional().default(false),
+    webhook_secret: z
+      .string()
+      .nullish()
+      .transform((value) => value ?? undefined),
+    payos_client_id: z
+      .string()
+      .nullish()
+      .transform((value) => value ?? undefined),
+    payos_api_key: z
+      .string()
+      .nullish()
+      .transform((value) => value ?? undefined),
+    payos_checksum_key: z
+      .string()
+      .nullish()
+      .transform((value) => value ?? undefined),
   })
   .passthrough();
 

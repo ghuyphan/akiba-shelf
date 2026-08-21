@@ -200,12 +200,13 @@ without a device ID. Apply the migration first, deploy functions second, and
 deploy the frontend last. Remove the compatibility overload only in a later
 migration after the previous Pages and Edge Function rollback window closes.
 
-Deploy all four functions explicitly after required migrations:
+Deploy all five functions explicitly after required migrations:
 
 ```bash
 npx supabase functions deploy create-order
 npx supabase functions deploy invite-shop-member
 npx supabase functions deploy notify-new-order
+npx supabase functions deploy payment-webhook
 npx supabase functions deploy push-subscriptions
 ```
 
@@ -219,6 +220,7 @@ Responsibilities:
 - `create-order`: checkout request validation, abuse boundary, privileged RPC.
 - `invite-shop-member`: owner-authorized invitations with generic responses.
 - `notify-new-order`: token-gated durable queue drain and Web Push delivery.
+- `payment-webhook`: payOS HMAC and secret-token payment verification webhook.
 - `push-subscriptions`: authenticated registration, status, and removal through
   the protected subscription RPCs.
 

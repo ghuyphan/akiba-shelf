@@ -1,5 +1,5 @@
 import {
-  FormEvent,
+  type FormEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -9,10 +9,14 @@ import {
 import {
   BadgeDollarSign,
   Building2,
+  Check,
+  Copy,
   CreditCard,
   Edit3,
   MessageSquareText,
   QrCode,
+  RefreshCw,
+  Sparkles,
   X,
 } from "lucide-react";
 import type { PaymentSettings } from "../../../types/catalog";
@@ -34,18 +38,45 @@ import { AdminFormError } from "../shared/AdminFormError";
 
 type QrManagerProps = {
   shopId: string;
+  shopSlug?: string;
   settings: PaymentSettings;
   onSave: (settings: PaymentSettings) => Promise<void>;
 };
 
-export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
+export function QrManager({ shopId, shopSlug, settings, onSave }: QrManagerProps) {
   const [draft, setDraft] = useState(settings);
   const [isEditing, setIsEditing] = useState(false);
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
   const activeShopIdRef = useRef(shopId);
   const acceptedSettingsRef = useRef(settings);
   const draftRef = useRef(draft);
   const { busy, error, run, setError } = useAsyncAction();
   const { t } = usePlatformI18n();
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || (typeof window !== "undefined" ? window.location.origin : "");
+  const webhookUrl = `${supabaseUrl}/functions/v1/payment-webhook?shop=${shopSlug || shopId}`;
+
+  const copyWebhookUrl = async () => {
+    if (!navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(webhookUrl);
+      setCopiedWebhook(true);
+      setTimeout(() => setCopiedWebhook(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const generateRandomSecret = () => {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    const hex = Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+    setDraft((current) => ({
+      ...current,
+      webhook_secret: `whsec_${hex}`,
+    }));
+  };
+
   const hasChanges = useMemo(
     () => JSON.stringify(draft) !== JSON.stringify(settings),
     [draft, settings],
@@ -140,6 +171,11 @@ export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
               <BadgeDollarSign size={16} />
               <small>{t("Label")}</small>
               <strong>{draft.bank_label || t("Payment")}</strong>
+            </span>
+            <span>
+              <Sparkles size={16} />
+              <small>{t("Auto-confirm")}</small>
+              <strong>{draft.auto_confirm_enabled ? t("Enabled") : t("Off")}</strong>
             </span>
           </div>
         )}
@@ -258,6 +294,150 @@ export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
               }
             />
           </Field>
+        </section>
+
+        <section className="admin-form-section">
+          <div className="admin-form-section-heading">
+            <span>
+              <Sparkles size={15} />
+            </span>
+            <div>
+              <h3>{t("Automated payment verification")}</h3>
+              <p>{t("Auto-confirm orders via payOS, SePay, or Android notification webhook.")}</p>
+            </div>
+          </div>
+          <div className="form-grid">
+            <Field label={t("Auto-confirm payments")}>
+              <label
+                className="admin-checkbox-label"
+                htmlFor="qr-manager-payment-auto-confirm"
+              >
+                <input
+                  id="qr-manager-payment-auto-confirm"
+                  type="checkbox"
+                  aria-label={t("Enable automated confirmation")}
+                  checked={draft.auto_confirm_enabled ?? false}
+                  disabled={!isEditing}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      auto_confirm_enabled: event.target.checked,
+                    })
+                  }
+                />
+                <span>{t("Enable automated confirmation")}</span>
+              </label>
+            </Field>
+            {draft.auto_confirm_enabled && (
+              <>
+                <Field
+                  label={t("Webhook URL")}
+                  hint={t("Paste this URL into your payOS or webhook forwarder settings.")}
+                >
+                  <div className="admin-copyable-field">
+                    <TextInput
+                      value={webhookUrl}
+                      readOnly
+                      disabled
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      icon={copiedWebhook ? <Check size={16} /> : <Copy size={16} />}
+                      onClick={() => void copyWebhookUrl()}
+                    >
+                      {copiedWebhook ? t("Copied") : t("Copy")}
+                    </Button>
+                  </div>
+                </Field>
+                <Field
+                  label={t("Webhook Secret (for MacroDroid / SePay / Custom)")}
+                  hint={t("Secret sent in x-webhook-secret header.")}
+                >
+                  <div className="admin-copyable-field">
+                    <TextInput
+                      value={draft.webhook_secret ?? ""}
+                      disabled={!isEditing}
+                      placeholder="whsec_..."
+                      onChange={(event) =>
+                        setDraft({
+                          ...draft,
+                          webhook_secret: event.target.value,
+                        })
+                      }
+                    />
+                    {isEditing && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        icon={<RefreshCw size={16} />}
+                        onClick={generateRandomSecret}
+                      >
+                        {t("Generate")}
+                      </Button>
+                    )}
+                  </div>
+                </Field>
+                <Field
+                  label={t("payOS Checksum Key (for payOS HMAC-SHA256)")}
+                  hint={t("Found in payOS Dashboard > Integration.")}
+                >
+                  <TextInput
+                    value={draft.payos_checksum_key ?? ""}
+                    disabled={!isEditing}
+                    placeholder={t("Paste Checksum Key from payOS")}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        payos_checksum_key: event.target.value,
+                      })
+                    }
+                  />
+                </Field>
+                <Field label={t("payOS Client ID")}>
+                  <TextInput
+                    value={draft.payos_client_id ?? ""}
+                    disabled={!isEditing}
+                    placeholder={t("Optional Client ID")}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        payos_client_id: event.target.value,
+                      })
+                    }
+                  />
+                </Field>
+                <Field label={t("payOS API Key")}>
+                  <TextInput
+                    value={draft.payos_api_key ?? ""}
+                    disabled={!isEditing}
+                    placeholder={t("Optional API Key")}
+                    onChange={(event) =>
+                      setDraft({
+                        ...draft,
+                        payos_api_key: event.target.value,
+                      })
+                    }
+                  />
+                </Field>
+                <div className="admin-webhook-guide">
+                  <strong>{t("How to set up automated alerts (100% Free):")}</strong>
+                  <p><strong>{t("Option 1: payOS (Recommended)")}</strong></p>
+                  <ol>
+                    <li>{t("1. Sign up at payos.vn and link your bank account.")}</li>
+                    <li>{t("2. Paste the Webhook URL above into payOS Webhook Settings.")}</li>
+                    <li>{t("3. Copy the Checksum Key from payOS into the field below.")}</li>
+                  </ol>
+                  <p style={{ marginTop: 8 }}><strong>{t("Option 2: Android Phone Forwarder (MacroDroid / Tasker)")}</strong></p>
+                  <ol>
+                    <li>{t("1. Install MacroDroid on your Android phone with banking notifications enabled.")}</li>
+                    <li>{t("2. Create a macro to HTTP POST bank push notifications to the Webhook URL.")}</li>
+                    <li>{t("3. Add header x-webhook-secret matching the secret key below.")}</li>
+                  </ol>
+                </div>
+              </>
+            )}
+          </div>
         </section>
 
         <section className="admin-form-section">

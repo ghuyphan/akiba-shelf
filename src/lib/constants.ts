@@ -101,6 +101,11 @@ export const defaultPayment: PaymentSettings = {
   bank_account_name: "",
   bank_add_info_template: "",
   payment_instructions: "",
+  auto_confirm_enabled: false,
+  webhook_secret: "",
+  payos_client_id: "",
+  payos_api_key: "",
+  payos_checksum_key: "",
 };
 
 export const defaultPromotion: PromotionSettings = {

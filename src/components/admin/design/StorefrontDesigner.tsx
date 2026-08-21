@@ -5,8 +5,10 @@ import {
   ArrowDown,
   ArrowUp,
   Building2,
+  Check,
   ChevronLeft,
   ChevronRight,
+  Copy,
   CreditCard,
   GripVertical,
   Languages,
@@ -20,9 +22,11 @@ import {
   Plus,
   QrCode,
   Redo2,
+  RefreshCw,
   RotateCcw,
   Save,
   Smartphone,
+  Sparkles,
   Store,
   Type,
   Undo2,
@@ -75,6 +79,7 @@ import { GUIDE_SPOTLIGHT_EVENT } from "../../../hooks/admin/useGuideSpotlight";
 
 type StorefrontDesignerProps = {
   shopId: string;
+  shopSlug?: string;
   settings: BoothSettings;
   products: Product[];
   payment: PaymentSettings;
@@ -168,6 +173,7 @@ function normalizedOrder(order?: StorefrontSection[]) {
 
 export function StorefrontDesigner({
   shopId,
+  shopSlug,
   settings,
   products,
   payment,
@@ -178,6 +184,23 @@ export function StorefrontDesigner({
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const [selected, setSelected] = useState<SelectedSection>("featured");
   const [tab, setTab] = useState<InspectorTab>("layout");
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
+
+  const supabaseUrl =
+    import.meta.env.VITE_SUPABASE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+  const webhookUrl = `${supabaseUrl}/functions/v1/payment-webhook?shop=${shopSlug || shopId}`;
+
+  const copyWebhookUrl = async () => {
+    if (!navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(webhookUrl);
+      setCopiedWebhook(true);
+      setTimeout(() => setCopiedWebhook(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
   const { containerRef: inspectorTabsRef, registerItem: registerInspectorTab } =
     useTabIndicator<InspectorTab, HTMLDivElement>(tab);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -533,6 +556,15 @@ export function StorefrontDesigner({
       booth: draftRef.current,
       payment: { ...paymentDraftRef.current, [key]: value },
     });
+  }
+
+  function generateRandomSecret() {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    const hex = Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    updatePayment("webhook_secret", `whsec_${hex}`);
   }
 
   function applyPalette(palette: (typeof STOREFRONT_PALETTES)[number]) {
@@ -1526,6 +1558,194 @@ export function StorefrontDesigner({
                             updatePayment("bank_qr_url", url)
                           }
                         />
+                      </div>
+                      <div className="builder-field-group">
+                        <h3>
+                          <Sparkles size={15} />{" "}
+                          {t("Automated payment verification")}
+                        </h3>
+                        <label
+                          className="builder-toggle"
+                          htmlFor="designer-payment-auto-confirm"
+                        >
+                          <span>
+                            <strong>{t("Auto-confirm payments")}</strong>
+                            <small>
+                              {t(
+                                "Auto-confirm orders via payOS, SePay, or Android notification webhook.",
+                              )}
+                            </small>
+                          </span>
+                          <input
+                            id="designer-payment-auto-confirm"
+                            type="checkbox"
+                            aria-label={t("Enable automated confirmation")}
+                            checked={paymentDraft.auto_confirm_enabled ?? false}
+                            onChange={(event) =>
+                              updatePayment(
+                                "auto_confirm_enabled",
+                                event.target.checked,
+                              )
+                            }
+                          />
+                        </label>
+                        {paymentDraft.auto_confirm_enabled && (
+                          <>
+                            <Field
+                              label={t("Webhook URL")}
+                              hint={t(
+                                "Paste this URL into your payOS or webhook forwarder settings.",
+                              )}
+                            >
+                              <div className="admin-copyable-field">
+                                <TextInput
+                                  value={webhookUrl}
+                                  readOnly
+                                  disabled
+                                />
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  icon={
+                                    copiedWebhook ? (
+                                      <Check size={16} />
+                                    ) : (
+                                      <Copy size={16} />
+                                    )
+                                  }
+                                  onClick={() => void copyWebhookUrl()}
+                                >
+                                  {copiedWebhook ? t("Copied") : t("Copy")}
+                                </Button>
+                              </div>
+                            </Field>
+                            <Field
+                              label={t(
+                                "Webhook Secret (for MacroDroid / SePay / Custom)",
+                              )}
+                              hint={t(
+                                "Secret sent in x-webhook-secret header.",
+                              )}
+                            >
+                              <div className="admin-copyable-field">
+                                <TextInput
+                                  value={paymentDraft.webhook_secret ?? ""}
+                                  placeholder="whsec_..."
+                                  onChange={(event) =>
+                                    updatePayment(
+                                      "webhook_secret",
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  icon={<RefreshCw size={16} />}
+                                  onClick={generateRandomSecret}
+                                >
+                                  {t("Generate")}
+                                </Button>
+                              </div>
+                            </Field>
+                            <Field
+                              label={t(
+                                "payOS Checksum Key (for payOS HMAC-SHA256)",
+                              )}
+                              hint={t(
+                                "Found in payOS Dashboard > Integration.",
+                              )}
+                            >
+                              <TextInput
+                                value={paymentDraft.payos_checksum_key ?? ""}
+                                placeholder={t("Paste Checksum Key from payOS")}
+                                onChange={(event) =>
+                                  updatePayment(
+                                    "payos_checksum_key",
+                                    event.target.value,
+                                  )
+                                }
+                              />
+                            </Field>
+                            <Field label={t("payOS Client ID")}>
+                              <TextInput
+                                value={paymentDraft.payos_client_id ?? ""}
+                                placeholder={t("Optional Client ID")}
+                                onChange={(event) =>
+                                  updatePayment(
+                                    "payos_client_id",
+                                    event.target.value,
+                                  )
+                                }
+                              />
+                            </Field>
+                            <Field label={t("payOS API Key")}>
+                              <TextInput
+                                value={paymentDraft.payos_api_key ?? ""}
+                                placeholder={t("Optional API Key")}
+                                onChange={(event) =>
+                                  updatePayment(
+                                    "payos_api_key",
+                                    event.target.value,
+                                  )
+                                }
+                              />
+                            </Field>
+                            <div className="admin-webhook-guide">
+                              <strong>
+                                {t(
+                                  "How to set up automated alerts (100% Free):",
+                                )}
+                              </strong>
+                              <p>
+                                <strong>
+                                  {t("Option 1: payOS (Recommended)")}
+                                </strong>
+                              </p>
+                              <ol>
+                                <li>
+                                  {t(
+                                    "1. Sign up at payos.vn and link your bank account.",
+                                  )}
+                                </li>
+                                <li>
+                                  {t(
+                                    "2. Paste the Webhook URL above into payOS Webhook Settings.",
+                                  )}
+                                </li>
+                                <li>
+                                  {t(
+                                    "3. Copy the Checksum Key from payOS into the field below.",
+                                  )}
+                                </li>
+                              </ol>
+                              <p style={{ marginTop: 8 }}>
+                                <strong>
+                                  {t(
+                                    "Option 2: Android Phone Forwarder (MacroDroid / Tasker)",
+                                  )}
+                                </strong>
+                              </p>
+                              <ol>
+                                <li>
+                                  {t(
+                                    "1. Install MacroDroid on your Android phone with banking notifications enabled.",
+                                  )}
+                                </li>
+                                <li>
+                                  {t(
+                                    "2. Create a macro to HTTP POST bank push notifications to the Webhook URL.",
+                                  )}
+                                </li>
+                                <li>
+                                  {t(
+                                    "3. Add header x-webhook-secret matching the secret key below.",
+                                  )}
+                                </li>
+                              </ol>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}

@@ -1,6 +1,12 @@
 .builder-field-group { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--soft-line); border-radius: 14px; background: var(--surface-soft); }
 .builder-field-group h3 { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--ink); font-size: 10px; }
 .builder-payment-fields { gap: 12px; }
+.storefront-builder .admin-copyable-field { display: flex; gap: 6px; align-items: center; }
+.storefront-builder .admin-copyable-field .input { flex: 1; min-width: 0; }
+.storefront-builder .admin-copyable-field .button { flex: 0 0 auto; min-height: 38px; padding: 0 10px; }
+.storefront-builder .admin-webhook-guide { padding: 10px 12px; border: 1px solid var(--soft-line); border-radius: 10px; background: var(--surface-soft); font-size: 11px; line-height: 1.45; }
+.storefront-builder .admin-webhook-guide ol { margin: 4px 0 0 16px; padding: 0; }
+.storefront-builder .admin-webhook-guide li { margin-bottom: 3px; }
 .builder-backup-qr { display: grid; grid-template-columns: 68px minmax(0, 1fr); align-items: center; gap: 9px; }
 .builder-backup-qr>img,.builder-backup-qr>span { display: grid; place-items: center; width: 68px; height: 68px; border: 1px solid var(--soft-line); border-radius: 11px; color: var(--muted); background: #fff; object-fit: contain; }
 .builder-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

@@ -118,6 +118,11 @@ export type PaymentSettings = {
   bank_account_name?: string;
   bank_add_info_template?: string;
   payment_instructions: string;
+  auto_confirm_enabled?: boolean;
+  webhook_secret?: string;
+  payos_client_id?: string;
+  payos_api_key?: string;
+  payos_checksum_key?: string;
 };
 
 export type PromotionKind = "buy_get" | "percentage";

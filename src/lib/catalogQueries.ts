@@ -81,4 +81,4 @@ export const ADMIN_BOOTH_COLUMNS = `${PUBLIC_BOOTH_COLUMNS},logo_path,social_qr_
 
 export const PUBLIC_PAYMENT_COLUMNS =
   "id,shop_id,momo_qr_url,bank_qr_url,momo_label,bank_label,bank_code,bank_acq_id,bank_account_no,bank_account_name,bank_add_info_template,payment_instructions";
-export const ADMIN_PAYMENT_COLUMNS = PUBLIC_PAYMENT_COLUMNS;
+export const ADMIN_PAYMENT_COLUMNS = `${PUBLIC_PAYMENT_COLUMNS},auto_confirm_enabled,webhook_secret,payos_client_id,payos_api_key,payos_checksum_key`;

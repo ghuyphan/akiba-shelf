@@ -470,9 +470,11 @@ describe("PaymentQrModal", () => {
     await waitFor(() =>
       expect(writeText).toHaveBeenCalledWith("0123456789"),
     );
-    expect(screen.getByText("Account number copied.")).toHaveAttribute(
-      "aria-live",
-      "polite",
+    await waitFor(() =>
+      expect(screen.getByText("Account number copied.")).toHaveAttribute(
+        "aria-live",
+        "polite",
+      ),
     );
   });
 
