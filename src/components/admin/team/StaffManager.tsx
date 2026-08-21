@@ -244,6 +244,7 @@ export function StaffManager({ shopId }: { shopId: string }) {
       )}
       icon={<ShieldCheck size={18} />}
       className="admin-team-card"
+      dataGuideSpotlight="team-manager"
     >
       <section
         className="staff-overview"

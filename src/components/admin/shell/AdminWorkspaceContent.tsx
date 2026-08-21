@@ -12,9 +12,8 @@ import type {
 import type { SalesSummaryState } from "../../../lib/sales";
 import { Button } from "../../ui/Button";
 import { EmptyState } from "../../ui/EmptyState";
-import { OrderQueue } from "../orders/OrderQueue";
+import { OrderQueue, type OrderViewFilter } from "../orders/OrderQueue";
 import type { AdminViewTab } from "./adminWorkspaceTypes";
-import type { OrderViewFilter } from "../orders/OrderQueue";
 
 const AdminProductsWorkspace = lazyWithRetry("admin-products-workspace", () =>
   import("../products/AdminProductsWorkspace").then((module) => ({

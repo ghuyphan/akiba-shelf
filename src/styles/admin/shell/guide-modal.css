@@ -1,6 +1,6 @@
 /* Admin Guide & Convention Playbook Modal */
 .admin-guide-modal {
-  max-width: 720px !important;
+  max-width: 720px;
   width: 100%;
 }
 
@@ -26,11 +26,6 @@
 
 .admin-guide-nav::-webkit-scrollbar {
   display: none;
-}
-
-.admin-guide-nav::before,
-.admin-guide-nav::after {
-  display: none !important;
 }
 
 .admin-guide-nav-tab {
@@ -62,9 +57,9 @@
 
 .admin-guide-nav-tab.is-active,
 .admin-guide-nav-tab.active {
-  background: #fff !important;
-  color: var(--ink) !important;
-  box-shadow: 0 2px 6px rgb(15 23 42 / 7%) !important;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 2px 6px rgb(15 23 42 / 7%);
 }
 
 .admin-guide-nav-tab .tab-label-short {
@@ -80,6 +75,57 @@
   }
 }
 
+/* Readiness Progress Bar */
+.admin-guide-progress-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--admin-inset-radius, 12px);
+  background: var(--surface-soft, #f8fafc);
+  border: 1px solid var(--soft-line);
+}
+
+.admin-guide-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+.admin-guide-progress-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 750;
+  color: var(--ink);
+}
+
+.admin-guide-progress-title svg {
+  color: #5c8657;
+}
+
+.admin-guide-progress-stat {
+  font-size: 11px;
+  font-weight: 800;
+  color: #436a3f;
+}
+
+.admin-guide-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 70%, transparent);
+  overflow: hidden;
+}
+
+.admin-guide-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5c8657, #669c5e);
+  transition: width 300ms ease;
+}
+
 .admin-guide-banner-tip {
   display: flex;
   align-items: center;
@@ -93,6 +139,8 @@
   font-size: 11.5px;
   line-height: 1.45;
   transition: all 160ms ease;
+  width: 100%;
+  text-align: left;
 }
 
 .admin-guide-banner-tip.is-clickable {
@@ -148,28 +196,33 @@
   padding-right: 2px;
 }
 
+.admin-guide-tabpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .admin-guide-card {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 10px !important;
-  background: #fff !important;
-  border: 1px solid var(--soft-line) !important;
-  border-radius: var(--admin-inset-radius, 14px) !important;
-  padding: 14px 16px !important;
-  box-shadow: 0 2px 8px rgb(15 23 42 / 3%) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--soft-line);
+  border-radius: var(--admin-inset-radius, 14px);
+  padding: 14px 16px;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 3%);
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .admin-guide-card:hover {
-  border-color: color-mix(in srgb, var(--coral) 32%, var(--line)) !important;
-  box-shadow: 0 4px 14px rgb(15 23 42 / 6%) !important;
+  border-color: color-mix(in srgb, var(--coral) 32%, var(--line));
+  box-shadow: 0 4px 14px rgb(15 23 42 / 6%);
 }
 
 .admin-guide-card.admin-guide-card-checklist {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 14px !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
 }
 
 /* Visual Mockup Illustrations */
@@ -275,6 +328,30 @@
   color: #fff;
 }
 
+.admin-guide-visual-standee {
+  background: color-mix(in srgb, var(--coral) 8%, #f8fafc);
+}
+
+.guide-standee-mockup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--coral-strong);
+  position: relative;
+}
+
+.guide-standee-pill {
+  position: absolute;
+  bottom: -6px;
+  font-size: 7px;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--ink);
+  color: #fff;
+}
+
 .admin-guide-visual-storefront {
   background: color-mix(in srgb, var(--coral) 8%, #fff);
 }
@@ -316,9 +393,9 @@
 }
 
 .admin-guide-card-title {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 7px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-size: 13.5px;
   font-weight: 800;
   color: var(--ink);
@@ -442,11 +519,84 @@
   color: #3b6038;
 }
 
+.guide-pipeline-flow .guide-diagram-step.is-highlight strong {
+  color: var(--coral-strong);
+}
+
 .guide-diagram-arrow {
   color: var(--muted);
   flex-shrink: 0;
   width: 12px;
   height: 12px;
+}
+
+/* Bank Split Box Preview */
+.guide-bank-split-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface-soft, #f8fafc);
+  border: 1px solid var(--soft-line);
+}
+
+.guide-split-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.guide-split-banking {
+  border-color: color-mix(in srgb, #5c8657 30%, var(--line));
+}
+
+.guide-split-matsuri {
+  border-color: color-mix(in srgb, var(--coral) 30%, var(--line));
+}
+
+.guide-split-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 750;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.guide-split-box strong {
+  font-size: 11px;
+  font-weight: 800;
+  color: #3b6038;
+}
+
+.guide-split-box code {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--coral-strong);
+}
+
+.guide-split-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #fff;
+  background: #5c8657;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+  width: fit-content;
 }
 
 /* Gacha Pity Bar */
@@ -484,7 +634,53 @@
 }
 
 .guide-pity-labels strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   color: var(--coral-strong);
+}
+
+/* Guide Spotlight Focus Ring - Matsuri Green Accent */
+@keyframes guide-spotlight-pulse-kf {
+  0% {
+    box-shadow:
+      0 0 0 0 rgb(92 134 87 / 0%),
+      0 0 0 0 rgb(92 134 87 / 0%);
+  }
+  30% {
+    box-shadow:
+      0 0 0 2.5px #5c8657,
+      0 0 0 7px rgb(92 134 87 / 24%),
+      0 8px 26px rgb(92 134 87 / 28%);
+  }
+  65% {
+    box-shadow:
+      0 0 0 2px #5c8657,
+      0 0 0 9px rgb(92 134 87 / 14%),
+      0 10px 30px rgb(92 134 87 / 20%);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgb(92 134 87 / 0%),
+      0 0 0 0 rgb(92 134 87 / 0%);
+  }
+}
+
+.guide-spotlight-pulse {
+  animation: guide-spotlight-pulse-kf 1.25s cubic-bezier(0.22, 1, 0.36, 1) 3;
+  scroll-margin: 110px;
+  position: relative;
+  z-index: 6;
+  transition: box-shadow 260ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-spotlight-pulse {
+    animation: none !important;
+    box-shadow:
+      0 0 0 2.5px #5c8657,
+      0 0 0 6px rgb(92 134 87 / 25%) !important;
+  }
 }
 
 @media (max-width: 760px) {
@@ -504,12 +700,12 @@
   }
 
   .admin-guide-card {
-    padding: 12px 14px !important;
-    gap: 8px !important;
+    padding: 12px 14px;
+    gap: 8px;
   }
 
   .admin-guide-card.admin-guide-card-checklist {
-    flex-direction: row !important;
+    flex-direction: row;
     flex-wrap: wrap;
     gap: 10px;
   }
@@ -525,11 +721,7 @@
     margin-left: 0;
   }
 
-  .admin-guide-card.admin-guide-card-checklist .admin-guide-card-action .button {
-    width: 100%;
-  }
-
-  .admin-guide-card:not(.admin-guide-card-checklist) .admin-guide-card-action .button {
+  .admin-guide-card-action .button {
     width: 100%;
   }
 

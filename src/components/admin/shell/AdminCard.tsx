@@ -8,6 +8,7 @@ type AdminCardProps = {
   className?: string;
   variant?: "panel" | "inset" | "flush";
   density?: "default" | "compact";
+  dataGuideSpotlight?: string;
   children: ReactNode;
 };
 
@@ -19,6 +20,7 @@ export function AdminCard({
   className = "",
   variant = "panel",
   density = "default",
+  dataGuideSpotlight,
   children,
 }: AdminCardProps) {
   const titleId = useId();
@@ -26,6 +28,7 @@ export function AdminCard({
   return (
     <section
       aria-labelledby={titleId}
+      data-guide-spotlight={dataGuideSpotlight}
       className={`admin-card admin-card-${variant} admin-card-${density} ${className}`.trim()}
     >
       <div className="admin-card-header">

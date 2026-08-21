@@ -25,6 +25,7 @@ type ActionMenuProps = {
   triggerClassName?: string;
   popoverClassName?: string;
   itemClassName?: string;
+  dataGuideSpotlight?: string;
 };
 
 export function ActionMenu({
@@ -35,6 +36,7 @@ export function ActionMenu({
   triggerClassName = "",
   popoverClassName = "",
   itemClassName = "",
+  dataGuideSpotlight,
 }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -88,7 +90,10 @@ export function ActionMenu({
   }
 
   return (
-    <div className={`action-menu ${open ? "open" : ""} ${className}`.trim()}>
+    <div
+      data-guide-spotlight={dataGuideSpotlight}
+      className={`action-menu ${open ? "open" : ""} ${className}`.trim()}
+    >
       <button
         ref={refs.setReference}
         type="button"

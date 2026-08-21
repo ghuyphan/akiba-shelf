@@ -739,6 +739,7 @@ export function OfflineEventManager({
       <button
         type="button"
         className={`admin-toolbar-control offline-event-launcher ${eventActive ? "is-active" : ""}`}
+        data-guide-spotlight="offline-event-tools"
         aria-label={
           eventDataLoading
             ? `${t("Event Mode")}: ${t("Loading")}`

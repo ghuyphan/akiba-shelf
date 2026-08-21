@@ -35,7 +35,7 @@ describe("AdminGuideModal", () => {
     cleanup();
   });
 
-  it("renders the launch checklist for owners by default with live status", () => {
+  it("renders the launch checklist for owners by default with live status and progress", () => {
     const onNavigateTab = vi.fn();
     const onClose = vi.fn();
 
@@ -54,14 +54,43 @@ describe("AdminGuideModal", () => {
 
     expect(screen.getByText("Booth Guide & Playbook")).toBeInTheDocument();
     expect(screen.getByText("Launch Checklist")).toBeInTheDocument();
+    expect(screen.getByText("Shop readiness progress")).toBeInTheDocument();
     expect(screen.getByText("1. VietQR Bank Payment")).toBeInTheDocument();
     expect(screen.getByText("2. Merch Catalog & Stock")).toBeInTheDocument();
     expect(screen.getByText("1 active items")).toBeInTheDocument();
 
-    // Clicking Manage products jumps to products tab and closes
+    // Clicking Manage products jumps to products tab with spotlight target and closes
     fireEvent.click(screen.getByRole("button", { name: "Manage products" }));
-    expect(onNavigateTab).toHaveBeenCalledWith("products");
+    expect(onNavigateTab).toHaveBeenCalledWith("products", "add-product-btn");
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("supports keyboard arrow navigation across tabs", () => {
+    const onNavigateTab = vi.fn();
+    const onClose = vi.fn();
+
+    renderWithI18n(
+      <AdminGuideModal
+        isOpen
+        onClose={onClose}
+        booth={defaultBooth}
+        payment={defaultPayment}
+        products={[]}
+        shopRole="owner"
+        shopSlug="demo-shop"
+        onNavigateTab={onNavigateTab}
+      />,
+    );
+
+    const checklistTab = screen.getByRole("tab", { name: "Launch Checklist" });
+    fireEvent.keyDown(checklistTab, { key: "ArrowRight" });
+    expect(screen.getByText("Convention Cheat Sheet")).toBeInTheDocument();
+    expect(screen.getByText("15-Minute Order Reservation")).toBeInTheDocument();
+
+    const conventionTab = screen.getByRole("tab", { name: "Convention Cheat Sheet" });
+    fireEvent.keyDown(conventionTab, { key: "ArrowRight" });
+    expect(screen.getByText("Feature Playbook")).toBeInTheDocument();
+    expect(screen.getByText("Gacha Minigame & Pity System")).toBeInTheDocument();
   });
 
   it("hides the launch checklist for staff and defaults to convention cheat sheet", () => {
@@ -88,7 +117,7 @@ describe("AdminGuideModal", () => {
     expect(screen.getByText("Spotty / Dead Convention Wi-Fi")).toBeInTheDocument();
   });
 
-  it("switches to the Feature Playbook tab and navigates to gacha", () => {
+  it("switches to the Feature Playbook tab and navigates to gacha with spotlight", () => {
     const onNavigateTab = vi.fn();
     const onClose = vi.fn();
 
@@ -110,7 +139,7 @@ describe("AdminGuideModal", () => {
     expect(screen.getByText("Staff Tablet & PIN Security")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Open Gacha Manager" }));
-    expect(onNavigateTab).toHaveBeenCalledWith("gacha");
+    expect(onNavigateTab).toHaveBeenCalledWith("gacha", "gacha-manager");
     expect(onClose).toHaveBeenCalled();
   });
 

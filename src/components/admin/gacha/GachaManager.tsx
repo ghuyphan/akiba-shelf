@@ -928,7 +928,7 @@ export function GachaManager({ shopId, shopSlug, products }: Props) {
   }
 
   return (
-    <div className="gacha-admin-page">
+    <div className="gacha-admin-page" data-guide-spotlight="gacha-manager">
       <GachaStatusBar
         games={statusGames}
         activeGame={activeGame}

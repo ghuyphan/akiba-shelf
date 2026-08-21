@@ -58,6 +58,11 @@ function main() {
   );
   const trackedFiles = execFileSync("git", ["ls-files", "-z"], {
     encoding: "utf8",
+    env: {
+      ...process.env,
+      GIT_CONFIG_GLOBAL: "/dev/null",
+      GIT_CONFIG_SYSTEM: "/dev/null",
+    },
   })
     .split("\0")
     .filter((path) => path && existsSync(path));

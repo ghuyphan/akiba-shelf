@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "../../styles/admin/admin.css";
 import { Navigate, useNavigate } from "react-router";
 import { deleteProduct, saveProduct } from "../../lib/api/products";
@@ -36,6 +36,7 @@ import {
   AdminGuideModal,
   type GuideSection,
 } from "../../components/admin/shell/AdminGuideModal";
+import type { AdminViewTab } from "../../components/admin/shell/adminWorkspaceTypes";
 import { AdminUnsavedChangesProvider } from "../../components/admin/shell/AdminUnsavedChanges";
 import { SignOutDialog } from "../../components/platform/SignOutDialog";
 import { EventPinDialog } from "../../components/ui/EventPinDialog";
@@ -46,6 +47,7 @@ import { useAdminNotifications } from "../../hooks/admin/useAdminNotifications";
 import { useAdminEventAccess } from "../../hooks/admin/useAdminEventAccess";
 import { useAdminCatalogWorkspace } from "../../hooks/admin/useAdminCatalogWorkspace";
 import { useAdminOrdersWorkspace } from "../../hooks/admin/useAdminOrdersWorkspace";
+import { useGuideSpotlight } from "../../hooks/admin/useGuideSpotlight";
 
 export function AdminPage() {
   const navigate = useNavigate();
@@ -65,6 +67,17 @@ export function AdminPage() {
   const [signOutBusy, setSignOutBusy] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [guideSection, setGuideSection] = useState<GuideSection>("checklist");
+  const { triggerSpotlight } = useGuideSpotlight();
+
+  const handleNavigateFromGuide = useCallback(
+    (tab: AdminViewTab, spotlightKey?: string) => {
+      setViewTab(tab);
+      if (spotlightKey) {
+        triggerSpotlight(spotlightKey);
+      }
+    },
+    [setViewTab, triggerSpotlight],
+  );
   const {
     state: eventAccess,
     unlock: unlockEventAccess,
@@ -549,7 +562,7 @@ export function AdminPage() {
           products={products}
           shopRole={adminSession.access.role}
           shopSlug={adminSession.access.shop_slug}
-          onNavigateTab={setViewTab}
+          onNavigateTab={handleNavigateFromGuide}
           initialSection={guideSection}
         />
 

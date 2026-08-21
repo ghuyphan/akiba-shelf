@@ -71,6 +71,7 @@ import { useAdminUnsavedChanges } from "../shell/AdminUnsavedChanges";
 import { useTabIndicator } from "../../../hooks/shared/useTabIndicator";
 import { DesignerStyleOptions } from "./DesignerStyleOptions";
 import { useStorefrontDesignerDraft } from "../../../hooks/admin/useStorefrontDesignerDraft";
+import { GUIDE_SPOTLIGHT_EVENT } from "../../../hooks/admin/useGuideSpotlight";
 
 type StorefrontDesignerProps = {
   shopId: string;
@@ -235,6 +236,36 @@ export function StorefrontDesigner({
       setError("");
     }
   }, [error, setError, t, toast]);
+
+  useEffect(() => {
+    function handleSpotlightRequest(event: Event) {
+      const customEvent = event as CustomEvent<{ targetKey?: string }>;
+      const target = customEvent.detail?.targetKey;
+      if (!target) return;
+
+      if (target === "payment-settings" || target === "qr-table-stand") {
+        setSidebarOpen(true);
+        setTab("content");
+        setSelected("cart");
+      } else if (target === "booth-settings") {
+        setSidebarOpen(true);
+        setTab("content");
+        setSelected("booth");
+      }
+    }
+
+    window.addEventListener(
+      GUIDE_SPOTLIGHT_EVENT,
+      handleSpotlightRequest as EventListener,
+    );
+    return () => {
+      window.removeEventListener(
+        GUIDE_SPOTLIGHT_EVENT,
+        handleSpotlightRequest as EventListener,
+      );
+    };
+  }, []);
+
   const order = normalizedOrder(draft.layout_order);
 
   function handleInspectorTabKeyDown(
@@ -1220,7 +1251,7 @@ export function StorefrontDesigner({
                         <h3>
                           <Store size={15} /> {t("Booth identity")}
                         </h3>
-                        <div className="designer-identity-card">
+                        <div className="designer-identity-card" data-guide-spotlight="booth-settings">
                           <div className="designer-identity-preview">
                             <span className="designer-identity-logo">
                               {draft.logo_url ? (
@@ -1328,13 +1359,14 @@ export function StorefrontDesigner({
                     </>
                   )}
                   {selected === "cart" && (
-                    <div className="builder-fields builder-payment-fields">
+                    <div className="builder-fields builder-payment-fields" data-guide-spotlight="payment-settings">
                       <div className="builder-field-group">
                         <h3>
                           <Building2 size={15} /> {t("Payment account")}
                         </h3>
                         <div
                           className={`designer-payment-card ${paymentAccountReady ? "is-ready" : "needs-setup"}`}
+                          data-guide-spotlight="payment-settings"
                         >
                           <div className="designer-payment-preview">
                             <img
@@ -1462,7 +1494,7 @@ export function StorefrontDesigner({
                           />
                         </Field>
                       </div>
-                      <div className="builder-field-group">
+                      <div className="builder-field-group" data-guide-spotlight="qr-table-stand">
                         <h3>
                           <QrCode size={15} /> {t("Backup QR")}
                         </h3>

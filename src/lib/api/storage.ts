@@ -1,6 +1,5 @@
 import { safeUuid } from "../../utils/id";
-import { requireSupabase, textArray } from "./shared";
-import type { ApiClient } from "./shared";
+import { requireSupabase, textArray, type ApiClient } from "./shared";
 import { imagePathsRowsSchema } from "../schemas";
 
 export async function removeUnreferencedProductImages(

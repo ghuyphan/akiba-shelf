@@ -81,6 +81,7 @@ export function ProductList({
         <button
           type="button"
           className="admin-new-item-button"
+          data-guide-spotlight="add-product-btn"
           onClick={onCreate}
         >
           <Plus size={17} /> {t("New item")}

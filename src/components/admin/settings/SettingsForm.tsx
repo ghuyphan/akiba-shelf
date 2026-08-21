@@ -107,6 +107,7 @@ export function SettingsForm({ shopId, settings, onSave }: SettingsFormProps) {
       title={t("Booth info")}
       description={t("Name, logo, location, and social links.")}
       icon={<Store size={18} />}
+      dataGuideSpotlight="booth-settings"
       action={
         !isEditing ? (
           <Button

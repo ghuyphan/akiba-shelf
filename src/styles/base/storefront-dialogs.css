@@ -188,6 +188,9 @@
 .code-modal-layout {
   display: grid;
   gap: 10px;
+  justify-items: center;
+  padding: 4px 0;
+  text-align: center;
 }
 
 .booth-info-modal {
@@ -278,12 +281,6 @@
   color: var(--ink);
   font-weight: 500;
   line-height: 1.4;
-}
-
-.code-modal-layout {
-  justify-items: center;
-  padding: 4px 0;
-  text-align: center;
 }
 
 .item-qr-card {

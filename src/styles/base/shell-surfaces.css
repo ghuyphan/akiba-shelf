@@ -2,6 +2,10 @@
   width: min(100% - 24px, 1500px);
   margin: 12px auto;
   padding: 18px 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
 :root {
@@ -15,13 +19,6 @@
   --sheet-animation-duration: 240ms;
   --sheet-handle-width: 42px;
   --sheet-handle-color: #d4dae2;
-}
-
-.app-shell {
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
 }
 
 .catalog-header,

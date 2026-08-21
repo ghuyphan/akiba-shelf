@@ -2192,6 +2192,48 @@ const vi: Record<string, string> = {
   "Last 7 days": "7 ngày qua",
   "Last 30 days": "30 ngày qua",
   "No orders in this period": "Không có đơn trong khoảng này",
+  "Shop readiness progress": "Tiến độ chuẩn bị gian hàng",
+  "{{done}}/{{total}} ready ({{percent}}%)": "{{done}}/{{total}} hoàn tất ({{percent}}%)",
+  "4. Table QR Stand & Signage": "4. Bảng QR để bàn & Biển hiệu",
+  "5. Customer Storefront Preview": "5. Xem trước cửa hàng của khách",
+  "Ready to print": "Sẵn sàng in",
+  "Display an acrylic QR stand on your table so attendees can scan and place orders instantly.":
+    "Đặt bảng mica mã QR trên bàn để khách tham quan quét và đặt hàng ngay.",
+  "View table stand": "Xem bảng QR để bàn",
+  "Stock Finalized": "Chốt xuất kho",
+  "Reserved for 15 minutes upon checkout; auto-restored to catalog if unpaid.":
+    "Hàng được giữ 15 phút khi đặt; tự động hoàn lại catalog nếu chưa thanh toán.",
+  "Bank notification": "Thông báo ngân hàng",
+  "Order #MS-4821": "Đơn #MS-4821",
+  "Verify the transfer note on your bank app matches the order code before clicking Confirm.":
+    "Kiểm tra nội dung chuyển khoản trên app ngân hàng khớp với mã đơn trước khi bấm Xác nhận.",
+  "Full Order Lifecycle": "Quy trình xử lý đơn hàng",
+  Fulfillment: "Trả hàng",
+  "Unpaid (15m)": "Chưa thanh toán (15p)",
+  Packed: "Đã gói hàng",
+  Bagged: "Đã vào túi",
+  Completed: "Hoàn tất",
+  "Picked up": "Khách đã nhận",
+  "Paid / Verify": "Đã thanh toán / Kiểm tra",
+  "Track orders from customer checkout to packing and fan pickup at the table.":
+    "Theo dõi đơn từ lúc khách đặt, đóng gói cho đến khi khách nhận tại bàn.",
+  "Sound Chime & Push Alerts": "Chuông báo & Thông báo đẩy",
+  "Live Alert": "Báo tức thì",
+  "Action Menu (…)": "Menu Thao tác (…)",
+  Header: "Thanh đầu trang",
+  "Enable Alerts": "Bật chuông báo",
+  "Grant Permission": "Cấp quyền trình duyệt",
+  "Audio Chime": "Chuông báo âm thanh",
+  "Never Miss Order": "Không bỏ lỡ đơn",
+  "Turn on audio and push alerts so your phone rings whenever a fan places an order in a noisy hall.":
+    "Bật chuông âm thanh và thông báo đẩy để điện thoại reo mỗi khi có khách đặt đơn trong sảnh ồn ào.",
+  "Configure alerts": "Cài đặt chuông báo",
+  "Standard gacha rates with pity; winning items deduct live catalog stock automatically.":
+    "Tỷ lệ gacha chuẩn kèm bảo hiểm; trúng thưởng tự động trừ kho catalog.",
+  "Restrict staff to order processing; protect sensitive settings and prevent unauthorized closing.":
+    "Giới hạn nhân viên chỉ xử lý đơn; bảo vệ cài đặt quan trọng và chống đóng phiên trái phép.",
+  "All sales, offline event orders, and gacha pulls share one live stock pool.":
+    "Mọi giao dịch trực tuyến, bán tại quầy và quay gacha đều dùng chung một kho tồn.",
 };
 
 export type PlatformTranslationVariables = Record<string, string | number>;

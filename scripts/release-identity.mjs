@@ -21,6 +21,11 @@ export function resolveReleaseId(env = process.env) {
       execFileSync("git", ["rev-parse", "--short=12", "HEAD"], {
         encoding: "utf8",
         stdio: ["ignore", "pipe", "ignore"],
+        env: {
+          ...process.env,
+          GIT_CONFIG_GLOBAL: "/dev/null",
+          GIT_CONFIG_SYSTEM: "/dev/null",
+        },
       }),
     );
   } catch {

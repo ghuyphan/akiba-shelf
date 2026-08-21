@@ -1,14 +1,15 @@
 import { MAX_FEATURED_PRODUCTS } from "../constants";
-import { PUBLIC_PRODUCT_COLUMNS } from "../catalogQueries";
-import type { PublicProductSort } from "../catalogQueries";
+import {
+  PUBLIC_PRODUCT_COLUMNS,
+  type PublicProductSort,
+} from "../catalogQueries";
 import {
   imagePathsRowSchema,
   productCategoryRowsSchema,
   productRowSchema,
 } from "../schemas";
 import type { Product } from "../../types/catalog";
-import { requireSupabase, textArray } from "./shared";
-import type { ApiClient } from "./shared";
+import { requireSupabase, textArray, type ApiClient } from "./shared";
 import { removeUnreferencedProductImages } from "./storage";
 import { normalizeProduct } from "./productNormalization";
 import { reportError } from "../observability";

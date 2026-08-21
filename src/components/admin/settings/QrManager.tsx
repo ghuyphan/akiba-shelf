@@ -103,6 +103,7 @@ export function QrManager({ shopId, settings, onSave }: QrManagerProps) {
       title={t("Payment & QR")}
       description={t("Bank details and payment instructions.")}
       icon={<QrCode size={18} />}
+      dataGuideSpotlight="payment-settings"
       action={
         !isEditing ? (
           <Button

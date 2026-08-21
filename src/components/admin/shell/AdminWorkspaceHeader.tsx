@@ -307,6 +307,7 @@ export function AdminWorkspaceHeader({
           </button>
           <ActionMenu
             className="admin-overflow-menu"
+            dataGuideSpotlight="push-notifications"
             label={t("More actions")}
             triggerIcon={<EllipsisVertical size={15} />}
             triggerClassName="app-header-button admin-overflow-toggle"

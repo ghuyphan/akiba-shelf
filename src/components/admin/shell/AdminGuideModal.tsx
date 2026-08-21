@@ -1,11 +1,13 @@
 import { useState } from "react";
 import {
   ArrowRight,
+  BellRing,
   Check,
   CheckCircle2,
   Clock,
   ExternalLink,
   Gamepad2,
+  Lock,
   MapPin,
   Package,
   QrCode,
@@ -13,6 +15,7 @@ import {
   Smartphone,
   Sparkles,
   Store,
+  Volume2,
   WifiOff,
 } from "lucide-react";
 import { Modal } from "../../ui/Modal";
@@ -38,7 +41,7 @@ type AdminGuideModalProps = {
   products: Product[];
   shopRole: "owner" | "admin" | "staff";
   shopSlug: string;
-  onNavigateTab: (tab: AdminViewTab) => void;
+  onNavigateTab: (tab: AdminViewTab, spotlightKey?: string) => void;
   initialSection?: GuideSection;
 };
 
@@ -70,10 +73,22 @@ export function AdminGuideModal({
   const hasBoothInfo = Boolean(
     booth.booth_name.trim() && booth.subtitle.trim() && booth.location.trim(),
   );
+  const hasQrStand = hasPayment && Boolean(booth.booth_name.trim());
 
-  function handleJump(tab: AdminViewTab) {
+  // Overall readiness checklist
+  const checklistItems = [
+    { key: "payment", complete: hasPayment },
+    { key: "catalog", complete: hasProducts },
+    { key: "identity", complete: hasBoothInfo },
+    { key: "table-stand", complete: hasQrStand },
+  ];
+  const completedCount = checklistItems.filter((item) => item.complete).length;
+  const totalCount = checklistItems.length;
+  const progressPercent = Math.round((completedCount / totalCount) * 100);
+
+  function handleJump(tab: AdminViewTab, spotlightKey?: string) {
     onClose();
-    onNavigateTab(tab);
+    onNavigateTab(tab, spotlightKey);
   }
 
   function handleOpenStorefront() {
@@ -83,6 +98,31 @@ export function AdminGuideModal({
       "_blank",
       "noopener,noreferrer",
     );
+  }
+
+  function handleTabKeyDown(
+    e: React.KeyboardEvent,
+    currentTab: GuideSection,
+  ) {
+    const tabs: GuideSection[] = isOwnerOrAdmin
+      ? ["checklist", "convention", "features"]
+      : ["convention", "features"];
+    const currentIndex = tabs.indexOf(currentTab);
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      const nextTab = tabs[(currentIndex + 1) % tabs.length];
+      setActiveSection(nextTab);
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      const prevTab = tabs[(currentIndex - 1 + tabs.length) % tabs.length];
+      setActiveSection(prevTab);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setActiveSection(tabs[0]);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setActiveSection(tabs[tabs.length - 1]);
+    }
   }
 
   return (
@@ -105,10 +145,14 @@ export function AdminGuideModal({
             <button
               type="button"
               role="tab"
+              id="guide-tab-checklist"
+              aria-controls="guide-panel-checklist"
               aria-label={t("Launch Checklist")}
               aria-selected={activeSection === "checklist"}
-              className={`admin-guide-nav-tab ${activeSection === "checklist" ? "is-active active" : ""}`}
+              tabIndex={activeSection === "checklist" ? 0 : -1}
+              className={`admin-guide-nav-tab ${activeSection === "checklist" ? "is-active" : ""}`}
               onClick={() => setActiveSection("checklist")}
+              onKeyDown={(e) => handleTabKeyDown(e, "checklist")}
             >
               <CheckCircle2 size={14} />
               <span className="tab-label-full">{t("Launch Checklist")}</span>
@@ -118,10 +162,14 @@ export function AdminGuideModal({
           <button
             type="button"
             role="tab"
+            id="guide-tab-convention"
+            aria-controls="guide-panel-convention"
             aria-label={t("Convention Cheat Sheet")}
             aria-selected={activeSection === "convention"}
-            className={`admin-guide-nav-tab ${activeSection === "convention" ? "is-active active" : ""}`}
+            tabIndex={activeSection === "convention" ? 0 : -1}
+            className={`admin-guide-nav-tab ${activeSection === "convention" ? "is-active" : ""}`}
             onClick={() => setActiveSection("convention")}
+            onKeyDown={(e) => handleTabKeyDown(e, "convention")}
           >
             <Clock size={14} />
             <span className="tab-label-full">{t("Convention Cheat Sheet")}</span>
@@ -130,10 +178,14 @@ export function AdminGuideModal({
           <button
             type="button"
             role="tab"
+            id="guide-tab-features"
+            aria-controls="guide-panel-features"
             aria-label={t("Feature Playbook")}
             aria-selected={activeSection === "features"}
-            className={`admin-guide-nav-tab ${activeSection === "features" ? "is-active active" : ""}`}
+            tabIndex={activeSection === "features" ? 0 : -1}
+            className={`admin-guide-nav-tab ${activeSection === "features" ? "is-active" : ""}`}
             onClick={() => setActiveSection("features")}
+            onKeyDown={(e) => handleTabKeyDown(e, "features")}
           >
             <Sparkles size={14} />
             <span className="tab-label-full">{t("Feature Playbook")}</span>
@@ -143,19 +195,41 @@ export function AdminGuideModal({
 
         <div className="admin-guide-content">
           {activeSection === "checklist" && isOwnerOrAdmin && (
-            <>
-              <div
+            <div
+              id="guide-panel-checklist"
+              role="tabpanel"
+              aria-labelledby="guide-tab-checklist"
+              className="admin-guide-tabpanel"
+            >
+              {/* Readiness Progress Bar Header */}
+              <div className="admin-guide-progress-card">
+                <div className="admin-guide-progress-header">
+                  <span className="admin-guide-progress-title">
+                    <CheckCircle2 size={15} />
+                    {t("Shop readiness progress")}
+                  </span>
+                  <span className="admin-guide-progress-stat">
+                    {t("{{done}}/{{total}} ready ({{percent}}%)", {
+                      done: completedCount,
+                      total: totalCount,
+                      percent: progressPercent,
+                    })}
+                  </span>
+                </div>
+                <div className="admin-guide-progress-track">
+                  <div
+                    className="admin-guide-progress-fill"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Fast Banner Tip */}
+              <button
+                type="button"
                 className="admin-guide-banner-tip is-clickable"
-                role="button"
-                tabIndex={0}
                 aria-label={t("Open event mode")}
-                onClick={() => handleJump("orders")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleJump("orders");
-                  }
-                }}
+                onClick={() => handleJump("orders", "offline-event-tools")}
               >
                 <div className="admin-guide-tip-content">
                   <WifiOff size={15} style={{ flexShrink: 0 }} />
@@ -168,7 +242,7 @@ export function AdminGuideModal({
                 <span className="admin-guide-tip-action">
                   {t("Open event mode")} <ArrowRight size={12} />
                 </span>
-              </div>
+              </button>
 
               {/* Step 1: Payment */}
               <article className="admin-guide-card admin-guide-card-checklist">
@@ -176,7 +250,7 @@ export function AdminGuideModal({
                   <div className="guide-qr-mockup">
                     <QrCode size={26} />
                     <span className="guide-qr-badge">
-                      {paymentBank?.code || "QR"}
+                      {paymentBank?.code || "VietQR"}
                     </span>
                   </div>
                 </div>
@@ -214,7 +288,10 @@ export function AdminGuideModal({
                   <Button
                     variant={hasPayment ? "secondary" : "primary"}
                     onClick={() =>
-                      handleJump(isCompact ? "settings" : "design")
+                      handleJump(
+                        isCompact ? "settings" : "design",
+                        "payment-settings",
+                      )
                     }
                   >
                     {hasPayment ? t("Review payment") : t("Set up payment")}
@@ -262,7 +339,7 @@ export function AdminGuideModal({
                 <div className="admin-guide-card-action">
                   <Button
                     variant={hasProducts ? "secondary" : "primary"}
-                    onClick={() => handleJump("products")}
+                    onClick={() => handleJump("products", "add-product-btn")}
                   >
                     {hasProducts ? t("Manage products") : t("Add products")}
                   </Button>
@@ -308,7 +385,10 @@ export function AdminGuideModal({
                   <Button
                     variant={hasBoothInfo ? "secondary" : "primary"}
                     onClick={() =>
-                      handleJump(isCompact ? "settings" : "design")
+                      handleJump(
+                        isCompact ? "settings" : "design",
+                        "booth-settings",
+                      )
                     }
                   >
                     {hasBoothInfo ? t("Edit booth info") : t("Complete booth")}
@@ -316,7 +396,54 @@ export function AdminGuideModal({
                 </div>
               </article>
 
-              {/* Step 4: Test Checkout */}
+              {/* Step 4: Printable Table Stand QR */}
+              <article className="admin-guide-card admin-guide-card-checklist">
+                <div className="admin-guide-visual admin-guide-visual-standee">
+                  <div className="guide-standee-mockup">
+                    <QrCode size={20} />
+                    <span className="guide-standee-pill">STAND</span>
+                  </div>
+                </div>
+                <div className="admin-guide-info">
+                  <div className="admin-guide-title-row">
+                    <span className="admin-guide-card-title">
+                      {t("4. Table QR Stand & Signage")}
+                    </span>
+                    <span
+                      className={`admin-guide-badge ${hasQrStand ? "admin-guide-badge-done" : "admin-guide-badge-todo"}`}
+                    >
+                      {hasQrStand ? (
+                        <>
+                          <Check size={11} />
+                          {t("Ready to print")}
+                        </>
+                      ) : (
+                        t("Action needed")
+                      )}
+                    </span>
+                  </div>
+                  <p className="admin-guide-card-desc">
+                    {t(
+                      "Display an acrylic QR stand on your table so attendees can scan and place orders instantly.",
+                    )}
+                  </p>
+                </div>
+                <div className="admin-guide-card-action">
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      handleJump(
+                        isCompact ? "settings" : "design",
+                        "qr-table-stand",
+                      )
+                    }
+                  >
+                    {t("View table stand")}
+                  </Button>
+                </div>
+              </article>
+
+              {/* Step 5: Test Checkout & Preview */}
               <article className="admin-guide-card admin-guide-card-checklist">
                 <div className="admin-guide-visual admin-guide-visual-storefront">
                   <div className="guide-phone-mockup">
@@ -327,7 +454,7 @@ export function AdminGuideModal({
                 <div className="admin-guide-info">
                   <div className="admin-guide-title-row">
                     <span className="admin-guide-card-title">
-                      {t("4. Customer Storefront Preview")}
+                      {t("5. Customer Storefront Preview")}
                     </span>
                     <span className="admin-guide-badge admin-guide-badge-info">
                       /s/{shopSlug}
@@ -349,11 +476,16 @@ export function AdminGuideModal({
                   </Button>
                 </div>
               </article>
-            </>
+            </div>
           )}
 
           {activeSection === "convention" && (
-            <>
+            <div
+              id="guide-panel-convention"
+              role="tabpanel"
+              aria-labelledby="guide-tab-convention"
+              className="admin-guide-tabpanel"
+            >
               {/* Emergency Card 1: 15-min reservation */}
               <article className="admin-guide-card">
                 <div className="admin-guide-card-header">
@@ -378,12 +510,12 @@ export function AdminGuideModal({
                   <ArrowRight size={14} className="guide-diagram-arrow" />
                   <div className="guide-diagram-step is-success">
                     <strong>{t("Confirmed")}</strong>
-                    <small>{t("Items Packed")}</small>
+                    <small>{t("Stock Finalized")}</small>
                   </div>
                 </div>
                 <p className="admin-guide-card-desc">
                   {t(
-                    "Reserved for 15 minutes upon checkout; auto-restored if unpaid.",
+                    "Reserved for 15 minutes upon checkout; auto-restored to catalog if unpaid.",
                   )}
                 </p>
                 {isOwnerOrAdmin && (
@@ -398,7 +530,7 @@ export function AdminGuideModal({
                 )}
               </article>
 
-              {/* Emergency Card 2: VietQR Reconciliation */}
+              {/* Emergency Card 2: VietQR Reconciliation & Split Screen */}
               <article className="admin-guide-card">
                 <div className="admin-guide-card-header">
                   <span className="admin-guide-card-title">
@@ -409,25 +541,27 @@ export function AdminGuideModal({
                     {t("Safe Banking")}
                   </span>
                 </div>
-                <div className="guide-diagram-flow">
-                  <div className="guide-diagram-step">
-                    <strong>{t("Transfer Note")}</strong>
-                    <code>MS-XXXX</code>
+                <div className="guide-bank-split-preview">
+                  <div className="guide-split-box guide-split-banking">
+                    <span className="guide-split-tag">
+                      <BellRing size={11} /> {t("Bank notification")}
+                    </span>
+                    <strong>+120.000 VND</strong>
+                    <code>ND: MS-4821</code>
                   </div>
                   <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step">
-                    <strong>{t("Order Code")}</strong>
-                    <code>MS-XXXX</code>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step is-success">
-                    <strong>{t("1-Click Confirm")}</strong>
-                    <small>{t("Ready for Pickup")}</small>
+                  <div className="guide-split-box guide-split-matsuri">
+                    <span className="guide-split-tag">
+                      <Package size={11} /> {t("Order #MS-4821")}
+                    </span>
+                    <span className="guide-split-btn">
+                      <Check size={11} /> {t("1-Click Confirm")}
+                    </span>
                   </div>
                 </div>
                 <p className="admin-guide-card-desc">
                   {t(
-                    "Verify the transfer note on your bank app matches the order code.",
+                    "Verify the transfer note on your bank app matches the order code before clicking Confirm.",
                   )}
                 </p>
                 {isOwnerOrAdmin && (
@@ -442,7 +576,46 @@ export function AdminGuideModal({
                 )}
               </article>
 
-              {/* Emergency Card 3: Offline Event Mode */}
+              {/* Emergency Card 3: Complete Order Lifecycle */}
+              <article className="admin-guide-card">
+                <div className="admin-guide-card-header">
+                  <span className="admin-guide-card-title">
+                    <Package size={17} />
+                    {t("Full Order Lifecycle")}
+                  </span>
+                  <span className="admin-guide-badge admin-guide-badge-info">
+                    {t("Fulfillment")}
+                  </span>
+                </div>
+                <div className="guide-diagram-flow guide-pipeline-flow">
+                  <div className="guide-diagram-step">
+                    <strong>{t("Pending")}</strong>
+                    <small>{t("Unpaid (15m)")}</small>
+                  </div>
+                  <ArrowRight size={13} className="guide-diagram-arrow" />
+                  <div className="guide-diagram-step is-highlight">
+                    <strong>{t("Confirmed")}</strong>
+                    <small>{t("Paid / Verify")}</small>
+                  </div>
+                  <ArrowRight size={13} className="guide-diagram-arrow" />
+                  <div className="guide-diagram-step">
+                    <strong>{t("Packed")}</strong>
+                    <small>{t("Bagged")}</small>
+                  </div>
+                  <ArrowRight size={13} className="guide-diagram-arrow" />
+                  <div className="guide-diagram-step is-success">
+                    <strong>{t("Completed")}</strong>
+                    <small>{t("Picked up")}</small>
+                  </div>
+                </div>
+                <p className="admin-guide-card-desc">
+                  {t(
+                    "Track orders from customer checkout to packing and fan pickup at the table.",
+                  )}
+                </p>
+              </article>
+
+              {/* Emergency Card 4: Spotty / Dead Wi-Fi */}
               <article className="admin-guide-card">
                 <div className="admin-guide-card-header">
                   <span className="admin-guide-card-title">
@@ -478,18 +651,69 @@ export function AdminGuideModal({
                   <div className="admin-guide-card-action">
                     <Button
                       variant="secondary"
-                      onClick={() => handleJump("orders")}
+                      onClick={() =>
+                        handleJump("orders", "offline-event-tools")
+                      }
                     >
                       {t("Offline Event Tools")}
                     </Button>
                   </div>
                 )}
               </article>
-            </>
+
+              {/* Emergency Card 5: Audio & Push Alerts */}
+              <article className="admin-guide-card">
+                <div className="admin-guide-card-header">
+                  <span className="admin-guide-card-title">
+                    <Volume2 size={17} />
+                    {t("Sound Chime & Push Alerts")}
+                  </span>
+                  <span className="admin-guide-badge admin-guide-badge-done">
+                    {t("Live Alert")}
+                  </span>
+                </div>
+                <div className="guide-diagram-flow">
+                  <div className="guide-diagram-step">
+                    <strong>{t("Action Menu (…)")}</strong>
+                    <small>{t("Header")}</small>
+                  </div>
+                  <ArrowRight size={14} className="guide-diagram-arrow" />
+                  <div className="guide-diagram-step">
+                    <strong>{t("Enable Alerts")}</strong>
+                    <small>{t("Grant Permission")}</small>
+                  </div>
+                  <ArrowRight size={14} className="guide-diagram-arrow" />
+                  <div className="guide-diagram-step is-success">
+                    <strong>{t("Audio Chime")}</strong>
+                    <small>{t("Never Miss Order")}</small>
+                  </div>
+                </div>
+                <p className="admin-guide-card-desc">
+                  {t(
+                    "Turn on audio and push alerts so your phone rings whenever a fan places an order in a noisy hall.",
+                  )}
+                </p>
+                <div className="admin-guide-card-action">
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      handleJump("orders", "push-notifications")
+                    }
+                  >
+                    {t("Configure alerts")}
+                  </Button>
+                </div>
+              </article>
+            </div>
           )}
 
           {activeSection === "features" && (
-            <>
+            <div
+              id="guide-panel-features"
+              role="tabpanel"
+              aria-labelledby="guide-tab-features"
+              className="admin-guide-tabpanel"
+            >
               {/* Feature 1: Gacha Pity Engine */}
               <article className="admin-guide-card">
                 <div className="admin-guide-card-header">
@@ -503,24 +727,29 @@ export function AdminGuideModal({
                 </div>
                 <div className="guide-diagram-pity">
                   <div className="guide-pity-bar">
-                    <div className="guide-pity-progress" style={{ width: "80%" }} />
+                    <div
+                      className="guide-pity-progress"
+                      style={{ width: "82%" }}
+                    />
                   </div>
                   <div className="guide-pity-labels">
                     <span>{t("1 Roll")}</span>
-                    <strong>{t("74 Soft Pity")}</strong>
+                    <strong>
+                      <Sparkles size={11} /> {t("74 Soft Pity")}
+                    </strong>
                     <span>{t("90 Guaranteed 5★")}</span>
                   </div>
                 </div>
                 <p className="admin-guide-card-desc">
                   {t(
-                    "Standard gacha rates with pity; winning items deduct live catalog stock.",
+                    "Standard gacha rates with pity; winning items deduct live catalog stock automatically.",
                   )}
                 </p>
                 {isOwnerOrAdmin && (
                   <div className="admin-guide-card-action">
                     <Button
                       variant="secondary"
-                      onClick={() => handleJump("gacha")}
+                      onClick={() => handleJump("gacha", "gacha-manager")}
                     >
                       {t("Open Gacha Manager")}
                     </Button>
@@ -532,7 +761,7 @@ export function AdminGuideModal({
               <article className="admin-guide-card">
                 <div className="admin-guide-card-header">
                   <span className="admin-guide-card-title">
-                    <ShieldCheck size={17} />
+                    <Lock size={17} />
                     {t("Staff Tablet & PIN Security")}
                   </span>
                   <span className="admin-guide-badge admin-guide-badge-done">
@@ -557,14 +786,14 @@ export function AdminGuideModal({
                 </div>
                 <p className="admin-guide-card-desc">
                   {t(
-                    "Restrict staff to order processing; protect sensitive settings.",
+                    "Restrict staff to order processing; protect sensitive settings and prevent unauthorized closing.",
                   )}
                 </p>
                 {isOwnerOrAdmin && (
                   <div className="admin-guide-card-action">
                     <Button
                       variant="secondary"
-                      onClick={() => handleJump("team")}
+                      onClick={() => handleJump("team", "team-manager")}
                     >
                       {t("Manage Team Access")}
                     </Button>
@@ -600,20 +829,22 @@ export function AdminGuideModal({
                   </div>
                 </div>
                 <p className="admin-guide-card-desc">
-                  {t("All sales and gacha pulls share one live stock pool.")}
+                  {t(
+                    "All sales, offline event orders, and gacha pulls share one live stock pool.",
+                  )}
                 </p>
                 {isOwnerOrAdmin && (
                   <div className="admin-guide-card-action">
                     <Button
                       variant="secondary"
-                      onClick={() => handleJump("products")}
+                      onClick={() => handleJump("products", "add-product-btn")}
                     >
                       {t("Manage live stock")}
                     </Button>
                   </div>
                 )}
               </article>
-            </>
+            </div>
           )}
         </div>
       </div>

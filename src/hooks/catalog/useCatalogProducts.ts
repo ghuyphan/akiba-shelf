@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PublicProductSort } from "../../lib/catalogQueries";
 import {
   getErrorMessage,
   isSessionNoise,
   isTransportError,
 } from "../../lib/errors";
-import { queryLocalCatalog } from "../../lib/catalogQueries";
-import type { Product } from "../../types/catalog";
+import {
+  queryLocalCatalog,
+  type PublicProductSort,
+} from "../../lib/catalogQueries";
+import type { CatalogLocale, Product } from "../../types/catalog";
 import { loadOfflineEventSession } from "../../lib/offline/offlineEvents";
 import { translations } from "../../lib/i18n/catalogI18n";
-import type { CatalogLocale } from "../../types/catalog";
 
 const PRODUCT_PAGE_SIZE = 24;
 
