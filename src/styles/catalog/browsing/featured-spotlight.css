@@ -75,6 +75,7 @@
   color: var(--ink);
   background: color-mix(in srgb, var(--coral) 8%, #ffffff);
   font-size: 10px;
+  line-height: 9px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;

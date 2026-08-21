@@ -2239,7 +2239,7 @@ test("designer phone rules apply inside the preview iframe", async ({
   );
   await expect(
     preview.locator(".storefront-module-cart > .designer-module-handle"),
-  ).toHaveCSS("position", "fixed");
+  ).toHaveCSS("position", "absolute");
 });
 
 test("mobile team members use one unified list surface", async ({ page }) => {
