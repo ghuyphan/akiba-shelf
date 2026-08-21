@@ -2007,94 +2007,114 @@ export function StorefrontDesigner({
           </Alert>
         )}
         <div className="builder-toolbar">
-          <div>
+          <div className="builder-toolbar-title">
             <strong>{t(sectionMeta[selected].title)}</strong>
-            <small>
-              {t(hasChanges ? "Unpublished changes" : "Published storefront")}
-            </small>
+            <span
+              className={`builder-status-badge ${hasChanges ? "is-dirty" : "is-clean"}`}
+            >
+              <span className="builder-status-dot" />
+              <span>
+                {t(hasChanges ? "Unpublished changes" : "Published storefront")}
+              </span>
+            </span>
           </div>
-          <div className="builder-toolbar-controls">
-            <div
-              className="builder-device-switcher admin-segmented-control admin-segmented-view"
-              aria-label={t("Preview size")}
-            >
-              <button
-                type="button"
-                className={device === "desktop" ? "active" : ""}
-                aria-pressed={device === "desktop"}
-                onClick={() => changeDevice("desktop")}
+          <div className="builder-toolbar-center">
+            <div className="builder-toolbar-island">
+              <div
+                className="builder-device-switcher"
+                aria-label={t("Preview size")}
               >
-                <Monitor size={16} />
-                {t("Desktop")}
-              </button>
-              <button
-                type="button"
-                className={device === "phone" ? "active" : ""}
-                aria-pressed={device === "phone"}
-                onClick={() => changeDevice("phone")}
+                <button
+                  type="button"
+                  className={device === "desktop" ? "active" : ""}
+                  aria-pressed={device === "desktop"}
+                  onClick={() => changeDevice("desktop")}
+                  title={t("Desktop")}
+                >
+                  <Monitor size={14} />
+                  <span>{t("Desktop")}</span>
+                </button>
+                <button
+                  type="button"
+                  className={device === "phone" ? "active" : ""}
+                  aria-pressed={device === "phone"}
+                  onClick={() => changeDevice("phone")}
+                  title={t("Phone")}
+                >
+                  <Smartphone size={14} />
+                  <span>{t("Phone")}</span>
+                </button>
+              </div>
+              <span className="builder-island-divider" />
+              <div
+                className="builder-zoom-controls"
+                aria-label={t("Preview zoom")}
               >
-                <Smartphone size={16} />
-                {t("Phone")}
-              </button>
-            </div>
-            <div
-              className="builder-zoom-controls"
-              aria-label={t("Preview zoom")}
-            >
-              <button
-                type="button"
-                onClick={() => adjustZoom(-10)}
-                disabled={displayedZoom <= 20}
-                aria-label={t("Zoom out")}
-              >
-                <Minus size={14} />
-              </button>
-              <button
-                type="button"
-                className={previewZoom === "fit" ? "active" : ""}
-                onClick={fitPreview}
-                aria-label={t("Fit preview")}
-              >
-                <Maximize2 size={13} />
-                <span>{displayedZoom}%</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => adjustZoom(10)}
-                disabled={displayedZoom >= 150}
-                aria-label={t("Zoom in")}
-              >
-                <Plus size={14} />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => adjustZoom(-10)}
+                  disabled={displayedZoom <= 20}
+                  aria-label={t("Zoom out")}
+                  title={t("Zoom out")}
+                >
+                  <Minus size={13} />
+                </button>
+                <button
+                  type="button"
+                  className={`builder-zoom-value ${previewZoom === "fit" ? "is-fit active" : ""}`}
+                  onClick={fitPreview}
+                  aria-label={t("Fit preview")}
+                  title={t("Fit preview")}
+                >
+                  <Maximize2 size={12} />
+                  <span>{displayedZoom}%</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => adjustZoom(10)}
+                  disabled={displayedZoom >= 150}
+                  aria-label={t("Zoom in")}
+                  title={t("Zoom in")}
+                >
+                  <Plus size={13} />
+                </button>
+              </div>
             </div>
           </div>
           <div className="builder-history-actions">
+            <div className="builder-btn-group">
+              <button
+                type="button"
+                onClick={undo}
+                disabled={history.length === 0}
+                aria-label={t("Undo")}
+                title={t("Undo")}
+              >
+                <Undo2 size={15} />
+              </button>
+              <button
+                type="button"
+                onClick={redo}
+                disabled={future.length === 0}
+                aria-label={t("Redo")}
+                title={t("Redo")}
+              >
+                <Redo2 size={15} />
+              </button>
+            </div>
             <button
               type="button"
-              onClick={undo}
-              disabled={history.length === 0}
-              aria-label={t("Undo")}
-            >
-              <Undo2 size={15} />
-            </button>
-            <button
-              type="button"
-              onClick={redo}
-              disabled={future.length === 0}
-              aria-label={t("Redo")}
-            >
-              <Redo2 size={15} />
-            </button>
-            <button
-              type="button"
+              className="builder-reset-btn"
               onClick={resetDraft}
               disabled={!hasChanges}
               aria-label={t("Reset unpublished changes")}
+              title={t("Reset unpublished changes")}
             >
-              <RotateCcw size={15} />
+              <RotateCcw size={14} />
               <span>{t("Reset")}</span>
             </button>
             <Button
+              variant="primary"
               icon={<Save size={15} />}
               loading={busy}
               loadingText={t("Publishing…")}
