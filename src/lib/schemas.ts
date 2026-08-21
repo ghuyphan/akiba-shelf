@@ -146,14 +146,6 @@ export const boothSettingsSchema = z
     layout_order: layoutOrderSchema
       .nullish()
       .transform((value) => value ?? undefined),
-    layout_preset: z
-      .enum(["split", "full_hero", "sidebar_booth", "stacked"])
-      .nullish()
-      .transform((value) => value ?? undefined),
-    hidden_sections: z
-      .array(z.enum(storefrontSections))
-      .nullish()
-      .transform((value) => value ?? undefined),
     corner_radius: z
       .number()
       .int()

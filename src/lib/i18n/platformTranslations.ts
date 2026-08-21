@@ -1134,28 +1134,7 @@ const vi: Record<string, string> = {
   Content: "Nội dung",
   Style: "Phong cách",
   "Page sections": "Các phần trang",
-  "Layout structure": "Cấu trúc bố cục",
-  "Choose the general layout template for your storefront.":
-    "Chọn mẫu bố cục tổng thể cho cửa hàng của bạn.",
-  "Split (Classic)": "Chia đôi (Cổ điển)",
-  "Featured & Booth header with 2-column catalog":
-    "Banner nổi bật và Thông tin gian hàng ở đầu, danh mục 2 cột",
-  "Full-width Banner": "Banner toàn chiều rộng",
-  "Wide 12-column hero banner on top":
-    "Banner nổi bật lớn 12 cột ở trên cùng",
-  "Sidebar Booth": "Gian hàng thanh bên",
-  "Sticky booth info & cart on the side":
-    "Thông tin gian hàng và giỏ hàng cố định ở cột bên",
-  "Stacked Flow": "Dòng chảy xếp chồng",
-  "Sequential vertical flow for events":
-    "Luồng hiển thị dọc liền mạch phù hợp cho sự kiện",
   "Drag to reorder the public page.": "Kéo để sắp xếp lại trang công khai.",
-  "Drag to reorder or toggle visibility.":
-    "Kéo để sắp xếp lại hoặc bật/tắt hiển thị.",
-  "Customize section order and visibility. Changes apply immediately to the live preview canvas.":
-    "Tùy chỉnh thứ tự và hiển thị phần trang. Thay đổi được áp dụng ngay trên bản xem trước.",
-  "Hide {{section}}": "Ẩn {{section}}",
-  "Show {{section}}": "Hiện {{section}}",
   "Move {{section}} up": "Di chuyển {{section}} lên",
   "Move {{section}} down": "Di chuyển {{section}} xuống",
   "Wide and side modules keep safe column widths. Dragging changes their order within those responsive lanes.":

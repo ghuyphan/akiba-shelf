@@ -8,11 +8,8 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Columns,
   Copy,
   CreditCard,
-  Eye,
-  EyeOff,
   GripVertical,
   Languages,
   LayoutTemplate,
@@ -21,13 +18,11 @@ import {
   Minus,
   Monitor,
   Palette,
-  PanelRight,
   Plus,
   QrCode,
   Redo2,
   RefreshCw,
   RotateCcw,
-  Rows,
   Save,
   Smartphone,
   Sparkles,
@@ -39,7 +34,6 @@ import type {
   BoothSettings,
   PaymentSettings,
   Product,
-  StorefrontLayoutPreset,
   StorefrontSection,
 } from "../../../types/catalog";
 import {
@@ -47,7 +41,6 @@ import {
   getThemeStyle,
 } from "../../../utils/theme";
 import { CatalogLocaleProvider } from "../../../lib/i18n/catalogLocale";
-import { partitionStorefrontOrder } from "../../catalog/layout/storefrontLayout";
 import type { PublicProductSort } from "../../../lib/catalogQueries";
 import { useAsyncAction } from "../../../hooks/shared/useAsyncAction";
 import { useToast } from "../../ui/ToastProvider";
@@ -169,38 +162,6 @@ const inspectorTabs = [
   ["content", Type, "Content"],
   ["style", Palette, "Style"],
 ] as const;
-
-const layoutPresetOptions: Array<{
-  value: StorefrontLayoutPreset;
-  title: string;
-  description: string;
-  icon: typeof LayoutTemplate;
-}> = [
-  {
-    value: "split",
-    title: "Split (Classic)",
-    description: "Featured & Booth header with 2-column catalog",
-    icon: Columns,
-  },
-  {
-    value: "full_hero",
-    title: "Full-width Banner",
-    description: "Wide 12-column hero banner on top",
-    icon: LayoutTemplate,
-  },
-  {
-    value: "sidebar_booth",
-    title: "Sidebar Booth",
-    description: "Sticky booth info & cart on the side",
-    icon: PanelRight,
-  },
-  {
-    value: "stacked",
-    title: "Stacked Flow",
-    description: "Sequential vertical flow for events",
-    icon: Rows,
-  },
-];
 
 function normalizedOrder(order?: StorefrontSection[]) {
   return order?.length === allowedSections.length &&
@@ -1007,24 +968,13 @@ export function StorefrontDesigner({
       />
     ),
   };
-
-  function toggleSectionVisibility(section: StorefrontSection) {
-    const hidden = draft.hidden_sections ?? [];
-    const nextHidden = hidden.includes(section)
-      ? hidden.filter((s) => s !== section)
-      : [...hidden, section];
-    update("hidden_sections", nextHidden);
-  }
-
-  const {
-    hero: heroPreviewSections,
-    main: mainPreviewSections,
-    side: sidePreviewSections,
-  } = partitionStorefrontOrder(
-    order,
-    draft.layout_preset,
-    draft.hidden_sections,
+  const heroPreviewSections = order.filter(
+    (section) => section === "featured" || section === "booth",
   );
+  const mainPreviewSections = order.filter(
+    (section) => section === "controls" || section === "products",
+  );
+  const sidePreviewSections = order.filter((section) => section === "cart");
 
   function renderModule(section: StorefrontSection) {
     return (
@@ -1190,157 +1140,82 @@ export function StorefrontDesigner({
                 <>
                   <div className="builder-section-heading">
                     <div>
-                      <strong>{t("Layout structure")}</strong>
-                      <small>
-                        {t(
-                          "Choose the general layout template for your storefront.",
-                        )}
-                      </small>
-                    </div>
-                  </div>
-                  <div className="builder-preset-grid">
-                    {layoutPresetOptions.map((presetOpt) => {
-                      const isActive =
-                        (draft.layout_preset ?? "split") === presetOpt.value;
-                      const Icon = presetOpt.icon;
-                      return (
-                        <button
-                          key={presetOpt.value}
-                          type="button"
-                          className={`builder-preset-card ${isActive ? "is-active" : ""}`}
-                          onClick={() =>
-                            update("layout_preset", presetOpt.value)
-                          }
-                        >
-                          <strong>
-                            <Icon size={14} />
-                            {t(presetOpt.title)}
-                          </strong>
-                          <small>{t(presetOpt.description)}</small>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="builder-section-heading">
-                    <div>
                       <strong>{t("Page sections")}</strong>
-                      <small>
-                        {t("Drag to reorder or toggle visibility.")}
-                      </small>
+                      <small>{t("Drag to reorder the public page.")}</small>
                     </div>
                   </div>
                   <div className="designer-block-list">
-                    {order.map((section, index) => {
-                      const isHidden = (draft.hidden_sections ?? []).includes(
-                        section,
-                      );
-                      return (
-                        <article
-                          key={section}
-                          data-designer-section={section}
-                          style={
-                            {
-                              viewTransitionName: `designer-list-${section}`,
-                            } as React.CSSProperties
-                          }
-                          onDragOver={(event) =>
-                            markDropTarget(event, section, "vertical")
-                          }
-                          onDrop={(event) => dropOn(event, section)}
-                          className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""} ${isHidden ? "is-hidden" : ""}`}
+                    {order.map((section, index) => (
+                      <article
+                        key={section}
+                        data-designer-section={section}
+                        style={
+                          {
+                            viewTransitionName: `designer-list-${section}`,
+                          } as React.CSSProperties
+                        }
+                        onDragOver={(event) =>
+                          markDropTarget(event, section, "vertical")
+                        }
+                        onDrop={(event) => dropOn(event, section)}
+                        className={`${dragged === section ? "dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `drag-over drop-${dropTarget.edge}` : ""} ${selected === section ? "selected" : ""}`}
+                      >
+                        <button
+                          type="button"
+                          className="designer-list-grip"
+                          draggable
+                          onDragStart={(event) => beginDrag(event, section)}
+                          onDragEnd={endDrag}
+                          aria-label={t("Drag {{section}}", {
+                            section: t(sectionMeta[section].title),
+                          })}
                         >
+                          <GripVertical size={17} />
+                        </button>
+                        <button
+                          type="button"
+                          className="designer-list-select"
+                          onClick={() => selectModule(section)}
+                          aria-label={t("Edit {{section}}", {
+                            section: t(sectionMeta[section].title),
+                          })}
+                        >
+                          <span>
+                            <strong>
+                              {index + 1}. {t(sectionMeta[section].title)}
+                            </strong>
+                            <small>{t(sectionMeta[section].description)}</small>
+                          </span>
+                        </button>
+                        <em>{t(sectionMeta[section].size)}</em>
+                        <div>
                           <button
                             type="button"
-                            className="designer-list-grip"
-                            draggable
-                            onDragStart={(event) => beginDrag(event, section)}
-                            onDragEnd={endDrag}
-                            aria-label={t("Drag {{section}}", {
+                            disabled={index === 0}
+                            onClick={() => nudge(section, -1)}
+                            aria-label={t("Move {{section}} up", {
                               section: t(sectionMeta[section].title),
                             })}
                           >
-                            <GripVertical size={17} />
+                            <ArrowUp size={14} />
                           </button>
                           <button
                             type="button"
-                            className={`designer-list-visibility-toggle ${isHidden ? "is-hidden" : ""}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              toggleSectionVisibility(section);
-                            }}
-                            aria-label={t(
-                              isHidden
-                                ? "Show {{section}}"
-                                : "Hide {{section}}",
-                              {
-                                section: t(sectionMeta[section].title),
-                              },
-                            )}
-                            title={t(
-                              isHidden
-                                ? "Show {{section}}"
-                                : "Hide {{section}}",
-                              {
-                                section: t(sectionMeta[section].title),
-                              },
-                            )}
-                          >
-                            {isHidden ? (
-                              <EyeOff size={15} />
-                            ) : (
-                              <Eye size={15} />
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            className="designer-list-select"
-                            onClick={() => selectModule(section)}
-                            aria-label={t("Edit {{section}}", {
+                            disabled={index === order.length - 1}
+                            onClick={() => nudge(section, 1)}
+                            aria-label={t("Move {{section}} down", {
                               section: t(sectionMeta[section].title),
                             })}
                           >
-                            <span>
-                              <strong>
-                                {index + 1}. {t(sectionMeta[section].title)}
-                              </strong>
-                              <small>{t(sectionMeta[section].description)}</small>
-                            </span>
+                            <ArrowDown size={14} />
                           </button>
-                          <em>
-                            {isHidden
-                              ? t("Hidden")
-                              : t(sectionMeta[section].size)}
-                          </em>
-                          <div>
-                            <button
-                              type="button"
-                              disabled={index === 0}
-                              onClick={() => nudge(section, -1)}
-                              aria-label={t("Move {{section}} up", {
-                                section: t(sectionMeta[section].title),
-                              })}
-                            >
-                              <ArrowUp size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              disabled={index === order.length - 1}
-                              onClick={() => nudge(section, 1)}
-                              aria-label={t("Move {{section}} down", {
-                                section: t(sectionMeta[section].title),
-                              })}
-                            >
-                              <ArrowDown size={14} />
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })}
+                        </div>
+                      </article>
+                    ))}
                   </div>
                   <p className="builder-help">
                     {t(
-                      "Customize section order and visibility. Changes apply immediately to the live preview canvas.",
+                      "Wide and side modules keep safe column widths. Dragging changes their order within those responsive lanes.",
                     )}
                   </p>
                 </>
@@ -2179,7 +2054,7 @@ export function StorefrontDesigner({
               </button>
               <button
                 type="button"
-                className={`builder-zoom-value ${previewZoom === "fit" ? "is-fit active" : ""}`}
+                className={`builder-zoom-value ${previewZoom === "fit" ? "is-fit" : ""}`}
                 onClick={fitPreview}
                 aria-label={t("Fit preview")}
                 title={t("Fit preview")}
@@ -2294,9 +2169,7 @@ export function StorefrontDesigner({
                       isDesigner={true}
                       isSelected={device === "phone" && selected === "booth"}
                     />
-                    <div
-                      className={`catalog-layout storefront-layout-grid layout-preset-${draft.layout_preset ?? "split"}`}
-                    >
+                    <div className="catalog-layout storefront-layout-grid">
                       <div className="storefront-hero-grid">
                         {heroPreviewSections.map(renderModule)}
                       </div>

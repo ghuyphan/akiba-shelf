@@ -711,11 +711,7 @@ export function CatalogPage() {
     hero: heroStorefrontSections,
     main: mainStorefrontSections,
     side: sideStorefrontSections,
-  } = partitionStorefrontOrder(
-    storefrontOrder,
-    booth.layout_preset,
-    booth.hidden_sections,
-  );
+  } = partitionStorefrontOrder(storefrontOrder);
   const contentStorefrontColumns = [
     {
       key: "main",
@@ -749,6 +745,7 @@ export function CatalogPage() {
             <div
               className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
               key={section}
+              ref={cartModuleRef}
             >
               {storefrontBlocks[section]}
             </div>
@@ -877,9 +874,7 @@ export function CatalogPage() {
                   )}
                 </Alert>
               )}
-              <div
-                className={`catalog-layout storefront-layout-grid layout-preset-${booth.layout_preset ?? "split"}`}
-              >
+              <div className="catalog-layout storefront-layout-grid">
                 <div className="storefront-hero-grid">
                   {heroStorefrontSections.map((section) => (
                     <div

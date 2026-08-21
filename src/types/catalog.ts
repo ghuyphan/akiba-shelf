@@ -16,11 +16,6 @@ export type StorefrontProductStyle =
   | "minimal"
   | "framed"
   | "playful";
-export type StorefrontLayoutPreset =
-  | "split"
-  | "full_hero"
-  | "sidebar_booth"
-  | "stacked";
 export type StorefrontSection =
   | "featured"
   | "controls"
@@ -101,8 +96,6 @@ export type BoothSettings = {
   theme_accent?: string;
   theme_background?: string;
   layout_order?: StorefrontSection[];
-  layout_preset?: StorefrontLayoutPreset;
-  hidden_sections?: StorefrontSection[];
   corner_radius?: number;
   card_style?: StorefrontCardStyle;
   featured_style?: StorefrontFeaturedStyle;
