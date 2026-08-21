@@ -2007,9 +2007,11 @@ export function StorefrontDesigner({
         )}
         <div className="builder-toolbar">
           <div className="builder-toolbar-left">
-            <h2 className="builder-toolbar-title">
+            <span className="builder-toolbar-title">
               {t(sectionMeta[selected].title)}
-            </h2>
+            </span>
+          </div>
+          <div className="builder-toolbar-center">
             <div
               className="builder-device-switcher"
               aria-label={t("Preview size")}
@@ -2035,6 +2037,8 @@ export function StorefrontDesigner({
                 <span>{t("Phone")}</span>
               </button>
             </div>
+          </div>
+          <div className="builder-toolbar-right">
             <div
               className="builder-zoom-controls"
               aria-label={t("Preview zoom")}
@@ -2067,8 +2071,6 @@ export function StorefrontDesigner({
                 <Plus size={13} />
               </button>
             </div>
-          </div>
-          <div className="builder-toolbar-right">
             <div className="builder-history-group">
               <button
                 type="button"
