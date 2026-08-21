@@ -7,12 +7,12 @@
   /* min-height: 330px; */
   padding: 17px;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--teal) 11%, transparent), transparent 35%),
-    #fff;
-  box-shadow: 0 16px 44px rgb(15 23 42 / 7%);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--store-card-border, var(--line));
+  border-radius: var(--store-radius, 20px);
+  background: var(--store-card-background, #fff);
+  box-shadow: var(--store-card-shadow, 0 16px 44px rgb(15 23 42 / 7%));
 }
 
 .booth-card-topline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }

@@ -5,22 +5,13 @@
 .featured-banner,
 .catalog-controls,
 .product-card,
-.booth-card,
-.selected-panel { border-radius: var(--store-radius, 16px) !important; }
-.storefront-content-main .catalog-controls,
 .booth-card.booth-card-redesign,
 .selected-panel {
+  border-width: 1px !important;
+  border-style: solid !important;
   border-color: var(--store-card-border) !important;
+  border-radius: var(--store-radius, 16px) !important;
   background: var(--store-card-background) !important;
-  box-shadow: var(--store-card-shadow) !important;
-}
-.product-card {
-  border-color: var(--store-card-border) !important;
-  background: var(--store-card-background) !important;
-  box-shadow: var(--store-card-shadow) !important;
-}
-.featured-banner {
-  border-color: var(--store-card-border) !important;
   box-shadow: var(--store-card-shadow) !important;
 }
 .storefront-section { min-width: 0; }

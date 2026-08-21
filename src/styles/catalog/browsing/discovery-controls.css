@@ -6,10 +6,12 @@
   gap: clamp(20px, 3vw, 44px);
   min-width: 0;
   padding: 10px;
-  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
-  border-radius: calc(var(--store-radius, 16px) + 6px);
-  background: color-mix(in srgb, #fff 92%, var(--page-bg));
-  box-shadow: 0 12px 34px rgb(15 23 42 / 6%);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--store-card-border, color-mix(in srgb, var(--line) 72%, transparent));
+  border-radius: var(--store-radius, 16px);
+  background: var(--store-card-background, color-mix(in srgb, #fff 92%, var(--page-bg)));
+  box-shadow: var(--store-card-shadow, 0 12px 34px rgb(15 23 42 / 6%));
 }
 
 .storefront-content-main .category-row {
