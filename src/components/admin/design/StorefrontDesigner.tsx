@@ -14,7 +14,6 @@ import {
   Languages,
   LayoutTemplate,
   Link2,
-  Maximize2,
   MessageSquareText,
   Minus,
   Monitor,
@@ -2008,10 +2007,9 @@ export function StorefrontDesigner({
         )}
         <div className="builder-toolbar">
           <div className="builder-toolbar-left">
-            <div className="builder-toolbar-section">
-              <strong>{t(sectionMeta[selected].title)}</strong>
-            </div>
-            <span className="builder-toolbar-divider" />
+            <h2 className="builder-toolbar-title">
+              {t(sectionMeta[selected].title)}
+            </h2>
             <div
               className="builder-device-switcher"
               aria-label={t("Preview size")}
@@ -2052,12 +2050,11 @@ export function StorefrontDesigner({
               </button>
               <button
                 type="button"
-                className={`builder-zoom-value ${previewZoom === "fit" ? "is-fit active" : ""}`}
+                className={`builder-zoom-value ${previewZoom === "fit" ? "is-fit" : ""}`}
                 onClick={fitPreview}
                 aria-label={t("Fit preview")}
                 title={t("Fit preview")}
               >
-                <Maximize2 size={12} />
                 <span>{displayedZoom}%</span>
               </button>
               <button
@@ -2072,15 +2069,7 @@ export function StorefrontDesigner({
             </div>
           </div>
           <div className="builder-toolbar-right">
-            <span
-              className={`builder-status-badge ${hasChanges ? "is-dirty" : "is-clean"}`}
-            >
-              <span className="builder-status-dot" />
-              <span>
-                {t(hasChanges ? "Unpublished changes" : "Published storefront")}
-              </span>
-            </span>
-            <div className="builder-btn-group">
+            <div className="builder-history-group">
               <button
                 type="button"
                 onClick={undo}
