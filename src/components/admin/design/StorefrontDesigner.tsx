@@ -2007,8 +2007,71 @@ export function StorefrontDesigner({
           </Alert>
         )}
         <div className="builder-toolbar">
-          <div className="builder-toolbar-title">
-            <strong>{t(sectionMeta[selected].title)}</strong>
+          <div className="builder-toolbar-left">
+            <div className="builder-toolbar-section">
+              <strong>{t(sectionMeta[selected].title)}</strong>
+            </div>
+            <span className="builder-toolbar-divider" />
+            <div
+              className="builder-device-switcher"
+              aria-label={t("Preview size")}
+            >
+              <button
+                type="button"
+                className={device === "desktop" ? "active" : ""}
+                aria-pressed={device === "desktop"}
+                onClick={() => changeDevice("desktop")}
+                title={t("Desktop")}
+              >
+                <Monitor size={14} />
+                <span>{t("Desktop")}</span>
+              </button>
+              <button
+                type="button"
+                className={device === "phone" ? "active" : ""}
+                aria-pressed={device === "phone"}
+                onClick={() => changeDevice("phone")}
+                title={t("Phone")}
+              >
+                <Smartphone size={14} />
+                <span>{t("Phone")}</span>
+              </button>
+            </div>
+            <div
+              className="builder-zoom-controls"
+              aria-label={t("Preview zoom")}
+            >
+              <button
+                type="button"
+                onClick={() => adjustZoom(-10)}
+                disabled={displayedZoom <= 20}
+                aria-label={t("Zoom out")}
+                title={t("Zoom out")}
+              >
+                <Minus size={13} />
+              </button>
+              <button
+                type="button"
+                className={`builder-zoom-value ${previewZoom === "fit" ? "is-fit active" : ""}`}
+                onClick={fitPreview}
+                aria-label={t("Fit preview")}
+                title={t("Fit preview")}
+              >
+                <Maximize2 size={12} />
+                <span>{displayedZoom}%</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => adjustZoom(10)}
+                disabled={displayedZoom >= 150}
+                aria-label={t("Zoom in")}
+                title={t("Zoom in")}
+              >
+                <Plus size={13} />
+              </button>
+            </div>
+          </div>
+          <div className="builder-toolbar-right">
             <span
               className={`builder-status-badge ${hasChanges ? "is-dirty" : "is-clean"}`}
             >
@@ -2017,71 +2080,6 @@ export function StorefrontDesigner({
                 {t(hasChanges ? "Unpublished changes" : "Published storefront")}
               </span>
             </span>
-          </div>
-          <div className="builder-toolbar-center">
-            <div className="builder-toolbar-island">
-              <div
-                className="builder-device-switcher"
-                aria-label={t("Preview size")}
-              >
-                <button
-                  type="button"
-                  className={device === "desktop" ? "active" : ""}
-                  aria-pressed={device === "desktop"}
-                  onClick={() => changeDevice("desktop")}
-                  title={t("Desktop")}
-                >
-                  <Monitor size={14} />
-                  <span>{t("Desktop")}</span>
-                </button>
-                <button
-                  type="button"
-                  className={device === "phone" ? "active" : ""}
-                  aria-pressed={device === "phone"}
-                  onClick={() => changeDevice("phone")}
-                  title={t("Phone")}
-                >
-                  <Smartphone size={14} />
-                  <span>{t("Phone")}</span>
-                </button>
-              </div>
-              <span className="builder-island-divider" />
-              <div
-                className="builder-zoom-controls"
-                aria-label={t("Preview zoom")}
-              >
-                <button
-                  type="button"
-                  onClick={() => adjustZoom(-10)}
-                  disabled={displayedZoom <= 20}
-                  aria-label={t("Zoom out")}
-                  title={t("Zoom out")}
-                >
-                  <Minus size={13} />
-                </button>
-                <button
-                  type="button"
-                  className={`builder-zoom-value ${previewZoom === "fit" ? "is-fit active" : ""}`}
-                  onClick={fitPreview}
-                  aria-label={t("Fit preview")}
-                  title={t("Fit preview")}
-                >
-                  <Maximize2 size={12} />
-                  <span>{displayedZoom}%</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => adjustZoom(10)}
-                  disabled={displayedZoom >= 150}
-                  aria-label={t("Zoom in")}
-                  title={t("Zoom in")}
-                >
-                  <Plus size={13} />
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="builder-history-actions">
             <div className="builder-btn-group">
               <button
                 type="button"
