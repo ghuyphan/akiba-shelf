@@ -18,12 +18,13 @@
 .designer-block-list article>div { display: flex; gap: 4px; }
 .designer-block-list button,.designer-locale button { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; border: 1px solid var(--soft-line); border-radius: 9px; color: var(--muted); background: #fff; cursor: pointer; font-size: 9px; font-weight: 900; }
 .designer-block-list button:disabled { opacity: .3; cursor: default; }
-.designer-setting-group,.designer-locale { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 15px; border-radius: 15px; background: var(--surface-soft); }
-.designer-setting-group>div,.designer-locale>span { display: flex; align-items: center; gap: 9px; min-width: 0; }
-.designer-setting-group>div>span,.designer-locale>span { flex-direction: column; align-items: flex-start; gap: 2px; }
-.designer-setting-group strong,.designer-locale strong { color: var(--ink); font-size: 10px; }
-.designer-setting-group small,.designer-locale small { color: var(--muted); font-size: 10px; line-height: 1.4; }
-.designer-setting-group input[type="range"] { width: 150px; accent-color: var(--coral); }
+.designer-setting-group,.designer-locale { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 16px; border: 1px solid var(--soft-line); border-radius: 14px; background: var(--surface-soft); }
+.designer-setting-group>div,.designer-setting-header,.designer-locale>span { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.designer-setting-icon { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto; border-radius: 9px; color: var(--coral); background: color-mix(in srgb, var(--coral) 10%, #ffffff); border: 1px solid color-mix(in srgb, var(--coral) 20%, transparent); }
+.designer-setting-label,.designer-setting-group>div>span,.designer-locale>span { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.designer-setting-group strong,.designer-locale strong { color: var(--ink); font-size: 12px; font-weight: 750; }
+.designer-setting-group small,.designer-locale small { color: var(--muted); font-size: 10.5px; line-height: 1.35; }
+.designer-setting-group input[type="range"] { width: 140px; accent-color: var(--coral); cursor: pointer; }
 .designer-color-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .designer-color-field { display: grid; gap: 6px; min-width: 0; padding: 12px; border: 1px solid var(--soft-line); border-radius: 12px; background: #fff; transition: border-color 140ms ease; }
 .designer-color-field:hover { border-color: color-mix(in srgb, var(--coral) 35%, var(--line)); }

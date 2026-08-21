@@ -1907,9 +1907,22 @@ export function StorefrontDesigner({
                     ))}
                   </div>
                   <div className="designer-setting-group">
-                    <div>
-                      <Palette size={16} />
-                      <span>
+                    <div className="designer-setting-header">
+                      <span className="designer-setting-icon" aria-hidden="true">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M4 20V10a6 6 0 0 1 6-6h10" />
+                        </svg>
+                      </span>
+                      <span className="designer-setting-label">
                         <strong>{t("Corner radius")}</strong>
                         <small>
                           {t("{{radius}}px across storefront cards", {
