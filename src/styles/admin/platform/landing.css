@@ -2150,18 +2150,14 @@
 
   /* Hero enter and preview */
   .platform-home-hero .platform-home-hero-copy {
-    opacity: 0;
-    transform: translateY(20px);
-    transition:
-      opacity 620ms cubic-bezier(0.16, 1, 0.3, 1),
-      transform 680ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 1;
+    transform: translateY(0);
+    animation: platform-home-enter 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .platform-home-hero .platform-home-hero-preview {
-    opacity: 0;
-    transform: translateY(26px) scale(0.98);
-    transition:
-      opacity 720ms 100ms cubic-bezier(0.16, 1, 0.3, 1),
-      transform 780ms 100ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    animation: platform-home-enter 720ms 100ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .platform-home-hero.is-visible .platform-home-hero-copy {
     opacity: 1;

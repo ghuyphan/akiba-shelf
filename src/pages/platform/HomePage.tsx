@@ -114,7 +114,7 @@ export function HomePage() {
         ref={landingContentRef}
         className="admin-container platform-home-container"
       >
-        <section className="platform-home-hero">
+        <section className="platform-home-hero is-visible" data-home-reveal>
           <div className="platform-home-hero-copy">
             <span className="platform-home-kicker">
               {t("A storefront built for artist booths")}
