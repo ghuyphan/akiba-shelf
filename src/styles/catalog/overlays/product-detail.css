@@ -1,16 +1,16 @@
 /* Featured swipe deck and product details */
 .featured-banner-deck-media { animation: none !important; }
-.featured-card-deck { position: relative; width: min(24vw, 220px); height: 250px; }
-.featured-deck-card { position: absolute; top: 50%; left: 50%; display: grid; grid-template-rows: minmax(0, 1fr) 52px; width: 196px; height: 236px; padding: 0; overflow: hidden; border: 7px solid #fff; border-radius: 25px; color: var(--ink); background: #fff; box-shadow: 0 22px 48px rgb(15 23 42 / 18%); cursor: pointer; text-align: left; transform-origin: bottom center; transition: transform 480ms cubic-bezier(.22, 1, .36, 1), opacity 320ms ease, box-shadow 320ms ease; will-change: transform, opacity; }
-.featured-deck-card.is-active { box-shadow: 0 26px 55px rgb(15 23 42 / 22%); cursor: grab; }
-.featured-deck-image { position: relative; display: block; min-height: 0; overflow: hidden; border-radius: 18px 18px 8px 8px; background: var(--surface-soft); }
+.featured-card-deck { position: relative; width: 210px; height: 260px; }
+.featured-deck-card { position: absolute; top: 50%; left: 50%; display: grid; grid-template-rows: minmax(0, 1fr) 52px; width: 204px; height: 244px; padding: 0; overflow: hidden; border: 5px solid #fff; border-radius: 22px; color: var(--ink); background: #fff; box-shadow: 0 18px 40px -4px rgb(15 23 42 / 16%), 0 4px 12px -2px rgb(15 23 42 / 8%); cursor: pointer; text-align: left; transform-origin: bottom center; transition: transform 440ms cubic-bezier(.22, 1, .36, 1), opacity 300ms ease, box-shadow 300ms ease; will-change: transform, opacity; }
+.featured-deck-card.is-active { box-shadow: 0 24px 50px -4px rgb(15 23 42 / 20%), 0 6px 16px -2px rgb(15 23 42 / 10%); cursor: grab; }
+.featured-deck-image { position: relative; display: block; min-height: 0; overflow: hidden; border-radius: 16px 16px 6px 6px; background: var(--surface-soft); }
 .featured-deck-image>img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-.featured-deck-image>i { position: absolute; top: 9px; left: 9px; max-width: calc(100% - 18px); padding: 5px 8px; overflow: hidden; border-radius: 999px; color: #fff; background: rgb(15 23 42 / 70%); font-size: 8px; font-style: normal; font-weight: 900; letter-spacing: .05em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
-.featured-deck-footer { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 8px 10px; }
-.featured-deck-footer strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-.featured-deck-footer small { margin-top: 3px; color: var(--coral); font-size: 9px; font-weight: 850; }
-.featured-deck-footer .product-price { margin-top: 3px; }
-.featured-deck-footer .product-price-current { font-size: 9px; }
+.featured-deck-image>i { position: absolute; top: 9px; left: 9px; max-width: calc(100% - 18px); padding: 4px 8px; overflow: hidden; border-radius: 999px; color: #fff; background: rgb(15 23 42 / 75%); font-size: 8.5px; font-style: normal; font-weight: 850; letter-spacing: .04em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.featured-deck-footer { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 8px 12px; background: #fff; }
+.featured-deck-footer strong { overflow: hidden; font-size: 11.5px; font-weight: 750; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; }
+.featured-deck-footer small { margin-top: 2px; color: var(--coral); font-size: 10px; font-weight: 800; }
+.featured-deck-footer .product-price { margin-top: 2px; }
+.featured-deck-footer .product-price-current { font-size: 11px; font-weight: 750; }
 .featured-deck-footer .product-price-comparison { display: none; }
 .product-card { cursor: pointer !important; }
 

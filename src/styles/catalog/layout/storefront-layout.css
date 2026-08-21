@@ -2,7 +2,11 @@
 
 /* Storefront designer variables */
 .app-shell { border-radius: calc(var(--store-radius, 16px) + 5px) !important; }
-.featured-banner,
+.featured-banner {
+  margin-bottom: 0 !important;
+  border-radius: var(--store-radius, 16px) !important;
+}
+
 .catalog-controls,
 .product-card,
 .booth-card.booth-card-redesign,

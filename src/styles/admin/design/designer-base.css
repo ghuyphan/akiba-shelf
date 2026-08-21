@@ -100,28 +100,282 @@
 .designer-palette-swatches i { display: block; }
 
 .designer-card-style-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.card-style-sample { display: block; width: 32px; height: 28px; flex: 0 0 auto; border-radius: 8px; background: #fff; }
-.card-style-soft { border: 1px solid #eee9e1; box-shadow: 0 3px 8px rgb(15 23 42 / 8%); }
-.card-style-outlined { border: 2px solid #ded9cf; }
-.card-style-elevated { border: 1px solid rgb(15 23 42 / 6%); box-shadow: 0 6px 14px rgb(15 23 42 / 12%); }
-.card-style-playful { border: 2px solid var(--coral); box-shadow: 3px 3px 0 color-mix(in srgb, var(--blue) 58%, transparent); }
+.card-style-sample { position: relative; display: block; width: 36px; height: 30px; flex: 0 0 auto; border-radius: 8px; background: #fff; overflow: hidden; }
+.card-style-soft { border: 1px solid #ded9cf; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08); background: #fdfcfb; }
+.card-style-soft::after { content: ""; position: absolute; inset: 4px; border-radius: 4px; background: #f4f0ea; }
+.card-style-outlined { border: 1.5px solid #a8b3c4; box-shadow: none; }
+.card-style-outlined::after { content: ""; position: absolute; inset: 4px; border: 1px dashed #cbd5e1; border-radius: 4px; }
+.card-style-elevated { border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 6px 14px -1px rgba(15, 23, 42, 0.18), 0 2px 4px -1px rgba(15, 23 42, 0.08); }
+.card-style-elevated::after { content: ""; position: absolute; inset: 4px; border-radius: 4px; background: #ffffff; box-shadow: 0 2px 5px rgba(15, 23, 42, 0.08); }
+.card-style-playful { border: 2px solid var(--coral, #d95c64); box-shadow: 3px 3px 0 var(--blue, #f6c85f); }
+.card-style-playful::after { content: ""; position: absolute; inset: 3px; border-radius: 3px; background: color-mix(in srgb, var(--coral, #d95c64) 10%, #fff); }
 
 .designer-section-style-grid { margin-top: 4px; }
-.section-style-sample { display: block; width: 32px; height: 28px; flex: 0 0 auto; border: 1px solid var(--soft-line); border-radius: 8px; background: #fff; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06); }
-.sample-featured-deck { background: linear-gradient(135deg, #fff 48%, color-mix(in srgb, var(--coral) 30%, #fff) 49%); }
-.sample-featured-editorial { background: linear-gradient(90deg, #fff 55%, color-mix(in srgb, var(--blue) 30%, #fff) 55%); }
-.sample-featured-minimal { box-shadow: none; border-color: var(--soft-line); }
-.sample-featured-poster { border-color: var(--navy); background: linear-gradient(135deg, var(--navy), var(--coral)); }
+.section-style-sample { position: relative; display: block; width: 36px; height: 30px; flex: 0 0 auto; border: 1px solid var(--soft-line); border-radius: 8px; background: #fff; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06); overflow: hidden; }
 
-.sample-controls-panel { background: var(--surface-soft); border-color: var(--soft-line); }
-.sample-controls-floating { border-color: transparent; box-shadow: 0 4px 10px rgb(15 23 42 / 12%); }
-.sample-controls-compact { height: 22px; background: repeating-linear-gradient(90deg, var(--surface-soft) 0 8px, #fff 8px 12px); }
-.sample-controls-playful { border-color: var(--coral); background: color-mix(in srgb, var(--blue) 16%, #fff); box-shadow: 2px 2px 0 color-mix(in srgb, var(--coral) 50%, transparent); }
+/* Banner Style Samples */
+.sample-featured-deck {
+  background: radial-gradient(circle at 90% 10%, color-mix(in srgb, var(--teal, #5c8657) 25%, transparent), transparent 45%), #ffffff;
+}
+.sample-featured-deck::before {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  width: 14px;
+  height: 18px;
+  background: color-mix(in srgb, var(--coral, #d95c64) 22%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--coral, #d95c64) 40%, transparent);
+  border-radius: 4px;
+  transform: rotate(-9deg);
+}
+.sample-featured-deck::after {
+  content: "";
+  position: absolute;
+  right: 7px;
+  top: 4px;
+  width: 15px;
+  height: 20px;
+  background: #ffffff;
+  border: 1px solid var(--soft-line);
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  transform: rotate(3deg);
+}
 
-.sample-product-classic { box-shadow: 0 3px 8px rgb(15 23 42 / 8%); border-color: var(--soft-line); }
-.sample-product-minimal { border-color: transparent; border-bottom: 2px solid var(--soft-line); border-radius: 0; }
-.sample-product-framed { border: 3px double color-mix(in srgb, var(--ink) 25%, var(--line)); }
-.sample-product-playful { border-color: var(--coral); box-shadow: 2px 2px 0 color-mix(in srgb, var(--blue) 55%, transparent); }
+.sample-featured-editorial {
+  background: linear-gradient(90deg, #ffffff 52%, color-mix(in srgb, var(--coral, #d95c64) 12%, #ffffff) 52%);
+  border-color: color-mix(in srgb, var(--coral, #d95c64) 30%, var(--line));
+}
+.sample-featured-editorial::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 7px;
+  width: 11px;
+  height: 3px;
+  background: var(--ink);
+  border-radius: 1px;
+  box-shadow: 0 5px 0 var(--muted), 0 9px 0 color-mix(in srgb, var(--coral, #d95c64) 70%, transparent);
+}
+.sample-featured-editorial::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  top: 4px;
+  bottom: 4px;
+  width: 13px;
+  background: #ffffff;
+  border: 1px solid var(--soft-line);
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08);
+}
+
+.sample-featured-minimal {
+  background: #ffffff;
+  border-color: var(--line);
+}
+.sample-featured-minimal::before {
+  content: "";
+  position: absolute;
+  inset: 4px 10px;
+  background: var(--surface-soft);
+  border: 1px solid var(--soft-line);
+  border-radius: 4px;
+}
+.sample-featured-minimal::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: var(--ink);
+  border-radius: 1px;
+  opacity: 0.35;
+}
+
+.sample-featured-poster {
+  background: linear-gradient(135deg, #131c2e 0%, #20304a 55%, color-mix(in srgb, var(--coral, #d95c64) 85%, #131c2e) 100%);
+  border-color: #131c2e;
+  box-shadow: 0 2px 8px rgba(19, 28, 46, 0.25);
+}
+.sample-featured-poster::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 5px;
+  width: 9px;
+  height: 2.5px;
+  background: var(--blue, #f6c85f);
+  border-radius: 1px;
+  box-shadow: 0 5px 0 rgba(255, 255, 255, 0.85);
+}
+.sample-featured-poster::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  top: 4px;
+  width: 14px;
+  height: 19px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 3px;
+  transform: rotate(5deg);
+  box-shadow: 2px 3px 0 var(--blue, #f6c85f);
+}
+
+/* Controls Style Samples */
+.sample-controls-panel {
+  background: var(--surface-soft);
+  border-color: var(--soft-line);
+}
+.sample-controls-panel::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 5px;
+  right: 4px;
+  height: 7px;
+  background: #ffffff;
+  border: 1px solid var(--soft-line);
+  border-radius: 3px;
+}
+.sample-controls-panel::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  bottom: 5px;
+  width: 14px;
+  height: 6px;
+  background: color-mix(in srgb, var(--coral, #d95c64) 40%, #ffffff);
+  border-radius: 3px;
+}
+
+.sample-controls-floating {
+  background: #f8fafc;
+  border-color: transparent;
+}
+.sample-controls-floating::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  top: 4px;
+  height: 8px;
+  background: #ffffff;
+  border: 1px solid var(--soft-line);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08);
+}
+.sample-controls-floating::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  bottom: 4px;
+  width: 12px;
+  height: 7px;
+  background: #ffffff;
+  border: 1px solid var(--soft-line);
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08);
+}
+
+.sample-controls-compact {
+  background: #ffffff;
+  border-color: var(--soft-line);
+}
+.sample-controls-compact::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 11px;
+  right: 3px;
+  height: 8px;
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--coral, #d95c64) 30%, #ffffff) 0 8px, transparent 8px 11px);
+  border-radius: 2px;
+}
+
+.sample-controls-playful {
+  background: color-mix(in srgb, var(--blue, #f6c85f) 14%, #ffffff);
+  border: 1.5px solid var(--coral, #d95c64);
+  box-shadow: 2px 2px 0 var(--blue, #f6c85f);
+}
+.sample-controls-playful::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 4px;
+  right: 3px;
+  height: 7px;
+  background: #ffffff;
+  border: 1px solid var(--coral, #d95c64);
+  border-radius: 3px;
+}
+
+/* Product Card Style Samples */
+.sample-product-classic {
+  background: #ffffff;
+  border: 1px solid var(--soft-line);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+.sample-product-classic::before {
+  content: "";
+  position: absolute;
+  inset: 3px 3px 12px 3px;
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+.sample-product-classic::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  width: 14px;
+  height: 3px;
+  background: var(--coral, #d95c64);
+  border-radius: 1px;
+}
+
+.sample-product-minimal {
+  background: #ffffff;
+  border: 1px solid transparent;
+  border-bottom: 2px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+}
+.sample-product-minimal::before {
+  content: "";
+  position: absolute;
+  inset: 2px 4px 10px 4px;
+  background: #f8fafc;
+  border-radius: 3px;
+}
+
+.sample-product-framed {
+  background: #ffffff;
+  border: 1px solid var(--line);
+}
+.sample-product-framed::before {
+  content: "";
+  position: absolute;
+  inset: 3px 3px 11px 3px;
+  border: 1.5px solid var(--line);
+  background: #f8fafc;
+  border-radius: 3px;
+}
+
+.sample-product-playful {
+  background: #ffffff;
+  border: 1.5px solid var(--coral, #d95c64);
+  box-shadow: 2px 2px 0 var(--blue, #f6c85f);
+}
+.sample-product-playful::before {
+  content: "";
+  position: absolute;
+  inset: 3px 3px 11px 3px;
+  background: color-mix(in srgb, var(--coral, #d95c64) 12%, #fff);
+  border-radius: 3px;
+}
 
 .designer-locale { grid-template-columns: auto minmax(0, 1fr) auto; padding: 12px 14px; border: 1px solid var(--soft-line); border-radius: 12px; background: #fff; }
 .designer-locale > svg { color: var(--coral); }
