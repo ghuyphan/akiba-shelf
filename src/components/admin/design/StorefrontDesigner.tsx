@@ -56,6 +56,7 @@ import { ProductGrid } from "../../catalog/browsing/ProductGrid";
 import { StackedFeatured } from "../../catalog/browsing/StackedFeatured";
 import { BoothInfoPanel } from "../../catalog/shell/BoothInfoPanel";
 import { SelectedItemPanel } from "../../catalog/cart/SelectedItemPanel";
+import { resolveStorefrontLayout } from "../../catalog/layout/storefrontLayout";
 import { ImageUpload } from "../shared/ImageUpload";
 import {
   getBankLogoUrl,
@@ -90,7 +91,11 @@ type InspectorTab = "layout" | "content" | "style";
 type PreviewDevice = "desktop" | "phone";
 type PreviewZoom = "fit" | number;
 type DropEdge = "before" | "after";
-type DropTarget = { section: StorefrontSection; edge: DropEdge };
+type DropTarget = {
+  section: StorefrontSection;
+  edge: DropEdge;
+  axis?: "horizontal" | "vertical";
+};
 type SelectedSection = StorefrontSection;
 type CanvasPan = {
   pointerId: number;
@@ -660,24 +665,38 @@ export function StorefrontDesigner({
   function markDropTarget(
     event: React.DragEvent,
     section: StorefrontSection,
-    orientation: "horizontal" | "vertical",
+    forcedOrientation?: "horizontal" | "vertical",
   ) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
     if (draggedRef.current === section) return;
     const rect = event.currentTarget.getBoundingClientRect();
+    const relX = (event.clientX - rect.left) / rect.width;
+    const relY = (event.clientY - rect.top) / rect.height;
+
+    let orientation = forcedOrientation;
+    if (!orientation) {
+      orientation =
+        Math.abs(relX - 0.5) > Math.abs(relY - 0.5)
+          ? "horizontal"
+          : "vertical";
+    }
+
     const edge =
       orientation === "horizontal"
-        ? event.clientX < rect.left + rect.width / 2
+        ? relX < 0.5
           ? "before"
           : "after"
-        : event.clientY < rect.top + rect.height / 2
+        : relY < 0.5
           ? "before"
           : "after";
+
     setDropTarget((current) =>
-      current?.section === section && current.edge === edge
+      current?.section === section &&
+      current.edge === edge &&
+      current.axis === orientation
         ? current
-        : { section, edge },
+        : { section, edge, axis: orientation },
     );
   }
 
@@ -968,31 +987,18 @@ export function StorefrontDesigner({
       />
     ),
   };
-  const heroPreviewSections = order.filter(
-    (section) => section === "featured" || section === "booth",
-  );
-  const mainPreviewSections = order.filter(
-    (section) => section === "controls" || section === "products",
-  );
-  const sidePreviewSections = order.filter((section) => section === "cart");
 
   function renderModule(section: StorefrontSection) {
+    const isOver = dropTarget?.section === section && dragged !== section;
+    const dropAxis = dropTarget?.axis ?? "vertical";
     return (
       <div
         key={section}
-        className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, draft)} designer-live-module ${section === "featured" || section === "booth" ? "drop-axis-horizontal" : "drop-axis-vertical"} ${selected === section ? "is-selected" : ""} ${dragged === section ? "is-dragging" : ""} ${dropTarget?.section === section && dragged !== section ? `is-drag-over drop-${dropTarget.edge}` : ""}`}
+        className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, draft)} designer-live-module drop-axis-${dropAxis} ${selected === section ? "is-selected" : ""} ${dragged === section ? "is-dragging" : ""} ${isOver ? `is-drag-over drop-${dropTarget.edge}` : ""}`}
         style={
           { viewTransitionName: `designer-${section}` } as React.CSSProperties
         }
-        onDragOver={(event) =>
-          markDropTarget(
-            event,
-            section,
-            section === "featured" || section === "booth"
-              ? "horizontal"
-              : "vertical",
-          )
-        }
+        onDragOver={(event) => markDropTarget(event, section)}
         onDrop={(event) => dropOn(event, section)}
       >
         <button
@@ -1022,29 +1028,6 @@ export function StorefrontDesigner({
       </div>
     );
   }
-
-  const contentPreviewColumns = [
-    {
-      position:
-        mainPreviewSections.reduce(
-          (sum, section) => sum + order.indexOf(section),
-          0,
-        ) / mainPreviewSections.length,
-      node: (
-        <section key="main" className="storefront-content-main">
-          {mainPreviewSections.map(renderModule)}
-        </section>
-      ),
-    },
-    {
-      position: order.indexOf("cart") - 0.01,
-      node: (
-        <section key="side" className="storefront-content-side">
-          {sidePreviewSections.map(renderModule)}
-        </section>
-      ),
-    },
-  ].sort((first, second) => first.position - second.position);
 
   function loadPreviewFrame(event: React.SyntheticEvent<HTMLIFrameElement>) {
     const frameDocument = event.currentTarget.contentDocument;
@@ -2169,14 +2152,32 @@ export function StorefrontDesigner({
                       isDesigner={true}
                       isSelected={device === "phone" && selected === "booth"}
                     />
-                    <div className="catalog-layout storefront-layout-grid">
-                      <div className="storefront-hero-grid">
-                        {heroPreviewSections.map(renderModule)}
-                      </div>
-                      <div className="storefront-content-grid">
-                        {contentPreviewColumns.map((column) => column.node)}
-                      </div>
-                    </div>
+                    {(() => {
+                      const layoutStructure = resolveStorefrontLayout(order);
+                      return (
+                        <div className="catalog-layout storefront-layout-grid">
+                          {layoutStructure.hero.length > 0 && (
+                            <div
+                              className={`storefront-hero-grid hero-${layoutStructure.heroStyle}`}
+                            >
+                              {layoutStructure.hero.map(renderModule)}
+                            </div>
+                          )}
+                          {layoutStructure.contentColumns.length > 0 && (
+                            <div className="storefront-content-grid">
+                              {layoutStructure.contentColumns.map((column) => (
+                                <section
+                                  key={column.key}
+                                  className={`storefront-content-${column.key}`}
+                                >
+                                  {column.sections.map(renderModule)}
+                                </section>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </CatalogLocaleProvider>,
                 previewDocument.getElementById("designer-preview-root") ??

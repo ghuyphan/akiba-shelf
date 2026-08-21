@@ -66,9 +66,8 @@ import { CatalogAppChrome } from "../../components/catalog/shell/CatalogAppChrom
 import { useCatalogEventState } from "../../hooks/catalog/useCatalogEventState";
 import { useStorefrontShop } from "../../hooks/catalog/useStorefrontShop";
 import {
-  getStorefrontColumnPosition,
   normalizeStorefrontOrder,
-  partitionStorefrontOrder,
+  resolveStorefrontLayout,
 } from "../../components/catalog/layout/storefrontLayout";
 import { useCatalogFilters } from "../../hooks/catalog/useCatalogFilters";
 import { useScheduledPromotion } from "../../hooks/catalog/useScheduledPromotion";
@@ -707,53 +706,7 @@ export function CatalogPage() {
     [handleClearCart],
   );
 
-  const {
-    hero: heroStorefrontSections,
-    main: mainStorefrontSections,
-    side: sideStorefrontSections,
-  } = partitionStorefrontOrder(storefrontOrder);
-  const contentStorefrontColumns = [
-    {
-      key: "main",
-      position: getStorefrontColumnPosition(
-        storefrontOrder,
-        mainStorefrontSections,
-      ),
-      node: (
-        <section key="main" className="storefront-content-main">
-          {mainStorefrontSections.map((section) => (
-            <div
-              className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
-              key={section}
-            >
-              {storefrontBlocks[section]}
-            </div>
-          ))}
-        </section>
-      ),
-    },
-    {
-      key: "side",
-      position: getStorefrontColumnPosition(
-        storefrontOrder,
-        sideStorefrontSections,
-        -0.01,
-      ),
-      node: (
-        <section key="side" className="storefront-content-side">
-          {sideStorefrontSections.map((section) => (
-            <div
-              className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
-              key={section}
-              ref={cartModuleRef}
-            >
-              {storefrontBlocks[section]}
-            </div>
-          ))}
-        </section>
-      ),
-    },
-  ].sort((first, second) => first.position - second.position);
+
 
   if (shop === undefined) {
     return (
@@ -874,21 +827,53 @@ export function CatalogPage() {
                   )}
                 </Alert>
               )}
-              <div className="catalog-layout storefront-layout-grid">
-                <div className="storefront-hero-grid">
-                  {heroStorefrontSections.map((section) => (
-                    <div
-                      className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
-                      key={section}
-                    >
-                      {storefrontBlocks[section]}
-                    </div>
-                  ))}
-                </div>
-                <div className="storefront-content-grid">
-                  {contentStorefrontColumns.map((column) => column.node)}
-                </div>
-              </div>
+              {(() => {
+                const layoutStructure =
+                  resolveStorefrontLayout(storefrontOrder);
+                return (
+                  <div className="catalog-layout storefront-layout-grid">
+                    {layoutStructure.hero.length > 0 && (
+                      <div
+                        className={`storefront-hero-grid hero-${layoutStructure.heroStyle}`}
+                      >
+                        {layoutStructure.hero.map((section) => (
+                          <div
+                            className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
+                            key={section}
+                            ref={section === "cart" ? cartModuleRef : undefined}
+                          >
+                            {storefrontBlocks[section]}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {layoutStructure.contentColumns.length > 0 && (
+                      <div className="storefront-content-grid">
+                        {layoutStructure.contentColumns.map((column) => (
+                          <section
+                            key={column.key}
+                            className={`storefront-content-${column.key}`}
+                          >
+                            {column.sections.map((section) => (
+                              <div
+                                className={`storefront-module storefront-module-${section} ${getStorefrontSectionStyleClass(section, booth)}`}
+                                key={section}
+                                ref={
+                                  section === "cart"
+                                    ? cartModuleRef
+                                    : undefined
+                                }
+                              >
+                                {storefrontBlocks[section]}
+                              </div>
+                            ))}
+                          </section>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               {showOrderDock && visibleOrder && (
                 <PendingOrderBar
                   order={visibleOrder}
