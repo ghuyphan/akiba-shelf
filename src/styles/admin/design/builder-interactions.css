@@ -57,7 +57,7 @@
 .storefront-builder .designer-preview-stage.is-panning { cursor: grabbing; }
 .designer-preview-frame { position: relative; flex: 0 0 auto; margin: 0 auto; overflow: hidden; border-radius: 18px; box-shadow: 0 16px 48px rgb(20 33 53 / 10%), 0 2px 8px rgb(20 33 53 / 5%); }
 .storefront-builder .designer-live-storefront { flex: 0 0 auto; }
-.designer-live-module.is-selected::after { content: ""; position: absolute; inset: -6px; z-index: 45; border: 2px solid var(--coral); border-radius: calc(var(--store-radius) + 6px); pointer-events: none; }
+.designer-live-module.is-selected::after { content: ""; position: absolute; inset: -6px; z-index: 45; border: 2px solid var(--coral); border-radius: calc(var(--store-radius, 16px) + 6px); pointer-events: none; }
 .designer-live-module.is-dragging { opacity: .28; filter: saturate(.65); }
 .designer-live-module.is-drag-over::before { content: ""; position: absolute; z-index: 47; border-radius: 999px; background: var(--coral); box-shadow: 0 0 0 4px color-mix(in srgb, var(--coral) 14%, transparent); pointer-events: none; }
 .designer-live-module.drop-axis-horizontal.is-drag-over::before { top: -8px; bottom: -8px; width: 4px; }

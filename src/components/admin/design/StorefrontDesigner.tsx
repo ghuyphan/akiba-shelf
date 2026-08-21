@@ -2054,7 +2054,7 @@ export function StorefrontDesigner({
               </button>
               <button
                 type="button"
-                className={`builder-zoom-value ${previewZoom === "fit" ? "is-fit" : ""}`}
+                className={`builder-zoom-value ${previewZoom === "fit" ? "is-fit active" : ""}`}
                 onClick={fitPreview}
                 aria-label={t("Fit preview")}
                 title={t("Fit preview")}
