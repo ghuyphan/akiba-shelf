@@ -46,6 +46,11 @@ type AdminWorkspaceHeaderProps = {
   canManageCatalog: boolean;
   canCreateShop: boolean;
   signOutBusy: boolean;
+  readiness?: {
+    done: number;
+    total: number;
+    isComplete: boolean;
+  };
   onViewTabChange: (tab: AdminViewTab) => void;
   onSelectShop: (shopId: string) => void;
   onRequestSignOut: () => void;
@@ -62,6 +67,7 @@ export function AdminWorkspaceHeader({
   canManageCatalog,
   canCreateShop,
   signOutBusy,
+  readiness,
   onViewTabChange,
   onSelectShop,
   onRequestSignOut,
@@ -108,6 +114,16 @@ export function AdminWorkspaceHeader({
   }
 
   const showTeam = access.role === "owner";
+  const showReadiness = Boolean(
+    readiness && !readiness.isComplete && canManageCatalog,
+  );
+  const guideLabel =
+    showReadiness && readiness
+      ? t("Shop setup · {{done}}/{{total}} ready", {
+          done: readiness.done,
+          total: readiness.total,
+        })
+      : t("Booth guide & playbook");
 
   return (
     <AppHeader
@@ -296,13 +312,18 @@ export function AdminWorkspaceHeader({
           />
           <button
             type="button"
-            className="app-header-button admin-guide-toggle"
-            aria-label={t("Booth guide & playbook")}
-            title={t("Booth guide & playbook")}
-            onClick={() => onOpenGuide()}
+            className={`app-header-button admin-guide-toggle ${showReadiness ? "has-readiness" : ""}`}
+            aria-label={guideLabel}
+            title={guideLabel}
+            onClick={() => onOpenGuide(showReadiness ? "checklist" : undefined)}
           >
             <HelpCircle size={15} />
             <span className="admin-guide-label">{t("Guide")}</span>
+            {showReadiness && readiness && (
+              <span className="admin-guide-readiness-pill" aria-hidden="true">
+                {readiness.done}/{readiness.total}
+              </span>
+            )}
           </button>
           <ActionMenu
             className="admin-overflow-menu"

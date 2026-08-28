@@ -75,7 +75,19 @@ describe("runtime schemas", () => {
       boothSettingsSchema.shape.product_style.safeParse("framed").success,
     ).toBe(true);
     expect(
-      boothSettingsSchema.shape.featured_style.safeParse("neon").success,
+      boothSettingsSchema.shape.booth_style.safeParse("compact").success,
+    ).toBe(true);
+    expect(
+      boothSettingsSchema.shape.booth_style.safeParse("invalid-style").success,
+    ).toBe(false);
+    expect(
+      boothSettingsSchema.shape.cart_style.safeParse("compact").success,
+    ).toBe(true);
+    expect(
+      boothSettingsSchema.shape.cart_style.safeParse("invalid-style").success,
+    ).toBe(false);
+    expect(
+      boothSettingsSchema.shape.product_style.safeParse("neon").success,
     ).toBe(false);
   });
   it("accepts Postgres timestamp offsets", () => {

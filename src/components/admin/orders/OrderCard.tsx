@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   Ban,
   CheckCircle2,
@@ -24,20 +24,6 @@ type OrderCardProps = {
   onFulfillment: (status: "ready" | "picked_up") => void;
 };
 
-function formatAdminRelativeTime(value: string | Date, locale: "en" | "vi") {
-  if (locale === "en") return formatRelativeTime(value);
-  const seconds = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(value).getTime()) / 1000),
-  );
-  if (seconds < 60) return "Vừa xong";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} phút trước`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} giờ trước`;
-  return `${Math.floor(hours / 24)} ngày trước`;
-}
-
 function formatExpiry(value: string, locale: "en" | "vi") {
   const seconds = Math.ceil((new Date(value).getTime() - Date.now()) / 1000);
   if (seconds <= 0)
@@ -52,7 +38,7 @@ function formatExpiry(value: string, locale: "en" | "vi") {
   };
 }
 
-export function OrderCard({
+export const OrderCard = memo(function OrderCard({
   order,
   isConfirming,
   isCancelling,
@@ -71,7 +57,7 @@ export function OrderCard({
   const hasScrollableItems = (order.order_items?.length ?? 0) > 3;
   useEffect(() => {
     function updateTime() {
-      setElapsedTime(formatAdminRelativeTime(order.created_at, locale));
+      setElapsedTime(formatRelativeTime(order.created_at, undefined, locale));
       setExpiry(
         order.status === "pending" && order.expires_at
           ? formatExpiry(order.expires_at, locale)
@@ -159,7 +145,7 @@ export function OrderCard({
           return (
             <div key={item.id} className="admin-order-item">
               {image ? (
-                <img src={image} alt="" />
+                <img src={image} alt="" loading="lazy" decoding="async" />
               ) : (
                 <span className="admin-order-item-placeholder">
                   <ShoppingBag size={15} />
@@ -243,4 +229,4 @@ export function OrderCard({
       </button>
     </article>
   );
-}
+});

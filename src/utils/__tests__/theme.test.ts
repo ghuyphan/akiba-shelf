@@ -51,6 +51,8 @@ describe("storefront card styles", () => {
       featured_style: "poster" as const,
       controls_style: "compact" as const,
       product_style: "framed" as const,
+      booth_style: "compact" as const,
+      cart_style: "compact" as const,
     };
     expect(getStorefrontSectionStyleClass("featured", booth)).toBe(
       "style-featured-poster",
@@ -61,7 +63,12 @@ describe("storefront card styles", () => {
     expect(getStorefrontSectionStyleClass("products", booth)).toBe(
       "style-product-framed",
     );
-    expect(getStorefrontSectionStyleClass("booth", booth)).toBe("");
+    expect(getStorefrontSectionStyleClass("booth", booth)).toBe(
+      "style-booth-compact",
+    );
+    expect(getStorefrontSectionStyleClass("cart", booth)).toBe(
+      "style-cart-compact",
+    );
   });
 
   it("hydrates the admin from the active shop theme", () => {

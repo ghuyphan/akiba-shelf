@@ -1,7 +1,7 @@
-import { Gamepad2 } from "lucide-react";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaSettings } from "../../../types/gacha";
 import { Field, TextArea, TextInput } from "../../ui/Field";
+import { MatsuriIcon } from "../../ui/MatsuriIcon";
 import { AdminCard } from "../shell/AdminCard";
 
 type Props = {
@@ -26,7 +26,7 @@ export function GachaGeneralSection({
     <AdminCard
       className="gacha-setup-card"
       variant="flush"
-      icon={<Gamepad2 size={18} />}
+      icon={<MatsuriIcon name="gacha-capsule" size={18} />}
       title={t("1 · Status & copy")}
       description={t(
         "Choose whether customers can play and what they see before starting.",

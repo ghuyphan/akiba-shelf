@@ -1,15 +1,19 @@
+const vndFormatter = new Intl.NumberFormat("vi-VN", {
+  style: "currency",
+  currency: "VND",
+  maximumFractionDigits: 0,
+});
+
+const numberFormatter = new Intl.NumberFormat("vi-VN", {
+  maximumFractionDigits: 0,
+});
+
 export function formatVnd(value: number) {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
+  return vndFormatter.format(value);
 }
 
 export function formatNumber(value: number) {
-  return new Intl.NumberFormat("vi-VN", {
-    maximumFractionDigits: 0,
-  }).format(value);
+  return numberFormatter.format(value);
 }
 
 export function formatRelativeTime(

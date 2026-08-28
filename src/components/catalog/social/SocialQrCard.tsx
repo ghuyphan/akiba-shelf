@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { memo, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { SOCIAL_QR_COLORS } from "../../../utils/social";
@@ -105,7 +105,15 @@ async function generateSocialQr(
 
   if (!logoUrl) return canvas.toDataURL("image/png");
 
-  const logoImage = await loadImage(logoUrl);
+  let logoImage: HTMLImageElement | null = null;
+  try {
+    logoImage = await loadImage(logoUrl);
+  } catch {
+    logoImage = null;
+  }
+
+  if (!logoImage) return canvas.toDataURL("image/png");
+
   context.fillStyle = "#ffffff";
   context.beginPath();
   context.roundRect(
@@ -136,7 +144,7 @@ function profileName(url: string, fallback: string) {
   }
 }
 
-export function SocialQrCard({
+export const SocialQrCard = memo(function SocialQrCard({
   label,
   url,
   logoUrl,
@@ -208,6 +216,7 @@ export function SocialQrCard({
     <>
       <button
         type="button"
+        data-platform-label={label}
         className={`social-qr-card social-qr-${platform}${accentGradient ? " social-qr-branded" : ""}`}
         style={{ ...cardStyle, cursor: "pointer" }}
         onClick={(e) => {
@@ -280,4 +289,4 @@ export function SocialQrCard({
       </Modal>
     </>
   );
-}
+});

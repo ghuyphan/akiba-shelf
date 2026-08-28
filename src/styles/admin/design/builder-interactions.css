@@ -72,7 +72,6 @@
 .designer-live-storefront :is(button,a,input,select,textarea) { cursor: default !important; }
 .designer-live-storefront :is(.product-card,.social-qr-card,.booth-info-trigger,.button,.chip,.category-chip,.product-add-button):hover,
 .designer-live-storefront :is(.product-card,.social-qr-card,.booth-info-trigger,.button,.chip,.category-chip,.product-add-button):active { transform: none !important; }
-.designer-live-storefront .product-card:hover { border-color: var(--line) !important; box-shadow: var(--soft-shadow) !important; }
 .designer-live-storefront .product-card:hover .product-image-wrap>img { transform: none !important; }
 .designer-live-storefront .storefront-module-products .product-grid:not(.product-grid-list) { grid-template-columns: repeat(auto-fill, minmax(260px, 320px)) !important; justify-content: start; }
 .designer-live-storefront .storefront-module-products .product-card { min-width: 0; }

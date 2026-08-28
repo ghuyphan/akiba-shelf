@@ -1,8 +1,9 @@
-import { Edit3, ExternalLink, Store } from "lucide-react";
+import { Edit3, ExternalLink } from "lucide-react";
 import { Link } from "react-router";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { ShopMembership } from "../../../types/catalog";
 import { Button } from "../../ui/Button";
+import { MatsuriIcon } from "../../ui/MatsuriIcon";
 
 type DashboardShopCardProps = {
   shop: ShopMembership;
@@ -22,7 +23,7 @@ export function DashboardShopCard({
     <article className={`dashboard-shop-card ${available ? "" : "inactive"}`}>
       <div className="shop-card-main">
         <div className="shop-card-icon">
-          <Store size={22} />
+          <MatsuriIcon name="lantern" size={22} />
         </div>
         <div className="shop-card-details">
           <div className="shop-card-title-row">

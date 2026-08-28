@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { PackageCheck, ShoppingCart, Tag } from "lucide-react";
+import { PackageCheck, Tag } from "lucide-react";
 import type { Product } from "../../../types/catalog";
 import { Modal, ModalFooter } from "../../ui/Modal";
+import { MatsuriIcon } from "../../ui/MatsuriIcon";
 import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { ProductPrice } from "./ProductPrice";
 
@@ -135,7 +136,7 @@ export function ProductDetailModal({
             onClose();
           }}
         >
-          <ShoppingCart size={18} />
+          <MatsuriIcon name="tote-bag" size={18} />
           {isSoldOut ? copy.currentlyUnavailable : copy.addToCart}
         </button>
       </ModalFooter>

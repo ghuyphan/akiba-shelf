@@ -338,6 +338,7 @@ export function PaymentQrModal({ shopSlug, isOpen, payment, cart, promotion, onC
                       src={centerLogoUrl}
                       alt="Booth logo"
                       onError={(e) => {
+                        e.currentTarget.onerror = null;
                         (e.target as HTMLImageElement).src = `${import.meta.env.BASE_URL}brand/matsuri-mark.svg`;
                       }}
                     />

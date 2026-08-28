@@ -20,7 +20,13 @@ vi.mock("../../hooks/admin/useAdminSession", () => ({
   }),
 }));
 
+import { useLocation } from "react-router";
 import { NewShopPage } from "./NewShopPage";
+
+function AdminTarget() {
+  const location = useLocation();
+  return <p>Admin reached: {location.pathname}{location.search}</p>;
+}
 
 function renderNewShop(entries: Parameters<typeof MemoryRouter>[0]["initialEntries"]) {
   return render(
@@ -30,7 +36,7 @@ function renderNewShop(entries: Parameters<typeof MemoryRouter>[0]["initialEntri
           <Routes>
             <Route path="/support" element={<p>Previous support page</p>} />
             <Route path="/dashboard" element={<p>Shops dashboard</p>} />
-            <Route path="/admin" element={<p>Admin reached</p>} />
+            <Route path="/admin" element={<AdminTarget />} />
             <Route path="/dashboard/shops/new" element={<NewShopPage />} />
           </Routes>
         </ToastProvider>
@@ -80,6 +86,8 @@ describe("NewShopPage navigation", () => {
     await user.type(screen.getByLabelText("Storefront URL slug"), "test-shop");
     await user.click(screen.getByRole("button", { name: "Create shop" }));
 
-    expect(await screen.findByText("Admin reached")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Admin reached: /admin?setup=1"),
+    ).toBeInTheDocument();
   });
 });

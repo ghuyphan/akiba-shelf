@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   BellRing,
@@ -100,28 +100,54 @@ export function AdminGuideModal({
     );
   }
 
+  const guideTabs: Array<{
+    id: GuideSection;
+    label: string;
+    shortLabel: string;
+    icon: typeof CheckCircle2;
+  }> = [
+    ...(isOwnerOrAdmin
+      ? [
+          {
+            id: "checklist" as const,
+            label: t("Launch Checklist"),
+            shortLabel: t("Checklist"),
+            icon: CheckCircle2,
+          },
+        ]
+      : []),
+    {
+      id: "convention" as const,
+      label: t("Convention Cheat Sheet"),
+      shortLabel: t("Cheat Sheet"),
+      icon: Clock,
+    },
+    {
+      id: "features" as const,
+      label: t("Feature Playbook"),
+      shortLabel: t("Playbook"),
+      icon: Sparkles,
+    },
+  ];
+
   function handleTabKeyDown(
     e: React.KeyboardEvent,
     currentTab: GuideSection,
   ) {
-    const tabs: GuideSection[] = isOwnerOrAdmin
-      ? ["checklist", "convention", "features"]
-      : ["convention", "features"];
-    const currentIndex = tabs.indexOf(currentTab);
+    const tabIds = guideTabs.map((tab) => tab.id);
+    const currentIndex = tabIds.indexOf(currentTab);
     if (e.key === "ArrowRight") {
       e.preventDefault();
-      const nextTab = tabs[(currentIndex + 1) % tabs.length];
-      setActiveSection(nextTab);
+      setActiveSection(tabIds[(currentIndex + 1) % tabIds.length]);
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
-      const prevTab = tabs[(currentIndex - 1 + tabs.length) % tabs.length];
-      setActiveSection(prevTab);
+      setActiveSection(tabIds[(currentIndex - 1 + tabIds.length) % tabIds.length]);
     } else if (e.key === "Home") {
       e.preventDefault();
-      setActiveSection(tabs[0]);
+      setActiveSection(tabIds[0]);
     } else if (e.key === "End") {
       e.preventDefault();
-      setActiveSection(tabs[tabs.length - 1]);
+      setActiveSection(tabIds[tabIds.length - 1]);
     }
   }
 
@@ -141,56 +167,29 @@ export function AdminGuideModal({
           role="tablist"
           aria-label={t("Guide categories")}
         >
-          {isOwnerOrAdmin && (
-            <button
-              type="button"
-              role="tab"
-              id="guide-tab-checklist"
-              aria-controls="guide-panel-checklist"
-              aria-label={t("Launch Checklist")}
-              aria-selected={activeSection === "checklist"}
-              tabIndex={activeSection === "checklist" ? 0 : -1}
-              className={`admin-guide-nav-tab ${activeSection === "checklist" ? "is-active" : ""}`}
-              onClick={() => setActiveSection("checklist")}
-              onKeyDown={(e) => handleTabKeyDown(e, "checklist")}
-            >
-              <CheckCircle2 size={14} />
-              <span className="tab-label-full">{t("Launch Checklist")}</span>
-              <span className="tab-label-short">{t("Checklist")}</span>
-            </button>
-          )}
-          <button
-            type="button"
-            role="tab"
-            id="guide-tab-convention"
-            aria-controls="guide-panel-convention"
-            aria-label={t("Convention Cheat Sheet")}
-            aria-selected={activeSection === "convention"}
-            tabIndex={activeSection === "convention" ? 0 : -1}
-            className={`admin-guide-nav-tab ${activeSection === "convention" ? "is-active" : ""}`}
-            onClick={() => setActiveSection("convention")}
-            onKeyDown={(e) => handleTabKeyDown(e, "convention")}
-          >
-            <Clock size={14} />
-            <span className="tab-label-full">{t("Convention Cheat Sheet")}</span>
-            <span className="tab-label-short">{t("Cheat Sheet")}</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            id="guide-tab-features"
-            aria-controls="guide-panel-features"
-            aria-label={t("Feature Playbook")}
-            aria-selected={activeSection === "features"}
-            tabIndex={activeSection === "features" ? 0 : -1}
-            className={`admin-guide-nav-tab ${activeSection === "features" ? "is-active" : ""}`}
-            onClick={() => setActiveSection("features")}
-            onKeyDown={(e) => handleTabKeyDown(e, "features")}
-          >
-            <Sparkles size={14} />
-            <span className="tab-label-full">{t("Feature Playbook")}</span>
-            <span className="tab-label-short">{t("Playbook")}</span>
-          </button>
+          {guideTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeSection === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                id={`guide-tab-${tab.id}`}
+                aria-controls={`guide-panel-${tab.id}`}
+                aria-label={tab.label}
+                aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
+                className={`admin-guide-nav-tab ${isActive ? "is-active" : ""}`}
+                onClick={() => setActiveSection(tab.id)}
+                onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
+              >
+                <Icon size={14} />
+                <span className="tab-label-full">{tab.label}</span>
+                <span className="tab-label-short">{tab.shortLabel}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="admin-guide-content">
@@ -245,46 +244,38 @@ export function AdminGuideModal({
               </button>
 
               {/* Step 1: Payment */}
-              <article className="admin-guide-card admin-guide-card-checklist">
-                <div className="admin-guide-visual admin-guide-visual-qr">
+              <ChecklistCard
+                visualClass="admin-guide-visual-qr"
+                visual={
                   <div className="guide-qr-mockup">
                     <QrCode size={26} />
                     <span className="guide-qr-badge">
                       {paymentBank?.code || "VietQR"}
                     </span>
                   </div>
-                </div>
-                <div className="admin-guide-info">
-                  <div className="admin-guide-title-row">
-                    <span className="admin-guide-card-title">
-                      {t("1. VietQR Bank Payment")}
-                    </span>
-                    <span
-                      className={`admin-guide-badge ${hasPayment ? "admin-guide-badge-done" : "admin-guide-badge-todo"}`}
-                    >
-                      {hasPayment ? (
-                        <>
-                          <Check size={11} />
-                          {t("Configured ({{bank}})", {
-                            bank:
-                              paymentBank?.name ||
-                              payment.bank_label ||
-                              payment.bank_code ||
-                              "VietQR",
-                          })}
-                        </>
-                      ) : (
-                        t("Action needed")
-                      )}
-                    </span>
-                  </div>
-                  <p className="admin-guide-card-desc">
-                    {t(
-                      "Direct VietQR transfer payments to your bank account with automatic order matching.",
-                    )}
-                  </p>
-                </div>
-                <div className="admin-guide-card-action">
+                }
+                title={t("1. VietQR Bank Payment")}
+                isComplete={hasPayment}
+                badgeContent={
+                  hasPayment ? (
+                    <>
+                      <Check size={11} />
+                      {t("Configured ({{bank}})", {
+                        bank:
+                          paymentBank?.name ||
+                          payment.bank_label ||
+                          payment.bank_code ||
+                          "VietQR",
+                      })}
+                    </>
+                  ) : (
+                    t("Action needed")
+                  )
+                }
+                description={t(
+                  "Direct VietQR transfer payments to your bank account with automatic order matching.",
+                )}
+                actionButton={
                   <Button
                     variant={hasPayment ? "secondary" : "primary"}
                     onClick={() =>
@@ -296,12 +287,13 @@ export function AdminGuideModal({
                   >
                     {hasPayment ? t("Review payment") : t("Set up payment")}
                   </Button>
-                </div>
-              </article>
+                }
+              />
 
               {/* Step 2: Catalog */}
-              <article className="admin-guide-card admin-guide-card-checklist">
-                <div className="admin-guide-visual admin-guide-visual-catalog">
+              <ChecklistCard
+                visualClass="admin-guide-visual-catalog"
+                visual={
                   <div className="guide-catalog-mockup">
                     <span className="guide-card-pill">120k</span>
                     <Package size={22} />
@@ -309,46 +301,38 @@ export function AdminGuideModal({
                       {activeProducts.length || 0}
                     </span>
                   </div>
-                </div>
-                <div className="admin-guide-info">
-                  <div className="admin-guide-title-row">
-                    <span className="admin-guide-card-title">
-                      {t("2. Merch Catalog & Stock")}
-                    </span>
-                    <span
-                      className={`admin-guide-badge ${hasProducts ? "admin-guide-badge-done" : "admin-guide-badge-todo"}`}
-                    >
-                      {hasProducts ? (
-                        <>
-                          <Check size={11} />
-                          {t("{{count}} active items", {
-                            count: activeProducts.length,
-                          })}
-                        </>
-                      ) : (
-                        t("0 active items")
-                      )}
-                    </span>
-                  </div>
-                  <p className="admin-guide-card-desc">
-                    {t(
-                      "List your prints, acrylic stands, charms, and stickers with prices and inventory limits.",
-                    )}
-                  </p>
-                </div>
-                <div className="admin-guide-card-action">
+                }
+                title={t("2. Merch Catalog & Stock")}
+                isComplete={hasProducts}
+                badgeContent={
+                  hasProducts ? (
+                    <>
+                      <Check size={11} />
+                      {t("{{count}} active items", {
+                        count: activeProducts.length,
+                      })}
+                    </>
+                  ) : (
+                    t("0 active items")
+                  )
+                }
+                description={t(
+                  "List your prints, acrylic stands, charms, and stickers with prices and inventory limits.",
+                )}
+                actionButton={
                   <Button
                     variant={hasProducts ? "secondary" : "primary"}
                     onClick={() => handleJump("products", "add-product-btn")}
                   >
                     {hasProducts ? t("Manage products") : t("Add products")}
                   </Button>
-                </div>
-              </article>
+                }
+              />
 
               {/* Step 3: Booth Info */}
-              <article className="admin-guide-card admin-guide-card-checklist">
-                <div className="admin-guide-visual admin-guide-visual-booth">
+              <ChecklistCard
+                visualClass="admin-guide-visual-booth"
+                visual={
                   <div className="guide-booth-mockup">
                     <Store size={22} />
                     <span className="guide-booth-pin">
@@ -356,32 +340,23 @@ export function AdminGuideModal({
                       {booth.booth_code || booth.location || "A1"}
                     </span>
                   </div>
-                </div>
-                <div className="admin-guide-info">
-                  <div className="admin-guide-title-row">
-                    <span className="admin-guide-card-title">
-                      {t("3. Booth Identity & Location")}
-                    </span>
-                    <span
-                      className={`admin-guide-badge ${hasBoothInfo ? "admin-guide-badge-done" : "admin-guide-badge-todo"}`}
-                    >
-                      {hasBoothInfo ? (
-                        <>
-                          <Check size={11} />
-                          {t("Ready")}
-                        </>
-                      ) : (
-                        t("Missing details")
-                      )}
-                    </span>
-                  </div>
-                  <p className="admin-guide-card-desc">
-                    {t(
-                      "Set table number, hall row, booth bio, and opening hours so attendees can locate you easily.",
-                    )}
-                  </p>
-                </div>
-                <div className="admin-guide-card-action">
+                }
+                title={t("3. Booth Identity & Location")}
+                isComplete={hasBoothInfo}
+                badgeContent={
+                  hasBoothInfo ? (
+                    <>
+                      <Check size={11} />
+                      {t("Ready")}
+                    </>
+                  ) : (
+                    t("Missing details")
+                  )
+                }
+                description={t(
+                  "Set table number, hall row, booth bio, and opening hours so attendees can locate you easily.",
+                )}
+                actionButton={
                   <Button
                     variant={hasBoothInfo ? "secondary" : "primary"}
                     onClick={() =>
@@ -393,42 +368,34 @@ export function AdminGuideModal({
                   >
                     {hasBoothInfo ? t("Edit booth info") : t("Complete booth")}
                   </Button>
-                </div>
-              </article>
+                }
+              />
 
               {/* Step 4: Printable Table Stand QR */}
-              <article className="admin-guide-card admin-guide-card-checklist">
-                <div className="admin-guide-visual admin-guide-visual-standee">
+              <ChecklistCard
+                visualClass="admin-guide-visual-standee"
+                visual={
                   <div className="guide-standee-mockup">
                     <QrCode size={20} />
                     <span className="guide-standee-pill">STAND</span>
                   </div>
-                </div>
-                <div className="admin-guide-info">
-                  <div className="admin-guide-title-row">
-                    <span className="admin-guide-card-title">
-                      {t("4. Table QR Stand & Signage")}
-                    </span>
-                    <span
-                      className={`admin-guide-badge ${hasQrStand ? "admin-guide-badge-done" : "admin-guide-badge-todo"}`}
-                    >
-                      {hasQrStand ? (
-                        <>
-                          <Check size={11} />
-                          {t("Ready to print")}
-                        </>
-                      ) : (
-                        t("Action needed")
-                      )}
-                    </span>
-                  </div>
-                  <p className="admin-guide-card-desc">
-                    {t(
-                      "Display an acrylic QR stand on your table so attendees can scan and place orders instantly.",
-                    )}
-                  </p>
-                </div>
-                <div className="admin-guide-card-action">
+                }
+                title={t("4. Table QR Stand & Signage")}
+                isComplete={hasQrStand}
+                badgeContent={
+                  hasQrStand ? (
+                    <>
+                      <Check size={11} />
+                      {t("Ready to print")}
+                    </>
+                  ) : (
+                    t("Action needed")
+                  )
+                }
+                description={t(
+                  "Display an acrylic QR stand on your table so attendees can scan and place orders instantly.",
+                )}
+                actionButton={
                   <Button
                     variant="secondary"
                     onClick={() =>
@@ -440,33 +407,25 @@ export function AdminGuideModal({
                   >
                     {t("View table stand")}
                   </Button>
-                </div>
-              </article>
+                }
+              />
 
               {/* Step 5: Test Checkout & Preview */}
-              <article className="admin-guide-card admin-guide-card-checklist">
-                <div className="admin-guide-visual admin-guide-visual-storefront">
+              <ChecklistCard
+                visualClass="admin-guide-visual-storefront"
+                visual={
                   <div className="guide-phone-mockup">
                     <Smartphone size={24} />
                     <span className="guide-phone-pill">LIVE</span>
                   </div>
-                </div>
-                <div className="admin-guide-info">
-                  <div className="admin-guide-title-row">
-                    <span className="admin-guide-card-title">
-                      {t("5. Customer Storefront Preview")}
-                    </span>
-                    <span className="admin-guide-badge admin-guide-badge-info">
-                      /s/{shopSlug}
-                    </span>
-                  </div>
-                  <p className="admin-guide-card-desc">
-                    {t(
-                      "Test adding items to cart, review mobile layout, and verify your VietQR code scan.",
-                    )}
-                  </p>
-                </div>
-                <div className="admin-guide-card-action">
+                }
+                title={t("5. Customer Storefront Preview")}
+                badgeClass="admin-guide-badge-info"
+                badgeContent={`/s/${shopSlug}`}
+                description={t(
+                  "Test adding items to cart, review mobile layout, and verify your VietQR code scan.",
+                )}
+                actionButton={
                   <Button
                     variant="secondary"
                     icon={<ExternalLink size={14} />}
@@ -474,8 +433,8 @@ export function AdminGuideModal({
                   >
                     {t("Open preview")}
                   </Button>
-                </div>
-              </article>
+                }
+              />
             </div>
           )}
 
@@ -487,60 +446,42 @@ export function AdminGuideModal({
               className="admin-guide-tabpanel"
             >
               {/* Emergency Card 1: 15-min reservation */}
-              <article className="admin-guide-card">
-                <div className="admin-guide-card-header">
-                  <span className="admin-guide-card-title">
-                    <Clock size={17} />
-                    {t("15-Minute Order Reservation")}
-                  </span>
-                  <span className="admin-guide-badge admin-guide-badge-info">
-                    {t("Auto Stock Protection")}
-                  </span>
-                </div>
-                <div className="guide-diagram-flow">
-                  <div className="guide-diagram-step">
-                    <strong>{t("Order Created")}</strong>
-                    <small>{t("Stock Reserved")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step">
-                    <strong>{t("15-Min Window")}</strong>
-                    <small>{t("VietQR Payment")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step is-success">
-                    <strong>{t("Confirmed")}</strong>
-                    <small>{t("Stock Finalized")}</small>
-                  </div>
-                </div>
-                <p className="admin-guide-card-desc">
-                  {t(
-                    "Reserved for 15 minutes upon checkout; auto-restored to catalog if unpaid.",
-                  )}
-                </p>
-                {isOwnerOrAdmin && (
-                  <div className="admin-guide-card-action">
-                    <Button
-                      variant="secondary"
-                      onClick={() => handleJump("orders")}
-                    >
-                      {t("View orders")}
-                    </Button>
-                  </div>
+              <GuideCard
+                icon={Clock}
+                title={t("15-Minute Order Reservation")}
+                badge={{ label: t("Auto Stock Protection"), variant: "info" }}
+                description={t(
+                  "Reserved for 15 minutes upon checkout; auto-restored to catalog if unpaid.",
                 )}
-              </article>
+                action={
+                  isOwnerOrAdmin
+                    ? { label: t("View orders"), onClick: () => handleJump("orders") }
+                    : undefined
+                }
+              >
+                <GuideDiagramFlow
+                  steps={[
+                    { title: t("Order Created"), subtitle: t("Stock Reserved") },
+                    { title: t("15-Min Window"), subtitle: t("VietQR Payment") },
+                    { title: t("Confirmed"), subtitle: t("Stock Finalized"), variant: "success" },
+                  ]}
+                />
+              </GuideCard>
 
               {/* Emergency Card 2: VietQR Reconciliation & Split Screen */}
-              <article className="admin-guide-card">
-                <div className="admin-guide-card-header">
-                  <span className="admin-guide-card-title">
-                    <ShieldCheck size={17} />
-                    {t("Confirming Bank Payments")}
-                  </span>
-                  <span className="admin-guide-badge admin-guide-badge-done">
-                    {t("Safe Banking")}
-                  </span>
-                </div>
+              <GuideCard
+                icon={ShieldCheck}
+                title={t("Confirming Bank Payments")}
+                badge={{ label: t("Safe Banking"), variant: "done" }}
+                description={t(
+                  "Verify the transfer note on your bank app matches the order code before clicking Confirm.",
+                )}
+                action={
+                  isOwnerOrAdmin
+                    ? { label: t("View orders"), onClick: () => handleJump("orders") }
+                    : undefined
+                }
+              >
                 <div className="guide-bank-split-preview">
                   <div className="guide-split-box guide-split-banking">
                     <span className="guide-split-tag">
@@ -559,151 +500,75 @@ export function AdminGuideModal({
                     </span>
                   </div>
                 </div>
-                <p className="admin-guide-card-desc">
-                  {t(
-                    "Verify the transfer note on your bank app matches the order code before clicking Confirm.",
-                  )}
-                </p>
-                {isOwnerOrAdmin && (
-                  <div className="admin-guide-card-action">
-                    <Button
-                      variant="secondary"
-                      onClick={() => handleJump("orders")}
-                    >
-                      {t("View orders")}
-                    </Button>
-                  </div>
-                )}
-              </article>
+              </GuideCard>
 
               {/* Emergency Card 3: Complete Order Lifecycle */}
-              <article className="admin-guide-card">
-                <div className="admin-guide-card-header">
-                  <span className="admin-guide-card-title">
-                    <Package size={17} />
-                    {t("Full Order Lifecycle")}
-                  </span>
-                  <span className="admin-guide-badge admin-guide-badge-info">
-                    {t("Fulfillment")}
-                  </span>
-                </div>
-                <div className="guide-diagram-flow guide-pipeline-flow">
-                  <div className="guide-diagram-step">
-                    <strong>{t("Pending")}</strong>
-                    <small>{t("Unpaid (15m)")}</small>
-                  </div>
-                  <ArrowRight size={13} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step is-highlight">
-                    <strong>{t("Confirmed")}</strong>
-                    <small>{t("Paid / Verify")}</small>
-                  </div>
-                  <ArrowRight size={13} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step">
-                    <strong>{t("Packed")}</strong>
-                    <small>{t("Bagged")}</small>
-                  </div>
-                  <ArrowRight size={13} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step is-success">
-                    <strong>{t("Completed")}</strong>
-                    <small>{t("Picked up")}</small>
-                  </div>
-                </div>
-                <p className="admin-guide-card-desc">
-                  {t(
-                    "Track orders from customer checkout to packing and fan pickup at the table.",
-                  )}
-                </p>
-              </article>
+              <GuideCard
+                icon={Package}
+                title={t("Full Order Lifecycle")}
+                badge={{ label: t("Fulfillment"), variant: "info" }}
+                description={t(
+                  "Track orders from customer checkout to packing and fan pickup at the table.",
+                )}
+              >
+                <GuideDiagramFlow
+                  className="guide-pipeline-flow"
+                  steps={[
+                    { title: t("Pending"), subtitle: t("Unpaid (15m)") },
+                    { title: t("Confirmed"), subtitle: t("Paid / Verify"), variant: "highlight" },
+                    { title: t("Packed"), subtitle: t("Bagged") },
+                    { title: t("Completed"), subtitle: t("Picked up"), variant: "success" },
+                  ]}
+                />
+              </GuideCard>
 
               {/* Emergency Card 4: Spotty / Dead Wi-Fi */}
-              <article className="admin-guide-card">
-                <div className="admin-guide-card-header">
-                  <span className="admin-guide-card-title">
-                    <WifiOff size={17} />
-                    {t("Spotty / Dead Convention Wi-Fi")}
-                  </span>
-                  <span className="admin-guide-badge admin-guide-badge-warning">
-                    {t("Staff Tablet")}
-                  </span>
-                </div>
-                <div className="guide-diagram-flow">
-                  <div className="guide-diagram-step">
-                    <strong>{t("Allocate Stock")}</strong>
-                    <small>{t("Online Setup")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step">
-                    <strong>{t("Sell Offline")}</strong>
-                    <small>{t("No Wi-Fi Needed")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step is-success">
-                    <strong>{t("PIN End Session")}</strong>
-                    <small>{t("Sync Orders")}</small>
-                  </div>
-                </div>
-                <p className="admin-guide-card-desc">
-                  {t(
-                    "Sell offline without internet; sync orders when back online.",
-                  )}
-                </p>
-                {isOwnerOrAdmin && (
-                  <div className="admin-guide-card-action">
-                    <Button
-                      variant="secondary"
-                      onClick={() =>
-                        handleJump("orders", "offline-event-tools")
-                      }
-                    >
-                      {t("Offline Event Tools")}
-                    </Button>
-                  </div>
+              <GuideCard
+                icon={WifiOff}
+                title={t("Spotty / Dead Convention Wi-Fi")}
+                badge={{ label: t("Staff Tablet"), variant: "warning" }}
+                description={t(
+                  "Sell offline without internet; sync orders when back online.",
                 )}
-              </article>
+                action={
+                  isOwnerOrAdmin
+                    ? {
+                        label: t("Offline Event Tools"),
+                        onClick: () => handleJump("orders", "offline-event-tools"),
+                      }
+                    : undefined
+                }
+              >
+                <GuideDiagramFlow
+                  steps={[
+                    { title: t("Allocate Stock"), subtitle: t("Online Setup") },
+                    { title: t("Sell Offline"), subtitle: t("No Wi-Fi Needed") },
+                    { title: t("PIN End Session"), subtitle: t("Sync Orders"), variant: "success" },
+                  ]}
+                />
+              </GuideCard>
 
               {/* Emergency Card 5: Audio & Push Alerts */}
-              <article className="admin-guide-card">
-                <div className="admin-guide-card-header">
-                  <span className="admin-guide-card-title">
-                    <Volume2 size={17} />
-                    {t("Sound Chime & Push Alerts")}
-                  </span>
-                  <span className="admin-guide-badge admin-guide-badge-done">
-                    {t("Live Alert")}
-                  </span>
-                </div>
-                <div className="guide-diagram-flow">
-                  <div className="guide-diagram-step">
-                    <strong>{t("Action Menu (…)")}</strong>
-                    <small>{t("Header")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step">
-                    <strong>{t("Enable Alerts")}</strong>
-                    <small>{t("Grant Permission")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step is-success">
-                    <strong>{t("Audio Chime")}</strong>
-                    <small>{t("Never Miss Order")}</small>
-                  </div>
-                </div>
-                <p className="admin-guide-card-desc">
-                  {t(
-                    "Turn on audio and push alerts so your phone rings whenever a fan places an order in a noisy hall.",
-                  )}
-                </p>
-                <div className="admin-guide-card-action">
-                  <Button
-                    variant="secondary"
-                    onClick={() =>
-                      handleJump("orders", "push-notifications")
-                    }
-                  >
-                    {t("Configure alerts")}
-                  </Button>
-                </div>
-              </article>
+              <GuideCard
+                icon={Volume2}
+                title={t("Sound Chime & Push Alerts")}
+                badge={{ label: t("Live Alert"), variant: "done" }}
+                description={t(
+                  "Turn on audio and push alerts so your phone rings whenever a fan places an order in a noisy hall.",
+                )}
+                action={{
+                  label: t("Configure alerts"),
+                  onClick: () => handleJump("orders", "push-notifications"),
+                }}
+              >
+                <GuideDiagramFlow
+                  steps={[
+                    { title: t("Action Menu (…)"), subtitle: t("Header") },
+                    { title: t("Enable Alerts"), subtitle: t("Grant Permission") },
+                    { title: t("Audio Chime"), subtitle: t("Never Miss Order"), variant: "success" },
+                  ]}
+                />
+              </GuideCard>
             </div>
           )}
 
@@ -715,16 +580,22 @@ export function AdminGuideModal({
               className="admin-guide-tabpanel"
             >
               {/* Feature 1: Gacha Pity Engine */}
-              <article className="admin-guide-card">
-                <div className="admin-guide-card-header">
-                  <span className="admin-guide-card-title">
-                    <Gamepad2 size={17} />
-                    {t("Gacha Minigame & Pity System")}
-                  </span>
-                  <span className="admin-guide-badge admin-guide-badge-done">
-                    {t("Fair Odds")}
-                  </span>
-                </div>
+              <GuideCard
+                icon={Gamepad2}
+                title={t("Gacha Minigame & Pity System")}
+                badge={{ label: t("Fair Odds"), variant: "done" }}
+                description={t(
+                  "Standard gacha rates with pity; winning items deduct live catalog stock automatically.",
+                )}
+                action={
+                  isOwnerOrAdmin
+                    ? {
+                        label: t("Open Gacha Manager"),
+                        onClick: () => handleJump("gacha", "gacha-manager"),
+                      }
+                    : undefined
+                }
+              >
                 <div className="guide-diagram-pity">
                   <div className="guide-pity-bar">
                     <div
@@ -740,163 +611,211 @@ export function AdminGuideModal({
                     <span>{t("90 Guaranteed 5★")}</span>
                   </div>
                 </div>
-                <p className="admin-guide-card-desc">
-                  {t(
-                    "Standard gacha rates with pity; winning items deduct live catalog stock automatically.",
-                  )}
-                </p>
-                {isOwnerOrAdmin && (
-                  <div className="admin-guide-card-action">
-                    <Button
-                      variant="secondary"
-                      onClick={() => handleJump("gacha", "gacha-manager")}
-                    >
-                      {t("Open Gacha Manager")}
-                    </Button>
-                  </div>
-                )}
-              </article>
+              </GuideCard>
 
               {/* Feature 2: Staff Tablet & PIN */}
-              <article className="admin-guide-card">
-                <div className="admin-guide-card-header">
-                  <span className="admin-guide-card-title">
-                    <Lock size={17} />
-                    {t("Staff Tablet & PIN Security")}
-                  </span>
-                  <span className="admin-guide-badge admin-guide-badge-done">
-                    {t("Offline PIN")}
-                  </span>
-                </div>
-                <div className="guide-diagram-flow">
-                  <div className="guide-diagram-step">
-                    <strong>{t("Staff Role")}</strong>
-                    <small>{t("Orders Only")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step">
-                    <strong>{t("Booth Tablet")}</strong>
-                    <small>{t("Shared Device")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step is-success">
-                    <strong>{t("6-Digit PIN")}</strong>
-                    <small>{t("Secure Close")}</small>
-                  </div>
-                </div>
-                <p className="admin-guide-card-desc">
-                  {t(
-                    "Restrict staff to order processing; protect sensitive settings and prevent unauthorized closing.",
-                  )}
-                </p>
-                {isOwnerOrAdmin && (
-                  <div className="admin-guide-card-action">
-                    <Button
-                      variant="secondary"
-                      onClick={() => handleJump("team", "team-manager")}
-                    >
-                      {t("Manage Team Access")}
-                    </Button>
-                  </div>
+              <GuideCard
+                icon={Lock}
+                title={t("Staff Tablet & PIN Security")}
+                badge={{ label: t("Offline PIN"), variant: "done" }}
+                description={t(
+                  "Restrict staff to order processing; protect sensitive settings and prevent unauthorized closing.",
                 )}
-              </article>
+                action={
+                  isOwnerOrAdmin
+                    ? {
+                        label: t("Manage Team Access"),
+                        onClick: () => handleJump("team", "team-manager"),
+                      }
+                    : undefined
+                }
+              >
+                <GuideDiagramFlow
+                  steps={[
+                    { title: t("Staff Role"), subtitle: t("Orders Only") },
+                    { title: t("Booth Tablet"), subtitle: t("Shared Device") },
+                    { title: t("6-Digit PIN"), subtitle: t("Secure Close"), variant: "success" },
+                  ]}
+                />
+              </GuideCard>
 
               {/* Feature 3: Dual Catalog Sync */}
-              <article className="admin-guide-card">
-                <div className="admin-guide-card-header">
-                  <span className="admin-guide-card-title">
-                    <Package size={17} />
-                    {t("Unified Inventory Sync")}
-                  </span>
-                  <span className="admin-guide-badge admin-guide-badge-done">
-                    {t("Real-time")}
-                  </span>
-                </div>
-                <div className="guide-diagram-flow">
-                  <div className="guide-diagram-step">
-                    <strong>{t("Storefront & Event")}</strong>
-                    <small>{t("Online & Offline")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step">
-                    <strong>{t("Gacha Pulls")}</strong>
-                    <small>{t("Pity Wins")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step is-success">
-                    <strong>{t("Real-Time Ledger")}</strong>
-                    <small>{t("Zero Overselling")}</small>
-                  </div>
-                </div>
-                <p className="admin-guide-card-desc">
-                  {t(
-                    "All sales, offline event orders, and gacha pulls share one live stock pool.",
-                  )}
-                </p>
-                {isOwnerOrAdmin && (
-                  <div className="admin-guide-card-action">
-                    <Button
-                      variant="secondary"
-                      onClick={() => handleJump("products", "add-product-btn")}
-                    >
-                      {t("Manage live stock")}
-                    </Button>
-                  </div>
+              <GuideCard
+                icon={Package}
+                title={t("Unified Inventory Sync")}
+                badge={{ label: t("Real-time"), variant: "done" }}
+                description={t(
+                  "All sales, offline event orders, and gacha pulls share one live stock pool.",
                 )}
-              </article>
+                action={
+                  isOwnerOrAdmin
+                    ? {
+                        label: t("Manage live stock"),
+                        onClick: () => handleJump("products", "add-product-btn"),
+                      }
+                    : undefined
+                }
+              >
+                <GuideDiagramFlow
+                  steps={[
+                    { title: t("Storefront & Event"), subtitle: t("Online & Offline") },
+                    { title: t("Gacha Pulls"), subtitle: t("Pity Wins") },
+                    { title: t("Real-Time Ledger"), subtitle: t("Zero Overselling"), variant: "success" },
+                  ]}
+                />
+              </GuideCard>
 
               {/* Feature 4: Automated VietQR & payOS Webhooks */}
-              <article className="admin-guide-card">
-                <div className="admin-guide-card-header">
-                  <span className="admin-guide-card-title">
-                    <Sparkles size={17} />
-                    {t("Automated VietQR & payOS Alerts")}
-                  </span>
-                  <span className="admin-guide-badge admin-guide-badge-done">
-                    {t("Hands-free")}
-                  </span>
-                </div>
-                <div className="guide-diagram-flow">
-                  <div className="guide-diagram-step">
-                    <strong>{t("payOS / Bank")}</strong>
-                    <small>{t("Open Banking")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step">
-                    <strong>{t("Webhook Alert")}</strong>
-                    <small>{t("HMAC-SHA256")}</small>
-                  </div>
-                  <ArrowRight size={14} className="guide-diagram-arrow" />
-                  <div className="guide-diagram-step is-success">
-                    <strong>{t("Instant Order Unlock")}</strong>
-                    <small>{t("Zero Manual Clicks")}</small>
-                  </div>
-                </div>
-                <p className="admin-guide-card-desc">
-                  {t(
-                    "Connect payOS or an Android notification forwarder for 100% automated, hands-free order confirmation.",
-                  )}
-                </p>
-                {isOwnerOrAdmin && (
-                  <div className="admin-guide-card-action">
-                    <Button
-                      variant="secondary"
-                      onClick={() =>
-                        handleJump(
-                          isCompact ? "settings" : "design",
-                          "payment-settings",
-                        )
-                      }
-                    >
-                      {t("Configure Auto-Confirm")}
-                    </Button>
-                  </div>
+              <GuideCard
+                icon={Sparkles}
+                title={t("Automated VietQR & payOS Alerts")}
+                badge={{ label: t("Hands-free"), variant: "done" }}
+                description={t(
+                  "Connect payOS or an Android notification forwarder for 100% automated, hands-free order confirmation.",
                 )}
-              </article>
+                action={
+                  isOwnerOrAdmin
+                    ? {
+                        label: t("Configure Auto-Confirm"),
+                        onClick: () =>
+                          handleJump(
+                            isCompact ? "settings" : "design",
+                            "payment-settings",
+                          ),
+                      }
+                    : undefined
+                }
+              >
+                <GuideDiagramFlow
+                  steps={[
+                    { title: t("payOS / Bank"), subtitle: t("Open Banking") },
+                    { title: t("Webhook Alert"), subtitle: t("HMAC-SHA256") },
+                    { title: t("Instant Order Unlock"), subtitle: t("Zero Manual Clicks"), variant: "success" },
+                  ]}
+                />
+              </GuideCard>
             </div>
           )}
         </div>
       </div>
     </Modal>
+  );
+}
+
+function ChecklistCard({
+  visual,
+  visualClass,
+  title,
+  isComplete,
+  badgeContent,
+  badgeClass,
+  description,
+  actionButton,
+}: {
+  visual: ReactNode;
+  visualClass: string;
+  title: string;
+  isComplete?: boolean;
+  badgeContent: ReactNode;
+  badgeClass?: string;
+  description: string;
+  actionButton: ReactNode;
+}) {
+  const badgeStyle =
+    badgeClass ||
+    (isComplete ? "admin-guide-badge-done" : "admin-guide-badge-todo");
+  return (
+    <article className="admin-guide-card admin-guide-card-checklist">
+      <div className={`admin-guide-visual ${visualClass}`}>{visual}</div>
+      <div className="admin-guide-info">
+        <div className="admin-guide-title-row">
+          <span className="admin-guide-card-title">{title}</span>
+          <span className={`admin-guide-badge ${badgeStyle}`}>
+            {badgeContent}
+          </span>
+        </div>
+        <p className="admin-guide-card-desc">{description}</p>
+      </div>
+      <div className="admin-guide-card-action">{actionButton}</div>
+    </article>
+  );
+}
+
+const guideBadgeClassMap = {
+  done: "admin-guide-badge-done",
+  info: "admin-guide-badge-info",
+  warning: "admin-guide-badge-warning",
+} as const;
+
+function GuideCard({
+  icon: Icon,
+  title,
+  badge,
+  description,
+  action,
+  children,
+}: {
+  icon: typeof Clock;
+  title: string;
+  badge: {
+    label: string;
+    variant: "done" | "info" | "warning";
+  };
+  description: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  children: ReactNode;
+}) {
+  return (
+    <article className="admin-guide-card">
+      <div className="admin-guide-card-header">
+        <span className="admin-guide-card-title">
+          <Icon size={17} />
+          {title}
+        </span>
+        <span className={`admin-guide-badge ${guideBadgeClassMap[badge.variant]}`}>
+          {badge.label}
+        </span>
+      </div>
+      {children}
+      <p className="admin-guide-card-desc">{description}</p>
+      {action && (
+        <div className="admin-guide-card-action">
+          <Button variant="secondary" onClick={action.onClick}>
+            {action.label}
+          </Button>
+        </div>
+      )}
+    </article>
+  );
+}
+
+function GuideDiagramFlow({
+  steps,
+  className = "",
+}: {
+  steps: Array<{
+    title: string;
+    subtitle: string;
+    variant?: "default" | "highlight" | "success";
+  }>;
+  className?: string;
+}) {
+  return (
+    <div className={`guide-diagram-flow ${className}`}>
+      {steps.map((step, idx) => (
+        <Fragment key={idx}>
+          {idx > 0 && <ArrowRight size={14} className="guide-diagram-arrow" />}
+          <div
+            className={`guide-diagram-step ${step.variant === "success" ? "is-success" : step.variant === "highlight" ? "is-highlight" : ""}`}
+          >
+            <strong>{step.title}</strong>
+            <small>{step.subtitle}</small>
+          </div>
+        </Fragment>
+      ))}
+    </div>
   );
 }

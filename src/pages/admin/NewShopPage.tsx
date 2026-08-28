@@ -126,7 +126,7 @@ export function NewShopPage() {
       await refreshAdminSession();
       // Set as active shop
       safeLocalStorageSet("akiba-active-shop", newShop.id);
-      navigate("/admin");
+      navigate("/admin?setup=1");
     }).catch((caught) => {
       toast.error(
         t(getErrorMessage(caught, "Could not create shop.")),

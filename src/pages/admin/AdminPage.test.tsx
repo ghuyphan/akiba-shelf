@@ -1,8 +1,18 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { ToastProvider } from "../../components/ui/ToastProvider";
 import { PlatformI18nProvider } from "../../lib/i18n/platformI18n";
+import { defaultBooth, defaultPayment, defaultPromotion } from "../../lib/constants";
+
+beforeAll(() => {
+  class ResizeObserverMock {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+});
 
 const mocks = vi.hoisted(() => ({
   session: { status: "checking" } as Record<string, unknown>,
@@ -33,12 +43,62 @@ vi.mock("../../hooks/admin/useAdminOrderRealtime", () => ({
 vi.mock("../../hooks/admin/useAdminViewRoute", () => ({
   useAdminViewRoute: () => ({ viewTab: "orders", setViewTab: vi.fn() }),
 }));
+vi.mock("../../hooks/admin/useAdminCatalogWorkspace", () => ({
+  useAdminCatalogWorkspace: () => ({
+    booth: defaultBooth,
+    catalogLoading: false,
+    loadedShopId: "shop-1",
+    markLocalWrite: vi.fn(),
+    payment: defaultPayment,
+    products: [],
+    promotion: defaultPromotion,
+    reload: vi.fn().mockResolvedValue(undefined),
+    selectedProduct: undefined,
+    setBooth: vi.fn(),
+    setPayment: vi.fn(),
+    setProducts: vi.fn(),
+    setPromotion: vi.fn(),
+    setSelectedProduct: vi.fn(),
+  }),
+}));
+vi.mock("../../hooks/admin/useAdminOrdersWorkspace", () => ({
+  useAdminOrdersWorkspace: () => ({
+    changeFilter: vi.fn(),
+    changeTodayOnly: vi.fn(),
+    eventOrderCount: 0,
+    expiringOrderCount: 0,
+    openPending: vi.fn(),
+    orderCounts: { pending: 0, confirmed: 0, packed: 0, completed: 0, cancelled: 0 },
+    orderFilter: "all",
+    orderPage: 1,
+    orderTotal: 0,
+    orders: [],
+    ordersLoading: false,
+    ordersTodayOnly: false,
+    pageSize: 20,
+    reload: vi.fn().mockResolvedValue(undefined),
+    sales: { total_sales_vnd: 0, total_orders: 0, average_order_value_vnd: 0 },
+    scheduleReload: vi.fn(),
+    selectEvent: vi.fn(),
+    selectedEventId: null,
+    setOrderPage: vi.fn(),
+  }),
+}));
 vi.mock("../../hooks/shared/useMediaQuery", () => ({
   useMediaQuery: () => false,
 }));
-vi.mock("../../lib/branding", () => ({
-  getAdminBranding: vi.fn(),
-  useDocumentBranding: vi.fn(),
+vi.mock("../../lib/branding", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../lib/branding")>();
+  return {
+    ...actual,
+    getAdminBranding: vi.fn(),
+    useDocumentBranding: vi.fn(),
+  };
+});
+vi.mock("../../components/admin/shell/AdminUnsavedChanges", () => ({
+  AdminUnsavedChangesProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useAdminNavigationGuard: () => (fn: () => void) => fn(),
+  useAdminUnsavedChanges: () => undefined,
 }));
 vi.mock("../../components/admin/auth/LoginPanel", () => ({
   AdminAccessCheck: () => <p>Checking admin access</p>,
@@ -50,9 +110,9 @@ vi.mock("../../components/admin/auth/LoginPanel", () => ({
 
 import { AdminPage } from "./AdminPage";
 
-function renderAdmin() {
+function renderAdmin(initialEntries = ["/admin"]) {
   return render(
-    <MemoryRouter initialEntries={["/admin"]}>
+    <MemoryRouter initialEntries={initialEntries}>
       <PlatformI18nProvider>
         <ToastProvider>
           <Routes>
@@ -68,6 +128,9 @@ function renderAdmin() {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  localStorage.clear();
+  document.body.removeAttribute("style");
+  document.body.removeAttribute("aria-hidden");
 });
 
 describe("AdminPage access orchestration", () => {
@@ -97,6 +160,69 @@ describe("AdminPage access orchestration", () => {
     renderAdmin();
     expect(
       screen.getByText("Could not verify shop access."),
+    ).toBeInTheDocument();
+  });
+
+  it("automatically opens the launch checklist guide when ?setup=1 is provided", async () => {
+    mocks.session = {
+      status: "authorized",
+      access: {
+        shop_id: "shop-1",
+        shop_name: "Test Shop",
+        shop_slug: "test-shop",
+        shop_active: true,
+        role: "owner",
+        active: true,
+      },
+      memberships: [
+        {
+          shop_id: "shop-1",
+          shop_name: "Test Shop",
+          shop_slug: "test-shop",
+          shop_active: true,
+          role: "owner",
+          active: true,
+        },
+      ],
+      userId: "user-1",
+    };
+
+    renderAdmin(["/admin?setup=1"]);
+
+    expect(await screen.findByText("Booth Guide & Playbook")).toBeInTheDocument();
+    expect(screen.getByText("Launch Checklist")).toBeInTheDocument();
+    expect(screen.getByText("Shop readiness progress")).toBeInTheDocument();
+  });
+
+  it("displays the readiness indicator in the header when setup is incomplete", async () => {
+    localStorage.setItem("matsuri-setup-seen-shop-1", "1");
+    mocks.session = {
+      status: "authorized",
+      access: {
+        shop_id: "shop-1",
+        shop_name: "Test Shop",
+        shop_slug: "test-shop",
+        shop_active: true,
+        role: "owner",
+        active: true,
+      },
+      memberships: [
+        {
+          shop_id: "shop-1",
+          shop_name: "Test Shop",
+          shop_slug: "test-shop",
+          shop_active: true,
+          role: "owner",
+          active: true,
+        },
+      ],
+      userId: "user-1",
+    };
+
+    renderAdmin(["/admin"]);
+
+    expect(
+      await screen.findByRole("button", { name: "Shop setup · 0/4 ready" }),
     ).toBeInTheDocument();
   });
 });

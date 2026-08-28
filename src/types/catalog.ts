@@ -16,6 +16,15 @@ export type StorefrontProductStyle =
   | "minimal"
   | "framed"
   | "playful";
+export type StorefrontBoothStyle =
+  | "classic"
+  | "compact"
+  | "banner"
+  | "playful";
+export type StorefrontCartStyle =
+  | "classic"
+  | "compact"
+  | "playful";
 export type StorefrontSection =
   | "featured"
   | "controls"
@@ -101,6 +110,8 @@ export type BoothSettings = {
   featured_style?: StorefrontFeaturedStyle;
   controls_style?: StorefrontControlsStyle;
   product_style?: StorefrontProductStyle;
+  booth_style?: StorefrontBoothStyle;
+  cart_style?: StorefrontCartStyle;
   catalog_locale?: CatalogLocale;
   featured_autoplay?: boolean;
 };

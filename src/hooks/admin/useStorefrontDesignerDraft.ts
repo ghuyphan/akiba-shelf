@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BoothSettings, PaymentSettings } from "../../types/catalog";
 
 export type StorefrontDesignerSnapshot = {
@@ -10,6 +10,7 @@ const sourceConflictMessage =
   "A newer storefront version is available. Your unpublished edits are preserved until you reset them.";
 
 function equal(left: unknown, right: unknown) {
+  if (left === right) return true;
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
@@ -142,6 +143,11 @@ export function useStorefrontDesignerDraft({
     clearError();
   }, [clearError, clearHistory, payment, settings]);
 
+  const hasChanges = useMemo(
+    () => !equal(draft, settings) || !equal(paymentDraft, payment),
+    [draft, payment, paymentDraft, settings],
+  );
+
   return {
     draft,
     paymentDraft,
@@ -151,7 +157,7 @@ export function useStorefrontDesignerDraft({
     future,
     syncNotice,
     setSyncNotice,
-    hasChanges: !equal(draft, settings) || !equal(paymentDraft, payment),
+    hasChanges,
     commitSnapshot,
     undo,
     redo,

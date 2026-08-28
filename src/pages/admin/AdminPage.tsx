@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "../../styles/admin/admin.css";
-import { Navigate, useNavigate } from "react-router";
+import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { deleteProduct, saveProduct } from "../../lib/api/products";
 import {
   saveBoothSettings,
@@ -30,7 +30,10 @@ import { PwaInstallBanner } from "../../components/admin/shell/PwaInstallBanner"
 import { getOfflineEventSignOutRisk } from "../../lib/offline/offlineEvents";
 import { AdminWorkspaceHeader } from "../../components/admin/shell/AdminWorkspaceHeader";
 import { AdminViewHero } from "../../components/admin/shell/AdminViewHero";
-import { AdminAttentionPanel } from "../../components/admin/shell/AdminAttentionPanel";
+import {
+  AdminAttentionPanel,
+  getShopReadiness,
+} from "../../components/admin/shell/AdminAttentionPanel";
 import { AdminWorkspaceContent } from "../../components/admin/shell/AdminWorkspaceContent";
 import {
   AdminGuideModal,
@@ -41,6 +44,10 @@ import { AdminUnsavedChangesProvider } from "../../components/admin/shell/AdminU
 import { SignOutDialog } from "../../components/platform/SignOutDialog";
 import { EventPinDialog } from "../../components/ui/EventPinDialog";
 import { saveCatalogSnapshot } from "../../lib/offline/offline";
+import {
+  safeLocalStorageGet,
+  safeLocalStorageSet,
+} from "../../lib/offline/safeStorage";
 import { useMediaQuery } from "../../hooks/shared/useMediaQuery";
 import { useAdminViewRoute } from "../../hooks/admin/useAdminViewRoute";
 import { useAdminNotifications } from "../../hooks/admin/useAdminNotifications";
@@ -62,6 +69,7 @@ export function AdminPage() {
   const canManageCatalog = isAuthed && adminSession.access.role !== "staff";
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [workspaceLoadFailed, setWorkspaceLoadFailed] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const { viewTab, setViewTab } = useAdminViewRoute();
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   const [signOutBusy, setSignOutBusy] = useState(false);
@@ -147,6 +155,58 @@ export function AdminPage() {
       ).length,
     [products],
   );
+
+  const readinessProgress = useMemo(() => {
+    if (!canManageCatalog) return undefined;
+    const items = getShopReadiness(booth, payment, products);
+    const done = items.filter((item) => item.complete).length;
+    return {
+      done,
+      total: items.length,
+      isComplete: items.length > 0 && done === items.length,
+    };
+  }, [canManageCatalog, booth, payment, products]);
+
+  useEffect(() => {
+    if (
+      !isAuthed ||
+      !canManageCatalog ||
+      isInitialLoading ||
+      catalogLoading ||
+      !shopId
+    )
+      return;
+
+    const setupRequested = searchParams.get("setup") === "1";
+    const setupStorageKey = `matsuri-setup-seen-${shopId}`;
+    const alreadySeen = safeLocalStorageGet(setupStorageKey) !== null;
+
+    if (setupRequested || (!alreadySeen && !readinessProgress?.isComplete)) {
+      setGuideSection("checklist");
+      setIsGuideOpen(true);
+      safeLocalStorageSet(setupStorageKey, "1");
+      if (setupRequested) {
+        setSearchParams(
+          (current) => {
+            const next = new URLSearchParams(current);
+            next.delete("setup");
+            return next;
+          },
+          { replace: true },
+        );
+      }
+    }
+  }, [
+    isAuthed,
+    canManageCatalog,
+    isInitialLoading,
+    catalogLoading,
+    shopId,
+    searchParams,
+    setSearchParams,
+    readinessProgress?.isComplete,
+  ]);
+
   useEffect(() => {
     setWorkspaceLoadFailed(false);
     setIsInitialLoading(true);
@@ -451,6 +511,7 @@ export function AdminPage() {
           canManageCatalog={canManageCatalog}
           canCreateShop={canCreateShop}
           signOutBusy={signOutBusy}
+          readiness={readinessProgress}
           onViewTabChange={setViewTab}
           onSelectShop={selectShop}
           onRequestSignOut={() => setIsSignOutOpen(true)}

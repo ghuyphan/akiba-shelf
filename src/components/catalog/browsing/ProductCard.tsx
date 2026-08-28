@@ -1,8 +1,8 @@
 import { memo } from "react";
-import { ShoppingCart } from "lucide-react";
 import type { Product } from "../../../types/catalog";
 import { getStockTone } from "../../../lib/product";
 import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
+import { MatsuriIcon } from "../../ui/MatsuriIcon";
 import { ProductPrice } from "./ProductPrice";
 
 type ProductCardProps = {
@@ -93,7 +93,7 @@ export const ProductCard = memo(function ProductCard({ product, selected, viewMo
             <ProductPrice product={product} />
             <span className={`stock-line ${getStockTone(product)}`}>{isSoldOut ? copy.soldOut : product.quantity_available > 50 ? copy.availableCapped(50) : copy.available(product.quantity_available)}</span>
           </div>
-          <div className="product-card-actions" style={{ position: "relative", zIndex: 4 }}><button type="button" className="product-add-button" disabled={isSoldOut} onClick={(event) => { event.stopPropagation(); onSelect(product, event); }} aria-label={isSoldOut ? copy.productSoldOut(product.name) : copy.addProduct(product.name)} title={isSoldOut ? copy.soldOut : copy.addToCart}><ShoppingCart size={16} /><span>{isSoldOut ? copy.unavailable : copy.addToCart}</span></button></div>
+          <div className="product-card-actions" style={{ position: "relative", zIndex: 4 }}><button type="button" className="product-add-button" disabled={isSoldOut} onClick={(event) => { event.stopPropagation(); onSelect(product, event); }} aria-label={isSoldOut ? copy.productSoldOut(product.name) : copy.addProduct(product.name)} title={isSoldOut ? copy.soldOut : copy.addToCart}><MatsuriIcon name="tote-bag" size={16} /><span>{isSoldOut ? copy.unavailable : copy.addToCart}</span></button></div>
         </div>
       </div>
     </div>

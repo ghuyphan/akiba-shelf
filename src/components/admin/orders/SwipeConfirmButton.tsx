@@ -8,7 +8,6 @@ type SwipeConfirmButtonProps = {
 };
 
 export function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButtonProps) {
-  const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<"idle" | "dragging" | "committing" | "success" | "error">("idle");
   const trackRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef(0);
@@ -18,21 +17,43 @@ export function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButt
   const lastTimeRef = useRef(0);
   const { t } = usePlatformI18n();
 
-  const updateProgress = useCallback((next: number) => { progressRef.current = next; setProgress(next); }, []);
-  const updatePhase = useCallback((next: typeof phase) => { phaseRef.current = next; setPhase(next); }, []);
+  const setDomProgress = useCallback((val: number) => {
+    progressRef.current = val;
+    if (trackRef.current) {
+      trackRef.current.style.setProperty("--swipe-progress", String(val));
+    }
+  }, []);
+
+  const updatePhase = useCallback((next: typeof phase) => {
+    phaseRef.current = next;
+    setPhase(next);
+  }, []);
+
   const commit = useCallback(async () => {
     if (phaseRef.current === "committing" || phaseRef.current === "success" || isConfirming) return;
-    updateProgress(1);
+    setDomProgress(1);
     updatePhase("committing");
-    if (await onConfirm()) { updatePhase("success"); return; }
+    if (await onConfirm()) {
+      updatePhase("success");
+      return;
+    }
     updatePhase("error");
-    window.setTimeout(() => { updateProgress(0); updatePhase("idle"); }, 700);
-  }, [isConfirming, onConfirm, updatePhase, updateProgress]);
+    window.setTimeout(() => {
+      setDomProgress(0);
+      updatePhase("idle");
+    }, 700);
+  }, [isConfirming, onConfirm, setDomProgress, updatePhase]);
+
   const finishGesture = (velocity = 0) => {
     if (phaseRef.current !== "dragging") return;
-    if (progressRef.current >= 0.88 || (progressRef.current >= 0.68 && velocity > 0.55)) void commit();
-    else { updateProgress(0); updatePhase("idle"); }
+    if (progressRef.current >= 0.88 || (progressRef.current >= 0.68 && velocity > 0.55)) {
+      void commit();
+    } else {
+      setDomProgress(0);
+      updatePhase("idle");
+    }
   };
+
   const isLocked = isConfirming || phase === "committing" || phase === "success";
   const label = phase === "committing" || isConfirming
     ? "Confirming payment…"
@@ -63,7 +84,7 @@ export function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButt
       onPointerMove={(event) => {
         if (phaseRef.current !== "dragging" || !trackRef.current) return;
         const maxTravel = Math.max(1, trackRef.current.clientWidth - 54);
-        updateProgress(Math.max(0, Math.min(1, (event.clientX - startXRef.current) / maxTravel)));
+        setDomProgress(Math.max(0, Math.min(1, (event.clientX - startXRef.current) / maxTravel)));
         lastXRef.current = event.clientX;
         lastTimeRef.current = performance.now();
       }}
@@ -72,7 +93,7 @@ export function SwipeConfirmButton({ onConfirm, isConfirming }: SwipeConfirmButt
         finishGesture((event.clientX - lastXRef.current) / elapsed);
       }}
       onPointerCancel={() => finishGesture()}
-      style={{ "--swipe-progress": progress } as React.CSSProperties}
+      style={{ "--swipe-progress": 0 } as React.CSSProperties}
     >
       <div className="swipe-bg" />
       <span className="swipe-copy">

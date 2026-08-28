@@ -1,7 +1,8 @@
-import { Eye, Gamepad2, Layers3, Rocket, X } from "lucide-react";
+import { Eye, Layers3, Rocket, X } from "lucide-react";
 import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
 import type { GachaGameType, GachaLiveStatus } from "../../../types/gacha";
 import { Button } from "../../ui/Button";
+import { MatsuriIcon } from "../../ui/MatsuriIcon";
 import { AdminEditBar } from "../shell/AdminEditBar";
 
 export type GachaStatusGame = {
@@ -118,7 +119,7 @@ export function GachaStatusBar({
             </>
           ) : (
             <span className="gacha-chip">
-              <Gamepad2 size={13} aria-hidden="true" />
+              <MatsuriIcon name="gacha-capsule" size={13} aria-hidden="true" />
               {t(hasPublished ? "Not live" : "Not published yet")}
             </span>
           )}

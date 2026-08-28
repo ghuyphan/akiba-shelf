@@ -24,7 +24,7 @@ function featuredProduct(id: string, name: string): Product {
 }
 
 describe("StackedFeatured", () => {
-  it("loads only the active artwork until another card is selected", () => {
+  it("prioritizes the active artwork for high priority while rendering deck images", () => {
     const { container } = render(
       <CatalogLocaleProvider locale="en">
         <StackedFeatured
@@ -39,14 +39,17 @@ describe("StackedFeatured", () => {
     );
 
     const initialImages = container.querySelectorAll(".featured-deck-card img");
-    expect(initialImages).toHaveLength(1);
+    expect(initialImages).toHaveLength(2);
     expect(initialImages[0]).toHaveAttribute(
       "src",
       "https://example.test/first.jpg",
     );
     expect(initialImages[0]).toHaveAttribute("fetchpriority", "high");
-
-    fireEvent.load(initialImages[0]);
+    expect(initialImages[1]).toHaveAttribute(
+      "src",
+      "https://example.test/second.jpg",
+    );
+    expect(initialImages[1]).toHaveAttribute("fetchpriority", "low");
 
     const cards = container.querySelectorAll<HTMLButtonElement>(
       ".featured-deck-card",
@@ -62,9 +65,6 @@ describe("StackedFeatured", () => {
       "https://example.test/second.jpg",
     );
     expect(activeImage).toHaveAttribute("fetchpriority", "high");
-    expect(container.querySelectorAll(".featured-deck-card img")).toHaveLength(
-      2,
-    );
   });
 
   it("keeps the LCP image on the small variant for constrained connections", () => {

@@ -6,12 +6,30 @@ export function useScheduledPromotion(configured: PromotionSettings) {
   const [clock, setClock] = useState(Date.now);
   const startsAt = configured.starts_at;
   const endsAt = configured.ends_at;
-  const promotion = useMemo(
+  const isEnabled = isPromotionActive(configured, new Date(clock));
+  const rewardIdsKey = configured.reward_product_ids?.join("\u0000") ?? "";
+  const qualifyingIdsKey = configured.qualifying_product_ids?.join("\u0000") ?? "";
+
+  const promotion = useMemo<PromotionSettings>(
     () => ({
       ...configured,
-      enabled: isPromotionActive(configured, new Date(clock)),
+      enabled: isEnabled,
     }),
-    [clock, configured],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      configured.shop_id,
+      configured.kind,
+      configured.starts_at,
+      configured.ends_at,
+      configured.buy_quantity,
+      configured.free_quantity,
+      configured.repeatable,
+      configured.percentage_off,
+      configured.minimum_subtotal_vnd,
+      rewardIdsKey,
+      qualifyingIdsKey,
+      isEnabled,
+    ],
   );
 
   useEffect(() => {

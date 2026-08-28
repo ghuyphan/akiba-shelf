@@ -1,4 +1,4 @@
-import { useId, useMemo } from "react";
+import { memo, useId, useMemo } from "react";
 import { Star, Sword, Trash2, UserRound } from "lucide-react";
 import {
   getGachaBannerFeaturedRule,
@@ -40,7 +40,7 @@ const rarityOptions: SelectMenuOption[] = [3, 4, 5].map((rarity) => ({
   icon: <Star size={15} />,
 }));
 
-export function GachaEntryEditor({
+export const GachaEntryEditor = memo(function GachaEntryEditor({
   entry,
   productActive,
   banner,
@@ -248,4 +248,4 @@ export function GachaEntryEditor({
       </button>
     </div>
   );
-}
+});

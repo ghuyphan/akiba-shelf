@@ -37,6 +37,10 @@ export function getStorefrontSectionStyleClass(
     return `style-controls-${booth.controls_style ?? "panel"}`;
   if (section === "products")
     return `style-product-${booth.product_style ?? "classic"}`;
+  if (section === "booth")
+    return `style-booth-${booth.booth_style ?? "classic"}`;
+  if (section === "cart")
+    return `style-cart-${booth.cart_style ?? "classic"}`;
   return "";
 }
 

@@ -160,6 +160,8 @@ const booth = {
   featured_style: "deck",
   controls_style: "panel",
   product_style: "classic",
+  booth_style: "classic",
+  cart_style: "classic",
   catalog_locale: "en",
   featured_autoplay: false,
 };

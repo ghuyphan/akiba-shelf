@@ -22,11 +22,11 @@ export function ProductPrice({
   const effectivePrice = getProductPrice(product);
   const promotionActive = isPromotionActive(promotion);
   const isQualifyingProduct =
-    promotionActive && promotion.qualifying_product_ids.includes(product.id);
+    promotionActive && (promotion.qualifying_product_ids ?? []).includes(product.id);
   const isRewardProduct =
     promotion.kind === "buy_get" &&
     promotionActive &&
-    promotion.reward_product_ids.includes(product.id);
+    (promotion.reward_product_ids ?? []).includes(product.id);
   const promotionLabel =
     isQualifyingProduct && isRewardProduct
       ? promotion.kind === "percentage"

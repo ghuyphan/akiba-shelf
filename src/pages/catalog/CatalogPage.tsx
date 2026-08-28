@@ -15,7 +15,11 @@ import {
   getThemeStyle,
   resetPageTheme,
 } from "../../utils/theme";
-import { getShopBranding, useDocumentBranding } from "../../lib/branding";
+import {
+  getShopBranding,
+  getShopName,
+  useDocumentBranding,
+} from "../../lib/branding";
 import { applyDocumentSeo } from "../../lib/seo";
 import type {
   CheckoutSession,
@@ -190,7 +194,7 @@ export function CatalogPage() {
       : null;
   useDocumentBranding(verifiedBranding);
   useEffect(() => {
-    const shopName = booth.booth_name.trim() || shop?.name.trim() || "Shop";
+    const shopName = getShopName(shop?.name, booth.booth_name);
     applyDocumentSeo({
       description:
         booth.subtitle.trim() ||
@@ -582,111 +586,152 @@ export function CatalogPage() {
     [booth.layout_order],
   );
 
-  const storefrontBlocks = useMemo<Record<StorefrontSection, React.ReactNode>>(
-    () => ({
-      featured: (
-        <StackedFeatured
-          products={featuredProducts}
-          onSelect={handleAddToCart}
-          autoRotate={!lightweightMode && (booth.featured_autoplay ?? true)}
-          lightweightImages={lightweightMode}
-        />
-      ),
-      controls: (
-        <div className="catalog-controls">
-          <CategoryFilters
-            categories={categories}
-            activeCategory={activeCategory}
-            onChange={setActiveCategory}
-          />
-          <CatalogToolbar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            sort={sort}
-            viewMode={viewMode}
-            onSortChange={setSort}
-            onViewModeChange={setViewMode}
-          />
-        </div>
-      ),
-      products: (
-        <ProductGrid
-          products={products}
-          totalProducts={products.length + (hasMore ? 1 : 0)}
+  const featuredBlock = useMemo(
+    () => (
+      <StackedFeatured
+        products={featuredProducts}
+        onSelect={handleAddToCart}
+        autoRotate={!lightweightMode && (booth.featured_autoplay ?? true)}
+        lightweightImages={lightweightMode}
+      />
+    ),
+    [booth.featured_autoplay, featuredProducts, handleAddToCart, lightweightMode],
+  );
+
+  const controlsBlock = useMemo(
+    () => (
+      <div className="catalog-controls">
+        <CategoryFilters
+          categories={categories}
           activeCategory={activeCategory}
-          selectedProduct={products.find((p) => p.id === selectedProductId)}
+          onChange={setActiveCategory}
+        />
+        <CatalogToolbar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          sort={sort}
           viewMode={viewMode}
-          onSelect={handleAddToCart}
-          onViewDetails={setDetailProduct}
-          onResetFilters={handleResetFilters}
-          loading={isLoading}
-          error={loadError}
-          onRetry={handleRetryCatalog}
-          searchActive={Boolean(searchQuery.trim())}
-          emptyMessage={catalogCopy.emptyBoothHint(
-            booth.booth_name.trim() ||
-              shop?.name.trim() ||
-              catalogCopy.boothDetails,
-          )}
-          hasMore={hasMore}
-          loadingMore={isLoadingMore}
-          onLoadMore={handleLoadMore}
+          onSortChange={setSort}
+          onViewModeChange={setViewMode}
         />
-      ),
-      booth: <BoothInfoPanel booth={booth} />,
-      cart: (
-        <SelectedItemPanel
-          cart={cart}
-          promotion={promotion}
-          rewardProducts={rewardProducts}
-          onAddReward={handleAddReward}
-          onQuantityChange={handleUpdateCartQuantity}
-          onRemove={handleRemoveFromCart}
-          onOpenPayment={handleOpenPayment}
-          onClearCart={handleClearCart}
-          checkoutLabel={orderingEnabled ? undefined : catalogCopy.demoCheckout}
-          isExpanded={isCartExpanded}
-          onToggleExpand={handleToggleCartExpand}
-        />
-      ),
-    }),
+      </div>
+    ),
     [
       activeCategory,
-      booth,
-      cart,
-      catalogCopy,
       categories,
-      featuredProducts,
-      handleAddReward,
-      handleAddToCart,
-      handleClearCart,
-      handleLoadMore,
-      handleOpenPayment,
-      handleRemoveFromCart,
-      handleResetFilters,
-      handleRetryCatalog,
-      handleToggleCartExpand,
-      handleUpdateCartQuantity,
-      hasMore,
-      isCartExpanded,
-      isLoading,
-      isLoadingMore,
-      lightweightMode,
-      loadError,
-      orderingEnabled,
-      products,
-      promotion,
-      rewardProducts,
       searchQuery,
-      selectedProductId,
       setActiveCategory,
       setSearchQuery,
       setSort,
       setViewMode,
-      shop?.name,
       sort,
       viewMode,
     ],
+  );
+
+  const emptyBoothMessage = useMemo(
+    () =>
+      catalogCopy.emptyBoothHint(
+        booth.booth_name.trim() ||
+          shop?.name.trim() ||
+          catalogCopy.boothDetails,
+      ),
+    [booth.booth_name, catalogCopy, shop?.name],
+  );
+
+  const selectedProduct = useMemo(
+    () =>
+      selectedProductId
+        ? products.find((p) => p.id === selectedProductId)
+        : undefined,
+    [products, selectedProductId],
+  );
+
+  const productsBlock = useMemo(
+    () => (
+      <ProductGrid
+        products={products}
+        totalProducts={products.length + (hasMore ? 1 : 0)}
+        activeCategory={activeCategory}
+        selectedProduct={selectedProduct}
+        viewMode={viewMode}
+        onSelect={handleAddToCart}
+        onViewDetails={setDetailProduct}
+        onResetFilters={handleResetFilters}
+        loading={isLoading}
+        error={loadError}
+        onRetry={handleRetryCatalog}
+        searchActive={Boolean(searchQuery.trim())}
+        emptyMessage={emptyBoothMessage}
+        hasMore={hasMore}
+        loadingMore={isLoadingMore}
+        onLoadMore={handleLoadMore}
+      />
+    ),
+    [
+      activeCategory,
+      emptyBoothMessage,
+      handleAddToCart,
+      handleLoadMore,
+      handleResetFilters,
+      handleRetryCatalog,
+      hasMore,
+      isLoading,
+      isLoadingMore,
+      loadError,
+      products,
+      searchQuery,
+      selectedProduct,
+      viewMode,
+    ],
+  );
+
+  const boothBlock = useMemo(
+    () => <BoothInfoPanel booth={booth} />,
+    [booth],
+  );
+
+  const cartBlock = useMemo(
+    () => (
+      <SelectedItemPanel
+        cart={cart}
+        promotion={promotion}
+        rewardProducts={rewardProducts}
+        onAddReward={handleAddReward}
+        onQuantityChange={handleUpdateCartQuantity}
+        onRemove={handleRemoveFromCart}
+        onOpenPayment={handleOpenPayment}
+        onClearCart={handleClearCart}
+        checkoutLabel={orderingEnabled ? undefined : catalogCopy.demoCheckout}
+        isExpanded={isCartExpanded}
+        onToggleExpand={handleToggleCartExpand}
+      />
+    ),
+    [
+      cart,
+      catalogCopy.demoCheckout,
+      handleAddReward,
+      handleClearCart,
+      handleOpenPayment,
+      handleRemoveFromCart,
+      handleToggleCartExpand,
+      handleUpdateCartQuantity,
+      isCartExpanded,
+      orderingEnabled,
+      promotion,
+      rewardProducts,
+    ],
+  );
+
+  const storefrontBlocks = useMemo<Record<StorefrontSection, React.ReactNode>>(
+    () => ({
+      featured: featuredBlock,
+      controls: controlsBlock,
+      products: productsBlock,
+      booth: boothBlock,
+      cart: cartBlock,
+    }),
+    [boothBlock, cartBlock, controlsBlock, featuredBlock, productsBlock],
   );
   const cartPricing = useMemo(
     () => calculateCartPricing(cart, promotion),

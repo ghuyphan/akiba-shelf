@@ -169,6 +169,14 @@ export const boothSettingsSchema = z
       .enum(["classic", "minimal", "framed", "playful"])
       .nullish()
       .transform((value) => value ?? undefined),
+    booth_style: z
+      .enum(["classic", "compact", "banner", "playful"])
+      .nullish()
+      .transform((value) => value ?? undefined),
+    cart_style: z
+      .enum(["classic", "compact", "playful"])
+      .nullish()
+      .transform((value) => value ?? undefined),
     catalog_locale: z
       .enum(["en", "vi"])
       .nullish()

@@ -14,6 +14,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router";
+import { MatsuriIcon } from "../../ui/MatsuriIcon";
 import {
   activateOfflineEventSession,
   finalizeOfflineEventSession,
@@ -757,7 +758,7 @@ export function OfflineEventManager({
         ) : eventActive ? (
           <ShieldCheck size={15} />
         ) : (
-          <CloudOff size={15} />
+          <MatsuriIcon name="booth-awning" size={15} />
         )}
         <span>
           {eventActive ? t("Event sales active") : t("Offline sales")}

@@ -62,6 +62,18 @@ Use terse technical English.
 - Changes under `src/lib/api/` require matching review of `e2e/fixtures.ts`,
   API contract tests, schemas, and response types.
 
+## Documentation maintenance
+
+Keep documentation synchronized with code changes.
+
+- Major or minor updates that modify architecture, schemas, API contracts,
+  invariants, UI rules, operations, or workflows MUST update corresponding docs
+  (`CODEBASE.md`, `DESIGN.md`, `AGENTS.md`, `docs/*`, ADRs) in the same change.
+- Never leave docs outdated, conflicting, or drifting after refactors,
+  deprecations, or feature additions.
+- If existing documentation is discovered to be outdated during a task, update
+  or flag it within the focused patch.
+
 ## Verification
 
 Always finish with:

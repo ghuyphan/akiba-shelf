@@ -26,15 +26,32 @@ export function useTabIndicator<TValue, TElement extends HTMLElement = HTMLEleme
       const a = activeElement;
       if (!c || !a) return;
       requestAnimationFrame(() => {
+        // Read phase
         const itemLeft = a.offsetLeft;
-        const itemRight = itemLeft + a.offsetWidth;
-        if (itemLeft < c.scrollLeft) c.scrollLeft = itemLeft;
-        else if (itemRight > c.scrollLeft + c.clientWidth)
-          c.scrollLeft = itemRight - c.clientWidth;
+        const itemWidth = a.offsetWidth;
+        const itemRight = itemLeft + itemWidth;
+        const currentScrollLeft = c.scrollLeft;
+        const clientWidth = c.clientWidth;
         const containerRect = c.getBoundingClientRect();
         const activeRect = a.getBoundingClientRect();
+
         if (containerRect.width === 0 || activeRect.width === 0) return;
-        c.style.setProperty("--active-left", `${activeRect.left - containerRect.left + c.scrollLeft}px`);
+
+        // Compute write values
+        let targetScrollLeft = currentScrollLeft;
+        if (itemLeft < currentScrollLeft) {
+          targetScrollLeft = itemLeft;
+        } else if (itemRight > currentScrollLeft + clientWidth) {
+          targetScrollLeft = itemRight - clientWidth;
+        }
+
+        const activeLeft = activeRect.left - containerRect.left + targetScrollLeft;
+
+        // Write phase
+        if (c.scrollLeft !== targetScrollLeft) {
+          c.scrollLeft = targetScrollLeft;
+        }
+        c.style.setProperty("--active-left", `${activeLeft}px`);
         c.style.setProperty("--active-width", `${activeRect.width}px`);
       });
     }

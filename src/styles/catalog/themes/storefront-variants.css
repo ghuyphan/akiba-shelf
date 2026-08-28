@@ -204,7 +204,7 @@
   box-shadow: 4px 5px 0 color-mix(in srgb, var(--coral) 35%, transparent) !important;
 }
 .style-controls-playful .category-scroller { background: rgb(255 255 255 / 80%); }
-.style-controls-playful .chip.active {
+.style-controls-playful .chip:is(.chip-active, [aria-pressed="true"]) {
   box-shadow: 2px 3px 0 color-mix(in srgb, var(--blue) 60%, transparent);
 }
 
@@ -252,6 +252,191 @@
 .style-product-playful .product-card-taxonomy > span:first-child {
   color: var(--navy);
   background: color-mix(in srgb, var(--blue) 20%, #ffffff);
+}
+
+/* Booth Information styles */
+
+/* 1. Classic (Balanced standard companion card) */
+.style-booth-classic .booth-card.booth-card-redesign {
+  background: var(--store-card-background, #ffffff);
+}
+
+/* 2. Compact (Space-efficient, clean companion card) */
+.style-booth-compact .booth-card.booth-card-redesign {
+  gap: 10px;
+  padding: 15px 16px;
+}
+.style-booth-compact .booth-card-identity {
+  gap: 10px;
+  padding-bottom: 9px;
+}
+.style-booth-compact .booth-hero-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+.style-booth-compact .booth-hero-logo img {
+  border-radius: 10px;
+}
+.style-booth-compact .booth-hero-name {
+  font-size: 14px;
+  font-weight: 850;
+}
+.style-booth-compact .booth-hero-code {
+  font-size: 8.5px;
+}
+.style-booth-compact .booth-detail-chips {
+  gap: 6px;
+}
+.style-booth-compact .booth-chip {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 8.5px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+.style-booth-compact .social-qr-grid {
+  gap: 6px !important;
+}
+.style-booth-compact .social-qr-card {
+  padding: 4px;
+  border-radius: 9px;
+}
+
+/* 3. Banner (Centered storefront identity showcase with soft halo gradient and full QR codes) */
+.style-booth-banner .booth-card.booth-card-redesign {
+  gap: 10px;
+  padding: 16px 17px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--coral) 8%, #ffffff) 0%, #ffffff 42%);
+  border-color: color-mix(in srgb, var(--coral) 18%, var(--line));
+}
+.style-booth-banner .booth-card-topline {
+  justify-content: space-between;
+  gap: 8px;
+}
+.style-booth-banner .booth-card-topline > span {
+  font-size: 9px;
+}
+.style-booth-banner .booth-card-topline > small {
+  font-size: 8px;
+}
+.style-booth-banner .booth-card-identity {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  gap: 4px !important;
+  padding-bottom: 9px !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--coral) 12%, var(--soft-line)) !important;
+}
+.style-booth-banner .booth-hero-logo {
+  width: 48px !important;
+  height: 48px !important;
+  border: 2.5px solid color-mix(in srgb, var(--coral) 28%, #ffffff) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--coral) 12%, rgba(15, 23, 42, 0.08)) !important;
+  background: #ffffff !important;
+}
+.style-booth-banner .booth-hero-logo img {
+  border-radius: 11px !important;
+}
+.style-booth-banner .booth-hero-info {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+}
+.style-booth-banner .booth-hero-name {
+  font-size: 14.5px !important;
+  font-weight: 850 !important;
+  line-height: 1.15 !important;
+}
+.style-booth-banner .booth-hero-code {
+  font-size: 9px !important;
+  margin-top: 1px !important;
+}
+.style-booth-banner .booth-detail-chips {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 7px !important;
+}
+.style-booth-banner .booth-chip {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 8.5px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--coral) 5%, #ffffff);
+  border-color: color-mix(in srgb, var(--coral) 18%, var(--soft-line));
+}
+.style-booth-banner .social-qr-grid {
+  gap: 7px !important;
+}
+.style-booth-banner .social-qr-card {
+  padding: 5px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid color-mix(in srgb, var(--coral) 14%, var(--soft-line));
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+/* 4. Playful (Vibrant borders and pop offset QR tiles) */
+.style-booth-playful .booth-card {
+  border-width: 2px !important;
+  border-color: color-mix(in srgb, var(--coral) 45%, var(--line)) !important;
+  box-shadow: 4px 5px 0 color-mix(in srgb, var(--blue) 45%, transparent) !important;
+}
+.style-booth-playful .booth-chip {
+  border-width: 1.5px;
+  border-color: color-mix(in srgb, var(--coral) 25%, var(--soft-line));
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--blue) 35%, transparent);
+}
+.style-booth-playful .social-qr-card {
+  border-width: 1.5px;
+  border-color: color-mix(in srgb, var(--coral) 30%, var(--soft-line));
+  box-shadow: 2px 3px 0 color-mix(in srgb, var(--blue) 35%, transparent);
+}
+
+/* Shopping Cart styles */
+
+/* 1. Compact (Condensed rows for high-volume multi-item orders) */
+.style-cart-compact .cart-item-row {
+  grid-template-columns: 38px minmax(0, 1fr) auto !important;
+  gap: 8px !important;
+  padding: 6px 8px !important;
+}
+.style-cart-compact .cart-item-row img,
+.style-cart-compact .cart-item-row .cart-item-placeholder {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 6px !important;
+}
+.style-cart-compact .cart-item-copy strong {
+  font-size: 12px !important;
+}
+.style-cart-compact .cart-item-copy small {
+  font-size: 10px !important;
+}
+.style-cart-compact .cart-qty-stepper {
+  min-height: 28px !important;
+}
+.style-cart-compact .cart-qty-stepper button {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* 2. Playful (Themed borders and pop offset checkout button) */
+.style-cart-playful .selected-panel {
+  border-width: 2px !important;
+  border-color: color-mix(in srgb, var(--coral) 45%, var(--line)) !important;
+  box-shadow: 4px 5px 0 color-mix(in srgb, var(--blue) 45%, transparent) !important;
+}
+.style-cart-playful .cart-item-row {
+  border-width: 1.5px !important;
+  border-color: color-mix(in srgb, var(--coral) 20%, var(--soft-line)) !important;
+}
+.style-cart-playful .cart-total-actions .button,
+.style-cart-playful .cart-checkout-button {
+  box-shadow: 3px 4px 0 color-mix(in srgb, var(--coral) 40%, transparent) !important;
 }
 
 @media (max-width: 720px) {

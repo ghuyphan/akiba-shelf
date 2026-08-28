@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { AlertTriangle, ChevronDown, LoaderCircle, PackageSearch, RotateCcw, Tags } from "lucide-react";
 import type { Product } from "../../../types/catalog";
 import { Button } from "../../ui/Button";
@@ -24,7 +25,7 @@ type ProductGridProps = {
   emptyMessage?: string;
 };
 
-export function ProductGrid({ products, totalProducts, activeCategory, selectedProduct, viewMode, onSelect, onViewDetails, onResetFilters, loading = false, error, onRetry, searchActive = false, hasMore = false, loadingMore = false, onLoadMore, emptyMessage }: ProductGridProps) {
+export const ProductGrid = memo(function ProductGrid({ products, totalProducts, activeCategory, selectedProduct, viewMode, onSelect, onViewDetails, onResetFilters, loading = false, error, onRetry, searchActive = false, hasMore = false, loadingMore = false, onLoadMore, emptyMessage }: ProductGridProps) {
   const copy = useCatalogCopy();
   if (loading && totalProducts === 0) return <EmptyState tone="loading" icon={<LoaderCircle className="state-spinner" size={28} />} title={copy.loadingCatalog} message={copy.loadingCatalogHint} />;
   if (error && totalProducts === 0) return <EmptyState tone="error" icon={<AlertTriangle size={28} />} title={copy.catalogUnavailable} message={copy.catalogUnavailableHint} action={onRetry ? <Button type="button" icon={<RotateCcw size={18} />} onClick={onRetry}>{copy.tryAgain}</Button> : undefined} />;
@@ -80,4 +81,4 @@ export function ProductGrid({ products, totalProducts, activeCategory, selectedP
       ) : null}
     </div>
   );
-}
+});

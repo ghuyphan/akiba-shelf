@@ -163,6 +163,17 @@ const productStyleOptions = [
   ["framed", "Framed", "Inset product photography"],
   ["playful", "Playful", "Colorful collectible cards"],
 ] as const;
+const boothStyleOptions = [
+  ["classic", "Classic", "Full identity card and QR codes"],
+  ["compact", "Compact", "Social icon links and space saving"],
+  ["banner", "Banner", "Centered hero identity with accent"],
+  ["playful", "Playful", "Themed borders and offset tags"],
+] as const;
+const cartStyleOptions = [
+  ["classic", "Classic", "Standard card and full line items"],
+  ["compact", "Compact", "Dense rows for multi-item orders"],
+  ["playful", "Playful", "Themed surface and pop action dock"],
+] as const;
 const inspectorTabs = [
   ["layout", LayoutGrid, "Layout"],
   ["content", SlidersHorizontal, "Content"],
@@ -937,57 +948,77 @@ export function StorefrontDesigner({
     }).catch(() => undefined);
   }
 
-  const previewBlocks: Record<StorefrontSection, React.ReactNode> = {
-    featured: (
-      <StackedFeatured
-        products={previewProducts}
-        onSelect={() => undefined}
-        autoRotate={draft.featured_autoplay ?? true}
-      />
-    ),
-    controls: (
-      <div className="catalog-controls">
-        <CategoryFilters
-          categories={categories}
-          activeCategory="All"
-          onChange={() => undefined}
-        />
-        <CatalogToolbar
-          searchQuery={previewSearch}
-          onSearchChange={setPreviewSearch}
-          sort={previewSort}
-          viewMode={previewView}
-          onSortChange={setPreviewSort}
-          onViewModeChange={setPreviewView}
-        />
-      </div>
-    ),
-    products: (
-      <ProductGrid
-        products={previewProducts}
-        totalProducts={previewProducts.length}
-        activeCategory="All"
-        viewMode={previewView}
-        onSelect={() => undefined}
-        onViewDetails={() => undefined}
-        onResetFilters={() => undefined}
-      />
-    ),
-    booth: <BoothInfoPanel booth={draft} />,
-    cart: (
-      <SelectedItemPanel
-        cart={
-          previewCartProduct
-            ? [{ product: previewCartProduct, quantity: 1 }]
-            : []
-        }
-        onQuantityChange={() => undefined}
-        onRemove={() => undefined}
-        onOpenPayment={() => undefined}
-        onClearCart={() => undefined}
-      />
-    ),
+  const sampleRadius = Math.round(
+    Math.min(10, Math.max(2, (draft.corner_radius ?? 16) * 0.4)),
+  );
+  const sampleInnerRadius = Math.round(Math.max(1, sampleRadius * 0.5));
+  const dynamicSampleStyle: React.CSSProperties = {
+    ["--sample-radius" as string]: `${sampleRadius}px`,
+    ["--sample-inner-radius" as string]: `${sampleInnerRadius}px`,
   };
+
+  const previewBlocks: Record<StorefrontSection, React.ReactNode> = useMemo(
+    () => ({
+      featured: (
+        <StackedFeatured
+          products={previewProducts}
+          onSelect={() => undefined}
+          autoRotate={draft.featured_autoplay ?? true}
+        />
+      ),
+      controls: (
+        <div className="catalog-controls">
+          <CategoryFilters
+            categories={categories}
+            activeCategory="All"
+            onChange={() => undefined}
+          />
+          <CatalogToolbar
+            searchQuery={previewSearch}
+            onSearchChange={setPreviewSearch}
+            sort={previewSort}
+            viewMode={previewView}
+            onSortChange={setPreviewSort}
+            onViewModeChange={setPreviewView}
+          />
+        </div>
+      ),
+      products: (
+        <ProductGrid
+          products={previewProducts}
+          totalProducts={previewProducts.length}
+          activeCategory="All"
+          viewMode={previewView}
+          onSelect={() => undefined}
+          onViewDetails={() => undefined}
+          onResetFilters={() => undefined}
+        />
+      ),
+      booth: <BoothInfoPanel booth={draft} />,
+      cart: (
+        <SelectedItemPanel
+          cart={
+            previewCartProduct
+              ? [{ product: previewCartProduct, quantity: 1 }]
+              : []
+          }
+          onQuantityChange={() => undefined}
+          onRemove={() => undefined}
+          onOpenPayment={() => undefined}
+          onClearCart={() => undefined}
+        />
+      ),
+    }),
+    [
+      categories,
+      draft,
+      previewCartProduct,
+      previewProducts,
+      previewSearch,
+      previewSort,
+      previewView,
+    ],
+  );
 
   function renderModule(section: StorefrontSection) {
     const isOver = dropTarget?.section === section && dragged !== section;
@@ -1233,6 +1264,7 @@ export function StorefrontDesigner({
                           sampleClassName={(value) =>
                             `section-style-sample sample-featured-${value}`
                           }
+                          sampleStyle={() => dynamicSampleStyle}
                           translate={t}
                           onChange={(value) => update("featured_style", value)}
                         />
@@ -1263,6 +1295,21 @@ export function StorefrontDesigner({
                   )}
                   {selected === "booth" && (
                     <>
+                      <div className="builder-field-group">
+                        <h3>
+                          <Palette size={15} /> {t("Booth card style")}
+                        </h3>
+                        <DesignerStyleOptions
+                          options={boothStyleOptions}
+                          value={draft.booth_style ?? "classic"}
+                          sampleClassName={(value) =>
+                            `section-style-sample sample-booth-${value}`
+                          }
+                          sampleStyle={() => dynamicSampleStyle}
+                          translate={t}
+                          onChange={(value) => update("booth_style", value)}
+                        />
+                      </div>
                       <div className="builder-field-group">
                         <h3>
                           <Store size={15} /> {t("Booth identity")}
@@ -1376,6 +1423,21 @@ export function StorefrontDesigner({
                   )}
                   {selected === "cart" && (
                     <div className="builder-fields builder-payment-fields" data-guide-spotlight="payment-settings">
+                      <div className="builder-field-group">
+                        <h3>
+                          <Palette size={15} /> {t("Cart card style")}
+                        </h3>
+                        <DesignerStyleOptions
+                          options={cartStyleOptions}
+                          value={draft.cart_style ?? "classic"}
+                          sampleClassName={(value) =>
+                            `section-style-sample sample-cart-${value}`
+                          }
+                          sampleStyle={() => dynamicSampleStyle}
+                          translate={t}
+                          onChange={(value) => update("cart_style", value)}
+                        />
+                      </div>
                       <div className="builder-field-group">
                         <h3>
                           <Building2 size={15} /> {t("Payment account")}
@@ -1750,6 +1812,7 @@ export function StorefrontDesigner({
                           sampleClassName={(value) =>
                             `section-style-sample sample-controls-${value}`
                           }
+                          sampleStyle={() => dynamicSampleStyle}
                           translate={t}
                           onChange={(value) => update("controls_style", value)}
                         />
@@ -1773,6 +1836,7 @@ export function StorefrontDesigner({
                           sampleClassName={(value) =>
                             `section-style-sample sample-product-${value}`
                           }
+                          sampleStyle={() => dynamicSampleStyle}
                           translate={t}
                           onChange={(value) => update("product_style", value)}
                         />
@@ -1859,8 +1923,91 @@ export function StorefrontDesigner({
                       sampleClassName={(value) =>
                         `card-style-sample card-style-${value}`
                       }
+                      sampleStyle={() => dynamicSampleStyle}
                       translate={t}
                       onChange={(value) => update("card_style", value)}
+                    />
+                  </div>
+                  <div className="designer-style-section">
+                    <div className="designer-style-section-heading">
+                      <strong>{t("Product card style")}</strong>
+                      <small>{t("The complete item grid or list")}</small>
+                    </div>
+                    <DesignerStyleOptions
+                      options={productStyleOptions}
+                      value={draft.product_style ?? "classic"}
+                      sampleClassName={(value) =>
+                        `section-style-sample sample-product-${value}`
+                      }
+                      sampleStyle={() => dynamicSampleStyle}
+                      translate={t}
+                      onChange={(value) => update("product_style", value)}
+                    />
+                  </div>
+                  <div className="designer-style-section">
+                    <div className="designer-style-section-heading">
+                      <strong>{t("Banner style")}</strong>
+                      <small>{t("Promoted products and swipe deck")}</small>
+                    </div>
+                    <DesignerStyleOptions
+                      options={featuredStyleOptions}
+                      value={draft.featured_style ?? "deck"}
+                      sampleClassName={(value) =>
+                        `section-style-sample sample-featured-${value}`
+                      }
+                      sampleStyle={() => dynamicSampleStyle}
+                      translate={t}
+                      onChange={(value) => update("featured_style", value)}
+                    />
+                  </div>
+                  <div className="designer-style-section">
+                    <div className="designer-style-section-heading">
+                      <strong>{t("Control style")}</strong>
+                      <small>
+                        {t("Categories, search, sort, and view mode")}
+                      </small>
+                    </div>
+                    <DesignerStyleOptions
+                      options={controlsStyleOptions}
+                      value={draft.controls_style ?? "panel"}
+                      sampleClassName={(value) =>
+                        `section-style-sample sample-controls-${value}`
+                      }
+                      sampleStyle={() => dynamicSampleStyle}
+                      translate={t}
+                      onChange={(value) => update("controls_style", value)}
+                    />
+                  </div>
+                  <div className="designer-style-section">
+                    <div className="designer-style-section-heading">
+                      <strong>{t("Booth card style")}</strong>
+                      <small>{t("Full identity card and QR codes")}</small>
+                    </div>
+                    <DesignerStyleOptions
+                      options={boothStyleOptions}
+                      value={draft.booth_style ?? "classic"}
+                      sampleClassName={(value) =>
+                        `section-style-sample sample-booth-${value}`
+                      }
+                      sampleStyle={() => dynamicSampleStyle}
+                      translate={t}
+                      onChange={(value) => update("booth_style", value)}
+                    />
+                  </div>
+                  <div className="designer-style-section">
+                    <div className="designer-style-section-heading">
+                      <strong>{t("Cart card style")}</strong>
+                      <small>{t("Standard card and full line items")}</small>
+                    </div>
+                    <DesignerStyleOptions
+                      options={cartStyleOptions}
+                      value={draft.cart_style ?? "classic"}
+                      sampleClassName={(value) =>
+                        `section-style-sample sample-cart-${value}`
+                      }
+                      sampleStyle={() => dynamicSampleStyle}
+                      translate={t}
+                      onChange={(value) => update("cart_style", value)}
                     />
                   </div>
                   <div className="designer-style-section-heading designer-custom-colors-heading">

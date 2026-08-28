@@ -86,8 +86,26 @@ export function usePersistentCart(shopKey?: string) {
           return { product, quantity, reward_quantity: rewardQuantity };
         })
         .filter((item): item is CartItem => item !== null);
-      cartRef.current = next;
-      setCartState(next);
+      const hasChanges =
+        notice.removed > 0 ||
+        notice.quantityAdjusted > 0 ||
+        notice.priceChanged > 0 ||
+        next.length !== cartRef.current.length ||
+        next.some((item, i) => {
+          const currentItem = cartRef.current[i];
+          return (
+            !currentItem ||
+            currentItem.product.id !== item.product.id ||
+            currentItem.quantity !== item.quantity ||
+            (currentItem.reward_quantity ?? 0) !== (item.reward_quantity ?? 0) ||
+            getProductPrice(currentItem.product) !== getProductPrice(item.product)
+          );
+        });
+
+      if (hasChanges) {
+        cartRef.current = next;
+        setCartState(next);
+      }
       if (notice.removed || notice.quantityAdjusted || notice.priceChanged) {
         setReconciliationNotice(notice);
       }

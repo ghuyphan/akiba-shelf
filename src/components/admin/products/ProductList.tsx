@@ -179,7 +179,12 @@ export function ProductList({
             >
               <span className="admin-product-thumb">
                 {primaryImage ? (
-                  <img src={primaryImage} alt="" />
+                  <img
+                    src={primaryImage}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
                 ) : (
                   <ImageIcon
                     size={24}

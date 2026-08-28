@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo, useState } from "react";
+import { memo, type ReactNode, useMemo, useState } from "react";
 import { ChevronDown, Gift, Plus, Search, Sword, Sparkles } from "lucide-react";
 import {
   getGachaBannerFeaturedRule,
@@ -73,7 +73,7 @@ export function compareGachaPoolItems(
   return left.catalogIndex - right.catalogIndex;
 }
 
-export function GachaPoolEditor({
+export const GachaPoolEditor = memo(function GachaPoolEditor({
   products,
   banner,
   banners,
@@ -152,6 +152,11 @@ export function GachaPoolEditor({
   const featuredRule = getGachaBannerFeaturedRule(
     descriptor.gameType,
     banner.kind,
+  );
+
+  const availableCount = useMemo(
+    () => products.filter((product) => !entriesByProduct.has(product.id)).length,
+    [entriesByProduct, products],
   );
 
   const visibleProducts = useMemo(() => {
@@ -276,9 +281,7 @@ export function GachaPoolEditor({
                   })
                 : filter === "available"
                   ? t("Add merch ({{count}})", {
-                      count: products.filter(
-                        (product) => !entriesByProduct.has(product.id),
-                      ).length,
+                      count: availableCount,
                     })
                   : t("3★ filler ({{count}})", { count: sharedCount })}
             </button>
@@ -456,4 +459,4 @@ export function GachaPoolEditor({
       )}
     </div>
   );
-}
+});

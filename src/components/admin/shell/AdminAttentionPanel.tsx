@@ -7,7 +7,7 @@ import {
   Settings2,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { usePlatformI18n } from "../../../lib/i18n/platformI18n";
+import { usePlatformI18n, type PlatformLocale } from "../../../lib/i18n/platformI18n";
 import type {
   BoothSettings,
   PaymentSettings,
@@ -112,6 +112,54 @@ export function getNotificationAttention(
   };
 }
 
+function getNotificationAttentionCopy(
+  notifications: NotificationAttention,
+  issueCount: number,
+  locale: PlatformLocale,
+  t: (key: string, values?: Record<string, string | number>) => string,
+) {
+  if (notifications.deadLetterCount > 0) {
+    return {
+      title:
+        issueCount === 1
+          ? t("1 order alert needs manual review")
+          : t("{{count}} order alerts need manual review", { count: issueCount }),
+      hint:
+        notifications.deadLetterCount === 1
+          ? t("1 alert stopped after all retries. Check staff notification devices.")
+          : t("{{count}} stopped after all retries. Check staff notification devices.", {
+              count: notifications.deadLetterCount,
+            }),
+    };
+  }
+
+  if (notifications.retryingCount > 0) {
+    return {
+      title:
+        notifications.retryingCount === 1
+          ? t("1 order alert is retrying")
+          : t("{{count}} order alerts are retrying", { count: notifications.retryingCount }),
+      hint: notifications.oldestDueAt
+        ? t("The oldest alert became due {{time}}.", {
+            time: formatRelativeTime(notifications.oldestDueAt, Date.now(), locale).toLocaleLowerCase(locale),
+          })
+        : t("Automatic retries are running; orders remain safe in the queue."),
+    };
+  }
+
+  return {
+    title:
+      notifications.overdueCount === 1
+        ? t("1 order alert is delayed")
+        : t("{{count}} order alerts are delayed", { count: notifications.overdueCount }),
+    hint: notifications.oldestDueAt
+      ? t("The oldest alert became due {{time}}.", {
+          time: formatRelativeTime(notifications.oldestDueAt, Date.now(), locale).toLocaleLowerCase(locale),
+        })
+      : t("Automatic retries are running; orders remain safe in the queue."),
+  };
+}
+
 function AttentionItem({
   icon,
   title,
@@ -165,6 +213,12 @@ export function AdminAttentionPanel({
   const notifications = getNotificationAttention(notificationStatuses);
   const notificationIssueCount =
     notifications.retryingCount + notifications.deadLetterCount;
+  const notificationCopy = getNotificationAttentionCopy(
+    notifications,
+    notificationIssueCount,
+    locale,
+    t,
+  );
   const retryCandidate = canRetryNotifications
     ? notificationStatuses.find(
         (status) =>
@@ -226,49 +280,8 @@ export function AdminAttentionPanel({
         {(notificationIssueCount > 0 || notifications.overdueCount > 0) && (
           <AttentionItem
             icon={<BellRing size={18} />}
-            title={
-              notifications.deadLetterCount > 0
-                ? notificationIssueCount === 1
-                  ? t("1 order alert needs manual review")
-                  : t("{{count}} order alerts need manual review", {
-                      count: notificationIssueCount,
-                    })
-                : notifications.retryingCount > 0
-                  ? notifications.retryingCount === 1
-                    ? t("1 order alert is retrying")
-                    : t("{{count}} order alerts are retrying", {
-                        count: notifications.retryingCount,
-                      })
-                  : notifications.overdueCount === 1
-                    ? t("1 order alert is delayed")
-                    : t("{{count}} order alerts are delayed", {
-                        count: notifications.overdueCount,
-                      })
-            }
-            hint={
-              notifications.deadLetterCount > 0
-                ? notifications.deadLetterCount === 1
-                  ? t(
-                      "1 alert stopped after all retries. Check staff notification devices.",
-                    )
-                  : t(
-                      "{{count}} stopped after all retries. Check staff notification devices.",
-                      {
-                        count: notifications.deadLetterCount,
-                      },
-                    )
-                : notifications.oldestDueAt
-                  ? t("The oldest alert became due {{time}}.", {
-                      time: formatRelativeTime(
-                        notifications.oldestDueAt,
-                        Date.now(),
-                        locale,
-                      ).toLocaleLowerCase(locale),
-                    })
-                  : t(
-                      "Automatic retries are running; orders remain safe in the queue.",
-                    )
-            }
+            title={notificationCopy.title}
+            hint={notificationCopy.hint}
             onClick={onOpenOrders}
           />
         )}

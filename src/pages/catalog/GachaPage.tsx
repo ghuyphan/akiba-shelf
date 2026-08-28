@@ -5,9 +5,10 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { MatsuriIcon } from "../../components/ui/MatsuriIcon";
 import { PageLoading } from "../../components/ui/PageLoading";
 import { CatalogUpdateNotice } from "../../components/catalog/shell/CatalogAppChrome";
 import { GachaGameSelector } from "../../components/gacha/host/GachaGameSelector";
@@ -17,7 +18,11 @@ import {
 } from "../../lib/gacha/gachaLaunch";
 import { translations, type CatalogCopy } from "../../lib/i18n/catalogI18n";
 import { prefersLightweightCatalog } from "../../lib/network";
-import { getShopBranding, useDocumentBranding } from "../../lib/branding";
+import {
+  getShopBranding,
+  getShopName,
+  useDocumentBranding,
+} from "../../lib/branding";
 import { applyDocumentSeo, resetDocumentSeo } from "../../lib/seo";
 import { resetPageTheme } from "../../utils/theme";
 import type { GachaGameType } from "../../types/gacha";
@@ -90,8 +95,7 @@ export function GachaPage() {
   }, [catalogLocale]);
 
   useEffect(() => {
-    const shopName =
-      state?.booth.booth_name.trim() || state?.shop.name.trim() || "Shop";
+    const shopName = getShopName(state?.shop.name, state?.booth.booth_name);
     applyDocumentSeo({
       description: `Play the free gacha minigame from ${shopName} on Matsuri.`,
       canonicalPath: `/s/${encodeURIComponent(shopSlug)}/play`,
@@ -154,7 +158,7 @@ export function GachaPage() {
       <GachaUpdateSurface copy={copy}>
         <main className="gacha-host-state">
           <EmptyState
-            icon={<Sparkles size={28} />}
+            icon={<MatsuriIcon name="gacha-capsule" size={28} />}
             title={copy.wishLoadFailed}
             message={error}
             action={
@@ -185,7 +189,7 @@ export function GachaPage() {
       <GachaUpdateSurface copy={copy}>
         <main className="gacha-host-state">
           <EmptyState
-            icon={<Sparkles size={28} />}
+            icon={<MatsuriIcon name="gacha-capsule" size={28} />}
             title={copy.wishUnavailable}
             message={copy.wishPoolEmptyHint}
             action={

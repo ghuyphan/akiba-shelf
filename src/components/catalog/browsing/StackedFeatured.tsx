@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -20,7 +20,7 @@ type StackedFeaturedProps = {
   lightweightImages?: boolean;
 };
 
-export function StackedFeatured({
+export const StackedFeatured = memo(function StackedFeatured({
   products,
   onSelect,
   autoRotate = true,
@@ -28,14 +28,14 @@ export function StackedFeatured({
 }: StackedFeaturedProps) {
   const copy = useCatalogCopy();
   const [active, setActive] = useState(0);
-  const [loadedImageIds, setLoadedImageIds] = useState<Set<string>>(
-    () => new Set(),
-  );
   const dragStartRef = useRef<number | null>(null);
   const touchStartRef = useRef<number | null>(null);
   const autoScrollPausedRef = useRef(false);
   const autoScrollResumeAtRef = useRef(0);
-  const featured = selectStorefrontFeaturedProducts(products);
+  const featured = useMemo(
+    () => selectStorefrontFeaturedProducts(products),
+    [products],
+  );
 
   useEffect(() => {
     if (active >= featured.length) setActive(0);
@@ -115,15 +115,6 @@ export function StackedFeatured({
     if (Math.abs(distance) > swipeThreshold) pauseAfterInteraction();
     if (distance > swipeThreshold) next();
     if (distance < -swipeThreshold) previous();
-  }
-
-  function markImageLoaded(productId: string) {
-    setLoadedImageIds((current) => {
-      if (current.has(productId)) return current;
-      const nextLoaded = new Set(current);
-      nextLoaded.add(productId);
-      return nextLoaded;
-    });
   }
 
   return (
@@ -251,22 +242,22 @@ export function StackedFeatured({
           <div className="featured-card-deck">
             {featured.map((product, index) => {
               const offset = getFeaturedOffset(index, active, featured.length);
-              if (Math.abs(offset) > 1) return null;
+              if (Math.abs(offset) > 2) return null;
               const isActive = offset === 0;
+              const isVisible = Math.abs(offset) <= 1;
               const variant = product.image_variants?.[0];
               const fallbackImage = product.images.find(Boolean);
               const image = variant?.thumbnail || fallbackImage;
-              const shouldLoadImage =
-                isActive || loadedImageIds.has(product.id);
               return (
                 <button
                   key={product.id}
                   type="button"
                   className={`featured-deck-card ${isActive ? "is-active" : ""}`}
                   style={{
-                    transform: `translate(-50%, -50%) translateX(${offset * 22}px) translateY(${Math.abs(offset) * 11}px) rotate(${offset * 5}deg) scale(${1 - Math.min(Math.abs(offset), 3) * 0.055})`,
+                    transform: `translate(-50%, -50%) translateX(${offset * 26}px) translateY(${Math.abs(offset) * 8}px) rotate(${offset * 5.5}deg) scale(${1 - Math.min(Math.abs(offset), 3) * 0.065})`,
                     zIndex: 20 - Math.abs(offset),
-                    opacity: Math.abs(offset) > 2 ? 0 : 1,
+                    opacity: isActive ? 1 : isVisible ? 0.88 : 0,
+                    pointerEvents: isVisible ? "auto" : "none",
                   }}
                   onClick={(event) => {
                     event.stopPropagation();
@@ -283,7 +274,7 @@ export function StackedFeatured({
                   tabIndex={isActive ? 0 : -1}
                 >
                   <span className="featured-deck-image">
-                    {image && shouldLoadImage ? (
+                    {image ? (
                       <img
                         src={image}
                         srcSet={
@@ -297,7 +288,6 @@ export function StackedFeatured({
                         loading={isActive ? "eager" : "lazy"}
                         fetchPriority={isActive ? "high" : "low"}
                         decoding="async"
-                        onLoad={() => markImageLoaded(product.id)}
                       />
                     ) : (
                       <span className="image-placeholder" />
@@ -320,17 +310,19 @@ export function StackedFeatured({
               );
             })}
           </div>
-          <span
-            className="featured-banner-swipe-hint"
-            aria-label={copy.swipeToBrowse}
-          >
-            <SwipeGestureIcon />
-          </span>
+          {featured.length > 1 && (
+            <span
+              className="featured-banner-swipe-hint"
+              aria-label={copy.swipeToBrowse}
+            >
+              <SwipeGestureIcon />
+            </span>
+          )}
         </div>
       </div>
     </section>
   );
-}
+});
 
 function SwipeGestureIcon() {
   return <MoveHorizontal size={14} aria-hidden="true" />;

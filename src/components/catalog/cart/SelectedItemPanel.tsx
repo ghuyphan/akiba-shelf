@@ -1,4 +1,5 @@
-import { Banknote, ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
+import { memo } from "react";
+import { Banknote, Minus, Plus, Trash2 } from "lucide-react";
 import type {
   CartItem,
   Product,
@@ -8,6 +9,7 @@ import { formatVnd } from "../../../utils/format";
 import { calculateCartPricing, getPricingLine } from "../../../utils/pricing";
 import { Button } from "../../ui/Button";
 import { EmptyState } from "../../ui/EmptyState";
+import { MatsuriIcon } from "../../ui/MatsuriIcon";
 import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { MobileSheetShell, SheetHandle } from "../../ui/MobileSheetShell";
 import { useOverlayHistory } from "../../../hooks/shared/useOverlayHistory";
@@ -26,7 +28,7 @@ type SelectedItemPanelProps = {
   onToggleExpand?: () => void;
 };
 
-export function SelectedItemPanel({
+export const SelectedItemPanel = memo(function SelectedItemPanel({
   cart,
   promotion,
   rewardProducts = [],
@@ -48,7 +50,7 @@ export function SelectedItemPanel({
       <aside className="selected-panel selected-panel-empty">
         <EmptyState
           variant="compact"
-          icon={<ShoppingBag size={26} />}
+          icon={<MatsuriIcon name="tote-bag" size={26} />}
           title={copy.emptyCart}
           message={copy.emptyCartHint}
         />
@@ -93,7 +95,7 @@ export function SelectedItemPanel({
       >
         <span className="mobile-cart-summary-info">
           <span className="mobile-cart-summary-icon-wrap">
-            <ShoppingBag size={20} />
+            <MatsuriIcon name="tote-bag" size={20} />
             <span className="mobile-cart-count-badge">{totalItems}</span>
           </span>
           <span className="mobile-cart-summary-text">
@@ -153,6 +155,8 @@ export function SelectedItemPanel({
                     className="cart-item-thumb"
                     src={primaryImage}
                     alt={item.product.name}
+                    loading="lazy"
+                    decoding="async"
                   />
                 ) : (
                   <div
@@ -239,7 +243,16 @@ export function SelectedItemPanel({
                       disabled={unavailable}
                       onClick={() => onAddReward?.(product)}
                     >
-                      {rewardImage ? <img src={rewardImage} alt="" /> : <i />}
+                      {rewardImage ? (
+                        <img
+                          src={rewardImage}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <i />
+                      )}
                       <span>
                         {product.name}
                         <small>
@@ -303,4 +316,4 @@ export function SelectedItemPanel({
       </div>
     </MobileSheetShell>
   );
-}
+});

@@ -9,6 +9,7 @@ type DesignerStyleOptionsProps<Value extends string> = {
   value: Value;
   className?: string;
   sampleClassName: (value: Value) => string;
+  sampleStyle?: (value: Value) => React.CSSProperties | undefined;
   translate: (value: string) => string;
   onChange: (value: Value) => void;
 };
@@ -18,6 +19,7 @@ export function DesignerStyleOptions<Value extends string>({
   value,
   className = "designer-card-style-grid designer-section-style-grid",
   sampleClassName,
+  sampleStyle,
   translate,
   onChange,
 }: DesignerStyleOptionsProps<Value>) {
@@ -30,9 +32,13 @@ export function DesignerStyleOptions<Value extends string>({
           className={value === optionValue ? "active" : ""}
           onClick={() => onChange(optionValue)}
           aria-pressed={value === optionValue}
-          aria-label={translate(label)}
+          aria-label={`${translate(label)}: ${translate(description)}`}
         >
-          <i className={sampleClassName(optionValue)} aria-hidden="true" />
+          <i
+            className={sampleClassName(optionValue)}
+            style={sampleStyle?.(optionValue)}
+            aria-hidden="true"
+          />
           <span>
             <strong>{translate(label)}</strong>
             <small>{translate(description)}</small>

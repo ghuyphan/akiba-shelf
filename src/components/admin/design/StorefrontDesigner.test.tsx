@@ -99,6 +99,48 @@ describe("StorefrontDesigner", () => {
     ).toBeInTheDocument();
   });
 
+  it("allows selecting card personality and section card styles in the Style tab", async () => {
+    const user = userEvent.setup();
+    render(renderDesigner("shop-1", defaultBooth));
+
+    await user.click(screen.getByRole("tab", { name: "Style" }));
+
+    // Global card personality
+    const playfulCardBtn = screen.getByRole("button", {
+      name: "Playful: Colorful offset shadow",
+    });
+    await user.click(playfulCardBtn);
+    expect(playfulCardBtn).toHaveAttribute("aria-pressed", "true");
+
+    // Product card style
+    const framedProductBtn = screen.getByRole("button", {
+      name: "Framed: Inset product photography",
+    });
+    await user.click(framedProductBtn);
+    expect(framedProductBtn).toHaveAttribute("aria-pressed", "true");
+
+    // Banner style
+    const minimalBannerBtn = screen.getByRole("button", {
+      name: "Minimal: Quiet and product-first",
+    });
+    await user.click(minimalBannerBtn);
+    expect(minimalBannerBtn).toHaveAttribute("aria-pressed", "true");
+
+    // Booth card style
+    const compactBoothBtn = screen.getByRole("button", {
+      name: "Compact: Social icon links and space saving",
+    });
+    await user.click(compactBoothBtn);
+    expect(compactBoothBtn).toHaveAttribute("aria-pressed", "true");
+
+    // Cart card style
+    const compactCartBtn = screen.getByRole("button", {
+      name: "Compact: Dense rows for multi-item orders",
+    });
+    await user.click(compactCartBtn);
+    expect(compactCartBtn).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("retains failed payment edits when storefront publication succeeds", async () => {
     const user = userEvent.setup();
     render(

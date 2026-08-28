@@ -112,14 +112,12 @@ function gachaHistoryReducer(
         if (!game.present) return game;
         const nextPresent = action.updater(game.present);
 
+        if (nextPresent === game.present) return game;
         if (
-          JSON.stringify(game.present.settings) ===
-            JSON.stringify(nextPresent.settings) &&
-          JSON.stringify(game.present.banners) ===
-            JSON.stringify(nextPresent.banners) &&
-          JSON.stringify(game.present.entries) ===
-            JSON.stringify(nextPresent.entries) &&
-          game.present.selectedBannerId === nextPresent.selectedBannerId
+          game.present.selectedBannerId === nextPresent.selectedBannerId &&
+          game.present.settings === nextPresent.settings &&
+          game.present.banners === nextPresent.banners &&
+          game.present.entries === nextPresent.entries
         ) {
           return game;
         }

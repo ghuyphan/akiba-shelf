@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ArrowDownUp, Grid2X2, List, Search, X } from "lucide-react";
 import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import type { PublicProductSort } from "../../../lib/catalogQueries";
@@ -12,7 +13,7 @@ type CatalogToolbarProps = {
   onViewModeChange: (mode: "grid" | "list") => void;
 };
 
-export function CatalogToolbar({
+export const CatalogToolbar = memo(function CatalogToolbar({
   searchQuery,
   onSearchChange,
   sort,
@@ -82,4 +83,4 @@ export function CatalogToolbar({
       </div>
     </div>
   );
-}
+});

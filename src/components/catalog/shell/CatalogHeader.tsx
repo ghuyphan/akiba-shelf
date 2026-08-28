@@ -1,8 +1,9 @@
-import { ChevronRight, Gamepad2, Info, ShoppingBag } from "lucide-react";
+import { ChevronRight, Info } from "lucide-react";
 import { Link, useParams } from "react-router";
 import type { BoothSettings } from "../../../types/catalog";
 import { useCatalogCopy } from "../../../lib/i18n/catalogLocale";
 import { safePublicUrl } from "../../../lib/branding";
+import { MatsuriIcon } from "../../ui/MatsuriIcon";
 import "../../../styles/gacha/entry.css";
 
 type CatalogHeaderProps = {
@@ -44,7 +45,7 @@ export function CatalogHeader({
               className="brand-logo-img"
             />
           ) : (
-            <ShoppingBag size={30} />
+            <MatsuriIcon name="lantern" size={30} />
           )}
         </div>
         <div className="brand-lockup-details">
@@ -71,7 +72,7 @@ export function CatalogHeader({
             aria-label={`${copy.playGacha}. ${copy.playGachaHint}`}
             title={copy.playGacha}
           >
-            <Gamepad2 size={22} aria-hidden="true" />
+            <MatsuriIcon name="gacha-capsule" size={22} aria-hidden="true" />
           </Link>
         )}
         {isDesigner ? (
