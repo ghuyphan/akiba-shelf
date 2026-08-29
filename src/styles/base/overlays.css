@@ -95,9 +95,9 @@
   height: 48px;
   margin: 2px auto 0;
   place-items: center;
-  border-radius: 14px;
-  color: var(--green);
-  background: color-mix(in srgb, var(--green) 10%, var(--surface));
+  border-radius: calc(var(--store-radius, 16px) * 0.85);
+  color: var(--coral, var(--green));
+  background: color-mix(in srgb, var(--coral, var(--green)) 10%, var(--surface));
 }
 .event-pin-form > p {
   max-width: 38ch;
@@ -121,7 +121,7 @@
   min-height: 52px;
   box-sizing: border-box;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: calc(var(--store-radius, 16px) * 0.75);
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -132,8 +132,8 @@
   text-align: center;
 }
 .event-pin-field input:focus-visible {
-  border-color: var(--green);
-  outline: 3px solid color-mix(in srgb, var(--green) 22%, transparent);
+  border-color: var(--coral, var(--green));
+  outline: 3px solid color-mix(in srgb, var(--coral, var(--green)) 22%, transparent);
   outline-offset: 1px;
 }
 .event-pin-error {
